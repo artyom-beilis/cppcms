@@ -119,4 +119,75 @@ void FastCGI_Single_Threaded_App::execute()
 	}
 }
 
-//FastCGI_Application::handlers_owner(0);
+void FastCGI_Mutiple_Threaded_App::thread_func(void *p)
+{
+	info_t *params=(info_t *)p;
+
+	int id=params->first;
+	FastCGI_Mutiple_Threaded_App *me=params->second;
+
+	FCGX_Request *req;
+	
+	while((req=me->jobs_stack.pop())!=NULL) {
+		me->workers[id]->run(req);
+		jobs_stack.push(req);
+	}
+}
+
+void FastCGI_Mutiple_Threaded_App::start_threads()
+{
+	int i;
+	threads_info = new info_t [size];
+	for(i=0;i<size;i++) {
+		
+		threads_info[i].first=i;
+		threads_info[i].second=this;
+		
+		pthread_create(pids+i,NULL,thread_func,threads_info+i);
+	}
+}
+
+void FastCGI_Mutiple_Threaded_App::setup(int num,Worker_Thread **workers)
+{
+	int i;
+	this->workers=workers;
+	size=num;
+
+	requests = new FCGX_Request [size+1];
+	pids = new pthread_t [size];
+	
+	requests_stack.init(size+1);
+	
+	for(i=0;i<size+i;i++)
+		requests_stack.push(requests+i);
+	
+	jobs_stack.init(size);
+
+	start_threads();	
+}
+
+
+void FastCGI_Mutiple_Threaded_App::execute()
+{
+	while(wait()==ACCEPT) {
+		FCGX_Request *req=requests_stack.pop()	
+		
+		#ifdef FCGX_API_ACCEPT_ONLY_EXISTS
+		res=FCGX_Accept_Only_r(&request);
+		#else 
+		res=FCGX_Accept_r(&request);
+		#endif
+		
+		if(res<0) {
+			requests_stack.push(req);
+			continue;
+		}
+		
+		jobs_stack.push(request);
+	}
+	// Exit event 
+	int i;
+	for(i=0;i<size;i++) {
+		jobs_stack.push(NULL);
+	}
+}

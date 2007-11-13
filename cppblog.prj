@@ -68,7 +68,6 @@ module.include.name=.
 module.include.type=
 module.include.files=\
 	worker_thread.h\
-	template.h\
 	textstream.h\
 	main_thread.h\
 	mysql_db.h\
@@ -78,7 +77,6 @@ module.source.name=.
 module.source.type=
 module.source.files=\
 	main.cpp\
-	testdb.cpp\
 	worker_thread.cpp\
 	textstream.cpp\
 	main_thread.cpp\

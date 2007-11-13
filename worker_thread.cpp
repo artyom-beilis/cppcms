@@ -1,7 +1,5 @@
 #include "worker_thread.h"
 
-extern int  global_exit_flag;
-
 
 Worker_Thread::Worker_Thread()
 {

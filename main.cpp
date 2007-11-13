@@ -23,10 +23,9 @@ int main(int argc,char **argv)
 	char *socket="/tmp/php-fastcgi.socket";
 
 	try{
-		auto_ptr<Worker_Thread> worker_thread(new Main_Thread);
 
-		FastCGI_Single_Threaded_App app(&*worker_thread,socket);
-
+		FastCGI_ST<Main_Thread> app(socket);
+		
 		app.execute();
 
 		cout<<"Finished\n";
