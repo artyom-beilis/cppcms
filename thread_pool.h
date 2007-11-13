@@ -32,7 +32,7 @@ public:
 
 	void shutdown();
 	virtual bool run() { return false; };
-	virtual void execute() {};
+	void execute();
 };
 
 class FastCGI_Single_Threaded_App : public FastCGI_Application {
@@ -45,7 +45,6 @@ public:
 	FastCGI_Single_Threaded_App(Worker_Thread *worker,char const *socket=NULL)
 		: FastCGI_Application(socket) { setup(worker); };
 	virtual ~FastCGI_Single_Threaded_App(){};
-	virtual void execute();
 };
 
 
@@ -72,6 +71,7 @@ public:
 			return;
 		pthread_mutex_init(&access_mutex,NULL);
 		pthread_cond_init(&new_data_availible,NULL);
+		pthread_cond_init(&new_space_availible,NULL);
 		stack = new T [size];
 		max_size=size;
 		stack_size=0;
@@ -82,9 +82,9 @@ public:
 	~Safe_Stack() {
 		delete [] stack;
 	};
-	void push(T &val) {
+	void push(T val) {
 		pthread_mutex_lock(&access_mutex);
-		while(size>=max_size) {
+		while(stack_size>=max_size) {
 			pthread_cond_wait(&new_space_availible,&access_mutex);			
 		}
 		stack[stack_size]=val;
@@ -99,19 +99,22 @@ public:
 		}
 		stack_size--;
 		T data=stack[stack_size];
+		pthread_cond_signal(&new_space_availible);
 		pthread_mutex_unlock(&access_mutex);
-		return T;
+		return data;
 	};
-}
+};
 
 class FastCGI_Mutiple_Threaded_App : public FastCGI_Application {
-	void setup(int num, Worker_Thread **thrd);
 	int size;
+	long long int *stats;
 	Worker_Thread **workers;
 	FCGX_Request  *requests;
 	Safe_Stack<FCGX_Request*> requests_stack;
 	Safe_Stack<FCGX_Request*> jobs_stack;
+	
 	void setup(int size,Worker_Thread **workers);
+	
 	pthread_t *pids;
 
 	typedef pair<int,FastCGI_Mutiple_Threaded_App*> info_t;
@@ -120,6 +123,7 @@ class FastCGI_Mutiple_Threaded_App : public FastCGI_Application {
 
 	static void *thread_func(void *p);
 	void start_threads();
+	void wait_threads();
 public:
 	FastCGI_Mutiple_Threaded_App(	int num,
 					Worker_Thread **workers,
@@ -128,13 +132,14 @@ public:
 	{
 		setup(num,workers);
 	};
-	virtual void execute();
 	virtual bool run();	
 	virtual ~FastCGI_Mutiple_Threaded_App() {
-		delete [] request;
+		delete [] requests;
 		delete [] pids;
 		delete [] threads_info;
-	}
+		delete [] stats;
+	};
+	long long int const *get_stats() { return stats; };
 };
 
 template<class WT>
@@ -153,7 +158,7 @@ class FastCGI_MT : public FastCGI_Mutiple_Threaded_App {
 	};
 public:
 	FastCGI_MT(int num, char *socket) : 
-		FastCGI_Mutiple_Threaded_App(num,setptrs,socket) {};
+		FastCGI_Mutiple_Threaded_App(num,setptrs(num),socket) {};
 	virtual ~FastCGI_MT() {
 		delete [] ptrs;
 		delete [] threads;

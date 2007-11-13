@@ -23,6 +23,7 @@ void Worker_Thread::run(FCGX_Request *fcgi)
 	cgi = auto_ptr<Cgicc>( new Cgicc(&*io) );
 	env=&(cgi->getEnvironment());
 
+	set_header(new HTTPHTMLHeader);
 	
 	try {
 		/**********/

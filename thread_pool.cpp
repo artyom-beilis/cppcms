@@ -17,9 +17,9 @@ FastCGI_Application::FastCGI_Application(const char *socket)
 	}
 	else {
 		this->socket=socket;
-		main_fd=FCGX_OpenSocket(socket,1);
+		main_fd=FCGX_OpenSocket(socket,50);
 		if(main_fd<0) {
-			throw HTTP_Error(string("Fauled to open socket ")
+			throw HTTP_Error(string("Failed to open socket ")
 					+socket);
 		}
 	}
@@ -110,7 +110,7 @@ bool FastCGI_Single_Threaded_App::run()
 };
 
 
-void FastCGI_Single_Threaded_App::execute()
+void FastCGI_Application::execute()
 {
 	set_signal_handlers();
 	
@@ -119,7 +119,7 @@ void FastCGI_Single_Threaded_App::execute()
 	}
 }
 
-void FastCGI_Mutiple_Threaded_App::thread_func(void *p)
+void *FastCGI_Mutiple_Threaded_App::thread_func(void *p)
 {
 	info_t *params=(info_t *)p;
 
@@ -130,14 +130,19 @@ void FastCGI_Mutiple_Threaded_App::thread_func(void *p)
 	
 	while((req=me->jobs_stack.pop())!=NULL) {
 		me->workers[id]->run(req);
-		jobs_stack.push(req);
+		me->requests_stack.push(req);
+		me->stats[id]++;
 	}
+	return NULL;
 }
 
 void FastCGI_Mutiple_Threaded_App::start_threads()
 {
 	int i;
+
+	pids = new pthread_t [size];
 	threads_info = new info_t [size];
+	
 	for(i=0;i<size;i++) {
 		
 		threads_info[i].first=i;
@@ -147,47 +152,75 @@ void FastCGI_Mutiple_Threaded_App::start_threads()
 	}
 }
 
+void FastCGI_Mutiple_Threaded_App::wait_threads()
+{
+	int i;
+	for(i=0;i<size;i++) {
+		pthread_join(pids[i],NULL);
+	}
+}
+
 void FastCGI_Mutiple_Threaded_App::setup(int num,Worker_Thread **workers)
 {
 	int i;
-	this->workers=workers;
 	size=num;
-
+	
+	// Statistics
+	
+	stats = new long long [size];
+	for(i=0;i<size;i++)
+		stats[i]=0;
+	
+	// Init Worker Threads
+	this->workers=workers;
+	for(i=0;i<size;i++) {
+		workers[i]->init();
+	}
+	
+	// Init FCGX Requests
 	requests = new FCGX_Request [size+1];
-	pids = new pthread_t [size];
-	
+	for(i=0;i<size;i++) {
+		FCGX_InitRequest(requests+i, main_fd, 0);
+	}
 	requests_stack.init(size+1);
-	
-	for(i=0;i<size+i;i++)
+	for(i=0;i<size;i++)
 		requests_stack.push(requests+i);
 	
-	jobs_stack.init(size);
+	// Setup Jobs Manager
+	jobs_stack.init(1);
 
 	start_threads();	
 }
 
+extern int global_counter;
 
-void FastCGI_Mutiple_Threaded_App::execute()
+bool FastCGI_Mutiple_Threaded_App::run()
 {
-	while(wait()==ACCEPT) {
-		FCGX_Request *req=requests_stack.pop()	
+	int res;
+	if(wait()==ACCEPT) {
+		FCGX_Request *req=requests_stack.pop();
 		
 		#ifdef FCGX_API_ACCEPT_ONLY_EXISTS
-		res=FCGX_Accept_Only_r(&request);
+		res=FCGX_Accept_Only_r(req); 
 		#else 
-		res=FCGX_Accept_r(&request);
+		res=FCGX_Accept_r(req);
 		#endif
-		
 		if(res<0) {
 			requests_stack.push(req);
-			continue;
+			return true;
 		}
-		
-		jobs_stack.push(request);
+		global_counter++;
+		jobs_stack.push(req);
+		return true;
 	}
-	// Exit event 
-	int i;
-	for(i=0;i<size;i++) {
-		jobs_stack.push(NULL);
+	else {// Exit event 
+		int i;
+		for(i=0;i<size;i++) {
+			jobs_stack.push(NULL);
+		}
+
+		wait_threads();
+		
+		return false;
 	}
 }
