@@ -7,7 +7,7 @@
 FastCGI_Application *FastCGI_Application::handlers_owner=NULL;
 
 
-FastCGI_Application::FastCGI_Application(const char *socket)
+FastCGI_Application::FastCGI_Application(const char *socket,int backlog)
 {
 	FCGX_Init();
 	
@@ -17,7 +17,7 @@ FastCGI_Application::FastCGI_Application(const char *socket)
 	}
 	else {
 		this->socket=socket;
-		main_fd=FCGX_OpenSocket(socket,50);
+		main_fd=FCGX_OpenSocket(socket,backlog);
 		if(main_fd<0) {
 			throw HTTP_Error(string("Failed to open socket ")
 					+socket);

@@ -27,7 +27,7 @@ protected:
 	void set_signal_handlers();
 	static FastCGI_Application *get_instance() { return handlers_owner; };
 public:
-	FastCGI_Application(char const *socket=NULL);
+	FastCGI_Application(char const *socket,int backlog);
 	virtual ~FastCGI_Application() {};
 
 	void shutdown();
@@ -43,7 +43,7 @@ class FastCGI_Single_Threaded_App : public FastCGI_Application {
 public:
 	virtual bool run();
 	FastCGI_Single_Threaded_App(Worker_Thread *worker,char const *socket=NULL)
-		: FastCGI_Application(socket) { setup(worker); };
+		: FastCGI_Application(socket,1) { setup(worker); };
 	virtual ~FastCGI_Single_Threaded_App(){};
 };
 
@@ -128,7 +128,7 @@ public:
 	FastCGI_Mutiple_Threaded_App(	int num,
 					Worker_Thread **workers,
 					char *socket=NULL) :
-		FastCGI_Application(socket)
+		FastCGI_Application(socket,num)
 	{
 		setup(num,workers);
 	};
