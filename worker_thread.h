@@ -14,29 +14,16 @@
 #include <memory>
 
 #include "FCgiIO.h"
-
-#include "config.h"
+#include "http_error.h"
 
 using namespace std;
-using namespace cgicc;
+using cgicc::CgiEnvironment;
+using cgicc::FCgiIO;
+using cgicc::Cgicc;
+using cgicc::HTTPHeader;
 
-class HTTP_Error {
-	bool State404;
-	char message[MAX_ERROR_MESSAGE_LEN];
-public:
-	char const *get() { return message; };
-	bool is_404() { return State404; };
-	HTTP_Error(char const *text,bool NotFound = false)
-	{
-		strncpy(message,text,MAX_ERROR_MESSAGE_LEN); 
-		State404 = NotFound;
-	};
-	HTTP_Error(string const &str,bool NotFound = false) 
-	{ 
-		strncpy(message,str.c_str(),MAX_ERROR_MESSAGE_LEN); 
-		State404 = NotFound;
-	};
-};
+
+
 
 class Worker_Thread {
 	auto_ptr<FCgiIO> io;

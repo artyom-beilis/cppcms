@@ -1,13 +1,10 @@
 #include "main_thread.h"
 
-extern All_Configuration config;
+#include "global_config.h"
 
 void Main_Thread::init()
 {
-	db.open(config.mysql_host,
-		config.mysql_uname,
-		config.mysql_password,
-		config.mysql_db);
+	db.open();
 }
 
 

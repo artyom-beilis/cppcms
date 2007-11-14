@@ -1,14 +1,106 @@
 #include "global_config.h"
 #include <stdio.h>
-
+#include <ctype.h>
 
 Global_Config global_config;
 
-bool Global_Config::get_tocken(FILE *f,toncken_t &T)
+bool Global_Config::get_tocken(FILE *f,tocken_t &T)
 {
-	while(getc(f)!=EOF) {
-		
+	int c;
+	while((c=fgetc(f))!=EOF) {
+		if(c=='.') {
+			T.first='.';
+			return true;
+		}
+		else if(c=='=') {
+			T.first='=';
+			return true;
+		}
+		else if(c=='\n') {
+			line_counter++;
+			continue;
+		}
+		else if(c==' ' || c=='\r' || c=='\t') {
+			continue;
+		}
+		else if(isalpha(c)) {
+			T.second="";
+			T.second.reserve(32);
+			T.second+=(char)c;
+			while((c=fgetc(f))!=EOF && isalnum(c)) {
+				T.second+=(char)c;
+			}
+			if(c!=EOF){
+				ungetc(c,f);
+			}
+			T.first=WORD;
+			return true;
+		}
+		else if(isdigit(c) || c=='-') {
+			T.second="";
+			T.second.reserve(32);
+			T.second+=(char)c;
+			T.first=INT;
+			while((c=fgetc(f))!=EOF && isdigit(c)) {
+				T.second+=(char)c;
+			}
+			if(c=='.') {
+				T.second+='.';
+				T.first=DOUBLE;
+				while((c=fgetc(f))!=EOF && isdigit(c)) {
+					T.second+=(char)c;
+				}
+			}
+			if(T.second=="-" || T.second=="." || T.second=="-.") {
+				throw HTTP_Error("Illegal charrecters");
+			}
+			if(c!=EOF) {
+				ungetc(c,f);
+			}
+			return true;
+		}
+		else if(c=='\"') {
+			T.first=STR;
+			T.second="";
+			T.second.reserve(128);
+			for(;;){
+				c=fgetc(f);
+				if(c=='\\'){
+					if((c=fgetc(f))=='\"' ) {
+						T.second+='"';
+						continue;
+					}
+					else {
+						T.second+='\\';
+					}
+				}
+				if(c==EOF){
+					throw HTTP_Error("Unexpected EOF ");
+				}
+				if(c=='\n') line_counter++;
+				if(c=='\"') {
+					return true;
+				}
+				T.second+=(char)c;
+			}
+		}
+		else if(c=='#' || c==';'){
+			while((c=fgetc(f))!=EOF) {
+				if(c=='\n'){
+					line_counter++;
+					break;
+				}
+			}
+			if(c==EOF) {
+				return false;
+			}
+				
+		}
+		else {
+			throw HTTP_Error(string("Unexpected charrecter")+(char)c);
+		}
 	}
+	return false;
 }
 
 void Global_Config::load(char const *fname)
@@ -19,55 +111,84 @@ void Global_Config::load(char const *fname)
 		throw HTTP_Error(string("Failed to open file:")+fname);
 	}
 	tocken_t T;
-	key_t key;
+	string key;
 	int state=0;
-	while(get_tocken(f,T) && state != 5) {
-		switch(state) {
-		case 0: if(T.first != WORD) {
-				state=5;
-			}else{
-				key.first=T.second;
-				state=1;
-			}
-			break;
-		case 1: if(T.first != '.')
-				state=5;
-			else 
-				state=2;
-			break;
-		case 2: if(T.first!=WORD){
-				state=5;
-			}else{
-				state=3;
-				key.second=T.second;
-			}
-			break;
-		case 3: if(T.first!= '=') 
-				state=5;
-			else
-				state=4;
-			break;
-		case 4: if(T.first==INT) {
-				long val=atol(T.second.c_str());
-				long_map.push_back(key,val);
-			}
-			else if(T.first==DOUBLE) {
-				double val=atof(T.second.c_str());
-				double_map.push_back(key,val);
-			}
-			else if(T.first==STR){
-				string_map.push_back(key,T.second);
-			}
-			else {
-				state=5;
+	try{
+		while(get_tocken(f,T) && state != 5) {
+			switch(state) {
+			case 0: if(T.first != WORD) {
+					state=5;
+				}else{
+					key=T.second;
+					state=1;
+				}
+				break;
+			case 1: if(T.first != '.')
+					state=5;
+				else 
+					state=2;
+				break;
+			case 2: if(T.first!=WORD){
+					state=5;
+				}else{
+					state=3;
+					key+='.';
+					key+=T.second;
+				}
+				break;
+			case 3: if(T.first!= '=') 
+					state=5;
+				else
+					state=4;
+				break;
+			case 4: if(T.first==INT) {
+					long val=atol(T.second.c_str());
+					long_map.insert(pair<string,long>(key,val));
+				}
+				else if(T.first==DOUBLE) {
+					double val=atof(T.second.c_str());
+					double_map.insert(pair<string,double>(key,val));
+				}
+				else if(T.first==STR){
+					string_map.insert(pair<string,string>(key,T.second));
+				}
+				else {
+					state=5;
+					break;
+				}
+				state=0;
 				break;
 			}
-			state=0;
+		}
+		if(state!=0) {
+			throw HTTP_Error("Parsing error");
+		}
+	}
+	catch (HTTP_Error &err){
+		fclose(f);
+		char stmp[32];
+		snprintf(stmp,32," at line %d",line_counter);
+		throw HTTP_Error(string(err.get())+stmp);
+	}
+}
+
+
+void Global_Config::load(int argc,char *argv[],char const *def)
+{
+	char const *def_file=def;
+	int i;
+	for(i=1;i<argc;i++) {
+		if(strncmp(argv[i],"--config=",9)==0) {
+			def_file=argv[i]+9;
+			break;
+		}
+		else if(strcmp(argv[i],"-c")==0 && i+1<argc) {
+			def_file=argv[i+1];
 			break;
 		}
 	}
-	fclose(f);
-	if(state!=0) {
-		HTTP_Error(string("Parsing error at line ")+line_counter);
+	if(def_file==NULL) {
+		throw HTTP_Error("Configuration file not defined");
 	}
+	load(def_file);
 }

@@ -107,7 +107,8 @@ public:
 
 	
 	void close() { if(conn) mysql_close(conn); conn=NULL; };
-	void open(char const *h,char const *u,char const *p,char const *d);
+	void open(string const &h,string const &u,string const &p,string const &d);
+	void open();
 	
 	MySQL_DB() { conn=NULL; setup=false; };
 	~MySQL_DB() { if(conn) mysql_close(conn); };

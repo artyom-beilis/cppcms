@@ -1,5 +1,6 @@
 TR=test.fcgi
-SRC=main.cpp textstream.cpp worker_thread.cpp FCgiIO.cpp main_thread.cpp mysql_db.cpp thread_pool.cpp
+SRC=main.cpp textstream.cpp worker_thread.cpp FCgiIO.cpp main_thread.cpp mysql_db.cpp thread_pool.cpp \
+    global_config.cpp
 OBJ := $(patsubst %.cpp,%.o,$(SRC))
 
 LIBS = -lmysqlclient -lfcgi++ -lcgicc

@@ -151,7 +151,7 @@ public:
 	FastCGI_Mutiple_Threaded_App(	int num,
 					int buffer_len,
 					Worker_Thread **workers,
-					char *socket=NULL) :
+					char const *socket=NULL) :
 		FastCGI_Application(socket,num+1+buffer_len)
 	{
 		setup(num,num+1+buffer_len,workers);
@@ -181,7 +181,7 @@ class FastCGI_MT : public FastCGI_Mutiple_Threaded_App {
 		return ptrs;
 	};
 public:
-	FastCGI_MT(int num,int buffer, char *socket) : 
+	FastCGI_MT(int num,int buffer, char const *socket) : 
 		FastCGI_Mutiple_Threaded_App(num,buffer,setptrs(num),socket) {};
 	virtual ~FastCGI_MT() {
 		delete [] ptrs;

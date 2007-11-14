@@ -1,5 +1,6 @@
 #include "worker_thread.h"
 
+using namespace cgicc;
 
 Worker_Thread::Worker_Thread()
 {

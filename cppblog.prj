@@ -72,7 +72,8 @@ module.include.files=\
 	main_thread.h\
 	mysql_db.h\
 	thread_pool.h\
-	global_config.h
+	global_config.h\
+	http_error.h
 
 module.source.name=.
 module.source.type=

@@ -2,6 +2,7 @@
 #include <boost/scoped_array.hpp>
 #include <iostream>
 
+#include "global_config.h"
 
 namespace mysql_wrapper {
 
@@ -143,7 +144,7 @@ void MySQL_DB::connect()
 	}
 }
 
-void MySQL_DB::open(char const *h,char const *u,char const *p,char const *d)
+void MySQL_DB::open(string const &h,string const &u,string const &p,string const &d)
 {
 	host=h;
 	username=u;
@@ -151,6 +152,14 @@ void MySQL_DB::open(char const *h,char const *u,char const *p,char const *d)
 	database=d;
 	setup=true;
 	connect();
+}
+
+void MySQL_DB::open()
+{
+	open(	global_config.sval("mysql.host"),
+		global_config.sval("mysql.username"),
+		global_config.sval("mysql.password"),
+		global_config.sval("mysql.database"));
 }
 	
 void MySQL_DB::exec_query(char const *q)

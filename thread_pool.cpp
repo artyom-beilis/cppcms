@@ -12,7 +12,7 @@ FastCGI_Application::FastCGI_Application(const char *socket,int backlog)
 	FCGX_Init();
 	
 	pipe(signal_pipe);
-	if(socket==NULL){
+	if(socket==NULL || socket[0]==0){
 		main_fd=0;
 	}
 	else {

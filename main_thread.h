@@ -3,7 +3,6 @@
 
 
 #include "worker_thread.h"
-#include "config.h"
 #include "mysql_db.h"
 #include <mysql/mysql.h>
 #include <cgicc/HTTPStatusHeader.h>
