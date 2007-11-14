@@ -23,26 +23,33 @@ int main(int argc,char **argv)
 	char *socket="/tmp/php-fastcgi.socket";
 
 	try{
-		#define SS
-		
+		//#define SS
 		#ifdef SS
+		
 		FastCGI_ST<Main_Thread> app(socket);
+		
+		app.execute();
+
+		cout<<"Finished\n";
+
 		# else 
-		FastCGI_MT<Main_Thread> app(5,socket);
+		
+		int n=5;
+		
+		FastCGI_MT<Main_Thread> app(n,socket);
 		 
-		#endif
-	
 		app.execute();
 		
-		#ifndef SS
 		long long const *stats=app.get_stats();
+
 		int i;
-		for(i=0;i<5;i++){
+
+		for(i=0;i<n;i++){
 			cout<<"Thread "<<i<<" executed "<<stats[i]<< " times\n";
 		}
+		cout<<"Finished\n"<<global_counter<<endl;
 		#endif
 
-		cout<<"Finished\n"<<global_counter<<endl;
 		
 	}
 	catch(HTTP_Error &s) {
