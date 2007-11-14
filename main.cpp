@@ -13,8 +13,6 @@
 using namespace std;
 using namespace boost;
 
-int  global_counter = 0;
-
 All_Configuration config = { "localhost","root","root","cppcms" };
 
 
@@ -34,9 +32,9 @@ int main(int argc,char **argv)
 
 		# else 
 		
-		int n=5;
+		int n=5,max=100;
 		
-		FastCGI_MT<Main_Thread> app(n,socket);
+		FastCGI_MT<Main_Thread> app(n,max,socket);
 		 
 		app.execute();
 		
@@ -47,7 +45,7 @@ int main(int argc,char **argv)
 		for(i=0;i<n;i++){
 			cout<<"Thread "<<i<<" executed "<<stats[i]<< " times\n";
 		}
-		cout<<"Finished\n"<<global_counter<<endl;
+		cout<<"Finished\n"<<endl;
 		#endif
 
 		

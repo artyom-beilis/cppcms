@@ -58,51 +58,74 @@ public:
 };
 
 template <class T>
-class Safe_Stack {
-	T *stack;
-	int stack_size;
-	int max_size;
+class Safe_Set  {
 	pthread_mutex_t access_mutex;
 	pthread_cond_t new_data_availible;
 	pthread_cond_t new_space_availible;
+protected:
+	int max;
+	int size;
+	virtual T &get_int() = 0;
+	virtual void put_int(T &val) = 0;
 public:
 	void init(int size){
-		if(stack!=NULL)
-			return;
 		pthread_mutex_init(&access_mutex,NULL);
 		pthread_cond_init(&new_data_availible,NULL);
 		pthread_cond_init(&new_space_availible,NULL);
-		stack = new T [size];
-		max_size=size;
-		stack_size=0;
+
+		max=size;
+		this->size=0;
+
 	};
-	Safe_Stack() {
-		stack=NULL;
-	};
-	~Safe_Stack() {
-		delete [] stack;
-	};
-	void push(T val) {
+	Safe_Set() {};
+	virtual ~Safe_Set() {};
+	virtual void push(T val) {
 		pthread_mutex_lock(&access_mutex);
-		while(stack_size>=max_size) {
+		while(size>=max) {
 			pthread_cond_wait(&new_space_availible,&access_mutex);			
 		}
-		stack[stack_size]=val;
-		stack_size++;
+		put_int(val);
 		pthread_cond_signal(&new_data_availible);
 		pthread_mutex_unlock(&access_mutex);
 	};
 	T pop() {
 		pthread_mutex_lock(&access_mutex);
-		while(stack_size==0) {
+		while(size==0) {
 			pthread_cond_wait(&new_data_availible,&access_mutex);
 		}
-		stack_size--;
-		T data=stack[stack_size];
+		T data=get_int();
 		pthread_cond_signal(&new_space_availible);
 		pthread_mutex_unlock(&access_mutex);
 		return data;
 	};
+};
+
+template <class T>
+class Safe_Queue : public Safe_Set<T>{
+	T *queue;
+	int head;
+	int tail;
+	int next(int x) { return (x+1)%this->max; };
+protected:
+	virtual void put_int(T &val) {
+		queue[head]=val;
+		head=next(head);
+		this->size++;
+	}
+	virtual T &get_int() {
+		this->size--;
+		int ptr=tail;
+		tail=next(tail);
+		return queue[ptr];
+	}
+public:
+	void init(int size) {
+		if(queue) return;
+		queue=new T [size];
+		Safe_Set<T>::init(size);
+	}
+	Safe_Queue() { queue = NULL; head=tail=0; };
+	virtual ~Safe_Queue() { delete [] queue; };
 };
 
 class FastCGI_Mutiple_Threaded_App : public FastCGI_Application {
@@ -110,10 +133,10 @@ class FastCGI_Mutiple_Threaded_App : public FastCGI_Application {
 	long long int *stats;
 	Worker_Thread **workers;
 	FCGX_Request  *requests;
-	Safe_Stack<FCGX_Request*> requests_stack;
-	Safe_Stack<FCGX_Request*> jobs_stack;
+	Safe_Queue<FCGX_Request*> requests_queue;
+	Safe_Queue<FCGX_Request*> jobs_queue;
 	
-	void setup(int size,Worker_Thread **workers);
+	void setup(int size,int buffer_len,Worker_Thread **workers);
 	
 	pthread_t *pids;
 
@@ -126,11 +149,12 @@ class FastCGI_Mutiple_Threaded_App : public FastCGI_Application {
 	void wait_threads();
 public:
 	FastCGI_Mutiple_Threaded_App(	int num,
+					int buffer_len,
 					Worker_Thread **workers,
 					char *socket=NULL) :
-		FastCGI_Application(socket,num)
+		FastCGI_Application(socket,num+1+buffer_len)
 	{
-		setup(num,workers);
+		setup(num,num+1+buffer_len,workers);
 	};
 	virtual bool run();	
 	virtual ~FastCGI_Mutiple_Threaded_App() {
@@ -157,8 +181,8 @@ class FastCGI_MT : public FastCGI_Mutiple_Threaded_App {
 		return ptrs;
 	};
 public:
-	FastCGI_MT(int num, char *socket) : 
-		FastCGI_Mutiple_Threaded_App(num,setptrs(num),socket) {};
+	FastCGI_MT(int num,int buffer, char *socket) : 
+		FastCGI_Mutiple_Threaded_App(num,buffer,setptrs(num),socket) {};
 	virtual ~FastCGI_MT() {
 		delete [] ptrs;
 		delete [] threads;
