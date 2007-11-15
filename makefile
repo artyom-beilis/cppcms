@@ -5,7 +5,8 @@ OBJ := $(patsubst %.cpp,%.o,$(SRC))
 
 LIBS = -lmysqlclient -lfcgi++ -lcgicc
 CXX = g++
-CFLAGS = -Wall -g -DFCGX_API_ACCEPT_ONLY_EXISTS
+;CFLAGS = -Wall -g -DFCGX_API_ACCEPT_ONLY_EXISTS
+CFLAGS = -Wall -g 
 
 
 all: $(TR)

@@ -3,10 +3,9 @@
 
 #include <pthread.h>
 #include <string>
+#include <memory>
 
 #include "worker_thread.h"
-
-#define MAX_THREADS_ALLOWED 256
 
 
 class FastCGI_Application {
@@ -187,6 +186,25 @@ public:
 		delete [] ptrs;
 		delete [] threads;
 	};
+};
+
+template<class T>
+void Run_Application(int argc,char *argv[])
+{
+	int n,max;
+	global_config.load(argc,argv);
+	
+	char const *socket=global_config.sval("server.socket","").c_str();
+	
+	if((n=global_config.lval("server.threads",0))==0) {
+		auto_ptr<FastCGI_ST<T> > app(new FastCGI_ST<T>(socket));
+		app->execute();
+	}
+	else {
+		max=global_config.lval("server.buffer",1);
+		auto_ptr<FastCGI_MT<T> > app(new FastCGI_MT<T>(n,max,socket));
+		app->execute();
+	}
 };
 
 #endif /* _THREAD_PULL_H */

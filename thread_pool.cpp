@@ -163,6 +163,12 @@ void FastCGI_Mutiple_Threaded_App::wait_threads()
 void FastCGI_Mutiple_Threaded_App::setup(int num,int buffer,Worker_Thread **workers)
 {
 	int i;
+	
+	stats=NULL;
+	requests=NULL;
+	threads_info=NULL;
+	pids=NULL;
+	
 	size=num;
 	
 	// Statistics

@@ -105,6 +105,9 @@ bool Global_Config::get_tocken(FILE *f,tocken_t &T)
 
 void Global_Config::load(char const *fname)
 {
+	if(loaded){
+		return;
+	}
 	FILE *f=fopen(fname,"r");
 	line_counter=1;
 	if(!f) {
@@ -170,11 +173,16 @@ void Global_Config::load(char const *fname)
 		snprintf(stmp,32," at line %d",line_counter);
 		throw HTTP_Error(string(err.get())+stmp);
 	}
+	fclose(f);
+	loaded=true;
 }
 
 
 void Global_Config::load(int argc,char *argv[],char const *def)
 {
+	if(loaded) {
+		return;
+	}
 	char const *def_file=def;
 	int i;
 	for(i=1;i<argc;i++) {
