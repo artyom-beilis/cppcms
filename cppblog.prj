@@ -73,7 +73,8 @@ module.include.files=\
 	mysql_db.h\
 	thread_pool.h\
 	global_config.h\
-	http_error.h
+	http_error.h\
+	templates.h
 
 module.source.name=.
 module.source.type=
@@ -85,7 +86,8 @@ module.source.files=\
 	mysql_db.cpp\
 	thread_pool.cpp\
 	makefile\
-	global_config.cpp
+	global_config.cpp\
+	templates.cpp
 
 module.pixmap.name=.
 module.pixmap.type=
