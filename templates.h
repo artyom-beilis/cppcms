@@ -1,7 +1,7 @@
 #ifndef _TEMPLATES_H
 #define _TEMPLATES_H
 
-#include <stdint.h>
+
 #include <string>
 #include <stdio.h>
 #include <vector>
@@ -10,29 +10,10 @@
 
 #include "templ_generated.h"
 
+#include "compiler/bytecode.h"
+
 using namespace std;
 
-enum {
-	OP_INLINE	= 0,
-	OP_CALL    	= 1,
-	OP_VAR		= 2,
-	OP_INCLUDE	= 3,
-	
-	OP_GOTO_IF_TRUE	= 4,
-	OP_GOTO_IF_FALSE= 5,
-	OP_GOTO_IF_DEF	= 6,
-	OP_GOTO_IF_NDEF	= 7,
-	OP_GOTO		= 8,
-	OP_STOP = 0xFF
-};
-
-
-struct Tmpl_Op {
-	uint8_t		opcode;		// Operation
-	uint8_t		reg_id;		// foreach register
-	uint16_t	parameter;	// variable id
-	uint32_t	jump;		// Jump offset 
-};
 
 class Variable {
 public: 
