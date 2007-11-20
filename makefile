@@ -1,12 +1,12 @@
 TR=test.fcgi
 SRC=main.cpp textstream.cpp worker_thread.cpp FCgiIO.cpp main_thread.cpp mysql_db.cpp thread_pool.cpp \
-    global_config.cpp
+    global_config.cpp url.cpp
 
 LSRC=textstream.cpp worker_thread.cpp FCgiIO.cpp mysql_db.cpp thread_pool.cpp global_config.cpp
 OBJ := $(patsubst %.cpp,%.o,$(SRC))
 LOBJ := $(patsubst %.cpp,%.o,$(LSRC))
 
-LIBS = -lmysqlclient -lfcgi++ -lcgicc
+LIBS = -lmysqlclient -lfcgi++ -lcgicc -lboost_regex
 CXX = g++
 ;CFLAGS = -Wall -g -DFCGX_API_ACCEPT_ONLY_EXISTS
 CFLAGS = -Wall -g -O2

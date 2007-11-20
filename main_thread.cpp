@@ -4,7 +4,15 @@
 
 void Main_Thread::init()
 {
-	db.open();
+	Worker_Thread::init();
+	
+	try {
+		db.open();
+	}
+	catch(MySQL_DB_Err &e)
+	{
+		throw HTTP_Error(e.get());
+	}
 }
 
 
@@ -16,7 +24,7 @@ void Main_Thread::load_cookies()
 	username.clear();
 	visitor.clear();
 	email.clear();
-	url.clear();
+	vurl.clear();
 	password.clear();
 	
 	for(i=0;i<cookies.size();i++) {
@@ -33,7 +41,7 @@ void Main_Thread::load_cookies()
 			email=cookies[i].getValue();
 		}
 		else if(cookies[i].getName()=="url") {
-			url=cookies[i].getValue();
+			vurl=cookies[i].getValue();
 		}
 	}
 }
@@ -67,31 +75,12 @@ void Main_Thread::load_inputs()
 	
 	page=0;
 	message.clear();
+
+	page=url.parse();	
 	
 	for(i=0;i<elements.size();i++) {
 		string const &name=elements[i].getName();
-		if(name=="id") {
-			string const &s=elements[i].getValue();
-			if(s=="login") {
-				page=1;
-			}
-			else if(s=="logout") {
-				page=2;
-			}
-			else if(s=="newpost") {
-				page=3;
-			}
-			else if(s=="post") {
-				page=4;
-			}
-			else if(s=="dologin") {
-				page=5;
-			}
-			else {
-				page=0;
-			}
-		}
-		else if(name=="message"){
+		if(name=="message"){
 			message=elements[i].getValue();
 		}
 		else if(name=="username"){
@@ -107,10 +96,10 @@ void Main_Thread::show_login()
 {
 	out.puts(
 	"<html><body>"
-	"<form name=\"input'\" action=\"test.fcgi\" method=\"post\">\n"
+	"<form name=\"input\" action=\"/site/dologin\" method=\"post\">\n"
 	" Username: <input type=\"text\" name=\"username\">\n<br>"
 	" Password: <input type=\"password\" name=\"password\">\n"
-	"<input type=\"hidden\" name=\"id\" value=\"dologin\">\n"
+	//"<input type=\"hidden\" name=\"id\" value=\"dologin\">\n"
 	" <input type=\"submit\" value=\"Submit\"></form>\n"
 	"</html></body>");
 }
@@ -121,7 +110,7 @@ void Main_Thread::do_login()
 	password=new_password;
 	check_athentication();
 	if(authenticated) {
-		set_header(new HTTPRedirectHeader("test.fcgi"));
+		set_header(new HTTPRedirectHeader("/site/"));
 		HTTPCookie cookie("username",username);
 		cookie.setMaxAge(7*24*3600);
 		response_header->setCookie(cookie);
@@ -130,13 +119,13 @@ void Main_Thread::do_login()
 		response_header->setCookie(cookie);
 	}
 	else {
-		set_header(new HTTPRedirectHeader("test.fcgi?id=login"));
+		set_header(new HTTPRedirectHeader("/site/login"));
 	}
 };
 
 void Main_Thread::show_logout()
 {
-	set_header(new HTTPRedirectHeader("test.fcgi"));
+	set_header(new HTTPRedirectHeader("/site/"));
 	response_header->setCookie(HTTPCookie("username",""));
 	response_header->setCookie(HTTPCookie("password",""));
 }
@@ -164,8 +153,8 @@ void Main_Thread::show_main_page()
 	else {
 		out.puts("<h1>Wellcome to the forum</h1>");
 	}
-	out.puts("<a href=\"test.fcgi?id=newpost\">New Post</a><br>");
-	out.puts("<a href=\"test.fcgi?id=logout\">Logout</a><br>");
+	out.puts("<a href=\"/site/newpost\">New Post</a><br>");
+	out.puts("<a href=\"/site/logout\">Logout</a><br>");
 	MySQL_DB_Res res = db.query(
 		"SELECT cp_messages.id,message,username "
 		"FROM cp_messages,cp_users "
@@ -187,14 +176,14 @@ void Main_Thread::show_post_form()
 	if(authenticated) {
 		out.puts(
 		"<html><body>"
-		"<form name=\"input'\" action=\"test.fcgi\" method=\"post\">\n"
+		"<form name=\"input\" action=\"/site/post\" method=\"post\">\n"
 		"<TEXTAREA NAME=\"message\" COLS=40 ROWS=6></TEXTAREA><br>\n"
-		"<input type=\"hidden\" name=\"id\" value=\"post\">\n"
+		//"<input type=\"hidden\" name=\"id\" value=\"post\">\n"
 		" <input type=\"submit\" value=\"Submit\"></form>\n"
 		"</html></body>");
 	}
 	else {
-		set_header(new HTTPRedirectHeader("test.fcgi?id=login"));
+		set_header(new HTTPRedirectHeader("/site/login"));
 		
 	}
 }
@@ -202,12 +191,12 @@ void Main_Thread::show_post_form()
 void Main_Thread::get_post_message()
 {
 	if(!authenticated){
-		set_header(new HTTPRedirectHeader("test.fcgi?id=login"));
+		set_header(new HTTPRedirectHeader("/site/login"));
 		return;
 	}
 	db.exec(escape("INSERT INTO cp_messages (message,user_id) values('%1%',%2%)")
 			<<message<<user_id);
-	set_header(new HTTPRedirectHeader("test.fcgi"));
+	set_header(new HTTPRedirectHeader("/site/"));
 }
 
 void Main_Thread::show_page()

@@ -19,7 +19,7 @@ class Main_Thread : public Worker_Thread {
 	string username;
 	string visitor;
 	string email;
-	string url;
+	string vurl;
 	string password;
 	bool authenticated;
 	string new_username;

@@ -15,6 +15,7 @@
 
 #include "FCgiIO.h"
 #include "http_error.h"
+#include "url.h"
 
 using namespace std;
 using cgicc::CgiEnvironment;
@@ -26,8 +27,10 @@ using cgicc::HTTPHeader;
 
 
 class Worker_Thread {
-	auto_ptr<FCgiIO> io;
+friend class URL_Parser;
 protected:	
+	URL_Parser url;
+	auto_ptr<FCgiIO>io;
 	auto_ptr<Cgicc> cgi;
 	CgiEnvironment const *env;
 
@@ -43,8 +46,8 @@ public:
 	void run(FCGX_Request *req);
 
 	Worker_Thread();
-	virtual ~Worker_Thread(){};
-	virtual void init() {};
+	virtual ~Worker_Thread(){ };
+	virtual void init() { url.init(this); };
 };
 
 #endif
