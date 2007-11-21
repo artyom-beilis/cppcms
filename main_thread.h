@@ -12,6 +12,7 @@ using namespace mysql_wrapper;
 using namespace cgicc;
 
 class Main_Thread : public Worker_Thread {
+	URL_Parser url;
 // Internal Data	
 	MySQL_DB db;
 // User Data

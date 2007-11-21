@@ -6,7 +6,7 @@ LSRC=textstream.cpp worker_thread.cpp FCgiIO.cpp mysql_db.cpp thread_pool.cpp gl
 OBJ := $(patsubst %.cpp,%.o,$(SRC))
 LOBJ := $(patsubst %.cpp,%.o,$(LSRC))
 
-LIBS = -lmysqlclient -lfcgi++ -lcgicc -lboost_regex
+LIBS = -lmysqlclient -lfcgi++ -lcgicc -lboost_regex -lboost_signals
 CXX = g++
 ;CFLAGS = -Wall -g -DFCGX_API_ACCEPT_ONLY_EXISTS
 CFLAGS = -Wall -g -O2

@@ -4,8 +4,16 @@
 
 void Main_Thread::init()
 {
-	Worker_Thread::init();
+	url.init(this);
+	url.reserve(10);
 	
+	url.add("^/login$",	1);
+	url.add("^/logout$",	2);
+	url.add("^/newpost$",	3);
+	url.add("^/post$",	4);
+	url.add("^/dologin$",	5);
+	url.add("^.*$",		0);
+
 	try {
 		db.open();
 	}

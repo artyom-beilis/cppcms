@@ -29,7 +29,6 @@ using cgicc::HTTPHeader;
 class Worker_Thread {
 friend class URL_Parser;
 protected:	
-	URL_Parser url;
 	auto_ptr<FCgiIO>io;
 	auto_ptr<Cgicc> cgi;
 	CgiEnvironment const *env;
@@ -47,7 +46,7 @@ public:
 
 	Worker_Thread();
 	virtual ~Worker_Thread(){ };
-	virtual void init() { url.init(this); };
+	virtual void init() { };
 };
 
 #endif
