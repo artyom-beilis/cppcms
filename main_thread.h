@@ -42,6 +42,7 @@ class Main_Thread : public Worker_Thread {
 protected:
 	
 	void check_athentication();
+	void check_athentication_by_name(string,string);
 	void get_parameters();
 
 	virtual void main();

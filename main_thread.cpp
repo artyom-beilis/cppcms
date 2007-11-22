@@ -2,17 +2,20 @@
 
 #include "global_config.h"
 
+#include <boost/bind.hpp>
+
 void Main_Thread::init()
 {
 	url.init(this);
 	url.reserve(10);
-	
-	url.add("^/login$",	1);
-	url.add("^/logout$",	2);
-	url.add("^/newpost$",	3);
-	url.add("^/post$",	4);
-	url.add("^/dologin$",	5);
-	url.add("^.*$",		0);
+
+	url.add("^/$",		boost::bind(&Main_Thread::show_main_page,this));
+	url.add("^$",		boost::bind(&Main_Thread::show_main_page,this));
+	url.add("^/login$",	boost::bind(&Main_Thread::show_login,this));
+	url.add("^/logout$",	boost::bind(&Main_Thread::show_logout,this));
+	url.add("^/newpost$",	boost::bind(&Main_Thread::show_post_form,this));
+	url.add("^/post$",	boost::bind(&Main_Thread::get_post_message,this));
+	url.add("^/dologin$",	boost::bind(&Main_Thread::do_login,this));
 
 	try {
 		db.open();
@@ -54,12 +57,11 @@ void Main_Thread::load_cookies()
 	}
 }
 
-void Main_Thread::check_athentication()
+void Main_Thread::check_athentication_by_name(string name,string password)
 {
-
 	MySQL_DB_Res res=db.query(
 		escape( "SELECT password,id from cp_users "
-			"WHERE username='%1%' LIMIT 1")<<username);
+			"WHERE username='%1%' LIMIT 1")<<name);
 	
 	MySQL_DB_Row row;
 	
@@ -68,11 +70,19 @@ void Main_Thread::check_athentication()
 			authenticated=true;
 			user_id=atoi(row[1]);
 		}
+		username=name;
 	}
 	else {
 		username.clear();
 		authenticated=false;
 	}
+	password.clear();
+}
+
+void Main_Thread::check_athentication()
+{
+	load_cookies();
+	check_athentication_by_name(username,password);
 }
 
 void Main_Thread::load_inputs()
@@ -84,8 +94,6 @@ void Main_Thread::load_inputs()
 	page=0;
 	message.clear();
 
-	page=url.parse();	
-	
 	for(i=0;i<elements.size();i++) {
 		string const &name=elements[i].getName();
 		if(name=="message"){
@@ -114,19 +122,20 @@ void Main_Thread::show_login()
 
 void Main_Thread::do_login()
 {
-	username=new_username;
-	password=new_password;
-	check_athentication();
+	load_inputs();
+	
+	check_athentication_by_name(new_username,new_password);
+	
 	if(authenticated) {
 		set_header(new HTTPRedirectHeader("/site/"));
-		HTTPCookie cookie("username",username);
-		cookie.setMaxAge(7*24*3600);
-		response_header->setCookie(cookie);
-		cookie.setName("password");
-		cookie.setValue(password);
-		response_header->setCookie(cookie);
+		HTTPCookie cookie_u("username",username,"","",7*24*3600,"/",false);
+		response_header->setCookie(cookie_u);
+		HTTPCookie cookie_p("password",new_password,"","",7*24*3600,"/",false);
+		response_header->setCookie(cookie_p);
 	}
 	else {
+		username="";
+		password="";
 		set_header(new HTTPRedirectHeader("/site/login"));
 	}
 };
@@ -134,8 +143,11 @@ void Main_Thread::do_login()
 void Main_Thread::show_logout()
 {
 	set_header(new HTTPRedirectHeader("/site/"));
-	response_header->setCookie(HTTPCookie("username",""));
-	response_header->setCookie(HTTPCookie("password",""));
+	HTTPCookie cookie("username","","","",0,"/",false);
+	response_header->setCookie(cookie);
+	cookie.setName("password");
+	cookie.setValue("");
+	response_header->setCookie(cookie);
 }
 
 void Main_Thread::printhtml(char const *text)
@@ -155,6 +167,8 @@ void Main_Thread::printhtml(char const *text)
 
 void Main_Thread::show_main_page()
 {
+	check_athentication();
+	
 	if(authenticated) {
 		out.printf("<h1>Wellcome %s to forum</h1>\n",username.c_str());
 	}
@@ -181,6 +195,7 @@ void Main_Thread::show_main_page()
 
 void Main_Thread::show_post_form()
 {
+	check_athentication();
 	if(authenticated) {
 		out.puts(
 		"<html><body>"
@@ -198,6 +213,10 @@ void Main_Thread::show_post_form()
 
 void Main_Thread::get_post_message()
 {
+	check_athentication();
+
+	load_inputs();
+
 	if(!authenticated){
 		set_header(new HTTPRedirectHeader("/site/login"));
 		return;
@@ -209,33 +228,11 @@ void Main_Thread::get_post_message()
 
 void Main_Thread::show_page()
 {
-	switch(page) {
-		case 1: show_login(); break;
-		case 4: if(authenticated) 
-				get_post_message();
-			else
-				show_login();
-			break;
-		case 3: if(authenticated)
-				show_post_form();
-			else
-				show_login();
-			break;
-		case 2: show_logout(); break;
-		case 5: do_login(); break;
-		case 0:
-		default:
-			show_main_page();
-	}
+	url.parse();
 }
 void Main_Thread::main()
 {
 	try {
-		set_header(new HTTPHTMLHeader);
-		
-		load_cookies();
-		check_athentication();
-		load_inputs();
 		show_page();
 	}
 	catch (MySQL_DB_Err &mysql_err) {
