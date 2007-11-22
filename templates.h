@@ -9,31 +9,32 @@
 #include <sys/mman.h>
 
 #include "compiler/bytecode.h"
+#include "textstream.h"
 
 using namespace std;
 
 
 class Variable {
 public: 
-	typedef enum { NONE, BOOL, STRING  } type_t;
+	typedef enum { NONE, INTEGER, STRING  } type_t;
 private:
 	type_t type;
-	bool bool_val;
+	int int_val;
 	char const *str_val;
 public:
-	Variable() { type = NONE; };
+	Variable() { type = NONE; str_val=NULL; int_val=0; };
 	Variable(string &s) { str_val=s.c_str(); type = STRING; };
 	Variable(char const *s) { str_val=s; type = STRING; };
-	Variable(bool b) { bool_val = b; type = BOOL; };
-	void operator=(bool b) { *this=Variable(b); };
+	Variable(int b) { int_val = b; type = INTEGER; };
+	void operator=(int b) { *this=Variable(b); };
 	void operator=(string &s) { *this=Variable(s); };
 	void operator=(const char *s) { *this=Variable(s); };
 	void reset() { type = NONE; };
-	bool getb() { return bool_val; };
+	int geti() { return int_val; };
 	char const *gets(){ return str_val; };
 	bool isstr() { return type == STRING; };
 	bool isdef() { return type != NONE; };
-	bool isbool() { return type == BOOL; };
+	bool isint() { return type == INTEGER; };
 	type_t get_type() { return type; };
 };
 
@@ -53,9 +54,9 @@ public:
 		vars.reserve(size);
 		reset();
 	};
-	Variable operator[](int i) {
+	Variable &operator[](int i) {
 		if(i<0 || i>=size) {
-			return Variable();
+			throw HTTP_Error("Out of content bounds");
 		}
 		return vars[i];
 	};
@@ -98,6 +99,7 @@ public:
 	}
 	Base_Template *get(int id);
 	void load(char const *file,int use_mmap=-1);
+	void load(void);
 	
 };
 
@@ -115,6 +117,7 @@ class Renderer {
 public:
 	Renderer(Templates_Set &tset,int id,Content &cont);
 	int render(string &s);
+	int render(Text_Stream &out) { return render(out.text);};
 };
 
 #endif /* _TEMPLATES_H */

@@ -15,6 +15,7 @@ class Text_Stream {
 	int inital_alloc;
 	char buffer[TS_BUFFER_SIZE];
 	string text;
+	friend class Renderer;
 public:
 	void reset(void)  {
 		text.clear();

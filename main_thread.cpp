@@ -4,6 +4,11 @@
 
 #include <boost/bind.hpp>
 
+#include "templates/look.h"
+#include "templates.h"
+
+extern Templates_Set templates;
+
 void Main_Thread::init()
 {
 	url.init(this);
@@ -109,14 +114,15 @@ void Main_Thread::load_inputs()
 
 void Main_Thread::show_login()
 {
-	out.puts(
-	"<html><body>"
-	"<form name=\"input\" action=\"/site/dologin\" method=\"post\">\n"
-	" Username: <input type=\"text\" name=\"username\">\n<br>"
-	" Password: <input type=\"password\" name=\"password\">\n"
-	//"<input type=\"hidden\" name=\"id\" value=\"dologin\">\n"
-	" <input type=\"submit\" value=\"Submit\"></form>\n"
-	"</html></body>");
+	Content c(T_VAR_NUM);
+	
+	c[TV_title]="Login";
+	c[TV_show_content]=TT_dologin;
+	
+	Renderer r(templates,TT_master,c);
+	
+	while(r.render(out)!=0);
+		
 }
 
 void Main_Thread::do_login()
@@ -149,17 +155,20 @@ void Main_Thread::show_logout()
 	response_header->setCookie(cookie);
 }
 
-void Main_Thread::printhtml(char const *text)
+void Main_Thread::text2html(char const *text,string &s)
 {
 	int c;
+	s="";
+	s.reserve(strlen(text)*3/2);
+	
 	while((c=*text++)!=0) {
 		switch(c) {
-			case '\n': out.puts("<br>\n"); break;
-			case '<': out.puts("&lt;"); break;
-			case '>': out.puts("&gt;"); break;
-			case '&': out.puts("&amp;"); break;
+			case '\n': s+="<br>\n"; break;
+			case '<':  s+="&lt;"; break;
+			case '>':  s+="&gt;"; break;
+			case '&':  s+="&amp;"; break;
 			default:
-				out.putchar(c);
+				s+=(char)c;
 		}
 	}
 }
@@ -168,41 +177,52 @@ void Main_Thread::show_main_page()
 {
 	check_athentication();
 	
+	Content c(T_VAR_NUM);
+	Renderer t(templates,TT_master,c);
+	
+	c[TV_title]="Main page";
+	c[TV_show_content]=TT_main;
+	
 	if(authenticated) {
-		out.printf("<h1>Wellcome %s to forum</h1>\n",username.c_str());
+		c[TV_username]=username;
 	}
-	else {
-		out.puts("<h1>Wellcome to the forum</h1>");
-	}
-	out.puts("<a href=\"/site/newpost\">New Post</a><br>");
-	out.puts("<a href=\"/site/logout\">Logout</a><br>");
+
 	MySQL_DB_Res res = db.query(
 		"SELECT cp_messages.id,message,username "
-		"FROM cp_messages,cp_users "
-		"WHERE cp_messages.user_id=cp_users.id "
+		"FROM cp_messages "
+		"LEFT JOIN cp_users ON cp_messages.user_id=cp_users.id "
 		"ORDER BY cp_messages.id DESC LIMIT 10");
 	
 	MySQL_DB_Row row;
-	out.puts("<dl>\n");
-	while((row=res.next())!=NULL) {
-		out.printf("<dt>Message %s, by %s</dt>\n<dd>\n",row[0],row[2]);
-		printhtml(row[1]);
-		out.puts("</dd>\n");
+
+	int id;
+	string content;
+	while((id=t.render(out))!=0) {
+		if(id==TV_get_message){
+			if((row=res.next())!=NULL){
+				c[TV_new_message]=1;
+				c[TV_message_id]=row[0];
+				text2html(row[1],content);
+				c[TV_message_body]=content.c_str();
+				c[TV_author]=row[2];
+			}
+			else {
+				c[TV_new_message]=0;
+			}
+		}
 	}
-	out.puts("</dl>\n");
 }
 
 void Main_Thread::show_post_form()
 {
 	check_athentication();
 	if(authenticated) {
-		out.puts(
-		"<html><body>"
-		"<form name=\"input\" action=\"/site/post\" method=\"post\">\n"
-		"<TEXTAREA NAME=\"message\" COLS=40 ROWS=6></TEXTAREA><br>\n"
-		//"<input type=\"hidden\" name=\"id\" value=\"post\">\n"
-		" <input type=\"submit\" value=\"Submit\"></form>\n"
-		"</html></body>");
+		Content c(T_VAR_NUM);
+		
+		c[TV_title]="New message";
+		c[TV_show_content]=TT_post;
+		Renderer t(templates,TT_master,c);
+		while(t.render(out));
 	}
 	else {
 		set_header(new HTTPRedirectHeader("/site/login"));

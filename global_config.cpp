@@ -27,7 +27,7 @@ bool Global_Config::get_tocken(FILE *f,tocken_t &T)
 			T.second="";
 			T.second.reserve(32);
 			T.second+=(char)c;
-			while((c=fgetc(f))!=EOF && isalnum(c)) {
+			while((c=fgetc(f))!=EOF && (isalnum(c) || c=='_')) {
 				T.second+=(char)c;
 			}
 			if(c!=EOF){

@@ -7,6 +7,9 @@
 #include <unistd.h>
 #include <fcntl.h>
 
+#include <iostream>
+using namespace std;
+
 
 bool Renderer::debug_defined=false;
 bool Renderer::debug=false;
@@ -35,21 +38,24 @@ int Renderer::render(string &s)
 {
 	if(!tmpl) return 0;
 	Content &cont=*content;
-	Variable var;
 	Base_Template *tmp_tmpl;
+	int templ_id;
 	for(;;) {
 		if(pos<0 || pos>(int64_t)(tmpl->len-sizeof(Tmpl_Op))){
 			throw HTTP_Error("Template overflow");
 		}
 		Tmpl_Op *op=(Tmpl_Op*)(tmpl->mem_ptr+pos);
 		pos+=sizeof(Tmpl_Op);
+	
+		Variable var;
+
 		switch(op->opcode){
 			case 	OP_VAR:
 			case	OP_GOTO_IF_TRUE:
 			case	OP_GOTO_IF_FALSE:
 			case	OP_GOTO_IF_DEF:
 			case	OP_GOTO_IF_NDEF:
-				
+			case	OP_INCLUDE_REF:	
 				var=cont[op->parameter];
 				break;
 		}
@@ -69,11 +75,22 @@ int Renderer::render(string &s)
 					s+=var.gets();
 				}
 				else if(debug) {
+					cerr<<"A"<<op->parameter<<endl;
 					throw HTTP_Error("Undefined variable");
 				}
 				break;
+			case	OP_INCLUDE_REF:
+				if(var.isint()){
+					templ_id=var.geti();
+				}
+				else {
+					throw HTTP_Error("Undefined variable in INCLUDE_REF");
+				}
 			case	OP_INCLUDE:
-				if((tmp_tmpl=templates_set->get(op->parameter))==NULL){
+				if(op->opcode==OP_INCLUDE){
+					templ_id=op->parameter;
+				}
+				if((tmp_tmpl=templates_set->get(templ_id))==NULL){
 					if(debug)
 						throw HTTP_Error("Undefined template");
 					break;
@@ -91,22 +108,24 @@ int Renderer::render(string &s)
 				pos=0;
 				break;
 			case	OP_GOTO_IF_TRUE:
-				if(var.isbool()){
-					if(var.getb()){
+				if(var.isint()){
+					if(var.geti()){
 						pos=op->jump;
 					}
 				}
 				else if(debug){
+					cerr<<"B"<<op->parameter<<endl;
 					throw HTTP_Error("Undefined variable");
 				}
 				break;
 			case	OP_GOTO_IF_FALSE:
-				if(var.isbool()){
-					if(!var.getb()){
+				if(var.isint()){
+					if(!var.geti()){
 						pos=op->jump;
 					}
 				}
 				else if(debug){
+					cerr<<"C"<<op->parameter<<endl;
 					throw HTTP_Error("Undefined variable");
 				}
 				break;
@@ -135,6 +154,11 @@ int Renderer::render(string &s)
 				throw HTTP_Error("Unknown opcode");
 		}
 	}
+}
+
+void Templates_Set::load()
+{
+	load(global_config.sval("templates.file").c_str());
 }
 
 void Templates_Set::load(char const *file,int use_mmap)
@@ -168,7 +192,7 @@ void Templates_Set::load(char const *file,int use_mmap)
 		rewind(f);
 		char *buf=new char [file_size];
 		base_ptr=buf;
-		if((int)fread(buf,1,file_size,f)!=map_size) {
+		if((int)fread(buf,1,file_size,f)!=file_size) {
 			fclose(f);
 			throw HTTP_Error(string("Falied to read file:")+file);
 		}
