@@ -74,6 +74,7 @@ module.include.files=\
 	thread_pool.h\
 	global_config.h\
 	http_error.h\
+	templates.h\
 	url.h
 
 module.source.name=.
@@ -87,6 +88,7 @@ module.source.files=\
 	thread_pool.cpp\
 	makefile\
 	global_config.cpp\
+	templates.cpp\
 	url.cpp
 
 module.pixmap.name=.

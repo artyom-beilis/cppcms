@@ -1,15 +1,15 @@
 TR=test.fcgi
 SRC=main.cpp textstream.cpp worker_thread.cpp FCgiIO.cpp main_thread.cpp mysql_db.cpp thread_pool.cpp \
-    global_config.cpp url.cpp
+    global_config.cpp url.cpp templates.cpp
 
-LSRC=textstream.cpp worker_thread.cpp FCgiIO.cpp mysql_db.cpp thread_pool.cpp global_config.cpp
+LSRC=textstream.cpp worker_thread.cpp FCgiIO.cpp mysql_db.cpp thread_pool.cpp global_config.cpp templates.cpp
 OBJ := $(patsubst %.cpp,%.o,$(SRC))
 LOBJ := $(patsubst %.cpp,%.o,$(LSRC))
 
 LIBS = -lmysqlclient -lfcgi++ -lcgicc -lboost_regex -lboost_signals
 CXX = g++
 ;CFLAGS = -Wall -g -DFCGX_API_ACCEPT_ONLY_EXISTS
-CFLAGS = -Wall -g -O2
+CFLAGS = -Wall -g -O2 -I..
 
 
 all: $(TR)
@@ -30,7 +30,7 @@ clean:
 	rm -f $(OBJ) $(TR) .depend
 
 depend:
-	$(CXX) -M $(SRC) > .depend
+	$(CXX) -I.. -M $(SRC) > .depend
 
 install: $(TR)
 	/etc/init.d/lighttpd stop

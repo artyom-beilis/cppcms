@@ -9,8 +9,7 @@ void Main_Thread::init()
 	url.init(this);
 	url.reserve(10);
 
-	url.add("^/$",		boost::bind(&Main_Thread::show_main_page,this));
-	url.add("^$",		boost::bind(&Main_Thread::show_main_page,this));
+	url.add("^/?$",		boost::bind(&Main_Thread::show_main_page,this));
 	url.add("^/login$",	boost::bind(&Main_Thread::show_login,this));
 	url.add("^/logout$",	boost::bind(&Main_Thread::show_logout,this));
 	url.add("^/newpost$",	boost::bind(&Main_Thread::show_post_form,this));
