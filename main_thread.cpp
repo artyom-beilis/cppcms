@@ -10,7 +10,6 @@ extern Templates_Set templates;
 void Main_Thread::init()
 {
 	url.init(this);
-	url.reserve(10);
 
 	url.add("^/?$",		BIND(&Main_Thread::show_main_page,this,"end"));
 	url.add("^/from/(\\d+)$",BIND(&Main_Thread::show_main_page,this,$1));

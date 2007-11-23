@@ -5,46 +5,61 @@
 using namespace std;
 using namespace boost;
 
-void URL_Parser::set_regex(char const *r)
+URL_Parser::~URL_Parser()
 {
-	if(!patterns)
-		reserve(default_size);
-	if(filled>=size) {
-		throw HTTP_Error("Too many pattersn added use reserve");
+	unsigned i;
+	for(i=0;i<patterns.size();i++) {
+		delete patterns[i].callback;
 	}
-	patterns[filled].pattern=regex(r);
 }
 
 void URL_Parser::add(char const *exp,int id)
 {
-	set_regex(exp);
-	patterns[filled].type=URL_Def::ID;
-	patterns[filled].id=id;
-	filled++;
+	URL_Def url_def;
 	
+	url_def.pattern=regex(exp);
+	url_def.type=URL_Def::ID;
+	url_def.id=id;
+	url_def.callback=NULL;
+	url_def.url=NULL;
+	
+	patterns.push_back(url_def);
 }
 
 void URL_Parser::add(char const *exp,URL_Parser &url)
 {
-	set_regex(exp);
-	patterns[filled].type=URL_Def::URL;
-	patterns[filled].url=&url;
-	filled++;
+	URL_Def url_def;
 	
+	url_def.pattern=regex(exp);
+	url_def.type=URL_Def::URL;
+	url_def.id=0;
+	url_def.callback=NULL;
+	url_def.url=&url;
+	
+	patterns.push_back(url_def);
 }
 
 void URL_Parser::add(char const *exp,callback_t callback)
 {
-	set_regex(exp);
-	patterns[filled].type=URL_Def::CALLBACK;
-	patterns[filled].callback.connect(callback);
-	filled++;
+	URL_Def url_def;
+	
+	callback_signal_t *signal = new callback_signal_t;
+	signal->connect(callback);
+	
+	url_def.pattern=regex(exp);
+	url_def.type=URL_Def::CALLBACK;
+	url_def.id=0;
+	url_def.callback=signal;
+	url_def.url=NULL;
+	
+	patterns.push_back(url_def);
+
 }
 
 int URL_Parser::parse(string &query)
 {
-	int i;
-	for(i=0;i<filled;i++) {
+	unsigned i;
+	for(i=0;i<patterns.size();i++) {
 		boost::regex &r=patterns[i].pattern;
 		string tmp;
 		if(boost::regex_match(query.c_str(),result,r)){
@@ -55,7 +70,7 @@ int URL_Parser::parse(string &query)
 				tmp=result[1];
 				return patterns[i].url->parse(tmp);
 			case URL_Def::CALLBACK:
-				patterns[i].callback(	result[1],result[2],
+				(*patterns[i].callback)(result[1],result[2],
 							result[3],result[4],
 							result[5],result[6],
 							result[7],result[8],

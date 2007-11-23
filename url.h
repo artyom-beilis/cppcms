@@ -2,6 +2,7 @@
 #define _URL_H
 
 #include <map>
+#include <memory>
 #include <vector>
 #include <boost/regex.hpp>
 #include <boost/signals.hpp>
@@ -37,37 +38,21 @@ struct URL_Def {
 	enum { ID, CALLBACK , URL } type;
 	int id;
 	URL_Parser *url;
-	callback_signal_t callback;
+	callback_signal_t *callback;
+	URL_Def() { callback=NULL; };
 };
 
 class URL_Parser {
-	int size;
-	int filled;
-	URL_Def *patterns;
+	std::vector<URL_Def>patterns;
 	Worker_Thread *worker;
 	boost::cmatch result;
 	void set_regex(char const *r);
 public:
-	static const int default_size = 32;
 	static const int not_found=-1;
 	static const int ok=0;
-	void reserve(int n) { 
-		if (!patterns)
-			patterns = new URL_Def [n];
-		size=n;
-		filled=0;
-	};
-	URL_Parser() { patterns = NULL;};
-	URL_Parser(Worker_Thread * w) { worker=w; patterns = NULL;};
-	URL_Parser(Worker_Thread * w,int size) { 
-		worker=w;
-		reserve(size);
-	};
-	URL_Parser(int size) { 
-		worker=NULL;
-		reserve(size);
-	};
-	~URL_Parser() { delete [] patterns; };
+	URL_Parser() {};
+	URL_Parser(Worker_Thread * w) { worker=w;};
+	~URL_Parser();
 	void add(char const *exp,int id);
 	void add(char const *exp,URL_Parser &url);
 	void add(char const *exp,callback_t callback);
