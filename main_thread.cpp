@@ -24,7 +24,7 @@ void Main_Thread::init()
 	try {
 		db.open();
 	}
-	catch(MySQL_DB_Err &e)
+	catch(DB_Err &e)
 	{
 		throw HTTP_Error(e.get());
 	}
@@ -68,11 +68,11 @@ void Main_Thread::load_cookies()
 
 void Main_Thread::check_athentication_by_name(string name,string password)
 {
-	MySQL_DB_Res res=db.query(
+	DB_Res res=db.query(
 		escape( "SELECT password,id from cp_users "
 			"WHERE username='%1%' LIMIT 1")<<name);
 	
-	MySQL_DB_Row row;
+	DB_Row row;
 	
 	if((row=res.next())!=NULL){
 		if(password==row[0]) {
@@ -192,7 +192,7 @@ void Main_Thread::show_main_page(string from)
 		c[TV_username]=username;
 	}
 	
-	MySQL_DB_Res res;
+	DB_Res res;
 	
 	if(from=="end") {
 		res = db.query(
@@ -213,7 +213,7 @@ void Main_Thread::show_main_page(string from)
 		res = db.query(escape(q)<<from_id);
 	}
 	
-	MySQL_DB_Row row;
+	DB_Row row;
 
 	int id;
 	string content;
@@ -274,7 +274,7 @@ void Main_Thread::main()
 	try {
 		show_page();
 	}
-	catch (MySQL_DB_Err &mysql_err) {
+	catch (DB_Err &mysql_err) {
 		throw HTTP_Error(mysql_err.get());
 	}
 }

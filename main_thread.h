@@ -3,18 +3,18 @@
 
 
 #include "worker_thread.h"
-#include "mysql_db.h"
-#include <mysql/mysql.h>
+#include "db_wrapper.h"
+
 #include <cgicc/HTTPStatusHeader.h>
 #include <cgicc/HTTPRedirectHeader.h>
 
-using namespace mysql_wrapper;
+using namespace db_wrapper;
 using namespace cgicc;
 
 class Main_Thread : public Worker_Thread {
 	URL_Parser url;
 // Internal Data	
-	MySQL_DB db;
+	Data_Base db;
 // User Data
 	int user_id;
 	string username;

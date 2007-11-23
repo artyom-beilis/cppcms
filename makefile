@@ -1,5 +1,5 @@
 TR=test.fcgi
-SRC=main.cpp textstream.cpp worker_thread.cpp FCgiIO.cpp main_thread.cpp mysql_db.cpp thread_pool.cpp \
+SRC=main.cpp textstream.cpp worker_thread.cpp FCgiIO.cpp main_thread.cpp db_wrapper.cpp thread_pool.cpp \
     global_config.cpp url.cpp templates.cpp
 
 LSRC=textstream.cpp worker_thread.cpp FCgiIO.cpp mysql_db.cpp thread_pool.cpp global_config.cpp templates.cpp

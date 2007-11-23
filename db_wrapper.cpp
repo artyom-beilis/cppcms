@@ -1,19 +1,19 @@
-#include "mysql_db.h"
+#include "db_wrapper.h"
 #include <boost/scoped_array.hpp>
 #include <iostream>
 
 #include "global_config.h"
 
-namespace mysql_wrapper {
+namespace db_wrapper {
 
-MySQL_DB_Escape::MySQL_DB_Escape(char const *format)
+DB_Escape::DB_Escape(char const *format)
 {
 	query=NULL;
 	this->format=format;
 	parameters.reserve(16);
 }
 
-MySQL_DB_Escape &MySQL_DB_Escape::operator<<(long val)
+DB_Escape &DB_Escape::operator<<(long val)
 {
 	element e;
 	e.data.long_val=val;
@@ -23,7 +23,7 @@ MySQL_DB_Escape &MySQL_DB_Escape::operator<<(long val)
 	return *this;
 }
 
-MySQL_DB_Escape &MySQL_DB_Escape::operator<<(double val)
+DB_Escape &DB_Escape::operator<<(double val)
 {
 	element e;
 	e.data.double_val=val;
@@ -33,7 +33,7 @@ MySQL_DB_Escape &MySQL_DB_Escape::operator<<(double val)
 	return *this;
 }
 
-MySQL_DB_Escape &MySQL_DB_Escape::operator<<(char const *str)
+DB_Escape &DB_Escape::operator<<(char const *str)
 {
 	element e;
 	e.data.str_val=str;
@@ -43,7 +43,7 @@ MySQL_DB_Escape &MySQL_DB_Escape::operator<<(char const *str)
 	return *this;
 }
 
-char *MySQL_DB_Escape::get(MYSQL *conn)
+char *DB_Escape::get(MYSQL *conn)
 {
 	int overall_len=calc_len();
 	query=new char [overall_len+1];
@@ -51,7 +51,7 @@ char *MySQL_DB_Escape::get(MYSQL *conn)
 	return query;
 }
 
-int MySQL_DB_Escape::calc_len()
+int DB_Escape::calc_len()
 {
 	int id,len=0,i,j;
 	for(i=0;format[i];i++) {
@@ -62,7 +62,7 @@ int MySQL_DB_Escape::calc_len()
 					id=id*10+format[j]-'0';
 				}
 				else {
-					throw MySQL_DB_Err("Invalid format");
+					throw DB_Err("Invalid format");
 				}
 			}
 			i=j;
@@ -78,7 +78,7 @@ int MySQL_DB_Escape::calc_len()
 	return i+len;
 }
 
-void MySQL_DB_Escape::escape_str(MYSQL *conn)
+void DB_Escape::escape_str(MYSQL *conn)
 {
 	char *q=query;
 	int i,j,id;
@@ -90,7 +90,7 @@ void MySQL_DB_Escape::escape_str(MYSQL *conn)
 					id=id*10+format[j]-'0';
 				}
 				else {
-					throw MySQL_DB_Err("Invalid format");
+					throw DB_Err("Invalid format");
 				}
 			}
 			i=j;
@@ -126,11 +126,11 @@ void MySQL_DB_Escape::escape_str(MYSQL *conn)
 	*q=0;
 }
 
-void MySQL_DB::connect()
+void Data_Base::connect()
 {
 	conn=mysql_init(NULL);
 	if(!conn){
-		throw MySQL_DB_Err("No memory");
+		throw DB_Err("No memory");
 	}
 	if(!mysql_real_connect(	conn,
 				host.c_str(),
@@ -140,11 +140,11 @@ void MySQL_DB::connect()
 				0,NULL,0))
 	{
 		close();
-		throw MySQL_DB_Err("Failed to connect to database");
+		throw DB_Err("Failed to connect to database");
 	}
 }
 
-void MySQL_DB::open(string const &h,string const &u,string const &p,string const &d)
+void Data_Base::open(string const &h,string const &u,string const &p,string const &d)
 {
 	host=h;
 	username=u;
@@ -154,7 +154,7 @@ void MySQL_DB::open(string const &h,string const &u,string const &p,string const
 	connect();
 }
 
-void MySQL_DB::open()
+void Data_Base::open()
 {
 	open(	global_config.sval("mysql.host"),
 		global_config.sval("mysql.username"),
@@ -162,10 +162,10 @@ void MySQL_DB::open()
 		global_config.sval("mysql.database"));
 }
 	
-void MySQL_DB::exec_query(char const *q)
+void Data_Base::exec_query(char const *q)
 {
 	bool not_try_once_more=false;
-	if(!setup) throw MySQL_DB_Err("Date base must be open first");
+	if(!setup) throw DB_Err("Date base must be open first");
 	if(!conn){
 		connect();
 		not_try_once_more=true;
@@ -175,31 +175,31 @@ void MySQL_DB::exec_query(char const *q)
 		close();
 		connect();
 		if(mysql_query(conn,q)) {
-			throw MySQL_DB_Err(string("Failed to exectue the query:") + q);
+			throw DB_Err(string("Failed to exectue the query:") + q);
 		}
 	}
 }
 
-void MySQL_DB::exec(char const *q)
+void Data_Base::exec(char const *q)
 {
 	exec_query(q);
 	MYSQL_RES *res=mysql_store_result(conn);
 	if(res) {
 		mysql_free_result(res);
-		throw MySQL_DB_Err("You must not use query for operation that "
+		throw DB_Err("You must not use query for operation that "
 					"returns result");
 	}
 	if(mysql_errno(conn)) {
-		throw MySQL_DB_Err(string("Error executing query:")+q);
+		throw DB_Err(string("Error executing query:")+q);
 	}
 }
 
-MYSQL_RES *MySQL_DB::query(char const *q)
+MYSQL_RES *Data_Base::query(char const *q)
 {
 	exec_query(q);
 	MYSQL_RES *res=mysql_store_result(conn);
 	if(!res || mysql_errno(conn)) {
-		throw MySQL_DB_Err(string("Error executing query:")+q);
+		throw DB_Err(string("Error executing query:")+q);
 	}
 	return res;
 }

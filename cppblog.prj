@@ -70,12 +70,12 @@ module.include.files=\
 	worker_thread.h\
 	textstream.h\
 	main_thread.h\
-	mysql_db.h\
 	thread_pool.h\
 	global_config.h\
 	http_error.h\
 	templates.h\
-	url.h
+	url.h\
+	db_wrapper.h
 
 module.source.name=.
 module.source.type=
@@ -84,12 +84,12 @@ module.source.files=\
 	worker_thread.cpp\
 	textstream.cpp\
 	main_thread.cpp\
-	mysql_db.cpp\
 	thread_pool.cpp\
 	makefile\
 	global_config.cpp\
 	templates.cpp\
-	url.cpp
+	url.cpp\
+	db_wrapper.cpp
 
 module.pixmap.name=.
 module.pixmap.type=
