@@ -9,13 +9,14 @@
 <% if new_message %>
 	<dl>
 		<% repeat %>
-			<dt>Message <% message_id %>, by <% author %></dt>
+			<dt>Message <a href="/site/edit/<% message_id %>"><% message_id %></a>, by <% author %></dt>
 			<dd>
 			<% message_body%>
 			</dd>
 			<% call get_message %>
 		<% until not new_message %>
 	</dl>
+	<a href="/site/from/<% message_id %>">next page</a>
 <% else %>
 	<h2>No messages on the forum</h2>
 <% end %>

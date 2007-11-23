@@ -2,8 +2,6 @@
 
 #include "global_config.h"
 
-#include <boost/bind.hpp>
-
 #include "templates/look.h"
 #include "templates.h"
 
@@ -14,12 +12,14 @@ void Main_Thread::init()
 	url.init(this);
 	url.reserve(10);
 
-	url.add("^/?$",		boost::bind(&Main_Thread::show_main_page,this));
-	url.add("^/login$",	boost::bind(&Main_Thread::show_login,this));
-	url.add("^/logout$",	boost::bind(&Main_Thread::show_logout,this));
-	url.add("^/newpost$",	boost::bind(&Main_Thread::show_post_form,this));
-	url.add("^/post$",	boost::bind(&Main_Thread::get_post_message,this));
-	url.add("^/dologin$",	boost::bind(&Main_Thread::do_login,this));
+	url.add("^/?$",		BIND(&Main_Thread::show_main_page,this,"end"));
+	url.add("^/from/(\\d+)$",BIND(&Main_Thread::show_main_page,this,$1));
+	url.add("^/login$",	BIND(&Main_Thread::show_login,this));
+	url.add("^/logout$",	BIND(&Main_Thread::show_logout,this));
+	url.add("^/newpost$",	BIND(&Main_Thread::show_post_form,this));
+	url.add("^/post$",	BIND(&Main_Thread::get_post_message,this));
+	url.add("^/dologin$",	BIND(&Main_Thread::do_login,this));
+	url.add("^/edit/(\\d+)$",BIND(&Main_Thread::edit_message,this,$1));
 
 	try {
 		db.open();
@@ -28,6 +28,11 @@ void Main_Thread::init()
 	{
 		throw HTTP_Error(e.get());
 	}
+}
+
+void Main_Thread::edit_message(string msg)
+{
+	// TODO
 }
 
 
@@ -173,7 +178,7 @@ void Main_Thread::text2html(char const *text,string &s)
 	}
 }
 
-void Main_Thread::show_main_page()
+void Main_Thread::show_main_page(string from)
 {
 	check_athentication();
 	
@@ -186,12 +191,27 @@ void Main_Thread::show_main_page()
 	if(authenticated) {
 		c[TV_username]=username;
 	}
+	
+	MySQL_DB_Res res;
+	
+	if(from=="end") {
+		res = db.query(
+			"SELECT cp_messages.id,message,username "
+			"FROM cp_messages "
+			"LEFT JOIN cp_users ON cp_messages.user_id=cp_users.id "
+			"ORDER BY cp_messages.id DESC LIMIT 10");
+	}
+	else {
+		int from_id=atoi(from.c_str());
+		char const q[]=
+			"SELECT cp_messages.id,message,username "
+			"FROM cp_messages "
+			"LEFT JOIN cp_users ON cp_messages.user_id=cp_users.id "
+			"WHERE cp_messages.id < %1% "
+			"ORDER BY cp_messages.id DESC LIMIT 10";
 
-	MySQL_DB_Res res = db.query(
-		"SELECT cp_messages.id,message,username "
-		"FROM cp_messages "
-		"LEFT JOIN cp_users ON cp_messages.user_id=cp_users.id "
-		"ORDER BY cp_messages.id DESC LIMIT 10");
+		res = db.query(escape(q)<<from_id);
+	}
 	
 	MySQL_DB_Row row;
 

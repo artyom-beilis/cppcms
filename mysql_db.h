@@ -75,10 +75,11 @@ public:
 class MySQL_DB_Res {
 	MYSQL_RES *res;
 public:
+	MySQL_DB_Res() { res=NULL; };
 	MySQL_DB_Res(MYSQL_RES *result) {
 		res=result;
 	};
-	void free() { mysql_free_result(res); };
+	void free() { if(res) mysql_free_result(res); };
 	~MySQL_DB_Res() { free(); };
 	MySQL_DB_Row next() { return mysql_fetch_row(res); };
 	void operator=(MYSQL_RES *result) { free(); res=result; };

@@ -30,7 +30,7 @@ class Main_Thread : public Worker_Thread {
 	string message;
 // Functions 	
 	void show_page();
-	void show_main_page();
+	void show_main_page(string from);
 	void show_login();
 	void show_logout();
 	void get_post_message();
@@ -39,6 +39,7 @@ class Main_Thread : public Worker_Thread {
 	void do_login();
 	void show_post_form();
 	void text2html(char const *text,string &s);
+	void edit_message(string s);
 protected:
 	
 	void check_athentication();
