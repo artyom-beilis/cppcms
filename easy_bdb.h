@@ -147,9 +147,9 @@ public:
 
 	bool operator=(DS &data)
 	{
-		Dbt val;
-		setup_dbt(val,data);
-		return cur->put(NULL,&val,DB_CURRENT)==0;
+		Dbt key;
+		Dbt val(&data,sizeof(DS));
+		return cur->put(&key,&val,DB_CURRENT)==0;
 	};
 	
 	int select(int dir,DS &data)
