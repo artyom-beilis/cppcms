@@ -144,6 +144,13 @@ public:
 		if(cur)
 			cur->close();
 	};
+
+	bool operator=(DS &data)
+	{
+		Dbt val;
+		setup_dbt(val,data);
+		return cur->put(NULL,&val,DB_CURRENT)==0;
+	};
 	
 	int select(int dir,DS &data)
 	{
