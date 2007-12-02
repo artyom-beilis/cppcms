@@ -389,13 +389,13 @@ public:
 		return (char*)val.get_data();
 	};
 	
-	int put(long id,char *text,int len=-1)
+	bool put(long id,char *text,int len=-1)
 	{
 		if(len<0) 
 			len=strlen(text);
 		Dbt data(text,len+1);
 		Dbt key(&id,sizeof(long));
-		return db->put(NULL,&key,&data,0);
+		return db->put(NULL,&key,&data,0)==0;
 	};
 	
 	long add(char *text,int len=-1)
@@ -436,12 +436,12 @@ public:
 		cur->close();
 		return id;
 	};
-	int update(long id,char *text,int len=-1)
+	bool update(long id,char *text,int len=-1)
 	{
 		if(len<0) len=strlen(text);
 		Dbt key(&id,sizeof(long));
 		Dbt data(text,len+1);
-		return db->put(NULL,&key,&data,0);
+		return db->put(NULL,&key,&data,0)==0;
 	};
 };
 
@@ -466,18 +466,18 @@ protected:
 public:
 //////////////
 
-	int remove(E &k) { 
+	bool remove(E &k) { 
 		Dbt key(&k,sizeof(E));
-		return db->del(NULL,&key,0);
+		return db->del(NULL,&key,0)==0;
 	};
 	
-	int get(E k,DS &data) {
+	bool get(E k,DS &data) {
 		Dbt key(&k,sizeof(E));
 		Dbt val;
 		
 		setup_dbt(val,data);
 		
-		return db->get(NULL,&key,&val,0);;
+		return db->get(NULL,&key,&val,0)==0;
 	};
 
 	Index_Base(Environment &env,char *name,DBTYPE type,
@@ -538,14 +538,14 @@ class Index_Func: public Index_Base< DS , E  > {
 	
 public:
 	
-	int insert(DS &data, bool overwrite = false) {
+	bool insert(DS &data, bool overwrite = false) {
 		E keyval((data.*getmember)());
 		Dbt key(&keyval,sizeof(E));
 		Dbt val(&data,sizeof(DS));
-		return this->db->put(NULL,&key,&val,(overwrite ? 0 : DB_NOOVERWRITE));
+		return this->db->put(NULL,&key,&val,(overwrite ? 0 : DB_NOOVERWRITE))==0;
 	};
 	
-	int update(DS &data) {
+	bool update(DS &data) {
 		return insert(data,true);
 	};
 	
@@ -584,14 +584,14 @@ class Index_Var: public Index_Base< DS , E  > {
 	
 public:
 	
-	int insert(DS &data, bool overwrite = false) {
+	bool insert(DS &data, bool overwrite = false) {
 		E keyval(data.*member);
 		Dbt key(&keyval,sizeof(E));
 		Dbt val(&data,sizeof(DS));
-		return this->db->put(NULL,&key,&val,(overwrite ? 0 : DB_NOOVERWRITE));
+		return this->db->put(NULL,&key,&val,(overwrite ? 0 : DB_NOOVERWRITE))==0;
 	};
 	
-	int update(DS &data) {
+	bool update(DS &data) {
 		return insert(data,true);
 	};
 	
