@@ -13,45 +13,50 @@ struct data {
 int main(int argc,char **argv)
 {
 	Environment e("./db/");
-	Index_Var<data,int,&data::val> db(e,"test.db",DB_BTREE);
+	Index_Auto_Increment<data,int,&data::val> db(e,"test.db",DB_BTREE);
 	
 	data d;
 	int i;
 
-	int N=100;
-	
-	if(argc==2 && argv[1][0]=='c') {
-		e.create();
-		db.create();
-		for(i=0;i<N;i++) {
-			d.val=i;
-			d.sq=i*i;
-			db.insert(d);
-		}
-	}
-	else {
-		e.open();
-		db.open();
-	}
+	int N=10;
+        try{
+        	if(argc==2 && argv[1][0]=='c') {
+        		e.create();
+        		db.create();
+        	}
+        	else {
+        		e.open();
+        		db.open();
+        	}
+                
+                cursor<data,int> cur(db);
+                
+        	if(argc==2 && argv[1][0]=='c') {
+                        for(i=0;i<N;i++) {
+                                d.val=i;
+                                d.sq=i*i;
+                                if(db.insert(d)) {
+                                        cout<<"Inserted: "<<d.val<<endl;
+                                }
+                                else {
+                                        cout<<"Not Inserted: "<<d.val<<endl;
+                                }
+                        }
+        	}
 
-	cout<<"Sleep\n";
-//	sleep(5);
-	cout<<"Reading\n";
-	try{
 #if 1
-		cursor<data,int> cur(db);
-		for(cur>=5;cur;cur++) {
+		for(cur.begin();cur;cur++) {
 			d=cur;
-			cout<<d.val<<endl;
-			if(d.val<10) {
+			cout<<d.val<<' '<<d.sq<<endl;
+			/*if(d.val<10) {
 				d.sq++;
 				cur=d;
 			}
 			else {
 				cur.del();
-			}
+			}*/
 		}
-#else
+#elif 0
 		for(i=0;i<N;i++) {
 			db.get(i,d);
 	//		cout<<d.val<<' '<<d.sq<<endl;

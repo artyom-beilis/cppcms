@@ -123,9 +123,13 @@ class cursor {
 		cmp_fnc=NULL;
 		direction=1;
                 data_exist=false;
+                extract=NULL;
+                auto_increment=NULL;
         }
 public:
 	Dbc *cur;
+        E (*extract)(DS &d);
+        void (*auto_increment)(cursor<DS,E> &cur,DS &indata);
 	int (*cmp_fnc)(void const *,void const *);
 	int direction;
 
@@ -299,16 +303,17 @@ public:
 
 	bool operator=(DS &data)
 	{
-		Dbt key;
+                E keyval=extract(this->data);
+		Dbt key(&keyval,sizeof(E));
+                if(!data_exist) {
+                        throw "Cursor point anywere";
+                }
+                if(!(extract(this->data)==extract(data))){
+                        throw "Inconsistent key value";
+                }
 		Dbt val(&data,sizeof(DS));
 		return data_exist=cur->put(&key,&val,DB_CURRENT)==0;
 	};
-        
-        bool operator+=(DS &data)
-        {
-        #warning "Implement me"
-                return false;
-        }
         
         bool set(DS &data) {
                 bool tmp=*this=data;
@@ -356,6 +361,7 @@ typedef enum { UNIQUE , NOT_UNIQUE } unique_t;
 
 class DB_Base {
 protected:
+        unique_t unique;
 	Db *db_primary;
 	Db *db;
 	char *db_name;
@@ -372,10 +378,11 @@ public:
 		if(u==NOT_UNIQUE) {
 			db->set_flags(DB_DUP);
 		}
+                unique=u;
 		strcpy(db_name,name);
 		db_type=type;
 	};
-	~DB_Base()
+	virtual ~DB_Base()
 	{
 		delete db;
 		delete [] db_name;
@@ -409,28 +416,34 @@ public:
 		db->set_bt_compare(cmp);
 	};
 	
-	char *get(long id) {
+	bool get(long id,std::string &s) {
 		Dbt key(&id,sizeof(long));
 		Dbt val;
 		
 		val.set_flags(DB_DBT_MALLOC);
 		
 		if(db->get(NULL,&key,&val,0)) {
-			return NULL;
+			return false;
 		}
-		return (char*)val.get_data();
+                s=(char*)val.get_data();
+                free(val.get_data());
+		return true;
 	};
 	
-	bool put(long id,char *text,int len=-1)
+	bool put(long id,char const *text,int len=-1)
 	{
 		if(len<0) 
 			len=strlen(text);
-		Dbt data(text,len+1);
+		Dbt data((void*)text,len+1);
 		Dbt key(&id,sizeof(long));
 		return db->put(NULL,&key,&data,0)==0;
 	};
+        
+        bool put(long id,std::string const &s){
+                return put(id,s.c_str(),s.size());
+        };
 	
-	long add(char *text,int len=-1)
+	long add(char const *text,int len=-1)
 	{
 		Dbc *cur;
 		db->cursor(NULL,&cur,0);
@@ -455,7 +468,7 @@ public:
 		if(len<0) len=strlen(text);
 		while (true) {
 			id++;
-			Dbt data(text,len+1);
+			Dbt data((void*)text,len+1);
 			Dbt key(&id,sizeof(long));
 			int res=db->put(NULL,&key,&data,DB_NOOVERWRITE);
 			if(res==0)
@@ -468,19 +481,27 @@ public:
 		cur->close();
 		return id;
 	};
-	bool update(long id,char *text,int len=-1)
+
+        long add(std::string const &s){
+                return add(s.c_str(),s.size());
+        };
+
+	bool update(long id,char const *text,int len=-1)
 	{
 		if(len<0) len=strlen(text);
 		Dbt key(&id,sizeof(long));
-		Dbt data(text,len+1);
+		Dbt data((void*)text,len+1);
 		return db->put(NULL,&key,&data,0)==0;
 	};
+        
+        bool update(long id,std::string const &s){
+                return update(id,s.c_str(),s.size());
+        };
 };
 
 template<class DS,typename E>
 class	Index_Base: public DB_Base {
 protected:
-
 	void setup_dbt(Dbt &dbt,DS &data)
 	{
 		dbt.set_data(&data);
@@ -497,10 +518,11 @@ protected:
 
 public:
 //////////////
-
-	bool remove(E &k) { 
-		Dbt key(&k,sizeof(E));
-		return db->del(NULL,&key,0)==0;
+	virtual bool insert(E &keyval,DS &data) {
+		Dbt key(&keyval,sizeof(E));
+		Dbt val(&data,sizeof(DS));
+                int flag=unique==UNIQUE ? DB_NOOVERWRITE : 0;
+		return this->db->put(NULL,&key,&val,flag)==0;
 	};
 	
 	bool get(E k,DS &data) {
@@ -524,7 +546,7 @@ public:
 		}
 	};
 	
-	~Index_Base() {
+	virtual ~Index_Base() {
 	};
 	
 	static int keycmp(E &key1,E &key2)
@@ -557,7 +579,7 @@ public:
 		return keycmp(*(E*)p1,*(E*)p2);
 	}
 	
-	void init_cursor(cursor<DS,E> &cur) {
+	virtual void init_cursor(cursor<DS,E> &cur) {
 		if(this->db_type == DB_BTREE) {
 			cur.cmp_fnc=cmpcur;
 		}
@@ -569,16 +591,9 @@ template<class DS,typename E,E (DS::*getmember)()>
 class Index_Func: public Index_Base< DS , E  > {
 	
 public:
-	
-	bool insert(DS &data, bool overwrite = false) {
+	virtual bool insert(DS &data) {
 		E keyval((data.*getmember)());
-		Dbt key(&keyval,sizeof(E));
-		Dbt val(&data,sizeof(DS));
-		return this->db->put(NULL,&key,&val,(overwrite ? 0 : DB_NOOVERWRITE))==0;
-	};
-	
-	bool update(DS &data) {
-		return insert(data,true);
+		return Index_Base<DS,E>::insert(keyval,data);
 	};
 	
 	static int get_key(Db *db, const Dbt *key,
@@ -594,7 +609,17 @@ public:
 		secondary_key->set_size(sizeof(E));
 		return 0;
 	}
-	
+        
+        static E extract_key(DS &d)
+        {
+                return (d.*getmember())();
+        }
+	virtual void init_cursor(cursor<DS,E> &cur)
+        {
+                Index_Base< DS , E  >::init_cursor(cur);
+                cur.extract=extract_key;
+        }
+
 	Index_Func(Environment &env,char *name,
 			DBTYPE type,
 			DB_Base *primary = NULL,
@@ -616,15 +641,9 @@ class Index_Var: public Index_Base< DS , E  > {
 	
 public:
 	
-	bool insert(DS &data, bool overwrite = false) {
+	virtual bool insert(DS &data) {
 		E keyval(data.*member);
-		Dbt key(&keyval,sizeof(E));
-		Dbt val(&data,sizeof(DS));
-		return this->db->put(NULL,&key,&val,(overwrite ? 0 : DB_NOOVERWRITE))==0;
-	};
-	
-	bool update(DS &data) {
-		return insert(data,true);
+		return Index_Base< DS , E  >::insert(keyval,data);
 	};
 	
 	static int get_key(Db *db, const Dbt *key,
@@ -637,7 +656,16 @@ public:
 		secondary_key->set_size(sizeof(E));
 		return 0;
 	}
-	
+        static E extract_key(DS &d)
+        {
+                return d.*member;
+        };
+	virtual void init_cursor(cursor<DS,E> &cur)
+        {
+                Index_Base< DS , E  >::init_cursor(cur);
+                cur.extract=extract_key;
+        };
+        
 	Index_Var(Environment &env,char *name,
 			DBTYPE type,
 			DB_Base *primary = NULL,
@@ -655,7 +683,8 @@ public:
 };
 
 template<class DS,typename E,E DS::*member>
-class Index_Auto_Increment : Index_Var <DS,E,member> {
+class Index_Auto_Increment : public Index_Var <DS,E,member> {
+public:
 	Index_Auto_Increment(Environment &env,char *name,
 			     DBTYPE type,
 			     DB_Base *primary = NULL) : 
@@ -689,7 +718,7 @@ class Index_Auto_Increment : Index_Var <DS,E,member> {
 		while (true) {
 			id++;
 			(indata.*member)=id;
-			Dbt data(&indata);
+			Dbt data(&indata,sizeof(DS));
 			Dbt key(&id,sizeof(E));
 			int res=this->db->put(NULL,&key,&data,DB_NOOVERWRITE);
 			if(res==0)
@@ -702,6 +731,7 @@ class Index_Auto_Increment : Index_Var <DS,E,member> {
 		cur->close();
 		return id;
 	};
+    
 };
 
 
