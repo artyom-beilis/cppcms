@@ -18,7 +18,7 @@ int main(int argc,char **argv)
 	data d;
 	int i;
 
-	int N=100000;
+	int N=100;
 	
 	if(argc==2 && argv[1][0]=='c') {
 		e.create();
@@ -40,12 +40,16 @@ int main(int argc,char **argv)
 	try{
 #if 1
 		cursor<data,int> cur(db);
-		bool res;
-		for(res=cur.begin();res;res=cur++) {
+		for(cur>=5;cur;cur++) {
 			d=cur;
-			//cout<<d.val<<' '<<d.sq<<endl;
-			d.sq++;
-			cur=d;
+			cout<<d.val<<endl;
+			if(d.val<10) {
+				d.sq++;
+				cur=d;
+			}
+			else {
+				cur.del();
+			}
 		}
 #else
 		for(i=0;i<N;i++) {

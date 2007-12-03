@@ -103,6 +103,7 @@ template<class DS,typename E> class Index_Base;
 template<class DS,class E>
 class cursor {
 	DS data;
+        bool data_exist;
 	void setup_dbt(Dbt &dbt,DS &data)
 	{
 		dbt.set_data(&data);
@@ -116,42 +117,38 @@ class cursor {
 		dbt.set_ulen(sizeof(E));
 		dbt.set_flags(DB_DBT_USERMEM);
 	};
+        void reset()
+        {
+		cur=NULL;
+		cmp_fnc=NULL;
+		direction=1;
+                data_exist=false;
+        }
 public:
 	Dbc *cur;
 	int (*cmp_fnc)(void const *,void const *);
 	int direction;
 
 	cursor(){
-		cur=NULL;
-		cmp_fnc=NULL;
-		direction=1;
+                reset();
 	};
 	
 	cursor(Index_Base<DS,E> &db) {
-		cur=NULL;
-		cmp_fnc=NULL;
-		direction=1;
+                reset();
 		db.init_cursor(*this);
 	};
 	
 	cursor(Db *db,int (*cmp)(void *,void *)) {
-		direction = 1;
+                reset();
 		db->cursor(NULL,&cur,0);
 		cmp_fnc=cmp;
 	};
 	
 	~cursor() {
-		if(cur)
-			cur->close();
+		if(cur)	cur->close();
 	};
 
-	bool operator=(DS &data)
-	{
-		Dbt key;
-		Dbt val(&data,sizeof(DS));
-		return cur->put(&key,&val,DB_CURRENT)==0;
-	};
-	
+private:	
 	int select(int dir,DS &data)
 	{
 		E akey;
@@ -231,15 +228,12 @@ public:
 		if(cmpres==0 && dir == SELECT_LTE)
 		{
 			direction=-direction;
-			//std::cout<<data.name<<'\n';
 			res=next(data,true);
-			//std::cout<<data.name<<'\n';
 			if(res) {
 				return select(SELECT_END,data);
 			}
 			direction=-direction;
 			return next(data,false);
-			//return next(data,false);
 		}
 		if(cmpres==0 && dir == SELECT_GT)
 		{
@@ -254,7 +248,6 @@ public:
 		return res;
 	};
 	
-private:	
 	int curget(DS &data,int d)
 	{
 		E akey;
@@ -263,10 +256,8 @@ private:
 		setup_dbt(key,akey);
 		return cur->get(&key,&val,d);
 	}
-public:	
 	int next(DS &data,bool use_no_dup=false) {
 		int d;
-		
 		if(direction==1){
 			d=use_no_dup ? DB_NEXT_NODUP : DB_NEXT;
 		}
@@ -278,24 +269,65 @@ public:
 		}
 		return curget(data,d);
 	};
+
+public:	
 	
-	bool next() { return next(data)==0; };
+	bool next() { return data_exist=(next(data)==0); };
 	
-	bool operator++() { return curget(data,DB_NEXT)==0;};
-	bool operator--() { return curget(data,DB_PREV)==0;};
-	bool operator++(int) { return curget(data,DB_NEXT)==0;};
-	bool operator--(int) { return curget(data,DB_PREV)==0;};
-	operator DS&()
+	bool operator++() { return data_exist=curget(data,DB_NEXT)==0;};
+	bool operator--() { return data_exist=curget(data,DB_PREV)==0;};
+	bool operator++(int) { return data_exist=curget(data,DB_NEXT)==0;};
+	bool operator--(int) { return data_exist=curget(data,DB_PREV)==0;};
+	operator DS const&()
 	{
+                if(!data_exist) {
+                        throw "No data";
+                }
 		return data;
 	};
-	bool end(){return select(SELECT_END,data)==0;};
-	bool begin(){return select(SELECT_START,data)==0;};
-	bool operator>(E const &k) { return select(SELECT_GT,k,data)==0; };
-	bool operator>=(E const &k) { return select(SELECT_GTE,k,data)==0; };
-	bool operator<=(E const &k) { return select(SELECT_LTE,k,data)==0; };
-	bool operator<(E const &k) { return select(SELECT_LT,k,data)==0; };
-	bool operator==(E const &k) { return select(SELECT_EQ,k,data)==0; };
+	bool end(){return data_exist=select(SELECT_END,data)==0;};
+	bool begin(){return data_exist=select(SELECT_START,data)==0;};
+	bool operator>(E const &k) { return data_exist=select(SELECT_GT,k,data)==0; };
+	bool operator>=(E const &k) { return data_exist=select(SELECT_GTE,k,data)==0; };
+	bool operator<=(E const &k) { return data_exist=select(SELECT_LTE,k,data)==0; };
+	bool operator<(E const &k) { return data_exist=select(SELECT_LT,k,data)==0; };
+	bool operator==(E const &k) { return data_exist=select(SELECT_EQ,k,data)==0; };
+        bool lt(E const &k) { return *this<k; };
+        bool lte(E const &k) { return *this<=k; };
+        bool gte(E const &k) { return *this>=k; };
+        bool gt(E const &k) { return *this>=k; };
+
+	bool operator=(DS &data)
+	{
+		Dbt key;
+		Dbt val(&data,sizeof(DS));
+		return data_exist=cur->put(&key,&val,DB_CURRENT)==0;
+	};
+        
+        bool operator+=(DS &data)
+        {
+        #warning "Implement me"
+                return false;
+        }
+        
+        bool set(DS &data) {
+                bool tmp=*this=data;
+                if(tmp) {
+                        this->data=data;
+                        data_exist=true;
+                }
+                return tmp;
+        };
+        bool get(DS &data) {
+                if(data_exist)
+                        data=*this;
+                return data_exist;
+        };
+	bool del() {
+                data_exist=false;
+		return cur->del(0)==0;
+	};
+        operator bool() { return data_exist; };
 };
 
 
