@@ -7,12 +7,14 @@ AC_INIT([test.fcgi], [0.0.1], [artyomtnk@yahoo.com])
 AM_INIT_AUTOMAKE([1.9 foreign])
 
 AC_PROG_CXX
+AC_PROG_LIBTOOL
+AC_SUBST(LIBTOOL_DEPS)
 
 AC_LANG_CPLUSPLUS
 AC_CONFIG_FILES([Makefile])
-AC_CHECK_LIB(db_cxx,main)
-AC_CHECK_LIB(fcgi++,main)
-AC_CHECK_LIB(cgicc,main)
-AC_CHECK_LIB(boost_regex,main)
-AC_CHECK_LIB(boost_signals,main)
+AC_CHECK_LIB(db_cxx,main,[],[echo "Berkeley DB C++ API not installed" ; exit -1])
+AC_CHECK_LIB(fcgi++,main,[],[echo "Fast CGI library not installed" ; exit -1])
+AC_CHECK_LIB(cgicc,main,[],[echo "cgicc not found" ; exit -1])
+AC_CHECK_LIB(boost_regex,main,[],[echo "boost::regex not found" ; exit -1])
+AC_CHECK_LIB(boost_signals,main,[],[echo "boost::signals not found" ; exit -1])
 AC_OUTPUT
