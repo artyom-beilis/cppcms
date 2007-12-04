@@ -8,7 +8,7 @@
 
 #include <sys/mman.h>
 
-#include "compiler/bytecode.h"
+#include "share/bytecode.h"
 #include "textstream.h"
 
 using namespace std;

@@ -14,7 +14,7 @@ int main(int argc,char **argv)
 {
 	Environment e("./db/");
 	Index_Auto_Increment<data,int,&data::val> db(e,"test.db",DB_BTREE);
-	
+
 	data d;
 	int i;
 
@@ -28,9 +28,9 @@ int main(int argc,char **argv)
         		e.open();
         		db.open();
         	}
-                
+
                 cursor<data,int> cur(db);
-                
+
         	if(argc==2 && argv[1][0]=='c') {
                         for(i=0;i<N;i++) {
                                 d.val=i;

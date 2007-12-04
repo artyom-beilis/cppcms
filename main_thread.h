@@ -7,14 +7,24 @@
 
 #include <cgicc/HTTPStatusHeader.h>
 #include <cgicc/HTTPRedirectHeader.h>
+#include "easy_bdb.h"
+#include "data.h"
 
 using namespace db_wrapper;
 using namespace cgicc;
+using namespace ebdb;
+
+
+
+extern auto_ptr<Users> users;
+extern auto_ptr<Messages> all_messages;
+extern auto_ptr<Texts_Collector> texts;
+
+
+
 
 class Main_Thread : public Worker_Thread {
 	URL_Parser url;
-// Internal Data	
-	Data_Base db;
 // User Data
 	int user_id;
 	string username;
@@ -28,7 +38,7 @@ class Main_Thread : public Worker_Thread {
 // Other
 	int page;
 	string message;
-// Functions 	
+// Functions
 	void show_page();
 	void show_main_page(string from);
 	void show_login();
@@ -41,7 +51,7 @@ class Main_Thread : public Worker_Thread {
 	void text2html(char const *text,string &s);
 	void edit_message(string s);
 protected:
-	
+
 	void check_athentication();
 	void check_athentication_by_name(string,string);
 	void get_parameters();

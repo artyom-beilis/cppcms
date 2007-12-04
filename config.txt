@@ -5,6 +5,11 @@ mysql.username="root"
 mysql.password="root"
 mysql.database="cppcms"
 
+
+# Berkeley DB Parameters
+
+bdb.path="./db/"
+
 # FastCGI settings
 
 server.threads = 5

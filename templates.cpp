@@ -75,7 +75,6 @@ int Renderer::render(string &s)
 					s+=var.gets();
 				}
 				else if(debug) {
-					cerr<<"A"<<op->parameter<<endl;
 					throw HTTP_Error("Undefined variable");
 				}
 				break;
@@ -114,7 +113,6 @@ int Renderer::render(string &s)
 					}
 				}
 				else if(debug){
-					cerr<<"B"<<op->parameter<<endl;
 					throw HTTP_Error("Undefined variable");
 				}
 				break;
@@ -125,7 +123,6 @@ int Renderer::render(string &s)
 					}
 				}
 				else if(debug){
-					cerr<<"C"<<op->parameter<<endl;
 					throw HTTP_Error("Undefined variable");
 				}
 				break;
