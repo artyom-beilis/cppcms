@@ -48,7 +48,6 @@ class Main_Thread : public Worker_Thread {
 	void load_inputs();
 	void do_login();
 	void show_post_form();
-	void text2html(char const *text,string &s);
 	void edit_message(string s);
 protected:
 

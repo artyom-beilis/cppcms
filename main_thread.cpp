@@ -6,6 +6,8 @@
 #include "templates.h"
 #include "data.h"
 #include "boost/format.hpp"
+#include "text_tool.h"
+
 
 extern Templates_Set templates;
 
@@ -65,7 +67,7 @@ void Main_Thread::check_athentication_by_name(string name,string password)
 	Users::username_c cur(users->username);
 
 	if(cur==name){
-		users_t const &user=cur;
+		user_t const &user=cur;
 		if(user.password==password.c_str()) {
 			authenticated=true;
 			user_id=user.id;
@@ -151,24 +153,6 @@ void Main_Thread::show_logout()
 	response_header->setCookie(cookie);
 }
 
-void Main_Thread::text2html(char const *text,string &s)
-{
-	int c;
-	s="";
-	s.reserve(strlen(text)*3/2);
-
-	while((c=*text++)!=0) {
-		switch(c) {
-			case '\n': s+="<br>\n"; break;
-			case '<':  s+="&lt;"; break;
-			case '>':  s+="&gt;"; break;
-			case '&':  s+="&amp;"; break;
-			default:
-				s+=(char)c;
-		}
-	}
-}
-
 void Main_Thread::show_main_page(string from)
 {
 	check_athentication();
@@ -200,7 +184,7 @@ void Main_Thread::show_main_page(string from)
 	while((id=t.render(out))!=0) {
 		if(id==TV_get_message){
 			if(cur && counter<10){
-				messages_t const &message=cur;
+				message_t const &message=cur;
 				c[TV_new_message]=1;
 				char buf[20];
 				snprintf(buf,20,"%d",message.id);
@@ -208,14 +192,15 @@ void Main_Thread::show_main_page(string from)
 
 				string intext;
 
-				texts->get(message.text,intext);
-				text2html(intext.c_str(),content);
+				texts->get(message.text_id,intext);
+				Text_Tool conv;
+				conv.markdown2html(intext,content);
 
 				c[TV_message_body]=content.c_str();
 
 				Users::id_c ucur(users->id);
 				ucur==message.user_id;
-				users_t const &user=ucur;
+				user_t const &user=ucur;
 				c[TV_author]=user.username.c_str();
 				cur.next();
 				counter++;
@@ -256,8 +241,8 @@ void Main_Thread::get_post_message()
 	}
 
 
-	messages_t msg;
-	msg.text=texts->add(message);
+	message_t msg;
+	msg.text_id=texts->add(message);
 	msg.user_id=user_id;
 	all_messages->id.add(msg);
 

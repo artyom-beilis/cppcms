@@ -19,9 +19,9 @@ auto_ptr<Texts_Collector> texts;
 
 void setup()
 {
-	users_t user;
+	user_t user;
 	user.username="artik";
-	user.password="artkmst";
+	user.password="artik";
 	cerr<<"Setting up: "<<users->id.add(user)<<endl;
 	user.username="maas";
 	user.password="maas";
@@ -38,7 +38,7 @@ int main(int argc,char **argv)
 		Environment env(global_config.sval( "bdb.path" ).c_str());
 		users=auto_ptr<Users>(new Users(env));
 		all_messages=auto_ptr<Messages>(new Messages(env));
-		texts=auto_ptr<Texts_Collector>(new Texts_Collector(env,"tests.db"));
+		texts=auto_ptr<Texts_Collector>(new Texts_Collector(env,"texts.db"));
 
 		env.create();
 
