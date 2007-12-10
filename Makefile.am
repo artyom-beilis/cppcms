@@ -1,4 +1,4 @@
-bin_PROGRAMS = test.fcgi
+noinst_PROGRAMS = test.fcgi
 test_fcgi_SOURCES = main.cpp  main_thread.cpp
 test_fcgi_LDADD = libcppcms.la
 
