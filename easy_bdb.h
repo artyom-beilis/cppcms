@@ -375,7 +375,7 @@ public:
 	DB_Base(Environment &env,char *name,DBTYPE type,unique_t u = UNIQUE)
 	{
 		db = new Db(env.getenv(),0);
-		db_name = new char [strlen(name+1)];
+		db_name = new char [strlen(name)+1];
 		if(u==NOT_UNIQUE) {
 			db->set_flags(DB_DUP);
 		}
@@ -613,7 +613,7 @@ public:
 
         static E extract_key(DS &d)
         {
-                return (d.*getmember())();
+                return (d.*getmember)();
         }
 	virtual void init_cursor(cursor<DS,E> &cur)
         {
