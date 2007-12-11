@@ -3,24 +3,19 @@
 
 
 #include "worker_thread.h"
-#include "db_wrapper.h"
+#include "http_error.h"
 
 #include <cgicc/HTTPStatusHeader.h>
 #include <cgicc/HTTPRedirectHeader.h>
 #include "easy_bdb.h"
 #include "data.h"
 
-using namespace db_wrapper;
 using namespace cgicc;
 using namespace ebdb;
-
-
 
 extern auto_ptr<Users> users;
 extern auto_ptr<Messages> all_messages;
 extern auto_ptr<Texts_Collector> texts;
-
-
 
 
 class Main_Thread : public Worker_Thread {
