@@ -1,22 +1,30 @@
-all: look.template look.h
 
-look.h: look.def
-	cc_templ_d -i look.def -h look.h -p "T"
+INTERFACE=look
 
-look.template: dologin.op main.op post.op master.op 
-	ln_templ look.def
 
-main.op: look.def main.tmpl
-	cc_templ_d -i look.def main.tmpl
+###################################
+# Don't change after this comment #
+###################################
 
-dologin.op: look.def dologin.tmpl
-	cc_templ_d -i look.def dologin.tmpl
+all: 
+	cc_templ_d -i $(INTERFACE).def -M $(INTERFACE).template
+	make build
 
-post.op: look.def post.tmpl
-	cc_templ_d -i look.def post.tmpl
+build: $(INTERFACE).template $(INTERFACE).h
 
-master.op: look.def master.tmpl
-	cc_templ_d -i look.def master.tmpl
+.SUFFIXES: .tmpl .op 
+
+$(INTERFACE).h: $(INTERFACE).def
+	cc_templ_d -i $< -h $@
+
+.tmpl.op: 
+	cc_templ_d -i $(INTERFACE).def $< -o $@
+
+$(INTERFACE).template: 
+	ln_templ $(INTERFACE).def
 
 clean:
-	rm -f *.op *.template *.h
+	rm -f *.op *.template *.h .deps
+
+-include .deps
+
