@@ -21,15 +21,21 @@ private:
 	type_t type;
 	int int_val;
 	char const *str_val;
+	string str_data;
 public:
 	Variable() { type = NONE; str_val=NULL; int_val=0; };
-	Variable(string &s) { str_val=s.c_str(); type = STRING; };
+	void str(char const *s) {
+		str_data=s; str_val=str_data.c_str(); type = STRING;
+	};
+	Variable(string &s) {
+		str(s.c_str());
+	};
 	Variable(char const *s) { str_val=s; type = STRING; };
 	Variable(int b) { int_val = b; type = INTEGER; };
 	void operator=(int b) { *this=Variable(b); };
 	void operator=(string &s) { *this=Variable(s); };
 	void operator=(const char *s) { *this=Variable(s); };
-	void reset() { type = NONE; };
+	void reset() { type = NONE; str_val="" ; };
 	int geti() { return int_val; };
 	char const *gets(){ return str_val; };
 	bool isstr() { return type == STRING; };
