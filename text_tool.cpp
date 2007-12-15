@@ -207,7 +207,7 @@ void Text_Tool::markdown2html(string &in,string &out)
 		case NOTHING: break;
 		case QUOTE:
 			if(input!=L_QUOTE) {
-				out+="</blockquote>\n";
+				out+="</p></blockquote>\n";
 				state=NOTHING;
 			}
 			else {
@@ -280,7 +280,7 @@ void Text_Tool::markdown2html(string &in,string &out)
 				}
 				break;
 			case L_QUOTE:
-				out+="<blockquote>\n";
+				out+="<blockquote></p>\n";
 				out+=content;
 				state=QUOTE;
 				break;
