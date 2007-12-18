@@ -80,12 +80,14 @@ void Text_Tool::getline(string &in)
 	input=L_TEXT;
 }
 
-void Text_Tool::text2html(string &s,string &content)
+void Text_Tool::text2html(char const *s,string &content)
 {
 	int i;
 	content="";
-	content.reserve(s.size()*3/2);
-	for(i=0;i<s.size();i++) {
+	if(s==NULL) return;
+	int len=strlen(s);
+	content.reserve(len*3/2);
+	for(i=0;i<len;i++) {
 		char c=s[i];
 		switch(c){
 			case '<': content+="&lt;"; break;
@@ -195,8 +197,10 @@ void Text_Tool::to_html(string s)
 	content+="\n";
 }
 
-void Text_Tool::markdown2html(string &in,string &out)
+void Text_Tool::markdown2html(char const *c_in,string &out)
 {
+#warning "Inefficient -- fix me"
+	string in=c_in;
 	init();
 	out="";
 	out.reserve(in.size()*3/2);
@@ -216,7 +220,7 @@ void Text_Tool::markdown2html(string &in,string &out)
 			break;
 		case CODE:
 			if(input!=L_CODE) {
-				out+="</code></pre>\n";
+				out+="</pre>\n";
 				state=NOTHING;
 			}
 			else {
@@ -285,7 +289,7 @@ void Text_Tool::markdown2html(string &in,string &out)
 				state=QUOTE;
 				break;
 			case L_CODE:
-				out+="<pre><code>\n";
+				out+="<pre>\n";
 				out+=content;
 				state=CODE;
 				break;

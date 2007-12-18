@@ -9,7 +9,6 @@
 #include "text_tool.h"
 
 
-extern Templates_Set templates;
 
 void Main_Thread::init()
 {

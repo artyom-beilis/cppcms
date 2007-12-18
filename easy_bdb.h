@@ -36,7 +36,7 @@ struct Ord_Pair{
 T1 first;
 T2 second;
 	Ord_Pair() {};
-	Ord_Pair(T1 &t1,T2 &t2) { first=t1; second=t2; };
+	Ord_Pair(T1 t1,T2 t2) { first=t1; second=t2; };
 	bool operator<(Ord_Pair &s)
 	{
 		if(first<s.first)
@@ -290,6 +290,7 @@ public:
                 }
 		return data;
 	};
+	DS const &val() { return *this; };
 	bool end(){return data_exist=select(SELECT_END,data)==0;};
 	bool begin(){return data_exist=select(SELECT_START,data)==0;};
 	bool operator>(E const &k) { return data_exist=select(SELECT_GT,k,data)==0; };
@@ -326,7 +327,7 @@ public:
         };
         bool get(DS &data) {
                 if(data_exist)
-                        data=*this;
+                        data=this->data;
                 return data_exist;
         };
 	bool del() {

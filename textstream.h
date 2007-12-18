@@ -30,6 +30,7 @@ public:
 	void puts(char const *t) { text += t; };
 	void putchar(char c) { text += c; };
 	char const *get() { return text.c_str(); };
+	string &getstring() { return text; };
 	int len() { return text.size(); };
 	void printf(char *format, ...);
 	void puts(string &str) { text += str; };

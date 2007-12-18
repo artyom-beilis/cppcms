@@ -1,4 +1,4 @@
-
+PREFIX="T"
 INTERFACE=look
 
 
@@ -15,7 +15,7 @@ build: $(INTERFACE).template $(INTERFACE).h
 .SUFFIXES: .tmpl .op 
 
 $(INTERFACE).h: $(INTERFACE).def
-	cc_templ_d -i $< -h $@
+	cc_templ_d -p $(PREFIX) -i $< -h $@
 
 .tmpl.op: 
 	cc_templ_d -i $(INTERFACE).def $< -o $@

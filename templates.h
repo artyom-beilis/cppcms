@@ -126,4 +126,8 @@ public:
 	int render(Text_Stream &out) { return render(out.text);};
 };
 
+extern Templates_Set templates;
+
+
+
 #endif /* _TEMPLATES_H */
