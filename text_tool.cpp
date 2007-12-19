@@ -284,7 +284,7 @@ void Text_Tool::markdown2html(char const *c_in,string &out)
 				}
 				break;
 			case L_QUOTE:
-				out+="<blockquote></p>\n";
+				out+="<blockquote><p>\n";
 				out+=content;
 				state=QUOTE;
 				break;
