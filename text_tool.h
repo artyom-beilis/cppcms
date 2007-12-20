@@ -23,6 +23,7 @@ public:
 	void markdown2html(string &in,string &out) { markdown2html(in.c_str(),out);};
 	void text2html(char const *s,string &);
 	void text2html(string &s,string &out) {	text2html(s.c_str(),out);};
+	void text2url(char const *s,string &);
 };
 
 

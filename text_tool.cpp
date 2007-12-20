@@ -1,6 +1,7 @@
 #include "text_tool.h"
 
 #include <iostream>
+#include <boost/regex.hpp>
 
 void Text_Tool::init()
 {
@@ -99,6 +100,20 @@ void Text_Tool::text2html(char const *s,string &content)
 	}
 }
 
+void Text_Tool::text2url(char const *in,string &out)
+{
+	static boost::regex e("^(http:\\/\\/|https:\\/\\/|ftp:\\/\\/|sftp:\\/\\/|mailto:\\/).*$");
+	boost::cmatch m;
+	if(boost::regex_match(in,m,e)) {
+		text2html(in,out);
+	}
+	else {
+		string tmpstr;
+		text2html(in,tmpstr);
+		out="http://"+tmpstr;
+	}
+}
+
 void Text_Tool::basic_to_html(string s)
 {
 	text2html(s,content);
@@ -167,7 +182,7 @@ void Text_Tool::to_html(string s)
 					string otext=s.substr(i+1,p1-(i+1));
 					string ourl=s.substr(p1+2,p2-(p1+2));
 					text2html(otext,text);
-					text2html(ourl,url);
+					text2url(ourl.c_str(),url);
 					content+="<a href=\"";
 					content+=url;
 					content+="\">";
