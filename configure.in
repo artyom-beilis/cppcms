@@ -20,5 +20,6 @@ AC_CHECK_LIB(db_cxx,main,[],[echo "Berkeley DB C++ API not installed" ; exit -1]
 AC_CHECK_LIB(fcgi++,main,[],[echo "Fast CGI library not installed" ; exit -1])
 AC_CHECK_LIB(cgicc,main,[],[echo "cgicc not found" ; exit -1])
 AC_CHECK_LIB(boost_regex,main,[],[AC_CHECK_LIB(boost_regex-gcc-mt,main,[],[ echo "boost::regex not found" ; exit -1])])
+AC_CHECK_LIB(boost_iostreams,main,[],[AC_CHECK_LIB(boost_iostreams-gcc-mt,main,[],[ echo "boost::iostreams not found" ; exit -1])])
 AC_CHECK_LIB(boost_signals,main,[],[AC_CHECK_LIB(boost_signals-gcc-mt,main,[],[ echo "boost::signals not found" ; exit -1])])
 AC_OUTPUT

@@ -1,5 +1,8 @@
 #include "worker_thread.h"
 
+#include <boost/iostreams/filtering_stream.hpp>
+#include <boost/iostreams/filter/gzip.hpp>
+
 using namespace cgicc;
 
 Worker_Thread::Worker_Thread()
@@ -50,9 +53,48 @@ void Worker_Thread::run(FCGX_Request *fcgi)
 		set_header(new HTTPStatusHeader(err_code,msg));
 		out.puts(msg.c_str());
 	}
+
+	char *ptr;
 	
-	*io<<*response_header;
-	*io<<out.get();
+	bool gzip=false;
+
+	if((ptr=FCGX_GetParam("HTTP_ACCEPT_ENCODING",fcgi->envp))!=NULL) {
+		if(strstr(ptr,"gzip")!=NULL) {
+			gzip=true;
+		}
+	}
+
+	if(global_config.lval("gzip.enable",0)==0) {
+		gzip=false;
+	}
+	
+	if(gzip) {
+		using namespace boost::iostreams;
+		*io<<"Content-Encoding: gzip\r\n";
+		*io<<*response_header;
+		gzip_params params;
+		long level,length;
+
+		if((level=global_config.lval("gzip.level",-1))!=-1){
+			params.level=level;
+		}		
+
+		filtering_ostream zstream;
+
+		if((length=global_config.lval("gzip.buffer",-1))!=-1){
+			zstream.push(gzip_compressor(params,length));
+		}
+		else {
+			zstream.push(gzip_compressor(params));
+		}
+
+		zstream.push(*io);
+		zstream<<out.get();
+	}	
+	else {
+		*io<<*response_header;
+		*io<<out.get();
+	}
 	
 	out.reset();
 	

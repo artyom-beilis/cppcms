@@ -20,3 +20,9 @@ server.socket = "/tmp/php-fastcgi.socket"
 templates.debug_level = 1
 templates.file = "templates/look.template"
 templates.use_mmap = 1
+
+# gzip
+gzip.enable = 1
+gzip.level = 1
+gzip.buffer = 4096
+
