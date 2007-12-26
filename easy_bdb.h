@@ -444,6 +444,11 @@ public:
         bool put(long id,std::string const &s){
                 return put(id,s.c_str(),s.size());
         };
+	bool del(long id)
+	{
+		Dbt key(&id,sizeof(long));
+		return db->del(NULL,&key,0)==0;
+	}
 
 	long add(char const *text,int len=-1)
 	{
