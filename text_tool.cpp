@@ -155,7 +155,7 @@ void Text_Tool::to_html(string s)
 				content+="</i>"; it_on=false;
 			}
 			else {
-				it_on+='_';
+				content+='_';
 			}
 			break;
 		case '-':
