@@ -16,7 +16,6 @@ AC_CHECK_PROG([TMPLCOMP],cc_templ_d,"yes","no")
 if test "x$TMPLCOMP" != "xyes" ; then
 	AC_MSG_ERROR("Insall templates compiler first")
 fi
-AC_CHECK_LIB(db_cxx,main,[],[echo "Berkeley DB C++ API not installed" ; exit -1])
 AC_CHECK_LIB(fcgi++,main,[],[echo "Fast CGI library not installed" ; exit -1])
 AC_CHECK_LIB(cgicc,main,[],[echo "cgicc not found" ; exit -1])
 AC_CHECK_LIB(boost_regex,main,[],[AC_CHECK_LIB(boost_regex-gcc-mt,main,[],[ echo "boost::regex not found" ; exit -1])])
