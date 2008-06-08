@@ -3,11 +3,13 @@
 #include <poll.h>
 #include <signal.h>
 
+using namespace cppcms;
+using namespace cppcms::details;
 
-FastCGI_Application *FastCGI_Application::handlers_owner=NULL;
+fast_cgi_application *fast_cgi_application::handlers_owner=NULL;
 
 
-FastCGI_Application::FastCGI_Application(const char *socket,int backlog)
+fast_cgi_application::fast_cgi_application(const char *socket,int backlog)
 {
 	FCGX_Init();
 	
@@ -19,14 +21,14 @@ FastCGI_Application::FastCGI_Application(const char *socket,int backlog)
 		this->socket=socket;
 		main_fd=FCGX_OpenSocket(socket,backlog);
 		if(main_fd<0) {
-			throw HTTP_Error(string("Failed to open socket ")
+			throw cppcms_error(string("Failed to open socket ")
 					+socket);
 		}
 	}
 }
 
 
-FastCGI_Application::event_t FastCGI_Application::wait()
+fast_cgi_application::event_t fast_cgi_application::wait()
 {
 	for(;;) {
 		struct pollfd fds[2];
@@ -54,22 +56,22 @@ FastCGI_Application::event_t FastCGI_Application::wait()
 	}
 }
 
-void FastCGI_Application::shutdown()
+void fast_cgi_application::shutdown()
 {
 	// Rise exit signal on
 	// the selfpipe
 	write(signal_pipe[1],"0",1);
 }
 
-void FastCGI_Application::handler(int id)
+void fast_cgi_application::handler(int id)
 {
-	FastCGI_Application *ptr=FastCGI_Application::get_instance();
+	fast_cgi_application *ptr=fast_cgi_application::get_instance();
 	if(ptr) {
 		ptr->shutdown();
 	}
 }
 
-void FastCGI_Application::set_signal_handlers()
+void fast_cgi_application::set_signal_handlers()
 {
 	handlers_owner=this;
 	/* Signals defined by standard */
@@ -78,14 +80,14 @@ void FastCGI_Application::set_signal_handlers()
 	/* Additional signal */
 	signal(SIGINT,handler);
 }
-void FastCGI_Single_Threaded_App::setup(Worker_Thread *worker)
+void fast_cgi_single_threaded_app::setup(worker_thread *worker)
 {
 	this->worker=worker;
 	worker->init();
 	FCGX_InitRequest(&request, main_fd, 0);
 }
 
-bool FastCGI_Single_Threaded_App::run()
+bool fast_cgi_single_threaded_app::run()
 {
 	// Blocking loop
 	event_t event=wait();
@@ -110,7 +112,7 @@ bool FastCGI_Single_Threaded_App::run()
 };
 
 
-void FastCGI_Application::execute()
+void fast_cgi_application::execute()
 {
 	set_signal_handlers();
 	
@@ -119,12 +121,12 @@ void FastCGI_Application::execute()
 	}
 }
 
-void *FastCGI_Mutiple_Threaded_App::thread_func(void *p)
+void *fast_cgi_multiple_threaded_app::thread_func(void *p)
 {
 	info_t *params=(info_t *)p;
 
 	int id=params->first;
-	FastCGI_Mutiple_Threaded_App *me=params->second;
+	fast_cgi_multiple_threaded_app *me=params->second;
 
 	FCGX_Request *req;
 	
@@ -136,7 +138,7 @@ void *FastCGI_Mutiple_Threaded_App::thread_func(void *p)
 	return NULL;
 }
 
-void FastCGI_Mutiple_Threaded_App::start_threads()
+void fast_cgi_multiple_threaded_app::start_threads()
 {
 	int i;
 
@@ -152,7 +154,7 @@ void FastCGI_Mutiple_Threaded_App::start_threads()
 	}
 }
 
-void FastCGI_Mutiple_Threaded_App::wait_threads()
+void fast_cgi_multiple_threaded_app::wait_threads()
 {
 	int i;
 	for(i=0;i<size;i++) {
@@ -160,7 +162,7 @@ void FastCGI_Mutiple_Threaded_App::wait_threads()
 	}
 }
 
-void FastCGI_Mutiple_Threaded_App::setup(int num,int buffer,Worker_Thread **workers)
+void fast_cgi_multiple_threaded_app::setup(int num,int buffer,worker_thread **workers)
 {
 	int i;
 	
@@ -198,7 +200,7 @@ void FastCGI_Mutiple_Threaded_App::setup(int num,int buffer,Worker_Thread **work
 	start_threads();	
 }
 
-bool FastCGI_Mutiple_Threaded_App::run()
+bool fast_cgi_multiple_threaded_app::run()
 {
 	int res;
 	if(wait()==ACCEPT) {

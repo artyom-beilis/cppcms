@@ -5,8 +5,6 @@
 #include <sstream>
 #include <string>
 
-#include "textstream.h"
-
 #include "cgicc/Cgicc.h"
 #include "cgicc/HTTPHTMLHeader.h"
 #include "cgicc/HTTPStatusHeader.h"
@@ -14,8 +12,13 @@
 #include <memory>
 
 #include "FCgiIO.h"
-#include "http_error.h"
+#include "cppcms_error.h"
 #include "url.h"
+#include "cache_interface.h"
+#include "base_cache.h"
+
+
+namespace cppcms {
 
 using namespace std;
 using cgicc::CgiEnvironment;
@@ -24,29 +27,37 @@ using cgicc::Cgicc;
 using cgicc::HTTPHeader;
 
 
-
-
-class Worker_Thread {
-friend class URL_Parser;
+class worker_thread {
+friend class url_parser;
+friend class cache_iface;
 protected:	
 	auto_ptr<FCgiIO>io;
 	auto_ptr<Cgicc> cgi;
 	CgiEnvironment const *env;
 
-	Text_Stream out;
 	auto_ptr<HTTPHeader> response_header;
 	void set_header(HTTPHeader*h){response_header=auto_ptr<HTTPHeader>(h);};
 	virtual void main();
+	
+	// Output and Cahce
+
+	cache_iface cache;
+	base_cache *caching_module;
+	bool gzip;
+	bool gzip_done;
+	string out;
+	void init_internal();
 public:
 	int id;
 	pthread_t pid;
 
-
 	void run(FCGX_Request *req);
 
-	Worker_Thread();
-	virtual ~Worker_Thread(){ };
-	virtual void init() { };
+	worker_thread() : cache(this) { init_internal(); } ;
+	virtual ~worker_thread();
+	virtual void init() {};
 };
+
+}
 
 #endif

@@ -10,8 +10,6 @@
 
 // Some defines:
 
-#define BIND boost::bind
-
 #define $0 _9
 #define $1 _1
 #define $2 _2
@@ -22,45 +20,49 @@
 #define $7 _7
 #define $8 _8
 
+namespace cppcms {
 
-class Worker_Thread;
+class worker_thread;
+
 using std::string;
+
 
 typedef boost::signal<void(string,string,string,string,
 			   string,string,string,string,
 			   string)> callback_signal_t;
 typedef callback_signal_t::slot_type callback_t;
 
-class URL_Parser;
+class  url_parser;
 
-struct URL_Def {
+struct url_def {
 	boost::regex pattern;
 	enum { ID, CALLBACK , URL } type;
 	int id;
-	URL_Parser *url;
+	url_parser *url;
 	callback_signal_t *callback;
-	URL_Def() { callback=NULL; };
+	url_def() { callback=NULL; };
 };
 
-class URL_Parser {
-	std::vector<URL_Def>patterns;
-	Worker_Thread *worker;
+class url_parser {
+	std::vector<url_def>patterns;
+	worker_thread *worker;
 	boost::cmatch result;
 	void set_regex(char const *r);
 public:
 	static const int not_found=-1;
 	static const int ok=0;
-	URL_Parser() {};
-	URL_Parser(Worker_Thread * w) { worker=w;};
-	~URL_Parser();
+	url_parser() {};
+	url_parser(worker_thread * w) { worker=w;};
+	~url_parser();
 	void add(char const *exp,int id);
-	void add(char const *exp,URL_Parser &url);
+	void add(char const *exp,url_parser &url);
 	void add(char const *exp,callback_t callback);
-	void init(Worker_Thread *w) { worker=w; };
+	void init(worker_thread *w) { worker=w; };
 	int parse();
 	int parse(string &s);
 	std::string operator[](int);
 };
 
+} // Namespace cppcms
 
 #endif /* _URL_H */

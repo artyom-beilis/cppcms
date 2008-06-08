@@ -1,16 +1,20 @@
-#ifndef _THREAD_PULL_H
-#define _THREAD_PULL_H
+#ifndef _THREAD_POOL_H
+#define _THREAD_POOL_H
 
 #include <pthread.h>
 #include <string>
 #include <memory>
 
 #include "worker_thread.h"
+#include "global_config.h"
 
+namespace cppcms {
 
-class FastCGI_Application {
+namespace details {
 
-	FastCGI_Application static  *handlers_owner;
+class fast_cgi_application {
+
+	fast_cgi_application static  *handlers_owner;
 protected:	
 	// General control 
 	
@@ -24,40 +28,40 @@ protected:
 	typedef enum { EXIT , ACCEPT } event_t;
 	event_t wait();
 	void set_signal_handlers();
-	static FastCGI_Application *get_instance() { return handlers_owner; };
+	static fast_cgi_application *get_instance() { return handlers_owner; };
 public:
-	FastCGI_Application(char const *socket,int backlog);
-	virtual ~FastCGI_Application() {};
+	fast_cgi_application(char const *socket,int backlog);
+	virtual ~fast_cgi_application() {};
 
 	void shutdown();
 	virtual bool run() { return false; };
 	void execute();
 };
 
-class FastCGI_Single_Threaded_App : public FastCGI_Application {
+class fast_cgi_single_threaded_app : public fast_cgi_application {
 	/* Single thread model -- one process runs */
 	FCGX_Request request;	
-	Worker_Thread *worker;
-	void setup(Worker_Thread *worker);
+	worker_thread *worker;
+	void setup(worker_thread *worker);
 public:
 	virtual bool run();
-	FastCGI_Single_Threaded_App(Worker_Thread *worker,char const *socket=NULL)
-		: FastCGI_Application(socket,1) { setup(worker); };
-	virtual ~FastCGI_Single_Threaded_App(){};
+	fast_cgi_single_threaded_app(worker_thread *worker,char const *socket=NULL)
+		: fast_cgi_application(socket,1) { setup(worker); };
+	virtual ~fast_cgi_single_threaded_app(){};
 };
 
 
 template <class WT>
-class FastCGI_ST : public FastCGI_Single_Threaded_App {
-	Worker_Thread *worker_thread;
+class fast_cgi_st : public fast_cgi_single_threaded_app {
+	worker_thread *wt;
 public:
-	FastCGI_ST(char const *socket=NULL) : 
-		FastCGI_Single_Threaded_App((worker_thread=new WT) ,socket) {};
-	virtual ~FastCGI_ST(){ delete worker_thread; };
+	fast_cgi_st(char const *socket=NULL) : 
+		fast_cgi_single_threaded_app((wt=new WT) ,socket) {};
+	virtual ~fast_cgi_st(){ delete wt; };
 };
 
 template <class T>
-class Safe_Set  {
+class sefe_set  {
 	pthread_mutex_t access_mutex;
 	pthread_cond_t new_data_availible;
 	pthread_cond_t new_space_availible;
@@ -76,8 +80,8 @@ public:
 		this->size=0;
 
 	};
-	Safe_Set() {};
-	virtual ~Safe_Set() {};
+	sefe_set() {};
+	virtual ~sefe_set() {};
 	virtual void push(T val) {
 		pthread_mutex_lock(&access_mutex);
 		while(size>=max) {
@@ -100,7 +104,7 @@ public:
 };
 
 template <class T>
-class Safe_Queue : public Safe_Set<T>{
+class sefe_queue : public sefe_set<T>{
 	T *queue;
 	int head;
 	int tail;
@@ -121,25 +125,25 @@ public:
 	void init(int size) {
 		if(queue) return;
 		queue=new T [size];
-		Safe_Set<T>::init(size);
+		sefe_set<T>::init(size);
 	}
-	Safe_Queue() { queue = NULL; head=tail=0; };
-	virtual ~Safe_Queue() { delete [] queue; };
+	sefe_queue() { queue = NULL; head=tail=0; };
+	virtual ~sefe_queue() { delete [] queue; };
 };
 
-class FastCGI_Mutiple_Threaded_App : public FastCGI_Application {
+class fast_cgi_multiple_threaded_app : public fast_cgi_application {
 	int size;
 	long long int *stats;
-	Worker_Thread **workers;
+	worker_thread **workers;
 	FCGX_Request  *requests;
-	Safe_Queue<FCGX_Request*> requests_queue;
-	Safe_Queue<FCGX_Request*> jobs_queue;
+	sefe_queue<FCGX_Request*> requests_queue;
+	sefe_queue<FCGX_Request*> jobs_queue;
 	
-	void setup(int size,int buffer_len,Worker_Thread **workers);
+	void setup(int size,int buffer_len,worker_thread **workers);
 	
 	pthread_t *pids;
 
-	typedef pair<int,FastCGI_Mutiple_Threaded_App*> info_t;
+	typedef pair<int,fast_cgi_multiple_threaded_app*> info_t;
 	
 	info_t *threads_info;
 
@@ -147,16 +151,16 @@ class FastCGI_Mutiple_Threaded_App : public FastCGI_Application {
 	void start_threads();
 	void wait_threads();
 public:
-	FastCGI_Mutiple_Threaded_App(	int num,
+	fast_cgi_multiple_threaded_app(	int num,
 					int buffer_len,
-					Worker_Thread **workers,
+					worker_thread **workers,
 					char const *socket=NULL) :
-		FastCGI_Application(socket,num+1+buffer_len)
+		fast_cgi_application(socket,num+1+buffer_len)
 	{
 		setup(num,num+1+buffer_len,workers);
 	};
 	virtual bool run();	
-	virtual ~FastCGI_Mutiple_Threaded_App() {
+	virtual ~fast_cgi_multiple_threaded_app() {
 		delete [] requests;
 		delete [] pids;
 		delete [] threads_info;
@@ -166,45 +170,50 @@ public:
 };
 
 template<class WT>
-class FastCGI_MT : public FastCGI_Mutiple_Threaded_App {
+class fast_cgi_mt : public fast_cgi_multiple_threaded_app {
 	WT *threads;
-	Worker_Thread **ptrs;
+	worker_thread **ptrs;
 	
-	Worker_Thread **setptrs(int num)
+	worker_thread **setptrs(int num)
 	{
 		threads = new  WT [num];
-		ptrs= new Worker_Thread* [num] ;
+		ptrs= new worker_thread* [num] ;
 		for(int i=0;i<num;i++) {
 			ptrs[i]=threads+i;
 		}
 		return ptrs;
 	};
 public:
-	FastCGI_MT(int num,int buffer, char const *socket) : 
-		FastCGI_Mutiple_Threaded_App(num,buffer,setptrs(num),socket) {};
-	virtual ~FastCGI_MT() {
+	fast_cgi_mt(int num,int buffer, char const *socket) : 
+		fast_cgi_multiple_threaded_app(num,buffer,setptrs(num),socket) {};
+	virtual ~fast_cgi_mt() {
 		delete [] ptrs;
 		delete [] threads;
 	};
 };
 
+} // END OF DETAILS
+
 template<class T>
-void Run_Application(int argc,char *argv[])
+void run_application(int argc,char *argv[])
 {
+	using namespace details;
+	
 	int n,max;
 	global_config.load(argc,argv);
 	
 	char const *socket=global_config.sval("server.socket","").c_str();
 	
 	if((n=global_config.lval("server.threads",0))==0) {
-		auto_ptr<FastCGI_ST<T> > app(new FastCGI_ST<T>(socket));
+		auto_ptr<fast_cgi_st<T> > app(new fast_cgi_st<T>(socket));
 		app->execute();
 	}
 	else {
 		max=global_config.lval("server.buffer",1);
-		auto_ptr<FastCGI_MT<T> > app(new FastCGI_MT<T>(n,max,socket));
+		auto_ptr<fast_cgi_mt<T> > app(new fast_cgi_mt<T>(n,max,socket));
 		app->execute();
 	}
 };
 
-#endif /* _THREAD_PULL_H */
+}
+#endif /* _THREAD_POOL_H */

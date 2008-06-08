@@ -2,9 +2,12 @@
 #include <stdio.h>
 #include <ctype.h>
 
-Global_Config global_config;
 
-bool Global_Config::get_tocken(FILE *f,tocken_t &T)
+namespace cppcms {
+
+cppcms_config global_config;
+
+bool cppcms_config::get_tocken(FILE *f,tocken_t &T)
 {
 	int c;
 	while((c=fgetc(f))!=EOF) {
@@ -52,7 +55,7 @@ bool Global_Config::get_tocken(FILE *f,tocken_t &T)
 				}
 			}
 			if(T.second=="-" || T.second=="." || T.second=="-.") {
-				throw HTTP_Error("Illegal charrecters");
+				throw cppcms_error("Illegal charrecters");
 			}
 			if(c!=EOF) {
 				ungetc(c,f);
@@ -75,7 +78,7 @@ bool Global_Config::get_tocken(FILE *f,tocken_t &T)
 					}
 				}
 				if(c==EOF){
-					throw HTTP_Error("Unexpected EOF ");
+					throw cppcms_error("Unexpected EOF ");
 				}
 				if(c=='\n') line_counter++;
 				if(c=='\"') {
@@ -97,13 +100,13 @@ bool Global_Config::get_tocken(FILE *f,tocken_t &T)
 				
 		}
 		else {
-			throw HTTP_Error(string("Unexpected charrecter")+(char)c);
+			throw cppcms_error(string("Unexpected charrecter")+(char)c);
 		}
 	}
 	return false;
 }
 
-void Global_Config::load(char const *fname)
+void cppcms_config::load(char const *fname)
 {
 	if(loaded){
 		return;
@@ -111,7 +114,7 @@ void Global_Config::load(char const *fname)
 	FILE *f=fopen(fname,"r");
 	line_counter=1;
 	if(!f) {
-		throw HTTP_Error(string("Failed to open file:")+fname);
+		throw cppcms_error(string("Failed to open file:")+fname);
 	}
 	tocken_t T;
 	string key;
@@ -164,21 +167,21 @@ void Global_Config::load(char const *fname)
 			}
 		}
 		if(state!=0) {
-			throw HTTP_Error("Parsing error");
+			throw cppcms_error("Parsing error");
 		}
 	}
-	catch (HTTP_Error &err){
+	catch (cppcms_error &err){
 		fclose(f);
 		char stmp[32];
 		snprintf(stmp,32," at line %d",line_counter);
-		throw HTTP_Error(string(err.get())+stmp);
+		throw cppcms_error(string(err.what())+stmp);
 	}
 	fclose(f);
 	loaded=true;
 }
 
 
-void Global_Config::load(int argc,char *argv[],char const *def)
+void cppcms_config::load(int argc,char *argv[],char const *def)
 {
 	if(loaded) {
 		return;
@@ -196,7 +199,9 @@ void Global_Config::load(int argc,char *argv[],char const *def)
 		}
 	}
 	if(def_file==NULL) {
-		throw HTTP_Error("Configuration file not defined");
+		throw cppcms_error("Configuration file not defined");
 	}
 	load(def_file);
+}
+
 }

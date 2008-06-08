@@ -4,8 +4,8 @@
 
 using namespace std;
 using namespace boost;
-
-URL_Parser::~URL_Parser()
+using namespace cppcms;
+url_parser::~url_parser()
 {
 	unsigned i;
 	for(i=0;i<patterns.size();i++) {
@@ -13,12 +13,12 @@ URL_Parser::~URL_Parser()
 	}
 }
 
-void URL_Parser::add(char const *exp,int id)
+void url_parser::add(char const *exp,int id)
 {
-	URL_Def url_def;
+	url_def url_def;
 	
 	url_def.pattern=regex(exp);
-	url_def.type=URL_Def::ID;
+	url_def.type=url_def::ID;
 	url_def.id=id;
 	url_def.callback=NULL;
 	url_def.url=NULL;
@@ -26,12 +26,12 @@ void URL_Parser::add(char const *exp,int id)
 	patterns.push_back(url_def);
 }
 
-void URL_Parser::add(char const *exp,URL_Parser &url)
+void url_parser::add(char const *exp,url_parser &url)
 {
-	URL_Def url_def;
+	url_def url_def;
 	
 	url_def.pattern=regex(exp);
-	url_def.type=URL_Def::URL;
+	url_def.type=url_def::URL;
 	url_def.id=0;
 	url_def.callback=NULL;
 	url_def.url=&url;
@@ -39,15 +39,15 @@ void URL_Parser::add(char const *exp,URL_Parser &url)
 	patterns.push_back(url_def);
 }
 
-void URL_Parser::add(char const *exp,callback_t callback)
+void url_parser::add(char const *exp,callback_t callback)
 {
-	URL_Def url_def;
+	url_def url_def;
 	
 	callback_signal_t *signal = new callback_signal_t;
 	signal->connect(callback);
 	
 	url_def.pattern=regex(exp);
-	url_def.type=URL_Def::CALLBACK;
+	url_def.type=url_def::CALLBACK;
 	url_def.id=0;
 	url_def.callback=signal;
 	url_def.url=NULL;
@@ -56,7 +56,7 @@ void URL_Parser::add(char const *exp,callback_t callback)
 
 }
 
-int URL_Parser::parse(string &query)
+int url_parser::parse(string &query)
 {
 	unsigned i;
 	for(i=0;i<patterns.size();i++) {
@@ -64,12 +64,12 @@ int URL_Parser::parse(string &query)
 		string tmp;
 		if(boost::regex_match(query.c_str(),result,r)){
 			switch(patterns[i].type) {
-			case URL_Def::ID: 
+			case url_def::ID: 
 				return patterns[i].id;
-			case URL_Def::URL: 
+			case url_def::URL: 
 				tmp=result[1];
 				return patterns[i].url->parse(tmp);
-			case URL_Def::CALLBACK:
+			case url_def::CALLBACK:
 				(*patterns[i].callback)(result[1],result[2],
 							result[3],result[4],
 							result[5],result[6],
@@ -82,7 +82,7 @@ int URL_Parser::parse(string &query)
 	return -1;
 }
 
-int URL_Parser::parse()
+int url_parser::parse()
 {
 	string query;
 	if(worker){
@@ -94,7 +94,7 @@ int URL_Parser::parse()
 	return parse(query);
 }
 
-string URL_Parser::operator[](int i)
+string url_parser::operator[](int i)
 {
 	return result[i];
 }
