@@ -11,7 +11,7 @@
 #include "cgicc/HTMLClasses.h"
 #include <memory>
 
-#include "FCgiIO.h"
+#include "fcgi_stream.h"
 #include "cppcms_error.h"
 #include "url.h"
 #include "cache_interface.h"
@@ -22,7 +22,6 @@ namespace cppcms {
 
 using namespace std;
 using cgicc::CgiEnvironment;
-using cgicc::FCgiIO;
 using cgicc::Cgicc;
 using cgicc::HTTPHeader;
 
@@ -31,7 +30,7 @@ class worker_thread {
 friend class url_parser;
 friend class cache_iface;
 protected:	
-	auto_ptr<FCgiIO>io;
+	auto_ptr<fcgi_stream>io;
 	auto_ptr<Cgicc> cgi;
 	CgiEnvironment const *env;
 

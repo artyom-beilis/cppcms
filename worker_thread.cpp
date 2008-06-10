@@ -16,7 +16,7 @@ void worker_thread::main()
 
 void worker_thread::run(FCGX_Request *fcgi)
 {
-	io = auto_ptr<FCgiIO>(new FCgiIO(*fcgi));
+	io = auto_ptr<fcgi_stream>(new fcgi_stream(*fcgi));
 	cgi = auto_ptr<Cgicc>(new Cgicc(&*io));
 	env=&(cgi->getEnvironment());
 
