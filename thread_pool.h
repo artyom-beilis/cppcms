@@ -8,7 +8,24 @@
 #include "worker_thread.h"
 #include "global_config.h"
 
+#include <boost/shared_ptr.hpp>
+
 namespace cppcms {
+
+using boost::shared_ptr;
+
+class base_factory {
+public:
+	virtual shared_ptr<worker_thread> operator()() const = 0;
+	virtual ~base_factory() {};
+};
+
+template<typename T>
+class simple_factory : public base_factory {
+public:
+	virtual shared_ptr<worker_thread> operator()() const { return shared_ptr<worker_thread>(new T()); };
+};
+
 
 namespace details {
 
@@ -41,23 +58,12 @@ public:
 class fast_cgi_single_threaded_app : public fast_cgi_application {
 	/* Single thread model -- one process runs */
 	FCGX_Request request;	
-	worker_thread *worker;
-	void setup(worker_thread *worker);
+	shared_ptr<worker_thread> worker;
+	void setup();
 public:
 	virtual bool run();
-	fast_cgi_single_threaded_app(worker_thread *worker,char const *socket=NULL)
-		: fast_cgi_application(socket,1) { setup(worker); };
+	fast_cgi_single_threaded_app(base_factory const &factory,char const *socket=NULL);
 	virtual ~fast_cgi_single_threaded_app(){};
-};
-
-
-template <class WT>
-class fast_cgi_st : public fast_cgi_single_threaded_app {
-	worker_thread *wt;
-public:
-	fast_cgi_st(char const *socket=NULL) : 
-		fast_cgi_single_threaded_app((wt=new WT) ,socket) {};
-	virtual ~fast_cgi_st(){ delete wt; };
 };
 
 template <class T>
@@ -133,87 +139,33 @@ public:
 
 class fast_cgi_multiple_threaded_app : public fast_cgi_application {
 	int size;
-	long long int *stats;
-	worker_thread **workers;
-	FCGX_Request  *requests;
+	vector<shared_ptr<worker_thread> > workers;
 	sefe_queue<FCGX_Request*> requests_queue;
 	sefe_queue<FCGX_Request*> jobs_queue;
-	
-	void setup(int size,int buffer_len,worker_thread **workers);
-	
-	pthread_t *pids;
-
 	typedef pair<int,fast_cgi_multiple_threaded_app*> info_t;
 	
+	FCGX_Request  *requests;
 	info_t *threads_info;
+	pthread_t *pids;
+
+	
 
 	static void *thread_func(void *p);
 	void start_threads();
 	void wait_threads();
 public:
-	fast_cgi_multiple_threaded_app(	int num,
-					int buffer_len,
-					worker_thread **workers,
-					char const *socket=NULL) :
-		fast_cgi_application(socket,num+1+buffer_len)
-	{
-		setup(num,num+1+buffer_len,workers);
-	};
+	fast_cgi_multiple_threaded_app(	int num,int buffer_len,	base_factory const &facory,char const *socket=NULL);
 	virtual bool run();	
 	virtual ~fast_cgi_multiple_threaded_app() {
 		delete [] requests;
 		delete [] pids;
 		delete [] threads_info;
-		delete [] stats;
-	};
-	long long int const *get_stats() { return stats; };
-};
-
-template<class WT>
-class fast_cgi_mt : public fast_cgi_multiple_threaded_app {
-	WT *threads;
-	worker_thread **ptrs;
-	
-	worker_thread **setptrs(int num)
-	{
-		threads = new  WT [num];
-		ptrs= new worker_thread* [num] ;
-		for(int i=0;i<num;i++) {
-			ptrs[i]=threads+i;
-		}
-		return ptrs;
-	};
-public:
-	fast_cgi_mt(int num,int buffer, char const *socket) : 
-		fast_cgi_multiple_threaded_app(num,buffer,setptrs(num),socket) {};
-	virtual ~fast_cgi_mt() {
-		delete [] ptrs;
-		delete [] threads;
 	};
 };
 
 } // END OF DETAILS
 
-template<class T>
-void run_application(int argc,char *argv[])
-{
-	using namespace details;
-	
-	int n,max;
-	global_config.load(argc,argv);
-	
-	char const *socket=global_config.sval("server.socket","").c_str();
-	
-	if((n=global_config.lval("server.threads",0))==0) {
-		auto_ptr<fast_cgi_st<T> > app(new fast_cgi_st<T>(socket));
-		app->execute();
-	}
-	else {
-		max=global_config.lval("server.buffer",1);
-		auto_ptr<fast_cgi_mt<T> > app(new fast_cgi_mt<T>(n,max,socket));
-		app->execute();
-	}
-};
+void run_application(int argc,char *argv[],base_factory const &factory);
 
 }
 #endif /* _THREAD_POOL_H */

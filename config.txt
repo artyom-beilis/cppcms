@@ -1,28 +1,11 @@
-# MySQL Parameters
-
-mysql.host="localhost"
-mysql.username="root"
-mysql.password="root"
-mysql.database="cppcms"
-
-
-# Berkeley DB Parameters
-
-bdb.path="./db/"
-
 # FastCGI settings
 
-server.threads = 5
+server.threads = 0
 server.buffer = 100
-server.socket = "/tmp/php-fastcgi.socket"
-
-# Templates
-templates.debug_level = 1
-templates.file = "templates/look.template"
-templates.use_mmap = 1
+server.socket = "/tmp/hello-fastcgi.socket"
 
 # gzip
-gzip.enable = 1
-gzip.level = 1
-gzip.buffer = 4096
+# gzip.enable = 0
+# gzip.level = 1
+# gzip.buffer = 4096
 

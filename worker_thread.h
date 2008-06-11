@@ -54,7 +54,6 @@ public:
 
 	worker_thread() : cache(this) { init_internal(); } ;
 	virtual ~worker_thread();
-	virtual void init() {};
 };
 
 }
