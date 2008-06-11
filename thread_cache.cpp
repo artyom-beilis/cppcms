@@ -230,8 +230,8 @@ void thread_cache::print_all()
 {
 	string res;
 	res+="Printing stored keys\n";
-	int N_triggers=0;
-	int N_keys=0;
+	unsigned N_triggers=0;
+	unsigned N_keys=0;
 	time_t now;
 	time(&now);
 	for(pointer p=primary.begin();p!=primary.end();p++) {
