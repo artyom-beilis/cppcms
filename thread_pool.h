@@ -89,23 +89,38 @@ public:
 	sefe_set() {};
 	virtual ~sefe_set() {};
 	virtual void push(T val) {
-		pthread_mutex_lock(&access_mutex);
-		while(size>=max) {
-			pthread_cond_wait(&new_space_availible,&access_mutex);			
+		try {
+			pthread_mutex_lock(&access_mutex);
+			while(size>=max) {
+				pthread_cond_wait(&new_space_availible,&access_mutex);			
+			}
+			
+			put_int(val);
+			
+			pthread_cond_signal(&new_data_availible);
+			pthread_mutex_unlock(&access_mutex);
 		}
-		put_int(val);
-		pthread_cond_signal(&new_data_availible);
-		pthread_mutex_unlock(&access_mutex);
+		catch(...) { // Make shure the mutex in unlocked
+			pthread_mutex_unlock(&access_mutex);
+			throw;
+		}
 	};
 	T pop() {
-		pthread_mutex_lock(&access_mutex);
-		while(size==0) {
-			pthread_cond_wait(&new_data_availible,&access_mutex);
+		try {
+			pthread_mutex_lock(&access_mutex);
+			while(size==0) {
+				pthread_cond_wait(&new_data_availible,&access_mutex);
+			}
+		
+			T data=get_int();
+			pthread_cond_signal(&new_space_availible);
+			pthread_mutex_unlock(&access_mutex);
+			return data;
 		}
-		T data=get_int();
-		pthread_cond_signal(&new_space_availible);
-		pthread_mutex_unlock(&access_mutex);
-		return data;
+		catch(...){ // Make shure the mutex in unlocked
+			pthread_mutex_unlock(&access_mutex);
+			throw;
+		}
 	};
 };
 

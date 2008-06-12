@@ -20,8 +20,9 @@ void worker_thread::run(FCGX_Request *fcgi)
 	cgi = auto_ptr<Cgicc>(new Cgicc(&*io));
 	env=&(cgi->getEnvironment());
 
+	other_headers.clear();
 	out.clear();
-	out.reserve(global_config.lval("performance.textalloc",65500));
+	out.reserve(global_config.lval("server.buffer_reserve",16000));
 	cache.reset();
 
 	set_header(new HTTPHTMLHeader);
@@ -42,28 +43,48 @@ void worker_thread::run(FCGX_Request *fcgi)
 			throw cppcms_error("Looks like a bug");
 		}
 	}
-	catch(cppcms_error const &e) {
+	catch(std::exception const &e) {
 		string msg=e.what();
 		set_header(new HTTPStatusHeader(500,msg));
 		out="<html><body><p>"+msg+"</p><body></html>";
+		gzip=gzip_done=false;
+		other_headers.clear();
 	}
 
+	if(global_config.lval("server.disable_xpowered_by",0)==0) {
+		add_header("X-Powered-By: CppCMS/0.0alpha1");
+	}
+
+	for(list<string>::iterator h=other_headers.begin();h!=other_headers.end();h++) {
+		*io<<*h<<"\r\n";
+	}
 
 	if(gzip) {
-		*io<<"Content-Encoding: gzip\r\n";
-		*io<<*response_header;
-		if(gzip_done)
-			*io<<out;
-		else
-			deflate(out,*io);
+		if(out.size()>0) {
+			if(gzip_done){
+				*io<<"Content-Length: "<<out.size()<<"\r\n";
+			}
+			*io<<"Content-Encoding: gzip\r\n";
+			*io<<*response_header;
+			if(gzip_done) {
+				*io<<out;
+			}
+			else
+				deflate(out,*io);
+		}
+		else {
+			*io<<*response_header;
+		}
 	}	
 	else {
+		*io<<"Content-Length: "<<out.size()<<"\r\n";
 		*io<<*response_header;
 		*io<<out;
 	}
 
 	// Clean Up
 	out.clear();
+	other_headers.clear();
 	response_header.reset();
 	cgi.reset();
 	io.reset();

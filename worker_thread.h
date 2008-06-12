@@ -16,7 +16,7 @@
 #include "url.h"
 #include "cache_interface.h"
 #include "base_cache.h"
-
+#include "boost/noncopyable.hpp"
 
 namespace cppcms {
 
@@ -26,7 +26,7 @@ using cgicc::Cgicc;
 using cgicc::HTTPHeader;
 
 
-class worker_thread {
+class worker_thread: private boost::noncopyable {
 friend class url_parser;
 friend class cache_iface;
 protected:	
@@ -35,7 +35,9 @@ protected:
 	CgiEnvironment const *env;
 
 	auto_ptr<HTTPHeader> response_header;
+	list<string> other_headers;
 	void set_header(HTTPHeader*h){response_header=auto_ptr<HTTPHeader>(h);};
+	void add_header(string s) { other_headers.push_back(s); };
 	virtual void main();
 	
 	// Output and Cahce

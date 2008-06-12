@@ -12,7 +12,7 @@ down()
 	exit
 }
 
-./hello_world.fcgi -c config.txt &
+./$PROGRAM -c config.txt &
 SERVER=$!
 
 /usr/sbin/lighttpd -D -f light.conf &
