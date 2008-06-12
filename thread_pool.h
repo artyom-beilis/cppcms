@@ -74,8 +74,8 @@ class sefe_set  {
 protected:
 	int max;
 	int size;
-	virtual T &get_int() = 0;
-	virtual void put_int(T &val) = 0;
+	virtual T &get_int() throw() = 0;
+	virtual void put_int(T &val) throw() = 0;
 public:
 	void init(int size){
 		pthread_mutex_init(&access_mutex,NULL);
@@ -116,12 +116,12 @@ class sefe_queue : public sefe_set<T>{
 	int tail;
 	int next(int x) { return (x+1)%this->max; };
 protected:
-	virtual void put_int(T &val) {
+	virtual void put_int(T &val) throw() {
 		queue[head]=val;
 		head=next(head);
 		this->size++;
 	}
-	virtual T &get_int() {
+	virtual T &get_int() throw () {
 		this->size--;
 		int ptr=tail;
 		tail=next(tail);
