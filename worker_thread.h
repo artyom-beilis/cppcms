@@ -30,8 +30,9 @@ class worker_thread: private boost::noncopyable {
 friend class url_parser;
 friend class cache_iface;
 protected:	
-	auto_ptr<fcgi_stream>io;
-	auto_ptr<Cgicc> cgi;
+	ostream *io;
+	ostream *err;
+	Cgicc *cgi;
 	CgiEnvironment const *env;
 
 	auto_ptr<HTTPHeader> response_header;

@@ -16,8 +16,20 @@ void worker_thread::main()
 
 void worker_thread::run(FCGX_Request *fcgi)
 {
-	io = auto_ptr<fcgi_stream>(new fcgi_stream(*fcgi));
-	cgi = auto_ptr<Cgicc>(new Cgicc(&*io));
+	auto_ptr<Cgicc> cgi;
+	auto_ptr<ostream> fcgi_io;
+	if(fcgi) {// This is fast cgi process
+		auto_ptr<fcgi_stream> temp(new fcgi_stream(*fcgi));
+		cgi = auto_ptr<Cgicc>(new Cgicc(temp.get()));
+		io = temp.get();
+		err = &(temp->err());
+		fcgi_io=temp;
+	}
+	else {
+		io=&cout;
+		err = &cerr;
+		cgi = auto_ptr<Cgicc>(new Cgicc());
+	}
 	env=&(cgi->getEnvironment());
 
 	other_headers.clear();
@@ -87,7 +99,8 @@ void worker_thread::run(FCGX_Request *fcgi)
 	other_headers.clear();
 	response_header.reset();
 	cgi.reset();
-	io.reset();
+	io=NULL;
+	err=NULL;
         FCGX_Finish_r(fcgi);
 }
 
