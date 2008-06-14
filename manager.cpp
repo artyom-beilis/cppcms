@@ -1,4 +1,4 @@
-#include "thread_pool.h"
+#include "manager.h"
 
 #include <poll.h>
 #include <signal.h>
@@ -236,14 +236,23 @@ void run_application(int argc,char *argv[],base_factory const &factory)
 	
 	char const *socket=global_config.sval("server.socket","").c_str();
 	
-	if((n=global_config.lval("server.threads",0))==0) {
+	string mod=global_config.sval("server.mod");
+	if(mod=="process") {
 		details::fast_cgi_single_threaded_app app(factory,socket);
 		app.execute();
 	}
-	else {
+	else if(mod=="thread") {
+		n=global_config.lval("server.threads",5);
 		max=global_config.lval("server.buffer",1);
 		details::fast_cgi_multiple_threaded_app app(n,max,factory,socket);
 		app.execute();
+	}
+	else if(mod=="cgi") {
+		shared_ptr<worker_thread> ptr=factory();
+		ptr->run(NULL);
+	}
+	else {
+		throw cppcms_error("Unknown mod:" + mod);
 	}
 };
 

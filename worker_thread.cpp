@@ -30,6 +30,7 @@ void worker_thread::run(FCGX_Request *fcgi)
 		err = &cerr;
 		cgi = auto_ptr<Cgicc>(new Cgicc());
 	}
+	this->cgi=cgi.get();
 	env=&(cgi->getEnvironment());
 
 	other_headers.clear();
@@ -41,7 +42,15 @@ void worker_thread::run(FCGX_Request *fcgi)
 
 	gzip=gzip_done=false;
 	char *ptr;
-	if((ptr=FCGX_GetParam("HTTP_ACCEPT_ENCODING",fcgi->envp))!=NULL) {
+
+	if(fcgi) {
+		ptr=FCGX_GetParam("HTTP_ACCEPT_ENCODING",fcgi->envp);
+	}
+	else {
+		ptr=getenv("HTTP_ACCEPT_ENCODING");
+	}
+
+	if(ptr!=NULL) {
 		if(strstr(ptr,"gzip")!=NULL) {
 			gzip=global_config.lval("gzip.enable",0);
 		}
@@ -101,7 +110,9 @@ void worker_thread::run(FCGX_Request *fcgi)
 	cgi.reset();
 	io=NULL;
 	err=NULL;
-        FCGX_Finish_r(fcgi);
+	if(fcgi) { // Not cgi mode
+	        FCGX_Finish_r(fcgi);
+	}
 }
 
 void worker_thread::init_internal()

@@ -1,5 +1,5 @@
 #include "worker_thread.h"
-#include "thread_pool.h"
+#include "manager.h"
 
 using namespace cppcms;
 

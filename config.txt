@@ -1,5 +1,8 @@
 # FastCGI Server Settings:
 
+#server.mod="thread"
+server.mod="cgi"
+
 server.threads = 5				# Default 0 -- single threaded application	
 						#   set to N in order to use mutli threaded model
 
