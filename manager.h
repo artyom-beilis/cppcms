@@ -43,7 +43,7 @@ protected:
 	static void handler(int id);
 	
 	typedef enum { EXIT , ACCEPT } event_t;
-	event_t wait();
+	virtual event_t wait();
 	void set_signal_handlers();
 	static fast_cgi_application *get_instance() { return handlers_owner; };
 public:
@@ -177,6 +177,9 @@ public:
 		delete [] threads_info;
 	};
 };
+
+
+
 
 } // END OF DETAILS
 

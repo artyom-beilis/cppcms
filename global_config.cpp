@@ -199,6 +199,9 @@ void cppcms_config::load(int argc,char *argv[],char const *def)
 		}
 	}
 	if(def_file==NULL) {
+		def_file=getenv("CPPCMS_CONFIG");
+	}
+	if(def_file==NULL) {
 		throw cppcms_error("Configuration file not defined");
 	}
 	load(def_file);

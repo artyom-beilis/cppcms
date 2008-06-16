@@ -14,24 +14,11 @@ void worker_thread::main()
 }
 
 
-void worker_thread::run(FCGX_Request *fcgi)
+void worker_thread::run(cgicc_connection &cgi_conn)
 {
-	auto_ptr<Cgicc> cgi;
-	auto_ptr<ostream> fcgi_io;
-	if(fcgi) {// This is fast cgi process
-		auto_ptr<fcgi_stream> temp(new fcgi_stream(*fcgi));
-		cgi = auto_ptr<Cgicc>(new Cgicc(temp.get()));
-		io = temp.get();
-		err = &(temp->err());
-		fcgi_io=temp;
-	}
-	else {
-		io=&cout;
-		err = &cerr;
-		cgi = auto_ptr<Cgicc>(new Cgicc());
-	}
-	this->cgi=cgi.get();
+	cgi=&cgi_conn.cgi();
 	env=&(cgi->getEnvironment());
+	ostream &cout=cgi_conn.cout();
 
 	other_headers.clear();
 	out.clear();
@@ -41,17 +28,10 @@ void worker_thread::run(FCGX_Request *fcgi)
 	set_header(new HTTPHTMLHeader);
 
 	gzip=gzip_done=false;
-	char *ptr;
+	string encoding;
 
-	if(fcgi) {
-		ptr=FCGX_GetParam("HTTP_ACCEPT_ENCODING",fcgi->envp);
-	}
-	else {
-		ptr=getenv("HTTP_ACCEPT_ENCODING");
-	}
-
-	if(ptr!=NULL) {
-		if(strstr(ptr,"gzip")!=NULL) {
+	if((encoding=cgi_conn.env("HTTP_ACCEPT_ENCODING"))!="") {
+		if(strstr(encoding.c_str(),"gzip")!=NULL) {
 			gzip=global_config.lval("gzip.enable",0);
 		}
 	}
@@ -77,42 +57,37 @@ void worker_thread::run(FCGX_Request *fcgi)
 	}
 
 	for(list<string>::iterator h=other_headers.begin();h!=other_headers.end();h++) {
-		*io<<*h<<"\r\n";
+		cout<<*h<<"\r\n";
 	}
 
 	if(gzip) {
 		if(out.size()>0) {
 			if(gzip_done){
-				*io<<"Content-Length: "<<out.size()<<"\r\n";
+				cout<<"Content-Length: "<<out.size()<<"\r\n";
 			}
-			*io<<"Content-Encoding: gzip\r\n";
-			*io<<*response_header;
+			cout<<"Content-Encoding: gzip\r\n";
+			cout<<*response_header;
 			if(gzip_done) {
-				*io<<out;
+				cout<<out;
 			}
 			else
-				deflate(out,*io);
+				deflate(out,cout);
 		}
 		else {
-			*io<<*response_header;
+			cout<<*response_header;
 		}
 	}	
 	else {
-		*io<<"Content-Length: "<<out.size()<<"\r\n";
-		*io<<*response_header;
-		*io<<out;
+		cout<<"Content-Length: "<<out.size()<<"\r\n";
+		cout<<*response_header;
+		cout<<out;
 	}
 
 	// Clean Up
 	out.clear();
 	other_headers.clear();
 	response_header.reset();
-	cgi.reset();
-	io=NULL;
-	err=NULL;
-	if(fcgi) { // Not cgi mode
-	        FCGX_Finish_r(fcgi);
-	}
+	cgi=NULL;
 }
 
 void worker_thread::init_internal()

@@ -5,10 +5,11 @@
 #include <sstream>
 #include <string>
 
-#include "cgicc/Cgicc.h"
-#include "cgicc/HTTPHTMLHeader.h"
-#include "cgicc/HTTPStatusHeader.h"
-#include "cgicc/HTMLClasses.h"
+#include <cgicc/Cgicc.h>
+#include <cgicc/HTTPHTMLHeader.h>
+#include <cgicc/HTTPStatusHeader.h>
+#include <cgicc/HTMLClasses.h>
+#include <boost/noncopyable.hpp>
 #include <memory>
 
 #include "fcgi_stream.h"
@@ -16,7 +17,7 @@
 #include "url.h"
 #include "cache_interface.h"
 #include "base_cache.h"
-#include "boost/noncopyable.hpp"
+#include "cgicc_connection.h"
 
 namespace cppcms {
 
@@ -30,8 +31,6 @@ class worker_thread: private boost::noncopyable {
 friend class url_parser;
 friend class cache_iface;
 protected:	
-	ostream *io;
-	ostream *err;
 	Cgicc *cgi;
 	CgiEnvironment const *env;
 
@@ -53,7 +52,7 @@ public:
 	int id;
 	pthread_t pid;
 
-	void run(FCGX_Request *req);
+	void run(cgicc_connection &);
 
 	worker_thread() : cache(this) { init_internal(); } ;
 	virtual ~worker_thread();

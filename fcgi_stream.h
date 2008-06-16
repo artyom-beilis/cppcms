@@ -22,6 +22,7 @@ public:
 	virtual std::string getenv(const char *variable);
 	virtual size_t read(char *d,size_t len);
 	std::ostream &err();
+	virtual ~fcgi_stream();
 };
 
 } // Namespace

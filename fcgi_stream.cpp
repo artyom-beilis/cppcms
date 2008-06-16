@@ -29,4 +29,10 @@ std::ostream &fcgi_stream::err()
 	return stream_cerr;
 };
 
+fcgi_stream::~fcgi_stream()
+{
+	FCGX_Finish_r(&request);
+};
+
+
 };

@@ -1,5 +1,5 @@
 #include "manager.h"
-
+#include "cgicc_connection.h"
 #include <poll.h>
 #include <signal.h>
 #include <errno.h>
@@ -108,7 +108,8 @@ bool fast_cgi_single_threaded_app::run()
 	
 	if(res>=0){
 		// Execute 
-		worker->run(&request);
+		cgicc_connection_fast_cgi cgi(request);
+		worker->run(cgi);
 	}
 	return true;
 };
@@ -170,7 +171,10 @@ void *fast_cgi_multiple_threaded_app::thread_func(void *p)
 	FCGX_Request *req;
 	
 	while((req=self->jobs_queue.pop())!=NULL) {
-		self->workers[id]->run(req);
+		{
+			cgicc_connection_fast_cgi cgi(*req);
+			self->workers[id]->run(cgi);
+		}
 		self->requests_queue.push(req);
 	}
 	return NULL;
@@ -249,12 +253,14 @@ void run_application(int argc,char *argv[],base_factory const &factory)
 	}
 	else if(mod=="cgi") {
 		shared_ptr<worker_thread> ptr=factory();
-		ptr->run(NULL);
+		cgicc_connection_cgi cgi;
+		ptr->run(cgi);
 	}
 	else {
 		throw cppcms_error("Unknown mod:" + mod);
 	}
 };
+
 
 
 
