@@ -43,13 +43,13 @@ scgi_outbuffer::~ scgi_outbuffer()
 
 }; // namespace scgi
 
-bool scgi_connection::prepare()
+bool scgi_session::prepare()
 {
 	char tmpbuf[16];
 	if(read(tmpbuf,15)!=15) {
 		return false;
 	}
-	tmpbuf[16]=0;
+	tmpbuf[15]=0;
 	char *ptr;
 	if((ptr=strstr(tmpbuf,":"))==NULL) {
 		return false;
@@ -63,23 +63,28 @@ bool scgi_connection::prepare()
 	boost::scoped_array<char> dealloc(data_buffer);
 	unsigned delta=15-(ptr-tmpbuf+1);
 	memset(data_buffer,0,len+1);
-	memcpy(data_buffer,ptr,delta);
-	if(read(data_buffer+delta,len+1-delta)!=len+1-delta || data_buffer[len]!=',')
+	memcpy(data_buffer,ptr+1,delta);
+	unsigned read_size=len+1-delta;
+	if(read_size==0){
+		return false;
+	}
+	if(read(data_buffer+delta,read_size)!=read_size || data_buffer[len]!=',')
 		return false;
 	data_buffer[len]=0;
 	unsigned n=0;
 	while(n<len) {
 		char *p1=data_buffer+n;
-		char *p2=data_buffer+strlen(p1)+1;
-		if(p2-data_buffer>=len || *p2==0) return false;
-		env[p1]=p2;
+		char *p2=p1+strlen(p1)+1;
+		if(p2-data_buffer>=(int)len || *p2==0) return false;
+		envmap[p1]=p2;
 		p2=p2+strlen(p2)+1;
 		n=p2-data_buffer;
 	}
+	cgi_ptr=new cgicc::Cgicc(this);
 	return true;
 }
 
-size_t scgi_connection::read(char *s, size_t n)
+size_t scgi_session::read(char *s, size_t n)
 {
 	int v;
 	int size=n;
@@ -102,13 +107,22 @@ size_t scgi_connection::read(char *s, size_t n)
 	return n+size;
 }
 
-scgi_connection::~scgi_connection()
+scgi_session::~scgi_session()
 {
+	delete cgi_ptr;
 	shutdown(socket,SHUT_RDWR);
 	close(socket);
 }
 
-scgi::scgi(string socket,int backlog)
+cgicc_connection &scgi_session::get_connection()
+{
+	if(cgi_ptr){
+		return *this;
+	}
+	throw cppcms_error("SCGI session not prepared");
+}
+
+scgi_api::scgi_api(string socket,int backlog)
 {
 	fd=-1;
 	size_t p;
@@ -125,63 +139,71 @@ scgi::scgi(string socket,int backlog)
 		}
 		fd=::socket(AF_INET,SOCK_STREAM,0);
 		if(fd<0) {
-			throwerror("socket");
+			throw cppcms_error(errno,"socket");
 		}
 		int yes=1;
 		if(setsockopt(fd,SOL_SOCKET, SO_REUSEADDR,(char *)&yes,sizeof(yes))<0) {
-			throwerror("reuse addr");
+			throw cppcms_error(errno,"reuse addr");
 		}
 		if(bind(fd,(struct sockaddr *) &a, sizeof (a)) < 0) {
-			throwerror("bind");
+			throw cppcms_error(errno,"bind");
 		}
 	}
 	else {
 		struct sockaddr_un addr;
 		fd=::socket(AF_UNIX, SOCK_STREAM, 0);
-		if(fd<0) throwerror("socket");
+		if(fd<0) throw cppcms_error(errno,"socket");
+		int yes=1;
+		if(setsockopt(fd,SOL_SOCKET, SO_REUSEADDR,(char *)&yes,sizeof(yes))<0) {
+			throw cppcms_error(errno,"reuse addr");
+		}
 		memset(&addr, 0, sizeof(addr));
 		addr.sun_family = AF_UNIX;
 		strncpy(addr.sun_path, socket.c_str() ,sizeof(addr.sun_path) - 1);
+		unlink(socket.c_str());
 		if(bind(fd,(struct sockaddr *) &addr,sizeof(addr))<0) {
-			throwerror("bind");
+			throw cppcms_error(errno,"bind");
 		}
 	}
 	listen(fd,backlog);
 }
 
-void scgi::throwerror(char const *s)
-{
-	char buf[256];
-	strerror_r(errno,buf,sizeof(buf));
-	throw cppcms_error(string(s)+":"+buf);
-}
-
-scgi::~scgi()
+scgi_api::~scgi_api()
 {
 	if(fd!=-1)
 		close(fd);
 }
 
-int scgi::accept()
+int scgi_api::get_socket()
+{
+	return fd;
+}
+
+cgi_session *scgi_api::accept_session()
 {
 	int socket=::accept(fd,NULL,NULL);
 	if(socket<0) {
-		return -1;
+		return NULL;
 	}
 	int yes=1;
 	if(setsockopt(socket,SOL_SOCKET,SO_LINGER,(char*)&yes,sizeof(yes))<0){
-		throwerror("setsockopt");
+		cppcms_error(errno,"setsockopt");
 	}
-	return socket;
+	return new scgi_session(socket);
 }
 
-string scgi_connection::getenv( char const  *var)
+string scgi_session::getenv( char const  *var)
 {
 	map<string,string>::iterator p;
-	p=env.find(var);
-	if(p==env.end())
+	p=envmap.find(var);
+	if(p==envmap.end())
 		return "";
 	return p->second;
 }
+
+string scgi_session::env(char const *variable) { return getenv(variable);};
+cgicc::Cgicc &scgi_session::cgi() { return *cgi_ptr; };
+ostream &scgi_session::cout() { return out_stream; };
+
 
 }; // cppcms

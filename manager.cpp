@@ -3,6 +3,7 @@
 #include <poll.h>
 #include <signal.h>
 #include <errno.h>
+#include "scgi.h"
 
 namespace cppcms {
 namespace details {
@@ -218,10 +219,13 @@ void run_application(int argc,char *argv[],base_factory const &factory)
 	else
 	{
 		auto_ptr<cgi_api> capi;
-		if(api=="fastcgi") {
+		if(api=="fastcgi" || api=="scgi" ) {
 			string socket=global_config.sval("server.socket","");
 			int backlog=global_config.lval("server.buffer",1);
-			capi=auto_ptr<cgi_api>(new fcgi_api(socket.c_str(),backlog));
+			if(api=="fastcgi")
+				capi=auto_ptr<cgi_api>(new fcgi_api(socket.c_str(),backlog));
+			else
+				capi=auto_ptr<cgi_api>(new scgi_api(socket.c_str(),backlog));
 		}
 		else {
 			throw cppcms_error("Unknown api:"+api);
