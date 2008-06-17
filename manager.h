@@ -32,22 +32,20 @@ namespace details {
 class fast_cgi_application {
 
 	fast_cgi_application static  *handlers_owner;
-protected:	
-	// General control 
-	
-	int main_fd; //File descriptor associated with socket 
-	int signal_pipe[2]; // Notification pipe
-	
-	std::string socket;
+protected:
+	// General control
+
+	cgi_api &api;
+	bool the_end;
 
 	static void handler(int id);
-	
+
 	typedef enum { EXIT , ACCEPT } event_t;
 	virtual event_t wait();
 	void set_signal_handlers();
 	static fast_cgi_application *get_instance() { return handlers_owner; };
 public:
-	fast_cgi_application(char const *socket,int backlog);
+	fast_cgi_application(cgi_api &api);
 	virtual ~fast_cgi_application() {};
 
 	void shutdown();
@@ -56,13 +54,11 @@ public:
 };
 
 class fast_cgi_single_threaded_app : public fast_cgi_application {
-	/* Single thread model -- one process runs */
-	FCGX_Request request;	
 	shared_ptr<worker_thread> worker;
 	void setup();
 public:
 	virtual bool run();
-	fast_cgi_single_threaded_app(base_factory const &factory,char const *socket=NULL);
+	fast_cgi_single_threaded_app(base_factory const &factory,cgi_api &api);
 	virtual ~fast_cgi_single_threaded_app(){};
 };
 
@@ -92,11 +88,11 @@ public:
 		try {
 			pthread_mutex_lock(&access_mutex);
 			while(size>=max) {
-				pthread_cond_wait(&new_space_availible,&access_mutex);			
+				pthread_cond_wait(&new_space_availible,&access_mutex);
 			}
-			
+
 			put_int(val);
-			
+
 			pthread_cond_signal(&new_data_availible);
 			pthread_mutex_unlock(&access_mutex);
 		}
@@ -111,7 +107,7 @@ public:
 			while(size==0) {
 				pthread_cond_wait(&new_data_availible,&access_mutex);
 			}
-		
+
 			T data=get_int();
 			pthread_cond_signal(&new_space_availible);
 			pthread_mutex_unlock(&access_mutex);
@@ -155,24 +151,19 @@ public:
 class fast_cgi_multiple_threaded_app : public fast_cgi_application {
 	int size;
 	vector<shared_ptr<worker_thread> > workers;
-	sefe_queue<FCGX_Request*> requests_queue;
-	sefe_queue<FCGX_Request*> jobs_queue;
+	sefe_queue<cgi_session *> jobs;
 	typedef pair<int,fast_cgi_multiple_threaded_app*> info_t;
-	
-	FCGX_Request  *requests;
+
 	info_t *threads_info;
 	pthread_t *pids;
-
-	
 
 	static void *thread_func(void *p);
 	void start_threads();
 	void wait_threads();
 public:
-	fast_cgi_multiple_threaded_app(	int num,int buffer_len,	base_factory const &facory,char const *socket=NULL);
-	virtual bool run();	
+	fast_cgi_multiple_threaded_app(	int num,int buffer_len,	base_factory const &facory,cgi_api &api);
+	virtual bool run();
 	virtual ~fast_cgi_multiple_threaded_app() {
-		delete [] requests;
 		delete [] pids;
 		delete [] threads_info;
 	};

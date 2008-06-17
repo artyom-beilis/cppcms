@@ -9,63 +9,42 @@ namespace details {
 
 fast_cgi_application *fast_cgi_application::handlers_owner=NULL;
 
-fast_cgi_application::fast_cgi_application(const char *socket,int backlog)
+fast_cgi_application::fast_cgi_application(cgi_api &a) : api(a)
 {
-	FCGX_Init();
-	
-	pipe(signal_pipe);
-	if(socket==NULL || socket[0]==0){
-		main_fd=0;
-	}
-	else {
-		this->socket=socket;
-		main_fd=FCGX_OpenSocket(socket,backlog);
-		if(main_fd<0) {
-			throw cppcms_error(string("Failed to open socket ")
-					+socket);
-		}
-	}
 }
 
 fast_cgi_application::event_t fast_cgi_application::wait()
 {
-	for(;;) {
-		struct pollfd fds[2];
-			
-		fds[0].fd=main_fd;
-		fds[0].events=POLLIN | POLLERR;
-		fds[0].revents=0;
-		
-		fds[1].fd=signal_pipe[0];
-		fds[1].events=POLLIN | POLLERR;
-		fds[1].revents=0;
+	while(!the_end) {
+		struct pollfd fds;
+
+		fds.fd=api.get_socket();
+		fds.events=POLLIN | POLLERR;
+		fds.revents=0;
 
 		/* Wait for two events:
 		 * 1. New connection and then do accept
 		 * 2. Exit message - exit and do clean up */
-		
-		if(poll(fds,2,-1)<0) {
-			if(errno==EINTR)
+
+		if(poll(&fds,1,-1)<0) {
+			if(errno==EINTR && !the_end)
 				continue;
 			return EXIT;
 		}
-		
-		if(fds[1].revents) {
-			return EXIT;
-		}
-		else if(fds[0].revents) {
-			if(fds[0].revents & POLLERR)
+		else if(fds.revents) {
+			if(fds.revents & POLLERR)
 				return EXIT;
 			return ACCEPT;
 		}
 	}
+	return EXIT;
 }
 
 void fast_cgi_application::shutdown()
 {
 	// Rise exit signal on
 	// the selfpipe
-	write(signal_pipe[1],"0",1);
+	the_end=true;
 }
 
 void fast_cgi_application::handler(int id)
@@ -86,30 +65,33 @@ void fast_cgi_application::set_signal_handlers()
 	signal(SIGINT,handler);
 }
 
-fast_cgi_single_threaded_app::fast_cgi_single_threaded_app(base_factory const &factory,char const *socket) :
-	fast_cgi_application(socket,1)
+fast_cgi_single_threaded_app::fast_cgi_single_threaded_app(base_factory const &factory,cgi_api &a) :
+	fast_cgi_application(a)
 {
 	worker=factory();
-	FCGX_InitRequest(&request, main_fd, 0);
 }
 
 bool fast_cgi_single_threaded_app::run()
 {
 	// Blocking loop
 	event_t event=wait();
-	
+
 	if(event==EXIT) {
 		return false;
 	} // ELSE event==ACCEPT
-	
-	int res;
-	
-	res=FCGX_Accept_r(&request);
-	
-	if(res>=0){
-		// Execute 
-		cgicc_connection_fast_cgi cgi(request);
-		worker->run(cgi);
+
+	cgi_session *session=api.accept_session();
+	if(session) {
+		try {
+			if(session->prepare()) {
+				worker->run(session->get_connection());
+			}
+		}
+		catch(...) {
+			delete session;
+			throw;
+		}
+		delete session;
 	}
 	return true;
 };
@@ -117,8 +99,10 @@ bool fast_cgi_single_threaded_app::run()
 
 void fast_cgi_application::execute()
 {
+	the_end=false;
+
 	set_signal_handlers();
-	
+
 	while(run()){
 		/* Do Continue */
 	}
@@ -127,15 +111,14 @@ void fast_cgi_application::execute()
 fast_cgi_multiple_threaded_app::fast_cgi_multiple_threaded_app(	int threads_num,
 								int buffer,
 								base_factory const &factory,
-								char const *socket) :
-	fast_cgi_application(socket,threads_num+1+buffer)
+								cgi_api &a) :
+	fast_cgi_application(a)
 {
 	int i;
-	
-	requests=NULL;
+
 	threads_info=NULL;
 	pids=NULL;
-	
+
 	size=threads_num;
 
 	// Init Worker Threads
@@ -144,19 +127,9 @@ fast_cgi_multiple_threaded_app::fast_cgi_multiple_threaded_app(	int threads_num,
 	for(i=0;i<size;i++) {
 		workers[i]=factory();
 	}
-	
-	// Init FCGX Requests
-	requests = new FCGX_Request [buffer];
-	for(i=0;i<buffer;i++) {
-		FCGX_InitRequest(requests+i, main_fd, 0);
-	}
-	
-	requests_queue.init(buffer);
-	for(i=0;i<buffer;i++)
-		requests_queue.push(requests+i);
-	
+
 	// Setup Jobs Manager
-	jobs_queue.init(buffer);
+	jobs.init(buffer);
 
 	start_threads();
 }
@@ -168,14 +141,19 @@ void *fast_cgi_multiple_threaded_app::thread_func(void *p)
 	int id=params->first;
 	fast_cgi_multiple_threaded_app *self=params->second;
 
-	FCGX_Request *req;
-	
-	while((req=self->jobs_queue.pop())!=NULL) {
-		{
-			cgicc_connection_fast_cgi cgi(*req);
-			self->workers[id]->run(cgi);
+	cgi_session *session;
+
+	while((session=self->jobs.pop())!=NULL) {
+		try{
+			if(session->prepare()){
+				self->workers[id]->run(session->get_connection());
+			}
 		}
-		self->requests_queue.push(req);
+		catch(...){
+			delete session;
+			return NULL;
+		}
+		delete session;
 	}
 	return NULL;
 }
@@ -186,12 +164,12 @@ void fast_cgi_multiple_threaded_app::start_threads()
 
 	pids = new pthread_t [size];
 	threads_info = new info_t [size];
-	
+
 	for(i=0;i<size;i++) {
-		
+
 		threads_info[i].first=i;
 		threads_info[i].second=this;
-		
+
 		pthread_create(pids+i,NULL,thread_func,threads_info+i);
 	}
 }
@@ -206,28 +184,21 @@ void fast_cgi_multiple_threaded_app::wait_threads()
 
 bool fast_cgi_multiple_threaded_app::run()
 {
-	int res;
 	if(wait()==ACCEPT) {
-		FCGX_Request *req=requests_queue.pop();
-		
-		res=FCGX_Accept_r(req);
-		
-		if(res<0) {
-			requests_queue.push(req);
-			return true;
+		cgi_session *session=api.accept_session();
+		if(session){
+			jobs.push(session);
 		}
-
-		jobs_queue.push(req);
 		return true;
 	}
-	else {// Exit event 
+	else {// Exit event
 		int i;
 		for(i=0;i<size;i++) {
-			jobs_queue.push(NULL);
+			jobs.push(NULL);
 		}
 
 		wait_threads();
-		
+
 		return false;
 	}
 }
@@ -237,27 +208,39 @@ void run_application(int argc,char *argv[],base_factory const &factory)
 {
 	int n,max;
 	global_config.load(argc,argv);
-	
-	char const *socket=global_config.sval("server.socket","").c_str();
-	
-	string mod=global_config.sval("server.mod");
-	if(mod=="process") {
-		details::fast_cgi_single_threaded_app app(factory,socket);
-		app.execute();
-	}
-	else if(mod=="thread") {
-		n=global_config.lval("server.threads",5);
-		max=global_config.lval("server.buffer",1);
-		details::fast_cgi_multiple_threaded_app app(n,max,factory,socket);
-		app.execute();
-	}
-	else if(mod=="cgi") {
+
+	string api=global_config.sval("server.api") ;
+	if(api=="cgi") {
 		shared_ptr<worker_thread> ptr=factory();
 		cgicc_connection_cgi cgi;
 		ptr->run(cgi);
 	}
-	else {
-		throw cppcms_error("Unknown mod:" + mod);
+	else
+	{
+		auto_ptr<cgi_api> capi;
+		if(api=="fastcgi") {
+			string socket=global_config.sval("server.socket","");
+			int backlog=global_config.lval("server.buffer",1);
+			capi=auto_ptr<cgi_api>(new fcgi_api(socket.c_str(),backlog));
+		}
+		else {
+			throw cppcms_error("Unknown api:"+api);
+		}
+
+		string mod=global_config.sval("server.mod");
+		if(mod=="process") {
+			details::fast_cgi_single_threaded_app app(factory,*capi.get());
+			app.execute();
+		}
+		else if(mod=="thread") {
+			n=global_config.lval("server.threads",5);
+			max=global_config.lval("server.buffer",1);
+			details::fast_cgi_multiple_threaded_app app(n,max,factory,*capi.get());
+			app.execute();
+		}
+		else {
+			throw cppcms_error("Unknown mod:" + mod);
+		}
 	}
 };
 

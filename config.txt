@@ -1,10 +1,12 @@
 # FastCGI Server Settings:
 
+server.api = "fastcgi"
+#server.api = "cgi"
+
 # Server model
 #
 #server.mod="process"				# process -- process runs single instance of worker
 server.mod="thread"				# thread  -- thread pool execute several instances of worker
-#server.mod="cgi"				# cgi     -- an old CGI model -- not recomended 
 
 server.threads = 5				# Default 0 -- single threaded application	
 						#   set to N in order to use mutli threaded model

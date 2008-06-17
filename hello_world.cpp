@@ -1,6 +1,5 @@
 #include "worker_thread.h"
 #include "manager.h"
-
 using namespace cppcms;
 
 class my_hello_world : public worker_thread {

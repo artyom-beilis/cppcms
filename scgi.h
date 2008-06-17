@@ -5,6 +5,7 @@
 #include <boost/noncopyable.hpp>
 #include <ostream>
 #include <streambuf>
+#include <map>
 #include <unistd.h>
 #include "cppcms_error.h"
 
@@ -12,19 +13,19 @@ namespace cppcms {
 using namespace std;
 
 namespace scgi {
-	class scgi_outbuffer : public streambuf 
+	class scgi_outbuffer : public streambuf
 	{
 		int fd;
 	public:
 		scgi_outbuffer(int descriptor) : fd(descriptor) {};
 		virtual streamsize xsputn ( const char * s, streamsize n );
-		virtual ~scgi_buffer();
+		virtual ~scgi_outbuffer();
 	};
-	
+
 };
 
 class scgi_connection : public cgicc::CgiInput,
-			public boost::noncopiable,
+			private boost::noncopyable,
 			public std::ostream
 {
 	int socket;
@@ -32,7 +33,7 @@ class scgi_connection : public cgicc::CgiInput,
 	map<string,string> env;
 
 public:
-	scgi_connection(int s) : socket(s), buf(s) , std::ostream(&buf), data_buffer(NULL) {};
+	scgi_connection(int s) :std::ostream(&buf), socket(s), buf(s) {};
 	bool prepare();
 	virtual size_t 	read(char *data, size_t length);
 	virtual std::string getenv(const char *var);
@@ -41,7 +42,7 @@ public:
 
 class scgi {
 	int fd;
-	void throwerror(chat const *s);
+	void throwerror(char const *s);
 public:
 	scgi(string socket,int backlog=1);
 	~scgi();

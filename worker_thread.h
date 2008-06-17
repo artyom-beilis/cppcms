@@ -12,7 +12,7 @@
 #include <boost/noncopyable.hpp>
 #include <memory>
 
-#include "fcgi_stream.h"
+#include "fcgi.h"
 #include "cppcms_error.h"
 #include "url.h"
 #include "cache_interface.h"
@@ -30,7 +30,7 @@ using cgicc::HTTPHeader;
 class worker_thread: private boost::noncopyable {
 friend class url_parser;
 friend class cache_iface;
-protected:	
+protected:
 	Cgicc *cgi;
 	CgiEnvironment const *env;
 
@@ -39,7 +39,7 @@ protected:
 	void set_header(HTTPHeader*h){response_header=auto_ptr<HTTPHeader>(h);};
 	void add_header(string s) { other_headers.push_back(s); };
 	virtual void main();
-	
+
 	// Output and Cahce
 
 	cache_iface cache;

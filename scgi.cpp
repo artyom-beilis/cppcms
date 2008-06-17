@@ -1,12 +1,22 @@
 #include "scgi.h"
 
+#include <errno.h>
+#include <signal.h>
+#include <stdio.h>
+#include <sys/socket.h>
+#include <boost/scoped_array.hpp>
+#include <sys/types.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
+#include <sys/un.h>
+
 namespace cppcms {
 using namespace std;
 namespace scgi {
 streamsize scgi_outbuffer:: xsputn ( const char * s, streamsize n )
 {
 	int v;
-	size=n;
+	int size=n;
 	n=0;
 	while((v=::write(fd,s,size))!=size){
 		if(v<0) {
@@ -26,6 +36,10 @@ streamsize scgi_outbuffer:: xsputn ( const char * s, streamsize n )
 	return n+size;
 }
 
+scgi_outbuffer::~ scgi_outbuffer()
+{
+}
+
 
 }; // namespace scgi
 
@@ -41,22 +55,23 @@ bool scgi_connection::prepare()
 		return false;
 	}
 	*ptr=0;
-	int len;
-	if(sscanf(tmpbuf,"%d".&len)!=1)
+	unsigned len;
+	if(sscanf(tmpbuf,"%d",&len)!=1)
 		return false;
 
 	char *data_buffer=new char[len+2];
-	scoped_array<cachar> dealloc(data_buffer);
-
+	boost::scoped_array<char> dealloc(data_buffer);
+	unsigned delta=15-(ptr-tmpbuf+1);
 	memset(data_buffer,0,len+1);
-	if(read(data_buffer,len+1)!=len+1 || data_buffer[len]!=',')
+	memcpy(data_buffer,ptr,delta);
+	if(read(data_buffer+delta,len+1-delta)!=len+1-delta || data_buffer[len]!=',')
 		return false;
 	data_buffer[len]=0;
-	int n=0;
+	unsigned n=0;
 	while(n<len) {
 		char *p1=data_buffer+n;
 		char *p2=data_buffer+strlen(p1)+1;
-		if(p2-data_buffer>=len || *p2=0) return false;
+		if(p2-data_buffer>=len || *p2==0) return false;
 		env[p1]=p2;
 		p2=p2+strlen(p2)+1;
 		n=p2-data_buffer;
@@ -67,9 +82,9 @@ bool scgi_connection::prepare()
 size_t scgi_connection::read(char *s, size_t n)
 {
 	int v;
-	size=n;
+	int size=n;
 	n=0;
-	while((v=::read(fd,s,size))!=size){
+	while((v=::read(socket,s,size))!=size){
 		if(v<0) {
 			if(errno==EINTR)
 				continue;
@@ -108,7 +123,7 @@ scgi::scgi(string socket,int backlog)
 				throw cppcms_error("Invalid IP" + socket);
 			}
 		}
-		fd=socket(AF_INET,SOCK_STREAM,0);
+		fd=::socket(AF_INET,SOCK_STREAM,0);
 		if(fd<0) {
 			throwerror("socket");
 		}
@@ -122,16 +137,16 @@ scgi::scgi(string socket,int backlog)
 	}
 	else {
 		struct sockaddr_un addr;
-		fd=socket(AF_UNIX, SOCK_STREAM, 0);
+		fd=::socket(AF_UNIX, SOCK_STREAM, 0);
 		if(fd<0) throwerror("socket");
-		memset(&addr, 0, sizeof(struct sockaddr_un));	
+		memset(&addr, 0, sizeof(addr));
 		addr.sun_family = AF_UNIX;
 		strncpy(addr.sun_path, socket.c_str() ,sizeof(addr.sun_path) - 1);
 		if(bind(fd,(struct sockaddr *) &addr,sizeof(addr))<0) {
 			throwerror("bind");
 		}
 	}
-	listen(fd,backlog)
+	listen(fd,backlog);
 }
 
 void scgi::throwerror(char const *s)
@@ -158,6 +173,15 @@ int scgi::accept()
 		throwerror("setsockopt");
 	}
 	return socket;
+}
+
+string scgi_connection::getenv( char const  *var)
+{
+	map<string,string>::iterator p;
+	p=env.find(var);
+	if(p==env.end())
+		return "";
+	return p->second;
 }
 
 }; // cppcms
