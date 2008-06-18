@@ -76,7 +76,7 @@ void worker_thread::run(cgicc_connection &cgi_conn)
 		else {
 			cout<<*response_header;
 		}
-	}	
+	}
 	else {
 		cout<<"Content-Length: "<<out.size()<<"\r\n";
 		cout<<*response_header;
