@@ -20,6 +20,7 @@ namespace scgi {
 	public:
 		scgi_outbuffer(int descriptor) : fd(descriptor) {};
 		virtual int overflow ( int c = EOF );
+		virtual streamsize xsputn(char const *s,streamsize n);
 		virtual ~scgi_outbuffer();
 	};
 
@@ -34,7 +35,6 @@ class scgi_session : public cgicc::CgiInput,
 	map<string,string> envmap;
 	cgicc::Cgicc *cgi_ptr;
 	std::ostream out_stream;
-	char iobuf[256];
 public:
 	scgi_session(int s) :
 		 socket(s), buf(s), cgi_ptr(NULL), out_stream(&buf)

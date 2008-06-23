@@ -57,15 +57,15 @@ void worker_thread::run(cgicc_connection &cgi_conn)
 	}
 
 	for(list<string>::iterator h=other_headers.begin();h!=other_headers.end();h++) {
-		cout<<*h<<"\r\n";
+		cout<<*h<<"\n";
 	}
 
 	if(gzip) {
 		if(out.size()>0) {
 			if(gzip_done){
-				cout<<"Content-Length: "<<out.size()<<"\r\n";
+				cout<<"Content-Length: "<<out.size()<<"\n";
 			}
-			cout<<"Content-Encoding: gzip\r\n";
+			cout<<"Content-Encoding: gzip\n";
 			cout<<*response_header;
 			if(gzip_done) {
 				cout<<out;
@@ -78,7 +78,7 @@ void worker_thread::run(cgicc_connection &cgi_conn)
 		}
 	}
 	else {
-		cout<<"Content-Length: "<<out.size()<<"\r\n";
+		cout<<"Content-Length: "<<out.size()<<"\n";
 		cout<<*response_header;
 		cout<<out;
 	}

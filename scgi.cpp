@@ -14,44 +14,44 @@ namespace cppcms {
 using namespace std;
 namespace scgi {
 
+static int safe_write(int fd,char const *s,size_t n)
+{
+	if(n==0) return 0;
+	int wr,written=0;
+	while(n) {
+		wr=::write(fd,s,n);
+		if(wr<0) {
+			if(errno==EINTR)
+				continue;
+			return -1;
+		}
+		if(wr==0)
+			break;
+		n-=wr;
+		written+=wr;
+		s+=wr;
+	}
+	return written;
+}
+	
 int scgi_outbuffer::overflow(int c)
 {
 	int len=pptr()-pbase();
-	cerr<<"Len:"<<len<<endl;
 	if(len) {
-		{
-			int i;
-			for(i=0;i<len;i++) {
-				cerr<<*(pptr()+i);
-			}
-			cerr<<endl;
-		}
-		int wr=0;
-		while(wr<len){
-			int v=::write(fd,pbase()+wr,len-wr);
-			if(v<0) {
-				if(errno==EINTR)
-					continue;
-				return EOF;
-			}
-			if(v==0){
-				return EOF;
-			}
-			wr+=v;
-		}
-		pbump(-len);
+		int n=safe_write(fd,pbase(),len);
+		pbump(-n);
 	}
 	if(c!=EOF) {
 		char b=c;
-		int v;
-		cerr<<(char)c<<endl;
-		while((v=::write(fd,&b,1))!=1){
-			if(v<0 && errno==EINTR)
-				continue;
+		if(safe_write(fd,&b,1)<1)
 			return EOF;
-		}
 	}
 	return 0;
+}
+
+streamsize scgi_outbuffer::xsputn(char const *s,streamsize n)
+{
+	return safe_write(fd,s,n);
 }
 
 scgi_outbuffer::~ scgi_outbuffer()
@@ -100,8 +100,6 @@ bool scgi_session::prepare()
 		p2=p2+strlen(p2)+1;
 		n=p2-data_buffer;
 	}
-
-	buf.pubsetbuf(iobuf,256);
 
 	cgi_ptr=new cgicc::Cgicc(this);
 	return true;
@@ -204,10 +202,6 @@ cgi_session *scgi_api::accept_session()
 	int socket=::accept(fd,NULL,NULL);
 	if(socket<0) {
 		return NULL;
-	}
-	int yes=1;
-	if(setsockopt(socket,SOL_SOCKET,SO_LINGER,(char*)&yes,sizeof(yes))<0){
-		cppcms_error(errno,"setsockopt");
 	}
 	return new scgi_session(socket);
 }
