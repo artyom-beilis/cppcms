@@ -4,6 +4,13 @@
 #include <signal.h>
 #include <errno.h>
 #include "scgi.h"
+#include <unistd.h>
+#include <stdlib.h>
+#include <semaphore.h>
+#include <sys/mman.h>
+#include <sys/wait.h>
+#include <sys/types.h>
+
 
 namespace cppcms {
 namespace details {
@@ -203,6 +210,133 @@ bool fast_cgi_multiple_threaded_app::run()
 		return false;
 	}
 }
+
+int prefork::exit_flag;
+
+void prefork::parent_handler(int s)
+{
+	exit_flag=1;
+}
+
+void prefork::chaild_handler(int s)
+{
+	if(s==SIGTERM) {
+		exit_flag=1;
+		alarm(1);
+	}
+}
+
+void prefork::run()
+{
+	signal(SIGTERM,chaild_handler);
+	signal(SIGALRM,chaild_handler);
+	
+	shared_ptr<worker_thread> worker=factory();
+	
+	int res,post_on_throw;
+	while(!prefork::exit_flag){
+		res=sem_wait(semaphore);
+		if(res<0){
+			if(errno==EINTR)
+				continue;
+			else {
+				int err=errno;
+				cerr<<"sem_wait failed\n"<<strerror(err)<<endl;
+				exit(1);
+			}
+		}
+		cgi_session *session=NULL;
+		try{
+			post_on_throw=1;
+			session=api.accept_session();
+			post_on_throw=0;
+			sem_post(semaphore);
+			if(session->prepare()) {
+				worker->run(session->get_connection());
+			}
+		}
+		catch(cppcms_error const &e){
+			if(post_on_throw) sem_post(semaphore);
+			cerr<<e.what();
+		}
+		catch(...){
+			if(post_on_throw) sem_post(semaphore);
+			exit(1);
+		}
+		delete session;
+	}
+
+}
+
+void prefork::execute()
+{
+	int i;
+	void *mem=mmap(NULL,sizeof(sem_t),PROT_READ | PROT_WRITE,
+			MAP_SHARED |MAP_ANONYMOUS,-1,0);
+	if(mem==MAP_FAILED) {
+		throw cppcms_error(errno,"mmap failed");
+	}
+	semaphore=(sem_t*)mem;
+	sem_init(semaphore,1,1);
+
+	for(i=0;i<procs;i++) {
+		pid_t pid=fork();
+		int err=errno;
+		if(pid<0) {
+			int j;
+			for(j=0;j<i;j++) {
+				kill(pids[j],SIGKILL);
+				wait(NULL);
+			}
+			cerr<<"Failed to fork:"<<strerror(err)<<endl;
+			exit(1);
+		}
+		if(pid>0) {
+			pids[i]=pid;	
+		}
+		else { // pid==0
+			run();
+			exit(0);
+		}
+	}
+	/* Signals defined by standard */
+	signal(SIGTERM,parent_handler);
+	signal(SIGUSR1,parent_handler);
+	/* Additional signal */
+	signal(SIGINT,parent_handler);
+
+	while(!prefork::exit_flag) {
+		pid_t pid=wait(NULL);
+		if(pid<0) {
+			continue;
+		}
+		for(i=0;i<procs;i++) {
+			if(pids[i]==pid) {
+				cerr<<"Chaild "<<pid<<" exited (dead?)\n";
+				pid=fork();
+				if(pid==0) {
+					run();
+					exit(0);
+				}
+				pids[i]=pid;
+				break;
+			}
+		}
+	}
+
+	for(i=0;i<procs;i++) {
+		kill(pids[i],SIGTERM);
+	}
+	for(i=0;i<procs;i++)  {
+		while(wait(NULL)<0 && errno==EINTR)
+			;
+	}
+	sem_close(semaphore);
+	munmap(mem,sizeof(sem_t));
+}
+
+
+
 } // END oF Details
 
 void run_application(int argc,char *argv[],base_factory const &factory)
@@ -240,6 +374,11 @@ void run_application(int argc,char *argv[],base_factory const &factory)
 			n=global_config.lval("server.threads",5);
 			max=global_config.lval("server.buffer",1);
 			details::fast_cgi_multiple_threaded_app app(n,max,factory,*capi.get());
+			app.execute();
+		}
+		else if(mod=="prefork") {
+			n=global_config.lval("server.procs",5);
+			details::prefork app(factory,*capi.get(),n);
 			app.execute();
 		}
 		else {

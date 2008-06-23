@@ -4,6 +4,7 @@
 #include <pthread.h>
 #include <string>
 #include <memory>
+#include <semaphore.h>
 
 #include "worker_thread.h"
 #include "global_config.h"
@@ -169,7 +170,20 @@ public:
 	};
 };
 
-
+class prefork {
+	cgi_api &api;
+	base_factory const &factory;
+	vector<pid_t> pids;
+	int procs;
+	sem_t *semaphore;
+	static int prefork::exit_flag;
+	static void parent_handler(int s);
+	static void chaild_handler(int s);
+	void run();
+public:
+	prefork(base_factory const &f,cgi_api &a,int n) : api(a), factory(f), procs(n)  { pids.resize(n); };
+	void execute();
+};
 
 
 } // END OF DETAILS
