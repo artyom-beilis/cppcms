@@ -228,7 +228,7 @@ void prefork::parent_handler(int s_catched)
 	}
 
 	signal(SIGALRM,parent_handler);
-	alarm(10);
+	alarm(3);
 	for(i=0;i<self->procs;i++) {
 		kill(self->pids[i],s);
 	}
@@ -237,9 +237,8 @@ void prefork::parent_handler(int s_catched)
 void prefork::chaild_handler(int s)
 {
 	self->exit_flag=1;
-	cerr<<"catched "<<getpid()<<endl;
 	signal(SIGALRM,chaild_handler);
-	alarm(3);
+	alarm(1);
 }
 
 void prefork::run()
@@ -249,26 +248,37 @@ void prefork::run()
 	shared_ptr<worker_thread> worker=factory();
 	
 	int res,post_on_throw;
-	while(!prefork::exit_flag){
-		cerr<<"Waiting for semaphore "<<getpid()<<endl;
+	int limit=global_config.lval("server.iterations_limit",-1);
+	if(limit!=-1) {
+		srand(getpid());
+		limit=limit+(limit / 10 *(rand() % 100))/100;
+	}
+	int counter=0;
+	while(!exit_flag){
+		if(limit!=-1 && counter>limit)
+			return;
+		counter++;
 		res=sem_wait(semaphore);
 		if(res<0){
-			cerr<<"Unsucesseful lock "<<getpid()<<endl;
 			if(errno==EINTR)
 				continue;
 			else {
-				int err=errno;
-				cerr<<"sem_wait failed\n"<<strerror(err)<<endl;
+				perror("sem_wait");
 				exit(1);
 			}
 		}
-		cerr<<"Locked "<<getpid()<<endl;
 		cgi_session *session=NULL;
 		try{
 			post_on_throw=1;
-			cerr<<"Trying to accept "<<getpid()<<endl;
-			session=api.accept_session();
-			cerr<<"Trying to accepted "<<getpid()<<(long)session<<endl;
+			
+			struct pollfd fds;
+			fds.fd=api.get_socket();
+			fds.revents=0;
+			fds.events=POLLIN | POLLERR;
+			
+			if(poll(&fds,1,-1)==1 && (fds.revents & POLLIN)) {
+				session=api.accept_session();
+			}
 			post_on_throw=0;
 			sem_post(semaphore);
 			if(session && session->prepare()) {
@@ -285,7 +295,6 @@ void prefork::run()
 		}
 		delete session;
 	}
-
 }
 
 void prefork::execute()
@@ -301,14 +310,13 @@ void prefork::execute()
 
 	for(i=0;i<procs;i++) {
 		pid_t pid=fork();
-		int err=errno;
 		if(pid<0) {
+			perror("fork:");
 			int j;
 			for(j=0;j<i;j++) {
 				kill(pids[j],SIGKILL);
 				wait(NULL);
 			}
-			cerr<<"Failed to fork:"<<strerror(err)<<endl;
 			exit(1);
 		}
 		if(pid>0) {
@@ -316,7 +324,7 @@ void prefork::execute()
 		}
 		else { // pid==0
 			run();
-			exit(0);
+			return;
 		}
 	}
 	/* Signals defined by standard */
@@ -326,18 +334,29 @@ void prefork::execute()
 	signal(SIGINT,parent_handler);
 
 	while(!prefork::exit_flag) {
-		pid_t pid=wait(NULL);
+		int stat;
+		pid_t pid=wait(&stat);
 		if(pid<0) {
 			continue;
 		}
 		if(exit_flag) break;
 		for(i=0;i<procs;i++) {
 			if(pids[i]==pid) {
-				cerr<<"Chaild "<<pid<<" exited (dead?)\n";
+				if(!WIFEXITED(stat) || WEXITSTATUS(stat)!=0){
+					if(WIFEXITED(stat)) {
+						cerr<<"Chaild "<<pid<<" exited with "<<WEXITSTATUS(stat)<<endl;
+					}
+					else if(WIFSIGNALED(stat)) {
+						cerr<<"Chaild "<<pid<<" killed by "<<WTERMSIG(stat)<<endl;
+					}
+					else {
+						cerr<<"Chaild "<<pid<<" exited for unknown reason"<<endl;
+					}
+				}
 				pid=fork();
 				if(pid==0) {
 					run();
-					exit(0);
+					return;
 				}
 				pids[i]=pid;
 				break;
