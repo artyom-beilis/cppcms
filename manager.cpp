@@ -211,32 +211,49 @@ bool fast_cgi_multiple_threaded_app::run()
 	}
 }
 
-int prefork::exit_flag;
 
-void prefork::parent_handler(int s)
-{
-	exit_flag=1;
+// Single instance of prefork
+prefork *prefork::self;
+
+void prefork::parent_handler(int s_catched)
+{	
+	int i;
+	int s;
+	if(self->exit_flag==0) {
+		self->exit_flag=1;
+		s=SIGTERM;
+	}
+	else {
+		s=SIGKILL;
+	}
+
+	signal(SIGALRM,parent_handler);
+	alarm(10);
+	for(i=0;i<self->procs;i++) {
+		kill(self->pids[i],s);
+	}
 }
 
 void prefork::chaild_handler(int s)
 {
-	if(s==SIGTERM) {
-		exit_flag=1;
-		alarm(1);
-	}
+	self->exit_flag=1;
+	cerr<<"catched "<<getpid()<<endl;
+	signal(SIGALRM,chaild_handler);
+	alarm(3);
 }
 
 void prefork::run()
 {
 	signal(SIGTERM,chaild_handler);
-	signal(SIGALRM,chaild_handler);
 	
 	shared_ptr<worker_thread> worker=factory();
 	
 	int res,post_on_throw;
 	while(!prefork::exit_flag){
+		cerr<<"Waiting for semaphore "<<getpid()<<endl;
 		res=sem_wait(semaphore);
 		if(res<0){
+			cerr<<"Unsucesseful lock "<<getpid()<<endl;
 			if(errno==EINTR)
 				continue;
 			else {
@@ -245,13 +262,16 @@ void prefork::run()
 				exit(1);
 			}
 		}
+		cerr<<"Locked "<<getpid()<<endl;
 		cgi_session *session=NULL;
 		try{
 			post_on_throw=1;
+			cerr<<"Trying to accept "<<getpid()<<endl;
 			session=api.accept_session();
+			cerr<<"Trying to accepted "<<getpid()<<(long)session<<endl;
 			post_on_throw=0;
 			sem_post(semaphore);
-			if(session->prepare()) {
+			if(session && session->prepare()) {
 				worker->run(session->get_connection());
 			}
 		}
@@ -310,6 +330,7 @@ void prefork::execute()
 		if(pid<0) {
 			continue;
 		}
+		if(exit_flag) break;
 		for(i=0;i<procs;i++) {
 			if(pids[i]==pid) {
 				cerr<<"Chaild "<<pid<<" exited (dead?)\n";
@@ -324,9 +345,6 @@ void prefork::execute()
 		}
 	}
 
-	for(i=0;i<procs;i++) {
-		kill(pids[i],SIGTERM);
-	}
 	for(i=0;i<procs;i++)  {
 		while(wait(NULL)<0 && errno==EINTR)
 			;

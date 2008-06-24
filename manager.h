@@ -176,12 +176,14 @@ class prefork {
 	vector<pid_t> pids;
 	int procs;
 	sem_t *semaphore;
-	static int prefork::exit_flag;
+	int exit_flag;
+	static prefork *self;
 	static void parent_handler(int s);
 	static void chaild_handler(int s);
 	void run();
 public:
-	prefork(base_factory const &f,cgi_api &a,int n) : api(a), factory(f), procs(n)  { pids.resize(n); };
+	prefork(base_factory const &f,cgi_api &a,int n) : api(a), factory(f), procs(n),exit_flag(0)
+		{ pids.resize(n); self=this; };
 	void execute();
 };
 
