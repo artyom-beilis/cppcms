@@ -1,6 +1,7 @@
 #ifndef THREAD_CHACHE_H
 #define THREAD_CHACHE_H
 #include "base_cache.h"
+#include "cache_interface.h"
 #include "pthread.h"
 #include <map>
 #include <list>
@@ -49,6 +50,15 @@ public:
 	virtual void stats(unsigned &keys,unsigned &triggers);
 	virtual void store(string const &key,set<string> const &triggers,time_t timeout,archive const &a);
 	virtual ~thread_cache();
+};
+
+class thread_cache_factory : public cache_factory{
+	thread_cache *cache;
+public:
+	thread_cache_factory(unsigned n) : cache(new thread_cache(n)) {};
+	virtual base_cache *get() const { return cache; };
+	virtual void del(base_cache *p) const { };
+	virtual ~thread_cache_factory() { delete cache; };
 };
 
 }

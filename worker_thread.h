@@ -30,6 +30,7 @@ using cgicc::HTTPHeader;
 class worker_thread: private boost::noncopyable {
 friend class url_parser;
 friend class cache_iface;
+	cache_factory const &cf;
 protected:
 	Cgicc *cgi;
 	CgiEnvironment const *env;
@@ -54,7 +55,7 @@ public:
 
 	void run(cgicc_connection &);
 
-	worker_thread() : cache(this) { init_internal(); } ;
+	worker_thread(cache_factory const &f=cache_factory()) : cf(f), cache(this) { init_internal(); } ;
 	virtual ~worker_thread();
 };
 

@@ -10,7 +10,7 @@
 #include <sys/mman.h>
 #include <sys/wait.h>
 #include <sys/types.h>
-
+#include "thread_cache.h"
 
 namespace cppcms {
 namespace details {
@@ -73,10 +73,10 @@ void fast_cgi_application::set_signal_handlers()
 	signal(SIGINT,handler);
 }
 
-fast_cgi_single_threaded_app::fast_cgi_single_threaded_app(base_factory const &factory,cgi_api &a) :
+fast_cgi_single_threaded_app::fast_cgi_single_threaded_app(base_factory const &factory,cache_factory const &cf,cgi_api &a) :
 	fast_cgi_application(a)
 {
-	worker=factory();
+	worker=factory(cf);
 }
 
 bool fast_cgi_single_threaded_app::run()
@@ -118,7 +118,7 @@ void fast_cgi_application::execute()
 
 fast_cgi_multiple_threaded_app::fast_cgi_multiple_threaded_app(	int threads_num,
 								int buffer,
-								base_factory const &factory,
+								base_factory const &factory,cache_factory const &cf,
 								cgi_api &a) :
 	fast_cgi_application(a)
 {
@@ -133,7 +133,7 @@ fast_cgi_multiple_threaded_app::fast_cgi_multiple_threaded_app(	int threads_num,
 	workers.resize(size);
 
 	for(i=0;i<size;i++) {
-		workers[i]=factory();
+		workers[i]=factory(cf);
 	}
 
 	// Setup Jobs Manager
@@ -245,7 +245,7 @@ void prefork::run()
 {
 	signal(SIGTERM,chaild_handler);
 	
-	shared_ptr<worker_thread> worker=factory();
+	shared_ptr<worker_thread> worker=factory(cache);
 	
 	int res,post_on_throw;
 	int limit=global_config.lval("server.iterations_limit",-1);
@@ -373,8 +373,23 @@ void prefork::execute()
 }
 
 
-
 } // END oF Details
+
+static cache_factory *get_cache_factory()
+{
+	string backend=global_config.sval("cache.backend","none");
+
+	if(backend=="none") {
+		return new cache_factory();
+	}
+	else if(backend=="threaded") {
+		int n=global_config.lval("cache.limit",100);
+		return new thread_cache_factory(n);
+	}
+	else {
+		throw cppcms_error("Unkown cache backend:" + backend);
+	}
+}
 
 void run_application(int argc,char *argv[],base_factory const &factory)
 {
@@ -382,8 +397,11 @@ void run_application(int argc,char *argv[],base_factory const &factory)
 	global_config.load(argc,argv);
 
 	string api=global_config.sval("server.api") ;
+
+	auto_ptr<cache_factory> cf(get_cache_factory());
+
 	if(api=="cgi") {
-		shared_ptr<worker_thread> ptr=factory();
+		shared_ptr<worker_thread> ptr=factory(*cf);
 		cgicc_connection_cgi cgi;
 		ptr->run(cgi);
 	}
@@ -404,18 +422,18 @@ void run_application(int argc,char *argv[],base_factory const &factory)
 
 		string mod=global_config.sval("server.mod");
 		if(mod=="process") {
-			details::fast_cgi_single_threaded_app app(factory,*capi.get());
+			details::fast_cgi_single_threaded_app app(factory,*cf.get(),*capi.get());
 			app.execute();
 		}
 		else if(mod=="thread") {
 			n=global_config.lval("server.threads",5);
 			max=global_config.lval("server.buffer",1);
-			details::fast_cgi_multiple_threaded_app app(n,max,factory,*capi.get());
+			details::fast_cgi_multiple_threaded_app app(n,max,factory,*cf.get(),*capi.get());
 			app.execute();
 		}
 		else if(mod=="prefork") {
 			n=global_config.lval("server.procs",5);
-			details::prefork app(factory,*capi.get(),n);
+			details::prefork app(factory,*cf.get(),*capi.get(),n);
 			app.execute();
 		}
 		else {

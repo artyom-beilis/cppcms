@@ -4,7 +4,7 @@
 #include <string>
 #include <set>
 #include "archive.h"
-
+#include "base_cache.h"
 using namespace std;
 
 namespace cppcms {
@@ -38,6 +38,13 @@ public:
 
 void deflate(string const &text,ostream &stream);
 string deflate(string const &text);
+
+class cache_factory {
+public:
+	virtual base_cache *get() const { return NULL; };
+	virtual void del(base_cache *p) const { };
+	virtual ~cache_factory() {};
+};
 
 
 }

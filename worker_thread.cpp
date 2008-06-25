@@ -92,20 +92,12 @@ void worker_thread::run(cgicc_connection &cgi_conn)
 
 void worker_thread::init_internal()
 {
-	string backend=global_config.sval("cache.backend","none");
-	caching_module=NULL;
-	if(backend=="threaded") {
-		static thread_cache tc;
-		tc.set_size(global_config.lval("cache.limit",100));
-		caching_module=&tc;
-		if(global_config.lval("cache.debug",0)==1) {
-			tc.set_debug_mode(2);
-		}
-	}
+	caching_module=cf.get();
 }
 
 worker_thread::~worker_thread()
 {
+	cf.del(caching_module);
 }
 
 

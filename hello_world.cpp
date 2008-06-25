@@ -4,6 +4,7 @@ using namespace cppcms;
 
 class my_hello_world : public worker_thread {
 public:
+	my_hello_world(cache_factory const &c) :  worker_thread(c) {};
 	virtual void main();
 };
 
