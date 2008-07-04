@@ -1,32 +1,12 @@
 #include "thread_cache.h"
 #include <boost/format.hpp>
 #include <unistd.h>
+#include "posix_mutex.h"
 
 using boost::format;
 using boost::str;
 
 namespace cppcms {
-
-class mutex_lock {
-	pthread_mutex_t &m;
-public:
-	mutex_lock(pthread_mutex_t &p): m(p) { pthread_mutex_lock(&m); };
-	~mutex_lock() { pthread_mutex_unlock(&m); };
-};
-
-class rwlock_rdlock {
-	pthread_rwlock_t &m;
-public:
-	rwlock_rdlock(pthread_rwlock_t &p): m(p) { pthread_rwlock_rdlock(&m); };
-	~rwlock_rdlock() { pthread_rwlock_unlock(&m); };
-};
-
-class rwlock_wrlock {
-	pthread_rwlock_t &m;
-public:
-	rwlock_wrlock(pthread_rwlock_t &p): m(p) { pthread_rwlock_wrlock(&m); };
-	~rwlock_wrlock() { pthread_rwlock_unlock(&m); };
-};
 
 thread_cache::~thread_cache()
 {
@@ -47,7 +27,7 @@ string *thread_cache::get(string const &key,set<string> *triggers)
 				res=str(boost::format("Not found [%1%]\n") % key);
 			}
 			else {
-				res=str(boost::format("Found [%1%] but timeout of %2% seconds\n") 
+				res=str(boost::format("Found [%1%] but timeout of %2% seconds\n")
 					% key % (now - p->second.timeout->first));
 			}
 			write(fd,res.c_str(),res.size());
@@ -256,7 +236,7 @@ void thread_cache::print_all()
 	res+="\n";
 	if(N_keys!=timeout.size() || N_keys!=lru.size() || N_triggers!=triggers.size()){
 		res+=str(boost::format("Internal error #prim=%1%, #lru=%2%, "
-				"#prim.triggers=%3% #triggers=%4%\n") 
+				"#prim.triggers=%3% #triggers=%4%\n")
 				% N_keys % lru.size() % N_triggers % triggers.size());
 	}
 	else {

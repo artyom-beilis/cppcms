@@ -15,6 +15,7 @@ public:
 	archive() { ptr=0; };
 	archive(string const &s) : data(s) { ptr=0; };
 	void set(string const &s) { data=s; ptr=0; };
+	void set(char const *ptr,size_t len) { data.assign(ptr,len); };
 	string const &get() const { return data; };
 	template<typename T>
 	archive &operator<<(T const &val) {

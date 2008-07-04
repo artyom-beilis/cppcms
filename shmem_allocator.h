@@ -3,7 +3,6 @@
 #include "cppcms_error.h"
 #include <mm.h>
 #include <string>
-
 namespace cppcms {
 
 class shmem_control {
@@ -27,7 +26,7 @@ public:
 
 template<typename T,shmem_control *&mm>
 class shmem_allocator {
-public : 
+public :
 	typedef T value_type;
 	typedef T *pointer;
 	typedef T &reference;
@@ -47,16 +46,16 @@ public :
 	shmem_allocator() {};
 
 	inline pointer allocate(size_type cnt, std::allocator<void>::const_pointer = 0) const
-	{ 
+	{
 		void *memory=mm->malloc(cnt*sizeof(T));
 		if(!memory) {
 			throw std::bad_alloc();
 		}
-		return (pointer)memory; 
+		return (pointer)memory;
 	};
 	inline void deallocate(pointer p, size_type) const
-	{ 
-		mm->free(p); 
+	{
+		mm->free(p);
 	};
 	inline void construct(pointer p, const T& t) const { new(p) T(t); }
 	inline void destroy(pointer p) const { p->~T(); }

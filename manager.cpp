@@ -11,6 +11,7 @@
 #include <sys/wait.h>
 #include <sys/types.h>
 #include "thread_cache.h"
+#include "process_cache.h"
 
 namespace cppcms {
 namespace details {
@@ -216,7 +217,7 @@ bool fast_cgi_multiple_threaded_app::run()
 prefork *prefork::self;
 
 void prefork::parent_handler(int s_catched)
-{	
+{
 	int i;
 	int s;
 	if(self->exit_flag==0) {
@@ -244,9 +245,9 @@ void prefork::chaild_handler(int s)
 void prefork::run()
 {
 	signal(SIGTERM,chaild_handler);
-	
+
 	shared_ptr<worker_thread> worker=factory(cache);
-	
+
 	int res,post_on_throw;
 	int limit=global_config.lval("server.iterations_limit",-1);
 	if(limit!=-1) {
@@ -270,12 +271,12 @@ void prefork::run()
 		cgi_session *session=NULL;
 		try{
 			post_on_throw=1;
-			
+
 			struct pollfd fds;
 			fds.fd=api.get_socket();
 			fds.revents=0;
 			fds.events=POLLIN | POLLERR;
-			
+
 			if(poll(&fds,1,-1)==1 && (fds.revents & POLLIN)) {
 				session=api.accept_session();
 			}
@@ -320,7 +321,7 @@ void prefork::execute()
 			exit(1);
 		}
 		if(pid>0) {
-			pids[i]=pid;	
+			pids[i]=pid;
 		}
 		else { // pid==0
 			run();
@@ -385,6 +386,11 @@ static cache_factory *get_cache_factory()
 	else if(backend=="threaded") {
 		int n=global_config.lval("cache.limit",100);
 		return new thread_cache_factory(n);
+	}
+	else if(backend=="fork") {
+		size_t s=global_config.lval("cache.memsize",64);
+		string f=global_config.sval("cache.file","");
+		return new process_cache_factory(s*1024U,f=="" ? NULL: f.c_str());
 	}
 	else {
 		throw cppcms_error("Unkown cache backend:" + backend);

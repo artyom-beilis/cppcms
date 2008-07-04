@@ -12,6 +12,7 @@ AC_SUBST(LIBTOOL_DEPS)
 
 AC_LANG_CPLUSPLUS
 AC_CONFIG_FILES([Makefile])
+AC_CHECK_LIB(mm,main,[],[echo "OSSP mm library (libmm) not installed" ; exit -1])
 AC_CHECK_LIB(fcgi++,main,[],[echo "Fast CGI library not installed" ; exit -1])
 AC_CHECK_LIB(cgicc,main,[],[echo "cgicc not found" ; exit -1])
 AC_CHECK_LIB(boost_regex,main,[],[AC_CHECK_LIB(boost_regex-gcc-mt,main,[],[ echo "boost::regex not found" ; exit -1])])

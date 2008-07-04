@@ -1,51 +1,94 @@
-#include "thread_cache.h"
+#include "process_cache.h"
 #include <boost/format.hpp>
 #include <unistd.h>
+#include "posix_mutex.h"
+#include <errno.h>
+#include <iostream>
 
 using boost::format;
 using boost::str;
 
 namespace cppcms {
 
-class mutex_lock {
-	pthread_mutex_t &m;
-public:
-	mutex_lock(pthread_mutex_t &p): m(p) { pthread_mutex_lock(&m); };
-	~mutex_lock() { pthread_mutex_unlock(&m); };
+shmem_control *process_cache_factory::mem(NULL);
+::pid_t process_cache_factory::owner_pid(0);
+
+
+process_cache_factory::process_cache_factory(size_t memsize,char const *file)
+{
+	cache=NULL;
+	if(memsize<8*1024) {
+		throw cppcms_error("Cache size too small -- need at least 8K");
+	}
+	if(!mem) {
+		mem=new shmem_control(memsize,file);
+		owner_pid=getpid();
+	}
+	else {
+		throw cppcms_error("The memory initilized -- can't use more then once cache in same time");
+	}
+	cache=new process_cache(memsize);
 };
 
-class rwlock_rdlock {
-	pthread_rwlock_t &m;
-public:
-	rwlock_rdlock(pthread_rwlock_t &p): m(p) { pthread_rwlock_rdlock(&m); };
-	~rwlock_rdlock() { pthread_rwlock_unlock(&m); };
+process_cache_factory::~process_cache_factory()
+{
+	// Only parent process can kill memory
+	// forked childs should never do it.
+	if(owner_pid==getpid()) {
+		delete cache;
+		delete mem;
+ 		mem=NULL;
+	}
+}
+
+base_cache *process_cache_factory::get() const
+{
+	 return cache;
+};
+void process_cache_factory::del(base_cache *p) const
+{
 };
 
-class rwlock_wrlock {
-	pthread_rwlock_t &m;
-public:
-	rwlock_wrlock(pthread_rwlock_t &p): m(p) { pthread_rwlock_wrlock(&m); };
-	~rwlock_wrlock() { pthread_rwlock_unlock(&m); };
+process_cache::process_cache(size_t m) :
+			memsize(m)
+{
+	pthread_mutexattr_t a;
+	pthread_rwlockattr_t al;
+
+	if(
+		pthread_mutexattr_init(&a)
+		|| pthread_mutexattr_setpshared(&a,PTHREAD_PROCESS_SHARED)
+		|| pthread_mutex_init(&lru_mutex,&a)
+		|| pthread_mutexattr_destroy(&a)
+		|| pthread_rwlockattr_init(&al)
+		|| pthread_rwlockattr_setpshared(&al,PTHREAD_PROCESS_SHARED)
+		|| pthread_rwlock_init(&access_lock,&al)
+		|| pthread_rwlockattr_destroy(&al))
+	{
+		throw cppcms_error(errno,"Failed setup mutexes --- is this system "
+					 "supports process shared mutex/rwlock?");
+	}
 };
 
-thread_cache::~thread_cache()
+
+process_cache::~process_cache()
 {
 	pthread_mutex_destroy(&lru_mutex);
 	pthread_rwlock_destroy(&access_lock);
 }
 
-string *thread_cache::get(string const &key,set<string> *triggers)
+process_cache::shr_string *process_cache::get(string const &key,set<string> *triggers)
 {
 	pointer p;
 	time_t now;
 	time(&now);
-	if((p=primary.find(key))==primary.end() || p->second.timeout->first < now) {
+	if((p=primary.find(key.c_str()))==primary.end() || p->second.timeout->first < now) {
 		return NULL;
 	}
 	if(triggers) {
 		list<triggers_ptr>::iterator tp;
 		for(tp=p->second.triggers.begin();tp!=p->second.triggers.end();tp++) {
-			triggers->insert((*tp)->first);
+			triggers->insert((*tp)->first.c_str());
 		}
 	}
 	{
@@ -57,10 +100,10 @@ string *thread_cache::get(string const &key,set<string> *triggers)
 	return &(p->second.data);
 }
 
-bool thread_cache::fetch_page(string const &key,string &out,bool gzip)
+bool process_cache::fetch_page(string const &key,string &out,bool gzip)
 {
 	rwlock_rdlock lock(access_lock);
-	string *r=get(key,NULL);
+	shr_string *r=get(key,NULL);
 	if(!r) return false;
 	size_t size=r->size();
 	size_t s;
@@ -80,16 +123,16 @@ bool thread_cache::fetch_page(string const &key,string &out,bool gzip)
 	return true;
 }
 
-bool thread_cache::fetch(string const  &key,archive &a,set<string> &tags)
+bool process_cache::fetch(string const &key,archive &a,set<string> &tags)
 {
 	rwlock_rdlock lock(access_lock);
-	string *r=get(key,&tags);
+	shr_string *r=get(key,&tags);
 	if(!r) return false;
-	a.set(*r);
+	a.set(r->c_str(),r->size());
 	return true;
 }
 
-void thread_cache::clear()
+void process_cache::clear()
 {
 	rwlock_wrlock lock(access_lock);
 	timeout.clear();
@@ -97,17 +140,17 @@ void thread_cache::clear()
 	primary.clear();
 	triggers.clear();
 }
-void thread_cache::stats(unsigned &keys,unsigned &triggers)
+void process_cache::stats(unsigned &keys,unsigned &triggers)
 {
 	rwlock_rdlock lock(access_lock);
 	keys=primary.size();
 	triggers=this->triggers.size();
 }
 
-void thread_cache::rise(string const &trigger)
+void process_cache::rise(string const &trigger)
 {
 	rwlock_wrlock lock(access_lock);
-	pair<triggers_ptr,triggers_ptr> range=triggers.equal_range(trigger);
+	pair<triggers_ptr,triggers_ptr> range=triggers.equal_range(trigger.c_str());
 	triggers_ptr p;
 	list<pointer> kill_list;
 	for(p=range.first;p!=range.second;p++) {
@@ -120,40 +163,66 @@ void thread_cache::rise(string const &trigger)
 	}
 }
 
-void thread_cache::store(string const &key,set<string> const &triggers_in,time_t timeout_in,archive const &a)
+void process_cache::store(string const &key,set<string> const &triggers_in,time_t timeout_in,archive const &a)
 {
 	rwlock_wrlock lock(access_lock);
 	pointer main;
-	main=primary.find(key);
-	if(main==primary.end() && primary.size()>=limit && limit>0) {
-		time_t now;
-		time(&now);
+	main=primary.find(key.c_str());
+
+	if(main!=primary.end())
+		delete_node(main);
+
+	if(a.get().size()>memsize/20) {
+		return;
+	}
+
+	time_t now;
+	time(&now);
+	// Make sure there is at least 10% avalible
+	// And there is a block that is big enough to allocate 5% of memory
+	for(;;) {
+		if(process_cache_factory::mem->available() > memsize / 10) {
+			void *p=process_cache_factory::mem->malloc(memsize/20);
+			if(p) {
+				process_cache_factory::mem->free(p);
+				break;
+			}
+		}
 		if(timeout.begin()->first<now) {
 			main=timeout.begin()->second;
 		}
 		else {
 			main=lru.back();
 		}
-	}
-	if(main!=primary.end())
 		delete_node(main);
-	pair<pointer,bool> res=primary.insert(pair<string,container>(key,container()));
-	main=res.first;
-	container &cont=main->second;
-	cont.data=a.get();
-	lru.push_front(main);
-	cont.lru=lru.begin();
-	cont.timeout=timeout.insert(pair<time_t,pointer>(timeout_in,main));
-	if(triggers_in.find(key)==triggers_in.end()){
-		cont.triggers.push_back(triggers.insert(pair<string,pointer>(key,main)));
 	}
-	set<string>::const_iterator si;
-	for(si=triggers_in.begin();si!=triggers_in.end();si++) {
-		cont.triggers.push_back(triggers.insert(pair<string,pointer>(*si,main)));
+
+	try {
+		pair<pointer,bool> res=primary.insert(pair<shr_string,container>(key.c_str(),container()));
+
+		main=res.first;
+		container &cont=main->second;
+		cont.data.assign(a.get().c_str(),a.get().size());
+
+		lru.push_front(main);
+		cont.lru=lru.begin();
+		cont.timeout=timeout.insert(pair<time_t,pointer>(timeout_in,main));
+		if(triggers_in.find(key)==triggers_in.end()){
+			cont.triggers.push_back(triggers.insert(
+					pair<shr_string,pointer>(key.c_str(),main)));
+		}
+		set<string>::const_iterator si;
+		for(si=triggers_in.begin();si!=triggers_in.end();si++) {
+			cont.triggers.push_back(triggers.insert(
+				pair<shr_string,pointer>(si->c_str(),main)));
+		}
+	}
+	catch(std::bad_alloc const &e) {
+		clear();
 	}
 }
 
-void thread_cache::delete_node(pointer p)
+void process_cache::delete_node(pointer p)
 {
 	lru.erase(p->second.lru);
 	timeout.erase(p->second.timeout);
@@ -164,43 +233,17 @@ void thread_cache::delete_node(pointer p)
 	primary.erase(p);
 }
 
-void thread_cache::print_all()
-{
-	string res;
-	res+="Printing stored keys\n";
-	unsigned N_triggers=0;
-	unsigned N_keys=0;
-	time_t now;
-	time(&now);
-	for(pointer p=primary.begin();p!=primary.end();p++) {
-		N_keys++;
-		res+=str(boost::format("%1%: timeount in %2% sec, triggers:") % p->first
-			% (p->second.timeout->first - now));
-		for(list<triggers_ptr>::iterator p1=p->second.triggers.begin(),
-			p2=p->second.triggers.end();
-			p2!=p1;p1++)
-		{
-			N_triggers++;
-			res+=(*p1)->first;
-			res+=" ";
-		}
-		res+="\n";
-	}
-	res+="LRU order:";
-	for(list<pointer>::iterator pl=lru.begin();pl!=lru.end();pl++) {
-		res+=(*pl)->first;
-		res+=" ";
-	}
-	res+="\n";
-	if(N_keys!=timeout.size() || N_keys!=lru.size() || N_triggers!=triggers.size()){
-		res+=str(boost::format("Internal error #prim=%1%, #lru=%2%, "
-				"#prim.triggers=%3% #triggers=%4%\n") 
-				% N_keys % lru.size() % N_triggers % triggers.size());
-	}
-	else {
-		res+=str(boost::format("#Keys=%1% #Triggers=%2%\n") % N_keys % N_triggers);
-	}
-	write(fd,res.c_str(),res.size());
+
+void *process_cache::operator new(size_t n) {
+	void *p=process_cache_factory::mem->malloc(n);
+	if(!p)
+		throw std::bad_alloc();
+	return p;
 }
+void process_cache::operator delete (void *p) {
+	process_cache_factory::mem->free(p);
+}
+
+
 
 };

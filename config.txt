@@ -1,33 +1,47 @@
-# FastCGI Server Settings:
+# Server API settings
 
-#server.api = "fastcgi"
-server.api = "scgi"
-#server.api = "cgi"
+server.api = "fastcgi"				# FastCGI -- preferred API
+#server.api = "scgi"				# SCGI	  -- simplefied FCGI API -- yet another alternative
+#server.api = "cgi"				# CGI	  -- Use only in case you application does huge amount of work
+						#            such the fork()+exec() time in neligable
+						#            Recomended for debug purposes only
 
-# Server model
-#
-server.mod="process"				# process -- process runs single instance of worker
-#server.mod="thread"				# thread  -- thread pool execute several instances of worker
+# Server work mode
 
-server.threads = 5				# Default 0 -- single threaded application	
-						#   set to N in order to use mutli threaded model
+#server.mod="process"				# process -- process runs single instance of worker thread. Very simple 
+						#	     suitable for server that manages process startup/shutdown
+						#	     This is only mod that supports CGI api
+						# thread  -- thread pool execute several instances of worker. More dengerous
+						# 	     in terms of faults -- thread crashes causes server crash
+						# prefork -- "Apache Style" module -- the process forks into several 
+						# 	     worker process and each worker thread has its own process
+
+#server.procs=5					# Default 5 -- Number of worker process for mod prefork
+#server.threads = 5				# Default 5 -- Number of worker threads for mod thread
 
 server.buffer = 100				# Default 1 -- relevant for multi-threaded model
-						#   How many requests may be "on-hold" even if
-						#   thread pool is full
+						#              How many requests may be "on-hold" even if
+						#              thread pool is full. Also sets "listen(2) backlog parameter
 
 server.socket = "/tmp/hello-fastcgi.socket"     # Default is "" -- use default socket given
-						#   by web server -- for production usually ""
+						#              by web server -
 
-# server.disable_xpowered_by	= 1 		# Disable X-Powered-By header (default enabled)
+# server.disable_xpowered_by	= 0		# Disable X-Powered-By header (default enabled)
 # server.buffer_reserve		= 16000		# Set default inital buffer size of output page
 						# Default is 16,000 -- set to cover most of page
 						# sizes that are used by your CMS
 
 # ZLib Compression: 
 
-# gzip.enable = 1				# Default 0 -- Enable gzip compression.
-						#   recomended to turn on
-
+# gzip.enable = 1				# Default 0 -- Enable gzip compression recomended to turn on
 # gzip.level = 1				# Default: zlib defailt, defines compression level 
 # gzip.buffer = 4096				# Default: zlib default, defines buffer size for zlib
+
+#cache.backend = "fork"				# Default "none" -- defines the cache backend to be used 
+						#        "threaded" inprocess server suitable only for mod thread
+						#	 "fork"     suitable for mod prefork only uses shared memory
+						#	 "tcp"      distributed suitable fork any other mod (TODO)
+# cache.limit = 100				# Default 100 -- number of cached entries for cache threaded
+# cache.memsize = 64				# Default 64  -- the size of cache in KB for "fork" cache backend
+# cache.file = "/tmp/mymem"			# The location of cache mmaped file/semaphore
+
