@@ -9,6 +9,7 @@
 #include "worker_thread.h"
 #include "global_config.h"
 #include "cache_interface.h"
+#include "cgi_api.h"
 
 #include <boost/shared_ptr.hpp>
 

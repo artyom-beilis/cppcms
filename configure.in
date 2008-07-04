@@ -3,7 +3,7 @@ dnl Process this file with autoconf to produce a configure script.
 AC_PREREQ(2.59)
 
 AC_INIT([cppcms], [0.0.1], [artyomtnk@yahoo.com])
-
+AC_CONFIG_HEADER(config.h)
 AM_INIT_AUTOMAKE([1.9 foreign])
 
 AC_PROG_CXX
@@ -12,8 +12,27 @@ AC_SUBST(LIBTOOL_DEPS)
 
 AC_LANG_CPLUSPLUS
 AC_CONFIG_FILES([Makefile])
-AC_CHECK_LIB(mm,main,[],[echo "OSSP mm library (libmm) not installed" ; exit -1])
-AC_CHECK_LIB(fcgi++,main,[],[echo "Fast CGI library not installed" ; exit -1])
+
+
+AC_CHECK_LIB(mm,main,[
+	have_mm=yes
+	LIBS="-lmm $LIBS"
+	AC_DEFINE([EN_FORK_CACHE],[],["Enable fork cache"])
+	],
+	[	echo "OSSP mm library (libmm) not installed" 
+		echo "============== The fork cache backend will be disabled ===============" ])
+AC_CHECK_LIB(fcgi++,main,[
+	have_fcgi=yes
+	LIBS="-lfcgi++ $LIBS"
+	AC_DEFINE([EN_FCGI_BACKEND],[],["Enable fastcgi backend"])
+	],
+	[	echo "Fast CGI library not installed"  
+		echo "============== FastCGI API will be disabled ==========================" 
+		echo "You still have scgi and cgi API" ])
+
+AM_CONDITIONAL(EN_FORK_CACHE,[test "x$have_mm" == "xyes" ])
+AM_CONDITIONAL(EN_FCGI_BACKEND,[test "x$have_fcgi" == "xyes" ])
+
 AC_CHECK_LIB(cgicc,main,[],[echo "cgicc not found" ; exit -1])
 AC_CHECK_LIB(boost_regex,main,[],[AC_CHECK_LIB(boost_regex-gcc-mt,main,[],[ echo "boost::regex not found" ; exit -1])])
 AC_CHECK_LIB(boost_iostreams,main,[],[AC_CHECK_LIB(boost_iostreams-gcc-mt,main,[],[ echo "boost::iostreams not found" ; exit -1])])

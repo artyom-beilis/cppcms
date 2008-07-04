@@ -1,9 +1,12 @@
+#ifdef HAVE_CONFIG_H
+# include "config.h"
+#endif
+
 #include "manager.h"
 #include "cgicc_connection.h"
 #include <poll.h>
 #include <signal.h>
 #include <errno.h>
-#include "scgi.h"
 #include <unistd.h>
 #include <stdlib.h>
 #include <semaphore.h>
@@ -11,7 +14,15 @@
 #include <sys/wait.h>
 #include <sys/types.h>
 #include "thread_cache.h"
-#include "process_cache.h"
+#include "scgi.h"
+
+#ifdef EN_FORK_CACHE
+# include "process_cache.h"
+#endif
+
+#ifdef EN_FCGI_BACKEND
+# include "fcgi.h"
+#endif
 
 namespace cppcms {
 namespace details {
@@ -387,11 +398,13 @@ static cache_factory *get_cache_factory()
 		int n=global_config.lval("cache.limit",100);
 		return new thread_cache_factory(n);
 	}
+#ifdef EN_FORK_CACHE
 	else if(backend=="fork") {
 		size_t s=global_config.lval("cache.memsize",64);
 		string f=global_config.sval("cache.file","");
 		return new process_cache_factory(s*1024U,f=="" ? NULL: f.c_str());
 	}
+#endif
 	else {
 		throw cppcms_error("Unkown cache backend:" + backend);
 	}
@@ -414,12 +427,18 @@ void run_application(int argc,char *argv[],base_factory const &factory)
 	else
 	{
 		auto_ptr<cgi_api> capi;
-		if(api=="fastcgi" || api=="scgi" ) {
+		if(
+#ifdef EN_FCGI_BACKEND
+			api=="fastcgi" 	||
+#endif
+			api=="scgi" ) {
 			string socket=global_config.sval("server.socket","");
 			int backlog=global_config.lval("server.buffer",1);
+#ifdef EN_FCGI_BACKEND
 			if(api=="fastcgi")
 				capi=auto_ptr<cgi_api>(new fcgi_api(socket.c_str(),backlog));
 			else
+#endif
 				capi=auto_ptr<cgi_api>(new scgi_api(socket.c_str(),backlog));
 		}
 		else {

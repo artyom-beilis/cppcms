@@ -12,7 +12,6 @@
 #include <boost/noncopyable.hpp>
 #include <memory>
 
-#include "fcgi.h"
 #include "cppcms_error.h"
 #include "url.h"
 #include "cache_interface.h"
