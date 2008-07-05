@@ -19,14 +19,14 @@ using boost::shared_ptr;
 
 class base_factory {
 public:
-	virtual shared_ptr<worker_thread> operator()(cache_factory const &cf) const = 0;
+	virtual shared_ptr<worker_thread> operator()(worker_settings const &cf) const = 0;
 	virtual ~base_factory() {};
 };
 
 template<typename T>
 class simple_factory : public base_factory {
 public:
-	virtual shared_ptr<worker_thread> operator()(cache_factory const &cf) const 
+	virtual shared_ptr<worker_thread> operator()(worker_settings const &cf) const
 	{ return shared_ptr<worker_thread>(new T(cf)); };
 };
 
@@ -35,7 +35,7 @@ namespace details {
 
 class fast_cgi_application {
 
-	fast_cgi_application static  *handlers_owner;
+	static fast_cgi_application  *handlers_owner;
 protected:
 	// General control
 
@@ -62,7 +62,7 @@ class fast_cgi_single_threaded_app : public fast_cgi_application {
 	void setup();
 public:
 	virtual bool run();
-	fast_cgi_single_threaded_app(base_factory const &factory,cache_factory const &cf,cgi_api &api);
+	fast_cgi_single_threaded_app(base_factory const &factory,worker_settings const &s,cgi_api &api);
 	virtual ~fast_cgi_single_threaded_app(){};
 };
 
@@ -165,9 +165,9 @@ class fast_cgi_multiple_threaded_app : public fast_cgi_application {
 	void start_threads();
 	void wait_threads();
 public:
-	fast_cgi_multiple_threaded_app(	
+	fast_cgi_multiple_threaded_app(
 				int num,int buffer_len,
-				base_factory const &facory,cache_factory const &cf,
+				base_factory const &facory,worker_settings const &cf,
 				cgi_api &api);
 	virtual bool run();
 	virtual ~fast_cgi_multiple_threaded_app() {
@@ -179,7 +179,7 @@ public:
 class prefork {
 	cgi_api &api;
 	base_factory const &factory;
-	cache_factory const &cache;
+	worker_settings const &settings;
 	vector<pid_t> pids;
 	int procs;
 	sem_t *semaphore;
@@ -189,8 +189,8 @@ class prefork {
 	static void chaild_handler(int s);
 	void run();
 public:
-	prefork(base_factory const &f,cache_factory const &cf,cgi_api &a,int n) : 
-		api(a), factory(f), cache(cf) , procs(n),exit_flag(0)
+	prefork(base_factory const &f,worker_settings const &s,cgi_api &a,int n) :
+		api(a), factory(f), settings(s) , procs(n),exit_flag(0)
 		{ pids.resize(n); self=this; };
 	void execute();
 };

@@ -25,11 +25,15 @@ using cgicc::CgiEnvironment;
 using cgicc::Cgicc;
 using cgicc::HTTPHeader;
 
+struct worker_settings {
+	cache_factory const &cache;
+	worker_settings(cache_factory const &c): cache(c) {};
+};
 
 class worker_thread: private boost::noncopyable {
 friend class url_parser;
 friend class cache_iface;
-	cache_factory const &cf;
+	worker_settings const &settings;
 protected:
 	Cgicc *cgi;
 	CgiEnvironment const *env;
@@ -54,7 +58,12 @@ public:
 
 	void run(cgicc_connection &);
 
-	worker_thread(cache_factory const &f=cache_factory()) : cf(f), cache(this) { init_internal(); } ;
+	worker_thread(worker_settings const &s) :
+			settings(s),
+			cache(this)
+	{
+		init_internal();
+	} ;
 	virtual ~worker_thread();
 };
 

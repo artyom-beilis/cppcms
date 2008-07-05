@@ -92,12 +92,12 @@ void worker_thread::run(cgicc_connection &cgi_conn)
 
 void worker_thread::init_internal()
 {
-	caching_module=cf.get();
+	caching_module=settings.cache.get();
 }
 
 worker_thread::~worker_thread()
 {
-	cf.del(caching_module);
+	settings.cache.del(caching_module);
 }
 
 
