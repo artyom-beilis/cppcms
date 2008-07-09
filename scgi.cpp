@@ -144,7 +144,10 @@ scgi_api::scgi_api(string socket,int backlog)
 {
 	fd=-1;
 	size_t p;
-	if((p=socket.find(':'))!=string::npos) {
+	if(socket=="") {
+		fd=0; // STDIN
+	}
+	else if((p=socket.find(':'))!=string::npos) {
 		struct sockaddr_in a;
 		memset (&a, 0, sizeof (a));
 		a.sin_family = AF_INET;
@@ -183,7 +186,9 @@ scgi_api::scgi_api(string socket,int backlog)
 			throw cppcms_error(errno,"bind");
 		}
 	}
-	listen(fd,backlog);
+	if(fd!=0 && listen(fd,backlog)<0) {
+		throw cppcms_error(errno,"listen");
+	}
 }
 
 scgi_api::~scgi_api()
@@ -201,6 +206,9 @@ cgi_session *scgi_api::accept_session()
 {
 	int socket=::accept(fd,NULL,NULL);
 	if(socket<0) {
+		if(fd==0 && errno==ENOTSOCK ) {
+			throw cppcms_error(errno,"Have the server reopened stdin as socket?");
+		}
 		return NULL;
 	}
 	return new scgi_session(socket);
