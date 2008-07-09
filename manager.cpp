@@ -15,6 +15,7 @@
 #include <sys/types.h>
 #include "thread_cache.h"
 #include "scgi.h"
+#include "cgi.h"
 
 #ifdef EN_FORK_CACHE
 # include "process_cache.h"
@@ -27,18 +28,40 @@
 namespace cppcms {
 namespace details {
 
-fast_cgi_application *fast_cgi_application::handlers_owner=NULL;
+class single_run : public web_application{
+public:
+	single_run(manager &m) : web_application(m)
+	{
+	};
+	virtual void execute()
+	{
+		base_factory &factory=*app.workers;
+		shared_ptr<worker_thread> worker(factory(app));
+		cgi_session *session=app.api->accept_session();
+		if(session) {
+			try {
+				if(session->prepare()) {
+					worker->run(session->get_connection());
+				}
+			}
+			catch(...) {
+				delete session;
+				throw;
+			}
+			delete session;
+		}
 
-fast_cgi_application::fast_cgi_application(cgi_api &a) : api(a)
-{
-}
+	}
+};
+
+fast_cgi_application *fast_cgi_application::handlers_owner=NULL;
 
 fast_cgi_application::event_t fast_cgi_application::wait()
 {
 	while(!the_end) {
 		struct pollfd fds;
 
-		fds.fd=api.get_socket();
+		fds.fd=app.api->get_socket();
 		fds.events=POLLIN | POLLERR;
 		fds.revents=0;
 
@@ -85,12 +108,11 @@ void fast_cgi_application::set_signal_handlers()
 	signal(SIGINT,handler);
 }
 
-fast_cgi_single_threaded_app::fast_cgi_single_threaded_app(
-		base_factory const &factory,
-		worker_settings const &cf,
-		cgi_api &a) : fast_cgi_application(a)
+fast_cgi_single_threaded_app::fast_cgi_single_threaded_app(manager &m) :
+		fast_cgi_application( m)
 {
-	worker=factory(cf);
+	base_factory &factory=*app.workers;
+	worker=factory(app);
 }
 
 bool fast_cgi_single_threaded_app::run()
@@ -102,7 +124,7 @@ bool fast_cgi_single_threaded_app::run()
 		return false;
 	} // ELSE event==ACCEPT
 
-	cgi_session *session=api.accept_session();
+	cgi_session *session=app.api->accept_session();
 	if(session) {
 		try {
 			if(session->prepare()) {
@@ -130,13 +152,12 @@ void fast_cgi_application::execute()
 	}
 }
 
-fast_cgi_multiple_threaded_app::fast_cgi_multiple_threaded_app(	int threads_num,
-								int buffer,
-								base_factory const &factory,
-								worker_settings const &cf,
-								cgi_api &a) :
-	fast_cgi_application(a)
+fast_cgi_multiple_threaded_app::fast_cgi_multiple_threaded_app(manager &m):
+	fast_cgi_application(m)
 {
+	int threads_num=app.config.lval("server.threads",5);
+	int buffer=app.config.lval("server.buffer",10);
+
 	int i;
 
 	threads_info=NULL;
@@ -147,8 +168,9 @@ fast_cgi_multiple_threaded_app::fast_cgi_multiple_threaded_app(	int threads_num,
 	// Init Worker Threads
 	workers.resize(size);
 
+	base_factory &factory=*app.workers;
 	for(i=0;i<size;i++) {
-		workers[i]=factory(cf);
+		workers[i]=factory(app);
 	}
 
 	// Setup Jobs Manager
@@ -208,7 +230,7 @@ void fast_cgi_multiple_threaded_app::wait_threads()
 bool fast_cgi_multiple_threaded_app::run()
 {
 	if(wait()==ACCEPT) {
-		cgi_session *session=api.accept_session();
+		cgi_session *session=app.api->accept_session();
 		if(session){
 			jobs.push(session);
 		}
@@ -260,10 +282,11 @@ void prefork::run()
 {
 	signal(SIGTERM,chaild_handler);
 
-	shared_ptr<worker_thread> worker=factory(settings);
+	base_factory &factory=*app.workers;
+	shared_ptr<worker_thread> worker=factory(app);
 
 	int res,post_on_throw;
-	int limit=global_config.lval("server.iterations_limit",-1);
+	int limit=app.config.lval("server.iterations_limit",-1);
 	if(limit!=-1) {
 		srand(getpid());
 		limit=limit+(limit / 10 *(rand() % 100))/100;
@@ -287,12 +310,12 @@ void prefork::run()
 			post_on_throw=1;
 
 			struct pollfd fds;
-			fds.fd=api.get_socket();
+			fds.fd=app.api->get_socket();
 			fds.revents=0;
 			fds.events=POLLIN | POLLERR;
 
 			if(poll(&fds,1,-1)==1 && (fds.revents & POLLIN)) {
-				session=api.accept_session();
+				session=app.api->accept_session();
 			}
 			post_on_throw=0;
 			sem_post(semaphore);
@@ -310,6 +333,15 @@ void prefork::run()
 		}
 		delete session;
 	}
+}
+
+prefork::prefork(manager &m) :
+	web_application(m)
+{
+	procs=app.config.lval("server.procs",5);
+	exit_flag=0;
+	pids.resize(procs);
+	self=this;
 }
 
 void prefork::execute()
@@ -390,21 +422,21 @@ void prefork::execute()
 
 } // END oF Details
 
-static cache_factory *get_cache_factory()
+cache_factory *manager::get_cache_factory()
 {
-	string backend=global_config.sval("cache.backend","none");
+	string backend=config.sval("cache.backend","none");
 
 	if(backend=="none") {
 		return new cache_factory();
 	}
 	else if(backend=="threaded") {
-		int n=global_config.lval("cache.limit",100);
+		int n=config.lval("cache.limit",100);
 		return new thread_cache_factory(n);
 	}
 #ifdef EN_FORK_CACHE
 	else if(backend=="fork") {
-		size_t s=global_config.lval("cache.memsize",64);
-		string f=global_config.sval("cache.file","");
+		size_t s=config.lval("cache.memsize",64);
+		string f=config.sval("cache.file","");
 		return new process_cache_factory(s*1024U,f=="" ? NULL: f.c_str());
 	}
 #endif
@@ -413,66 +445,101 @@ static cache_factory *get_cache_factory()
 	}
 }
 
-void run_application(int argc,char *argv[],base_factory const &factory)
+cgi_api *manager::get_api()
 {
-	int n,max;
-	global_config.load(argc,argv);
-
-	string api=global_config.sval("server.api") ;
-
-	auto_ptr<cache_factory> cf(get_cache_factory());
+	string api=config.sval("server.api");
 
 	if(api=="cgi") {
-		shared_ptr<worker_thread> ptr=factory(*cf);
-		cgicc_connection_cgi cgi;
-		ptr->run(cgi);
+		return new cgi_cgi_api();
 	}
-	else
-	{
-		auto_ptr<cgi_api> capi;
-		if(
-#ifdef EN_FCGI_BACKEND
-			api=="fastcgi" 	||
-#endif
-			api=="scgi" ) {
-			string socket=global_config.sval("server.socket","");
-			int backlog=global_config.lval("server.buffer",1);
-#ifdef EN_FCGI_BACKEND
-			if(api=="fastcgi")
-				capi=auto_ptr<cgi_api>(new fcgi_api(socket.c_str(),backlog));
-			else
-#endif
-				capi=auto_ptr<cgi_api>(new scgi_api(socket.c_str(),backlog));
-		}
-		else {
-			throw cppcms_error("Unknown api:"+api);
-		}
 
-		worker_settings settings(*cf);
+	string socket=config.sval("server.socket","");
+	int backlog=config.lval("server.buffer",1);
 
-		string mod=global_config.sval("server.mod");
-		if(mod=="process") {
-			details::fast_cgi_single_threaded_app app(factory,settings,*capi.get());
-			app.execute();
-		}
-		else if(mod=="thread") {
-			n=global_config.lval("server.threads",5);
-			max=global_config.lval("server.buffer",1);
-			details::fast_cgi_multiple_threaded_app app(n,max,factory,settings,*capi.get());
-			app.execute();
-		}
-		else if(mod=="prefork") {
-			n=global_config.lval("server.procs",5);
-			details::prefork app(factory,settings,*capi.get(),n);
-			app.execute();
-		}
-		else {
-			throw cppcms_error("Unknown mod:" + mod);
-		}
+	if(api=="scgi" ) {
+		return new scgi_api(socket.c_str(),backlog);
 	}
-};
 
+#ifdef EN_FCGI_BACKEND
+	if(api=="fastcgi"){
+		return new fcgi_api(socket.c_str(),backlog);
+	}
+#endif
+	throw cppcms_error("Unknown api:"+api);
 
+}
+
+web_application *manager::get_mod()
+{
+	if(config.sval("server.api","")=="cgi") {
+		return new details::single_run(*this);
+	}
+
+	string mod=config.sval("server.mod");
+
+	if(mod=="process") {
+		return new details::fast_cgi_single_threaded_app(*this);
+	}
+	if(mod=="thread") {
+		return new details::fast_cgi_multiple_threaded_app(*this);
+	}
+	if(mod=="prefork") {
+		return new details::prefork(*this);
+	}
+	throw cppcms_error("Unknown mod:" + mod);
+}
+
+void manager::execute()
+{
+	if(!cache.get()) {
+		set_cache(get_cache_factory());
+	}
+	if(!api.get()) {
+		set_api(get_api());
+	}
+	if(!web_app.get()) {
+		set_mod(get_mod());
+	}
+	if(!workers.get()) {
+		throw cppcms_error("No workers factory set up");
+	}
+	web_app->execute();
+}
+
+void manager::set_worker(base_factory *w)
+{
+	workers=auto_ptr<base_factory>(w);
+}
+
+void manager::set_cache(cache_factory *c)
+{
+	cache=auto_ptr<cache_factory>(c);
+}
+
+void manager::set_api(cgi_api *a)
+{
+	api=auto_ptr<cgi_api>(get_api());
+}
+
+void manager::set_mod(web_application *m)
+{
+	web_app=auto_ptr<web_application>(m);
+}
+
+manager::manager()
+{
+	config.load(0,NULL);
+}
+
+manager::manager(char const *f)
+{
+	config.load(0,NULL,f);
+}
+
+manager::manager(int argc, char **argv)
+{
+	config.load(argc,argv);
+}
 
 
 } // END OF CPPCMS

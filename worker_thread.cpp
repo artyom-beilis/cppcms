@@ -5,6 +5,8 @@
 #include <boost/iostreams/filtering_stream.hpp>
 #include <boost/iostreams/filter/gzip.hpp>
 
+#include "manager.h"
+
 using namespace cgicc;
 namespace cppcms {
 
@@ -22,7 +24,7 @@ void worker_thread::run(cgicc_connection &cgi_conn)
 
 	other_headers.clear();
 	out.clear();
-	out.reserve(global_config.lval("server.buffer_reserve",16000));
+	out.reserve(app.config.lval("server.buffer_reserve",16000));
 	cache.reset();
 
 	set_header(new HTTPHTMLHeader);
@@ -32,7 +34,7 @@ void worker_thread::run(cgicc_connection &cgi_conn)
 
 	if((encoding=cgi_conn.env("HTTP_ACCEPT_ENCODING"))!="") {
 		if(strstr(encoding.c_str(),"gzip")!=NULL) {
-			gzip=global_config.lval("gzip.enable",0);
+			gzip=app.config.lval("gzip.enable",0);
 		}
 	}
 
@@ -52,7 +54,7 @@ void worker_thread::run(cgicc_connection &cgi_conn)
 		other_headers.clear();
 	}
 
-	if(global_config.lval("server.disable_xpowered_by",0)==0) {
+	if(app.config.lval("server.disable_xpowered_by",0)==0) {
 		add_header("X-Powered-By: CppCMS/0.0alpha1");
 	}
 
@@ -70,8 +72,11 @@ void worker_thread::run(cgicc_connection &cgi_conn)
 			if(gzip_done) {
 				cout<<out;
 			}
-			else
-				deflate(out,cout);
+			else{
+				long level=app.config.lval("gzip.level",-1);
+				long length=app.config.lval("gzip.buffer",-1);
+				deflate(out,cout,level,length);
+			}
 		}
 		else {
 			cout<<*response_header;
@@ -92,12 +97,12 @@ void worker_thread::run(cgicc_connection &cgi_conn)
 
 void worker_thread::init_internal()
 {
-	caching_module=settings.cache.get();
+	caching_module=app.cache->get();
 }
 
 worker_thread::~worker_thread()
 {
-	settings.cache.del(caching_module);
+	app.cache->del(caching_module);
 }
 
 

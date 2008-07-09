@@ -5,8 +5,6 @@
 
 namespace cppcms {
 
-cppcms_config global_config;
-
 bool cppcms_config::get_tocken(FILE *f,tocken_t &T)
 {
 	int c;
@@ -97,7 +95,7 @@ bool cppcms_config::get_tocken(FILE *f,tocken_t &T)
 			if(c==EOF) {
 				return false;
 			}
-				
+
 		}
 		else {
 			throw cppcms_error(string("Unexpected charrecter")+(char)c);
@@ -131,7 +129,7 @@ void cppcms_config::load(char const *fname)
 				break;
 			case 1: if(T.first != '.')
 					state=5;
-				else 
+				else
 					state=2;
 				break;
 			case 2: if(T.first!=WORD){
@@ -142,7 +140,7 @@ void cppcms_config::load(char const *fname)
 					key+=T.second;
 				}
 				break;
-			case 3: if(T.first!= '=') 
+			case 3: if(T.first!= '=')
 					state=5;
 				else
 					state=4;

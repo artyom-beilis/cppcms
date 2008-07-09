@@ -5,9 +5,10 @@
 #include <set>
 #include "archive.h"
 #include "base_cache.h"
-using namespace std;
 
 namespace cppcms {
+
+using namespace std;
 
 const time_t infty=(sizeof(time_t)==4 ? 0x7FFFFFFF: 0x7FFFFFFFFFFFFFFFULL );
 
@@ -33,11 +34,11 @@ public:
 			time_t timeout=infty);
 	void clear();
 	bool stats(unsigned &keys,unsigned &triggers);
-	
+
 };
 
-void deflate(string const &text,ostream &stream);
-string deflate(string const &text);
+void deflate(string const &text,ostream &stream,long level,long length);
+string deflate(string const &text,long level,long length);
 
 class cache_factory {
 public:

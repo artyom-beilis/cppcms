@@ -21,5 +21,5 @@ libcppcms_la_CXXFLAGS=-Wall
 nobase_pkginclude_HEADERS = global_config.h text_tool.h url.h cppcms_error.h \
 	manager.h worker_thread.h fcgi.h cache_interface.h archive.h base_cache.h \
 	thread_cache.h cgicc_connection.h scgi.h cgi_api.h process_cache.h \
-	shmem_allocator.h posix_mutex.h config.h
+	shmem_allocator.h posix_mutex.h config.h cgi.h
 

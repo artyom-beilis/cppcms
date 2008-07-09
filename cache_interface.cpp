@@ -5,22 +5,22 @@
 #include <boost/iostreams/filter/gzip.hpp>
 #include <sstream>
 #include <iostream>
+#include "manager.h"
 
 namespace cppcms {
 using namespace std;
 
-void deflate(string const &text,ostream &stream)
+void deflate(string const &text,ostream &stream,long level,long length)
 {
 	using namespace boost::iostreams;
 	gzip_params params;
-	long level,length;
-	if((level=global_config.lval("gzip.level",-1))!=-1){
+	if(level!=-1){
 		params.level=level;
-	}		
-	
+	}
+
 	filtering_ostream zstream;
 
-	if((length=global_config.lval("gzip.buffer",-1))!=-1){
+	if(length!=-1){
 		zstream.push(gzip_compressor(params,length));
 	}
 	else {
@@ -31,10 +31,10 @@ void deflate(string const &text,ostream &stream)
 	zstream<<text;
 }
 
-string deflate(string const &text)
+string deflate(string const &text,long level,long length)
 {
 	ostringstream sstream;
-	deflate(text,sstream);
+	deflate(text,sstream,level,length);
 	return sstream.str();
 }
 
@@ -54,7 +54,9 @@ void cache_iface::store_page(string const &key,time_t timeout)
 {
 	if(!cms->caching_module) return;
 	archive a;
-	string compr=deflate(cms->out);
+	long level=cms->app.config.lval("gzip.level",-1);
+	long length=cms->app.config.lval("gzip.buffer",-1);
+	string compr=deflate(cms->out,level,length);
 	a<<(cms->out)<<compr;
 	if(cms->gzip){
 		cms->out=compr;
@@ -119,7 +121,7 @@ void cache_iface::store_frame(string const &key,string const &data,
 	if(!cms->caching_module) return;
 	archive a;
 	a<<data;
-		
+
 	this->triggers.insert(triggers.begin(),triggers.end());
 	cms->caching_module->store(key,triggers,timeout,a);
 }

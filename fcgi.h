@@ -2,7 +2,6 @@
 #define FCGI_STREAM_H
 
 #include <string>
-#include <iostream>
 #include <fcgio.h>
 #include <cgicc/CgiInput.h>
 #include <boost/noncopyable.hpp>

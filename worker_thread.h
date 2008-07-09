@@ -20,21 +20,19 @@
 
 namespace cppcms {
 
+class manager;
+
 using namespace std;
 using cgicc::CgiEnvironment;
 using cgicc::Cgicc;
 using cgicc::HTTPHeader;
 
-struct worker_settings {
-	cache_factory const &cache;
-	worker_settings(cache_factory const &c): cache(c) {};
-};
-
 class worker_thread: private boost::noncopyable {
 friend class url_parser;
 friend class cache_iface;
-	worker_settings const &settings;
 protected:
+	url_parser url;
+	manager const &app;
 	Cgicc *cgi;
 	CgiEnvironment const *env;
 
@@ -58,8 +56,9 @@ public:
 
 	void run(cgicc_connection &);
 
-	worker_thread(worker_settings const &s) :
-			settings(s),
+	worker_thread(manager const &s) :
+			url(this),
+			app(s),
 			cache(this)
 	{
 		init_internal();

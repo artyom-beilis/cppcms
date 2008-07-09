@@ -10,23 +10,26 @@
 #include "global_config.h"
 #include "cache_interface.h"
 #include "cgi_api.h"
+#include "posix_mutex.h"
 
 #include <boost/shared_ptr.hpp>
 
 namespace cppcms {
 
+class manager;
+
 using boost::shared_ptr;
 
 class base_factory {
 public:
-	virtual shared_ptr<worker_thread> operator()(worker_settings const &cf) const = 0;
+	virtual shared_ptr<worker_thread> operator()(manager const &cf) const = 0;
 	virtual ~base_factory() {};
 };
 
 template<typename T>
 class simple_factory : public base_factory {
 public:
-	virtual shared_ptr<worker_thread> operator()(worker_settings const &cf) const
+	virtual shared_ptr<worker_thread> operator()(manager const &cf) const
 	{ return shared_ptr<worker_thread>(new T(cf)); };
 };
 
@@ -35,7 +38,7 @@ class one_param_factory : public base_factory {
 	P const &P1;
 public:
 	one_param_factory(P const &p) : P1(p) {};
-	virtual shared_ptr<worker_thread> operator()(worker_settings const &cf) const
+	virtual shared_ptr<worker_thread> operator()(manager const &cf) const
 	{ return shared_ptr<worker_thread>(new T(cf,P1)); };
 };
 
@@ -45,20 +48,27 @@ class two_params_factory : public base_factory {
 	Pb const &P2;
 public:
 	two_params_factory(Pa const &p1,Pb const &p2) : P1(p1), P2(p2) {};
-	virtual shared_ptr<worker_thread> operator()(worker_settings const &cf) const
+	virtual shared_ptr<worker_thread> operator()(manager const &cf) const
 	{ return shared_ptr<worker_thread>(new T(cf,P1,P2)); };
+};
+
+class web_application {
+public:
+	manager &app;
+	web_application(manager &m) : app(m) {};
+	virtual void execute() = 0;
+	virtual ~web_application() {};
 };
 
 
 namespace details {
 
-class fast_cgi_application {
+class fast_cgi_application :public web_application {
 
 	static fast_cgi_application  *handlers_owner;
 protected:
 	// General control
 
-	cgi_api &api;
 	bool the_end;
 
 	static void handler(int id);
@@ -68,12 +78,12 @@ protected:
 	void set_signal_handlers();
 	static fast_cgi_application *get_instance() { return handlers_owner; };
 public:
-	fast_cgi_application(cgi_api &api);
+	fast_cgi_application(manager &m) : web_application(m) {};
 	virtual ~fast_cgi_application() {};
 
 	void shutdown();
 	virtual bool run() { return false; };
-	void execute();
+	virtual void execute();
 };
 
 class fast_cgi_single_threaded_app : public fast_cgi_application {
@@ -81,7 +91,7 @@ class fast_cgi_single_threaded_app : public fast_cgi_application {
 	void setup();
 public:
 	virtual bool run();
-	fast_cgi_single_threaded_app(base_factory const &factory,worker_settings const &s,cgi_api &api);
+	fast_cgi_single_threaded_app(manager &m);
 	virtual ~fast_cgi_single_threaded_app(){};
 };
 
@@ -108,38 +118,22 @@ public:
 	sefe_set() {};
 	virtual ~sefe_set() {};
 	virtual void push(T val) {
-		try {
-			pthread_mutex_lock(&access_mutex);
-			while(size>=max) {
-				pthread_cond_wait(&new_space_availible,&access_mutex);
-			}
-
-			put_int(val);
-
-			pthread_cond_signal(&new_data_availible);
-			pthread_mutex_unlock(&access_mutex);
+		mutex_lock lock(access_mutex);
+		while(size>=max) {
+			pthread_cond_wait(&new_space_availible,&access_mutex);
 		}
-		catch(...) { // Make shure the mutex in unlocked
-			pthread_mutex_unlock(&access_mutex);
-			throw;
-		}
+		put_int(val);
+		pthread_cond_signal(&new_data_availible);
 	};
 	T pop() {
-		try {
-			pthread_mutex_lock(&access_mutex);
-			while(size==0) {
-				pthread_cond_wait(&new_data_availible,&access_mutex);
-			}
+		mutex_lock lock(access_mutex);
+		while(size==0) {
+			pthread_cond_wait(&new_data_availible,&access_mutex);
+		}
 
-			T data=get_int();
-			pthread_cond_signal(&new_space_availible);
-			pthread_mutex_unlock(&access_mutex);
-			return data;
-		}
-		catch(...){ // Make shure the mutex in unlocked
-			pthread_mutex_unlock(&access_mutex);
-			throw;
-		}
+		T data=get_int();
+		pthread_cond_signal(&new_space_availible);
+		return data;
 	};
 };
 
@@ -184,10 +178,7 @@ class fast_cgi_multiple_threaded_app : public fast_cgi_application {
 	void start_threads();
 	void wait_threads();
 public:
-	fast_cgi_multiple_threaded_app(
-				int num,int buffer_len,
-				base_factory const &facory,worker_settings const &cf,
-				cgi_api &api);
+	fast_cgi_multiple_threaded_app(manager &m);
 	virtual bool run();
 	virtual ~fast_cgi_multiple_threaded_app() {
 		delete [] pids;
@@ -195,10 +186,7 @@ public:
 	};
 };
 
-class prefork {
-	cgi_api &api;
-	base_factory const &factory;
-	worker_settings const &settings;
+class prefork : public web_application {
 	vector<pid_t> pids;
 	int procs;
 	sem_t *semaphore;
@@ -208,16 +196,36 @@ class prefork {
 	static void chaild_handler(int s);
 	void run();
 public:
-	prefork(base_factory const &f,worker_settings const &s,cgi_api &a,int n) :
-		api(a), factory(f), settings(s) , procs(n),exit_flag(0)
-		{ pids.resize(n); self=this; };
-	void execute();
+	prefork(manager &m);
+	virtual void execute();
 };
 
 
 } // END OF DETAILS
 
 void run_application(int argc,char *argv[],base_factory const &factory);
+
+class manager : private boost::noncopyable {
+	cache_factory *get_cache_factory();
+	cgi_api *get_api();
+	web_application *get_mod();
+public:
+	cppcms_config config;
+	auto_ptr<cache_factory> cache;
+	auto_ptr<cgi_api> api;
+	auto_ptr<base_factory> workers;
+	auto_ptr<web_application> web_app;
+
+	void set_worker(base_factory *w);
+	void set_cache(cache_factory *c);
+	void set_api(cgi_api *a);
+	void set_mod(web_application *m);
+
+	manager();
+	manager(char const *file);
+	manager(int argc, char **argv);
+	void execute();
+};
 
 }
 #endif /* _THREAD_POOL_H */
