@@ -47,7 +47,12 @@ void fcgi_api::init()
 fcgi_api::fcgi_api(char const *socket,int backlog)
 {
 	pthread_once(&init_fcgi,fcgi_api::init);
-	fd=FCGX_OpenSocket(socket,backlog);
+	if(socket && socket[0]!='\0') {
+		fd=FCGX_OpenSocket(socket,backlog);
+	}
+	else {
+		fd=0; // STDIN
+	}
 	if(fd<0) {
 		throw cppcms_error(errno,"FCGX_OpenSocket");
 	}
