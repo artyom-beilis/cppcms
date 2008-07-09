@@ -30,6 +30,25 @@ public:
 	{ return shared_ptr<worker_thread>(new T(cf)); };
 };
 
+template<typename T,typename P>
+class one_param_factory : public base_factory {
+	P const &P1;
+public:
+	one_param_factory(P const &p) : P1(p) {};
+	virtual shared_ptr<worker_thread> operator()(worker_settings const &cf) const
+	{ return shared_ptr<worker_thread>(new T(cf,P1)); };
+};
+
+template<typename T,typename Pa,typename Pb>
+class two_params_factory : public base_factory {
+	Pa const &P1;
+	Pb const &P2;
+public:
+	two_params_factory(Pa const &p1,Pb const &p2) : P1(p1), P2(p2) {};
+	virtual shared_ptr<worker_thread> operator()(worker_settings const &cf) const
+	{ return shared_ptr<worker_thread>(new T(cf,P1,P2)); };
+};
+
 
 namespace details {
 
