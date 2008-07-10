@@ -9,7 +9,7 @@ libcppcms_la_SOURCES = global_config.cpp manager.cpp \
  	url.cpp  worker_thread.cpp text_tool.cpp\
  	cache_interface.cpp base_cache.cpp thread_cache.cpp scgi.cpp 
 
-libcppcms_la_LDFLAGS  = -version-info 1:0:0
+libcppcms_la_LDFLAGS  = -version-info 0:0:0
 libcppcms_la_CXXFLAGS = -Wall
 
 if  EN_FORK_CACHE
