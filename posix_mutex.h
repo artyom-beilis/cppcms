@@ -3,6 +3,8 @@
 
 #include <pthread.h>
 
+namespace cppcms {
+
 class mutex_lock {
 	pthread_mutex_t &m;
 public:
@@ -23,5 +25,7 @@ public:
 	rwlock_wrlock(pthread_rwlock_t &p): m(p) { pthread_rwlock_wrlock(&m); };
 	~rwlock_wrlock() { pthread_rwlock_unlock(&m); };
 };
+
+}
 
 #endif
