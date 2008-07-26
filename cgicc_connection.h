@@ -5,6 +5,7 @@
 #include <cgicc/Cgicc.h>
 #include <string>
 #include <ostream>
+#include <memory>
 
 namespace cppcms {
 using namespace std;
