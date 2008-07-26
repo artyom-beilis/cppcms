@@ -1,6 +1,7 @@
 #include "global_config.h"
 #include <stdio.h>
 #include <ctype.h>
+#include <stdlib.h>
 
 
 namespace cppcms {
