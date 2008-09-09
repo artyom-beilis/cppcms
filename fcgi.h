@@ -1,8 +1,18 @@
 #ifndef FCGI_STREAM_H
 #define FCGI_STREAM_H
 
+#include "config.h"
+
 #include <string>
-#include <fcgio.h>
+
+#ifdef EN_FASTCGI_LONG_PATH
+	#include <fastcgi/fcgio.h>
+	#include <fastcgi/fcgiapp.h>
+#else
+	#include <fcgio.h>
+	#include <fcgiapp.h>
+#endif
+
 #include <cgicc/CgiInput.h>
 #include <boost/noncopyable.hpp>
 #include "cgi_api.h"

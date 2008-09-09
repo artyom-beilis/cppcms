@@ -33,6 +33,8 @@ AC_CHECK_LIB(fcgi++,main,[
 AM_CONDITIONAL(EN_FORK_CACHE,[test "x$have_mm" == "xyes" ])
 AM_CONDITIONAL(EN_FCGI_BACKEND,[test "x$have_fcgi" == "xyes" ])
 
+AC_CHECK_HEADER([fastcgi/fcgiapp.h],[AC_DEFINE([EN_FASTCGI_LONG_PATH],[],["Fastcgi headers in fastcgi dir"])],[])
+
 AC_CHECK_LIB(cgicc,main,[],[echo "cgicc not found" ; exit -1])
 AC_CHECK_LIB(boost_regex,main,[],[AC_CHECK_LIB(boost_regex-gcc-mt,main,[],[ echo "boost::regex not found" ; exit -1])])
 AC_CHECK_LIB(boost_iostreams,main,[],[AC_CHECK_LIB(boost_iostreams-gcc-mt,main,[],[ echo "boost::iostreams not found" ; exit -1])])
