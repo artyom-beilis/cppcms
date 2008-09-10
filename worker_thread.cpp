@@ -55,7 +55,7 @@ void worker_thread::run(cgicc_connection &cgi_conn)
 	}
 
 	if(app.config.lval("server.disable_xpowered_by",0)==0) {
-		add_header("X-Powered-By: CppCMS/0.0alpha1");
+		add_header("X-Powered-By: " PACKAGE_NAME "/" PACKAGE_VERSION);
 	}
 
 	for(list<string>::iterator h=other_headers.begin();h!=other_headers.end();h++) {
