@@ -13,6 +13,10 @@ AC_SUBST(LIBTOOL_DEPS)
 AC_LANG_CPLUSPLUS
 AC_CONFIG_FILES([Makefile])
 
+case $host in
+	*cygwin*) CXXFLAGS="-D_WIN32_WINNT -D__USE_W32_SOCKETS $CXXFLAGS"  
+		  CFLAGS="-D_WIN32_WINNT -D__USE_W32_SOCKETS $CFLAGS" ;;
+esac
 
 AC_CHECK_LIB(mm,main,[
 	have_mm=yes
@@ -33,7 +37,42 @@ AC_CHECK_LIB(fcgi++,main,[
 AM_CONDITIONAL(EN_FORK_CACHE,[test "x$have_mm" == "xyes" ])
 AM_CONDITIONAL(EN_FCGI_BACKEND,[test "x$have_fcgi" == "xyes" ])
 
-AC_CHECK_HEADER([fastcgi/fcgiapp.h],[AC_DEFINE([EN_FASTCGI_LONG_PATH],[],["Fastcgi headers in fastcgi dir"])],[])
+AC_CHECK_HEADER(fastcgi/fcgiapp.h ,[AC_DEFINE([EN_FASTCGI_LONG_PATH],[],["Fastcgi headers in fastcgi dir"])],[])
+
+AC_CHECK_HEADER([asio.hpp],[have_asio=yes
+			need_system=no],[AC_CHECK_HEADER([boost/asio.hpp],[
+					have_asio=yes
+					AC_DEFINE([USE_BOOST_ASIO],[],["Use boost::asio"])
+					need_system=yes],[
+					have_asio=no
+					need_system=no
+					echo "ASIO library not found... TCP cache will be disabled" ])])
+
+if test "x$have_asio" == "xyes"
+then
+	case $host in 
+		*cygwin*) 
+			AC_CHECK_LIB(ws2_32,main,[],[echo "WS2 library not found, TCP cache disabled" ; have_asio=no ]) ;;
+	esac
+fi
+
+if test "x$need_system" == "xyes" 
+then
+	AC_CHECK_LIB(boost_system,main,
+		[ LIBS="-lboost_system $LIBS" ],
+		[	AC_CHECK_LIB(boost_system-gcc-mt,main,
+				[LIBS="-lboost_system-gcc-mt $LIBS"],
+				[	have_asio=no 
+				echo "boost::asio found however boost::system not found"
+				echo "     TCP cache disabled"])])
+fi
+
+if test "x$have_asio" == "xyes" 
+then
+	AC_DEFINE([EN_TCP_CACHE],[],["Enable tcp cache"])
+fi
+
+AM_CONDITIONAL(EN_TCP_CACHE,[test "x$have_asio" == "xyes" ])
 
 AC_CHECK_LIB(cgicc,main,[],[echo "cgicc not found" ; exit -1])
 AC_CHECK_LIB(boost_regex,main,[],[AC_CHECK_LIB(boost_regex-gcc-mt,main,[],[ echo "boost::regex not found" ; exit -1])])

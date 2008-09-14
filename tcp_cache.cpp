@@ -1,3 +1,4 @@
+#include "config.h"
 #include "tcp_cache.h"
 
 #ifdef USE_BOOST_ASIO

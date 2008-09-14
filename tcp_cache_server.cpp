@@ -1,3 +1,4 @@
+#include "config.h"
 #ifdef USE_BOOST_ASIO
 #include <boost/asio.hpp>
 namespace aio = boost::asio;

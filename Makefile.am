@@ -20,6 +20,11 @@ if EN_FCGI_BACKEND
 libcppcms_la_SOURCES += fcgi.cpp
 endif	
 
+if EN_TCP_CACHE
+libcppcms_la_SOURCES += tcp_cache.cpp
+bin_PROGRAMS = tcp_cache_server
+tcp_cache_server_SOURCES = base_cache.cpp thread_cache.cpp tcp_cache_server.cpp
+endif
 
 nobase_pkginclude_HEADERS = global_config.h text_tool.h url.h cppcms_error.h \
 	manager.h worker_thread.h fcgi.h cache_interface.h archive.h \
