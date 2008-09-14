@@ -14,6 +14,7 @@ using asio::error_code;
 #include <boost/shared_ptr.hpp>
 #include <boost/enable_shared_from_this.hpp>
 #include <ctime>
+#include <cstdlib>
 
 using namespace std;
 using namespace cppcms;
@@ -40,7 +41,8 @@ public:
 	}
 	void on_header_in(error_code const &e)
 	{
-		data_in.erase();
+		data_in.clear();
+		data_in.resize(hin.size);
 		aio::async_read(socket_,aio::buffer(data_in,hin.size),
 				boost::bind(&session::on_data_in,shared_from_this(),
 						aio::placeholders::error));
@@ -98,17 +100,18 @@ public:
 		hout.operations.out_stats.keys=k;
 		hout.operations.out_stats.triggers=t;
 	}
-	bool load_triggers(set<string>triggers,char const *start,unsigned len)
+	bool load_triggers(set<string> &triggers,char const *start,unsigned len)
 	{
 		int slen=len;
 		while(slen>0) {
 			unsigned size=strlen(start);
-			if(size==0)
+			if(size==0) {
 				return false;
+			}
 			string tmp;
 			tmp.assign(start,size);
-			slen-=len+1;
-			start+=len+1;
+			slen-=size+1;
+			start+=size+1;
 			triggers.insert(tmp);
 		}
 		return true;
@@ -119,10 +122,17 @@ public:
 		if(	hin.operations.store.key_len
 			+hin.operations.store.data_len
 			+hin.operations.store.triggers_len != hin.size
-			|| hin.operations.store.key_len == 0
-			|| ! load_triggers(triggers,&data_in[0]
-					+hin.operations.store.key_len
-					+hin.operations.store.data_len, 
+			|| hin.operations.store.key_len == 0)
+		{
+			hout.opcode=opcodes::error;
+			return;
+		}
+		string ts;
+		vector<char>::iterator p=data_in.begin()
+			+hin.operations.store.key_len
+			+hin.operations.store.data_len;
+		ts.assign(p,p + hin.operations.store.triggers_len);
+		if(!load_triggers(triggers,ts.c_str(),
 					hin.operations.store.triggers_len))
 		{
 			hout.opcode=opcodes::error;
@@ -161,8 +171,10 @@ public:
 	void on_header_out(error_code const &e)
 	{
 		if(e) return;
-		if(hout.size==0)
+		if(hout.size==0) {
 			run();
+			return ;
+		}
 		async_write(socket_,aio::buffer(data_out.c_str(),hout.size),
 			boost::bind(&session::on_data_out,shared_from_this(),
 				aio::placeholders::error));
@@ -191,8 +203,13 @@ class tcp_cache_server  {
 		acceptor_.async_accept(s->socket_,boost::bind(&tcp_cache_server::on_accept,this,aio::placeholders::error,s));
 	}
 public:
-	tcp_cache_server(aio::io_service &io,base_cache &c) : 
-		acceptor_(io,tcp::endpoint(tcp::v4(),6000)),
+	tcp_cache_server(	aio::io_service &io,
+				string ip,
+				int port,
+				base_cache &c) : 
+		acceptor_(io,
+			  tcp::endpoint(aio::ip::address::from_string(ip),
+			  port)),
 		cache(c)
 	{
 		start_accept();
@@ -202,11 +219,15 @@ public:
 
 int main(int argc,char **argv)
 {
+	if(argc!=4) {
+		cerr<<"Usage: tcp_cache_server ip port entries-limit"<<endl;
+		return 1;
+	}
 	try 
 	{
 		aio::io_service io;
-		thread_cache cache(1000);
-		tcp_cache_server srv_cache(io,cache);
+		thread_cache cache(atoi(argv[3]));
+		tcp_cache_server srv_cache(io,argv[1],atoi(argv[2]),cache);
 		io.run();
 	}
 	catch(std::exception const &e) {

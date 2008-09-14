@@ -25,7 +25,6 @@ struct tcp_operation_header {
 		} fetch_page;
 		struct {
 			uint32_t key_len;
-			uint32_t data_len;
 		} fetch;
 		struct {
 			uint32_t trigger_len;
