@@ -13,11 +13,6 @@ AC_SUBST(LIBTOOL_DEPS)
 AC_LANG_CPLUSPLUS
 AC_CONFIG_FILES([Makefile])
 
-case $host in
-	*cygwin*) CXXFLAGS="-D_WIN32_WINNT -D__USE_W32_SOCKETS $CXXFLAGS"  
-		  CFLAGS="-D_WIN32_WINNT -D__USE_W32_SOCKETS $CFLAGS" ;;
-esac
-
 AC_CHECK_LIB(mm,main,[
 	have_mm=yes
 	LIBS="-lmm $LIBS"
@@ -47,14 +42,6 @@ AC_CHECK_HEADER([asio.hpp],[have_asio=yes
 					have_asio=no
 					need_system=no
 					echo "ASIO library not found... TCP cache will be disabled" ])])
-
-if test "x$have_asio" == "xyes"
-then
-	case $host in 
-		*cygwin*) 
-			AC_CHECK_LIB(ws2_32,main,[],[echo "WS2 library not found, TCP cache disabled" ; have_asio=no ]) ;;
-	esac
-fi
 
 if test "x$need_system" == "xyes" 
 then

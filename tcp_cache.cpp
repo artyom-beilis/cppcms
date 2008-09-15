@@ -145,7 +145,7 @@ void tcp_cache::stats(unsigned &keys,unsigned &triggers)
 	string data;
 	h.opcode=opcodes::stats;
 	tcp->transmit(h,data);
-	if(h.opcode=opcodes::out_stats) {
+	if(h.opcode==opcodes::out_stats) {
 		keys=h.operations.out_stats.keys;
 		triggers=h.operations.out_stats.triggers;
 	}
