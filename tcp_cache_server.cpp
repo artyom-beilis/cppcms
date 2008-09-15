@@ -194,6 +194,8 @@ class tcp_cache_server  {
 	void on_accept(error_code const &e,shared_ptr<session> s)
 	{
 		if(!e) {
+			tcp::no_delay nd(true);
+			s->socket_.set_option(nd);
 			s->run();
 			start_accept();
 		}
