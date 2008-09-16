@@ -34,6 +34,12 @@ AM_CONDITIONAL(EN_FCGI_BACKEND,[test "x$have_fcgi" == "xyes" ])
 
 AC_CHECK_HEADER(fastcgi/fcgiapp.h ,[AC_DEFINE([EN_FASTCGI_LONG_PATH],[],["Fastcgi headers in fastcgi dir"])],[])
 
+store_flags="$CXXFLAGS"
+
+case $host in
+	*cygwin*) CXXFLAGS="-D_WIN32_WINNT -D__USE_W32_SOCKETS $CXXFLAGS"
+esac
+
 AC_CHECK_HEADER([asio.hpp],[have_asio=yes
 			need_system=no],[AC_CHECK_HEADER([boost/asio.hpp],[
 					have_asio=yes
@@ -42,6 +48,9 @@ AC_CHECK_HEADER([asio.hpp],[have_asio=yes
 					have_asio=no
 					need_system=no
 					echo "ASIO library not found... TCP cache will be disabled" ])])
+
+CXXFLAGS="$store_flags"
+
 
 if test "x$need_system" == "xyes" 
 then
@@ -57,7 +66,11 @@ fi
 if test "x$have_asio" == "xyes" 
 then
 	AC_DEFINE([EN_TCP_CACHE],[],["Enable tcp cache"])
+	case $host in 
+		*cygwin*) LIBS="-lws2_32 $LIBS"
+	esac
 fi
+
 
 AM_CONDITIONAL(EN_TCP_CACHE,[test "x$have_asio" == "xyes" ])
 
