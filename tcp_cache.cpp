@@ -32,9 +32,9 @@ public:
 		port_=port;
 		error_code e;
 		socket_.connect(tcp::endpoint(aio::ip::address::from_string(ip),port),e);
+		if(e) throw cppcms_error("connect:"+e.message());
 		tcp::no_delay nd(true);
 		socket_.set_option(nd);
-		if(e) throw cppcms_error("connect:"+e.message());
 	}
 	void transmit(tcp_operation_header &h,string &data)
 	{
