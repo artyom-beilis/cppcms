@@ -14,6 +14,14 @@ bool cppcms_config::get_tocken(FILE *f,tocken_t &T)
 			T.first='.';
 			return true;
 		}
+		else if(c=='{') {
+			T.first='{';
+			return true;
+		}
+		else if(c=='}') {
+			T.first='}';
+			return true;
+		}
 		else if(c=='=') {
 			T.first='=';
 			return true;
@@ -119,22 +127,22 @@ void cppcms_config::load(char const *fname)
 	string key;
 	int state=0;
 	try{
-		while(get_tocken(f,T) && state != 5) {
+		while(get_tocken(f,T) && state != -1) {
 			switch(state) {
 			case 0: if(T.first != WORD) {
-					state=5;
+					state=-1;
 				}else{
 					key=T.second;
 					state=1;
 				}
 				break;
 			case 1: if(T.first != '.')
-					state=5;
+					state=-1;
 				else
 					state=2;
 				break;
 			case 2: if(T.first!=WORD){
-					state=5;
+					state=-1;
 				}else{
 					state=3;
 					key+='.';
@@ -142,26 +150,63 @@ void cppcms_config::load(char const *fname)
 				}
 				break;
 			case 3: if(T.first!= '=')
-					state=5;
+					state=-1;
 				else
 					state=4;
 				break;
-			case 4: if(T.first==INT) {
-					long val=atol(T.second.c_str());
-					long_map.insert(pair<string,long>(key,val));
-				}
-				else if(T.first==DOUBLE) {
-					double val=atof(T.second.c_str());
-					double_map.insert(pair<string,double>(key,val));
-				}
-				else if(T.first==STR){
-					string_map.insert(pair<string,string>(key,T.second));
-				}
-				else {
+			case 4: if(T.first=='{') {
 					state=5;
 					break;
 				}
+				if(T.first==INT) {
+					long val=atol(T.second.c_str());
+					data[key]=val;
+				}
+				else if(T.first==DOUBLE) {
+					double val=atof(T.second.c_str());
+					data[key]=val;
+				}
+				else if(T.first==STR){
+					data[key]=T.second;
+				}
+				else {
+					state=-1;
+					break;
+				}
 				state=0;
+				break;
+			case 5:
+				if(T.first==INT || T.first==DOUBLE || T.first==STR) {
+					int fp=T.first;
+					vector<long> vl;
+					vector<double> vd;
+					vector<string> vs;
+					do {
+						if(T.first=='}') {
+							state=0;
+						}
+						else if(T.first==fp){
+							switch(T.first) { 
+							case INT: vl.push_back(atol(T.second.c_str())); break;
+							case DOUBLE: vd.push_back(atof(T.second.c_str())); break;
+							case STR: vs.push_back(T.second); break;
+							}
+						}
+						else {
+							state=-1;
+						}
+					}while(state==5 && get_tocken(f,T));
+
+					if(state==0) {
+						switch(fp) {
+						case INT: data[key]=vl; break;
+						case DOUBLE: data[key]=vd; break;
+						case STR: data[key]=vs; break;
+						};
+					}
+				}
+				else 
+					state=-1;
 				break;
 			}
 		}
