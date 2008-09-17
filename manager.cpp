@@ -446,9 +446,9 @@ cache_factory *manager::get_cache_factory()
 #endif
 #ifdef EN_TCP_CACHE
 	else if(backend=="tcp") {
-		int port=config.lval("cache.port");
-		string ip=config.sval("cache.ip");
-		return new tcp_cache_factory(ip,port);
+		vector<long> const &ports=config.llist("cache.ports");
+		vector<string> const &ips=config.slist("cache.ips");
+		return new tcp_cache_factory(ips,ports);
 	}
 #endif
 	else {

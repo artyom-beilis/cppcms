@@ -25,15 +25,13 @@ using aio::ip::tcp;
 
 namespace cppcms {
 
-class messenger {
+class messenger : boost::noncopyable {
 	aio::io_service srv_;
 	tcp::socket socket_;
 	string ip_;
 	int port_;
 public:
-	messenger(string ip,int port) :
-		socket_(srv_)
-	{
+	void connect(string ip,int port) {
 		ip_=ip;
 		port_=port;
 		error_code e;
@@ -42,6 +40,13 @@ public:
 		tcp::no_delay nd(true);
 		socket_.set_option(nd);
 	}
+	messenger(string ip,int port) :
+		socket_(srv_)
+	{
+		connect(ip,port);
+	}
+	messenger() : socket_(srv_) { };
+
 	void transmit(tcp_operation_header &h,string &data)
 	{
 		bool done=false;
@@ -77,14 +82,38 @@ public:
 	
 };
 
-tcp_cache::tcp_cache(string ip,int port)
+tcp_cache::tcp_cache(vector<string> const& ip,vector<long> const &port)
 {
-	tcp=new messenger(ip,port);
+	if(ip.size()<1 || port.size()!=ip.size()) {
+		throw cppcms_error("Incorrect parameters for tcp cache");
+	}
+	conns=ip.size();
+	tcp=new messenger[conns];
+	try {
+		for(int i=0;i<conns;i++) {
+			tcp[i].connect(ip[i],port[i]);
+		}
+	}
+	catch(...) {
+		delete [] tcp;
+		tcp=NULL;
+		throw;
+	}
 }
 
 tcp_cache::~tcp_cache()
 {
-	delete tcp;
+	delete [] tcp;
+}
+
+void tcp_cache::broadcast(tcp_operation_header &h,string &data)
+{
+	int i;
+	for(i=0;i<conns;i++) {
+		tcp_operation_header ht=h;
+		string dt=data;
+		tcp[i].transmit(ht,data);
+	}
 }
 
 void tcp_cache::rise(string const &trigger)
@@ -94,7 +123,7 @@ void tcp_cache::rise(string const &trigger)
 	h.size=trigger.size();
 	string data=trigger;
 	h.operations.rise.trigger_len=trigger.size();
-	tcp->transmit(h,data);
+	broadcast(h,data);
 }
 
 void tcp_cache::clear()
@@ -103,7 +132,7 @@ void tcp_cache::clear()
 	h.opcode=opcodes::clear;
 	h.size=0;
 	string empty;
-	tcp->transmit(h,empty);
+	broadcast(h,empty);
 }
 
 bool tcp_cache::fetch_page(string const  &key,string &output,bool gzip)
@@ -114,7 +143,7 @@ bool tcp_cache::fetch_page(string const  &key,string &output,bool gzip)
 	h.size=data.size();
 	h.operations.fetch_page.gzip=gzip;
 	h.operations.fetch_page.strlen=data.size();
-	tcp->transmit(h,data);
+	get(key).transmit(h,data);
 	if(h.opcode==opcodes::page_data) {
 		output=data;
 		return true;
@@ -129,7 +158,7 @@ bool tcp_cache::fetch(string const &key,archive &a,set<string> &tags)
 	h.opcode=opcodes::fetch;
 	h.size=data.size();
 	h.operations.fetch.key_len=data.size();
-	tcp->transmit(h,data);
+	get(key).transmit(h,data);
 	if(h.opcode!=opcodes::data)
 		return false;
 	char const *ptr=data.c_str();
@@ -149,13 +178,16 @@ bool tcp_cache::fetch(string const &key,archive &a,set<string> &tags)
 
 void tcp_cache::stats(unsigned &keys,unsigned &triggers)
 {
-	tcp_operation_header h={0};
-	string data;
-	h.opcode=opcodes::stats;
-	tcp->transmit(h,data);
-	if(h.opcode==opcodes::out_stats) {
-		keys=h.operations.out_stats.keys;
-		triggers=h.operations.out_stats.triggers;
+	keys=0; triggers=0;
+	for(int i=0;i<conns;i++) {
+		tcp_operation_header h={0};
+		string data;
+		h.opcode=opcodes::stats;
+		tcp[i].transmit(h,data);
+		if(h.opcode==opcodes::out_stats) {
+			keys+=h.operations.out_stats.keys;
+			triggers+=h.operations.out_stats.triggers;
+		}
 	}
 }
 
@@ -178,8 +210,19 @@ void tcp_cache::store(string const &key,set<string> const &triggers,time_t timeo
 	}
 	h.operations.store.triggers_len=tlen;
 	h.size=data.size();
-	tcp->transmit(h,data);
+	get(key).transmit(h,data);
 }
+
+messenger &tcp_cache::get(string const &key)
+{
+	if(conns==1) return tcp[0];
+	unsigned val=0,i;
+	for(i=0;i<key.size();i++) {
+		val+=251*key[i]+103 % 307;
+	}
+	return tcp[val % conns];
+}
+
 
 }
 
