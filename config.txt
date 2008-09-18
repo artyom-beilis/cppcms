@@ -40,7 +40,7 @@ server.socket = "/tmp/hello-fastcgi.socket"     # Default is "" -- use default s
 # cache.backend = "fork"			# Default "none" -- defines the cache backend to be used 
 						#        "threaded" inprocess server suitable only for mod thread
 						#	 "fork"     suitable for mod prefork only uses shared memory
-						#	 "tcp"      distributed suitable fork any other mod (TODO)
+						#	 "tcp"      distributed suitable for any other mod
 						#
 ## threaded cache parameters
 # cache.limit = 100				# Default 100 -- number of cached entries for cache threaded
@@ -50,7 +50,7 @@ server.socket = "/tmp/hello-fastcgi.socket"     # Default is "" -- use default s
 # cache.file = "/tmp/mymem"			# The location of cache mmaped file/semaphore
 #
 ## tcp cache parameters
-# cache.ips = { "192.168.0.1" "192.168.2" }	# The IP addresses of tcp_cache_servers -- no default value!
+# cache.ips = { "192.168.0.1" "192.168.0.2" }	# The IP addresses of tcp_cache_servers -- no default value!
 # cache.ports = { 12000 12000 }			# The ports tcp_cache_servers listen on
 						# Make sure all servers occure in SAME order in all clients
 
