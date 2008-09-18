@@ -237,7 +237,18 @@ int main(int argc,char **argv)
 		aio::io_service io;
 		thread_cache cache(atoi(argv[3]));
 		tcp_cache_server srv_cache(io,argv[1],atoi(argv[2]),cache);
-		io.run();
+		for(;;) {
+			try {
+				io.run();
+				break;
+			}
+			catch(cppcms_error const &e) {
+				// Not much to do...
+				// Object will be destroyed automatically 
+				// Because it does not resubmit itself
+				cerr<<"CppCMS Error:"<<e.what()<<endl;
+			}
+		}
 	}
 	catch(std::exception const &e) {
 		cerr<<"Error:"<<e.what()<<endl;
