@@ -5,7 +5,7 @@
 #include <memory>
 #include <vector>
 #include <boost/regex.hpp>
-#include <boost/signals.hpp>
+#include <boost/function.hpp>
 #include <boost/bind.hpp>
 
 // Some defines:
@@ -27,11 +27,9 @@ class worker_thread;
 using std::string;
 
 
-typedef boost::signal<void(string,string,string,string,
+typedef boost::function<void(string,string,string,string,
 			   string,string,string,string,
-			   string)> callback_signal_t;
-typedef callback_signal_t::slot_type callback_t;
-
+			   string)> callback_t;
 class  url_parser;
 
 struct url_def {
@@ -39,8 +37,7 @@ struct url_def {
 	enum { ID, CALLBACK , URL } type;
 	int id;
 	url_parser *url;
-	callback_signal_t *callback;
-	url_def() { callback=NULL; };
+	callback_t callback;
 };
 
 class url_parser {
