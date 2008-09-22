@@ -11,6 +11,7 @@ libcppcms_la_SOURCES = global_config.cpp manager.cpp \
 
 libcppcms_la_LDFLAGS  = -version-info 0:0:0
 libcppcms_la_CXXFLAGS = -Wall
+libcppcms_la_LIBADD = @CPPCMS_LIBS@
 
 if EN_FORK_CACHE
 libcppcms_la_SOURCES += process_cache.cpp
