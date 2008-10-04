@@ -99,6 +99,7 @@ fi
 AM_CONDITIONAL(EN_TCP_CACHE,[test "x$have_asio" == "xyes" ])
 
 AC_CHECK_LIB(cgicc,main,[CPPCMS_LIBS="-lcgicc $CPPCMS_LIBS"],[echo "cgicc not found" ; exit -1])
+AC_CHECK_LIB(pthread,pthread_sigmask,[],[echo "Pthreads library not found" ; exit -1])
 AC_CHECK_LIB(boost_regex,main,[
 	CPPCMS_LIBS="-lboost_regex $CPPCMS_LIBS"
 	],
