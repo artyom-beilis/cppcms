@@ -82,7 +82,10 @@ views_storage &views_storage::instance() {
 
 void views_storage::add_view(string t,string v,view_factory_t f)
 {
-	storage[t][v]=f;
+	view_factory_t &func=storage[t][v];
+	if(!func.empty())
+		throw cppcms_error("Duplicate template " + t+"::"+v);
+	func=f;
 }
 
 void views_storage::remove_views(string t)
