@@ -1,0 +1,16 @@
+<% c++ #include "hello_world_view.h" %>
+<% namespace vary %>
+	<% class master uses view::master %>
+	<% template render() %>
+		<html>
+		<title>Skin2:: <% title %></title>
+		<body>
+		<% include body() %>
+		</body>
+		</html>
+	<% end template %>
+	<% template body() %>
+	<% end template %>
+	<% end class %>
+<% end namespace %>
+

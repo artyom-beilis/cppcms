@@ -1,0 +1,16 @@
+<% namespace vary %>
+	<% class hello uses view::hello extends master %>
+	<% template body() %>
+	<% if rtl %><% end %>
+		<% if not empty title %><h1><% title %></h1><% end %>
+		<p><% msg %></p>
+		<% foreach x in numbers %>
+			<ul>
+			<% item %>
+			<li><% ngt "passed one day","passed %d days",x using x %></li>
+			<% end %>
+			</ul>
+		<% end %>
+	<% end template %>
+	<% end class %>
+<% end namespace %>

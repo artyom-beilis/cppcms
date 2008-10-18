@@ -41,9 +41,10 @@ string deflate(string const &text,long level,long length)
 
 bool cache_iface::fetch_page(string const &key)
 {
-	string tmp;
 	if(!cms->caching_module) return false;
-	if(cms->caching_module->fetch_page(key,cms->out,cms->gzip)) {
+	string tmp;
+	if(cms->caching_module->fetch_page(key,tmp,cms->gzip)) {
+		cms->cout<<tmp;
 		cms->gzip_done=true;
 		return true;
 	}
@@ -56,10 +57,13 @@ void cache_iface::store_page(string const &key,time_t timeout)
 	archive a;
 	long level=cms->app.config.lval("gzip.level",-1);
 	long length=cms->app.config.lval("gzip.buffer",-1);
-	string compr=deflate(cms->out,level,length);
-	a<<(cms->out)<<compr;
+	string tmp=cms->out_buf.str();
+	cms->out_buf.str("");
+
+	string compr=deflate(tmp,level,length);
+	a<<tmp<<compr;
 	if(cms->gzip){
-		cms->out=compr;
+		cms->cout<<compr;
 		cms->gzip_done=true;
 	}
 	cms->caching_module->store(key,triggers,timeout,a);

@@ -1,6 +1,7 @@
 #include "worker_thread.h"
 #include "global_config.h"
 #include "thread_cache.h"
+#include "base_view.h"
 
 #include <boost/iostreams/filtering_stream.hpp>
 #include <boost/iostreams/filter/gzip.hpp>
@@ -10,22 +11,63 @@
 using namespace cgicc;
 namespace cppcms {
 
+worker_thread::worker_thread(manager const &s) :
+		url(this),
+		app(s),
+		cache(this),
+		cout(&(this->out_buf))
+{
+	caching_module=app.cache->get();
+	static const transtext::trans tr;
+	gt=&tr;
+} ;
+
+worker_thread::~worker_thread()
+{
+	app.cache->del(caching_module);
+}
 void worker_thread::main()
 {
-	out="<h1>Hello World</h2>\n";
+	cout<<"<h1>Hello World</h2>\n";
+}
+void worker_thread::set_header(HTTPHeader *h)
+{
+	response_header=auto_ptr<HTTPHeader>(h);
+};
+void worker_thread::add_header(string s) {
+	other_headers.push_back(s);
+};
+
+void worker_thread::set_cookie(cgicc::HTTPCookie const &c)
+{
+	response_header->setCookie(c);
 }
 
+void worker_thread::set_lang(string const &s)
+{
+	lang=s;
+	gt=&app.gettext->get(s,"");
+}
+
+transtext::trans const *worker_thread::domain_gettext(string const &domain)
+{
+	return &app.gettext->get(lang,domain);
+}
+
+HTTPHeader &worker_thread::header()
+{
+	return *response_header;
+}
 
 void worker_thread::run(cgicc_connection &cgi_conn)
 {
 	cgi=&cgi_conn.cgi();
 	env=&(cgi->getEnvironment());
-	ostream &cout=cgi_conn.cout();
-
+	ostream &cgi_out=cgi_conn.cout();
 	other_headers.clear();
-	out.clear();
-	out.reserve(app.config.lval("server.buffer_reserve",16000));
 	cache.reset();
+	set_lang("");
+	out_buf.str("");
 
 	set_header(new HTTPHTMLHeader);
 
@@ -48,10 +90,12 @@ void worker_thread::run(cgicc_connection &cgi_conn)
 	}
 	catch(std::exception const &e) {
 		string msg=e.what();
-		set_header(new HTTPStatusHeader(500,msg));
-		out="<html><body><p>"+msg+"</p><body></html>";
+		cgi_out<<HTTPStatusHeader(500,msg);
+		cgi_out<<"<html><body><p>"+msg+"</p><body></html>";
 		gzip=gzip_done=false;
 		other_headers.clear();
+		out_buf.str("");
+		return;
 	}
 
 	if(app.config.lval("server.disable_xpowered_by",0)==0) {
@@ -59,53 +103,62 @@ void worker_thread::run(cgicc_connection &cgi_conn)
 	}
 
 	for(list<string>::iterator h=other_headers.begin();h!=other_headers.end();h++) {
-		cout<<*h<<"\n";
+		cgi_out<<*h<<"\n";
 	}
+
+	string out=out_buf.str();
+	out_buf.str("");
 
 	if(gzip) {
 		if(out.size()>0) {
 			if(gzip_done){
-				cout<<"Content-Length: "<<out.size()<<"\n";
+				cgi_out<<"Content-Length: "<<out.size()<<"\n";
 			}
-			cout<<"Content-Encoding: gzip\n";
-			cout<<*response_header;
+			cgi_out<<"Content-Encoding: gzip\n";
+			cgi_out<<*response_header;
 			if(gzip_done) {
-				cout<<out;
+				cgi_out<<out;
 			}
 			else{
 				long level=app.config.lval("gzip.level",-1);
 				long length=app.config.lval("gzip.buffer",-1);
-				deflate(out,cout,level,length);
+				deflate(out,cgi_out,level,length);
 			}
 		}
 		else {
-			cout<<*response_header;
+			cgi_out<<*response_header;
 		}
 	}
 	else {
-		cout<<"Content-Length: "<<out.size()<<"\n";
-		cout<<*response_header;
-		cout<<out;
+		cgi_out<<"Content-Length: "<<out.size()<<"\n";
+		cgi_out<<*response_header;
+		cgi_out<<out;
 	}
-
-	// Clean Up
-	out.clear();
-	other_headers.clear();
-	response_header.reset();
-	cgi=NULL;
 }
 
-void worker_thread::init_internal()
+void worker_thread::render(string tmpl,string name,base_content &content,ostream &out )
 {
-	caching_module=app.cache->get();
-}
+	using cppcms::details::views_storage;
+	base_view::settings s(this,&out);
+	auto_ptr<base_view> p(views_storage::instance().fetch_view(tmpl,name,s,&content));
+	if(!p.get()) throw cppcms_error("Template `"+name+"' not found in template set `" + tmpl +"'");
+	p->render();	
+};
 
-worker_thread::~worker_thread()
+void worker_thread::render(string tmpl,string name,base_content &content)
 {
-	app.cache->del(caching_module);
-}
+	render(tmpl,name,content,cout);
+};
 
+void worker_thread::render(string name,base_content &content,ostream &o)
+{
+	render(current_template,name,content,o);
+};
 
+void worker_thread::render(string name,base_content &content)
+{
+	render(current_template,name,content,cout);
+};
 
 }
 

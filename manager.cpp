@@ -4,6 +4,8 @@
 
 #include "manager.h"
 #include "cgicc_connection.h"
+#include <dlfcn.h>
+#include <dirent.h>
 #include <poll.h>
 #include <signal.h>
 #include <errno.h>
@@ -13,9 +15,11 @@
 #include <sys/mman.h>
 #include <sys/wait.h>
 #include <sys/types.h>
+#include <algorithm>
 #include "thread_cache.h"
 #include "scgi.h"
 #include "cgi.h"
+
 
 #ifdef EN_FORK_CACHE
 # include "process_cache.h"
@@ -511,10 +515,42 @@ void manager::execute()
 	if(!web_app.get()) {
 		set_mod(get_mod());
 	}
+	if(!gettext.get()){
+		set_gettext(get_gettext());
+	}
 	if(!workers.get()) {
 		throw cppcms_error("No workers factory set up");
 	}
+
+	load_templates();
+	
 	web_app->execute();
+}
+
+void manager::load_templates()
+{
+	string ext=config.sval("templates.ext",".so");
+	unsigned len=ext.size();
+	vector<string> const &dirs=config.slist("templates.dirs");
+	for(vector<string>::const_iterator dir=dirs.begin();dir!=dirs.end();++dir) {
+		DIR *d=::opendir(dir->c_str());
+		if(!d) continue;
+		for(struct dirent *entry=::readdir(d);entry;entry=::readdir(d)) {
+			string filename=entry->d_name;
+			if(	filename.size()>len &&
+				filename.substr(filename.size()-len,len) == ext )
+			{
+				void *handler=::dlopen((*dir + "/" + filename).c_str(),RTLD_LAZY);
+				if(handler) templates_list.push_back(handler);
+			}
+		}
+		::closedir(d);
+	}
+}
+
+manager::~manager()
+{
+	for_each(templates_list.begin(),templates_list.end(),::dlclose);
 }
 
 void manager::set_worker(base_factory *w)
@@ -535,6 +571,30 @@ void manager::set_api(cgi_api *a)
 void manager::set_mod(web_application *m)
 {
 	web_app=auto_ptr<web_application>(m);
+}
+
+transtext::trans_factory *manager::get_gettext()
+{
+	transtext::trans_factory *tmp=NULL;
+	try{
+		tmp=new transtext::trans_factory();
+		
+		tmp->load(	config.sval ("locale.dir",""),
+				config.slist("locale.lang_list"),
+				config.sval ("locale.lang_default",""),
+				config.slist ("locale.domain_list"),
+				config.sval ("locale.domain_default",""));
+		return tmp;
+	}
+	catch(...){
+		delete tmp;
+		throw;
+	}
+}
+
+void manager::set_gettext(transtext::trans_factory *s)
+{
+	gettext=auto_ptr<transtext::trans_factory>(s);
 }
 
 manager::manager()

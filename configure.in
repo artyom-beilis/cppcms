@@ -11,7 +11,7 @@ AC_PROG_LIBTOOL
 AC_SUBST(LIBTOOL_DEPS)
 
 AC_LANG_CPLUSPLUS
-AC_CONFIG_FILES([Makefile])
+AC_CONFIG_FILES([Makefile transtext/Makefile])
 
 AC_ARG_ENABLE(forkcache,[AS_HELP_STRING([--disable-forkcache],[Disable shared memory cache])])
 AC_ARG_ENABLE(fastcgi,[AS_HELP_STRING([--disable-fastcgi],[Disable fastcgi interface])])
@@ -40,7 +40,7 @@ fi
 if test "x$enable_fastcgi" != "xno" ; then
 	AC_CHECK_LIB(fcgi++,main,[
 		have_fcgi=yes
-		CPPCMS_LIBS="-lfcgi++ $CPPCMS_LIBS"
+		CPPCMS_LIBS="-lfcgi++ -lfcgi $CPPCMS_LIBS"
 		AC_DEFINE([EN_FCGI_BACKEND],[],["Enable fastcgi backend"])
 		],
 		[	echo "======================================================================"
@@ -48,6 +48,45 @@ if test "x$enable_fastcgi" != "xno" ; then
 			echo "============== FastCGI API will be disabled ==========================" 
 			echo "You still have scgi and cgi API" ])
 fi
+
+have_auto_type_detection=no
+
+AC_TRY_COMPILE([#include <list>
+		],
+		[std::list<int> l; auto p=l.begin();],
+		[AC_DEFINE([HAVE_CPP_0X_AUTO],[],["Have C++0x auto"])
+			have_auto_type_detection=yes
+			echo "C++0x auto... ok"	],[echo "C++0x auto... not supported"])
+AC_TRY_COMPILE([#include <list>
+		],
+		[std::list<int> l; decltype(l.begin()) p=l.begin();],
+		[AC_DEFINE([HAVE_CPP_0X_DECLTYPE],[],["Have C++0x decltype"])
+			have_auto_type_detection=yes
+			echo "C++0x decltype... ok"],[echo "C++0x decltype... not supported"])
+AC_TRY_COMPILE([#include <list>
+		],
+		[std::list<int> l; typeof(l.begin()) p=l.begin();],
+		[AC_DEFINE([HAVE_GCC_TYPEOF],[],["Have g++ typeof"])
+			have_auto_type_detection=yes
+			echo "g++ typeof... ok"],[echo "g++ typeof... not supported"])
+AC_TRY_COMPILE([#include <list>
+		#include <vector>
+		#include #include <boost/typeof/typeof.hpp>
+		],
+		[	{std::list<int> l; BOOST_TYPEOF(l.begin()) p=l.begin(); BOOST_TYPEOF(*p) &refp=*p;}
+			{std::vector<int> l; BOOST_TYPEOF(l.begin()) p=l.begin(); BOOST_TYPEOF(*p) &refp=*p;}],
+		[AC_DEFINE([HAVE_WORKING_BOOST_TYPEOF],[],["Have working BOOST_TYPEOF"])
+			have_auto_type_detection=yes
+			echo "Useful BOOST_TYPEOF... ok"],[echo "Useful BOOST_TYPEOF... not supported"])
+
+if test x$have_auto_type_detection != xyes ; then
+	echo "No useful type detection method for this compiler found"
+	echo "Supported methods: C++0x auto, C++0x decltype, Boost.Typeof, GCC typeof"
+	exit -1
+fi
+
+
+
 
 AM_CONDITIONAL(EN_FORK_CACHE,[test "x$have_mm" == "xyes" ])
 AM_CONDITIONAL(EN_FCGI_BACKEND,[test "x$have_fcgi" == "xyes" ])
@@ -99,6 +138,7 @@ fi
 AM_CONDITIONAL(EN_TCP_CACHE,[test "x$have_asio" == "xyes" ])
 
 AC_CHECK_LIB(cgicc,main,[CPPCMS_LIBS="-lcgicc $CPPCMS_LIBS"],[echo "cgicc not found" ; exit -1])
+AC_CHECK_LIB(dl,dlopen,[CPPCMS_LIBS="-ldl $CPPCMS_LIBS"],[])
 AC_CHECK_LIB(pthread,pthread_sigmask,[],[echo "Pthreads library not found" ; exit -1])
 AC_CHECK_LIB(boost_regex,main,[
 	CPPCMS_LIBS="-lboost_regex $CPPCMS_LIBS"

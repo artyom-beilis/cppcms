@@ -54,3 +54,11 @@ server.socket = "/tmp/hello-fastcgi.socket"     # Default is "" -- use default s
 # cache.ports = { 12000 12000 }			# The ports tcp_cache_servers listen on
 						# Make sure all servers occure in SAME order in all clients
 
+
+# Localization
+locale.dir="./transtext/locale"			# path to locale directory
+locale.lang_list = { "he"  "en" }		# list of supported languages
+locale.lang_default = "he"			# default language (default first one)
+locale.domain_list = { "app" "test" }		# list of supported domains
+locale.domain_default = "test"			# default domain (default first one)
+
