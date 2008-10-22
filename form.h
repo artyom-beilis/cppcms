@@ -4,6 +4,7 @@
 #include <list>
 #include <cgicc/Cgicc.h>
 #include <boost/regex.hpp>
+#include <ostream>
 
 namespace cppcms {
 using namespace std;
@@ -56,6 +57,8 @@ public:
 	text(string id,string msg="") : base_widget(id,msg) , type("text"){ low=0,high=-1; };
 	void set_limits(int min,int max) { low=min,high=max; }
 	void set_nonempty() { low = 1, high=-1;};
+	void set_limits(string e,int min,int max) { error_msg=e; set_limits(min,max); }
+	void set_nonempty(string e){ error_msg=e; set_nonempty(); };
 	virtual string render_input(int how);
 	void set(string const &s);
 	string const &get();

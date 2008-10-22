@@ -1,6 +1,12 @@
 <% namespace vary %>
 	<% class hello uses view::hello extends master %>
 	<% template body() %>
+	<form action="" method="post">
+	<table>
+	<% c++ cout<< content.form.render(base_form::as_table); %>
+	</table>
+	<input type="submit" value="Submit" />
+	</form>
 	<% if rtl %><% end %>
 		<% if not empty title %><h1><% title %></h1><% end %>
 		<p><% msg %></p>

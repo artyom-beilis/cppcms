@@ -8,6 +8,10 @@ base_form::~base_form()
 {
 }
 
+void base_form::append(base_form *ptr)
+{
+	elements.push_back(ptr);	
+}
 bool base_form::validate()
 {
 	bool valid=true;
@@ -150,6 +154,8 @@ bool text::validate()
 		if(value.size()<low || (high>=0 && value.size()>(unsigned)high)) {
 			is_valid=false;
 		}
+		else
+			is_valid=true;
 	return is_valid;
 }
 
@@ -188,8 +194,9 @@ string checkbox::render_input(int how)
 	out+=name;
 	out+="\" value=\"";
 	out+=escape(input_value);
+	out+="\"";
 	if(value)
-		out+=" selected=\"selected\"";
+		out+=" checked=\"checked\"";
 	if(!id.empty())
 		out+=" id=\""+id+"\"";
 	if(how & as_xhtml)
