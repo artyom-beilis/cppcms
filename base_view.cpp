@@ -1,24 +1,12 @@
 #include "base_view.h"
 #include "worker_thread.h"
+#include "util.h"
 
 namespace cppcms {
 
 string base_view::escape(string const &s)
 {
-	string content;
-	unsigned i,len=s.size();
-	content.reserve(len*3/2);
-	for(i=0;i<len;i++) {
-		char c=s[i];
-		switch(c){
-			case '<': content+="&lt;"; break;
-			case '>': content+="&gt;"; break;
-			case '&': content+="&amp;"; break;
-			case '\"': content+="&quot;"; break;
-			default: content+=c;
-		}
-	}
-	return content;
+	return cppcms::escape(s);
 }
 
 string base_view::urlencode(string const &s)

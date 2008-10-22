@@ -1,8 +1,28 @@
 #include "worker_thread.h"
 #include "manager.h"
 #include "hello_world_view.h"
-
+#include "form.h"
 using namespace cppcms;
+
+struct my_form : public base_form {
+	widgets::text username;
+	widgets::text name;
+	widgets::password p1;
+	widgets::password p2;
+	my_form() :
+		username("user","Username"),
+		name("name","Real Name"),
+		p1("pass","Password"),
+		p2("passcopy","Confirm")
+	{
+		*this & username & name & p1 & p2;
+		username.set_nonempty();
+		username.error_msg="Empty username";
+		name.set_nonempty();
+		name.error_msg="Empty name";
+		p2.set_equal(p1);
+	}
+};
 
 class my_hello_world : public worker_thread {
 public:
