@@ -16,37 +16,50 @@ struct data {
 	data(char const *n="",int v=0) : name(n),val(v){}
 };
 
-struct my_form : public base_form {
+struct my_form : public form {
 	widgets::text username;
 	widgets::text name;
 	widgets::password p1;
 	widgets::password p2;
 	widgets::checkbox ok;
-	my_form() :
-		username("user","Username"),
-		name("name","Real Name"),
-		p1("pass","Password"),
-		p2("passcopy","Confirm"),
-		ok("ok","Never save")
+	widgets::select fruit;
+	//widgets::radio fruit;
+	widgets::select_multiple meat;
+	my_form(worker_thread *w) :
+		username("user",w->gettext("Username")),
+		name("name",w->gettext("Real Name")),
+		p1("pass",w->gettext("Password")),
+		p2("passcopy",w->gettext("Confirm")),
+		ok("ok",w->gettext("Never save")),
+		fruit("fr",w->gettext("Fruit")),
+		meat("mt",2,w->gettext("Meat"))
 	{
-		*this & username & name & p1 & p2 & ok;
+		*this & username & name & p1 & p2 & ok & fruit & meat ;
 		username.set_nonempty();
-		username.error_msg="Empty username";
-		name.set_nonempty();
-		name.error_msg="Empty name";
+	//	name.set_nonempty();
 		p2.set_equal(p1);
+		p2.help=w->gettext("(Same as above)");
 		p1.set_nonempty();
 		p2.set_nonempty();
-		p1.error_msg=p2.error_msg="Empty passwords or not equal passwords";
+		fruit.add(1,"Orange");
+		fruit.add(2,"Palm");
+		meat.add(1,"Beef");
+		meat.add(2,"Chicken");
+		meat.add(3,"Duck");
+		meat.set_min(2);
+		meat.help=w->gettext("At least two choises");
 	}
 };
 
 
 struct hello : public master {
+	string username,realname,password;
+	bool ok;
 	std::string msg;
 	std::list<int> numbers;
 	std::list<data> lst;
 	my_form form;
+	hello(worker_thread *w) : form(w) {}
 };
 
 };

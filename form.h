@@ -1,16 +1,16 @@
 #ifndef CPPCMS_FORM_H
 #define CPPCMS_FORM_H 
 #include <string>
+#include <set>
 #include <list>
 #include <cgicc/Cgicc.h>
 #include <boost/regex.hpp>
+#include <boost/noncopyable.hpp>
 #include <ostream>
 
 namespace cppcms {
 using namespace std;
 class base_form {
-protected:
-	list<base_form *> elements;
 public:
 	virtual ~base_form();
 	enum {	as_html = 0,
@@ -24,11 +24,23 @@ public:
 		error_only = 0x20,
 		error_mask = 0x30, };
 
+	virtual string render(int how) = 0;
+	virtual void load(cgicc::Cgicc const &cgi) = 0;
+	inline void load(cgicc::Cgicc const *cgi) { if(cgi) load(*cgi); }
+	virtual bool validate() = 0;
+	virtual void clear() = 0;
+};
+
+class form : public boost::noncopyable , public base_form {
+protected:
+	list<base_form *> elements;
+public:
+	void append(base_form *ptr);
+	inline form &operator & (base_form &f) { append(&f); return *this; }
 	virtual string render(int how);
 	virtual void load(cgicc::Cgicc const &cgi);
 	virtual bool validate();
-	void append(base_form *ptr);
-	inline base_form &operator & (base_form &f) { append(&f); return *this; }
+	virtual void clear();
 };
 
 namespace widgets {
@@ -41,10 +53,14 @@ public:
 	string name;
 	string msg;
 	string error_msg;
+	string help;
 	bool is_valid;
 	virtual string render(int how);
 	virtual string render_input(int ) = 0;
 	virtual string render_error();
+	virtual void clear();
+	virtual bool validate();
+	void not_valid() { is_valid=false; }
 };
 
 class text : public base_widget {
@@ -69,9 +85,10 @@ public:
 class password: public text {
 	password *other;
 public:
-	password(string id,string msg="") : text(id,msg) { type="password"; other=NULL; } ;
+	password(string id,string msg="") : text(id,msg),other(0) {} ;
 	void set_equal(password &p2) { other=&p2; } ;
 	virtual bool validate();
+	virtual string render_input(int how);
 };
 class textarea: public text {
 public:
@@ -112,26 +129,60 @@ public:
 	virtual void load(cgicc::Cgicc const &cgi);
 };
 
-class select : public base_widget {
+class select_multiple : public base_widget {
+	int min;
+public:
+	int size;
+	select_multiple(string name,int s,string msg="") : base_widget(name,msg),min(-1),size(s) {};
+	set<string> chosen;
+	map<string,string> available;
+	void add(string val,string opt,bool selected=false);
+	void add(int val,string opt,bool selected=false);
+	set<string> &get() { return chosen; };
+	set<int> geti();
+	void set_min(int n) { min=n; };
+	virtual string render_input(int how);
+	virtual bool validate();
+	virtual void load(cgicc::Cgicc const &cgi);
+	virtual void clear();
+};
+
+class select_base : public base_widget {
+protected:
 	string value;
+	bool has_value;
 public:
 	struct option {
 		string value;
 		string option;
 	};
 	list<option> select_list;
-	select(string name,string msg="") : base_widget(name,msg) {};
+	select_base(string name,string msg="") : base_widget(name,msg){};
 	void add(string value,string option);
 	void add(int value,string option);
 	void set(string value);
 	void set(int value);
 	string get();
 	int geti();
-	virtual string render_input(int how);
 	virtual bool validate();
 	virtual void load(cgicc::Cgicc const &cgi);
 };
 
+class select : public select_base {
+	int size;
+public:
+	select(string n,string m="") : select_base(n,m),size(-1) {};
+	void set_size(int n) { size=n;}
+	virtual string render_input(int how);
+};
+
+class radio : public select_base {
+	bool add_br;
+public:
+	radio(string name,string msg="") : select_base(name,msg),add_br(false) {}
+	void set_vertical() { add_br=true; }
+	virtual string render_input(int how);
+};
 
 class hidden : public text {
 public:

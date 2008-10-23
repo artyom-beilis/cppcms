@@ -2,27 +2,37 @@
 #include "util.h"
 
 #include <boost/format.hpp>
+#include <iostream>
 
 namespace cppcms {
 base_form::~base_form()
 {
 }
 
-void base_form::append(base_form *ptr)
+void form::append(base_form *ptr)
 {
 	elements.push_back(ptr);	
 }
-bool base_form::validate()
+bool form::validate()
 {
 	bool valid=true;
 	for(list<base_form *>::iterator p=elements.begin(),e=elements.end();p!=e;++p)
 	{
-		valid = valid && (*p)->validate();
+		bool val=(*p)->validate();
+		valid = valid && val;
 	}
 	return valid;
 }
 
-void base_form::load(cgicc::Cgicc const &cgi)
+void form::clear()
+{
+	for(list<base_form *>::iterator p=elements.begin(),e=elements.end();p!=e;++p)
+	{
+		(*p)->clear();
+	}
+}
+
+void form::load(cgicc::Cgicc const &cgi)
 {
 	for(list<base_form *>::iterator p=elements.begin(),e=elements.end();p!=e;++p)
 	{
@@ -30,7 +40,7 @@ void base_form::load(cgicc::Cgicc const &cgi)
 	}
 }
 
-string base_form::render(int how)
+string form::render(int how)
 {
 	string output;
 	for(list<base_form *>::iterator p=elements.begin(),e=elements.end();p!=e;++p) {
@@ -44,7 +54,18 @@ namespace widgets {
 base_widget::base_widget(string _id,string m) : name(_id), msg(m)
 {	
 	is_set=false;
-	is_valid=false;
+	is_valid=true;
+}
+
+void base_widget::clear()
+{
+	is_set=false;
+}
+
+bool base_widget::validate()
+{
+	is_valid=true;
+	return true;
 }
 
 string base_widget::render(int how)
@@ -67,41 +88,55 @@ string base_widget::render(int how)
 		tmp_msg="<lablel for=\"" + id + "\">" + msg +"</label>";
 	}
 	else {
-		tmp_msg=name;
+		tmp_msg=msg;
 	}
+
+	string help_text;
+	if(!help.empty()) {
+		if((how & as_mask)==as_table)
+			help_text=
+				((how & as_xhtml) ? "<br/>" : "<br>") 
+				+ escape(help);
+		else
+			help_text=escape(help);
+	}
+		
 
 	if(error.empty()) {
 		char const *frm=NULL;
 		switch(how & as_mask) {
 		case as_p: 
-			frm = "<p>%1%: %2%</p>\n";
+			frm = "<p>%1%: %2% %3%</p>\n";
 			break;
 		case as_table:
-			frm = "<tr><th>%1%</th><td>%2%</td></tr>\n";
+			frm = "<tr><th>%1%</th><td>%2% %3%</td></tr>\n";
 			break;
 		case as_ul:
-			frm = "<li>%1%: %2%</li>\n";
+			frm = "<li>%1%: %2% %3%</li>\n";
 			break;
 		}
 		assert(frm);
-		out=(boost::format(frm) % tmp_msg % input).str();
+		out=(boost::format(frm) % tmp_msg % input % help_text).str();
 	}
 	else {
 		char const *frm=NULL;
 		switch(how & as_mask) {
 		case as_p: 
-			frm = "<p>%3%</p>\n<p>%1%: %2%</p>\n";
+			frm = "<p>%3%</p>\n<p>%1%: %2% %4%</p>\n";
 			break;
 		case as_table:
-			frm = "<tr><th>%1%</th><td>%3% %2%</td></tr>\n";
+			frm = "<tr><th>%1%</th><td>%3% %2% %4%</td></tr>\n";
 			break;
 		case as_ul:
-			frm = "<li>%3% %1%: %2%</li>\n";
+			frm = "<li>%3% %1%: %2% %4%</li>\n";
 			break;
 		}
 		assert(frm);
-		error="<ul class=\"errorlist\">" + error + "</ul>";
-		out=(boost::format(frm) % tmp_msg % input % error).str();
+		if(error!="*")
+			error="<ul class=\"errorlist\"><li>" + error + "</li></ul>";
+		else
+			error="<span class=\"errorstar\">*</span>";
+		out=(boost::format(frm) % tmp_msg % input % error % help_text).str();
 	}
 	return out;
 
@@ -109,8 +144,12 @@ string base_widget::render(int how)
 
 string base_widget::render_error()
 {
-	if(is_set && !is_valid)
+	if(!is_valid) {
+		if(error_msg.empty()) {
+			return "*";
+		}
 		return escape(error_msg);
+	}
 	return "";
 }
 
@@ -195,7 +234,7 @@ string checkbox::render_input(int how)
 	out+="\" value=\"";
 	out+=escape(input_value);
 	out+="\"";
-	if(value)
+	if(is_set && value)
 		out+=" checked=\"checked\"";
 	if(!id.empty())
 		out+=" id=\""+id+"\"";
@@ -233,7 +272,86 @@ bool regex_field::validate()
 
 boost::regex email::exp_email("^[^@]+@[^@]+$");
 
-void select::add(string v,string opt)
+void select_multiple::add(int v,string o,bool selected)
+{
+	add((boost::format("%d") % v).str() ,o,selected);
+}
+
+set<int> select_multiple::geti()
+{
+	set<int> c;
+	for(set<string>::iterator p=chosen.begin(),e=chosen.end();p!=e;++p) {
+		c.insert(atoi(p->c_str()));
+	}
+	return c;
+}
+
+bool select_multiple::validate()
+{
+	int count=0;
+	if(!is_set) { is_valid=false; return false; };
+	is_valid=true;
+	for(set<string>::iterator p=chosen.begin(),e=chosen.end();p!=e;++p) {
+		if(available.find(*p)==available.end()) {
+			is_valid=false;
+			break;
+		}
+		count++;
+	}
+	if(min>0 && count < min)
+		is_valid=false;
+	return is_valid;
+}
+
+
+void select_multiple::add(string v,string o,bool selected)
+{
+	available[v]=o;
+	if(selected) chosen.insert(v);
+}
+
+void select_multiple::load(cgicc::Cgicc const &cgi)
+{
+	chosen.clear();
+	cgicc::const_form_iterator p=cgi.getElements().begin(),e=cgi.getElements().end();
+	for(;p!=e;++p) {
+		if(p->getName()==name) {
+			map<string,string>::iterator orig=available.find(p->getValue());
+			if(orig!=available.end()) 
+				chosen.insert(orig->first);
+		}
+	}
+	is_set=true;
+}
+
+string select_multiple::render_input(int how)
+{
+	string out="<select multiple=\"multiple\" name=\"";
+	out+=name;
+	out+="\" ";
+	if(!id.empty())
+		out+="id=\""+id+"\" ";
+	out+=(boost::format(" size=\"%d\"") % size).str();
+	out+=">\n";
+	for(map<string,string>::iterator p=available.begin(),e=available.end();p!=e;++p) {
+		out+="<option value=\""+p->first+"\" ";
+		if(chosen.find(p->first)!=chosen.end())
+			out+=" selected=\"selected\" ";
+		out+=">";
+		out+=escape(p->second);
+		out+="</option>\n";
+	}
+	out+="</select>\n";
+	return out;
+}
+
+void select_multiple::clear()
+{
+	base_widget::clear();
+	chosen.clear();
+}
+
+void select_base::add(string v,string opt)
 {
 	option o;
 	o.value=v;
@@ -241,27 +359,27 @@ void select::add(string v,string opt)
 	select_list.push_back(o);
 }
 
-void select::add(int val,string opt)
+void select_base::add(int val,string opt)
 {
 	add((boost::format("%d") % val).str(),opt);
 }
 
-void select::set(string v)
+void select_base::set(string v)
 {
 	value=v;
 }
 
-void select::set(int v)
+void select_base::set(int v)
 {
 	value=(boost::format("%d") % v).str();
 }
 
-string select::get()
+string select_base::get()
 {
 	return value;
 }
 
-int select::geti()
+int select_base::geti()
 {
 	return atoi(value.c_str());
 }
@@ -271,12 +389,14 @@ string select::render_input(int how)
 	string out="<select name=\"";
 	out+=name;
 	out+="\" ";
+	if(size!=-1)
+		out+=(boost::format(" size=\"%d\" ") % size).str();
 	if(!id.empty())
 		out+="id=\""+id+"\" ";
 	out+=">\n";
 	for(list<option>::iterator p=select_list.begin(),e=select_list.end();p!=e;++p) {
 		out+="<option value=\""+p->value+"\" ";
-		if(p->value==value)
+		if(is_set && p->value==value)
 			out+=" selected=\"selected\" ";
 		out+=">";
 		out+=escape(p->option);
@@ -286,7 +406,7 @@ string select::render_input(int how)
 	return out;
 }
 
-void select::load(cgicc::Cgicc const &cgi)
+void select_base::load(cgicc::Cgicc const &cgi)
 {
 	cgicc::const_form_iterator p=cgi.getElement(name);
 	if(p==cgi.getElements().end()) {
@@ -294,22 +414,52 @@ void select::load(cgicc::Cgicc const &cgi)
 	}
 	else {
 		value=**p;
+		is_set=true;
 	}
 }
 
-bool select::validate()
+bool select_base::validate()
 {
 	if(!is_set) {
 		is_valid=false;
 		return false;
 	}
 	for(list<option>::iterator p=select_list.begin(),e=select_list.end();p!=e;++p) {
-		if(value==p->value)
+		if(value==p->value) {
 			is_valid=true;
-		return true;
+			return true;
+		}
 	}
 	is_valid=false;
 	return false;
+}
+
+string radio::render_input(int how)
+{
+	string out="<div class=\"radio\" ";
+	if(!id.empty())
+		out+="id=\""+id+"\" ";
+	out+=">\n";
+	for(list<option>::iterator p=select_list.begin(),e=select_list.end();p!=e;++p) {
+		out+="<input type=\"radio\" value=\""+p->value+"\" ";
+		if(is_set && p->value==value)
+			out+=" checked=\"checked\" ";
+		out+="name=\"";
+		out+=name;
+		out+="\" ";
+		if(how & as_xhtml)
+			out+="/";
+		out+=">";
+		out+=escape(p->option);
+		if(add_br)
+			if(how & as_xhtml)
+				out+="<br/>";
+			else
+				out+="<br>";
+		out+="\n";
+	}
+	out+="</div>\n";
+	return out;
 }
 
 string hidden::render(int how)
@@ -340,6 +490,15 @@ bool password::validate()
 			return false;
 		}
 	return true;
+}
+
+string password::render_input(int how)
+{
+	return (boost::format("<input type=\"password\" %1% name=\"%2%\" %3%>")
+		% ( id.empty() ? string("") : "id=\""+id+"\"" )
+		% name 
+		% ( (how & as_xhtml) ? "/" : "" )
+		).str();
 }
 
 } // Namespace widgets 

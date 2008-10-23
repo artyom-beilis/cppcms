@@ -10,6 +10,10 @@
 	<% if rtl %><% end %>
 		<% if not empty title %><h1><% title %></h1><% end %>
 		<p><% msg %></p>
+		<% if not empty username %>
+		<p> The form was: nik=<% username %>, name=<% realname %>, Ok is <% if not ok%>not<% end %> checked,
+			password=<% password %></p>
+		<% end %>
 		<% foreach x in numbers %>
 			<ul>
 			<% item %>

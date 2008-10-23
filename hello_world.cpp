@@ -14,11 +14,17 @@ public:
 
 void my_hello_world::main()
 {
-	view::hello v;
+	view::hello v(this);
 
 	if(env->getRequestMethod()=="POST") {
 		v.form.load(*cgi);
-		v.form.validate();
+		if(v.form.validate()) {
+			v.username=v.form.username.get();
+			v.realname=v.form.name.get();
+			v.ok=v.form.ok.get();
+			v.password=v.form.p1.get();
+			v.form.clear();
+		}
 	}
 
 	v.title="Cool";
@@ -27,7 +33,6 @@ void my_hello_world::main()
 	for(int i=0;i<15;i++)
 		v.numbers.push_back(i);
 	v.lst.push_back(view::data("Hello",10));
-	v.ok=true;
 	render("hello",v);
 }
 

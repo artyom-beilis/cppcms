@@ -65,8 +65,6 @@ protected:
 	void set_lang();
 	void set_lang(string const &s);
 
-	inline char const *gettext(char const *s) { return gt->gettext(s); };
-	inline char const *ngettext(char const *s,char const *p,int n) { return gt->ngettext(s,p,n); };
 
 
 	string current_template;
@@ -79,6 +77,10 @@ protected:
 	void render(string templ,string name,base_content &content,ostream &);
 	virtual void main();
 public:
+
+	inline char const *gettext(char const *s) { return gt->gettext(s); };
+	inline char const *ngettext(char const *s,char const *p,int n) { return gt->ngettext(s,p,n); };
+
 	int id;
 	pthread_t pid;
 	ostream &get_cout() { return cout; }
