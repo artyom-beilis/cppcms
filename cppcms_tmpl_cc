@@ -4,7 +4,7 @@ import os
 import re
 import sys
 
-variable_match=r'([a-zA-Z]\w*)(((\.|->)([a-zA-Z]\w*))*)'
+variable_match=r'\*?([a-zA-Z]\w*)(((\.|->)([a-zA-Z]\w*))*)'
 str_match=r'"([^"\\]|\\[^"]|\\")*"'
 
 def interleave(*args):
@@ -261,7 +261,11 @@ def make_ident(val):
 	global tmpl_seq
 	if tmpl_seq.has_key(m.group(1)):
 		return val
-	return "content." + val
+	m2=re.match('^\*(.*)$',val)
+	if m2:
+		return "*content." + m2.group(1)
+	else:
+		return "content." + val
 
 class foreach_block:
 	pattern=r'^<%\s*foreach\s+([a-zA-Z]\w*)\s+in\s+(' + variable_match +')\s*%>$'
