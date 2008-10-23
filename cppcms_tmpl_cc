@@ -102,6 +102,18 @@ def gettext_domain():
 	global namespace_name
 	return namespace_name
 
+class html_type:
+	pattern=r'^<%\s*(x)?html\s*%>$'
+	def use(self,m):
+		global html_type_code
+		if m.group(1):
+			html_type_code='cppcms::base_form::as_xhtml'
+		else:
+			html_type_code='cppcms::base_form::as_html'
+
+	
+
+
 class class_block:
 	pattern=r'^<%\s*class\s+(\w+)\s+(uses\s+(\w+(::\w+)?))?\s+(extends\s+(\w+(::\w+)?))?\s*%>$'
 	type='class'
@@ -469,6 +481,24 @@ class base_show:
 		error_exit("Seems to be a problem in expression %s" % filters)
 		return "";
 
+class form_block:
+	pattern=r'^<%\s*form\s+(((as_p|as_table|as_ul)(\s+no\s+error)?)|error|input)\s+('\
+		 + variable_match +')\s*%>'
+	def use(self,m):
+		ident=make_ident(m.group(5))
+		global html_type_code
+		if m.group(1)=='error':
+			output('cout<<%s.render_error();' % ident)
+		elif m.group(1)=='input':
+			output('cout<<%s.render_input(%s);' % ( ident , html_type_code ));
+		else:
+			html_code='cppcms::base_form::' + m.group(3)
+			if m.group(4):
+				html_code=html_code + '|cppcms::base_form::error_no';
+			output('cout<<%s.render(%s);' % (ident , html_code + '|' + html_type_code))
+
+
+
 class filters_show_block(base_show):
 	pattern=r'^<%\s*('+ variable_match + r'\s*(\|.*)?)%>$'
 	def use(self,m):
@@ -610,6 +640,7 @@ def main():
 					gettext_block(),ngettext_block(),\
 					foreach_block(), item_block(), empty_block(),separator_block(),\
 					include_block(),\
+					html_type(), form_block(), \
 					filters_show_block(), error_com()]:
 				m = re.match(c.pattern,x)
 				if m :
@@ -631,6 +662,7 @@ def main():
 #######################
 
 
+html_type_code='cppcms::base_form::as_html'
 output_file=''
 output_fd=sys.stdout
 namespace_name=''

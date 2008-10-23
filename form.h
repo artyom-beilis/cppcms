@@ -21,8 +21,7 @@ public:
 		as_mask = 6,
 		error_with   = 0,
 		error_no = 0x10,
-		error_only = 0x20,
-		error_mask = 0x30, };
+		error_mask = 0x10, };
 
 	virtual string render(int how) = 0;
 	virtual void load(cgicc::Cgicc const &cgi) = 0;

@@ -1,10 +1,11 @@
+<% xhtml %>
 <% namespace vary %>
 	<% class hello uses view::hello extends master %>
 	<% template body() %>
 	<form action="" method="post">
-	<table>
-	<% c++ cout<< content.form.render(base_form::as_table); %>
-	</table>
+	<ul>
+	<% form as_ul form %>
+	</ul>
 	<input type="submit" value="Submit" />
 	</form>
 	<% if rtl %><% end %>

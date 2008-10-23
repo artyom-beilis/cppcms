@@ -75,8 +75,6 @@ string base_widget::render(int how)
 	string error;
 
 	switch(how & error_mask) {
-	case error_only:
-		return render_error();
 	case error_with:
 		error=render_error();
 		break;
