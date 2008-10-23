@@ -18,7 +18,8 @@ struct data {
 
 struct my_form : public form {
 	widgets::text username;
-	widgets::text name;
+	widgets::textarea name;
+	widgets::email mail;
 	widgets::password p1;
 	widgets::password p2;
 	widgets::checkbox ok;
@@ -28,15 +29,16 @@ struct my_form : public form {
 	my_form(worker_thread *w) :
 		username("user",w->gettext("Username")),
 		name("name",w->gettext("Real Name")),
+		mail("mail","Mail"),
 		p1("pass",w->gettext("Password")),
 		p2("passcopy",w->gettext("Confirm")),
 		ok("ok",w->gettext("Never save")),
 		fruit("fr",w->gettext("Fruit")),
 		meat("mt",2,w->gettext("Meat"))
 	{
-		*this & username & name & p1 & p2 & ok & fruit & meat ;
+		*this & username & mail & name & p1 & p2 & ok & fruit & meat ;
 		username.set_nonempty();
-	//	name.set_nonempty();
+		name.set_nonempty();
 		p2.set_equal(p1);
 		p2.help=w->gettext("(Same as above)");
 		p1.set_nonempty();

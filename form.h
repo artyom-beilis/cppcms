@@ -189,6 +189,15 @@ public:
 	virtual string render(int how);
 };
 
+class submit : public base_widget {
+public:
+	string value;
+	bool pressed;
+	submit(string name,string button,string msg="") : base_widget(name,msg), value(button),pressed(false) {};
+	virtual string render_input(int);
+	virtual void load(cgicc::Cgicc const &cgi);
+};
+
 } // widgets
 
 } //cppcms

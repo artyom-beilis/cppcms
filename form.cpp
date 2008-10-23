@@ -265,7 +265,8 @@ bool regex_field::validate()
 {
 	if(!text::validate())
 		return false;
-	return boost::regex_match(value,exp);
+	is_valid=boost::regex_match(value,exp);
+	return is_valid;
 }
 
 boost::regex email::exp_email("^[^@]+@[^@]+$");
@@ -497,6 +498,24 @@ string password::render_input(int how)
 		% name 
 		% ( (how & as_xhtml) ? "/" : "" )
 		).str();
+}
+
+string submit::render_input(int how)
+{
+	return (boost::format("<input type=\"submit\" %1% name=\"%2%\" value=\"%3%\" %4%>")
+		% ( id.empty() ? string("") : "id=\""+id+"\"" )
+		% name 
+		% value
+		% ( (how & as_xhtml) ? "/" : "" )
+		).str();
+}
+
+void submit::load(cgicc::Cgicc const &cgi)
+{
+	is_set=true;
+	cgicc::const_form_iterator v=cgi.getElement(name);
+	if(v!=cgi.getElements().end())
+		pressed=true;
 }
 
 } // Namespace widgets 
