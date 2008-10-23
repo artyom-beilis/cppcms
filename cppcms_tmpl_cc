@@ -268,20 +268,25 @@ def make_ident(val):
 		return "content." + val
 
 class foreach_block:
-	pattern=r'^<%\s*foreach\s+([a-zA-Z]\w*)\s+in\s+(' + variable_match +')\s*%>$'
+	pattern=r'^<%\s*foreach(\s+widget)?\s+([a-zA-Z]\w*)\s+in\s+(' + variable_match +')\s*%>$'
 	type='foreach'
 	has_item=0
 	has_separator=0
 	separator_label=''
 	on_first_label=''
+	widget=0
 	def use(self,m):
-		self.ident=m.group(1)
-		self.seq_name=make_ident(m.group(2))
+		self.ident=m.group(2)
+		self.seq_name=make_ident(m.group(3))
 		global tmpl_seq
 		if tmpl_seq.has_key(self.ident):
 			error_exit("Nested sequences with same name")
 		tmpl_seq[self.ident]='';
-		output( "if(%s.begin()!=%s.end()) {" % (self.seq_name,self.seq_name) )
+		if m.group(1):
+			self.widget=1
+			output("if(%s.widgets.begin()!=%s.widgets.end()){" % (self.seq_name,self.seq_name) )
+		else:
+			output( "if(%s.begin()!=%s.end()) {" % (self.seq_name,self.seq_name) )
 		global stack
 		stack.append(self)
 
@@ -293,12 +298,20 @@ class foreach_block:
 		del tmpl_seq[self.ident]
 		output( "}" )
 
-def prepare_foreach(seq,ident,has_separator):
-	output( "for(CPPCMS_TYPEOF(%(s)s.begin()) %(i)s_ptr=%(s)s.begin(),%(i)s_ptr_end=%(s)s.end();%(i)s_ptr!=%(i)s_ptr_end;++%(i)s_ptr) {" \
+def prepare_foreach(widget,seq,ident,has_separator):
+	if widget:
+		output("for(cppcms::widgetset::widgets_t::iterator %(i)s_ptr=%(s)s.widgets.begin(),%(i)s_ptr_end=%(s)s.widgets.end();%(i)s_ptr!=%(i)s_ptr_end;++%(i)s_ptr) {" \
+                % { 's' :seq, 'i' : ident })
+		output( "cppcms::widgets::base_widget &%s=**%s_ptr;" % (ident,ident))
+	else:
+		output( "for(CPPCMS_TYPEOF(%(s)s.begin()) %(i)s_ptr=%(s)s.begin(),%(i)s_ptr_end=%(s)s.end();%(i)s_ptr!=%(i)s_ptr_end;++%(i)s_ptr) {" \
 		% { 's' :seq, 'i' : ident })
-	output( "CPPCMS_TYPEOF(*%s_ptr) &%s=*%s_ptr;" % (ident,ident,ident))
+		output( "CPPCMS_TYPEOF(*%s_ptr) &%s=*%s_ptr;" % (ident,ident,ident))
 	if has_separator:
-		output( "if(%s_ptr!=%s.begin()) {" % (ident,seq))
+		if widget:
+			output( "if(%s_ptr!=%s.widgets.begin()) {" % (ident,seq))
+		else:
+			output( "if(%s_ptr!=%s.begin()) {" % (ident,seq))
 		
 		
 
@@ -314,7 +327,7 @@ class separator_block:
 		if foreachb.has_separator:
 			error_exit("two separators for one foreach")
 		foreachb.has_separator=1
-		prepare_foreach(foreachb.seq_name,foreachb.ident,1)
+		prepare_foreach(foreachb.widget,foreachb.seq_name,foreachb.ident,1)
 		
 
 class item_block:
@@ -331,7 +344,7 @@ class item_block:
 		if foreachb.has_separator:
 			output( "} // end of separator")
 		else:
-			prepare_foreach(foreachb.seq_name,foreachb.ident,0)
+			prepare_foreach(foreachb.widget,foreachb.seq_name,foreachb.ident,0)
 		foreachb.has_item=1
 		stack.append(self)
 	def on_end(self):
@@ -486,7 +499,7 @@ class base_show:
 		return "";
 
 class form_block:
-	pattern=r'^<%\s*form\s+(((as_p|as_table|as_ul)(\s+no\s+error)?)|error|input)\s+('\
+	pattern=r'^<%\s*form\s+(((as_p|as_table|as_ul|as_dl|as_space)(\s+no\s+error)?)|error|input)\s+('\
 		 + variable_match +')\s*%>'
 	def use(self,m):
 		ident=make_ident(m.group(5))

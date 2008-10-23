@@ -8,6 +8,18 @@
 	</ul>
 	<input type="submit" value="Submit" />
 	</form>
+	<form action="" method="post">
+	<p>
+		<% foreach widget w in form.my_set %>
+			<% separator %><br/><% item %>
+				<% if not empty w.msg %><% w.msg %>:<% end %>
+				<% form input w %>
+				<% if not w.is_valid %>:<% form error w %><% end %>
+			<% end %>
+		<% end %>
+		<input type="submit" value="Submit" />
+
+	</p>
 	<% if rtl %><% end %>
 		<% if not empty title %><h1><% title %></h1><% end %>
 		<p><% msg %></p>

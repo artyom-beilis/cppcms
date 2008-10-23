@@ -49,6 +49,22 @@ string form::render(int how)
 	return output;
 }
 
+widgetset::~widgetset(){}
+string widgetset::render(int how)
+{
+	string out;
+	for(widgets_t::iterator p=widgets.begin(),e=widgets.end();p!=e;++p) {
+		out+=(*p)->render(how);
+	}
+	return out;
+}
+
+widgetset::widgetset()
+{
+	widgets.reserve(10);
+}
+
+
 namespace widgets {
 
 base_widget::base_widget(string _id,string m) : name(_id), msg(m)
@@ -99,41 +115,61 @@ string base_widget::render(int how)
 			help_text=escape(help);
 	}
 		
+	bool points=false;
 
 	if(error.empty()) {
 		char const *frm=NULL;
 		switch(how & as_mask) {
 		case as_p: 
-			frm = "<p>%1%: %2% %3%</p>\n";
+			frm = "<p>%1% %2% %3%</p>\n";
+			points=true;
 			break;
 		case as_table:
 			frm = "<tr><th>%1%</th><td>%2% %3%</td></tr>\n";
 			break;
 		case as_ul:
-			frm = "<li>%1%: %2% %3%</li>\n";
+			frm = "<li>%1% %2% %3%</li>\n";
+			points=true;
+			break;
+		case as_dl:
+			frm = "<dt>%1%</dt>\n<dd>%2% %3%</dd>\n";
+			break;
+		case as_space:
+			frm = "%1% %2% %3%\n";
+			points=true;
 			break;
 		}
 		assert(frm);
+		if(points)
+			tmp_msg+=":";
 		out=(boost::format(frm) % tmp_msg % input % help_text).str();
 	}
 	else {
 		char const *frm=NULL;
 		switch(how & as_mask) {
 		case as_p: 
-			frm = "<p>%3%</p>\n<p>%1%: %2% %4%</p>\n";
+			frm = "<p>%3%</p>\n<p>%1% %2% %4%</p>\n";
+			points=true;
 			break;
 		case as_table:
 			frm = "<tr><th>%1%</th><td>%3% %2% %4%</td></tr>\n";
 			break;
 		case as_ul:
-			frm = "<li>%3% %1%: %2% %4%</li>\n";
+			frm = "<li>%3% %1% %2% %4%</li>\n";
+			points=true;
+			break;
+		case as_dl:
+			frm = "<dt>%3% %1%</dt>\n<dd>%2% %4%</dd>\n";
+			break;
+		case as_space:
+			frm = "%3% %1% %2% %4%\n";
+			points=true;
 			break;
 		}
 		assert(frm);
-		if(error!="*")
-			error="<ul class=\"errorlist\"><li>" + error + "</li></ul>";
-		else
-			error="<span class=\"errorstar\">*</span>";
+		error="<span class=\"formerror\">" + error + "</span>";
+		if(points && !tmp_msg.empty())
+			tmp_msg=":"+tmp_msg;
 		out=(boost::format(frm) % tmp_msg % input % error % help_text).str();
 	}
 	return out;
@@ -196,6 +232,12 @@ bool text::validate()
 	return is_valid;
 }
 
+string &text::str()
+{
+	is_set=true;
+	return value;
+}
+
 void text::set(string const &s)
 {
 	is_set=true;
@@ -241,11 +283,6 @@ string checkbox::render_input(int how)
 	else
 		out+=" >";
 	return out;
-}
-
-string checkbox::render_error()
-{
-	return "";
 }
 
 void checkbox::load(cgicc::Cgicc const &cgi)

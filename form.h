@@ -16,9 +16,11 @@ public:
 	enum {	as_html = 0,
 		as_xhtml= 1,
 		as_p	= 0,
-		as_table= 2,
-		as_ul 	= 4,
-		as_mask = 6,
+		as_table= 1<<1,
+		as_ul 	= 2<<1,
+		as_dl	= 3<<1,
+		as_space= 4<<1,
+		as_mask = 7<<1,
 		error_with   = 0,
 		error_no = 0x10,
 		error_mask = 0x10, };
@@ -41,6 +43,9 @@ public:
 	virtual bool validate();
 	virtual void clear();
 };
+
+
+
 
 namespace widgets {
 
@@ -76,6 +81,7 @@ public:
 	void set_nonempty(string e){ error_msg=e; set_nonempty(); };
 	virtual string render_input(int how);
 	void set(string const &s);
+	string &str();
 	string const &get();
 	virtual bool validate();
 	virtual void load(cgicc::Cgicc const &cgi);
@@ -121,7 +127,6 @@ public:
 		set(false);
 	};
 	virtual string render_input(int how);
-	virtual string render_error();
 	void set(bool v) { value=v; is_set=true; };
 	void set(string const &s) { input_value=s; };
 	bool get() { return value; };
@@ -199,6 +204,16 @@ public:
 };
 
 } // widgets
+
+class widgetset {
+public:
+	typedef vector<widgets::base_widget*> widgets_t;
+	widgets_t widgets;
+	inline widgetset &operator<<(widgets::base_widget &w) { widgets.push_back(&w); return *this; }
+	widgetset();
+	virtual string render(int how);
+	virtual ~widgetset();
+};
 
 } //cppcms
 

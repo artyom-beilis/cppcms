@@ -26,6 +26,7 @@ struct my_form : public form {
 	widgets::select fruit;
 	//widgets::radio fruit;
 	widgets::select_multiple meat;
+	widgetset my_set;
 	my_form(worker_thread *w) :
 		username("user",w->gettext("Username")),
 		name("name",w->gettext("Real Name")),
@@ -37,6 +38,7 @@ struct my_form : public form {
 		meat("mt",2,w->gettext("Meat"))
 	{
 		*this & username & mail & name & p1 & p2 & ok & fruit & meat ;
+		my_set<< username<<mail<<name<<p1<<p2<<ok<<fruit<<meat;
 		username.set_nonempty();
 		name.set_nonempty();
 		p2.set_equal(p1);
