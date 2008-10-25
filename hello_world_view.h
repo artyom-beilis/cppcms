@@ -30,7 +30,7 @@ struct my_form : public form {
 	my_form(worker_thread *w) :
 		username("user",w->gettext("Username")),
 		name("name",w->gettext("Real Name")),
-		mail("mail","Mail"),
+		mail("mail"),
 		p1("pass",w->gettext("Password")),
 		p2("passcopy",w->gettext("Confirm")),
 		ok("ok",w->gettext("Never save")),
