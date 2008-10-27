@@ -58,11 +58,11 @@ void cache_iface::store_page(string const &key,time_t timeout)
 	long level=cms->app.config.lval("gzip.level",-1);
 	long length=cms->app.config.lval("gzip.buffer",-1);
 	string tmp=cms->out_buf.str();
-	cms->out_buf.str("");
 
 	string compr=deflate(tmp,level,length);
 	a<<tmp<<compr;
 	if(cms->gzip){
+		cms->out_buf.str("");
 		cms->cout<<compr;
 		cms->gzip_done=true;
 	}
