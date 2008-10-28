@@ -172,7 +172,7 @@ class template_block:
 		res=[]
 		while m:
 			global tmpl_seq
-			id=m.group(2)
+			id=m.group(6)
 			if tmpl_seq.has_key(id):
 				error_exit("Duplicate definition of patameter %s" % id)
 				for v in self.plist:

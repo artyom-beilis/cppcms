@@ -1,6 +1,11 @@
 <% c++ #include "hello_world_view.h" %>
 <% namespace vary %>
 	<% class master uses view::master %>
+	<% template test(string &v,int p) %>
+	<% foreach c in v %>
+		<% item %><% c %><% end %>
+	<% end %>
+	<% end %>
 	<% template render() %>
 		<html>
 		<title>Skin1 :: <% title %></title>
