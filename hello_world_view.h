@@ -1,4 +1,5 @@
 #include "base_view.h"
+#include "application.h"
 #include <list>
 #include "form.h"
 using namespace cppcms;
@@ -27,7 +28,7 @@ struct my_form : public form {
 	//widgets::radio fruit;
 	widgets::select_multiple meat;
 	widgetset my_set;
-	my_form(worker_thread *w) :
+	my_form(application *w) :
 		username("user",w->gettext("Username")),
 		name("name",w->gettext("Real Name")),
 		mail("mail"),
@@ -63,7 +64,7 @@ struct hello : public master {
 	std::list<int> numbers;
 	std::list<data> lst;
 	my_form form;
-	hello(worker_thread *w) : form(w) {}
+	hello(application *w) : form(w) {}
 };
 
 };

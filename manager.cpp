@@ -529,7 +529,14 @@ void manager::execute()
 
 void manager::load_templates()
 {
-	string ext=config.sval("templates.ext",".so");
+	string ext=config.sval("templates.ext",
+		#ifdef __CYGWIN__
+		".dll"
+		#else
+		".so"
+		#endif
+		);
+	// FIXME to something that works with autotools
 	unsigned len=ext.size();
 	vector<string> const &dirs=config.slist("templates.dirs");
 	for(vector<string>::const_iterator dir=dirs.begin();dir!=dirs.end();++dir) {

@@ -1,15 +1,18 @@
-#include "worker_thread.h"
+#include "application.h"
 #include "manager.h"
 #include "hello_world_view.h"
 using namespace cppcms;
 
-class my_hello_world : public worker_thread {
+class my_hello_world : public application {
 public:
-	my_hello_world(manager const &s) :  worker_thread(s)
+	my_hello_world(worker_thread &w) :
+		application(w)
 	{
+		url.add("^/hello?$",
+			boost::bind(&my_hello_world::main,this));
 		use_template("view2");
 	};
-	virtual void main();
+	void main();
 };
 
 void my_hello_world::main()
@@ -40,7 +43,7 @@ int main(int argc,char ** argv)
 {
 	try {
 		manager app(argc,argv);
-		app.set_worker(new simple_factory<my_hello_world>());
+		app.set_worker(new application_factory<my_hello_world>());
 		app.execute();
 	}
 	catch(std::exception const &e) {

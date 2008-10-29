@@ -151,6 +151,11 @@ AC_CHECK_LIB(boost_iostreams,main,[
 	],[AC_CHECK_LIB(boost_iostreams-gcc-mt,main,[
 		CPPCMS_LIBS="-lboost_iostreams-gcc-mt $CPPCMS_LIBS"
 		],[ echo "boost::iostreams not found" ; exit -1])])
+AC_CHECK_LIB(boost_signals,main,[
+	CPPCMS_LIBS="-lboost_signals $CPPCMS_LIBS"
+	],[AC_CHECK_LIB(boost_signals-gcc-mt,main,[
+		CPPCMS_LIBS="-lboost_signals-gcc-mt $CPPCMS_LIBS"
+		],[ echo "boost::signals not found" ; exit -1])])
 
 AC_SUBST(CPPCMS_LIBS)
 AC_OUTPUT

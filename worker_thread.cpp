@@ -26,9 +26,13 @@ worker_thread::~worker_thread()
 {
 	app.cache->del(caching_module);
 }
+
+
 void worker_thread::main()
 {
+	on_start();
 	cout<<"<h1>Hello World</h2>\n";
+	on_end();
 }
 void worker_thread::set_header(HTTPHeader *h)
 {

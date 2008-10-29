@@ -11,6 +11,7 @@
 #include <cgicc/HTMLClasses.h>
 #include <boost/noncopyable.hpp>
 #include <memory>
+#include <boost/signal.hpp>
 
 #include "cppcms_error.h"
 #include "url.h"
@@ -30,6 +31,9 @@ using cgicc::Cgicc;
 using cgicc::HTTPHeader;
 
 class worker_thread: private boost::noncopyable {
+	int id;
+	pthread_t pid;
+
 	friend class url_parser;
 	friend class cache_iface;
 	friend class base_view;
@@ -44,10 +48,10 @@ class worker_thread: private boost::noncopyable {
 	string lang;
 	
 	auto_ptr<HTTPHeader> response_header;
-
-protected:
+	string current_template;
 	
-
+public:
+	
 	url_parser url;
 	manager const &app;
 	Cgicc *cgi;
@@ -55,6 +59,9 @@ protected:
 
 	cache_iface cache;
 	ostream cout;
+
+	boost::signal<void()> on_start;
+	boost::signal<void()> on_end;
 
 	void set_header(HTTPHeader *h);
 	void add_header(string s);
@@ -65,24 +72,18 @@ protected:
 	void set_lang();
 	void set_lang(string const &s);
 
-
-
-	string current_template;
-
 	inline void use_template(string s="") { current_template=s; };
 
 	void render(string name,base_content &content);
 	void render(string templ,string name,base_content &content);
 	void render(string name,base_content &content,ostream &);
 	void render(string templ,string name,base_content &content,ostream &);
+
 	virtual void main();
-public:
 
 	inline char const *gettext(char const *s) { return gt->gettext(s); };
 	inline char const *ngettext(char const *s,char const *p,int n) { return gt->ngettext(s,p,n); };
 
-	int id;
-	pthread_t pid;
 	ostream &get_cout() { return cout; }
 	
 	transtext::trans const *domain_gettext(string const &domain);
