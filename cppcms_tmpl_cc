@@ -189,9 +189,7 @@ class template_block:
 		for v in self.plist:
 			del tmpl_seq[v]
 		error_exit("Wrong expression %s" % lst)
-
-
-			
+		
 	def use(self,m):
 		self.name=m.group(1)
 		params=""
@@ -211,6 +209,8 @@ class template_block:
 		output( "} // end of template %s" % self.name)
 		global ignore_inline
 		ignore_inline=1
+		global tmpl_seq
+		tmpl_seq={}
 
 		
 
