@@ -56,6 +56,7 @@ public:
 	manager const &app;
 	Cgicc *cgi;
 	CgiEnvironment const *env;
+	cgicc_connection *cgi_conn;
 
 	cache_iface cache;
 	ostream cout;
