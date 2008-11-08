@@ -72,6 +72,7 @@ void worker_thread::run(cgicc_connection &cgi_conn)
 	cache.reset();
 	set_lang("");
 	out_buf.str("");
+	this->cgi_conn=&cgi_conn;
 
 	set_header(new HTTPHTMLHeader);
 
