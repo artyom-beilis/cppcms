@@ -2,7 +2,7 @@ SUBDIRS = ./transtext
 
 noinst_PROGRAMS = hello_world.fcgi
 noinst_HEADERS = hello_world_view.h
-dist_bin_SCRIPTS = cppcms_tmpl_cc
+dist_bin_SCRIPTS = cppcms_tmpl_cc cppcms_run
 
 hello_world_fcgi_SOURCES = hello_world.cpp hello_world_view1.cpp hello_world_view2.cpp
 hello_world_fcgi_LDADD = libcppcms.la transtext/libcppcmstranstext.la
