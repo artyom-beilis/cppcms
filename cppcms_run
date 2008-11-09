@@ -8,7 +8,7 @@ locate_server()
 	if [ "$WEB_SERVER" != "" ] ; then
 		return
 	fi
-	WEB_SERVER="`which $NAME`"
+	WEB_SERVER="`which $NAME 2>/dev/null`"
 	if [ "$WEB_SERVER" != "" ] ; then
 		return
 	fi
@@ -25,7 +25,7 @@ locate_server()
 	done
 	if [ "$2" == "exit" ] ; then
 		echo "Failed to locate server $NAME, exitting"
-		echo "Try specifing WEB_SERVER valiable, for example /home/me/myinst/sbin/nginx"
+		echo "Try providing PATH valiable"
 		exit 1
 	fi
 }
@@ -144,6 +144,13 @@ if [ "$API" != "fastcgi" ] ; then
 fi
 
 CONFIG_FILE=$DIR/cppcms-nginx.conf 
+
+# This is fix for cygwin specific issue
+# of select
+case `uname` in 
+	*CYGWIN*) EVENT="use poll;" ;;
+esac
+
 cat >$CONFIG_FILE <<EOF
 
 worker_processes  1;
@@ -153,6 +160,7 @@ error_log  $DIR/nginx.log;
 
 events {
     worker_connections  1024;
+    $EVENT
 }
 
 http {
@@ -250,7 +258,7 @@ WEB_SERVER="$WEB_SERVER -c $CONFIG_FILE"
 apache2()
 {
 
-locate_server apache2 
+locate_server apache2 $1
 [ "$WEB_SERVER" == "" ] && return
 if [ "$APACHE_MOD_DIR" == "" ] ; then
 	for p in /usr/lib/apache2/modules /usr/local/lib/apache2/modules /opt/lib/apache2/modules 
@@ -403,6 +411,13 @@ fi
 
 SOCKET=`find_param $APP_CONFIG_FILE server.socket`
 API=`find_param $APP_CONFIG_FILE server.api`
+
+if [ "$SOCKET" == "" ] || [ "$API" == "" ] ; then
+	echo "Can't find server.api and server.socket if $APP_CONFIG_FILE"
+	echo "Aborting"
+	exit 1
+fi
+
 DIR="`pwd`/cppcms_rundir"
 PID_FILE="$DIR/srv.pid"
 
@@ -416,10 +431,9 @@ echo "Api:$API"
 echo "Socket:$SOCKET"
 
 # Configure web server
-
 if [ "$TRY_SETUP" != "" ]; then
 	case "$TRY_SETUP" in
-	ligttpd) ligttpd exit ;;
+	lighttpd) lighttpd exit ;;
 	nginx) nginx exit ;;
 	apache2) apache2 exit ;;
 	*) help
@@ -448,10 +462,29 @@ fi
 echo "Starting Web Server"
 $WEB_SERVER
 sleep 1
-echo "Web Server PID:`cat $PID_FILE`"
-trap "echo peress any key to stop" SIGHUP SIGINT SIGTERM
+if ! [ -f "$PID_FILE" ]; then
+	echo "No web server pid... sleeping 2 more seconds"
+	sleep 2
+fi
 
-read
+if [ -f "$PID_FILE" ] ; then
+	echo "Web Server PID:`cat $PID_FILE`"
+	trap "echo peress any key to stop" SIGHUP SIGINT SIGTERM
+	echo 
+	echo "------------------------------------"
+	echo "- Press Any Key To Stop The Server -"
+	echo "------------------------------------"
+	read
+else
+	echo "Seems that web server had not started"
+	if [ "$NO_APP" != "yes" ]; then
+		echo "Stopping FastCGI application"
+		kill $FASTCGI_SERVER
+	fi
+	echo "Aborting"
+	exit 1
+fi
+
 
 if [ "$NO_APP" != "yes" ]; then
 	echo Killing Application pid=$FASTCGI_SERVER
