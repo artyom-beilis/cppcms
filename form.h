@@ -6,6 +6,7 @@
 #include <cgicc/Cgicc.h>
 #include <boost/regex.hpp>
 #include <boost/noncopyable.hpp>
+#include <boost/lexical_cast.hpp>
 #include <ostream>
 
 namespace cppcms {
@@ -85,6 +86,57 @@ public:
 	string const &get();
 	virtual bool validate();
 	virtual void load(cgicc::Cgicc const &cgi);
+};
+
+template<typename T>
+class number: public text {
+	T min,max,value;
+	bool check_low,check_high;
+public:
+	number(string id,string msg="") :
+		text(id,msg),
+		value(0),check_low(false),check_high(false)
+	{};
+	void set_low(T a)
+	{
+		min=a;
+		check_low=true;
+		set_nonempty();
+	}
+	void set_high(T b)
+	{
+		max=b;
+		check_high=true;
+		set_nonempty();
+	}
+	void set_range(T a,T b)
+	{
+		min=a; max=b;
+		check_low=check_high=true;
+		set_nonempty();
+	}
+	virtual bool validate() 
+	{
+		if(!text::validate())
+			return false;
+		if(!str().empty()) {
+			try {
+				value=boost::lexical_cast<T>(str());
+			}
+			catch(boost::bad_lexical_cast const &e) {
+				return (is_valid=false);
+			}
+		}
+		if((check_low || check_high) && str().empty())
+			return (is_valid=false);
+		if(check_low && value<min)
+			return (is_valid=false);
+		if(check_high && value>max)
+			return (is_valid=false);
+		return (is_valid=true);
+	}
+	T get() const { return value; };
+	T &val() { return value; }
 };
 
 class password: public text {

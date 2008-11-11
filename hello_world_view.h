@@ -23,6 +23,8 @@ struct my_form : public form {
 	widgets::email mail;
 	widgets::password p1;
 	widgets::password p2;
+	widgets::number<int> integer;
+	widgets::number<double> real;
 	widgets::checkbox ok;
 	widgets::select fruit;
 	//widgets::radio fruit;
@@ -34,18 +36,22 @@ struct my_form : public form {
 		mail("mail"),
 		p1("pass",w->gettext("Password")),
 		p2("passcopy",w->gettext("Confirm")),
+		integer("int",w->gettext("Integer")),
+		real("real",w->gettext("Real")),
 		ok("ok",w->gettext("Never save")),
 		fruit("fr",w->gettext("Fruit")),
 		meat("mt",2,w->gettext("Meat"))
 	{
-		*this & username & mail & name & p1 & p2 & ok & fruit & meat ;
-		my_set<< username<<mail<<name<<p1<<p2<<ok<<fruit<<meat;
+		*this & username & mail & name & p1 & p2 &
+			integer & real & ok & fruit & meat ;
+		my_set<< username<<mail<<name<<p1<<p2<<integer<<real<<ok<<fruit<<meat;
 		username.set_nonempty();
 		name.set_nonempty();
 		p2.set_equal(p1);
 		p2.help=w->gettext("(Same as above)");
 		p1.set_nonempty();
 		p2.set_nonempty();
+		real.set_range(-1.0,1.5);
 		fruit.add(1,"Orange");
 		fruit.add(2,"Palm");
 		meat.add(1,"Beef");
