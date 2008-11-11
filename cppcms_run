@@ -255,13 +255,29 @@ WEB_SERVER="$WEB_SERVER -c $CONFIG_FILE"
 }
 
 
-apache2()
+apache()
 {
 
-locate_server apache2 $1
+locate_server apache2
+locate_server httpd2 
+locate_server apache
+locate_server httpd $1
+
+
 [ "$WEB_SERVER" == "" ] && return
 if [ "$APACHE_MOD_DIR" == "" ] ; then
-	for p in /usr/lib/apache2/modules /usr/local/lib/apache2/modules /opt/lib/apache2/modules 
+	for p in /usr/lib/apache2/modules \
+		 /usr/local/lib/apache2/modules \
+		 /opt/lib/apache2/modules \
+		 /usr/lib/httpd2/modules \
+		 /usr/local/lib/httpd2/modules \
+		 /opt/lib/httpd2/modules \
+		 /usr/lib/apache/modules \
+		 /usr/local/lib/apache/modules \
+		 /opt/lib/apache/modules \
+		 /usr/lib/httpd/modules \
+		 /usr/local/lib/httpd/modules \
+		 /opt/lib/httpd/modules
 	do
 		if [ -f $p/mod_fastcgi.* ] ; then
 			APACHE_MOD_DIR="$p"
@@ -435,13 +451,14 @@ if [ "$TRY_SETUP" != "" ]; then
 	case "$TRY_SETUP" in
 	lighttpd) lighttpd exit ;;
 	nginx) nginx exit ;;
-	apache2) apache2 exit ;;
+	apache2) apache exit ;;
+	apache) apache exit ;;
 	*) help
 	esac
 else
 	lighttpd 
 	[ "$WEB_SERVER" == "" ] && nginx
-	[ "$WEB_SERVER" == "" ] && apache2 
+	[ "$WEB_SERVER" == "" ] && apache 
 	if [ "$WEB_SERVER" == "" ]; then
 		echo "Can't find sutiable web server (nginx/lighttpd/apache)"
 		echo "You may try to change PATH variable. In case of Apache2"
