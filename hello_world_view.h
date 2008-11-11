@@ -52,11 +52,11 @@ struct my_form : public form {
 		p1.set_nonempty();
 		p2.set_nonempty();
 		real.set_range(-1.0,1.5);
-		fruit.add(1,"Orange");
-		fruit.add(2,"Palm");
-		meat.add(1,"Beef");
-		meat.add(2,"Chicken");
-		meat.add(3,"Duck");
+		fruit.add("Orange");
+		fruit.add("Palm");
+		meat.add("Beef");
+		meat.add("<<Chicken>>");
+		meat.add("Duck");
 		meat.set_min(2);
 		meat.help=w->gettext("At least two choises");
 	}

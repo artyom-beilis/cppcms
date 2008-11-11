@@ -194,6 +194,8 @@ public:
 	map<string,string> available;
 	void add(string val,string opt,bool selected=false);
 	void add(int val,string opt,bool selected=false);
+	void add(string v,bool s=false) { add(v,v,s); }
+	void add(int v,bool s=false) { add(v,boost::lexical_cast<std::string>(v),s); }
 	set<string> &get() { return chosen; };
 	set<int> geti();
 	void set_min(int n) { min=n; };
@@ -215,7 +217,9 @@ public:
 	list<option> select_list;
 	select_base(string name,string msg="") : base_widget(name,msg){};
 	void add(string value,string option);
+	void add(string v) { add(v,v); }
 	void add(int value,string option);
+	void add(int v) { add(v,boost::lexical_cast<std::string>(v)); }
 	void set(string value);
 	void set(int value);
 	string get();

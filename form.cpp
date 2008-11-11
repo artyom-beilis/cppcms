@@ -366,7 +366,7 @@ string select_multiple::render_input(int how)
 	out+=(boost::format(" size=\"%d\"") % size).str();
 	out+=">\n";
 	for(map<string,string>::iterator p=available.begin(),e=available.end();p!=e;++p) {
-		out+="<option value=\""+p->first+"\" ";
+		out+="<option value=\""+escape(p->first)+"\" ";
 		if(chosen.find(p->first)!=chosen.end())
 			out+=" selected=\"selected\" ";
 		out+=">";
@@ -427,7 +427,7 @@ string select::render_input(int how)
 		out+="id=\""+id+"\" ";
 	out+=">\n";
 	for(list<option>::iterator p=select_list.begin(),e=select_list.end();p!=e;++p) {
-		out+="<option value=\""+p->value+"\" ";
+		out+="<option value=\""+escape(p->value)+"\" ";
 		if(is_set && p->value==value)
 			out+=" selected=\"selected\" ";
 		out+=">";
@@ -473,7 +473,7 @@ string radio::render_input(int how)
 		out+="id=\""+id+"\" ";
 	out+=">\n";
 	for(list<option>::iterator p=select_list.begin(),e=select_list.end();p!=e;++p) {
-		out+="<input type=\"radio\" value=\""+p->value+"\" ";
+		out+="<input type=\"radio\" value=\""+escape(p->value)+"\" ";
 		if(is_set && p->value==value)
 			out+=" checked=\"checked\" ";
 		out+="name=\"";
@@ -499,7 +499,7 @@ string hidden::render(int how)
 	string out="<input type=\"hidden\" name=\"";
 	out+=name;
 	out+="\" value=\"";
-	out+=value;
+	out+=escape(value);
 	out+="\" ";
 	if(!id.empty()) {
 		out+="id=\""+id+"\"";
@@ -538,7 +538,7 @@ string submit::render_input(int how)
 	return (boost::format("<input type=\"submit\" %1% name=\"%2%\" value=\"%3%\" %4%>")
 		% ( id.empty() ? string("") : "id=\""+id+"\"" )
 		% name 
-		% value
+		% escape(value)
 		% ( (how & as_xhtml) ? "/" : "" )
 		).str();
 }
