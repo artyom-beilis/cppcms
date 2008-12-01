@@ -12,13 +12,18 @@ namespace cppcms {
 using namespace std;
 
 class cppcms_config {
+public:
+	typedef map<string,boost::any> data_t;
+	typedef std::pair<data_t::const_iterator,data_t::const_iterator> range_t;
+	
+private:
 
 	enum { WORD, INT, DOUBLE, STR };
 	
 	typedef std::pair<int,string> tocken_t;
 	typedef std::pair<string,string> key_t;
 
-	map<string,boost::any> data;
+	data_t data;
 
 	string filename;
 
@@ -66,10 +71,17 @@ class cppcms_config {
 
 
 public:
-
+	data_t const &get_data() const { return data; }
 	size_t size() const { return data.size(); };
 	void load(char const *filename);
 	void load(int argc,char *argv[],char const *def=NULL);
+
+	range_t prefix(string pref) const {
+		range_t res;
+		res.first=data.lower_bound(pref+'.');
+		res.second=data.upper_bound(pref+char('.'+1));
+		return res;
+	}
 
 	cppcms_config() { loaded = false;};
 
