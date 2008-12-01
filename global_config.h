@@ -24,17 +24,14 @@ private:
 	typedef std::pair<string,string> key_t;
 
 	data_t data;
-
 	string filename;
-
 	int line_counter;
-
 	bool loaded;
-
 	bool get_tocken(FILE *,tocken_t &T);
 
+public:
 	template<typename T>
-	T const *get(string const &name) const {
+	T const *get_ptr(string const &name) const {
 		map<string,boost::any>::const_iterator it;
 		if((it=data.find(name))==data.end()) {
 			return NULL;
@@ -49,30 +46,33 @@ private:
 	template<typename T>
 	T const &get(string const &name,T const &def) const
 	{
-		T const *p=get<T>(name);
+		T const *p=get_ptr<T>(name);
 		if(!p) return def;
 		return *p;
 	};
 	template<typename T>
-	T const &get_throw(string const &name) const
+	T const &get(string const &name) const
 	{
-		T const *p=get<T>(name);
+		T const *p=get_ptr<T>(name);
 		if(!p) throw cppcms_error("Configuration parameter "+name+" not found");
 		return *p;
 	};
 	template<typename T>
-	T const &get_nothrow(string const &name) const
+	T const &get_default(string const &name) const
 	{
-		T const *p=get<T>(name);
+		T const *p=get_ptr<T>(name);
 		static const T v;
 		if(!p) return v;
 		return *p;
 	};
 
+	data_t const &get_data() const 
+	{
+		return data;
+	}
 
-public:
-	data_t const &get_data() const { return data; }
 	size_t size() const { return data.size(); };
+
 	void load(char const *filename);
 	void load(int argc,char *argv[],char const *def=NULL);
 
@@ -85,33 +85,38 @@ public:
 
 	cppcms_config() { loaded = false;};
 
-	long lval(string m) const {
-		return get_throw<long>(m);
+	// { begin depricated
+	int lval(string m) const { return ival(m); }
+	int lval(string m,int def) const { return ival(m,def); }
+	vector<int> const &llist(string m) const { return ilist(m); }
+	// } end depricated
+	int ival(string m) const {
+		return get<int>(m);
 	};
-	long lval(string m,long def) const {
-		return get<long>(m,def);
+	int ival(string m,int def) const {
+		return get<int>(m,def);
 	};
 	double dval(string m) const {
-		return get_throw<double>(m);
+		return get<double>(m);
 	};
 	double dval(string m,double def) const {
 		return get<double>(m,def); 
 	};
 	string const &sval(string m) const {
-		return get_throw<string>(m);
+		return get<string>(m);
 	};
 	string sval(string m,string def) const {
 		return get<string>(m,def);
 	};
-	vector<long> const &llist(string m) const {
-		return get_nothrow<vector<long> >(m);
+	vector<int> const &ilist(string m) const {
+		return get_default<vector<int> >(m);
 	}
-	vector<double> const &dlist(string m) const{
-		return get_nothrow<vector<double> >(m);
+	vector<double> const &dlist(string m) const {
+		return get_default<vector<double> >(m);
 	};
 
 	vector<string> const &slist(string m) const {
-		return get_nothrow<vector<string> >(m);
+		return get_default<vector<string> >(m);
 	};
 
 };

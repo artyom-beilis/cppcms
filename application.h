@@ -66,8 +66,8 @@ struct application {
 				string val=boost::any_cast<string>(p->second);
 				sql.param(param,val);
 			}
-			else if(p->second.type()==typeid(long)) {
-				long val=boost::any_cast<long>(p->second);
+			else if(p->second.type()==typeid(int)) {
+				int val=boost::any_cast<int>(p->second);
 				sql.param(param,val);
 			}
 		}

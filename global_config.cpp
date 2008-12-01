@@ -159,7 +159,7 @@ void cppcms_config::load(char const *fname)
 					break;
 				}
 				if(T.first==INT) {
-					long val=atol(T.second.c_str());
+					int val=atol(T.second.c_str());
 					data[key]=val;
 				}
 				else if(T.first==DOUBLE) {
@@ -178,7 +178,7 @@ void cppcms_config::load(char const *fname)
 			case 5:
 				if(T.first==INT || T.first==DOUBLE || T.first==STR) {
 					int fp=T.first;
-					vector<long> vl;
+					vector<int> vl;
 					vector<double> vd;
 					vector<string> vs;
 					do {

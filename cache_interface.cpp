@@ -55,8 +55,8 @@ void cache_iface::store_page(string const &key,time_t timeout)
 {
 	if(!cms->caching_module) return;
 	archive a;
-	long level=cms->app.config.lval("gzip.level",-1);
-	long length=cms->app.config.lval("gzip.buffer",-1);
+	int level=cms->app.config.get<int>("gzip.level",-1);
+	int length=cms->app.config.get<int>("gzip.buffer",-1);
 	string tmp=cms->out_buf.str();
 
 	string compr=deflate(tmp,level,length);

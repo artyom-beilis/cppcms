@@ -17,7 +17,7 @@ class tcp_cache : public base_cache {
 	messenger &get(string const &key);
 	void broadcast(tcp_operation_header &h,string &data);
 public:
-	tcp_cache(vector<string> const &ip_list,vector<long> const &port_list);
+	tcp_cache(vector<string> const &ip_list,vector<int> const &port_list);
 
 	virtual bool fetch_page(string const &key,string &output,bool gzip);
 	virtual bool fetch(string const &key,archive &a,set<string> &tags);
@@ -30,9 +30,9 @@ public:
 
 class tcp_cache_factory : public cache_factory {
 	vector<string> ip;
-	vector<long>   port;
+	vector<int>   port;
 public:
-	tcp_cache_factory(vector<string> const &_ip,vector<long> const &_port) :
+	tcp_cache_factory(vector<string> const &_ip,vector<int> const &_port) :
 		ip(_ip),port(_port) {};
 	virtual base_cache *get() const { return new tcp_cache(ip,port); };
 	virtual void del(base_cache *p) const { delete p; };

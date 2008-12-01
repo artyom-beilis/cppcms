@@ -82,7 +82,7 @@ public:
 	
 };
 
-tcp_cache::tcp_cache(vector<string> const& ip,vector<long> const &port)
+tcp_cache::tcp_cache(vector<string> const& ip,vector<int> const &port)
 {
 	if(ip.size()<1 || port.size()!=ip.size()) {
 		throw cppcms_error("Incorrect parameters for tcp cache");

@@ -125,8 +125,8 @@ void worker_thread::run(cgicc_connection &cgi_conn)
 				cgi_out<<out;
 			}
 			else{
-				long level=app.config.lval("gzip.level",-1);
-				long length=app.config.lval("gzip.buffer",-1);
+				int level=app.config.ival("gzip.level",-1);
+				int length=app.config.ival("gzip.buffer",-1);
 				deflate(out,cgi_out,level,length);
 			}
 		}
