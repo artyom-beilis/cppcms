@@ -8,14 +8,26 @@ public:
 	my_hello_world(worker_thread &w) :
 		application(w)
 	{
-		url.add("^/hello?$",
-			boost::bind(&my_hello_world::main,this));
+		url.add("^/?$",
+			boost::bind(&my_hello_world::std,this));
+		url.add("^/test?$",boost::bind(&my_hello_world::test,this));
 		use_template("view2");
 	};
-	void main();
+	void test();
+	void std();
 };
 
-void my_hello_world::main()
+void my_hello_world::test()
+{
+	if(cache.fetch_page("tst"))
+		return;
+	time_t tm;
+	time(&tm);
+	cout<<"<h1>"<<tm<<"</h1>";
+	cache.store_page("tst");
+}
+
+void my_hello_world::std()
 {
 	view::hello v(this);
 

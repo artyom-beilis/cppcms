@@ -10,6 +10,26 @@
 namespace cppcms {
 using namespace std;
 
+namespace {
+	const time_t infty=
+		(sizeof(time_t)==4 ? 0x7FFFFFFF: 0x7FFFFFFFFFFFFFFFULL ) - 
+			3600*24;
+	time_t deadtime(int sec)
+	{
+		if(sec<0) 
+			return infty;
+		else {
+			time_t tmp;
+			time(&tmp);
+			if(tmp+sec<tmp) {
+				throw cppcms_error("Year 2038 problem?");
+			}
+			return tmp+sec;
+		}
+	}
+}
+
+
 void deflate(string const &text,ostream &stream,long level,long length)
 {
 	using namespace boost::iostreams;
@@ -51,7 +71,7 @@ bool cache_iface::fetch_page(string const &key)
 	return false;
 }
 
-void cache_iface::store_page(string const &key,time_t timeout)
+void cache_iface::store_page(string const &key,int timeout)
 {
 	if(!cms->caching_module) return;
 	archive a;
@@ -66,7 +86,7 @@ void cache_iface::store_page(string const &key,time_t timeout)
 		cms->cout<<compr;
 		cms->gzip_done=true;
 	}
-	cms->caching_module->store(key,triggers,timeout,a);
+	cms->caching_module->store(key,triggers,deadtime(timeout),a);
 }
 
 void cache_iface::add_trigger(string const &t)
@@ -96,13 +116,13 @@ bool cache_iface::fetch_data(string const &key,serializable &data)
 
 void cache_iface::store_data(string const &key,serializable const &data,
 			set<string> const &triggers,
-			time_t timeout)
+			int timeout)
 {
 	if(!cms->caching_module) return;
 	archive a;
 	data.save(a);
 	this->triggers.insert(triggers.begin(),triggers.end());
-	cms->caching_module->store(key,triggers,timeout,a);
+	cms->caching_module->store(key,triggers,deadtime(timeout),a);
 }
 
 bool cache_iface::fetch_frame(string const &key,string &result)
@@ -120,14 +140,14 @@ bool cache_iface::fetch_frame(string const &key,string &result)
 
 void cache_iface::store_frame(string const &key,string const &data,
 			set<string> const &triggers,
-			time_t timeout)
+			int timeout)
 {
 	if(!cms->caching_module) return;
 	archive a;
 	a<<data;
 
 	this->triggers.insert(triggers.begin(),triggers.end());
-	cms->caching_module->store(key,triggers,timeout,a);
+	cms->caching_module->store(key,triggers,deadtime(timeout),a);
 }
 
 void cache_iface::clear()
