@@ -8,6 +8,11 @@ namespace cppcms {
 
 using namespace std;
 
+namespace sessions {
+	string sign(string const &val,string const &pkey);
+	string check_sign(string const &val,string const &pkey);
+}
+
 class archive {
 	string data;
 	size_t ptr;
@@ -15,6 +20,7 @@ public:
 	archive() { ptr=0; };
 	archive(string const &s) : data(s) { ptr=0; };
 	void set(string const &s) { data=s; ptr=0; };
+	string &set() { ptr=0; return data; };
 	void set(char const *ptr,size_t len) { data.assign(ptr,len); };
 	string const &get() const { return data; };
 	template<typename T>
