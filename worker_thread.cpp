@@ -81,7 +81,7 @@ void worker_thread::run(cgicc_connection &cgi_conn)
 
 	if((encoding=cgi_conn.env("HTTP_ACCEPT_ENCODING"))!="") {
 		if(strstr(encoding.c_str(),"gzip")!=NULL) {
-			gzip=app.config.lval("gzip.enable",0);
+			gzip=app.config.lval("gzip.enable",1);
 		}
 	}
 
