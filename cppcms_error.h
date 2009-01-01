@@ -9,9 +9,15 @@ namespace cppcms {
 
 
 class cppcms_error : public std::runtime_error {
+	std::string strerror(int err)
+	{
+		char buf[256];
+		strerror_r(err,buf,sizeof(buf));
+		return buf;
+	}
 public:
-	cppcms_error(int errno,std::string const &error):
-		std::runtime_error(error+":" + strerror(errno)) {};
+	cppcms_error(int err,std::string const &error):
+		std::runtime_error(error+":" + strerror(err)) {};
 	cppcms_error(std::string const &error) : std::runtime_error(error) {};
 };
 

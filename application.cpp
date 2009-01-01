@@ -9,6 +9,7 @@ application::application(worker_thread &w) :
 	env(worker.env),
 	cgi_conn(worker.cgi_conn),
 	cache(worker.cache),
+	session(worker.session),
 	cout(worker.cout),
 	on_start(worker.on_start),
 	on_end(worker.on_end)

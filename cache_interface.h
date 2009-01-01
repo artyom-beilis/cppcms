@@ -21,12 +21,12 @@ public:
 	void store_page(string const &key,int timeout=-1);
 	void rise(string const &trigger);
 	void add_trigger(string const &trigger);
-	bool fetch_frame(string const &key,string &result);
+	bool fetch_frame(string const &key,string &result,bool notriggers=false);
 	void store_frame(string const &key,
 			 string const &frame,
 			 set<string> const &triggers=set<string>(),
 			 int timeout=-1);
-	bool fetch_data(string const &key,serializable &data);
+	bool fetch_data(string const &key,serializable &data,bool notriggers=false);
 	void store_data(string const &key,serializable const &data,
 			set<string> const &triggers=set<string>(),
 			int timeout=-1);

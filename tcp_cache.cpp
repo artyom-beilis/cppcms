@@ -1,119 +1,11 @@
-#include "config.h"
-#ifdef __CYGWIN__
-// Cygwin ASIO works only with win32 sockets
-#define _WIN32_WINNT 1
-#define __USE_W32_SOCKETS 1
-#endif
-
-#ifdef USE_BOOST_ASIO
-#include <boost/asio.hpp>
-namespace aio = boost::asio;
-using boost::system::error_code;
-using boost::system::system_error;
-#else
-#include <asio.hpp>
-namespace aio = asio;
-using asio::error_code;
-using asio::system_error;
-#endif
-
+#include "tcp_messenger.h"
 #include "tcp_cache.h"
-#include "tcp_cache_protocol.h"
-#include "archive.h"
-
-using aio::ip::tcp;
 
 namespace cppcms {
 
-class messenger : boost::noncopyable {
-	aio::io_service srv_;
-	tcp::socket socket_;
-	string ip_;
-	int port_;
-public:
-	void connect(string ip,int port) {
-		ip_=ip;
-		port_=port;
-		error_code e;
-		socket_.connect(tcp::endpoint(aio::ip::address::from_string(ip),port),e);
-		if(e) throw cppcms_error("connect:"+e.message());
-		tcp::no_delay nd(true);
-		socket_.set_option(nd);
-	}
-	messenger(string ip,int port) :
-		socket_(srv_)
-	{
-		connect(ip,port);
-	}
-	messenger() : socket_(srv_) { };
-
-	void transmit(tcp_operation_header &h,string &data)
-	{
-		bool done=false;
-		int times=0;
-		do {
-			try {
-				aio::write(socket_,aio::buffer(&h,sizeof(h)));
-				if(h.size>0) {
-					aio::write(socket_,aio::buffer(data,h.size));
-				}
-				aio::read(socket_,aio::buffer(&h,sizeof(h)));
-				if(h.size>0) {
-					vector<char> d(h.size);
-					aio::read(socket_,aio::buffer(d,h.size));
-					data.assign(d.begin(),d.begin()+h.size);
-				}
-				done=true;
-			}
-			catch(system_error const &e) {
-				if(times) {
-					throw cppcms_error(string("tcp_cache:")+e.what());
-				}
-				socket_.close();
-				error_code er;
-				socket_.connect(
-					tcp::endpoint(
-						aio::ip::address::from_string(ip_),port_),er);
-				if(er) throw cppcms_error("reconnect:"+er.message());
-				times++;
-			}
-		}while(!done);
-	}
-	
-};
-
-tcp_cache::tcp_cache(vector<string> const& ip,vector<int> const &port)
-{
-	if(ip.size()<1 || port.size()!=ip.size()) {
-		throw cppcms_error("Incorrect parameters for tcp cache");
-	}
-	conns=ip.size();
-	tcp=new messenger[conns];
-	try {
-		for(int i=0;i<conns;i++) {
-			tcp[i].connect(ip[i],port[i]);
-		}
-	}
-	catch(...) {
-		delete [] tcp;
-		tcp=NULL;
-		throw;
-	}
-}
-
 tcp_cache::~tcp_cache()
 {
-	delete [] tcp;
-}
-
-void tcp_cache::broadcast(tcp_operation_header &h,string &data)
-{
-	int i;
-	for(i=0;i<conns;i++) {
-		tcp_operation_header ht=h;
-		string dt=data;
-		tcp[i].transmit(ht,data);
-	}
+	// Nothing
 }
 
 void tcp_cache::rise(string const &trigger)
@@ -134,6 +26,7 @@ void tcp_cache::clear()
 	string empty;
 	broadcast(h,empty);
 }
+
 
 bool tcp_cache::fetch_page(string const  &key,string &output,bool gzip)
 {
@@ -213,18 +106,8 @@ void tcp_cache::store(string const &key,set<string> const &triggers,time_t timeo
 	get(key).transmit(h,data);
 }
 
-messenger &tcp_cache::get(string const &key)
-{
-	if(conns==1) return tcp[0];
-	unsigned val=0,i;
-	for(i=0;i<key.size();i++) {
-		val+=251*key[i]+103 % 307;
-	}
-	return tcp[val % conns];
-}
 
-
-}
+} // cppcms
 
 
 #ifdef TCP_CACHE_UNIT_TEST

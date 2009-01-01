@@ -12,7 +12,7 @@
 #include "cgi_api.h"
 #include "posix_mutex.h"
 #include "transtext.h"
-
+#include "session_backend_factory.h"
 #include <boost/shared_ptr.hpp>
 
 namespace cppcms {
@@ -210,8 +210,9 @@ class manager : private boost::noncopyable {
 	cache_factory *get_cache_factory();
 	cgi_api *get_api();
 	web_application *get_mod();
+	session_backend_factory get_sessions();
 	transtext::trans_factory *get_gettext();
-	list<void *> templates_list; 
+	list<void *> templates_list;
 	void load_templates();
 public:
 	cppcms_config config;
@@ -219,7 +220,7 @@ public:
 	auto_ptr<cgi_api> api;
 	auto_ptr<base_factory> workers;
 	auto_ptr<web_application> web_app;
-
+	session_backend_factory sessions;
 	auto_ptr<transtext::trans_factory> gettext;
 
 	void set_worker(base_factory *w);
@@ -227,6 +228,7 @@ public:
 	void set_api(cgi_api *a);
 	void set_mod(web_application *m);
 	void set_gettext(transtext::trans_factory *);
+	void set_sessions(session_backend_factory);
 
 	manager();
 	manager(char const *file);

@@ -35,6 +35,7 @@ string cipher::encrypt(string const &plain,time_t timeout)
 	header.timeout=timeout;
 	header.size=plain.size();
 	salt(header.salt);
+	copy(plain.begin(),plain.end(),data.begin()+16+sizeof(info));
 	hash(&data.front()+16,data.size()-16,&data.front());
 	return base64_enc(data);
 }

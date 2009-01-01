@@ -23,6 +23,7 @@ public:
 	string &set() { ptr=0; return data; };
 	void set(char const *ptr,size_t len) { data.assign(ptr,len); };
 	string const &get() const { return data; };
+	string &get() { return data; }
 	template<typename T>
 	archive &operator<<(T const &val) {
 		size_t size=sizeof(T);
@@ -74,8 +75,35 @@ class serializable {
 public:
 	virtual void load(archive &a) = 0;
 	virtual void save(archive &a) const = 0;
+	
+	operator std::string() const 
+	{
+		return str();
+	}
+	serializable const &operator=(std::string const &s)
+	{
+		str(s);
+		return *this;
+	}
+
+	void str(std::string const &s)
+	{
+		archive a(s);
+		load(a);
+	}	
+	
+	std::string str() const
+	{
+		archive a;
+		save(a);
+		string str;
+		str.swap(a.get());
+		return str;
+	}
+
 	virtual ~serializable() {};
 };
+
 }
 
 #endif

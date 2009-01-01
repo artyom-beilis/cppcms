@@ -15,7 +15,10 @@ worker_thread::worker_thread(manager const &s) :
 		url(this),
 		app(s),
 		cache(this),
-		cout(&(this->out_buf))
+		cout(&(this->out_buf)),
+		on_start(),
+		on_end(),
+		session(*this)
 {
 	caching_module=app.cache->get();
 	static const transtext::trans tr;
@@ -87,7 +90,9 @@ void worker_thread::run(cgicc_connection &cgi_conn)
 
 	try {
 		/**********/
+		session.on_start();
 		main();
+		session.on_end();
 		/**********/
 		if(response_header.get() == NULL) {
 			throw cppcms_error("Looks like a bug");
@@ -147,7 +152,7 @@ void worker_thread::render(string tmpl,string name,base_content &content,ostream
 	base_view::settings s(this,&out);
 	auto_ptr<base_view> p(views_storage::instance().fetch_view(tmpl,name,s,&content));
 	if(!p.get()) throw cppcms_error("Template `"+name+"' not found in template set `" + tmpl +"'");
-	p->render();	
+	p->render();
 };
 
 void worker_thread::render(string tmpl,string name,base_content &content)

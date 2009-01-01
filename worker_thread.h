@@ -19,6 +19,7 @@
 #include "base_cache.h"
 #include "cgicc_connection.h"
 #include "transtext.h"
+#include "session_interface.h"
 
 namespace cppcms {
 
@@ -46,12 +47,12 @@ class worker_thread: private boost::noncopyable {
 
 	transtext::trans const *gt;
 	string lang;
-	
+
 	auto_ptr<HTTPHeader> response_header;
 	string current_template;
-	
+
 public:
-	
+
 	url_parser url;
 	manager const &app;
 	Cgicc *cgi;
@@ -60,9 +61,9 @@ public:
 
 	cache_iface cache;
 	ostream cout;
-
 	boost::signal<void()> on_start;
 	boost::signal<void()> on_end;
+	session_interface session;
 
 	void set_header(HTTPHeader *h);
 	void add_header(string s);
@@ -86,7 +87,7 @@ public:
 	inline char const *ngettext(char const *s,char const *p,int n) { return gt->ngettext(s,p,n); };
 
 	ostream &get_cout() { return cout; }
-	
+
 	transtext::trans const *domain_gettext(string const &domain);
 
 	void run(cgicc_connection &);

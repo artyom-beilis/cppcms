@@ -19,12 +19,26 @@ public:
 
 void my_hello_world::test()
 {
-	if(cache.fetch_page("tst"))
-		return;
-	time_t tm;
-	time(&tm);
-	cout<<"<h1>"<<tm<<"</h1>";
-	cache.store_page("tst");
+	if(!session.is_set("time")) {
+		cout<<"No Time\n";
+	}
+	else {
+		time_t given=session.get<time_t>("time");
+		cout<<asctime(gmtime(&given))<<"<br/>\n";
+		if(session.is_set("msg")) {
+			cout<<session["msg"]<<"<br/>";
+		}
+		if(given % 3 == 0) {
+			cout<<"SET LONG MESSAGE";
+			session["msg"]="Looooooooooooooooooooooooooooooong msg";
+		}
+		else {
+			cout<<"UNSET LONG MESSAGE";
+			session.del("msg");
+		}
+		//session.clear();
+	}
+	session.set<time_t>("time",time(NULL));
 }
 
 void my_hello_world::std()
@@ -34,6 +48,7 @@ void my_hello_world::std()
 	if(env->getRequestMethod()=="POST") {
 		v.form.load(*cgi);
 		if(v.form.validate()) {
+			session["name"]=v.form.username.get();
 			v.username=v.form.username.get();
 			v.realname=v.form.name.get();
 			v.ok=v.form.ok.get();
@@ -43,6 +58,9 @@ void my_hello_world::std()
 	}
 
 	v.title="Cool";
+	if(session.is_set("name"))
+		v.title+=":"+session["name"];
+
 	v.msg=gettext("Hello World");
 
 	for(int i=0;i<15;i++)

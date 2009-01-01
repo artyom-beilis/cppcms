@@ -8,20 +8,20 @@ using namespace std;
 
 namespace cppcms {
 
-encryptor::~encryptor() 
+encryptor::~encryptor()
 {
 }
 
 encryptor::encryptor(string key_):
 	key(16,0)
-	
+
 {
 	if(key_.size()!=32) {
 		throw cppcms_error("Incorrect key length (32 expected)\n");
 	}
 	for(unsigned i=0;i<32;i+=2) {
 		char buf[3];
-		if(!isxdigit(key_[i]) || !isxdigit(key_[i+1])) { 
+		if(!isxdigit(key_[i]) || !isxdigit(key_[i+1])) {
 			throw cppcms_error("Cipher should be encoded as hexadecimal 32 digits number");
 		}
 		buf[0]=key_[i];
@@ -33,7 +33,7 @@ encryptor::encryptor(string key_):
 	}
 	struct timeval tv;
 	gettimeofday(&tv,NULL);
-	seed=(unsigned)this+tv.tv_sec+tv.tv_usec+getpid();
+	seed=(unsigned)(intptr_t)this+tv.tv_sec+tv.tv_usec+getpid();
 }
 
 unsigned encryptor::rand(unsigned max)
@@ -45,8 +45,8 @@ string encryptor::base64_enc(vector<unsigned char> const &data)
 {
 	size_t size=b64url::encoded_size(data.size());
 	vector<unsigned char> result(size,0);
-	b64url::encode(&data.front(),&data.front()+size,&result.front());
-	return string(data.begin(),data.end());
+	b64url::encode(&data.front(),&data.front()+data.size(),&result.front());
+	return string(result.begin(),result.end());
 }
 
 void encryptor::base64_dec(std::string const &in,std::vector<unsigned char> &data)
@@ -55,10 +55,10 @@ void encryptor::base64_dec(std::string const &in,std::vector<unsigned char> &dat
 	if(size<0) return;
 	data.resize(size);
 	unsigned char const *ptr=(unsigned char const *)in.data();
-	b64url::decode((unsigned char const *)ptr,ptr+size,&data.front());
+	b64url::decode((unsigned char const *)ptr,ptr+in.size(),&data.front());
 }
 
-void encryptor::salt(char *salt) 
+void encryptor::salt(char *salt)
 {
 	info dummy;
 	for(unsigned i=0;i<sizeof(dummy.salt);i++)

@@ -16,26 +16,51 @@ AC_CONFIG_FILES([Makefile transtext/Makefile])
 AC_ARG_ENABLE(forkcache,[AS_HELP_STRING([--disable-forkcache],[Disable shared memory cache])])
 AC_ARG_ENABLE(fastcgi,[AS_HELP_STRING([--disable-fastcgi],[Disable fastcgi interface])])
 AC_ARG_ENABLE(tcpcache,[AS_HELP_STRING([--disable-tcpcache],[Disable distributed cache system])])
+AC_ARG_ENABLE(crypt,[AS_HELP_STRING([--disable-crypt],[Disable encrypted sessions backend])])
+AC_ARG_ENABLE(sqlite,[AS_HELP_STRING([--disable-sqlite],[Disable sqlite sessions backend])])
 
 CPPCMS_LIBS=""
 
+AC_CHECK_LIB(pthread,pthread_sigmask,[],[echo "Pthreads library not found" ; exit -1])
+AC_TRY_RUN([	#include <pthread.h>
+		int main()
+		{
+			pthread_rwlockattr_t attr;
+			pthread_rwlock_t lock;
+			return 
+			(	pthread_rwlockattr_init(&attr)==0
+				&& pthread_rwlockattr_setpshared(&attr,PTHREAD_PROCESS_SHARED)==0
+				&& pthread_rwlock_init(&lock,&attr)==0 )
+			? 0 : 1;
+		}
+		],
+		[AC_DEFINE([HAVE_PTHREADS_PSHARED],[],["Have Pshared"])
+			have_pthreads_pshared=yes
+			echo "Check: process shared mutex... ok"],[echo "Check: process shared mutex not supported"])
 if test "x$enable_forkcache" != "xno" ; then
-	case $host in 
-	*cygwin*)	echo "=============================================="
-			echo "Cygwin pthread process shared mutex is broken "
-			echo "Shared memory/fork cache will be disabled " 
-			echo "==============================================" ;;
-	*)
+	if test "x$have_pthreads_pshared" != "xyes" ; then
+		echo "======================================================================"
+		echo "          Pthread process shared mutex/rwlock not supported " 
+		echo "                  The fork cache backend is disabled "
+		echo "    File based session storage process-shared backend is disabled"
+		echo "======================================================================"
+		enable_forkcache=no
+	fi
+fi
+
+if test "x$enable_forkcache" != "xno" ; then
 	AC_CHECK_LIB(mm,main,[
 		have_mm=yes
 		CPPCMS_LIBS="-lmm $CPPCMS_LIBS"
 		AC_DEFINE([EN_FORK_CACHE],[],["Enable fork cache"])
 		],
 		[	echo "======================================================================"
-			echo "OSSP mm library (libmm) not installed" 
-			echo "============== The fork cache backend will be disabled ===============" ]) ;;
-	esac
+			echo "               OSSP mm library (libmm) not installed" 
+			echo "               The fork cache backend is disabled "
+			echo "======================================================================" ]) 
 fi
+
+AM_CONDITIONAL(EN_FORK_CACHE,[test "x$have_mm" == "xyes" ])
 
 if test "x$enable_fastcgi" != "xno" ; then
 	AC_CHECK_LIB(fcgi++,main,[
@@ -48,6 +73,32 @@ if test "x$enable_fastcgi" != "xno" ; then
 			echo "============== FastCGI API will be disabled ==========================" 
 			echo "You still have scgi and cgi API" ])
 fi
+AM_CONDITIONAL(EN_FCGI_BACKEND,[test "x$have_fcgi" == "xyes" ])
+
+if test "x$enable_crypt" != "xno" ; then
+	AC_CHECK_LIB(gcrypt,main,[
+		have_gcrypt=yes
+		CPPCMS_LIBS="-lgcrypt $CPPCMS_LIBS"
+		AC_DEFINE([EN_ENCR_SESSIONS],[],["Enable encrypted sessions"])
+		],
+		[	echo "====================================================================="
+			echo "libgcrypt not found, Encrypted Sessions backend is disabled"
+			echo "=====================================================================" ])
+fi
+AM_CONDITIONAL(EN_ENCR_SESSIONS,[test "x$have_gcrypt" == "xyes" ])
+
+if test "x$enable_sqlite" != "xno" ; then
+	AC_CHECK_LIB(sqlite3,sqlite3_open,[
+		have_sqlite3=yes
+		LIBS="-lsqlite3 $LIBS"
+		AC_DEFINE([EN_SQLITE_SESSIONS],[],["Enable sqlite sessions"])
+		],
+		[	echo "====================================================================="
+			echo "libsqlite3 not found, Sqlite sessions backend is disabled"
+			echo "=====================================================================" ])
+fi
+AM_CONDITIONAL(EN_SQLITE_SESSIONS,[test "x$have_sqlite3" == "xyes" ])
+
 
 have_auto_type_detection=no
 
@@ -88,8 +139,6 @@ fi
 
 
 
-AM_CONDITIONAL(EN_FORK_CACHE,[test "x$have_mm" == "xyes" ])
-AM_CONDITIONAL(EN_FCGI_BACKEND,[test "x$have_fcgi" == "xyes" ])
 
 AC_CHECK_HEADER(fastcgi/fcgiapp.h ,[AC_DEFINE([EN_FASTCGI_LONG_PATH],[],["Fastcgi headers in fastcgi dir"])],[])
 
@@ -139,7 +188,6 @@ AM_CONDITIONAL(EN_TCP_CACHE,[test "x$have_asio" == "xyes" ])
 
 AC_CHECK_LIB(cgicc,main,[CPPCMS_LIBS="-lcgicc $CPPCMS_LIBS"],[echo "cgicc not found" ; exit -1])
 AC_CHECK_LIB(dl,dlopen,[CPPCMS_LIBS="-ldl $CPPCMS_LIBS"],[])
-AC_CHECK_LIB(pthread,pthread_sigmask,[],[echo "Pthreads library not found" ; exit -1])
 AC_CHECK_LIB(boost_regex,main,[
 	CPPCMS_LIBS="-lboost_regex $CPPCMS_LIBS"
 	],

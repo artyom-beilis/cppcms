@@ -1,55 +1,53 @@
 #ifndef CPPCMS_DBIXX_STORAGE_H
 #define CPPCMS_DBIXX_STORAGE_H
 
-#include "session_server_storage_with_cache.h"
+#include "session_storage.h"
 #include <dbixx/dbixx.h>
 
 namespace cppcms {
-class session_dbixx_storage : public session_server_storage_with_cache {
+class session_dbixx_storage : public session_server_storage {
 	dbixx::session &sql;
 public:
-	session_dbixx_storage(dbixx::session &sql_,cache_iface &cache_) :
-		session_server_storage_with_cache(cache_),
+	session_dbixx_storage(dbixx::session &sql_) :
 		sql(sql_)
 	{
 	}
 protected:	
-	virtual void impl_save(std::string const &sid,entry &e)
+	virtual void save(std::string const &sid,time_t timeout,std::string const &in)
 	{
 		dbixx::transaction tr(sql);
-		impl_remove(sid);
+		remove(sid);
 		std::tm t;
-		localtime_r(&e.timeout,&t);
+		localtime_r(&timeout,&t);
 		sql<<"INSERT INTO cppcms_sessions(sid,timeout,data) "
-		     "VALUES (?,?,?)",sid,t,e.data;
+		     "VALUES (?,?,?)",sid,t,in;
 		sql.exec();
 		tr.commit();
-		time_t now;
-		time(&now);
-		localtime_r(&now,&t);
-		sql<<"DELETE FROM cppcms_sessions WHERE timeout < ?",t;
-		sql.exec();
 	}
 
-	virtual bool impl_load(std::string const &sid,entry &e)
+	virtual bool load(std::string const &sid,time_t *timeout,std::string &out)
 	{
 		sql<<"SELECT timeout,data FROM cppcms_sessions WHERE sid=?",sid;
 		dbixx::row r;
 		if(sql.single(r)) {
 			std::tm t;
-			r>>t>>e.data;
-			time_t now;
-			time(&now);
-			e.timeout=mktime(&t);
-			if(e.timeout < now) 
+			std::string data;
+			r>>t>>data;
+			time_t tmp=mktime(&t);
+			if(tmp<time(NULL))
 				return false;
+			if(*timeout) *timeout=tmp;
+			out.swap(data);
 			return true;
 		}
 		return false;
 	}
 	virtual void remove(std::string const &sid)
 	{
-		sql<<"DELETE FROM cppcms_sessions WHERE sid=?",sid;
+		time_t now=time(NULL);
+		std::tm tnow;
+		localtime_r(&tnow,&now);
+		sql<<"DELETE FROM cppcms_sessions WHERE sid=? OR timeout < ?",sid,tnow;
 		sql.exec();
 	}
 };

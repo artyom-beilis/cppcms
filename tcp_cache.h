@@ -2,6 +2,8 @@
 #define TCP_CHACHE_H
 #include "base_cache.h"
 #include "cache_interface.h"
+#include "session_storage.h"
+#include "tcp_connector.h"
 #include <string>
 
 namespace cppcms {
@@ -11,13 +13,12 @@ using namespace std;
 class messenger;
 struct tcp_operation_header;
 
-class tcp_cache : public base_cache {
-	messenger *tcp;
-	int conns;
-	messenger &get(string const &key);
-	void broadcast(tcp_operation_header &h,string &data);
+class tcp_cache : public base_cache, public tcp_connector {
 public:
-	tcp_cache(vector<string> const &ip_list,vector<int> const &port_list);
+	tcp_cache(vector<string> const &ip_list,vector<int> const &port_list) :
+		tcp_connector(ip_list,port_list)
+	{
+	}
 
 	virtual bool fetch_page(string const &key,string &output,bool gzip);
 	virtual bool fetch(string const &key,archive &a,set<string> &tags);
@@ -26,6 +27,7 @@ public:
 	virtual void stats(unsigned &keys,unsigned &triggers);
 	virtual void store(string const &key,set<string> const &triggers,time_t timeout,archive const &a);
 	virtual ~tcp_cache();
+
 };
 
 class tcp_cache_factory : public cache_factory {
@@ -38,6 +40,6 @@ public:
 	virtual void del(base_cache *p) const { delete p; };
 };
 
-}
+} // cppcms
 
 #endif

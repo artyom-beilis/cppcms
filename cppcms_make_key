@@ -1,0 +1,9 @@
+#!/bin/bash
+
+SECRET=`od -An -t x4 -N16 /dev/random | awk '{ print $1$2$3$4}'`
+
+echo
+echo "# This is your PRIVATE KEY --- keep it in secret!"
+echo "# Put this line into your configuration file"
+echo
+echo "session.cookies_key = \"$SECRET\""

@@ -9,7 +9,8 @@ namespace cppcms {
 namespace opcodes {
 #endif
 	enum {	fetch_page, fetch, rise, clear, store ,stats,
-		error, done, page_data, data, no_data, out_stats };
+		error, done, page_data, data, no_data, out_stats,
+		session_save, session_load, session_load_data, session_remove};
 #ifdef __cplusplus
 }
 #endif
@@ -46,6 +47,12 @@ struct tcp_operation_header {
 			uint32_t keys;
 			uint32_t triggers;
 		} out_stats;
+		struct {
+			uint32_t timeout;
+		} session_save;
+		struct {
+			uint32_t timeout;
+		} session_data;
 	} operations;
 };
 

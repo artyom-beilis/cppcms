@@ -19,9 +19,17 @@
 #include "thread_cache.h"
 #include "scgi.h"
 #include "cgi.h"
+#include "session_cookies.h"
+#include "session_file_storage.h"
+#include "session_cache_backend.h"
+#include "session_dual.h"
 
+#ifdef EN_SQLITE_SESSIONS
+# include "session_sqlite_storage.h"
+#endif
 
 #ifdef EN_FORK_CACHE
+
 # include "process_cache.h"
 #endif
 
@@ -31,6 +39,7 @@
 
 #ifdef EN_TCP_CACHE
 # include "tcp_cache.h"
+# include "session_tcp_storage.h"
 #endif
 
 namespace cppcms {
@@ -504,26 +513,80 @@ web_application *manager::get_mod()
 	throw cppcms_error("Unknown mod:" + mod);
 }
 
+namespace {
+	struct empty_backend {
+		shared_ptr<session_api> operator()(worker_thread &a)
+		{
+			return shared_ptr<session_api>(); // EMPTY
+		}
+	};
+}
+
+session_backend_factory manager::get_sessions()
+{
+	string lock=config.sval("session.location","none");
+	if(lock=="none")
+		return empty_backend();
+	
+	session_backend_factory clnt;
+	session_backend_factory srv;
+	
+	if(lock=="client" || lock=="both") {
+		clnt=session_cookies::factory();
+	}
+	if(lock=="server" || lock=="both") {
+		string srv_backend=config.sval("session.backend","files");
+		if(srv_backend=="cache")
+			srv=session_cache_backend::factory();
+		else if(srv_backend=="files")
+			srv=session_file_storage::factory(config);
+#ifdef EN_SQLITE_SESSIONS
+		else if(srv_backend=="sqlite")
+			srv=session_sqlite_storage::factory(config);
+#endif
+#ifdef EN_TCP_CACHE
+		else if(srv_backend=="tcp")
+			srv=session_tcp_storage::factory(config);
+#endif
+	else
+			throw cppcms_error("Unknown backend:"+srv_backend);
+	}
+
+	if(lock=="server") 
+		return srv;
+	if(lock=="client")
+		return clnt;
+	if(lock=="both") {
+		int limit=config.ival("session.client_size_limit",2048);
+		return session_dual::factory(clnt,srv,limit);
+	}
+	
+	throw cppcms_error("Unknown location:"+lock);
+}
+
 void manager::execute()
 {
+	if(!workers.get()) {
+		throw cppcms_error("No workers factory set up");
+	}
 	if(!cache.get()) {
 		set_cache(get_cache_factory());
+	}
+	if(sessions.empty()) {
+		set_sessions(get_sessions());
 	}
 	if(!api.get()) {
 		set_api(get_api());
 	}
-	if(!web_app.get()) {
-		set_mod(get_mod());
-	}
 	if(!gettext.get()){
 		set_gettext(get_gettext());
 	}
-	if(!workers.get()) {
-		throw cppcms_error("No workers factory set up");
+	if(!web_app.get()) {
+		set_mod(get_mod());
 	}
 
 	load_templates();
-	
+
 	web_app->execute();
 }
 
@@ -560,6 +623,11 @@ manager::~manager()
 	for_each(templates_list.begin(),templates_list.end(),::dlclose);
 }
 
+void manager::set_sessions(session_backend_factory s)
+{
+	sessions=s;
+}
+
 void manager::set_worker(base_factory *w)
 {
 	workers=auto_ptr<base_factory>(w);
@@ -585,7 +653,7 @@ transtext::trans_factory *manager::get_gettext()
 	transtext::trans_factory *tmp=NULL;
 	try{
 		tmp=new transtext::trans_factory();
-		
+
 		tmp->load(	config.sval ("locale.dir",""),
 				config.slist("locale.lang_list"),
 				config.sval ("locale.lang_default",""),

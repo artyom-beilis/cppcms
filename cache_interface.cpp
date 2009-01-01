@@ -101,14 +101,16 @@ void cache_iface::rise(string const &t)
 	cms->caching_module->rise(t);
 }
 
-bool cache_iface::fetch_data(string const &key,serializable &data)
+bool cache_iface::fetch_data(string const &key,serializable &data,bool notriggers)
 {
 	if(!cms->caching_module) return false;
 	archive a;
 	set<string> new_trig;
 	if(cms->caching_module->fetch(key,a,new_trig)) {
 		data.load(a);
-		triggers.insert(new_trig.begin(),new_trig.end());
+		if(!notriggers){
+			triggers.insert(new_trig.begin(),new_trig.end());
+		}
 		return true;
 	}
 	return false;
@@ -125,14 +127,15 @@ void cache_iface::store_data(string const &key,serializable const &data,
 	cms->caching_module->store(key,triggers,deadtime(timeout),a);
 }
 
-bool cache_iface::fetch_frame(string const &key,string &result)
+bool cache_iface::fetch_frame(string const &key,string &result,bool notriggers)
 {
 	if(!cms->caching_module) return false;
 	archive a;
 	set<string> new_trig;
 	if(cms->caching_module->fetch(key,a,new_trig)) {
 		a>>result;
-		triggers.insert(new_trig.begin(),new_trig.end());
+		if(!notriggers)
+			triggers.insert(new_trig.begin(),new_trig.end());
 		return true;
 	}
 	return false;

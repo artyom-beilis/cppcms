@@ -7,7 +7,7 @@ namespace cppcms {
 
 struct application {
 
-	// Data 
+	// Data
 	worker_thread &worker;
 	url_parser &url;
 	manager const &app;
@@ -16,6 +16,8 @@ struct application {
 	cgicc_connection *&cgi_conn;
 
 	cache_iface &cache;
+	session_interface &session;
+
 	ostream &cout;
 
 	boost::signal<void()> &on_start;
@@ -26,7 +28,7 @@ struct application {
 	virtual ~application();
 	// API
 
-	void set_header(HTTPHeader *h) { worker.set_header(h); } 
+	void set_header(HTTPHeader *h) { worker.set_header(h); }
 	void add_header(string s) { worker.add_header(s); }
 	void set_cookie(cgicc::HTTPCookie const &c) { worker.set_cookie(c); }
 
