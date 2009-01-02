@@ -95,7 +95,10 @@ bool cipher::decrypt(string const &cipher,string &plain,time_t *timeout)
 		return false;
 	if(timeout) *timeout=header.timeout;
 
-	plain.assign(data.begin()+sizeof(aes_hdr)+sizeof(info),data.end());
+	vector<unsigned char>::iterator data_start=data.begin()+sizeof(aes_hdr)+sizeof(info),
+			data_end=data_start+header.size;
+
+	plain.assign(data_start,data_end);
 	return true;
 }
 
