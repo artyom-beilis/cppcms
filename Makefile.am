@@ -21,7 +21,7 @@ libcppcms_la_SOURCES = global_config.cpp manager.cpp 	url.cpp worker_thread.cpp 
 	text_tool.cpp 	cache_interface.cpp base_cache.cpp thread_cache.cpp scgi.cpp \
 	base_view.cpp util.cpp form.cpp application.cpp session_interface.cpp \
 	session_cookies.cpp hmac_encryptor.cpp encryptor.cpp md5.c base64.cpp \
-	session_sid.cpp session_file_storage.cpp session_dual.cpp
+	session_sid.cpp session_file_storage.cpp session_dual.cpp cppcms_error.cpp
 
 libcppcms_la_LDFLAGS  = -no-undefined -version-info 0:0:0
 libcppcms_la_LIBADD = @CPPCMS_LIBS@ transtext/libcppcmstranstext.la
@@ -55,7 +55,7 @@ nobase_pkginclude_HEADERS = global_config.h text_tool.h url.h cppcms_error.h \
 if EN_TCP_CACHE
 libcppcms_la_SOURCES += tcp_cache.cpp tcp_messenger.cpp session_tcp_storage.cpp tcp_connector.cpp
 bin_PROGRAMS = cppcms_tcp_scale
-cppcms_tcp_scale_SOURCES = base_cache.cpp thread_cache.cpp tcp_cache_server.cpp session_file_storage.cpp 
+cppcms_tcp_scale_SOURCES = base_cache.cpp thread_cache.cpp tcp_cache_server.cpp session_file_storage.cpp cppcms_error.cpp
 cppcms_tcp_scale_CXXFLAGS=-DNO_BUILDER_INTERFACE
 if EN_SQLITE_SESSIONS
 cppcms_tcp_scale_SOURCES += session_sqlite_storage.cpp
