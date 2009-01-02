@@ -322,7 +322,10 @@ void session_file_storage::gc(boost::shared_ptr<storage::io> io)
 	DIR *d=NULL;
 	try{
 		string dir=io->get_dir();
-		d=opendir(dir.c_str());
+		if((d=opendir(dir.c_str()))==NULL) {
+			int err=errno;
+			throw cppcms_error(err,"Failed to open directory :"+dir);
+		}
 		struct dirent entry,*entry_p;
 		while(readdir_r(d,&entry,&entry_p)==0 && entry_p!=NULL) {
 			int i;
