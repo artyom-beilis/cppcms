@@ -14,7 +14,21 @@ class worker_thread;
 class serializable;
 
 class session_interface : private boost::noncopyable {
-	std::map<std::string,std::string> data,data_copy;
+	struct entry {
+		std::string value;
+		bool exposed;
+		entry(std::string v="",bool exp=false) : value(v) , exposed(exp) {}
+		bool operator==(entry const &other) const 
+		{
+			return value==other.value && exposed==other.exposed;
+		}
+		bool operator!=(entry const &other) const 
+		{
+			return !(*this==other);
+		}
+	};
+	typedef std::map<std::string,entry> data_t;
+	data_t data,data_copy;
 	worker_thread &worker;
 
 	// Cached defaults
@@ -39,7 +53,10 @@ class session_interface : private boost::noncopyable {
 	std::string temp_cookie;
 
 	boost::shared_ptr<session_api> storage;
-	void set_session_cookie(int64_t age,std::string const &data);
+	void set_session_cookie(int64_t age,std::string const &data,std::string const &key=std::string());
+
+	void save_data(data_t const &data,std::string &s);
+	void load_data(data_t &data,std::string const &s);
 
 public:
 	session_interface(worker_thread &w);
@@ -57,6 +74,9 @@ public:
 	
 	void get(std::string const &key,serializable &);
 	void set(std::string const &key,serializable const &);
+	bool is_exposed(std::string const &key);
+	void expose(std::string const &key,bool val=true);
+	void hide(std::string const &key);
 
 
 	void clear();
@@ -71,10 +91,11 @@ public:
 	std::string get_session_cookie();
 	void set_api(boost::shared_ptr<session_api>);
 
-	void on_start();
+void on_start();
 	void on_end();
 	worker_thread &get_worker();
 };
+
 
 } // cppcms
 

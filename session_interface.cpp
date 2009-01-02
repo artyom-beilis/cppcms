@@ -2,7 +2,6 @@
 #include "session_interface.h"
 #include "session_api.h"
 #include "manager.h"
-#include "archive.h"
 
 namespace cppcms {
 
@@ -43,17 +42,11 @@ bool session_interface::load()
 	data_copy.clear();
 	timeout_val=timeout_val_def;
 	how=how_def;
-	archive ar;
-	if(!storage.get() || !storage->load(this,ar.set(),timeout_in)) {
+	string ar;
+	if(!storage.get() || !storage->load(this,ar,timeout_in)) {
 		return false;
 	}
-	int i,num;
-	ar>>num;
-	for(i=0;i<num;i++) {
-		string key,val;
-		ar>>key>>val;
-		data[key].swap(val);
-	}
+	load_data(data,ar);
 	data_copy=data;
 	return true;
 }
@@ -73,6 +66,74 @@ time_t session_interface::session_age()
 		return timeout_val + time(NULL);
 	return timeout_in;
 }
+
+namespace {
+struct packed {
+        unsigned key_size  : 10;
+        unsigned exposed   :  1;
+        unsigned data_size : 21;
+	packed() {}
+	packed(unsigned ks,bool exp, unsigned ds)
+	{
+		if(ks >=1024) 
+			throw cppcms_error("session::save key too long");
+		if(ds >= 1024 * 1024 * 2)
+			throw cppcms_error("session::save value too long");
+		key_size=ks;
+		exposed = exp ? 1 : 0;
+		data_size=ds;
+	}
+	packed(char const *start,char const *end)
+	{
+		if(start + 4 <= end ) {
+			memcpy(this,start,4);
+		}
+		else
+			throw cppcms_error("session::format violation -> pack");
+	}
+};
+
+}
+
+
+void session_interface::save_data(data_t const &data,std::string &s)
+{
+	s.clear();
+	data_t::const_iterator p;
+	for(p=data.begin();p!=data.end();++p) {
+		packed header(p->first.size(),p->second.exposed,p->second.value.size());
+		char *ptr=(char *)&header;
+		s.append(ptr,ptr+sizeof(header));
+		s.append(p->first.begin(),p->first.end());
+		s.append(p->second.value.begin(),p->second.value.end());
+	}
+}
+
+void session_interface::load_data(data_t &data,std::string const &s)
+{
+	data.clear();
+	char const *begin=s.data(),*end=begin+s.size();
+	while(begin < end) {
+		packed p(begin,end);
+		begin +=sizeof(p);
+		if(end - begin >= int(p.key_size + p.data_size)) {
+			string key(begin,begin+p.key_size);
+			begin+=p.key_size;
+			string val(begin,begin+p.data_size);
+			begin+=p.data_size;
+			entry &ent=data[key];
+			ent.exposed = p.exposed;
+			ent.value.swap(val);
+		}
+		else {
+			throw cppcms_error("sessions::format violation data");
+		}
+
+	}
+
+}
+
+
 
 void session_interface::save()
 {
@@ -97,16 +158,29 @@ void session_interface::save()
 			}
 		}
 	}
-	int num=data.size();
-	archive ar;
-	ar<<num;
-	for(map<string,string>::iterator p=data.begin(),e=data.end();p!=e;++p) {
-		ar<<p->first<<p->second;
-	}
+
+	string ar;
+	save_data(data,ar);
+	
 	temp_cookie.clear();
-	storage->save(this,ar.get(),session_age(),new_session);
+	storage->save(this,ar,session_age(),new_session);
 	set_session_cookie(cookie_age(),temp_cookie);
 	temp_cookie.clear();
+	
+	for(data_t::iterator p=data.begin();p!=data.end();++p) {
+		data_t::iterator p2=data_copy.find(p->first);
+		if(p->second.exposed && (p2==data_copy.end() || !p2->second.exposed || p->second.value!=p2->second.value)){
+			set_session_cookie(cookie_age(),p->second.value,p->first);
+		}
+		else if(!p->second.exposed && p2!=data_copy.end() && p2->second.exposed) {
+			set_session_cookie(-1,"",p->first);
+		}
+	}
+	for(data_t::iterator p=data_copy.begin();p!=data_copy.end();++p) {
+		if(p->second.exposed && data.find(p->first)==data.end()) {
+			set_session_cookie(-1,"",p->first);
+		}
+	}
 }
 
 void session_interface::on_start()
@@ -128,7 +202,7 @@ void session_interface::check()
 
 string &session_interface::operator[](string const &key)
 {
-	return data[key];
+	return data[key].value;
 }
 
 void session_interface::del(string const &key)
@@ -151,12 +225,17 @@ void session_interface::clear_session_cookie()
 	if(get_session_cookie()!="")
 		set_session_cookie(-1,"");
 }
-void session_interface::set_session_cookie(int64_t age,string const &data)
+void session_interface::set_session_cookie(int64_t age,string const &data,string const &key)
 {
 	if(data.empty())
 		age=0;
+	string cookie_name=worker.app.config.sval("session.cookies_prefix","cppcms_session");
+	if(!key.empty()) {
+		cookie_name+="_";
+		cookie_name+=key;
+	}
 	cgicc::HTTPCookie
-		cookie(	worker.app.config.sval("session.cookies_prefix","cppcms_session"), // name
+		cookie(	cookie_name, // name
 			(age >= 0 ? data : ""), // value
 			"",   // comment
 			worker.app.config.sval("session.cookies_domain",""), // domain
@@ -189,6 +268,25 @@ void session_interface::set(std::string const &key,serializable const &s)
 {
 	(*this)[key]=s;
 }
+
+bool session_interface::is_exposed(std::string const &key)
+{
+	data_t::iterator p=data.find(key);
+	if(p!=data.end()) 
+		return p->second.exposed;
+	return false;
+}
+
+void session_interface::expose(string const &key,bool exp)
+{
+	data[key].exposed=exp;
+}
+
+void session_interface::hide(string const &key)
+{
+	expose(key,false);
+}
+
 
 
 };

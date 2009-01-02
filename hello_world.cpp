@@ -36,6 +36,12 @@ void my_hello_world::test()
 			cout<<"UNSET LONG MESSAGE";
 			session.del("msg");
 		}
+		cout<<"<br/>"<<endl;
+		if(session.is_set("msg")) {
+			int val=given % 2;
+			session.expose("msg",val);
+			cout<<(val ? "exposed" : "hidden")<<endl;
+		}
 		//session.clear();
 	}
 	session.set<time_t>("time",time(NULL));
