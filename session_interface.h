@@ -49,6 +49,7 @@ class session_interface : private boost::noncopyable {
 	void check();
 	bool load();
 	void save();
+	void update_exposed(); 
 
 	std::string temp_cookie;
 

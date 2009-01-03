@@ -2,8 +2,59 @@
 #include "session_interface.h"
 #include "session_api.h"
 #include "manager.h"
+#include "util.h"
+#include <sstream>
 
 namespace cppcms {
+
+class cookie : public cgicc::HTTPCookie {
+	bool del;
+public:
+	cookie() :
+	 del(false)
+	{
+	}
+	cookie(string const &name,string const &val) :
+		cgicc::HTTPCookie(name,val),
+		del(false)
+
+	{
+	}
+	cookie(	const std::string& name,
+		const std::string& value,
+		const std::string& comment,
+		const std::string& domain,
+		unsigned long maxAge,
+		const std::string& path,
+		bool secure) :
+			HTTPCookie(name,value,comment,domain,maxAge,path,secure),
+			del(false)
+	{
+	}
+	void remove() { del=true; }
+	virtual void render(std::ostream& out) const
+	{
+		if(!del) {
+			cgicc::HTTPCookie::render(out);
+		}
+		else {
+			out <<"Set-Cookie:"<<getName()<<"=";
+			string domain=getDomain();
+			if(!domain.empty()) {
+				out<<"; Domain="<<domain;
+			}
+			string path=getPath();
+			if(!path.empty()) {
+				out<<"; Path="<<path;
+			}
+			if(isSecure()) {
+				cout<<"; Secure";
+			}
+			out<<"; Expires=Fri, 01-Jan-1971 01:00:00 GMT; Version=1";
+		}
+	}
+};
+
 
 session_interface::session_interface(worker_thread &w) :
 	worker(w)
@@ -135,6 +186,24 @@ void session_interface::load_data(data_t &data,std::string const &s)
 
 
 
+void session_interface::update_exposed()
+{
+	for(data_t::iterator p=data.begin();p!=data.end();++p) {
+		data_t::iterator p2=data_copy.find(p->first);
+		if(p->second.exposed && (p2==data_copy.end() || !p2->second.exposed || p->second.value!=p2->second.value)){
+			set_session_cookie(cookie_age(),p->second.value,p->first);
+		}
+		else if(!p->second.exposed && p2!=data_copy.end() && p2->second.exposed) {
+			set_session_cookie(-1,"",p->first);
+		}
+	}
+	for(data_t::iterator p=data_copy.begin();p!=data_copy.end();++p) {
+		if(p->second.exposed && data.find(p->first)==data.end()) {
+			set_session_cookie(-1,"",p->first);
+		}
+	}
+}
+
 void session_interface::save()
 {
 	check();
@@ -142,6 +211,7 @@ void session_interface::save()
 	if(data.empty()) {
 		if(get_session_cookie()!="")
 			storage->clear(this);
+		update_exposed();
 		return;
 	}
 
@@ -166,21 +236,8 @@ void session_interface::save()
 	storage->save(this,ar,session_age(),new_session);
 	set_session_cookie(cookie_age(),temp_cookie);
 	temp_cookie.clear();
-	
-	for(data_t::iterator p=data.begin();p!=data.end();++p) {
-		data_t::iterator p2=data_copy.find(p->first);
-		if(p->second.exposed && (p2==data_copy.end() || !p2->second.exposed || p->second.value!=p2->second.value)){
-			set_session_cookie(cookie_age(),p->second.value,p->first);
-		}
-		else if(!p->second.exposed && p2!=data_copy.end() && p2->second.exposed) {
-			set_session_cookie(-1,"",p->first);
-		}
-	}
-	for(data_t::iterator p=data_copy.begin();p!=data_copy.end();++p) {
-		if(p->second.exposed && data.find(p->first)==data.end()) {
-			set_session_cookie(-1,"",p->first);
-		}
-	}
+
+	update_exposed();	
 }
 
 void session_interface::on_start()
@@ -228,21 +285,35 @@ void session_interface::clear_session_cookie()
 void session_interface::set_session_cookie(int64_t age,string const &data,string const &key)
 {
 	if(data.empty())
-		age=0;
+		age=-1;
 	string cookie_name=worker.app.config.sval("session.cookies_prefix","cppcms_session");
 	if(!key.empty()) {
 		cookie_name+="_";
 		cookie_name+=key;
 	}
-	cgicc::HTTPCookie
-		cookie(	cookie_name, // name
-			(age >= 0 ? data : ""), // value
+	if(age < 0) {
+		cookie cook(cookie_name,"","",
+			worker.app.config.sval("session.cookies_domain",""),
+			0,
+			worker.app.config.sval("session.cookies_path","/"),
+			worker.app.config.ival("session.cookies_secure",0));
+		cook.remove();
+		ostringstream out;
+		out<<cook;
+		worker.add_header(out.str());
+	}
+	else {
+		cgicc::HTTPCookie cook(
+			cookie_name, // name
+			(age >= 0 ? urlencode(data) : ""), // value
 			"",   // comment
 			worker.app.config.sval("session.cookies_domain",""), // domain
 			( age < 0 ? 0 : age ),
 			worker.app.config.sval("session.cookies_path","/"),
 			worker.app.config.ival("session.cookies_secure",0));
-	worker.set_cookie(cookie);
+		worker.set_cookie(cook);
+	}
+
 }
 void session_interface::set_session_cookie(string const &data)
 {

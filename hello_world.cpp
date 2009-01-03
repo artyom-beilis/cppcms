@@ -10,12 +10,56 @@ public:
 	{
 		url.add("^/?$",
 			boost::bind(&my_hello_world::std,this));
-		url.add("^/test?$",boost::bind(&my_hello_world::test,this));
+		url.add("^/test$",boost::bind(&my_hello_world::test,this));
+		url.add("^/test2$",boost::bind(&my_hello_world::test2,this));
 		use_template("view2");
 	};
 	void test();
+	void test2();
 	void std();
 };
+
+
+void my_hello_world::test2()
+{
+	if(!session.is_set("test")) {
+		session["test"]="1";
+		cout<<"Set 1";
+	}
+	else {
+		int state=session.get<int>("test");
+		switch(state) {
+		case 1:
+			if(!session.is_exposed("test")) {
+				cout<<"Expose 1";
+				session.expose("test");
+			}
+			else {
+				session["test"]="2";
+				cout<<"Change exposed to 2";
+			}
+			break;
+		case 2:
+			if(session.is_exposed("test")) {
+				session.hide("test");
+				cout<<"Hidden 2";
+			}
+			else {
+				session["test"]="3";
+				cout<<"Hidden 2 moved to 3 and exposed";
+				session.expose("test");
+			}
+			break;
+		case 3:
+			session.del("test");
+			cout<<"Remove 3 and remove from hidden";
+			break;
+		default:
+			cout<<"Error";
+		}
+	}
+
+}
 
 void my_hello_world::test()
 {
