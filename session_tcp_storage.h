@@ -3,7 +3,6 @@
 
 #include "session_storage.h"
 #include "tcp_connector.h"
-#include "tcp_messenger.h"
 #include "session_backend_factory.h"
 
 namespace cppcms {

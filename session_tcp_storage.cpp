@@ -1,6 +1,9 @@
+#include "asio_config.h"
+// MUST BE FIRST TO COMPILE CORRECTLY UNDER CYGWIN
+#include "tcp_messenger.h"
 #include "session_tcp_storage.h"
 #include "session_sid.h"
-#include "manager.h"
+#include "global_config.h"
 
 namespace cppcms {
 

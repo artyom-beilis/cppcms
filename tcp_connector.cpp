@@ -1,5 +1,7 @@
-#include "tcp_connector.h"
+#include "asio_config.h"
+// MUST BE FIRST TO COMPILE CORRECTLY UNDER CYGWIN
 #include "tcp_messenger.h"
+#include "tcp_connector.h"
 
 namespace cppcms {
 

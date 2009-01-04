@@ -1,19 +1,6 @@
-#include "config.h"
-#ifdef __CYGWIN__
-// Cygwin ASIO works only with win32 sockets
-#define _WIN32_WINNT 1
-#define __USE_W32_SOCKETS 1
-#endif
+#include "asio_config.h"
+// MUST BE FIRST TO COMPILE CORRECTLY UNDER CYGWIN
 
-#ifdef USE_BOOST_ASIO
-#include <boost/asio.hpp>
-namespace aio = boost::asio;
-using boost::system::error_code;
-#else
-#include <asio.hpp>
-namespace aio = asio;
-using asio::error_code;
-#endif
 #include "tcp_cache_protocol.h"
 #include "session_storage.h"
 #include "archive.h"
@@ -34,7 +21,6 @@ using asio::error_code;
 
 using namespace std;
 using namespace cppcms;
-using aio::ip::tcp;
 using boost::shared_ptr;
 
 
