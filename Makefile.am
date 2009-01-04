@@ -4,6 +4,8 @@ noinst_PROGRAMS = hello_world.fcgi
 noinst_HEADERS = hello_world_view.h
 dist_bin_SCRIPTS = cppcms_tmpl_cc cppcms_run cppcms_make_key
 
+EXTRA_DIST = hello_world_skin1.tmpl hello_world_view1.tmpl hello_world_skin2.tmpl
+
 hello_world_fcgi_SOURCES = hello_world.cpp hello_world_view1.cpp hello_world_view2.cpp
 hello_world_fcgi_LDADD = libcppcms.la transtext/libcppcmstranstext.la
 hello_world_fcgi_CXXFLAGS= -Wall -I./transtext
@@ -50,7 +52,8 @@ nobase_pkginclude_HEADERS = global_config.h text_tool.h url.h cppcms_error.h \
 	util.h form.h application.h session_interface.h session_api.h session_cookies.h \
 	hmac_encryptor.h aes_encryptor.h encryptor.h md5.h base64.h session_backend_factory.h \
 	session_sid.h session_storage.h session_file_storage.h session_dual.h \
-	session_cache_backend.h session_sqlite_storage.h tcp_cache_protocol.h tcp_cache.h
+	session_cache_backend.h session_sqlite_storage.h tcp_cache_protocol.h tcp_cache.h \
+	tcp_connector.h session_tcp_storage.h tcp_messenger.h asio_config.h
 
 if EN_TCP_CACHE
 libcppcms_la_SOURCES += tcp_cache.cpp tcp_messenger.cpp session_tcp_storage.cpp tcp_connector.cpp
