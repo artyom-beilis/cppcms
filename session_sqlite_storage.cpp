@@ -229,14 +229,16 @@ namespace {
 // The database is created at startup
 struct builder_thread {
 	boost::shared_ptr<storage::sqlite_N> db;
-	builder_thread(string dir,int n,bool sync,int dc,int dt)
-		: db(new storage::sqlite_N(dir,n,sync,dc,dt))
+	bool cache;
+	builder_thread(string dir,int n,bool sync,int dc,int dt,bool c) :
+		db(new storage::sqlite_N(dir,n,sync,dc,dt)),
+		cache(c)
 	{
 	}
 	boost::shared_ptr<session_api> operator()(worker_thread &w)
 	{	
 		boost::shared_ptr<session_server_storage> storage(new session_sqlite_storage(db));
-		return boost::shared_ptr<session_api>(new session_sid(storage));
+		return boost::shared_ptr<session_api>(new session_sid(storage,cache));
 	}
 };
 
@@ -245,14 +247,15 @@ struct builder_proc {
 	string dir;
 	bool sync;
 	int size;
-	builder_proc(string d,int n,bool s) : dir(d) , sync(s) , size(n)
+	bool cache;
+	builder_proc(string d,int n,bool s,bool c) : dir(d) , sync(s) , size(n), cache(c)
 	{
 	}
 	boost::shared_ptr<session_api> operator()(worker_thread &w)
 	{	
 		boost::shared_ptr<storage::sqlite_N> db(new storage::sqlite_N(dir,size,sync,0,0));
 		boost::shared_ptr<session_server_storage> storage(new session_sqlite_storage(db));
-		return boost::shared_ptr<session_api>(new session_sid(storage));
+		return boost::shared_ptr<session_api>(new session_sid(storage,cache));
 	}
 
 };
@@ -272,15 +275,16 @@ session_backend_factory session_sqlite_storage::factory(cppcms_config const  &co
 	if(config.sval("server.mod","")=="thread")
 		def="thread";
 	string mod=config.sval("session.sqlite_mod",def);
+	bool cache=config.ival("session.server_enable_cache",0);
 	if(mod=="fork") {
 		bool sync=config.ival("session.sqlite_sync",0);
-		return builder_proc(db,db_count,sync);
+		return builder_proc(db,db_count,sync,cache);
 	}
 	else if(mod=="thread") {
 		bool sync=config.ival("session.sqlite_sync",1);
 		int  dc=config.ival("session.sqlite_commits",1000);
 		int  dt=config.ival("session.sqlite_commit_timeout",5);
-		return builder_thread(db,db_count,sync,dc,dt);
+		return builder_thread(db,db_count,sync,dc,dt,cache);
 	}
 	else {
 		throw cppcms_error("Unknown sqlite mode:"+mod);
