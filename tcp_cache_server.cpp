@@ -418,7 +418,7 @@ class garbage_collector
 		timer.expires_from_now(boost::posix_time::seconds(seconds));
 		timer.async_wait(boost::bind(&garbage_collector::gc,this,_1));
 	}
-	void gc(aio::error_code const &e)
+	void gc(error_code const &e)
 	{
 		session_file_storage::gc(io);
 		submit();
