@@ -14,13 +14,13 @@ class thread_cache : public base_cache {
 	pthread_rwlock_t access_lock;
 	struct container {
 		string data;
-		typedef map<string,container>::iterator pointer;
+		typedef std::map<string,container>::iterator pointer;
 		list<pointer>::iterator lru;
 		list<multimap<string,pointer>::iterator> triggers;
 		multimap<time_t,pointer>::iterator timeout;
 	};
 	typedef container::pointer pointer;
-	map<string,container> primary;
+	std::map<string,container> primary;
 	multimap<string,pointer> triggers;
 	typedef multimap<string,pointer>::iterator triggers_ptr;
 	multimap<time_t,pointer> timeout;

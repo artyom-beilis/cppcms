@@ -1,5 +1,5 @@
-#ifndef _GLOBAL_CONFIG_H
-#define _GLOBAL_CONFIG_H
+#ifndef CPPCMS_GLOBAL_CONFIG_H
+#define CPPCMS_GLOBAL_CONFIG_H
 
 #include <string>
 #include <map>
@@ -13,7 +13,7 @@ using namespace std;
 
 class cppcms_config {
 public:
-	typedef map<string,boost::any> data_t;
+	typedef std::map<string,boost::any> data_t;
 	typedef std::pair<data_t::const_iterator,data_t::const_iterator> range_t;
 	
 private:
@@ -32,7 +32,7 @@ private:
 public:
 	template<typename T>
 	T const *get_ptr(string const &name) const {
-		map<string,boost::any>::const_iterator it;
+		std::map<string,boost::any>::const_iterator it;
 		if((it=data.find(name))==data.end()) {
 			return NULL;
 		}
