@@ -60,7 +60,7 @@ if test "x$enable_forkcache" != "xno" ; then
 			echo "======================================================================" ]) 
 fi
 
-AM_CONDITIONAL(EN_FORK_CACHE,[test "x$have_mm" == "xyes" ])
+AM_CONDITIONAL(EN_FORK_CACHE,[test "x$have_mm" = "xyes" ])
 
 if test "x$enable_fastcgi" != "xno" ; then
 	AC_CHECK_LIB(fcgi++,main,[
@@ -73,7 +73,7 @@ if test "x$enable_fastcgi" != "xno" ; then
 			echo "============== FastCGI API will be disabled ==========================" 
 			echo "You still have scgi and cgi API" ])
 fi
-AM_CONDITIONAL(EN_FCGI_BACKEND,[test "x$have_fcgi" == "xyes" ])
+AM_CONDITIONAL(EN_FCGI_BACKEND,[test "x$have_fcgi" = "xyes" ])
 
 if test "x$enable_crypt" != "xno" ; then
 	AC_CHECK_LIB(gcrypt,main,[
@@ -85,7 +85,7 @@ if test "x$enable_crypt" != "xno" ; then
 			echo "libgcrypt not found, Encrypted Sessions backend is disabled"
 			echo "=====================================================================" ])
 fi
-AM_CONDITIONAL(EN_ENCR_SESSIONS,[test "x$have_gcrypt" == "xyes" ])
+AM_CONDITIONAL(EN_ENCR_SESSIONS,[test "x$have_gcrypt" = "xyes" ])
 
 if test "x$enable_sqlite" != "xno" ; then
 	AC_CHECK_LIB(sqlite3,sqlite3_open,[
@@ -97,7 +97,7 @@ if test "x$enable_sqlite" != "xno" ; then
 			echo "libsqlite3 not found, Sqlite sessions backend is disabled"
 			echo "=====================================================================" ])
 fi
-AM_CONDITIONAL(EN_SQLITE_SESSIONS,[test "x$have_sqlite3" == "xyes" ])
+AM_CONDITIONAL(EN_SQLITE_SESSIONS,[test "x$have_sqlite3" = "xyes" ])
 
 
 have_auto_type_detection=no
@@ -164,7 +164,7 @@ if test "x$enable_tcpcache" != "xno" ; then
 	CXXFLAGS="$store_flags"
 fi
 
-if test "x$need_system" == "xyes" 
+if test "x$need_system" = "xyes" 
 then
 	AC_CHECK_LIB(boost_system,main,
 		[ LIBS="-lboost_system $LIBS" ],
@@ -175,7 +175,7 @@ then
 				echo "     TCP cache disabled"])])
 fi
 
-if test "x$have_asio" == "xyes" 
+if test "x$have_asio" = "xyes" 
 then
 	AC_DEFINE([EN_TCP_CACHE],[],["Enable tcp cache"])
 	case $host in 
@@ -184,7 +184,7 @@ then
 fi
 
 
-AM_CONDITIONAL(EN_TCP_CACHE,[test "x$have_asio" == "xyes" ])
+AM_CONDITIONAL(EN_TCP_CACHE,[test "x$have_asio" = "xyes" ])
 
 AC_CHECK_LIB(cgicc,main,[CPPCMS_LIBS="-lcgicc $CPPCMS_LIBS"],[echo "cgicc not found" ; exit -1])
 AC_CHECK_LIB(dl,dlopen,[CPPCMS_LIBS="-ldl $CPPCMS_LIBS"],[])
