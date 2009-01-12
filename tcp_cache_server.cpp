@@ -529,7 +529,9 @@ int main(int argc,char **argv)
 		sigaddset(&wait_mask, SIGTERM);
 		pthread_sigmask(SIG_BLOCK, &wait_mask, 0);
 		int sig = 0;
-		sigwait(&wait_mask, &sig);		
+		sigwait(&wait_mask, &sig);
+		
+		cout<<"Catched signal:"<<sig<<" exiting..."<<endl;
 
 		io.stop();
 
@@ -541,6 +543,7 @@ int main(int argc,char **argv)
 		cerr<<"Error:"<<e.what()<<endl;
 		return 1;
 	}
+	cout<<"Done"<<endl;
 	return 0;
 }
 
