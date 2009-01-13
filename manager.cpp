@@ -11,7 +11,6 @@
 #include <errno.h>
 #include <unistd.h>
 #include <stdlib.h>
-#include <semaphore.h>
 #include <sys/mman.h>
 #include <sys/wait.h>
 #include <sys/types.h>
@@ -310,12 +309,15 @@ void prefork::chaild_handler(int s)
 
 void prefork::run()
 {
+	/* Signals defined by standard */
 	set_signal_handler(SIGTERM,chaild_handler);
+	set_signal_handler(SIGUSR1,chaild_handler);
+	/* Additional signal */
+	set_signal_handler(SIGINT,chaild_handler);
 
 	base_factory &factory=*app.workers;
 	shared_ptr<worker_thread> worker=factory(app);
 
-	int res,post_on_throw;
 	int limit=app.config.lval("server.iterations_limit",-1);
 	if(limit!=-1) {
 		srand(getpid());
@@ -326,42 +328,16 @@ void prefork::run()
 		if(limit!=-1 && counter>limit)
 			return;
 		counter++;
-		res=sem_wait(semaphore);
-		if(res<0){
-			if(errno==EINTR)
-				continue;
-			else {
-				perror("sem_wait");
-				exit(1);
-			}
-		}
-		cgi_session *session=NULL;
+		auto_ptr<cgi_session> session;
 		try{
-			post_on_throw=1;
-
-			struct pollfd fds;
-			fds.fd=app.api->get_socket();
-			fds.revents=0;
-			fds.events=POLLIN | POLLERR;
-
-			if(poll(&fds,1,-1)==1 && (fds.revents & POLLIN)) {
-				session=app.api->accept_session();
-			}
-			post_on_throw=0;
-			sem_post(semaphore);
-			if(session && session->prepare()) {
+			session.reset(app.api->accept_session());
+			if(session.get() && session->prepare()) {
 				worker->run(session->get_connection());
 			}
 		}
-		catch(cppcms_error const &e){
-			if(post_on_throw) sem_post(semaphore);
-			cerr<<e.what();
+		catch(exception const &e){
+			cerr<<e.what()<<endl;
 		}
-		catch(...){
-			if(post_on_throw) sem_post(semaphore);
-			exit(1);
-		}
-		delete session;
 	}
 }
 
@@ -377,13 +353,6 @@ prefork::prefork(manager &m) :
 void prefork::execute()
 {
 	int i;
-	void *mem=mmap(NULL,sizeof(sem_t),PROT_READ | PROT_WRITE,
-			MAP_SHARED |MAP_ANONYMOUS,-1,0);
-	if(mem==MAP_FAILED) {
-		throw cppcms_error(errno,"mmap failed");
-	}
-	semaphore=(sem_t*)mem;
-	sem_init(semaphore,1,1);
 
 	for(i=0;i<procs;i++) {
 		pid_t pid=fork();
@@ -445,8 +414,6 @@ void prefork::execute()
 		while(wait(NULL)<0 && errno==EINTR)
 			;
 	}
-	sem_close(semaphore);
-	munmap(mem,sizeof(sem_t));
 }
 
 

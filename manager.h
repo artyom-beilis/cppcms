@@ -4,7 +4,6 @@
 #include <pthread.h>
 #include <string>
 #include <memory>
-#include <semaphore.h>
 
 #include "worker_thread.h"
 #include "global_config.h"
@@ -190,7 +189,6 @@ public:
 class prefork : public web_application {
 	vector<pid_t> pids;
 	int procs;
-	sem_t *semaphore;
 	int exit_flag;
 	static prefork *self;
 	static void parent_handler(int s);
