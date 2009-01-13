@@ -42,6 +42,19 @@
 # include "session_tcp_storage.h"
 #endif
 
+
+namespace {
+
+	void set_signal_handler(int sig,void (*handler)(int))
+	{
+		struct sigaction sac;
+		memset(&sac,0,sizeof(sac));
+		sac.sa_handler=handler;
+		sigaction(sig,&sac,NULL);
+	}
+
+}
+
 namespace cppcms {
 namespace details {
 
@@ -119,10 +132,10 @@ void fast_cgi_application::set_signal_handlers()
 {
 	handlers_owner=this;
 	/* Signals defined by standard */
-	signal(SIGTERM,handler);
-	signal(SIGUSR1,handler);
+	set_signal_handler(SIGTERM,handler);
+	set_signal_handler(SIGUSR1,handler);
 	/* Additional signal */
-	signal(SIGINT,handler);
+	set_signal_handler(SIGINT,handler);
 }
 
 fast_cgi_single_threaded_app::fast_cgi_single_threaded_app(manager &m) :
@@ -281,7 +294,7 @@ void prefork::parent_handler(int s_catched)
 		s=SIGKILL;
 	}
 
-	signal(SIGALRM,parent_handler);
+	set_signal_handler(SIGALRM,parent_handler);
 	alarm(3);
 	for(i=0;i<self->procs;i++) {
 		kill(self->pids[i],s);
@@ -291,13 +304,13 @@ void prefork::parent_handler(int s_catched)
 void prefork::chaild_handler(int s)
 {
 	self->exit_flag=1;
-	signal(SIGALRM,chaild_handler);
+	set_signal_handler(SIGALRM,chaild_handler);
 	alarm(1);
 }
 
 void prefork::run()
 {
-	signal(SIGTERM,chaild_handler);
+	set_signal_handler(SIGTERM,chaild_handler);
 
 	base_factory &factory=*app.workers;
 	shared_ptr<worker_thread> worker=factory(app);
@@ -392,10 +405,10 @@ void prefork::execute()
 		}
 	}
 	/* Signals defined by standard */
-	signal(SIGTERM,parent_handler);
-	signal(SIGUSR1,parent_handler);
+	set_signal_handler(SIGTERM,parent_handler);
+	set_signal_handler(SIGUSR1,parent_handler);
 	/* Additional signal */
-	signal(SIGINT,parent_handler);
+	set_signal_handler(SIGINT,parent_handler);
 
 	while(!prefork::exit_flag) {
 		int stat;
