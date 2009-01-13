@@ -521,6 +521,8 @@ int main(int argc,char **argv)
 			}
 		}
 
+		// Restore previous mask
+		pthread_sigmask(SIG_SETMASK,&old_mask,0);
 		// Wait for signlas for exit
 		sigset_t wait_mask;
 		sigemptyset(&wait_mask);
