@@ -432,6 +432,13 @@ cache_factory *manager::get_cache_factory()
 	}
 #ifdef EN_FORK_CACHE
 	else if(backend=="fork") {
+		#ifndef HAVE_PTHREADS_PSHARED
+			// without pshared mutexes fork cache uses fcnlt for locking 
+			// and becomes not thread safe
+			if(config.sval("server.mod","")=="thread") {
+				throw cppcms_error("Can't use fork cache backend with mod_thread");
+			}
+		#endif
 		size_t s=config.lval("cache.memsize",64);
 		string f=config.sval("cache.file","");
 		return new process_cache_factory(s*1024U,f=="" ? NULL: f.c_str());

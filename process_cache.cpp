@@ -1,7 +1,14 @@
 #include "process_cache.h"
 #include <boost/format.hpp>
 #include <unistd.h>
-#include "posix_mutex.h"
+
+#ifdef HAVE_PTHREADS_PSHARED
+# include "posix_mutex.h"
+#else
+# include "fcntl_mutex.h"
+using namespace cppcms::fcntl;
+#endif
+
 #include <errno.h>
 #include <iostream>
 
@@ -52,6 +59,7 @@ void process_cache_factory::del(base_cache *p) const
 process_cache::process_cache(size_t m) :
 			memsize(m)
 {
+#ifdef HAVE_PTHREADS_PSHARED
 	pthread_mutexattr_t a;
 	pthread_rwlockattr_t al;
 
@@ -68,13 +76,23 @@ process_cache::process_cache(size_t m) :
 		throw cppcms_error(errno,"Failed setup mutexes --- is this system "
 					 "supports process shared mutex/rwlock?");
 	}
+#else
+	if((lru_mutex=tmpfile())==NULL || (access_lock=tmpfile())==NULL) {
+		throw cppcms_error(errno,"Failed to create temporary file");
+	}
+#endif
 };
 
 
 process_cache::~process_cache()
 {
+#ifdef HAVE_PTHREADS_PSHARED
 	pthread_mutex_destroy(&lru_mutex);
 	pthread_rwlock_destroy(&access_lock);
+#else
+	fclose(lru_mutex);
+	fclose(access_lock);
+#endif
 }
 
 process_cache::shr_string *process_cache::get(string const &key,set<string> *triggers)

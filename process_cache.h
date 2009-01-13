@@ -2,7 +2,7 @@
 #define CPPCMS_PROC_CHACHE_H
 #include "base_cache.h"
 #include "cache_interface.h"
-#include "pthread.h"
+#include <pthread.h>
 #include <map>
 #include <list>
 #include <sys/types.h>
@@ -26,8 +26,13 @@ public:
 using namespace std;
 
 class process_cache : public base_cache {
+#ifdef HAVE_PTHREADS_PSHARED
 	pthread_mutex_t lru_mutex;
 	pthread_rwlock_t access_lock;
+#else
+	FILE *lru_mutex;
+	FILE *access_lock;
+#endif
 	typedef std::basic_string<char,std::char_traits<char>,shmem_allocator<char,process_cache_factory::mem> > shr_string;
 	struct container {
 		shr_string data;

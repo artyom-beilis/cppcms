@@ -43,16 +43,7 @@ AC_TRY_RUN([	#include <pthread.h>
 		[AC_DEFINE([HAVE_PTHREADS_PSHARED],[],["Have Pshared"])
 			have_pthreads_pshared=yes
 			echo "Check: process shared mutex... ok"],[echo "Check: process shared mutex not supported"])
-if test "x$enable_forkcache" != "xno" ; then
-	if test "x$have_pthreads_pshared" != "xyes" ; then
-		echo "======================================================================"
-		echo "          Pthread process shared mutex/rwlock not supported " 
-		echo "                  The fork cache backend is disabled "
-		echo "    File based session storage process-shared backend is disabled"
-		echo "======================================================================"
-		enable_forkcache=no
-	fi
-fi
+
 
 if test "x$enable_forkcache" != "xno" ; then
 	AC_CHECK_LIB(mm,main,[

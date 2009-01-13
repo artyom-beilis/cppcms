@@ -53,7 +53,7 @@ nobase_pkginclude_HEADERS = global_config.h text_tool.h url.h cppcms_error.h \
 	hmac_encryptor.h aes_encryptor.h encryptor.h md5.h base64.h session_backend_factory.h \
 	session_sid.h session_storage.h session_file_storage.h session_dual.h \
 	session_cache_backend.h session_sqlite_storage.h tcp_cache_protocol.h tcp_cache.h \
-	tcp_connector.h session_tcp_storage.h tcp_messenger.h asio_config.h
+	tcp_connector.h session_tcp_storage.h tcp_messenger.h asio_config.h fcntl_mutex.h
 
 if EN_TCP_CACHE
 libcppcms_la_SOURCES += tcp_cache.cpp tcp_messenger.cpp session_tcp_storage.cpp tcp_connector.cpp

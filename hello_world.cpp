@@ -12,11 +12,13 @@ public:
 			boost::bind(&my_hello_world::std,this));
 		url.add("^/test$",boost::bind(&my_hello_world::test,this));
 		url.add("^/test2$",boost::bind(&my_hello_world::test2,this));
+		url.add("^/cache$",boost::bind(&my_hello_world::cache_test,this));
 		use_template("view2");
 	};
 	void test();
 	void test2();
 	void std();
+	void cache_test();
 };
 
 
@@ -117,6 +119,21 @@ void my_hello_world::std()
 		v.numbers.push_back(i);
 	v.lst.push_back(view::data("Hello",10));
 	render("hello",v);
+}
+
+void my_hello_world::cache_test()
+{
+	string tmp;
+	bool from_cache=true;
+	if(!cache.fetch_frame("test",tmp,true)) {
+		tmp="test value";
+		from_cache=false;
+		cache.store_frame("test",tmp,5);
+	}
+	if(from_cache)
+		cout <<"Fetched ["<<tmp<<"] from cache";
+	else
+		cout <<"Fetched ["<<tmp<<"] from start";
 }
 
 int main(int argc,char ** argv)
