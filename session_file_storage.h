@@ -44,7 +44,15 @@ public:
 	virtual void unlock(std::string const &sid) const;
 };
 
-class nfs_io : public io {
+class thread_io : public local_io
+{
+	pthread_rwlock_t *create_locks();
+public:
+	thread_io(std::string dir);
+	~thread_io();
+};
+
+class nfs_io : public thread_io {
 	int fid;
 protected:
 	virtual void close(int fid);
@@ -56,13 +64,6 @@ public:
 	~nfs_io();
 };
 
-class thread_io : public local_io
-{
-	pthread_rwlock_t *create_locks();
-public:
-	thread_io(std::string dir);
-	~thread_io();
-};
 
 #ifdef HAVE_PTHREADS_PSHARED
 

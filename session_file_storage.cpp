@@ -141,7 +141,7 @@ void nfs_io::close(int fid)
 	::close(fid);
 }
 
-nfs_io::nfs_io(std::string dir) : io(dir)
+nfs_io::nfs_io(std::string dir) : thread_io(dir)
 {
 	string lockf=dir+"/"+"nfs.lock";
 	fid=::open(lockf.c_str(),O_CREAT | O_RDWR,0666);
@@ -177,19 +177,24 @@ bool flock(int fid,int how,int pos)
 } // anon namespace
 
 
+// withing same process you should add additional mutex on the operations
+
 void nfs_io::wrlock(std::string const &sid) const
 {
+	thread_io::wrlock(sid);
 	if(!flock(fid,F_WRLCK,lock_id(sid)))
 		throw cppcms_error(errno,"storage::nfs_io::fcntl::WRITE LOCK");
 }
 void nfs_io::rdlock(std::string const &sid) const
 {
+	thread_io::rdlock(sid);
 	if(!flock(fid,F_RDLCK,lock_id(sid)))
 		throw cppcms_error(errno,"storage::nfs_io::fcntl::READ LOCK");
 }
 void nfs_io::unlock(std::string const &sid) const
 {
 	flock(fid,F_UNLCK,lock_id(sid));
+	thread_io::unlock(sid);
 }
 
 
