@@ -119,7 +119,7 @@ AC_TRY_COMPILE([#include <list>
 			echo "g++ typeof... ok"],[echo "g++ typeof... not supported"])
 AC_TRY_COMPILE([#include <list>
 		#include <vector>
-		#include #include <boost/typeof/typeof.hpp>
+		#include <boost/typeof/typeof.hpp>
 		],
 		[	{std::list<int> l; BOOST_TYPEOF(l.begin()) p=l.begin(); BOOST_TYPEOF(*p) &refp=*p;}
 			{std::vector<int> l; BOOST_TYPEOF(l.begin()) p=l.begin(); BOOST_TYPEOF(*p) &refp=*p;}],
