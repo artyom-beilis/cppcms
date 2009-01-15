@@ -27,6 +27,13 @@ fi
 
 CPPCMS_LIBS=""
 
+case $host in
+	*solaris*)
+		echo "Adding -pthreads for Solaris host"
+		CXXFLAGS="-pthreads $CXXFLAGS" 
+		LDFLAGS="-pthreads $LDFLAGS" 
+esac
+
 AC_SEARCH_LIBS(pthread_sigmask,thr kse pthread,[],[echo "Posix threads library not found" ; exit -1])
 
 AC_TRY_RUN([	#include <pthread.h>
