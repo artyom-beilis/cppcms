@@ -27,7 +27,8 @@ fi
 
 CPPCMS_LIBS=""
 
-AC_CHECK_LIB(pthread,pthread_sigmask,[],[echo "Pthreads library not found" ; exit -1])
+AC_SEARCH_LIBS(pthread_sigmask,thr kse pthread,[],[echo "Posix threads library not found" ; exit -1])
+
 AC_TRY_RUN([	#include <pthread.h>
 		int main()
 		{
