@@ -99,6 +99,10 @@ bool session_interface::load()
 	}
 	load_data(data,ar);
 	data_copy=data;
+	if(is_set("_t"))
+		timeout_val=get<int>("_t");
+	if(is_set("_h"))
+		how=get<int>("_h");
 	return true;
 }
 
@@ -357,6 +361,31 @@ void session_interface::hide(string const &key)
 {
 	expose(key,false);
 }
+
+void session_interface::set_age(int t)
+{
+	timeout_val=t;
+	set("_t",t);
+}
+
+void session_interface::set_age()
+{
+	del("_t");
+	timeout_val=timeout_val_def;
+}
+
+void session_interface::set_expiration(int h)
+{
+	how=h;
+	set("_h",h);
+}
+void session_interface::set_expiration()
+{
+	del("_h");
+	how=how_def;
+}
+
+
 
 
 

@@ -1,0 +1,7 @@
+- Fixed incorrect triggers behavior in cache_iface.
+- Added "notriggers" to store cache functions as well
+- Now session timeout is preserved withing session.
+
+Version 0.0.2
+=============
+

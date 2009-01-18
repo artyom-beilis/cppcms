@@ -25,20 +25,22 @@ public:
 	void store_frame(string const &key,
 			 string const &frame,
 			 set<string> const &triggers=set<string>(),
-			 int timeout=-1);
+			 int timeout=-1,
+			 bool notriggers=false);
 	void store_frame(string const &key,
 			 string const &frame,
-			 int timeout)
+			 int timeout,
+			 bool notriggers=false)
 	{
-		store_frame(key,frame,set<string>(),timeout);
+		store_frame(key,frame,set<string>(),timeout,notriggers);
 	}
 	bool fetch_data(string const &key,serializable &data,bool notriggers=false);
 	void store_data(string const &key,serializable const &data,
 			set<string> const &triggers=set<string>(),
-			int timeout=-1);
-	void store_data(string const &key,serializable const &data,int timeout)
+			int timeout=-1,bool notriggers=false);
+	void store_data(string const &key,serializable const &data,int timeout,bool notriggers=false)
 	{
-		store_data(key,data,set<string>(),timeout);
+		store_data(key,data,set<string>(),timeout,notriggers);
 	}
 	void clear();
 	bool stats(unsigned &keys,unsigned &triggers);

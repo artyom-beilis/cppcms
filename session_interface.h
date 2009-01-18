@@ -83,8 +83,10 @@ public:
 	void clear();
 
 	enum { fixed, renew, browser };
-	void set_age(int t) { timeout_val=t;}
-	void set_expiration(int h) { how=h; };
+	void set_age(int t);
+	void set_expiration(int h);
+	void set_age();
+	void set_expiration();
 
 // Special interface
 	void set_session_cookie(std::string const &data);

@@ -118,12 +118,16 @@ bool cache_iface::fetch_data(string const &key,serializable &data,bool notrigger
 
 void cache_iface::store_data(string const &key,serializable const &data,
 			set<string> const &triggers,
-			int timeout)
+			int timeout,
+			bool notriggers)
 {
 	if(!cms->caching_module) return;
 	archive a;
 	data.save(a);
-	this->triggers.insert(triggers.begin(),triggers.end());
+	if(!notriggers) {
+		this->triggers.insert(triggers.begin(),triggers.end());
+		this->triggers.insert(key);
+	}
 	cms->caching_module->store(key,triggers,deadtime(timeout),a);
 }
 
@@ -143,13 +147,17 @@ bool cache_iface::fetch_frame(string const &key,string &result,bool notriggers)
 
 void cache_iface::store_frame(string const &key,string const &data,
 			set<string> const &triggers,
-			int timeout)
+			int timeout,
+			bool notriggers)
 {
 	if(!cms->caching_module) return;
 	archive a;
 	a<<data;
 
-	this->triggers.insert(triggers.begin(),triggers.end());
+	if(!notriggers) {
+		this->triggers.insert(triggers.begin(),triggers.end());
+		this->triggers.insert(key);
+	}
 	cms->caching_module->store(key,triggers,deadtime(timeout),a);
 }
 
