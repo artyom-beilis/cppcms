@@ -592,6 +592,16 @@ def fetch_content(content):
 		tmp+=l1[n]+'\n'
 	yield tmp
 
+def help():
+	print	"Usage cppcms_tmpl_cc [-o filename.cpp] [-n namespace] [-d domain] file1.tmpl ... \n" \
+		"      -o filename.cpp     file name that implements this template\n" \
+		"      -n namespace        setup namespace for template\n" \
+		"      -d domain           setup gettext domain for this template\n" \
+		"      -h/--help           show this help message\n"
+
+
+	
+
 def main():
 	global stack
 	all=[]
@@ -603,6 +613,7 @@ def main():
 		if os.sys.argv[indx]=='-n':
 			if indx+1>=len(os.sys.argv):
 				sys.stderr.write("-n should be followed by namespace name\n")
+				help()
 				exit_flag=1
 				return
 			else:
@@ -611,6 +622,7 @@ def main():
 		elif os.sys.argv[indx]=='-o':
 			if indx+1>=len(os.sys.argv):
 				sys.stderr.write("-o should be followed by output file name\n")
+				help()
 				exit_flag=1
 				return
 			else:
@@ -619,17 +631,24 @@ def main():
 		elif os.sys.argv[indx]=='-d':
 			if indx+1>=len(os.sys.argv):
 				sys.stderr.write("-d should followed by gettext domain name\n")
+				help()
 				exit_flag=1
 				return
 			else:
 				global spec_gettext
 				spec_gettext=os.sys.argv[indx+1]
 				indx+=1
+
+		elif os.sys.argv[indx]=='--help' or os.sys.argv[indx]=='-h':
+			help()
+			exit_flag=1
+			return
 		else:
 			all.append(os.sys.argv[indx])
 		indx+=1
 	if not all:
 		sys.stderr.write("No input file names given\n")
+		help()
 		exit_flag=1
 		return
 	global output_fd
