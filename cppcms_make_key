@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 SECRET=`od -An -t x4 -N16 /dev/random | awk '{ print $1$2$3$4}'`
 
