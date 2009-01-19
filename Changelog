@@ -1,6 +1,7 @@
-- Fixed incorrect triggers behavior in cache_iface.
-- Added "notriggers" to store cache functions as well
+- Added help to templates compiler, BSD bugfix
 - Now session timeout is preserved withing session.
+- Added "notriggers" to store cache functions as well
+- Fixed incorrect triggers behavior in cache_iface.
 
 Version 0.0.2
 =============
