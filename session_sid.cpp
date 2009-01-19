@@ -73,7 +73,7 @@ bool session_sid::valid_sid(std::string const &id)
 
 string session_sid::key(std::string sid)
 {
-	return "cppcms_session_"+sid;
+	return "_cppcms_session_"+sid;
 }
 
 void session_sid::save(session_interface *session,std::string const &data,time_t timeout,bool new_data)
@@ -101,8 +101,9 @@ void session_sid::save(session_interface *session,std::string const &data,time_t
 		session->get_worker().cache.store_data(
 			key(id),
 			cdata,
-			set<string>(),
-			timeout - time(NULL));
+			timeout - time(NULL),
+			true);
+			// Store entry without triggers
 	}
 }
 
@@ -113,7 +114,8 @@ bool session_sid::load(session_interface *session,std::string &data,time_t &time
 		return false;
 	if(cache){
 		cached_data cdata;
-		if(session->get_worker().cache.fetch_data(key(id),cdata,false)) {
+		if(session->get_worker().cache.fetch_data(key(id),cdata,true)) {
+			// fetch data without triggers
 			data.swap(cdata.data);
 			timeout=cdata.timeout;
 			return true;
@@ -132,9 +134,9 @@ bool session_sid::load(session_interface *session,std::string &data,time_t &time
 	session->get_worker().cache.store_data(
 			key(id),
 			cdata,
-			set<string>(),
-			timeout-time(NULL)
-		);
+			timeout-time(NULL),
+			true
+		); // store entry without triggers
 	return true;
 }
 
