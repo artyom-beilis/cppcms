@@ -53,7 +53,7 @@ namespace widgets {
 class base_widget : public base_form {
 public:
 	bool is_set;
-	base_widget(string name,string msg="");
+	base_widget(string name="",string msg="");
 	string id;
 	string name;
 	string msg;
@@ -75,7 +75,7 @@ protected:
 	int high;
 public:
 	string value;
-	text(string id,string msg="") : base_widget(id,msg) , type("text"){ low=0,high=-1; };
+	text(string name="",string msg="") : base_widget(name,msg) , type("text"){ low=0,high=-1; };
 	void set_limits(int min,int max) { low=min,high=max; }
 	void set_nonempty() { low = 1, high=-1;};
 	void set_limits(string e,int min,int max) { error_msg=e; set_limits(min,max); }
@@ -93,8 +93,8 @@ class number: public text {
 	T min,max,value;
 	bool check_low,check_high;
 public:
-	number(string id,string msg="") :
-		text(id,msg),
+	number(string name="",string msg="") :
+		text(name,msg),
 		value(0),check_low(false),check_high(false)
 	{};
 	void set_low(T a)
@@ -142,7 +142,7 @@ public:
 class password: public text {
 	password *other;
 public:
-	password(string id,string msg="") : text(id,msg),other(0) {} ;
+	password(string name="",string msg="") : text(name,msg),other(0) {} ;
 	void set_equal(password &p2) { other=&p2; } ;
 	virtual bool validate();
 	virtual string render_input(int how);
@@ -150,31 +150,29 @@ public:
 class textarea: public text {
 public:
 	int rows,cols;
-	textarea(string id,string msg="") : text(id,msg) { rows=cols=-1; };
+	textarea(string name="",string msg="") : text(name,msg) { rows=cols=-1; };
 	virtual string render_input(int how);
 };
 
 class regex_field : public text {
-	boost::regex const &exp;
+	boost::regex const *exp;
 public:
-	regex_field(boost::regex const &e,string id,string msg="") : text(id,msg),exp(e)
-	{ 
-		low=3;
-	};
+	regex_field() : exp(0) {}	
+	regex_field(boost::regex const &e,string name="",string msg="") : text(name,msg),exp(&e) {}
 	virtual bool validate();
 };
 
 class email : public regex_field {
 	static boost::regex exp_email;
 public:
-	email(string id,string msg="") : regex_field(exp_email,id,msg) {}
+	email(string name="",string msg="") : regex_field(exp_email,name,msg) {}
 };
 
 class checkbox: public base_widget {
 public:
 	string input_value;
 	bool value;
-	checkbox(string id,string msg="") : base_widget(id,msg),input_value("1")
+	checkbox(string name="",string msg="") : base_widget(name,msg),input_value("1")
 	{
 		set(false);
 	};
@@ -189,7 +187,7 @@ class select_multiple : public base_widget {
 	int min;
 public:
 	int size;
-	select_multiple(string name,int s,string msg="") : base_widget(name,msg),min(-1),size(s) {};
+	select_multiple(string name="",int s=0,string msg="") : base_widget(name,msg),min(-1),size(s) {};
 	set<string> chosen;
 	map<string,string> available;
 	void add(string val,string opt,bool selected=false);
@@ -215,7 +213,7 @@ public:
 		string option;
 	};
 	list<option> select_list;
-	select_base(string name,string msg="") : base_widget(name,msg){};
+	select_base(string name="",string msg="") : base_widget(name,msg){};
 	void add(string value,string option);
 	void add(string v) { add(v,v); }
 	void add(int value,string option);
@@ -231,7 +229,7 @@ public:
 class select : public select_base {
 	int size;
 public:
-	select(string n,string m="") : select_base(n,m),size(-1) {};
+	select(string n="",string m="") : select_base(n,m),size(-1) {};
 	void set_size(int n) { size=n;}
 	virtual string render_input(int how);
 };
@@ -239,14 +237,14 @@ public:
 class radio : public select_base {
 	bool add_br;
 public:
-	radio(string name,string msg="") : select_base(name,msg),add_br(false) {}
+	radio(string name="",string msg="") : select_base(name,msg),add_br(false) {}
 	void set_vertical() { add_br=true; }
 	virtual string render_input(int how);
 };
 
 class hidden : public text {
 public:
-	hidden(string n,string msg="") : text(n,msg) { set_nonempty(); };
+	hidden(string n="",string msg="") : text(n,msg) { set_nonempty(); };
 	virtual string render(int how);
 };
 
@@ -254,7 +252,7 @@ class submit : public base_widget {
 public:
 	string value;
 	bool pressed;
-	submit(string name,string button,string msg="") : base_widget(name,msg), value(button),pressed(false) {};
+	submit(string name="",string button="",string msg="") : base_widget(name,msg), value(button),pressed(false) {};
 	virtual string render_input(int);
 	virtual void load(cgicc::Cgicc const &cgi);
 };

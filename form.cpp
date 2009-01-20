@@ -3,6 +3,7 @@
 
 #include <boost/format.hpp>
 #include <iostream>
+#include "cppcms_error.h"
 
 namespace cppcms {
 base_form::~base_form()
@@ -90,6 +91,9 @@ string base_widget::render(int how)
 	string input=render_input(how);
 	string error;
 
+	if(name.empty()) {
+		throw cppcms_error("widgets::base_widget undefine name");
+	}
 	switch(how & error_mask) {
 	case error_with:
 		error=render_error();
@@ -298,7 +302,9 @@ bool regex_field::validate()
 {
 	if(!text::validate())
 		return false;
-	is_valid=boost::regex_match(value,exp);
+	if(!exp)
+		throw cppcms_error("widgets::regex_field regular expression is not defined");
+	is_valid=boost::regex_match(value,*exp);
 	return is_valid;
 }
 

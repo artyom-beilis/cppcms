@@ -1,3 +1,4 @@
+- Fixed -- widgets are default constructable
 - Added help to templates compiler, BSD bugfix
 - Now session timeout is preserved withing session.
 - Added "notriggers" to store cache functions as well
