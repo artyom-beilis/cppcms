@@ -27,6 +27,8 @@ fi
 
 CPPCMS_LIBS=""
 
+MY_SAVE_LIBS="$LIBS"
+
 case $host in
 	*solaris*)
 		echo "Adding -pthreads for Solaris host"
@@ -223,5 +225,8 @@ else
 	CPPCMS_LIBS="-lboost_regex-$bsts -lboost_iostreams-$bsts -lboost_signals-$bsts $CPPCMS_LIBS"
 fi
 
+TCPSCALE_LIBS="$LIBS"
+LIBS="$SAVE_LIBS"
+AC_SUBST(TCPSCALE_LIBS)
 AC_SUBST(CPPCMS_LIBS)
 AC_OUTPUT

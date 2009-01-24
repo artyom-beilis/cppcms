@@ -2,7 +2,8 @@ SUBDIRS = ./transtext
 
 noinst_PROGRAMS = hello_world.fcgi
 noinst_HEADERS = hello_world_view.h
-dist_bin_SCRIPTS = cppcms_tmpl_cc cppcms_run cppcms_make_key
+dist_bin_SCRIPTS = cppcms_tmpl_cc cppcms_run
+bin_PROGRAMS = cppcms_make_key
 
 EXTRA_DIST = hello_world_skin1.tmpl hello_world_view1.tmpl hello_world_skin2.tmpl Changelog
 
@@ -57,9 +58,10 @@ nobase_pkginclude_HEADERS = global_config.h text_tool.h url.h cppcms_error.h \
 
 if EN_TCP_CACHE
 libcppcms_la_SOURCES += tcp_cache.cpp tcp_messenger.cpp session_tcp_storage.cpp tcp_connector.cpp
-bin_PROGRAMS = cppcms_tcp_scale
+bin_PROGRAMS += cppcms_tcp_scale
 cppcms_tcp_scale_SOURCES = base_cache.cpp thread_cache.cpp tcp_cache_server.cpp session_file_storage.cpp cppcms_error.cpp
 cppcms_tcp_scale_CXXFLAGS=-DNO_BUILDER_INTERFACE
+cppcms_tcp_scale_LDADD = @TCPSCALE_LIBS@ 
 if EN_SQLITE_SESSIONS
 cppcms_tcp_scale_SOURCES += session_sqlite_storage.cpp
 endif
