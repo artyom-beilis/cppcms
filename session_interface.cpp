@@ -94,6 +94,7 @@ bool session_interface::load()
 	timeout_val=timeout_val_def;
 	how=how_def;
 	string ar;
+	saved=false;
 	if(!storage.get() || !storage->load(this,ar,timeout_in)) {
 		return false;
 	}
@@ -210,6 +211,8 @@ void session_interface::update_exposed()
 
 void session_interface::save()
 {
+	if(saved)
+		return;
 	check();
 	new_session  = data_copy.empty() && !data.empty();
 	if(data.empty()) {
@@ -242,6 +245,7 @@ void session_interface::save()
 	temp_cookie.clear();
 
 	update_exposed();	
+	saved=true;
 }
 
 void session_interface::on_start()

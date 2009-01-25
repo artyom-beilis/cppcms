@@ -41,6 +41,7 @@ class worker_thread: private boost::noncopyable {
 
 	list<string> other_headers;
 	base_cache *caching_module;
+	bool user_io;
 	bool gzip;
 	bool gzip_done;
 	stringbuf out_buf;
@@ -68,6 +69,7 @@ public:
 	void set_header(HTTPHeader *h);
 	void add_header(string s);
 	void set_cookie(cgicc::HTTPCookie const &c);
+	void set_user_io();
 
 	HTTPHeader &header();
 

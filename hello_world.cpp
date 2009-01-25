@@ -13,13 +13,39 @@ public:
 		url.add("^/test$",boost::bind(&my_hello_world::test,this));
 		url.add("^/test2$",boost::bind(&my_hello_world::test2,this));
 		url.add("^/cache$",boost::bind(&my_hello_world::cache_test,this));
+		url.add("^/png$",boost::bind(&my_hello_world::png,this));
 		use_template("view2");
 	};
 	void test();
+	void png();
 	void test2();
 	void std();
 	void cache_test();
 };
+
+void my_hello_world::png()
+{
+	ifstream file("test.png");
+	if(!file) {
+		cout<<"File test.png not found";
+		return ;
+	}
+	vector<char> buffer(1024);
+	set_user_io();
+
+	ostream &cout=cgi_conn->cout();
+	set_header(new cgicc::HTTPContentHeader("image/png"));
+	session.save();
+	cout<<header();
+
+	for(;;) {
+		file.read(&buffer.front(),1024);
+		cout.write(&buffer.front(),file.gcount());
+		if(file.eof())
+			break;
+	}
+	file.close();
+}
 
 
 void my_hello_world::test2()

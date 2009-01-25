@@ -42,13 +42,13 @@ class session_interface : private boost::noncopyable {
 	// Information from session data
 	time_t timeout_in;
 	bool new_session;
+	bool saved;
 
 	int cookie_age();
 	time_t   session_age();
 
 	void check();
 	bool load();
-	void save();
 	void update_exposed(); 
 
 	std::string temp_cookie;
@@ -87,6 +87,7 @@ public:
 	void set_expiration(int h);
 	void set_age();
 	void set_expiration();
+	void save();
 
 // Special interface
 	void set_session_cookie(std::string const &data);

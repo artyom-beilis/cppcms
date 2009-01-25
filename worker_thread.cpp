@@ -50,6 +50,11 @@ void worker_thread::set_cookie(cgicc::HTTPCookie const &c)
 	response_header->setCookie(c);
 }
 
+void worker_thread::set_user_io()
+{
+	user_io=true;
+}
+
 void worker_thread::set_lang(string const &s)
 {
 	lang=s;
@@ -80,6 +85,7 @@ void worker_thread::run(cgicc_connection &cgi_conn)
 	set_header(new HTTPHTMLHeader);
 
 	gzip=gzip_done=false;
+	user_io=false;
 	string encoding;
 
 	if((encoding=cgi_conn.env("HTTP_ACCEPT_ENCODING"))!="") {
@@ -114,6 +120,11 @@ void worker_thread::run(cgicc_connection &cgi_conn)
 
 	for(list<string>::iterator h=other_headers.begin();h!=other_headers.end();h++) {
 		cgi_out<<*h<<"\n";
+	}
+
+	if(user_io) {
+		// user controls it's IO
+		return;
 	}
 
 	string out=out_buf.str();
@@ -169,6 +180,8 @@ void worker_thread::render(string name,base_content &content)
 {
 	render(current_template,name,content,cout);
 };
+
+
 
 }
 
