@@ -2,11 +2,14 @@
 #include <sys/stat.h>
 #include <sys/mman.h>
 #include <fcntl.h>
+#include <stddef.h>
+#include <unistd.h>
 #include <dirent.h>
 #include <errno.h>
 #include <stdio.h>
 #include <boost/crc.hpp>
 #include <boost/bind.hpp>
+#include <limits.h>
 #include "global_config.h"
 
 #include "session_file_storage.h"
@@ -233,7 +236,7 @@ thread_io::~thread_io()
 pthread_rwlock_t *shmem_io::create_locks()
 {
 	int size=sizeof(pthread_rwlock_t)*LOCK_SIZE;
-	void *ptr=mmap(0,size,PROT_READ | PROT_WRITE,MAP_SHARED | MAP_ANONYMOUS, 0,0);
+	void *ptr=mmap(0,size,PROT_READ | PROT_WRITE,MAP_SHARED | MAP_ANONYMOUS, -1,0);
 	if(ptr==MAP_FAILED) {
 		throw cppcms_error(errno,"storage:mmap");
 	}
@@ -325,22 +328,37 @@ void session_file_storage::remove(string const &sid)
 void session_file_storage::gc(boost::shared_ptr<storage::io> io)
 {
 	DIR *d=NULL;
+	string dir=io->get_dir();
+	struct dirent *entry_st=NULL,*entry_p;
+	int path_len=pathconf(dir.c_str(),_PC_NAME_MAX);
+	if(path_len < 0 ) { 
+		// Only "sessions" should be in this directory
+		// also this directory has high level of trust
+		// thus... Don't care about symlink exploits
+		#ifdef NAME_MAX
+		path_len=NAME_MAX;
+		#elif defined(PATH_MAX)
+		path_len=PATH_MAX;
+		#else
+		path_len=4096; // guess
+		#endif
+	}
+	// this is for Solaris... 
+	entry_st=(struct dirent *)new char[sizeof(struct dirent)+path_len+1];
 	try{
-		string dir=io->get_dir();
 		if((d=opendir(dir.c_str()))==NULL) {
 			int err=errno;
 			throw cppcms_error(err,"Failed to open directory :"+dir);
 		}
-		struct dirent entry,*entry_p;
-		while(readdir_r(d,&entry,&entry_p)==0 && entry_p!=NULL) {
+		while(readdir_r(d,entry_st,&entry_p)==0 && entry_p!=NULL) {
 			int i;
 			for(i=0;i<32;i++) {
-				if(!isxdigit(entry.d_name[i]))
+				if(!isxdigit(entry_st->d_name[i]))
 					break;
 			}
-			if(i!=32 || entry.d_name[i]!=0) 
+			if(i!=32 || entry_st->d_name[i]!=0) 
 				continue;
-			string sid=entry.d_name;
+			string sid=entry_st->d_name;
 			try{
 				io->rdlock(sid);
 				time_t tmp;
@@ -358,6 +376,7 @@ void session_file_storage::gc(boost::shared_ptr<storage::io> io)
 	}
 	catch(...) {
 		if(d) closedir(d);
+		delete [] entry_st;
 		throw;
 	}
 }
