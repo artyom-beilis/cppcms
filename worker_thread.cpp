@@ -52,6 +52,12 @@ void worker_thread::set_cookie(cgicc::HTTPCookie const &c)
 
 void worker_thread::set_user_io()
 {
+	ostream &cout=cgi_conn->cout();
+	for(list<string>::iterator h=other_headers.begin();h!=other_headers.end();h++) {
+		cout<<*h<<"\n";
+	}
+	session.save();
+	cout<<header();
 	user_io=true;
 }
 
@@ -94,6 +100,10 @@ void worker_thread::run(cgicc_connection &cgi_conn)
 		}
 	}
 
+	if(app.config.lval("server.disable_xpowered_by",0)==0) {
+		add_header("X-Powered-By: " PACKAGE_NAME "/" PACKAGE_VERSION);
+	}
+
 	try {
 		/**********/
 		session.on_start();
@@ -114,17 +124,15 @@ void worker_thread::run(cgicc_connection &cgi_conn)
 		return;
 	}
 
-	if(app.config.lval("server.disable_xpowered_by",0)==0) {
-		add_header("X-Powered-By: " PACKAGE_NAME "/" PACKAGE_VERSION);
-	}
 
-	for(list<string>::iterator h=other_headers.begin();h!=other_headers.end();h++) {
-		cgi_out<<*h<<"\n";
-	}
 
 	if(user_io) {
 		// user controls it's IO
 		return;
+	}
+
+	for(list<string>::iterator h=other_headers.begin();h!=other_headers.end();h++) {
+		cgi_out<<*h<<"\n";
 	}
 
 	string out=out_buf.str();

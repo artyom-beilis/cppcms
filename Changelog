@@ -1,3 +1,4 @@
+- Changed manual output control to flush all headers on request
 - Fixed incorrect use of readdir_r with dirent on Solaris that caused crash
 - Added an option for manual output stream control
 - Changed cppcms_make_key now written in C instead of unportable bash/od

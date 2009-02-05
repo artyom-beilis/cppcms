@@ -31,12 +31,11 @@ void my_hello_world::png()
 		return ;
 	}
 	vector<char> buffer(1024);
-	set_user_io();
 
-	ostream &cout=cgi_conn->cout();
 	set_header(new cgicc::HTTPContentHeader("image/png"));
-	session.save();
-	cout<<header();
+	
+	set_user_io();
+	ostream &cout=cgi_conn->cout();
 
 	for(;;) {
 		file.read(&buffer.front(),1024);
