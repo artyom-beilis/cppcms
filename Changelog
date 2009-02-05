@@ -1,3 +1,4 @@
+- Added an option to disable gzip compression
 - Changed manual output control to flush all headers on request
 - Fixed incorrect use of readdir_r with dirent on Solaris that caused crash
 - Added an option for manual output stream control

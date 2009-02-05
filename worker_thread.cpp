@@ -165,6 +165,11 @@ void worker_thread::run(cgicc_connection &cgi_conn)
 	}
 }
 
+void worker_thread::no_gzip()
+{
+	gzip=false;
+}
+
 void worker_thread::render(string tmpl,string name,base_content &content,ostream &out )
 {
 	using cppcms::details::views_storage;
