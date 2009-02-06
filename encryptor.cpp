@@ -3,6 +3,7 @@
 #include "cppcms_error.h"
 #include <sys/time.h>
 #include <time.h>
+#include <cstdlib>
 
 using namespace std;
 
