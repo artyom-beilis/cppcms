@@ -1,3 +1,4 @@
+- Fixed configuration with latest autoconf/automake
 - gcc 4.3 compilation fixes
 - Added an option to disable gzip compression
 - Changed manual output control to flush all headers on request

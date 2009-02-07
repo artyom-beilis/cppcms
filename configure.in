@@ -37,6 +37,7 @@ case $host in
 esac
 
 AC_SEARCH_LIBS(pthread_sigmask,thr kse pthread,[],[echo "Posix threads library not found" ; exit -1])
+AC_SEARCH_LIBS(clock_gettime,rt,[],[])
 
 AC_TRY_RUN([	#include <pthread.h>
 		int main()
@@ -225,6 +226,7 @@ else
 	CPPCMS_LIBS="-lboost_regex-$bsts -lboost_iostreams-$bsts -lboost_signals-$bsts $CPPCMS_LIBS"
 fi
 
+CPPCMS_LIBS="$CPPCMS_LIBS $LIBS"
 TCPSCALE_LIBS="$LIBS"
 LIBS="$SAVE_LIBS"
 AC_SUBST(TCPSCALE_LIBS)
