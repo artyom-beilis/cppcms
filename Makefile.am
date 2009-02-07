@@ -5,7 +5,7 @@ noinst_HEADERS = hello_world_view.h
 dist_bin_SCRIPTS = cppcms_tmpl_cc cppcms_run
 bin_PROGRAMS = cppcms_make_key
 
-EXTRA_DIST = hello_world_skin1.tmpl hello_world_view1.tmpl hello_world_skin2.tmpl Changelog
+EXTRA_DIST = hello_world_skin1.tmpl hello_world_view1.tmpl hello_world_skin2.tmpl Changelog autogen.sh config.txt
 
 hello_world_fcgi_SOURCES = hello_world.cpp hello_world_view1.cpp hello_world_view2.cpp
 hello_world_fcgi_LDADD = libcppcms.la transtext/libcppcmstranstext.la
