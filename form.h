@@ -136,7 +136,11 @@ public:
 		return (is_valid=true);
 	}
 	T get() const { return value; };
-	T &val() { return value; }
+	void set(T v)
+	{
+		value=v;
+		text::set(boost::lexical_cast<string>(v));
+	}
 };
 
 class password: public text {
@@ -204,10 +208,8 @@ public:
 };
 
 class select_base : public base_widget {
-protected:
-	string value;
-	bool has_value;
 public:
+	string value;
 	struct option {
 		string value;
 		string option;
