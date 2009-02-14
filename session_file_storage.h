@@ -34,6 +34,8 @@ public:
 	virtual ~io(){};
 };
 
+#if !defined(CPPCMS_EMBEDDED)
+
 class local_io : public io {
 protected:
 	pthread_rwlock_t *locks;
@@ -77,6 +79,21 @@ public:
 };
 
 #endif
+
+#else // !CPPCMS_EMBEDDED
+
+class embed_io : public io {
+	int fid;
+public:
+	embed_io(std::string dir);
+	virtual void wrlock(std::string const &sid) const;
+	virtual void rdlock(std::string const &sid) const;
+	virtual void unlock(std::string const &sid) const;
+	~embed_io();
+};
+
+
+#endif // CPPCMS_EMBEDDED
 
 } // storage
 

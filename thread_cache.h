@@ -1,5 +1,6 @@
 #ifndef THREAD_CHACHE_H
 #define THREAD_CHACHE_H
+#include "config.h"
 #include "base_cache.h"
 #include "cache_interface.h"
 #include "pthread.h"
@@ -8,6 +9,8 @@
 namespace cppcms {
 
 using namespace std;
+
+#if !defined(CPPCMS_EMBEDDED) || defined(CPPCMS_EMBEDDED_THREAD)
 
 class thread_cache : public base_cache {
 	pthread_mutex_t lru_mutex;
@@ -60,6 +63,8 @@ public:
 	virtual void del(base_cache *p) const { };
 	virtual ~thread_cache_factory() { delete cache; };
 };
+
+#endif
 
 }
 

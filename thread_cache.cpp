@@ -1,3 +1,7 @@
+#include "config.h"
+
+#if !defined(CPPCMS_EMBEDDED) || defined(CPPCMS_EMBEDDED_THREAD)
+
 #include "thread_cache.h"
 #include <boost/format.hpp>
 #include <unistd.h>
@@ -61,6 +65,17 @@ string *thread_cache::get(string const &key,set<string> *triggers)
 	return &(p->second.data);
 }
 
+namespace {
+	template<typename T>
+	T unaligned(T const *p)
+	{
+		T tmp;
+		memcpy(&tmp,p,sizeof(T));
+		return tmp;
+	}
+}
+
+
 bool thread_cache::fetch_page(string const &key,string &out,bool gzip)
 {
 	rwlock_rdlock lock(access_lock);
@@ -69,7 +84,7 @@ bool thread_cache::fetch_page(string const &key,string &out,bool gzip)
 	size_t size=r->size();
 	size_t s;
 	char const *ptr=r->c_str();
-	if(size<sizeof(size_t) || (s=*(size_t const *)ptr)>size-sizeof(size_t))
+	if(size<sizeof(size_t) || (s=unaligned((size_t const *)ptr))>size-sizeof(size_t))
 		return false;
 	if(!gzip){
 		out.assign(ptr+sizeof(size_t),s);
@@ -77,7 +92,7 @@ bool thread_cache::fetch_page(string const &key,string &out,bool gzip)
 	else {
 		ptr+=s+sizeof(size_t);
 		size-=s+sizeof(size_t);
-		if(size<sizeof(size_t) || (s=*(size_t const *)ptr)!=size-sizeof(size_t))
+		if(size<sizeof(size_t) || (s=unaligned((size_t const *)ptr))!=size-sizeof(size_t))
 			return false;
 		out.assign(ptr+sizeof(size_t),s);
 	}
@@ -246,3 +261,7 @@ void thread_cache::print_all()
 }
 
 };
+
+#endif 
+
+

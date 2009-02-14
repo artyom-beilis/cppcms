@@ -31,6 +31,7 @@ struct application {
 	void set_header(HTTPHeader *h) { worker.set_header(h); }
 	void add_header(string s) { worker.add_header(s); }
 	void set_cookie(cgicc::HTTPCookie const &c) { worker.set_cookie(c); }
+	void flush_headers() { worker.flush_headers(); }
 	void set_user_io() { worker.set_user_io(); }
 	void no_gzip() { worker.no_gzip(); }
 

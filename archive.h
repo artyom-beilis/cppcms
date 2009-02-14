@@ -44,7 +44,9 @@ public:
 			throw cppcms_error("Format violation");
 		}
 		char const *start=data.c_str()+ptr;
-		if(*(size_t const *)start!=sizeof(T)) {
+		size_t tmp_size;
+		memcpy(&tmp_size,start,sizeof(size_t));
+		if(tmp_size!=sizeof(T)) {
 			throw cppcms_error("Invalid size read");
 		}
 		start+=sizeof(size_t);
@@ -60,7 +62,9 @@ public:
 			throw cppcms_error("Format violation");
 		}
 		char const *start=data.c_str()+ptr;
-		size_t s=*(size_t const *)start;
+		//size_t s=*(size_t const *)start;
+		size_t s;
+		memcpy(&s,start,sizeof(s)); // alginment
 		if(ptr+sizeof(size_t)+s>data.size()) {
 			throw cppcms_error("String too long");
 		}

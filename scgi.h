@@ -1,6 +1,7 @@
 #ifndef CPPCMS_SCGI_H
 #define CPPCMS_SCGI_H
 
+#include "config.h"
 #include <cgicc/CgiInput.h>
 #include <boost/noncopyable.hpp>
 #include <ostream>
@@ -12,7 +13,7 @@
 
 namespace cppcms {
 using namespace std;
-
+#if !defined(CPPCMS_EMBEDDED) || defined(CPPCMS_EMBEDDED_THREAD)
 namespace scgi {
 	class scgi_outbuffer : public streambuf
 	{
@@ -58,7 +59,7 @@ public:
 	virtual cgi_session *accept_session();
 	virtual ~scgi_api();
 };
-
+#endif
 
 };
 

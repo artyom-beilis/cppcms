@@ -4,18 +4,24 @@
 
 #include "manager.h"
 #include "cgicc_connection.h"
+
+#if !defined(CPPCMS_EMBEDDED) || defined(CPPCMS_EMBEDDED_THREAD)
+
 #include <dlfcn.h>
 #include <dirent.h>
 #include <poll.h>
 #include <signal.h>
 #include <errno.h>
 #include <unistd.h>
-#include <stdlib.h>
 #include <sys/mman.h>
 #include <sys/wait.h>
 #include <sys/types.h>
-#include <algorithm>
 #include "thread_cache.h"
+
+#endif
+
+#include <algorithm>
+#include <stdlib.h>
 #include "scgi.h"
 #include "cgi.h"
 #include "session_cookies.h"
@@ -42,6 +48,8 @@
 #endif
 
 
+#if !defined(CPPCMS_EMBEDDED) || defined(CPPCMS_EMBEDDED_THREAD)
+
 namespace {
 
 	void set_signal_handler(int sig,void (*handler)(int))
@@ -53,6 +61,8 @@ namespace {
 	}
 
 }
+
+#endif
 
 namespace cppcms {
 namespace details {
@@ -82,6 +92,8 @@ public:
 
 	}
 };
+
+#if !defined(CPPCMS_EMBEDDED) || defined(CPPCMS_EMBEDDED_THREAD)
 
 fast_cgi_application *fast_cgi_application::handlers_owner=NULL;
 
@@ -278,6 +290,10 @@ bool fast_cgi_multiple_threaded_app::run()
 }
 
 
+#endif // if !defined(CPPCMS_EMBEDDED) || defined(CPPCMS_EMBEDDED_THREAD)
+
+#if !defined(CPPCMS_EMBEDDED)
+
 // Single instance of prefork
 prefork *prefork::self;
 
@@ -416,11 +432,15 @@ void prefork::execute()
 	}
 }
 
+#endif //if !defined(CPPCMS_EMBEDDED)
 
 } // END oF Details
 
 cache_factory *manager::get_cache_factory()
 {
+#ifdef CPPCMS_EMBEDDED
+	return new cache_factory();
+#else
 	string backend=config.sval("cache.backend","none");
 
 	if(backend=="none") {
@@ -454,10 +474,14 @@ cache_factory *manager::get_cache_factory()
 	else {
 		throw cppcms_error("Unkown cache backend:" + backend);
 	}
+#endif // cppcms_embedded
 }
 
 cgi_api *manager::get_api()
 {
+#if defined(CPPCMS_EMBEDDED) && !defined(CPPCMS_EMBEDDED_THREAD)
+	return new cgi_cgi_api();
+#else
 	string api=config.sval("server.api");
 
 	if(api=="cgi") {
@@ -477,27 +501,34 @@ cgi_api *manager::get_api()
 	}
 #endif
 	throw cppcms_error("Unknown api:"+api);
-
+#endif // ! CGI only
 }
 
 web_application *manager::get_mod()
 {
+#if defined(CPPCMS_EMBEDDED) && !defined(CPPCMS_EMBEDDED_THREAD)
+	return new details::single_run(*this);
+#else
 	if(config.sval("server.api","")=="cgi") {
 		return new details::single_run(*this);
 	}
 
 	string mod=config.sval("server.mod");
-
+#if !defined(CPPCMS_EMBEDDED) || defined(CPPCMS_EMBEDDED_THREAD)
 	if(mod=="process") {
 		return new details::fast_cgi_single_threaded_app(*this);
 	}
 	if(mod=="thread") {
 		return new details::fast_cgi_multiple_threaded_app(*this);
 	}
+#endif
+#if !defined(CPPCMS_EMBEDDED)
 	if(mod=="prefork") {
 		return new details::prefork(*this);
 	}
+#endif
 	throw cppcms_error("Unknown mod:" + mod);
+#endif
 }
 
 namespace {
@@ -579,6 +610,7 @@ void manager::execute()
 
 void manager::load_templates()
 {
+#if !defined(CPPCMS_EMBEDDED) 
 	string ext=config.sval("templates.ext",
 		#ifdef __CYGWIN__
 		".dll"
@@ -603,11 +635,14 @@ void manager::load_templates()
 		}
 		::closedir(d);
 	}
+#endif
 }
 
 manager::~manager()
 {
+#if !defined(CPPCMS_EMBEDDED) 
 	for_each(templates_list.begin(),templates_list.end(),::dlclose);
+#endif 
 }
 
 void manager::set_sessions(session_backend_factory s)

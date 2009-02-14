@@ -1,10 +1,14 @@
+#include "config.h"
 #include "worker_thread.h"
 #include "global_config.h"
-#include "thread_cache.h"
 #include "base_view.h"
+
+#ifndef CPPCMS_EMBEDDED
 
 #include <boost/iostreams/filtering_stream.hpp>
 #include <boost/iostreams/filter/gzip.hpp>
+
+#endif
 
 #include "manager.h"
 
@@ -50,7 +54,7 @@ void worker_thread::set_cookie(cgicc::HTTPCookie const &c)
 	response_header->setCookie(c);
 }
 
-void worker_thread::set_user_io()
+void worker_thread::flush_headers()
 {
 	ostream &cout=cgi_conn->cout();
 	for(list<string>::iterator h=other_headers.begin();h!=other_headers.end();h++) {
@@ -58,6 +62,11 @@ void worker_thread::set_user_io()
 	}
 	session.save();
 	cout<<header();
+}
+
+void worker_thread::set_user_io()
+{
+	flush_headers();
 	user_io=true;
 }
 
@@ -76,6 +85,45 @@ HTTPHeader &worker_thread::header()
 {
 	return *response_header;
 }
+
+#ifdef CPPCMS_EMBEDDED 
+
+void worker_thread::run(cgicc_connection &cgi_conn)
+{
+	cgi=&cgi_conn.cgi();
+	env=&(cgi->getEnvironment());
+	other_headers.clear();
+	
+	set_lang("");
+	cout.rdbuf(cgi_conn.cout().rdbuf()); // Set output buffer;
+	this->cgi_conn=&cgi_conn;
+
+	set_header(new HTTPHTMLHeader);
+
+	if(app.config.lval("server.disable_xpowered_by",0)==0) {
+		add_header("X-Powered-By: " PACKAGE_NAME "/" PACKAGE_VERSION);
+	}
+
+	try {
+		/**********/
+		session.on_start();
+		main();
+		session.on_end();
+		/**********/
+		if(response_header.get() == NULL) {
+			throw cppcms_error("Looks like a bug");
+		}
+	}
+	catch(std::exception const &e) {
+		string msg=e.what();
+		cout<<HTTPStatusHeader(500,msg);
+		cout<<"<html><body><p>"+msg+"</p><body></html>";
+		other_headers.clear();
+		return;
+	}
+}
+
+#else
 
 void worker_thread::run(cgicc_connection &cgi_conn)
 {
@@ -165,6 +213,9 @@ void worker_thread::run(cgicc_connection &cgi_conn)
 	}
 }
 
+#endif
+
+
 void worker_thread::no_gzip()
 {
 	gzip=false;
@@ -172,6 +223,9 @@ void worker_thread::no_gzip()
 
 void worker_thread::render(string tmpl,string name,base_content &content,ostream &out )
 {
+#if defined(CPPCMS_EMBEDDED)
+	flush_headers();
+#endif
 	using cppcms::details::views_storage;
 	base_view::settings s(this,&out);
 	auto_ptr<base_view> p(views_storage::instance().fetch_view(tmpl,name,s,&content));

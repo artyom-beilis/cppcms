@@ -62,7 +62,7 @@ public:
 
 
 namespace details {
-
+#if !defined(CPPCMS_EMBEDDED) || defined(CPPCMS_EMBEDDED_THREAD)
 class fast_cgi_application :public web_application {
 
 	static fast_cgi_application  *handlers_owner;
@@ -186,6 +186,10 @@ public:
 	};
 };
 
+#endif
+
+#if !defined(CPPCMS_EMBEDDED) 
+
 class prefork : public web_application {
 	vector<pid_t> pids;
 	int procs;
@@ -199,6 +203,7 @@ public:
 	virtual void execute();
 };
 
+#endif
 
 } // END OF DETAILS
 

@@ -211,7 +211,7 @@ void session_interface::update_exposed()
 
 void session_interface::save()
 {
-	if(saved)
+	if(storage.get()==NULL || saved)
 		return;
 	check();
 	new_session  = data_copy.empty() && !data.empty();

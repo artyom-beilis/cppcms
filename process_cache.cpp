@@ -118,6 +118,17 @@ process_cache::shr_string *process_cache::get(string const &key,set<string> *tri
 	return &(p->second.data);
 }
 
+namespace {
+	template<typename T>
+	T unaligned(T const *p)
+	{
+		T tmp;
+		memcpy(&tmp,p,sizeof(T));
+		return tmp;
+	}
+}
+
+
 bool process_cache::fetch_page(string const &key,string &out,bool gzip)
 {
 	rwlock_rdlock lock(access_lock);
@@ -126,7 +137,7 @@ bool process_cache::fetch_page(string const &key,string &out,bool gzip)
 	size_t size=r->size();
 	size_t s;
 	char const *ptr=r->c_str();
-	if(size<sizeof(size_t) || (s=*(size_t const *)ptr)>size-sizeof(size_t))
+	if(size<sizeof(size_t) || (s=unaligned((size_t const *)ptr))>size-sizeof(size_t))
 		return false;
 	if(!gzip){
 		out.assign(ptr+sizeof(size_t),s);
@@ -134,7 +145,7 @@ bool process_cache::fetch_page(string const &key,string &out,bool gzip)
 	else {
 		ptr+=s+sizeof(size_t);
 		size-=s+sizeof(size_t);
-		if(size<sizeof(size_t) || (s=*(size_t const *)ptr)!=size-sizeof(size_t))
+		if(size<sizeof(size_t) || (s=unaligned((size_t const *)ptr))!=size-sizeof(size_t))
 			return false;
 		out.assign(ptr+sizeof(size_t),s);
 	}

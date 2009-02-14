@@ -33,7 +33,7 @@ struct my_form : public form {
 	my_form(application *w) :
 		username("user",w->gettext("Username")),
 		name("name",w->gettext("Real Name")),
-		mail("mail"),
+		mail("mail",w->gettext("Mail")),
 		p1("pass",w->gettext("Password")),
 		p2("passcopy",w->gettext("Confirm")),
 		integer("int",w->gettext("Integer")),

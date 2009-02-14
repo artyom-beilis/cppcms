@@ -22,6 +22,27 @@ using namespace std;
 
 namespace cppcms {
 
+namespace {
+
+bool flock(int fid,int how,int pos=-1)
+{
+	struct flock lock;
+	memset(&lock,0,sizeof(lock));
+	lock.l_type=how;
+	lock.l_whence=SEEK_SET;
+	if(pos<0) { // All file
+		lock.l_start=pos;
+		lock.l_len=1;
+	}
+	int res;
+	while((res=fcntl(fid,F_SETLKW,&lock)!=0) && errno==EINTR)
+		;
+	if(res) return false;
+	return true;	
+}
+
+} // anon namespace
+
 namespace storage {
 
 #define LOCK_SIZE 256
@@ -119,6 +140,8 @@ void io::unlink(std::string const &sid) const
 	::unlink(name.c_str());
 }
 
+#if !defined(CPPCMS_EMBEDDED)
+
 local_io::local_io(std::string dir,pthread_rwlock_t *l):
 	io(dir),
 	locks(l)
@@ -159,25 +182,6 @@ nfs_io::~nfs_io()
 {
 	::close(fid);
 }
-
-namespace {
-
-bool flock(int fid,int how,int pos)
-{
-	struct flock lock;
-	memset(&lock,0,sizeof(lock));
-	lock.l_type=how;
-	lock.l_whence=SEEK_SET;
-	lock.l_start=pos;
-	lock.l_len=1;
-	int res;
-	while((res=fcntl(fid,F_SETLKW,&lock)!=0) && errno==EINTR)
-		;
-	if(res) return false;
-	return true;	
-}
-
-} // anon namespace
 
 
 // withing same process you should add additional mutex on the operations
@@ -277,6 +281,56 @@ shmem_io::~shmem_io()
 }
 
 #endif // HAVE_PTHREADS_PSHARED
+
+#else // CPPCMS_EMBEDDED
+
+#if defined(CPPCMS_EMBEDDED_THREAD) 
+static pthread_rwlock_t cppcms_embed_io_lock = PTHREAD_RWLOCK_INITIALIZER;
+#define embed_wrlock() pthread_rwlock_wrlock(&cppcms_embed_io_lock)
+#define embed_rdlock() pthread_rwlock_rdlock(&cppcms_embed_io_lock)
+#define embed_unlock() pthread_rwlock_unlock(&cppcms_embed_io_lock)
+#else
+
+#define embed_wrlock() 
+#define embed_rdlock() 
+#define embed_unlock() 
+
+#endif
+
+embed_io::embed_io(std::string dir) : io(dir)
+{
+	string lockf=dir+"/"+"flock";
+	fid=::open(lockf.c_str(),O_CREAT | O_RDWR,0666);
+	if(fid<0) {
+		throw cppcms_error(errno,"storage::embed_io::open");
+	}
+}
+
+embed_io::~embed_io()
+{
+	::close(fid);
+}
+
+void embed_io::wrlock(std::string const &sid) const
+{
+	embed_wrlock();
+	if(!flock(fid,F_WRLCK))
+		throw cppcms_error(errno,"storage::nfs_io::fcntl::WRITE LOCK");
+}
+void embed_io::rdlock(std::string const &sid) const
+{
+	embed_rdlock();
+	if(!flock(fid,F_RDLCK))
+		throw cppcms_error(errno,"storage::nfs_io::fcntl::READ LOCK");
+}
+void embed_io::unlock(std::string const &sid) const
+{
+	flock(fid,F_UNLCK);
+	embed_unlock();
+}
+
+
+#endif 
 
 } // namespace storeage
 
@@ -386,11 +440,13 @@ void session_file_storage::gc(boost::shared_ptr<storage::io> io)
 
 namespace {
 
+#if !defined(CPPCMS_EMBEDDED) || defined(CPPCMS_EMBEDDED_THREAD)
 	static pthread_mutex_t gc_mutex=PTHREAD_MUTEX_INITIALIZER;
 	static pthread_cond_t  gc_cond=PTHREAD_COND_INITIALIZER;
 	static int gc_exit=-1;
-	static int gc_period=-1;
 	static int starter_pid=-1;
+#endif
+	static int gc_period=-1;
 
 	void *thread_func(void *param);
 
@@ -414,13 +470,12 @@ public:
 	
 	builder_impl(cppcms_config const config)
 	{
-		gc_exit=-1;
-		cache=config.ival("session.server_enable_cache",0);
 		string dir=config.sval("session.files_dir","");
 		if(dir=="") {
 			dir=def_dir();
 		}
-		string mod = config.sval("server.mod","");
+#if !defined(CPPCMS_EMBEDDED)
+		string mod = config.sval("server.mod","");		
 		string default_type;
 		if(mod=="thread")
 			default_type = "thread";
@@ -441,11 +496,17 @@ public:
 			io.reset(new storage::nfs_io(dir));
 		else
 			throw cppcms_error("Unknown option for session.files_comp `"+type+"'");
-		// Clean first time
-		session_file_storage::gc(io);
+#else // EMBEDDED
+
+		io.reset(new storage::embed_io(dir));
+#endif
 
 		gc_period=config.ival("session.files_gc_frequency",-1);
-
+#if !defined(CPPCMS_EMBEDDED) || defined(CPPCMS_EMBEDDED_THREAD)
+		// Clean first time
+		session_file_storage::gc(io);
+		
+		gc_exit=-1;
 		if(gc_period>0) {
 			has_thread=true;
 			gc_exit=0;
@@ -454,10 +515,19 @@ public:
 		}
 		else
 			has_thread=false;
+#else // We have only cgi
+		string timestamp=dir+"/gc.timestamp";
+		struct stat info;
+		if(stat(timestamp.c_str(),&info)==0 && (time(NULL) - info.st_mtime) < gc_period)
+			return;
+		fclose(fopen(timestamp.c_str(),"w")); // timestamp it
+		session_file_storage::gc(io);
+#endif
 
 	}
 	~builder_impl()
 	{
+#if !defined(CPPCMS_EMBEDDED) || defined(CPPCMS_EMBEDDED_THREAD)
 		if(has_thread) {
 			pthread_mutex_lock(&gc_mutex);
 			gc_exit=1;
@@ -465,6 +535,7 @@ public:
 			pthread_mutex_unlock(&gc_mutex);
 			pthread_join(pid,NULL);
 		}
+#endif
 	}
 
 	boost::shared_ptr<session_api> operator()(worker_thread &w)
@@ -490,6 +561,7 @@ struct builder {
 
 void *thread_func(void *param)
 {
+#if !defined(CPPCMS_EMBEDDED) || defined(CPPCMS_EMBEDDED_THREAD)
 	builder_impl *blder=(builder_impl*)param;
 	int exit=0;
 	while(!exit) {
@@ -514,6 +586,7 @@ void *thread_func(void *param)
 			}
 		}
 	}
+#endif
 	return NULL;
 }
 

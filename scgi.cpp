@@ -1,5 +1,5 @@
 #include "scgi.h"
-
+#if !defined(CPPCMS_EMBEDDED) || defined(CPPCMS_EMBEDDED_THREAD)
 #include <errno.h>
 #include <signal.h>
 #include <stdio.h>
@@ -229,3 +229,5 @@ ostream &scgi_session::cout() { return out_stream; };
 
 
 }; // cppcms
+
+#endif

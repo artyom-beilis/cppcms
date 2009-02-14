@@ -29,6 +29,73 @@ namespace {
 	}
 }
 
+#ifdef CPPCMS_EMBEDDED
+
+void deflate(string const &text,ostream &stream,long level,long length)
+{
+	throw cppcms_error("gzip compression is not supported for embedded system");
+}
+
+string deflate(string const &text,long level,long length)
+{
+	throw cppcms_error("gzip compression is not supported for embedded system");
+}
+
+
+
+bool cache_iface::fetch_page(string const &key)
+{
+	return false;
+}
+
+void cache_iface::store_page(string const &key,int timeout)
+{
+}
+
+void cache_iface::add_trigger(string const &t)
+{
+}
+
+void cache_iface::rise(string const &t)
+{
+}
+
+bool cache_iface::fetch_data(string const &key,serializable &data,bool notriggers)
+{
+	return false;
+}
+
+void cache_iface::store_data(string const &key,serializable const &data,
+			set<string> const &triggers,
+			int timeout,
+			bool notriggers)
+{
+}
+
+bool cache_iface::fetch_frame(string const &key,string &result,bool notriggers)
+{
+	return false;
+}
+
+void cache_iface::store_frame(string const &key,string const &data,
+			set<string> const &triggers,
+			int timeout,
+			bool notriggers)
+{
+}
+
+void cache_iface::clear()
+{
+}
+
+bool cache_iface::stats(unsigned &k,unsigned &t)
+{
+	return false;
+}
+
+
+#else // Normal System
+
 
 void deflate(string const &text,ostream &stream,long level,long length)
 {
@@ -57,6 +124,7 @@ string deflate(string const &text,long level,long length)
 	deflate(text,sstream,level,length);
 	return sstream.str();
 }
+
 
 
 bool cache_iface::fetch_page(string const &key)
@@ -174,5 +242,7 @@ bool cache_iface::stats(unsigned &k,unsigned &t)
 	cms->caching_module->stats(k,t);
 	return true;
 }
+
+#endif
 
 } // End of namespace cppcms
