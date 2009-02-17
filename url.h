@@ -7,6 +7,23 @@
 #include <boost/regex.hpp>
 #include <boost/function.hpp>
 #include <boost/bind.hpp>
+#include "config.h"
+
+// Some defines:
+
+#if defined(HAVE_DOLLAR_SIGN) && !defined(NO_DEPRICATED)
+
+#define $0 _9
+#define $1 _1
+#define $2 _2
+#define $3 _3
+#define $4 _4
+#define $5 _5
+#define $6 _6
+#define $7 _7
+#define $8 _8
+
+#endif
 
 namespace cppcms {
 

@@ -133,6 +133,12 @@ AM_CONDITIONAL(EN_SQLITE_SESSIONS,[test "x$have_sqlite3" = "xyes" ])
 
 have_auto_type_detection=no
 
+AC_TRY_COMPILE([],[int \$1=10;],[
+	AC_DEFINE([HAVE_DOLLAR_SIGN],[],["Can use $ in indentifiers"])
+	echo "Check: $ is supported in identifiers"
+	],
+	[echo "Check: $ is not supported in identifiers"])
+
 AC_TRY_COMPILE([#include <list>
 		],
 		[std::list<int> l; auto p=l.begin();],
