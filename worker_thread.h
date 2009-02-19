@@ -70,7 +70,6 @@ public:
 	void add_header(string s);
 	void set_cookie(cgicc::HTTPCookie const &c);
 	void set_user_io();
-	void flush_headers();
 	void no_gzip();
 
 	HTTPHeader &header();

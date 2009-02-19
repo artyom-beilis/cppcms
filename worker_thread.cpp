@@ -54,7 +54,7 @@ void worker_thread::set_cookie(cgicc::HTTPCookie const &c)
 	response_header->setCookie(c);
 }
 
-void worker_thread::flush_headers()
+void worker_thread::set_user_io()
 {
 	ostream &cout=cgi_conn->cout();
 	for(list<string>::iterator h=other_headers.begin();h!=other_headers.end();h++) {
@@ -62,11 +62,6 @@ void worker_thread::flush_headers()
 	}
 	session.save();
 	cout<<header();
-}
-
-void worker_thread::set_user_io()
-{
-	flush_headers();
 	user_io=true;
 }
 
@@ -86,45 +81,6 @@ HTTPHeader &worker_thread::header()
 	return *response_header;
 }
 
-#ifdef CPPCMS_EMBEDDED 
-
-void worker_thread::run(cgicc_connection &cgi_conn)
-{
-	cgi=&cgi_conn.cgi();
-	env=&(cgi->getEnvironment());
-	other_headers.clear();
-	
-	set_lang("");
-	cout.rdbuf(cgi_conn.cout().rdbuf()); // Set output buffer;
-	this->cgi_conn=&cgi_conn;
-
-	set_header(new HTTPHTMLHeader);
-
-	if(app.config.lval("server.disable_xpowered_by",0)==0) {
-		add_header("X-Powered-By: " PACKAGE_NAME "/" PACKAGE_VERSION);
-	}
-
-	try {
-		/**********/
-		session.on_start();
-		main();
-		session.on_end();
-		/**********/
-		if(response_header.get() == NULL) {
-			throw cppcms_error("Looks like a bug");
-		}
-	}
-	catch(std::exception const &e) {
-		string msg=e.what();
-		cout<<HTTPStatusHeader(500,msg);
-		cout<<"<html><body><p>"+msg+"</p><body></html>";
-		other_headers.clear();
-		return;
-	}
-}
-
-#else
-
 void worker_thread::run(cgicc_connection &cgi_conn)
 {
 	cgi=&cgi_conn.cgi();
@@ -140,14 +96,15 @@ void worker_thread::run(cgicc_connection &cgi_conn)
 
 	gzip=gzip_done=false;
 	user_io=false;
-	string encoding;
 
+#ifndef CPPCMS_EMBEDDED
+	string encoding;
 	if((encoding=cgi_conn.env("HTTP_ACCEPT_ENCODING"))!="") {
 		if(strstr(encoding.c_str(),"gzip")!=NULL) {
 			gzip=app.config.lval("gzip.enable",1);
 		}
 	}
-
+#endif
 	if(app.config.lval("server.disable_xpowered_by",0)==0) {
 		add_header("X-Powered-By: " PACKAGE_NAME "/" PACKAGE_VERSION);
 	}
@@ -185,7 +142,7 @@ void worker_thread::run(cgicc_connection &cgi_conn)
 
 	string out=out_buf.str();
 	out_buf.str("");
-
+#ifndef CPPCMS_EMBEDDED
 	if(gzip) {
 		if(out.size()>0) {
 			if(gzip_done){
@@ -206,14 +163,14 @@ void worker_thread::run(cgicc_connection &cgi_conn)
 			cgi_out<<*response_header;
 		}
 	}
-	else {
+	else 
+#endif		
+	{
 		cgi_out<<"Content-Length: "<<out.size()<<"\n";
 		cgi_out<<*response_header;
 		cgi_out<<out;
 	}
 }
-
-#endif
 
 
 void worker_thread::no_gzip()
@@ -223,9 +180,6 @@ void worker_thread::no_gzip()
 
 void worker_thread::render(string tmpl,string name,base_content &content,ostream &out )
 {
-#if defined(CPPCMS_EMBEDDED)
-	flush_headers();
-#endif
 	using cppcms::details::views_storage;
 	base_view::settings s(this,&out);
 	auto_ptr<base_view> p(views_storage::instance().fetch_view(tmpl,name,s,&content));

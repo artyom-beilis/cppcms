@@ -694,14 +694,14 @@ void manager::set_gettext(transtext::trans_factory *s)
 	gettext=auto_ptr<transtext::trans_factory>(s);
 }
 
-manager::manager()
-{
-	config.load(0,NULL);
-}
-
 manager::manager(char const *f)
 {
 	config.load(0,NULL,f);
+}
+
+manager::manager(int argc, char **argv,char const *file)
+{
+	config.load(argc,argv,file);
 }
 
 manager::manager(int argc, char **argv)

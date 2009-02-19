@@ -49,7 +49,6 @@ void my_hello_world::png()
 
 void my_hello_world::test2()
 {
-	ostringstream cout;
 	if(!session.is_set("test")) {
 		session["test"]="1";
 		cout<<"Set 1";
@@ -86,14 +85,11 @@ void my_hello_world::test2()
 			cout<<"Error";
 		}
 	}
-	flush_headers();
-	this->cout<<cout.str();
 
 }
 
 void my_hello_world::test()
 {
-	ostringstream cout;
 	if(!session.is_set("time")) {
 		cout<<"No Time\n";
 	}
@@ -120,8 +116,6 @@ void my_hello_world::test()
 		//session.clear();
 	}
 	session.set<time_t>("time",time(NULL));
-	flush_headers();
-	this->cout<<cout.str();
 }
 
 void my_hello_world::std()
@@ -156,7 +150,6 @@ void my_hello_world::cache_test()
 {
 	string tmp;
 	bool from_cache=true;
-	flush_headers();
 	if(!cache.fetch_frame("test",tmp,true)) {
 		tmp="test value";
 		from_cache=false;

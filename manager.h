@@ -233,9 +233,9 @@ public:
 	void set_gettext(transtext::trans_factory *);
 	void set_sessions(session_backend_factory);
 
-	manager();
 	manager(char const *file);
 	manager(int argc, char **argv);
+	manager(int argc, char **argv,char const *file);
 	~manager();
 	void execute();
 };
