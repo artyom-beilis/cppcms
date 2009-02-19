@@ -1,6 +1,8 @@
 #include "fcgi.h"
 #include "cppcms_error.h"
 #include <errno.h>
+#include <pthread.h>
+#include <unistd.h>
 
 namespace cppcms {
 

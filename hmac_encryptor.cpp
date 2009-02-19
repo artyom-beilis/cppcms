@@ -1,5 +1,6 @@
 #include "hmac_encryptor.h"
 #include "md5.h"
+#include <time.h>
 
 using namespace std;
 
