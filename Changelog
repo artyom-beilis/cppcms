@@ -1,3 +1,12 @@
+Version 0.0.4
+=============
+
+- Embedded system configuration support
+- Identifiers like "$1" are depricated
+
+Version 0.0.3
+=============
+
 - Forms API cleanup
 - Fixed configuration with latest autoconf/automake
 - gcc 4.3 compilation fixes
