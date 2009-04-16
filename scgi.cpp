@@ -115,7 +115,7 @@ size_t scgi_session::read(char *s, size_t n)
 		if(v<0) {
 			if(errno==EINTR)
 				continue;
-			return EOF;
+			break;
 		}
 		else {
 			n+=v;

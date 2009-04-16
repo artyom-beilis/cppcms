@@ -240,7 +240,7 @@ class tcp_cache_server  {
 	tcp::acceptor acceptor_;
 	base_cache &cache;
 	session_server_storage &sessions;
-	void on_accept(error_code const &e,shared_ptr<session> s)
+	void on_accept(error_code const &e,boost::shared_ptr<session> s)
 	{
 		if(!e) {
 			tcp::no_delay nd(true);
@@ -251,7 +251,7 @@ class tcp_cache_server  {
 	}
 	void start_accept()
 	{
-		shared_ptr<session> s(new session(acceptor_.io_service(),cache,sessions));
+		boost::shared_ptr<session> s(new session(acceptor_.io_service(),cache,sessions));
 		acceptor_.async_accept(s->socket_,boost::bind(&tcp_cache_server::on_accept,this,aio::placeholders::error,s));
 	}
 public:

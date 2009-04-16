@@ -161,7 +161,7 @@ void local_io::unlock(std::string const &sid) const
 	pthread_rwlock_unlock(&locks[lock_id(sid)]);
 }
 
-void nfs_io::close(int fid)
+void nfs_io::close(int fid) const
 {
 	::fsync(fid);
 	::close(fid);

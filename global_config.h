@@ -41,7 +41,7 @@ public:
 			throw cppcms_error("Type mistmach for field "+name);
 		}
 		return res;
-	};
+	}
 
 	template<typename T>
 	T const &get(string const &name,T const &def) const
@@ -49,14 +49,14 @@ public:
 		T const *p=get_ptr<T>(name);
 		if(!p) return def;
 		return *p;
-	};
+	}
 	template<typename T>
 	T const &get(string const &name) const
 	{
 		T const *p=get_ptr<T>(name);
 		if(!p) throw cppcms_error("Configuration parameter "+name+" not found");
 		return *p;
-	};
+	}
 	template<typename T>
 	T const &get_default(string const &name) const
 	{
@@ -64,14 +64,14 @@ public:
 		static const T v;
 		if(!p) return v;
 		return *p;
-	};
+	}
 
 	data_t const &get_data() const 
 	{
 		return data;
 	}
 
-	size_t size() const { return data.size(); };
+	size_t size() const { return data.size(); }
 
 	void load(char const *filename);
 	void load(int argc,char *argv[],char const *def=NULL);
@@ -83,7 +83,7 @@ public:
 		return res;
 	}
 
-	cppcms_config() { loaded = false;};
+	cppcms_config() { loaded = false;}
 
 	// { begin depricated
 	int lval(string m) const { return ival(m); }
@@ -92,32 +92,32 @@ public:
 	// } end depricated
 	int ival(string m) const {
 		return get<int>(m);
-	};
+	}
 	int ival(string m,int def) const {
 		return get<int>(m,def);
-	};
+	}
 	double dval(string m) const {
 		return get<double>(m);
-	};
+	}
 	double dval(string m,double def) const {
 		return get<double>(m,def); 
-	};
+	}
 	string const &sval(string m) const {
 		return get<string>(m);
-	};
+	}
 	string sval(string m,string def) const {
 		return get<string>(m,def);
-	};
+	}
 	vector<int> const &ilist(string m) const {
 		return get_default<vector<int> >(m);
 	}
 	vector<double> const &dlist(string m) const {
 		return get_default<vector<double> >(m);
-	};
+	}
 
 	vector<string> const &slist(string m) const {
 		return get_default<vector<string> >(m);
-	};
+	}
 
 };
 

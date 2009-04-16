@@ -57,7 +57,7 @@ public:
 class nfs_io : public thread_io {
 	int fid;
 protected:
-	virtual void close(int fid);
+	virtual void close(int fid) const;
 public:
 	nfs_io(std::string dir);
 	virtual void wrlock(std::string const &sid) const;

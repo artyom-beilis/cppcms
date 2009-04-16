@@ -29,16 +29,16 @@ cipher::cipher(string k) :
 	encryptor(k)
 {
 	bool in=false,out=false;
-	in=gcry_cipher_open(&hd_in,GCRY_CIPHER_AES,GCRY_CIPHER_MODE_CBC,0)<0;
-	out=gcry_cipher_open(&hd_out,GCRY_CIPHER_AES,GCRY_CIPHER_MODE_CBC,0)<0;
-	if(in || out){
+	in=gcry_cipher_open(&hd_in,GCRY_CIPHER_AES,GCRY_CIPHER_MODE_CBC,0) == 0;
+	out=gcry_cipher_open(&hd_out,GCRY_CIPHER_AES,GCRY_CIPHER_MODE_CBC,0) == 0;
+	if(!in || !out){
 		goto error_exit;
 	}
 
-	if( gcry_cipher_setkey(hd_in,&key.front(),16) < 0) {
+	if( gcry_cipher_setkey(hd_in,&key.front(),16) != 0) {
 		goto error_exit;
 	}
-	if( gcry_cipher_setkey(hd_out,&key.front(),16) < 0)
+	if( gcry_cipher_setkey(hd_out,&key.front(),16) != 0)
 		goto error_exit;
 	char iv[16];
 	gcry_create_nonce(iv,sizeof(iv));

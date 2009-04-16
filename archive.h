@@ -79,8 +79,8 @@ class serializable {
 public:
 	virtual void load(archive &a) = 0;
 	virtual void save(archive &a) const = 0;
-	
-	operator std::string() const 
+
+	operator std::string() const
 	{
 		return str();
 	}
@@ -94,8 +94,8 @@ public:
 	{
 		archive a(s);
 		load(a);
-	}	
-	
+	}
+
 	std::string str() const
 	{
 		archive a;

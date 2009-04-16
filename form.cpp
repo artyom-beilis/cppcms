@@ -489,11 +489,12 @@ string radio::render_input(int how)
 			out+="/";
 		out+=">";
 		out+=escape(p->option);
-		if(add_br)
+		if(add_br) {
 			if(how & as_xhtml)
 				out+="<br/>";
 			else
 				out+="<br>";
+		}
 		out+="\n";
 	}
 	out+="</div>\n";
