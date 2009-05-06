@@ -13,16 +13,16 @@ public:
 	virtual std::string getenv(std::string const &key) = 0;
 	virtual size_t read(void *buffer,size_t s) = 0;
 	virtual size_t write(void const *buffer,size_t s) = 0;
-	virtual bool keep_alive() = 0;
 	virtual ~connection(){}
 };
 
 class async_connection : public connection {
 public:
+	virtual bool keep_alive() = 0;
 	virtual void async_prepare(boost::function<void(bool)>) = 0;
 	virtual void async_read(void *buffer,size_t s,boost::function<void(bool)>) = 0;
 	virtual size_t async_write(void const *buffer,size_t s,boost::function<void(bool)>) = 0;
-	virtual void cancel();
+	virtual void on_closed(boost::function<void()>) = 0;
 };
 
 

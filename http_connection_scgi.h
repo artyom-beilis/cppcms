@@ -10,6 +10,7 @@ class scgi_connection : public connection {
 	std::vector<char> data_;
 	std::map<std::string,std::string> env_;
 	Socket socket_;
+
 	void on_done(error_code const &e,boost::fuction<void(bool>) callback)
 	{
 		callback(bool(e));
@@ -48,6 +49,7 @@ class scgi_connection : public connection {
 	}
 public:
 	virtual bool keep_alive() { return false; }
+
 	virtual size_t read(void *buffer,size_t s)
 	{
 		return aio::read(socket_,aio::buffer(buffer,s));

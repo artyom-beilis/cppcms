@@ -71,6 +71,7 @@ namespace http {
 	public:
 		request(connection &);
 		~request();
+
 	};
 
 
