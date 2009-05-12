@@ -76,10 +76,10 @@ def write_class_loader():
 	for class_def in class_list:
 		list_of_views[class_def.namespace]=""
 		if class_def.content_name!='':
-			output( '			_VS_ref.add_view("%s","%s",view_builder<%s::%s,%s>());' \
+			output( '			_VS_ref.add_view("%s","%s",view_builder<%s::%s,%s>);' \
 				% (class_def.namespace,class_def.name,class_def.namespace,class_def.name,class_def.content_name))
 		else:
-			output( '			_VS_ref.add_view("%s","%s",simple_view_builder<%s::%s>());' \
+			output( '			_VS_ref.add_view("%s","%s",&simple_view_builder<%s::%s>);' \
 				% (class_def.namespace,class_def.name,class_def.namespace,class_def.name))
 	output( "		};")
 	output( '		~loader() { ')
@@ -127,12 +127,11 @@ class class_block:
 		output( "{")
 		if self.uses!='' : 
 			output( "\t%s &content;" % self.uses)
-			output( "\tcppcms::transtext::trans const *tr;" )
 			output( "\t%s(cppcms::base_view::settings _s,%s &_content): %s,content(_content)" % ( self.class_name,self.uses,constructor ))
 		else:
 			output( "\t%s(cppcms::base_view::settings _s): %s" % ( self.class_name,constructor ))
 		output("\t{")
-		output('\t\ttr=_s.worker->domain_gettext("%s");' % gettext_domain() )
+		output('\t\tset_domain("%s");' % gettext_domain() )
 		output("\t};")
 
 	def use(self,m):
@@ -396,7 +395,7 @@ class if_block:
 		self.type=m.group(1)
 		if m.group(4):
 			if m.group(4)=='rtl':
-				self.ident='(std::strcmp(tr->gettext("LTR"),"RTL")==0)'
+				self.ident='(std::strcmp(gettext("LTR"),"RTL")==0)'
 			else:
 				self.ident=make_ident(m.group(4))
 			if m.group(3):
@@ -549,9 +548,9 @@ class ngettext_block:
 		if m.group(11):
 			params=make_format_params(m.group(12))
 		if not params:
-			output( "cout<<tr->ngettext(%s,%s,%s);" % (s1,s2,idt))
+			output( "cout<<ngettext(%s,%s,%s);" % (s1,s2,idt))
 		else:
-			output( "cout<<(format(tr->ngettext(%s,%s,%s)) %% %s );" % (s1,s2,idt, ' % '.join(params)))
+			output( "cout<<(format(ngettext(%s,%s,%s)) %% %s );" % (s1,s2,idt, ' % '.join(params)))
 			
 
 class gettext_block:
@@ -562,9 +561,9 @@ class gettext_block:
 		if m.group(3):
 			params=make_format_params(m.group(4))
 		if not params:
-			output( "cout<<tr->gettext(%s);" % s)
+			output( "cout<<gettext(%s);" % s)
 		else:
-			output( "cout<<(format(tr->gettext(%s)) %% %s );" % (s , ' % '.join(params)))
+			output( "cout<<(format(gettext(%s)) %% %s );" % (s , ' % '.join(params)))
 
 
 class include_block:

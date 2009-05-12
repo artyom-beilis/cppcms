@@ -1,13 +1,11 @@
 #ifndef CPPCMS_BASEVIEW_H
 #define CPPCMS_BASEVIEW_H
 
-#include <boost/format.hpp>
-#include <boost/function.hpp>
 #include <ostream>
 #include <sstream>
 #include <string>
 #include <map>
-#include "worker_thread.h"
+#include <boost/format/format_fwd.hpp>
 #include "cppcms_error.h"
 #include "config.h"
 
@@ -20,23 +18,51 @@ public:
 	virtual ~base_content() {};
 };
 
+namespace transtext  { class trans; }
+
+class format {
+	mutable std::auto_ptr<boost::format> impl;
+	friend ostream &operator<<(ostream &,format &);
+public:
+	format(std::string const &s);
+	format(format const &f);
+	format &operator % (int n);
+	format &operator % (string const &);
+	format &operator % (char const *);
+	string str();
+	~format();
+};
+
+ostream &operator<<(ostream &,format &);
+
+class worker_thread;
 class base_view {
 public:
 	struct settings {
 		worker_thread *worker;
 		ostream *output;
-		settings(worker_thread *w) : worker(w) , output(&w->get_cout()) {};
-		settings(worker_thread *w,ostream *o) : worker(w), output(o) {};
+		settings(worker_thread *w);
+		settings(worker_thread *w,ostream *o);
 	};
 protected:
 	worker_thread &worker;
 	ostream &cout;
+	transtext::trans const *tr;
 
 	base_view(settings s) :
 		worker(*s.worker),
 		cout(*s.output)
 	{
 	}
+
+	::cppcms::format format(std::string const &s)
+	{
+		return ::cppcms::format(s);
+	}
+
+	void set_domain(char const *);
+	char const *gettext(char const *);
+	char const *ngettext(char const *,char const *,int n);
 
 	template<typename T>
 	string escape(T const &v)
@@ -49,28 +75,14 @@ protected:
 	string escape(string const &s);
 
 	inline string raw(string s) { return s; };
-	inline string intf(int val,string f){
-		return (format(f) % val).str();
-	};
-	string strftime(std::tm const &t,string f)
-	{
-		char buf[128];
-		buf[0]=0;
-		std::strftime(buf,sizeof(buf),f.c_str(),&t);
-		return buf;
-	};
+	string intf(int val,string f);
+	string strftime(std::tm const &t,string f);
 	string date(std::tm const &t) { return strftime(t,"%Y-%m-%d"); };
 	string time(std::tm const &t) { return strftime(t,"%H:%M"); };
 	string timesec(std::tm const &t) { return strftime(t,"%T"); };
 	string escape(std::tm const &t) { return strftime(t,"%Y-%m-%d %T"); }
-
 	string urlencode(string const &s);
 
-	inline boost::format format(string const &f){
-		boost::format frm(f);
-		frm.exceptions(0);
-		return frm;
-	};
 public:
 	virtual void render() {};
 	virtual ~base_view() {};
@@ -79,17 +91,15 @@ public:
 namespace details {
 
 template<typename T,typename VT>
-struct view_builder {
-        base_view *operator()(base_view::settings s,base_content *c) {
-		VT *p=dynamic_cast<VT *>(c);
-		if(!p) throw cppcms_error("Incorrect content type");
-		return new T(s,*p);
-	};
+base_view *view_builder(base_view::settings s,base_content *c) {
+	VT *p=dynamic_cast<VT *>(c);
+	if(!p) throw cppcms_error("Incorrect content type");
+	return new T(s,*p);
 };
 
 class views_storage {
 public:
-	typedef boost::function<base_view *(base_view::settings s,base_content *c)> view_factory_t;
+	typedef base_view *(*view_factory_t)(base_view::settings s,base_content *c);
 private:
 	typedef map<string,view_factory_t> template_views_t;
 	typedef map<string,template_views_t> templates_t;

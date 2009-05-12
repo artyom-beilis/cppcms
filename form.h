@@ -2,12 +2,15 @@
 #define CPPCMS_FORM_H 
 #include <string>
 #include <set>
+#include <map>
 #include <list>
-#include <cgicc/Cgicc.h>
-#include <boost/regex.hpp>
+#include <vector>
+#include <boost/regex_fwd.hpp>
 #include <boost/noncopyable.hpp>
-#include <boost/lexical_cast.hpp>
 #include <ostream>
+#include <sstream>
+
+namespace cgicc { class Cgicc; }
 
 namespace cppcms {
 using namespace std;
@@ -120,12 +123,10 @@ public:
 		if(!text::validate())
 			return false;
 		if(!str().empty()) {
-			try {
-				value=boost::lexical_cast<T>(str());
-			}
-			catch(boost::bad_lexical_cast const &e) {
-				return (is_valid=false);
-			}
+			std::istringstream ss(str());
+			ss>>value;
+			if(ss.fail() || !ss.eof())
+				is_valid=false;
 		}
 		if((check_low || check_high) && str().empty())
 			return (is_valid=false);
@@ -139,7 +140,9 @@ public:
 	void set(T v)
 	{
 		value=v;
-		text::set(boost::lexical_cast<string>(v));
+		std::ostringstream ss;
+		ss<<v;
+		text::set(ss.str());
 	}
 };
 
@@ -167,9 +170,8 @@ public:
 };
 
 class email : public regex_field {
-	static boost::regex exp_email;
 public:
-	email(string name="",string msg="") : regex_field(exp_email,name,msg) {}
+	email(string name="",string msg="");
 };
 
 class checkbox: public base_widget {
@@ -197,7 +199,11 @@ public:
 	void add(string val,string opt,bool selected=false);
 	void add(int val,string opt,bool selected=false);
 	void add(string v,bool s=false) { add(v,v,s); }
-	void add(int v,bool s=false) { add(v,boost::lexical_cast<std::string>(v),s); }
+	void add(int v,bool s=false) { 
+		ostringstream ss;
+		ss<<v;
+		add(v,ss.str(),s); 
+	}
 	set<string> &get() { return chosen; };
 	set<int> geti();
 	void set_min(int n) { min=n; };
@@ -219,7 +225,11 @@ public:
 	void add(string value,string option);
 	void add(string v) { add(v,v); }
 	void add(int value,string option);
-	void add(int v) { add(v,boost::lexical_cast<std::string>(v)); }
+	void add(int v) {
+		ostringstream ss;
+		ss<<v;
+		add(v,ss.str()); 
+	}
 	void set(string value);
 	void set(int value);
 	string get();

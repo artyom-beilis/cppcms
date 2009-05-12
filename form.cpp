@@ -1,6 +1,8 @@
 #include "form.h"
 #include "util.h"
 
+#include <cgicc/Cgicc.h>
+#include <boost/regex.hpp>
 #include <boost/format.hpp>
 #include <iostream>
 #include "cppcms_error.h"
@@ -307,8 +309,14 @@ bool regex_field::validate()
 	is_valid=boost::regex_match(value,*exp);
 	return is_valid;
 }
+	
+namespace {
+	boost::regex const exp_email("^[^@]+@[^@]+$");
+}
 
-boost::regex email::exp_email("^[^@]+@[^@]+$");
+email::email(std::string name,std::string value) : regex_field(exp_email,name,value)
+{
+}
 
 void select_multiple::add(int v,string o,bool selected)
 {
