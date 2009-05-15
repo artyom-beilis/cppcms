@@ -133,6 +133,8 @@ public:
 #	define CPPCMS_TYPEOF(x) decltype(x)
 #elif defined(HAVE_GCC_TYPEOF)
 #	define CPPCMS_TYPEOF(x) typeof(x)
+#elif defined(HAVE_UNDERSCORE_TYPEOF)
+#	define CPPCMS_TYPEOF(x) __typeof__(x)
 #elif defined(HAVE_WORKING_BOOST_TYPEOF)
 #	include <boost/typeof/typeof.hpp>
 #	define CPPCMS_TYPEOF(x) BOOST_TYPEOF(x)
