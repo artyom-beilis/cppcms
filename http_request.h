@@ -1,21 +1,21 @@
 #ifndef CPPCMS_HTTP_REQUEST_H
 #define CPPCMS_HTTP_REQUEST_H
+
+#include "defs.h"
+#include "noncopyable.h"
+
 #include <string>
 #include <map>
 #include <vector>
 
-namespace cgicc { class Cgicc; class CgiInput; }
-
 namespace cppcms {
 
 namespace http {
+
 	class cookie;
 	class file;
-	class connection;
-	class request {
-		connection &conn_;
-		std::map<std::string,cookie> cookies_;
-		std::vector<file> files_;
+
+	class CPPCMS_API request : public util::noncopyable {
 	public:
 		// get env like
 		bool https();
@@ -42,9 +42,9 @@ namespace http {
 		std::string request_uri();
 		std::string content_type();
 		unsigned long long content_length();
-		std::string accept();
-		std::string user_agent();
-		std::string accept_encoding();
+		std::string http_accept();
+		std::string http_user_agent();
+		std::string http_accept_encoding();
 		std::string accept_language();
 		std::string document_root();
 		std::string http_cookie();
@@ -55,23 +55,29 @@ namespace http {
 
 		// Other
 		std::string getenv(std::string const &);
-
 		
-		std::map<std::string,cookie> const &cookies();
-
 		typedef std::multimap<std::string,std::string> form_type;
-		
+		typedef std::map<std::string,cookie> cookies_type;
+		typedef std::vector<file> files_type;
+
+		cookies_type const &cookies();
 		form_type const &get();
 		form_type const &post();
-		std::vector<file> &files();
+		files_type const &files();
 
-	private:
-		request(request const &); // Non copyable
-		request const &operator=(request const &); // Non assignable
 	public:
 		request(connection &);
+		bool prepare();
 		~request();
+	private:
 
+		struct data;
+		form_type get_;
+		form_type post_;
+		files_type files_;
+		cookies_type cookies_;
+		connection *conn_;
+		util::hold_ptr<data> d;
 	};
 
 
