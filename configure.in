@@ -158,6 +158,12 @@ AC_TRY_COMPILE([#include <list>
 			have_auto_type_detection=yes
 			echo "g++ typeof... ok"],[echo "g++ typeof... not supported"])
 AC_TRY_COMPILE([#include <list>
+		],
+		[std::list<int> l; __typeof__(l.begin()) p=l.begin();],
+		[AC_DEFINE([HAVE_UNDERSCORE_TYPEOF],[],["Have g++ typeof"])
+			have_auto_type_detection=yes
+			echo "__typeof__... ok"],[echo "__typeof__... not supported"])
+AC_TRY_COMPILE([#include <list>
 		#include <vector>
 		#include <boost/typeof/typeof.hpp>
 		],

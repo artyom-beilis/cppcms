@@ -1,8 +1,13 @@
 #include "base_view.h"
 #include "worker_thread.h"
 #include "util.h"
+#include <boost/format.hpp>
 
 namespace cppcms {
+
+
+base_view::settings::settings(worker_thread *w) : worker(w) , output(&w->get_cout()) {};
+base_view::settings::settings(worker_thread *w,ostream *o) : worker(w), output(o) {};
 
 string base_view::escape(string const &s)
 {
@@ -14,6 +19,35 @@ string base_view::urlencode(string const &s)
 	return cppcms::urlencode(s);
 }
 
+string base_view::intf(int val,string f)
+{
+	return (format(f) % val).str();
+}
+
+string base_view::strftime(std::tm const &t,string f)
+{
+	char buf[128];
+	buf[0]=0;
+	std::strftime(buf,sizeof(buf),f.c_str(),&t);
+	return buf;
+}
+
+void base_view::set_domain(char const *s)
+{
+	tr=worker.domain_gettext(s);
+}
+
+char const *base_view::gettext(char const *s)
+{
+	return tr->gettext(s);
+}
+
+char const *base_view::ngettext(char const *s,char const *s1,int m)
+{
+	return tr->ngettext(s,s1,m);
+}
+
+
 namespace details {
 
 views_storage &views_storage::instance() {
@@ -23,10 +57,7 @@ views_storage &views_storage::instance() {
 
 void views_storage::add_view(string t,string v,view_factory_t f)
 {
-	view_factory_t &func=storage[t][v];
-	if(!func.empty())
-		throw cppcms_error("Duplicate template " + t+"::"+v);
-	func=f;
+	storage[t][v]=f;
 }
 
 void views_storage::remove_views(string t)
@@ -45,4 +76,44 @@ base_view *views_storage::fetch_view(string t,string v,base_view::settings s,bas
 }
 
 };
+
+
+format::format(std::string const &s) :
+	impl(new boost::format(s))
+{
+	impl->exceptions(0);
+}
+
+format::~format() {}
+format::format(format const &f) : impl(f.impl) {}
+
+format &format::operator % (int n)
+{
+	*impl % n;
+	return *this;
+}
+format &format::operator % (string const &s)
+{
+	*impl % s;
+	return *this;
+}
+format &format::operator % (char const *s)
+{
+	*impl % s;
+	return *this;
+}
+
+string format::str()
+{
+	string s=impl->str();
+	return s;
+}
+
+ostream &operator<<(ostream &s,format &f)
+{
+	s << *f.impl;
+	return s;
+}
+
+
 }// CPPCMS
