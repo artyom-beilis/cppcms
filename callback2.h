@@ -25,6 +25,8 @@ class callback2 {
 	clone_ptr<callable> call_ptr;
 public:
 	typedef void result_type;
+	typedef P1 first_argument_type;
+	typedef P2 second_argument_type;
 
 	void operator()(P1 p1,P2 p2) const
 	{
