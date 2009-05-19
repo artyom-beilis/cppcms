@@ -7,8 +7,8 @@ namespace cppcms { namespace util {
 	template<typename T>
 	class hold_ptr {
 		T *ptr_;
-		copy_ptr(copy_ptr const &other); // non copyable 
-		copy_ptr const &operator=(copy_ptr const &other); // non assignable
+		hold_ptr(hold_ptr const &other); // non copyable 
+		hold_ptr const &operator=(hold_ptr const &other); // non assignable
 	public:
 		hold_ptr() : ptr_(0) {}
 		hold_ptr(T *v) : ptr_v() {}
