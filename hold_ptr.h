@@ -19,6 +19,10 @@ namespace cppcms { namespace util {
 		{
 			if(ptr_) delete ptr_;
 		}
+
+		T const *get() const { return ptr_; }
+		T *get() { return ptr_; }
+
 		T const &operator *() const { return *ptr_; }
 		T &operator *() { return *ptr_; }
 		T const *operator->() const { return ptr_; }
@@ -28,6 +32,12 @@ namespace cppcms { namespace util {
 		{
 			if(ptr_) delete ptr_;
 			ptr_=p;
+		}
+		void swap(hold_ptr &other)
+		{
+			T *tmp=other.ptr_;
+			other.ptr_=ptr_;
+			ptr_=tmp;
 		}
 	};
 } } // cppcms::util;

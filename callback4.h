@@ -47,6 +47,10 @@ public:
 		return *this;
 	}
 
+	void swap(callback4 &other)
+	{
+		call_ptr.swap(other.call_ptr);
+	}
 };
 
 

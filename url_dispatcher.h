@@ -97,6 +97,36 @@ namespace cppcms {
 
 		url_dispatcher();
 		~url_dispatcher();
+
+		template<typename C>
+		void assign(util::regex const &match,void (C::*member)(),C *object)
+		{
+			assign(match,mem_bind(member,object));
+		}
+		template<typename C>
+		void assign(util::regex const &match,void (C::*member)(std::string),C *object,int e1)
+		{
+			assign(match,mem_bind(member,object),e1);
+		}
+		template<typename C>
+		void assign(util::regex const &match,void (C::*member)(std::string,std::string),C *object,int e1,int e2)
+		{
+			assign(match,mem_bind(member,object),e1,e2);
+		}
+		template<typename C>
+		void assign(util::regex const &match,void (C::*member)(std::string,std::string,std::string),C *object,int e1,int e2,int e3)
+		{
+			assign(match,mem_bind(member,object),e1,e2,e3);
+		}
+		template<typename C>
+		void assign(util::regex const &match,void (C::*member)(std::string,std::string,std::string,std::string),C *object,int e1,int e2,int e3,int e4)
+		{
+			assign(match,mem_bind(member,object),e1,e2,e3,e4);
+		}
+
+
+
+
 	private:
 		struct option;
 		std::list<option> options_;

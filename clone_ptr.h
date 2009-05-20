@@ -43,6 +43,12 @@ namespace cppcms { namespace util {
 			if(ptr_) delete ptr_;
 			ptr_=p;
 		}
+		void swap(clone_ptr &other)
+		{
+			T *tmp=other.ptr_;
+			other.ptr_=ptr_;
+			ptr_=tmp;
+		}
 	};
 
 }} // cppcms::util

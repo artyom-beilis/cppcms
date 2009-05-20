@@ -48,6 +48,10 @@ public:
 		call_ptr.reset(new callable_functor<T>(c));
 		return *this;
 	}
+	void swap(callback2 &other)
+	{
+		call_ptr.swap(other.call_ptr);
+	}
 
 };
 

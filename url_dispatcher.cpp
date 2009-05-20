@@ -83,7 +83,7 @@ namespace cppcms {
 		option &last=options_.back();
 		last.expr=&match;
 		last.handler_no=1;
-		last.h1=h;
+		last.h1.swap(h);
 		last.params[0]=exp1;
 	}
 	void url_dispatcher::assign(util::regex const &match,handler2 h,int exp1,int exp2)
@@ -92,7 +92,7 @@ namespace cppcms {
 		option &last=options_.back();
 		last.expr=&match;
 		last.handler_no=2;
-		last.h2=h;
+		last.h2.swap(h);
 		last.params[0]=exp1;
 		last.params[1]=exp2;
 	}
@@ -102,7 +102,7 @@ namespace cppcms {
 		option &last=options_.back();
 		last.expr=&match;
 		last.handler_no=3;
-		last.h3=h;
+		last.h4.swap(h);
 		last.params[0]=exp1;
 		last.params[1]=exp2;
 		last.params[2]=exp3;
@@ -113,7 +113,7 @@ namespace cppcms {
 		option &last=options_.back();
 		last.expr=&match;
 		last.handler_no=4;
-		last.h4=h;
+		last.h4.swap(h);
 		last.params[0]=exp1;
 		last.params[1]=exp2;
 		last.params[2]=exp3;
