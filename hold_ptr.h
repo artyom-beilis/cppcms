@@ -11,10 +11,7 @@ namespace cppcms { namespace util {
 		hold_ptr const &operator=(hold_ptr const &other); // non assignable
 	public:
 		hold_ptr() : ptr_(0) {}
-		hold_ptr(T *v) : ptr_v() {}
-			ptr_(other.ptr ? new T(*other.ptr) : 0)
-		{
-		}
+		hold_ptr(T *v) : ptr_(v) {}
 		~hold_ptr() 
 		{
 			if(ptr_) delete ptr_;

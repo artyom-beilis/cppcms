@@ -4,11 +4,14 @@
 #include "defs.h"
 #include "noncopyable.h"
 #include "hold_ptr.h"
+#include <string>
 
 namespace cppcms { namespace util {
 
 	class regex_result;
 
+	///
+	/// \brief This class is used for matching regular expressions;
 	///
 	/// This class is actually used as a simple wrapper of \a boost::regex,
 	/// \a smatch and \a match_results.
@@ -42,8 +45,10 @@ namespace cppcms { namespace util {
 	};
 
 	///
-	/// This class holds result of matching regular expression \a regex. It is
-	/// actually wrapper of \a boost::regex::smatch
+	/// \brief This class holds result of matching regular expression \a regex.
+	/// 
+	/// This class is actually wrapper of \a boost::regex::smatch and used entirely with
+	/// \a util::regex.
 	///
 
 	class CPPCMS_API regex_result : public noncopyable {

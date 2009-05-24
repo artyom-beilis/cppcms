@@ -98,26 +98,47 @@ namespace cppcms {
 		url_dispatcher();
 		~url_dispatcher();
 
+		///
+		/// This template function is a shortcut to assign(regex,callback). It allows
+		/// assignment of \a member function of an \a object with signature void handler()
+		/// as simple as assign(expr,&bar::foo,this);
+		///
 		template<typename C>
 		void assign(util::regex const &match,void (C::*member)(),C *object)
 		{
 			assign(match,mem_bind(member,object));
 		}
+		///
+		/// This template function is a shortcut to assign(regex,callback,int). It allows
+		/// assignment of \a member function of an \a object with signature void handler(string)
+		///
 		template<typename C>
 		void assign(util::regex const &match,void (C::*member)(std::string),C *object,int e1)
 		{
 			assign(match,mem_bind(member,object),e1);
 		}
+		///
+		/// This template function is a shortcut to assign(regex,callback,int,int). It allows
+		/// assignment of \a member function of an \a object with signature void handler(string,string)
+		///
 		template<typename C>
 		void assign(util::regex const &match,void (C::*member)(std::string,std::string),C *object,int e1,int e2)
 		{
 			assign(match,mem_bind(member,object),e1,e2);
 		}
 		template<typename C>
+		///
+		/// This template function is a shortcut to assign(regex,callback,int,int,int). It allows
+		/// assignment of \a member function of an \a object with signature void handler(string,string,string)
+		///
 		void assign(util::regex const &match,void (C::*member)(std::string,std::string,std::string),C *object,int e1,int e2,int e3)
 		{
 			assign(match,mem_bind(member,object),e1,e2,e3);
 		}
+		///
+		/// This template function is a shortcut to assign(regex,callback,int,int,int,int). It allows
+		/// assignment of \a member function of an \a object with signature void handler(string,string,string,string)
+		///
 		template<typename C>
 		void assign(util::regex const &match,void (C::*member)(std::string,std::string,std::string,std::string),C *object,int e1,int e2,int e3,int e4)
 		{

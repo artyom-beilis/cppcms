@@ -90,6 +90,8 @@ struct application {
 		}
 	}
 
+	bool run(std::string) { return true; }
+
 };
 
 template<typename T>
