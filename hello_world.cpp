@@ -1,6 +1,7 @@
 #include "application.h"
 #include "manager.h"
 #include "hello_world_view.h"
+#include "regex.h"
 using namespace cppcms;
 
 class my_hello_world : public application {
@@ -8,12 +9,17 @@ public:
 	my_hello_world(worker_thread &w) :
 		application(w)
 	{
-		url.add("^/?$",
-			boost::bind(&my_hello_world::std,this));
-		url.add("^/test$",boost::bind(&my_hello_world::test,this));
-		url.add("^/test2$",boost::bind(&my_hello_world::test2,this));
-		url.add("^/cache$",boost::bind(&my_hello_world::cache_test,this));
-		url.add("^/png$",boost::bind(&my_hello_world::png,this));
+		using util::regex;
+		static const regex std("^/?$");
+		url.assign(std,&my_hello_world::std,this);
+		static const regex test("^/test$");
+		url.assign(test,&my_hello_world::test,this);
+		static const regex test2("^/test2$");
+		url.assign(test2,&my_hello_world::test2,this);
+		static const regex cache("^/cache$");
+		url.assign(cache,&my_hello_world::cache_test,this);
+		static const regex png("^/png$");
+		url.assign(png,&my_hello_world::png,this);
 		use_template("view2");
 	};
 	void test();

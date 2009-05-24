@@ -9,7 +9,7 @@ struct application {
 
 	// Data
 	worker_thread &worker;
-	url_parser &url;
+	url_dispatcher &url;
 	manager const &app;
 	Cgicc *&cgi;
 	CgiEnvironment const *&env;

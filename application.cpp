@@ -38,7 +38,7 @@ void application::on_404()
 void application::main()
 {
 	on_start();
-	if(url.parse()<0) {
+	if(url.dispatch(env->getPathInfo())<0) {
 		on_404();
 	}
 	on_end();

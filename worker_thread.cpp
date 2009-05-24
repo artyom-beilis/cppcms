@@ -16,7 +16,6 @@ using namespace cgicc;
 namespace cppcms {
 
 worker_thread::worker_thread(manager const &s) :
-		url(this),
 		app(s),
 		cache(this),
 		cout(&(this->out_buf)),

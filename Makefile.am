@@ -20,7 +20,7 @@ hello_world_view2.cpp: hello_world_skin2.tmpl hello_world_view1.tmpl
 	./cppcms_tmpl_cc hello_world_skin2.tmpl hello_world_view1.tmpl -o hello_world_view2.cpp -n view2 -d test
 
 lib_LTLIBRARIES     = libcppcms.la
-libcppcms_la_SOURCES = global_config.cpp manager.cpp 	url.cpp worker_thread.cpp \
+libcppcms_la_SOURCES = global_config.cpp manager.cpp worker_thread.cpp \
 	text_tool.cpp 	cache_interface.cpp base_cache.cpp thread_cache.cpp scgi.cpp \
 	base_view.cpp util.cpp form.cpp application.cpp session_interface.cpp \
 	session_cookies.cpp hmac_encryptor.cpp encryptor.cpp md5.c base64.cpp \
@@ -47,7 +47,7 @@ if EN_SQLITE_SESSIONS
 libcppcms_la_SOURCES += session_sqlite_storage.cpp
 endif
 
-nobase_pkginclude_HEADERS = global_config.h text_tool.h url.h cppcms_error.h \
+nobase_pkginclude_HEADERS = global_config.h text_tool.h cppcms_error.h \
 	manager.h worker_thread.h fcgi.h cache_interface.h archive.h \
 	base_cache.h thread_cache.h cgicc_connection.h scgi.h cgi_api.h \
 	process_cache.h shmem_allocator.h posix_mutex.h config.h cgi.h base_view.h \

@@ -5,6 +5,7 @@
 #include "defs.h"
 #include "callback.h"
 #include "hold_ptr.h"
+#include "mem_bind.h"
 #include <string>
 #include <list>
 
@@ -106,7 +107,7 @@ namespace cppcms {
 		template<typename C>
 		void assign(util::regex const &match,void (C::*member)(),C *object)
 		{
-			assign(match,mem_bind(member,object));
+			assign(match,util::mem_bind(member,object));
 		}
 		///
 		/// This template function is a shortcut to assign(regex,callback,int). It allows
@@ -115,7 +116,7 @@ namespace cppcms {
 		template<typename C>
 		void assign(util::regex const &match,void (C::*member)(std::string),C *object,int e1)
 		{
-			assign(match,mem_bind(member,object),e1);
+			assign(match,util::mem_bind(member,object),e1);
 		}
 		///
 		/// This template function is a shortcut to assign(regex,callback,int,int). It allows
@@ -124,7 +125,7 @@ namespace cppcms {
 		template<typename C>
 		void assign(util::regex const &match,void (C::*member)(std::string,std::string),C *object,int e1,int e2)
 		{
-			assign(match,mem_bind(member,object),e1,e2);
+			assign(match,util::mem_bind(member,object),e1,e2);
 		}
 		template<typename C>
 		///
@@ -133,7 +134,7 @@ namespace cppcms {
 		///
 		void assign(util::regex const &match,void (C::*member)(std::string,std::string,std::string),C *object,int e1,int e2,int e3)
 		{
-			assign(match,mem_bind(member,object),e1,e2,e3);
+			assign(match,util::mem_bind(member,object),e1,e2,e3);
 		}
 		///
 		/// This template function is a shortcut to assign(regex,callback,int,int,int,int). It allows
@@ -142,7 +143,7 @@ namespace cppcms {
 		template<typename C>
 		void assign(util::regex const &match,void (C::*member)(std::string,std::string,std::string,std::string),C *object,int e1,int e2,int e3,int e4)
 		{
-			assign(match,mem_bind(member,object),e1,e2,e3,e4);
+			assign(match,util::mem_bind(member,object),e1,e2,e3,e4);
 		}
 
 

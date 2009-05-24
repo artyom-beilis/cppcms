@@ -14,7 +14,7 @@
 #include <boost/signal.hpp>
 
 #include "cppcms_error.h"
-#include "url.h"
+#include "url_dispatcher.h"
 #include "cache_interface.h"
 #include "base_cache.h"
 #include "cgicc_connection.h"
@@ -35,7 +35,6 @@ class worker_thread: private boost::noncopyable {
 	int id;
 	pthread_t pid;
 
-	friend class url_parser;
 	friend class cache_iface;
 	friend class base_view;
 
@@ -54,7 +53,7 @@ class worker_thread: private boost::noncopyable {
 
 public:
 
-	url_parser url;
+	url_dispatcher url;
 	manager const &app;
 	Cgicc *cgi;
 	CgiEnvironment const *env;
