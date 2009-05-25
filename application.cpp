@@ -1,3 +1,4 @@
+#define CPPCMS_SOURCE
 #include "application.h"
 
 namespace cppcms {

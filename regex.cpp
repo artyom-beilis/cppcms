@@ -33,6 +33,10 @@ namespace cppcms { namespace util {
 	{
 		return boost::regex_match(str.c_str(),res.d->match,d->r);
 	}
+	bool regex::match(std::string const &str) const
+	{
+		return boost::regex_match(str.c_str(),d->r);
+	}
 
 
 }} // cppcms::util

@@ -12,25 +12,23 @@
 #include "posix_mutex.h"
 #include "transtext.h"
 #include "session_backend_factory.h"
-#include <boost/shared_ptr.hpp>
 
 namespace cppcms {
 
 class manager;
 
-using boost::shared_ptr;
 
 class base_factory {
 public:
-	virtual shared_ptr<worker_thread> operator()(manager const &cf) const = 0;
+	virtual std::auto_ptr<worker_thread> operator()(manager const &cf) const = 0;
 	virtual ~base_factory() {};
 };
 
 template<typename T>
 class simple_factory : public base_factory {
 public:
-	virtual shared_ptr<worker_thread> operator()(manager const &cf) const
-	{ return shared_ptr<worker_thread>(new T(cf)); };
+	virtual std::auto_ptr<worker_thread> operator()(manager const &cf) const
+	{ return std::auto_ptr<worker_thread>(new T(cf)); };
 };
 
 template<typename T,typename P>
@@ -38,8 +36,8 @@ class one_param_factory : public base_factory {
 	P const &P1;
 public:
 	one_param_factory(P const &p) : P1(p) {};
-	virtual shared_ptr<worker_thread> operator()(manager const &cf) const
-	{ return shared_ptr<worker_thread>(new T(cf,P1)); };
+	virtual std::auto_ptr<worker_thread> operator()(manager const &cf) const
+	{ return std::auto_ptr<worker_thread>(new T(cf,P1)); };
 };
 
 template<typename T,typename Pa,typename Pb>
@@ -48,8 +46,8 @@ class two_params_factory : public base_factory {
 	Pb const &P2;
 public:
 	two_params_factory(Pa const &p1,Pb const &p2) : P1(p1), P2(p2) {};
-	virtual shared_ptr<worker_thread> operator()(manager const &cf) const
-	{ return shared_ptr<worker_thread>(new T(cf,P1,P2)); };
+	virtual std::auto_ptr<worker_thread> operator()(manager const &cf) const
+	{ return std::auto_ptr<worker_thread>(new T(cf,P1,P2)); };
 };
 
 class web_application {
@@ -86,8 +84,8 @@ public:
 	virtual void execute();
 };
 
-class fast_cgi_single_threaded_app : public fast_cgi_application {
-	shared_ptr<worker_thread> worker;
+class fast_cgi_single_threaded_app : public fast_cgi_application , public util::noncopyable {
+	std::auto_ptr<worker_thread> worker;
 	void setup();
 public:
 	virtual bool run();
@@ -167,7 +165,7 @@ public:
 
 class fast_cgi_multiple_threaded_app : public fast_cgi_application {
 	int size;
-	vector<shared_ptr<worker_thread> > workers;
+	vector<worker_thread *> workers;
 	sefe_queue<cgi_session *> jobs;
 	typedef pair<int,fast_cgi_multiple_threaded_app*> info_t;
 
@@ -183,6 +181,8 @@ public:
 	virtual ~fast_cgi_multiple_threaded_app() {
 		delete [] pids;
 		delete [] threads_info;
+		for(unsigned i=0;i<workers.size();i++)
+			delete workers[i];
 	};
 };
 

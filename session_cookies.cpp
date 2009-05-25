@@ -10,6 +10,7 @@
 #include "aes_encryptor.h"
 #endif
 
+#include <boost/shared_ptr.hpp>
 
 using namespace std;
 
@@ -17,9 +18,9 @@ namespace cppcms {
 
 namespace {
 struct builder {
-	shared_ptr<session_api> operator()(worker_thread &w)
+	boost::shared_ptr<session_api> operator()(worker_thread &w)
 	{
-		return shared_ptr<session_api>(new session_cookies(w));
+		return boost::shared_ptr<session_api>(new session_cookies(w));
 	}
 };
 }

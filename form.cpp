@@ -1,8 +1,8 @@
+#define CPPCMS_SOURCE
 #include "form.h"
 #include "util.h"
 
 #include <cgicc/Cgicc.h>
-#include <boost/regex.hpp>
 #include <boost/format.hpp>
 #include <iostream>
 #include "cppcms_error.h"
@@ -306,12 +306,12 @@ bool regex_field::validate()
 		return false;
 	if(!exp)
 		throw cppcms_error("widgets::regex_field regular expression is not defined");
-	is_valid=boost::regex_match(value,*exp);
+	is_valid=exp->match(value);
 	return is_valid;
 }
 	
 namespace {
-	boost::regex const exp_email("^[^@]+@[^@]+$");
+	util::regex const exp_email("^[^@]+@[^@]+$");
 }
 
 email::email(std::string name,std::string value) : regex_field(exp_email,name,value)

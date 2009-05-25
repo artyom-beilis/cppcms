@@ -38,6 +38,11 @@ namespace cppcms { namespace util {
 		/// false. It actually calls \a boost::regex::match_result
 		/// 
 		bool match(std::string const &str,regex_result &res) const;
+		///
+		/// This function checks if string \a str matches the regular expression.
+		/// If so, it returns true, otherwise returs false
+		/// 
+		bool match(std::string const &str) const;
 
 	private:
 		struct data;

@@ -1,3 +1,4 @@
+#define CPPCMS_SOURCE
 #include "config.h"
 #include "worker_thread.h"
 #include "global_config.h"

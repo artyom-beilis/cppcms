@@ -11,7 +11,7 @@ class session_server_storage;
 class session_interface;
 	
 namespace details {
-class sid_generator : public boost::noncopyable {
+class sid_generator : public util::noncopyable {
 	struct for_hash {
 		char uid[16];
 		uint64_t session_counter;

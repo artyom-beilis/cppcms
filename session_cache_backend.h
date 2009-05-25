@@ -12,10 +12,10 @@ class worker_thread;
 namespace session_cache_backend {
 
 struct builder {
-	shared_ptr<session_api> operator()(worker_thread &w)
+	boost::shared_ptr<session_api> operator()(worker_thread &w)
 	{
 		boost::shared_ptr<empty_session_server_storage> storage(new empty_session_server_storage());
-		return shared_ptr<session_api>(new session_sid(storage,true));
+		return boost::shared_ptr<session_api>(new session_sid(storage,true));
 	}
 };
 

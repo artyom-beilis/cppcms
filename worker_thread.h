@@ -9,9 +9,9 @@
 #include <cgicc/HTTPHTMLHeader.h>
 #include <cgicc/HTTPStatusHeader.h>
 #include <cgicc/HTMLClasses.h>
-#include <boost/noncopyable.hpp>
+#include "noncopyable.h"
 #include <memory>
-#include <boost/signal.hpp>
+#include "signal0.h"
 
 #include "cppcms_error.h"
 #include "url_dispatcher.h"
@@ -31,7 +31,7 @@ using cgicc::CgiEnvironment;
 using cgicc::Cgicc;
 using cgicc::HTTPHeader;
 
-class worker_thread: private boost::noncopyable {
+class worker_thread: private util::noncopyable {
 	int id;
 	pthread_t pid;
 
@@ -61,8 +61,8 @@ public:
 
 	cache_iface cache;
 	ostream cout;
-	boost::signal<void()> on_start;
-	boost::signal<void()> on_end;
+	util::signal0 on_start;
+	util::signal0 on_end;
 	session_interface session;
 
 	void set_header(HTTPHeader *h);

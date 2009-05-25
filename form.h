@@ -5,10 +5,10 @@
 #include <map>
 #include <list>
 #include <vector>
-#include <boost/regex_fwd.hpp>
-#include <boost/noncopyable.hpp>
 #include <ostream>
 #include <sstream>
+#include "noncopyable.h"
+#include "regex.h"
 
 namespace cgicc { class Cgicc; }
 
@@ -36,7 +36,7 @@ public:
 	virtual void clear() = 0;
 };
 
-class form : public boost::noncopyable , public base_form {
+class form : public util::noncopyable , public base_form {
 protected:
 	list<base_form *> elements;
 public:
@@ -162,10 +162,10 @@ public:
 };
 
 class regex_field : public text {
-	boost::regex const *exp;
+	util::regex const *exp;
 public:
 	regex_field() : exp(0) {}	
-	regex_field(boost::regex const &e,string name="",string msg="") : text(name,msg),exp(&e) {}
+	regex_field(util::regex const &e,string name="",string msg="") : text(name,msg),exp(&e) {}
 	virtual bool validate();
 };
 

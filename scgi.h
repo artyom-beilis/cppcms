@@ -3,7 +3,6 @@
 
 #include "config.h"
 #include <cgicc/CgiInput.h>
-#include <boost/noncopyable.hpp>
 #include <ostream>
 #include <streambuf>
 #include <map>

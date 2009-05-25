@@ -20,8 +20,8 @@ struct application {
 
 	ostream &cout;
 
-	boost::signal<void()> &on_start;
-	boost::signal<void()> &on_end;
+	util::signal0 &on_start;
+	util::signal0 &on_end;
 
 	// Construction
 	application(worker_thread &w);

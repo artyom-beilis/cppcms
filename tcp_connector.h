@@ -3,14 +3,14 @@
 
 #include <string>
 #include <vector>
-#include <boost/noncopyable.hpp>
+#include "noncopyable.h"
 
 namespace cppcms {
 
 class messenger;
 struct tcp_operation_header;
 
-class tcp_connector : private boost::noncopyable
+class tcp_connector : private util::noncopyable
 {
 protected:
 	messenger *tcp;

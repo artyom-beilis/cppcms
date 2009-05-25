@@ -550,7 +550,7 @@ class ngettext_block:
 		if not params:
 			output( "cout<<ngettext(%s,%s,%s);" % (s1,s2,idt))
 		else:
-			output( "cout<<(format(ngettext(%s,%s,%s)) %% %s );" % (s1,s2,idt, ' % '.join(params)))
+			output( "cppcms::util::format(cout,ngettext(%s,%s,%s),(%s));" % (s1,s2,idt, '),('.join(params)))
 			
 
 class gettext_block:
@@ -563,7 +563,7 @@ class gettext_block:
 		if not params:
 			output( "cout<<gettext(%s);" % s)
 		else:
-			output( "cout<<(format(gettext(%s)) %% %s );" % (s , ' % '.join(params)))
+			output( "cppcms::util::format(cout,gettext(%s)),(%s));" % (s , '),('.join(params)))
 
 
 class include_block:

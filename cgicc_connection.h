@@ -1,7 +1,7 @@
 #ifndef CPPCMS_CGICC_CONN_H
 #define CPPCMS_CGICC_CONN_H
 
-#include <boost/noncopyable.hpp>
+#include "noncopyable.h"
 #include <cgicc/Cgicc.h>
 #include <string>
 #include <ostream>
@@ -10,7 +10,7 @@
 namespace cppcms {
 using namespace std;
 
-class cgicc_connection : private boost::noncopyable {
+class cgicc_connection : private util::noncopyable {
 public:
 	virtual string env(char const *variable) = 0;
 	virtual cgicc::Cgicc &cgi() = 0;

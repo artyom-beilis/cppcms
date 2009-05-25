@@ -14,7 +14,7 @@
 #endif
 
 #include <cgicc/CgiInput.h>
-#include <boost/noncopyable.hpp>
+#include "noncopyable.h"
 #include "cgi_api.h"
 #include "cgicc_connection.h"
 
@@ -22,7 +22,7 @@ namespace cppcms {
 
 class fcgi_stream :	public cgicc::CgiInput,
 			public std::ostream,
-			private boost::noncopyable
+			private util::noncopyable
 {
 	FCGX_Request &request;
 	fcgi_streambuf fcgi_cout;

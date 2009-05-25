@@ -16,6 +16,7 @@
 #include <sys/mman.h>
 #include <sys/wait.h>
 #include <sys/types.h>
+#include <boost/shared_ptr.hpp>
 #include "thread_cache.h"
 
 #endif
@@ -75,7 +76,7 @@ public:
 	virtual void execute()
 	{
 		base_factory &factory=*app.workers;
-		shared_ptr<worker_thread> worker(factory(app));
+		auto_ptr<worker_thread> worker(factory(app));
 		cgi_session *session=app.api->accept_session();
 		if(session) {
 			try {
@@ -207,11 +208,11 @@ fast_cgi_multiple_threaded_app::fast_cgi_multiple_threaded_app(manager &m):
 	size=threads_num;
 
 	// Init Worker Threads
-	workers.resize(size);
+	workers.resize(size,0);
 
 	base_factory &factory=*app.workers;
 	for(i=0;i<size;i++) {
-		workers[i]=factory(app);
+		workers[i]=factory(app).release();
 	}
 
 	// Setup Jobs Manager
@@ -332,7 +333,7 @@ void prefork::run()
 	set_signal_handler(SIGINT,chaild_handler);
 
 	base_factory &factory=*app.workers;
-	shared_ptr<worker_thread> worker=factory(app);
+	auto_ptr<worker_thread> worker=factory(app);
 
 	int limit=app.config.lval("server.iterations_limit",-1);
 	if(limit!=-1) {
@@ -533,9 +534,9 @@ web_application *manager::get_mod()
 
 namespace {
 	struct empty_backend {
-		shared_ptr<session_api> operator()(worker_thread &a)
+		boost::shared_ptr<session_api> operator()(worker_thread &a)
 		{
-			return shared_ptr<session_api>(); // EMPTY
+			return boost::shared_ptr<session_api>(); // EMPTY
 		}
 	};
 }

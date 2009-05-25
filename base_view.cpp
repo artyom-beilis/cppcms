@@ -21,7 +21,7 @@ string base_view::urlencode(string const &s)
 
 string base_view::intf(int val,string f)
 {
-	return (format(f) % val).str();
+	return (boost::format(f) % val).str();
 }
 
 string base_view::strftime(std::tm const &t,string f)
@@ -76,44 +76,5 @@ base_view *views_storage::fetch_view(string t,string v,base_view::settings s,bas
 }
 
 };
-
-
-format::format(std::string const &s) :
-	impl(new boost::format(s))
-{
-	impl->exceptions(0);
-}
-
-format::~format() {}
-format::format(format const &f) : impl(f.impl) {}
-
-format &format::operator % (int n)
-{
-	*impl % n;
-	return *this;
-}
-format &format::operator % (string const &s)
-{
-	*impl % s;
-	return *this;
-}
-format &format::operator % (char const *s)
-{
-	*impl % s;
-	return *this;
-}
-
-string format::str()
-{
-	string s=impl->str();
-	return s;
-}
-
-ostream &operator<<(ostream &s,format &f)
-{
-	s << *f.impl;
-	return s;
-}
-
 
 }// CPPCMS

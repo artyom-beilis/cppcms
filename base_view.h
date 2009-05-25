@@ -5,9 +5,9 @@
 #include <sstream>
 #include <string>
 #include <map>
-#include <boost/format/format_fwd.hpp>
 #include "cppcms_error.h"
 #include "config.h"
+#include "format.h"
 
 namespace cppcms {
 using namespace std;
@@ -19,21 +19,6 @@ public:
 };
 
 namespace transtext  { class trans; }
-
-class format {
-	mutable std::auto_ptr<boost::format> impl;
-	friend ostream &operator<<(ostream &,format &);
-public:
-	format(std::string const &s);
-	format(format const &f);
-	format &operator % (int n);
-	format &operator % (string const &);
-	format &operator % (char const *);
-	string str();
-	~format();
-};
-
-ostream &operator<<(ostream &,format &);
 
 class worker_thread;
 class base_view {
@@ -53,11 +38,6 @@ protected:
 		worker(*s.worker),
 		cout(*s.output)
 	{
-	}
-
-	::cppcms::format format(std::string const &s)
-	{
-		return ::cppcms::format(s);
 	}
 
 	void set_domain(char const *);
@@ -135,9 +115,6 @@ public:
 #	define CPPCMS_TYPEOF(x) typeof(x)
 #elif defined(HAVE_UNDERSCORE_TYPEOF)
 #	define CPPCMS_TYPEOF(x) __typeof__(x)
-#elif defined(HAVE_WORKING_BOOST_TYPEOF)
-#	include <boost/typeof/typeof.hpp>
-#	define CPPCMS_TYPEOF(x) BOOST_TYPEOF(x)
 #else
 #	error "No useful C++0x auto/decltype/typeof method for this compiler"
 #endif
