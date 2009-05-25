@@ -20,6 +20,32 @@ namespace cppcms { namespace util {
 		static const int end=-1;
 	};
 
+#ifdef CPPCMS_HAVE_VARIADIC_TEMPLATES
+	namespace details {
+		inline void format_nth(std::ostream &out,int n)
+		{
+		}
+		template<typename A,typename... Args>
+		inline void format_nth(std::ostream &out,int n,A v,Args... args)
+		{
+			if(n==1) out<<v;
+			else format_nth(out,n-1,args...);
+		}
+	} // details
+	
+
+	template<typename... Args>
+	inline std::ostream &format(std::ostream &out,std::string const &s,Args... args)
+	{
+		format_iterator f(out,s);
+		int n;
+		while((n=f.write())!=format_iterator::end) {
+			details::format_nth(out,n,args...);
+		}
+		return out;
+	}
+
+#else
 	inline std::ostream &format(std::ostream &out,std::string const &form)
 	{		
 		format_iterator f(out,form);
@@ -182,7 +208,7 @@ namespace cppcms { namespace util {
 		}
 		return out;
 	}
-
+#endif
 
 
 } } // cppcms::util
