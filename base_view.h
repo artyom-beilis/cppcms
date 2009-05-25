@@ -116,7 +116,9 @@ public:
 #elif defined(HAVE_UNDERSCORE_TYPEOF)
 #	define CPPCMS_TYPEOF(x) __typeof__(x)
 #else
-#	error "No useful C++0x auto/decltype/typeof method for this compiler"
+#	define CPPCMS_TYPEOF(x) \
+#		error "There is no automatic type identification for this compiler, " \
+		" please use <% for X in Y as Z %> statement"
 #endif
 
 

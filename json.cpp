@@ -1,6 +1,7 @@
-#include <cppcms/json.h>
+#include "json.h"
 #include <stdio.h>
 
+namespace cppcms {
 namespace json {
 
 	struct value_data {
@@ -11,11 +12,12 @@ namespace json {
 		array arr_;
 		double num_;
 		bool bool_;
-		clear() {
+		void clear() {
 			switch(type) {
-			case is_string: str_.clear();
-			case is_object: obj_.clear();
-			case is_array: arr_.clear();
+			case is_string: str_.clear(); break;
+			case is_object: obj_.clear(); break;
+			case is_array: arr_.clear(); break;
+			default: ;
 			}
 			type=is_null;
 		}
@@ -28,7 +30,7 @@ namespace json {
 
 	bool value::is_null() const
 	{
-		return d->type==is_null;
+		return d->type==json::is_null;
 	}
 	void value::null()
 	{
@@ -38,22 +40,22 @@ namespace json {
 	{
 		if(d->type==is_number)
 			return d->num_;
-		throw std::bad_cast;
+		throw std::bad_cast();
 	}
 	double value::real(double def) const 
 	{
 		if(d->type==is_number)
 			return d->num_;
-		else if(d->type==is_null)
+		else if(d->type==json::is_null)
 			return def;
-		throw std::bad_cast;
+		throw std::bad_cast();
 	}
 	int value::integer() const
 	{
 		double real_value=real();
 		int value=static_cast<int>(real_value);
 		if(value!=real_value)
-			throw std::bad_cast;
+			throw std::bad_cast();
 		return value;
 	}
 	int value::integer(int def) const
@@ -61,95 +63,72 @@ namespace json {
 		double real_value=real(def);
 		int value=static_cast<int>(real_value);
 		if(value!=real_value)
-			throw std::bad_cast;
+			throw std::bad_cast();
 		return value;
 	}
 	bool value::boolean() const 
 	{
 		if(d->type==is_boolean)
 			return d->bool_;
-		throw std::bad_cast;
+		throw std::bad_cast();
 	}
 	bool value::boolean(bool def) const 
 	{
 		if(d->type==is_boolean)
 			return d->bool_;
-		if(d->type==is_null)
-			return defl
-		throw std::bad_cast;
+		if(d->type==json::is_null)
+			return def;
+		throw std::bad_cast();
 	}
 	std::string value::str() const 
 	{
 		if(d->type==is_string)
 			return d->str_;
-		throw std::bad_cast;
+		throw std::bad_cast();
 	}
 	std::string value::str(std::string def) const 
 	{
 		if(d->type==is_string)
 			return d->str_;
-		if(d->type==is_null)
-			return def
-		throw std::bad_cast;
+		if(d->type==json::is_null)
+			return def;
+		throw std::bad_cast();
 	}
 
 	std::wstring value::wstr() const
 	{
-		return uni::str_to_wstr(str());
+		return uni::to_wstring(str());
 	}
 	std::wstring value::wstr(std::wstring def) const
 	{
-		if(d->type==is_null)
+		if(d->type==json::is_null)
 			return def;
-		return uni::str_to_wstr(str());
+		return uni::to_wstring(str());
 	}
 
-#ifdef CPPCMS_HAVE_CPP0X_UNICODE_CHARRECTERS
-	std::u16string value::u16str() const
-	{
-		return uni::str_to_u16str(str());
-	}
-	std::u16string value::u16str(std::u16string def) const
-	{
-		if(d->type==is_null)
-			return def;
-		return uni::str_to_u16str(str());
-	}
-	std::u32string value::u32str() const
-	{
-		return uni::str_to_u32str(str());
-	}
-	std::u32string value::u32str(std::u32string def) const
-	{
-		if(d->type==is_null)
-			return def;
-		return uni::str_to_u32str(str());
-	}
-#endif
-
-	object const &value::object() const
+	json::object const &value::object() const
 	{
 		if(d->type==is_object)
 			return d->obj_;
-		throw std::bad_cast;
+		throw std::bad_cast();
 	}
-	object &object()
+	json::object &object()
 	{
 		if(d->type==is_object)
 			return d->obj_;
-		throw std::bad_cast;
+		throw std::bad_cast();
 	}
-	array const &array() const
+	json::array const &array() const
 	{
 		if(d->type==is_array)
 			return d->array_;
-		throw std::bad_cast;
+		throw std::bad_cast();
 	}
-	array &array()
+	json::array &array()
 	{
 		if(d->type==is_array)
 			return d->array_;
-		throw std::bad_cast;
+		throw std::bad_cast();
 	}
 
 	value const &value::operator=(double v)
@@ -187,24 +166,6 @@ namespace json {
 		d->set(uni::wstr_to_str(v));
 		return *this;
 	}
-#ifdef CPPCMS_HAVE_CPP0X_UNICODE_CHARRECTERS
-	value const &value::operator=(std::u16string v)
-	{ 
-		d->set(uti::u16str_to_str(v)); return *this;
-	}
-	value const &value::operator=(std::u32string v)
-	{ 
-		d->set(uti::u32str_to_str(v)); return *this;
-	}
-	value const &value::operator=(char16_t const *v)
-	{
-		d->set(uti::u16str_to_str(v)); return *this;
-	}
-	value const &value::operator=(char32_t const *v)
-	{
-		d->set(uti::u32str_to_str(v)); return *this;
-	}
-#endif
 	value const &value::operator=(object const &v)
 	{
 		d->set(v); return *this;
@@ -216,9 +177,9 @@ namespace json {
 
 	value &operator[](unsigned pos)
 	{
-		if(d->type!=is_array && d->type!=is_null)
-			throw std::bad_cast;
-		if(d->type==is_null) {
+		if(d->type!=is_array && d->type!=json::is_null)
+			throw std::bad_cast();
+		if(d->type==json::is_null) {
 			d->set(array());
 		}
 		if(d->arr_.size()=<pos)
@@ -228,7 +189,7 @@ namespace json {
 	value const &operator[](unsigned pos) const
 	{
 		if(d->type!=is_array)
-			throw std::bad_cast;
+			throw std::bad_cast();
 		return d->arr_.at(pos);
 	}
 	value const &value::operator()(std::string const &path) const 

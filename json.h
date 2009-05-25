@@ -1,8 +1,8 @@
 #ifndef CPPCMS_JSON_H
 #define CPPCMS_JSON_H
 
-#include <cppcms/util/copy_ptr.h>
-#include <cppcms/config.h>
+#include "defs.h"
+#include "copy_ptr.h"
 
 #include <vector>
 #include <map>
@@ -35,7 +35,7 @@ namespace json {
 	};
 
 	class value_data;
-	class value {
+	class CPPCMS_API value {
 		void write(std::ostream &out,int tabs,bool utf) const; 
 	public:
 		
@@ -54,21 +54,13 @@ namespace json {
 
 		std::string str() const;
 		std::wstring wstr() const;
-#ifdef CPPCMS_HAVE_CPP0X_UNICODE_CHARRECTERS
-		std::u16string u16str() const;
-		std::u32string u32str() const;
-#endif
 		std::string str(std::string) const;
 		std::wstring wstr(std::wstring) const;
-#ifdef CPPCMS_HAVE_CPP0X_UNICODE_CHARRECTERS
-		std::u16string u16str(std::u16string) const;
-		std::u32string u32str(std::u32string) const;
-#endif
 
-		object const &object() const;
-		object &object();
-		array const &array() const;
-		array &array();
+		json::object const &object() const;
+		json::object &object();
+		json::array const &array() const;
+		json::array &array();
 
 		value const &operator=(double v);
 		value const &operator=(bool v);
@@ -77,17 +69,11 @@ namespace json {
 		value const &operator=(std::wstring);
 		value const &operator=(char const *);
 		value const &operator=(wchar_t const *);
-#ifdef CPPCMS_HAVE_CPP0X_UNICODE_CHARRECTERS
-		value const &operator=(std::u16string);
-		value const &operator=(std::u32string);
-		value const &operator=(char16_t const *);
-		value const &operator=(char32_t const *);
-#endif
-		value const &operator=(object const &);
-		value const &operator=(array const &);
+		value const &operator=(json::object const &);
+		value const &operator=(json::array const &);
 
 		value &operator[](unsigned pos);
-		value const &operator[](unsigned pos) const
+		value const &operator[](unsigned pos) const;
 		value const &operator()(std::string const &path) const;
 		value &operator()(std::string const &path);
 		value const &operator[](std::string const &entry) const;
@@ -103,7 +89,7 @@ namespace json {
 
 	private:
 		util::copy_ptr<value_data> d;
-	}
+	};
 
 	value parse(std::string const &);
 	value parse(char const *begin,char const *end);
