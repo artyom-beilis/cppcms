@@ -1,5 +1,6 @@
 #define CPPCMS_SOURCE
 #include "format.h"
+#include <algorithm>
 
 namespace cppcms { namespace util {
 

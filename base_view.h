@@ -5,6 +5,7 @@
 #include <sstream>
 #include <string>
 #include <map>
+#include <ctime>
 #include "cppcms_error.h"
 #include "config.h"
 #include "format.h"
