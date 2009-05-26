@@ -79,7 +79,7 @@ namespace json {
 		value const &operator[](std::string const &entry) const;
 		value &operator[](std::string const &entry);
 
-		std::string save(int how=(utf8 | compact));
+		std::string save(int how=(utf8 | compact)) const;
 
 
 		value();

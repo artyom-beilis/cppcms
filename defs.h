@@ -12,7 +12,7 @@
 #		define CPPCMS_API
 #	endif
 #else // ELF BINARIES
-#	define CPPCMS_API __attribute__(visibility("default"))
+#	define CPPCMS_API __attribute__((visibility("default")))
 #endif
 
 

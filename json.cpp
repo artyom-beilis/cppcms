@@ -1,5 +1,8 @@
 #include "json.h"
+#include "encoding.h"
+#include <sstream>
 #include <stdio.h>
+
 
 namespace cppcms {
 namespace json {
@@ -97,13 +100,13 @@ namespace json {
 
 	std::wstring value::wstr() const
 	{
-		return uni::to_wstring(str());
+		return encoding::to_wstring(str());
 	}
 	std::wstring value::wstr(std::wstring def) const
 	{
 		if(d->type==json::is_null)
 			return def;
-		return uni::to_wstring(str());
+		return encoding::to_wstring(str());
 	}
 
 	json::object const &value::object() const
@@ -112,22 +115,22 @@ namespace json {
 			return d->obj_;
 		throw std::bad_cast();
 	}
-	json::object &object()
+	json::object &value::object()
 	{
 		if(d->type==is_object)
 			return d->obj_;
 		throw std::bad_cast();
 	}
-	json::array const &array() const
+	json::array const &value::array() const
 	{
 		if(d->type==is_array)
-			return d->array_;
+			return d->arr_;
 		throw std::bad_cast();
 	}
-	json::array &array()
+	json::array &value::array()
 	{
 		if(d->type==is_array)
-			return d->array_;
+			return d->arr_;
 		throw std::bad_cast();
 	}
 
@@ -153,7 +156,7 @@ namespace json {
 	}
 	value const &value::operator=(std::wstring v)
 	{
-		d->set(uni::wstr_to_str(v));
+		d->set(encoding::to_string(v));
 		return *this;
 	}
 	value const &value::operator=(char const *v)
@@ -163,30 +166,30 @@ namespace json {
 	}
 	value const &value::operator=(wchar_t const *v)
 	{
-		d->set(uni::wstr_to_str(v));
+		d->set(encoding::to_string(v));
 		return *this;
 	}
-	value const &value::operator=(object const &v)
+	value const &value::operator=(json::object const &v)
 	{
 		d->set(v); return *this;
 	}
-	value const &value::operator=(array const &v)
+	value const &value::operator=(json::array const &v)
 	{
 		d->set(v); return *this;
 	}
 
-	value &operator[](unsigned pos)
+	value &value::operator[](unsigned pos)
 	{
 		if(d->type!=is_array && d->type!=json::is_null)
 			throw std::bad_cast();
 		if(d->type==json::is_null) {
 			d->set(array());
 		}
-		if(d->arr_.size()=<pos)
+		if(d->arr_.size()<=pos)
 			d->arr_.resize(pos+1);
 		return d->arr_[pos];
 	}
-	value const &operator[](unsigned pos) const
+	value const &value::operator[](unsigned pos) const
 	{
 		if(d->type!=is_array)
 			throw std::bad_cast();
@@ -194,9 +197,9 @@ namespace json {
 	}
 	value const &value::operator()(std::string const &path) const 
 	{
-		object const &members=object();
+		json::object const &members=object();
 		static const value null;
-		object::const_iterator p;
+		json::object::const_iterator p;
 		std::string::const_iterator i=find(path.begin(),path.end(),'.');
 		if(i==path.end()) {
 			if((p=members.find(path))!=members.end())
@@ -205,14 +208,14 @@ namespace json {
 		}
 		std::string prefix(path.begin(),i);
 		value const &tmp=(*this)[prefix];
-		if(tmp.null()) 
+		if(tmp.is_null()) 
 			return null;
 		return tmp[std::string(i+1,path.end())];
 	}
 	value &value::operator()(std::string const &path)
 	{
-		object::iterator p;
-		object &members=object();
+		json::object::iterator p;
+		json::object &members=object();
 		std::string::const_iterator i=find(path.begin(),path.end(),'.');
 		if(i==path.end())
 			return members[path];
@@ -222,35 +225,31 @@ namespace json {
 	}
 	value const &value::operator[](std::string const &entry) const 
 	{
-		object const &members=object();
+		json::object const &members=object();
 		static const value null;
-		object::const_iterator p;
-		if((p=members.find(path))!=members.end())
+		json::object::const_iterator p;
+		if((p=members.find(entry))!=members.end())
 			return p->second;
 		return null;
 	}
-	value &value::operator[](std::string const &enrty)
+	value &value::operator[](std::string const &entry)
 	{
-		object::iterator p;
-		object &members=object();
-		return members[path];
+		json::object::iterator p;
+		json::object &members=object();
+		return members[entry];
 	}
 
 	value::value() : d(new value_data) { }
-	valie::value(value const &other) : d(other.d) {}
-	value const &operator=(value const &v) 
+	value::value(value const &other) : d(other.d) {}
+	value const &value::operator=(value const &other) 
 	{
 		d=other.d;
+		return *this;
 	}
-	~value()  {}
+	value::~value()  {}
 
 	
 	namespace {
-		std::string uchar(std::string::const_iterator p,std::string::const_iterator e)
-		{
-			// TODO
-			return uchar(*p);	
-		}
 		std::string uchar(unsigned v)
 		{
 			char buf[8];
@@ -258,7 +257,13 @@ namespace json {
 			std::string res=buf;
 			return res;
 		}
-		std::string value::escape(std::string const &input,bool utf)
+		std::string uchar(std::string::const_iterator p,std::string::const_iterator e)
+		{
+			// TODO
+			return uchar(*p);	
+		}
+		
+		std::string escape(std::string const &input,bool utf)
 		{
 			std::string result;
 			result.reserve(input.size());
@@ -293,12 +298,12 @@ namespace json {
 			return result;
 		}
 
-		void pad(std::ostream &out,int tb) const
+		void pad(std::ostream &out,int tb)
 		{
 			for(;tb > 0;tb--) out<<'\t';
 		}
 
-		void indent(std::ostream &out,char c,int &tabs) const
+		void indent(std::ostream &out,char c,int &tabs)
 		{
 			if(tabs < 0) {
 				out<<c;
@@ -330,9 +335,11 @@ namespace json {
 		}
 
 	} // namespace anonymous
+
+
 	json_type value::type() const
 	{
-		return d->type();
+		return d->type;
 	}
 	
 	void value::write(std::ostream &out,int tabs,bool utf) const 
@@ -341,7 +348,7 @@ namespace json {
 			out<<"null";
 			return;
 		}
-		switch(d->type_) {
+		switch(d->type) {
 		case is_number:
 			out<<d->num_;
 			break;
@@ -349,10 +356,11 @@ namespace json {
 			out<<escape((d->str_),utf);
 			break;
 		case is_boolean:
-			out<< d->bool_ ? "true" : "false" ;
+			out<< (d->bool_ ? "true" : "false") ;
+			break;
 		case is_array:
 			{
-				array const &a=d->arr_;
+				json::array const &a=d->arr_;
 				if(!a.empty()) {
 					unsigned i;
 					indent(out,'[',tabs);
@@ -367,21 +375,23 @@ namespace json {
 			}
 			break;
 		case is_object:
-			object const &obj=d->obj_;
-			object::const_iterator p,end;
-			p=obj.begin();
-			end=obj.end();
-			if(p!=end) {
-				indent(out,'{',tabs);
-				while(p!=end) {
-					out<<escape(p->first,utf);
-					indent(out,':',tabs);
-					p->second.write(out,tabs,utf);
-					++p;
-					if(p!=end)
-						indent(out,',',tabs);
+			{
+				json::object const &obj=d->obj_;
+				object::const_iterator p,end;
+				p=obj.begin();
+				end=obj.end();
+				if(p!=end) {
+					indent(out,'{',tabs);
+					while(p!=end) {
+						out<<escape(p->first,utf);
+						indent(out,':',tabs);
+						p->second.write(out,tabs,utf);
+						++p;
+						if(p!=end)
+							indent(out,',',tabs);
+					}
+					indent(out,'}',tabs);
 				}
-				indent(out,'}',tabs);
 			}
 			break;
 		default:
@@ -389,7 +399,7 @@ namespace json {
 		}
 	}
 	
-	std::string value::save(int how=(utf8 | compact))
+	std::string value::save(int how) const
 	{
 		std::ostringstream ss;
 		ss.imbue(std::locale("C"));

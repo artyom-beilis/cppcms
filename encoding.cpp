@@ -7,6 +7,29 @@
 
 namespace cppcms { namespace encoding {
 
+	namespace {
+		char const *native_unicode_encoding()
+		{
+			char const *le="UTF-32LE";
+			char const *be="UTF-32BE";
+			uint16_t v=0x0a0b;
+			char const *utf=*(char*)&v== 0x0a ? be : le;
+			return utf;
+		}
+		char const *native_wchar_encoding()
+		{
+			if(sizeof(wchar_t)==4)
+				return native_unicode_encoding();
+			if(sizeof(wchar_t)!=2)
+				throw std::runtime_error("wchar_t does not support unicode!");
+			char const *le="UTF-16LE";
+			char const *be="UTF-16BE";
+			uint16_t v=0x0a0b;
+			char const *utf=*(char*)&v== 0x0a ? be : le;
+			return utf;
+		}
+	}
+	
 	class iconv_validator {
 	private:
 		iconv_t descriptor_;
@@ -18,12 +41,7 @@ namespace cppcms { namespace encoding {
 		iconv_validator(std::string const &charset) :
 			descriptor_((iconv_t)(-1))
 		{
-			char const *le="UTF-32LE";
-			char const *be="UTF-32BE";
-			uint16_t v=0x0a0b;
-			char const *utf=*(char*)&v== 0x0a ? be : le;
-
-			descriptor_=iconv_open(utf,charset.c_str());
+			descriptor_=iconv_open(native_unicode_encoding(),charset.c_str());
 			if(descriptor_==(iconv_t)(-1)) {
 				throw std::runtime_error("Failed to load iconv tables for:" + charset);
 			}
@@ -166,4 +184,33 @@ namespace cppcms { namespace encoding {
 		return validator(s);
 	}
 
+	std::string to_string(std::wstring const &s)
+	{
+		throw std::runtime_error("Unsuppoteed");
+	}
+	std::string to_string(std::wstring const &s,std::locale const &locale)
+	{
+		throw std::runtime_error("Unsuppoteed");
+	}
+	std::string to_string(std::wstring const &s,std::string const &encoding)
+	{
+		throw std::runtime_error("Unsuppoteed");
+	}
+
+	std::wstring to_wstring(std::string const &s)
+	{
+		throw std::runtime_error("Unsuppoteed");
+	}
+	std::wstring to_wstring(std::string const &s,std::locale const &locale)
+	{
+		throw std::runtime_error("Unsuppoteed");
+	}
+	std::wstring to_wstring(std::string const &s,std::string const &encoding)
+	{
+		throw std::runtime_error("Unsuppoteed");
+	}
+
+	
+	
+	
 } } // cppcms::encoding

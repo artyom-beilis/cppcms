@@ -25,7 +25,7 @@ libcppcms_la_SOURCES = global_config.cpp manager.cpp worker_thread.cpp \
 	base_view.cpp util.cpp form.cpp application.cpp session_interface.cpp \
 	session_cookies.cpp hmac_encryptor.cpp encryptor.cpp md5.c base64.cpp \
 	session_sid.cpp session_file_storage.cpp session_dual.cpp cppcms_error.cpp \
-	url_dispatcher.cpp regex.cpp format.cpp
+	url_dispatcher.cpp regex.cpp format.cpp json.cpp encoding.cpp
 
 libcppcms_la_LDFLAGS  = -no-undefined -version-info 0:0:0
 libcppcms_la_LIBADD = @CPPCMS_LIBS@ transtext/libcppcmstranstext.la

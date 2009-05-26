@@ -12,7 +12,7 @@ namespace cppcms { namespace util {
 		copy_ptr() : ptr_(0) {}
 		copy_ptr(T *v) : ptr_(v) {}
 		copy_ptr(copy_ptr const &other) :
-			ptr_(other.ptr ? new T(*other.ptr) : 0)
+			ptr_(other.ptr_ ? new T(*other.ptr_) : 0)
 		{
 		}
 		copy_ptr const &operator=(copy_ptr const &other)
@@ -23,7 +23,7 @@ namespace cppcms { namespace util {
 					ptr_=0;
 				}
 				if(other.ptr_) {
-					ptr_=new T(*other.ptr);
+					ptr_=new T(*other.ptr_);
 				}
 			}
 			return *this;

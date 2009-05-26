@@ -3,6 +3,8 @@
 
 #include <string>
 #include <map>
+#include <locale>
+#include "defs.h"
 
 namespace cppcms {
 	namespace encoding {
@@ -11,7 +13,7 @@ namespace cppcms {
 		
 		class iconv_validator;
 
-		class validator {
+		class CPPCMS_API validator {
 			std::string charset_;
 			encoding_tester_type tester_;
 			iconv_validator *iconv_;
@@ -31,7 +33,7 @@ namespace cppcms {
 			~validator();
 		};
 		
-		class validators_set {
+		class CPPCMS_API validators_set {
 			friend int test_function(); 
 			std::map<std::string,encoding_tester_type> predefined_;
 		public:
@@ -43,7 +45,7 @@ namespace cppcms {
 			validator operator[](std::string) const;
 		};
 
-		class converter {
+		class CPPCMS_API converter {
 			std::string encoding_;
 		public:
 			converter(std::string const &encoding);
@@ -56,6 +58,14 @@ namespace cppcms {
 			std::string operator()(std::wstring const &);
 			std::string operator()(wchar_t const *begin,wchar_t const *end);
 		};
+
+		std::string CPPCMS_API to_string(std::wstring const &);
+		std::string CPPCMS_API to_string(std::wstring const &,std::locale const &locale);
+		std::string CPPCMS_API to_string(std::wstring const &,std::string const &encoding);
+
+		std::wstring CPPCMS_API to_wstring(std::string const &);
+		std::wstring CPPCMS_API to_wstring(std::string const &,std::locale const &locale);
+		std::wstring CPPCMS_API to_wstring(std::string const &,std::string const &encoding);
 
 	}  // encoding
 } // cppcms
