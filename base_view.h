@@ -5,6 +5,8 @@
 #include <sstream>
 #include <string>
 #include <map>
+#include <memory>
+#include <ctime>
 #include <boost/format/format_fwd.hpp>
 #include "cppcms_error.h"
 #include "config.h"
