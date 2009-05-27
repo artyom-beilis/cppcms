@@ -1,4 +1,4 @@
-SUBDIRS = ./transtext
+SUBDIRS = ./transtext tests
 
 noinst_PROGRAMS = hello_world.fcgi
 noinst_HEADERS = hello_world_view.h
@@ -68,5 +68,6 @@ cppcms_tcp_scale_SOURCES += session_sqlite_storage.cpp
 endif
 
 endif
+
 
 

@@ -11,7 +11,10 @@ AC_PROG_LIBTOOL
 AC_SUBST(LIBTOOL_DEPS)
 
 AC_LANG_CPLUSPLUS
-AC_CONFIG_FILES([Makefile transtext/Makefile])
+AC_CONFIG_FILES([	\
+	Makefile	\
+	transtext/Makefile\
+	tests/Makefile])
 
 AC_ARG_ENABLE(embedded,[AS_HELP_STRING([--enable-embedded],[Create embedded version of cppcms])])
 AC_ARG_ENABLE(cgi,[AS_HELP_STRING([--enable-cgi],[Embedded version of cppcms with CGI api only])])

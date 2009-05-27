@@ -2,6 +2,9 @@
 #include "encoding.h"
 #include <sstream>
 #include <stdio.h>
+#include <typeinfo>
+#include <algorithm>
+#include <iostream>
 
 
 namespace cppcms {
@@ -180,25 +183,31 @@ namespace json {
 
 	value &value::operator[](unsigned pos)
 	{
-		if(d->type!=is_array && d->type!=json::is_null)
+		if(is_null())
+			d->set(json::array());
+		if(d->type!=is_array)
 			throw std::bad_cast();
-		if(d->type==json::is_null) {
-			d->set(array());
-		}
 		if(d->arr_.size()<=pos)
 			d->arr_.resize(pos+1);
 		return d->arr_[pos];
 	}
 	value const &value::operator[](unsigned pos) const
 	{
+		static value null;
+		if(is_null())
+			return null;
 		if(d->type!=is_array)
 			throw std::bad_cast();
-		return d->arr_.at(pos);
+		if(d->arr_.size()<=pos)
+			return null;
+		return d->arr_[pos];
 	}
 	value const &value::operator()(std::string const &path) const 
 	{
-		json::object const &members=object();
 		static const value null;
+		if(is_null())
+			return null;
+		json::object const &members=object();
 		json::object::const_iterator p;
 		std::string::const_iterator i=find(path.begin(),path.end(),'.');
 		if(i==path.end()) {
@@ -214,6 +223,8 @@ namespace json {
 	}
 	value &value::operator()(std::string const &path)
 	{
+		if(is_null())
+			d->set(json::object());
 		json::object::iterator p;
 		json::object &members=object();
 		std::string::const_iterator i=find(path.begin(),path.end(),'.');
@@ -225,8 +236,10 @@ namespace json {
 	}
 	value const &value::operator[](std::string const &entry) const 
 	{
-		json::object const &members=object();
 		static const value null;
+		if(is_null())
+			return null;
+		json::object const &members=object();
 		json::object::const_iterator p;
 		if((p=members.find(entry))!=members.end())
 			return p->second;
@@ -234,6 +247,8 @@ namespace json {
 	}
 	value &value::operator[](std::string const &entry)
 	{
+		if(is_null())
+			d->set(json::object());
 		json::object::iterator p;
 		json::object &members=object();
 		return members[entry];
@@ -414,6 +429,26 @@ namespace json {
 		out<<v.save();
 		return out;
 	}
+
+	bool value::operator==(value const &other) const
+	{
+		if(d->type!=other.d->type)
+			return false;
+		switch(d->type) {
+		case json::is_null: return true;
+		case is_number: return d->num_==other.d->num_;
+		case is_string: return d->str_==other.d->str_;
+		case is_boolean: return d->bool_==other.d->bool_;
+		case is_object: return d->obj_==other.d->obj_;
+		case is_array: return d->arr_==other.d->arr_;
+		default: return false;
+		}
+	}
+	bool value::operator!=(value const &other) const
+	{
+		return !(*this == other);
+	}
+
 
 /*	namespace {
 		struct tockenizer {

@@ -81,6 +81,9 @@ namespace json {
 
 		std::string save(int how=(utf8 | compact)) const;
 
+		bool operator==(value const &other) const;
+		bool operator!=(value const &other) const;
+
 
 		value();
 		value(value const &);
