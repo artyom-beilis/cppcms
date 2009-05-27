@@ -1,8 +1,10 @@
-check_PROGRAMS=json_test
-json_test_LDADD = ../libcppcms.la
-json_test_CXXFLAGS = ../libcppcms.la
-TESTS=json_test
+check_PROGRAMS=json_test base64_test
+LDFLAGS=../libcppcms.la
+CXXFLAGS=-Wall -I..
 
 json_test_SOURCES=json_test.cpp
+base64_test_SOURCES=base64_test.cpp
 
 
+
+TESTS=$(check_PROGRAMS)
