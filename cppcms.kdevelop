@@ -10,8 +10,9 @@
     <projectdirectory>.</projectdirectory>
     <absoluteprojectpath>false</absoluteprojectpath>
     <description/>
-    <versioncontrol/>
+    <versioncontrol>kdevsubversion</versioncontrol>
     <projectname>cppcms</projectname>
+    <defaultencoding/>
   </general>
   <kdevautoproject>
     <general>
@@ -19,13 +20,18 @@
       <useconfiguration>default</useconfiguration>
     </general>
     <run>
-      <mainprogram>hello_world.fcgi</mainprogram>
+      <mainprogram/>
       <directoryradio>executable</directoryradio>
       <customdirectory>/</customdirectory>
       <programargs>-c config.txt</programargs>
       <terminal>false</terminal>
       <autocompile>true</autocompile>
       <envvars/>
+      <globaldebugarguments/>
+      <globalcwd>/home/artik/Projects/FastBlog/cppblog/refactoring</globalcwd>
+      <useglobalprogram>false</useglobalprogram>
+      <autoinstall>false</autoinstall>
+      <autokdesu>false</autokdesu>
     </run>
     <configurations>
       <optimized>
@@ -71,6 +77,7 @@
       <breakonloadinglibs>true</breakonloadinglibs>
       <separatetty>false</separatetty>
       <floatingtoolbar>false</floatingtoolbar>
+      <raiseGDBOnStart>false</raiseGDBOnStart>
     </general>
     <display>
       <staticmembers>false</staticmembers>
@@ -185,6 +192,11 @@
       <inlineSet>true</inlineSet>
     </creategettersetter>
     <references/>
+    <splitheadersource>
+      <enabled>false</enabled>
+      <synchronize>true</synchronize>
+      <orientation>Vertical</orientation>
+    </splitheadersource>
   </kdevcppsupport>
   <kdevfileview>
     <groups>
@@ -194,6 +206,7 @@
     <tree>
       <hidepatterns>*.o,*.lo,CVS</hidepatterns>
       <hidenonprojectfiles>false</hidenonprojectfiles>
+      <showvcsfields>false</showvcsfields>
     </tree>
   </kdevfileview>
   <kdevdocumentation>
@@ -203,4 +216,9 @@
       <usermanualurl/>
     </projectdoc>
   </kdevdocumentation>
+  <ctagspart>
+    <customArguments/>
+    <customTagfilePath>/home/artik/Projects/FastBlog/cppblog/refactoring/tags</customTagfilePath>
+    <activeTagsFiles/>
+  </ctagspart>
 </kdevelop>

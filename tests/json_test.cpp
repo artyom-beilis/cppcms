@@ -26,6 +26,11 @@ void test2(json::value &v)
 	TEST(v("y").str()=="True Name");
 	TEST(v.type()==json::is_object);
 }
+
+char const *jsn_str=
+		"{ \"x\" : 10 , \"o\" : { \"test\" : [ 10,20,true ], \"post\" : 13.01 }, \"yes\" : \"\\u05d0א\" }";
+
+
 int main()
 {
 	try {
@@ -45,6 +50,18 @@ int main()
 		test2(v);
 		cout<<v.save(json::readable)<<endl;
 		TEST(v2!=v);
+		json::value v_1;
+		v_1.load(jsn_str);
+		json::value v_2;
+		v_2["x"]=10;
+		v_2("o.test")[0]=10;
+		v_2("o.test")[1]=20;
+		v_2("o.test")[2]=true;
+		v_2("o.post")=13.01;
+		v_2("yes")=L"אא";
+		TEST(v_2==v_1);
+		TEST(v_1["yes"].wstr()==L"אא");
+		TEST(v_2["yes"].str()=="אא" );
 	}
 	catch(std::exception const &e)
 	{

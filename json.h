@@ -18,7 +18,7 @@ namespace json {
 	typedef std::vector<value> array;
 	typedef std::map<std::string,value> object;
 
-	typedef enum { 
+	typedef enum {
 		is_null,
 		is_number,
 		is_boolean,
@@ -26,7 +26,7 @@ namespace json {
 		is_object,
 		is_array
 	} json_type;
-	
+
 	enum {
 		utf8 = 0,
 		us_ascii = 1,
@@ -36,11 +36,11 @@ namespace json {
 
 	class value_data;
 	class CPPCMS_API value {
-		void write(std::ostream &out,int tabs,bool utf) const; 
+		void write(std::ostream &out,int tabs,bool utf) const;
 	public:
-		
+
 		json_type type() const;
-		
+
 		bool is_null() const;
 		void null();
 
@@ -80,6 +80,7 @@ namespace json {
 		value &operator[](std::string const &entry);
 
 		std::string save(int how=(utf8 | compact)) const;
+		int load(std::string const &s);
 
 		bool operator==(value const &other) const;
 		bool operator!=(value const &other) const;

@@ -5,6 +5,7 @@
 #include <typeinfo>
 #include <algorithm>
 #include <iostream>
+#include <stdexcept>
 
 
 namespace cppcms {
@@ -42,13 +43,13 @@ namespace json {
 	{
 		d->clear();
 	}
-	double value::real() const 
+	double value::real() const
 	{
 		if(d->type==is_number)
 			return d->num_;
 		throw std::bad_cast();
 	}
-	double value::real(double def) const 
+	double value::real(double def) const
 	{
 		if(d->type==is_number)
 			return d->num_;
@@ -72,13 +73,13 @@ namespace json {
 			throw std::bad_cast();
 		return value;
 	}
-	bool value::boolean() const 
+	bool value::boolean() const
 	{
 		if(d->type==is_boolean)
 			return d->bool_;
 		throw std::bad_cast();
 	}
-	bool value::boolean(bool def) const 
+	bool value::boolean(bool def) const
 	{
 		if(d->type==is_boolean)
 			return d->bool_;
@@ -86,13 +87,13 @@ namespace json {
 			return def;
 		throw std::bad_cast();
 	}
-	std::string value::str() const 
+	std::string value::str() const
 	{
 		if(d->type==is_string)
 			return d->str_;
 		throw std::bad_cast();
 	}
-	std::string value::str(std::string def) const 
+	std::string value::str(std::string def) const
 	{
 		if(d->type==is_string)
 			return d->str_;
@@ -202,7 +203,7 @@ namespace json {
 			return null;
 		return d->arr_[pos];
 	}
-	value const &value::operator()(std::string const &path) const 
+	value const &value::operator()(std::string const &path) const
 	{
 		static const value null;
 		if(is_null())
@@ -217,7 +218,7 @@ namespace json {
 		}
 		std::string prefix(path.begin(),i);
 		value const &tmp=(*this)[prefix];
-		if(tmp.is_null()) 
+		if(tmp.is_null())
 			return null;
 		return tmp[std::string(i+1,path.end())];
 	}
@@ -234,7 +235,7 @@ namespace json {
 		value &tmp=(*this)[prefix];
 		return tmp[std::string(i+1,path.end())];
 	}
-	value const &value::operator[](std::string const &entry) const 
+	value const &value::operator[](std::string const &entry) const
 	{
 		static const value null;
 		if(is_null())
@@ -256,14 +257,14 @@ namespace json {
 
 	value::value() : d(new value_data) { }
 	value::value(value const &other) : d(other.d) {}
-	value const &value::operator=(value const &other) 
+	value const &value::operator=(value const &other)
 	{
 		d=other.d;
 		return *this;
 	}
 	value::~value()  {}
 
-	
+
 	namespace {
 		std::string uchar(unsigned v)
 		{
@@ -274,10 +275,10 @@ namespace json {
 		}
 		std::string uchar(std::string::const_iterator p,std::string::const_iterator e)
 		{
-			// TODO
-			return uchar(*p);	
+
+			return uchar(*p);
 		}
-		
+
 		std::string escape(std::string const &input,bool utf)
 		{
 			std::string result;
@@ -356,8 +357,8 @@ namespace json {
 	{
 		return d->type;
 	}
-	
-	void value::write(std::ostream &out,int tabs,bool utf) const 
+
+	void value::write(std::ostream &out,int tabs,bool utf) const
 	{
 		if(is_null()) {
 			out<<"null";
@@ -382,7 +383,7 @@ namespace json {
 					for(i=0;i<a.size();) {
 						a[i].write(out,tabs,utf);
 						i++;
-						if(i<a.size()) 
+						if(i<a.size())
 							indent(out,',',tabs);
 					}
 					indent(out,']',tabs);
@@ -413,7 +414,7 @@ namespace json {
 			throw std::bad_cast();
 		}
 	}
-	
+
 	std::string value::save(int how) const
 	{
 		std::ostringstream ss;
@@ -423,7 +424,7 @@ namespace json {
 		write(ss,tabs,utf);
 		return ss.str();
 	}
-	
+
 	std::ostream &operator<<(std::ostream &out,value const &v)
 	{
 		out<<v.save();
@@ -449,6 +450,10 @@ namespace json {
 		return !(*this == other);
 	}
 
+	int value::load(std::string const &s)
+	{
+		throw std::runtime_error("Unsupported");
+	}
 
 /*	namespace {
 		struct tockenizer {
@@ -459,7 +464,7 @@ namespace json {
 			std::string string_;
 			double number_;
 			bool boolean_;
-			enum { 
+			enum {
 				error = 0,
 				null = 256,
 				string = 257,
@@ -510,7 +515,7 @@ namespace json {
 					case '}':
 					case ':':
 					case ',':
-						return c; 
+						return c;
 					case '/':
 						c=input_.get();
 						if(c=='/') {
@@ -525,7 +530,7 @@ namespace json {
 							while((c=input_.get())!=-1) {
 								if(c=='*') {
 									c=input_.get()
-									if(c=='/') 
+									if(c=='/')
 										break;
 									if(c==-1)
 										return error;
