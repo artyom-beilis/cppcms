@@ -20,31 +20,28 @@ namespace utf8 {
 	// See RFC 3629
 	// Based on: http://www.w3.org/International/questions/qa-forms-utf-8
 	template<typename Iterator>
-	uint32_t next(Iterator &p,Iterator e,bool html=false)
+	uint32_t next(Iterator &p,Iterator e,bool html=false,bool decode=false)
 	{
-		unsigned char c=*p;
+		unsigned char c=*p++;
 		unsigned char seq0,seq1=0,seq2=0,seq3=0;
 		seq0=c;
 		int len=1;
 		if((c & 0xC0) == 0xC0) {
-			++p;
 			if(p==e)
 				return utf::illegal;
-			seq1=*p;
+			seq1=*p++;
 			len=2;
 		}
 		if((c & 0xE0) == 0xE0) {
-			++p;
 			if(p==e)
 				return utf::illegal;
-			seq2=*p;
+			seq2=*p++;
 			len=3;
 		}
 		if((c & 0xF0) == 0xF0) {
-			++p;
 			if(p==e)
 				return utf::illegal;
-			seq3=*p;
+			seq3=*p++;
 			len=4;
 		}
 		switch(len) {
@@ -54,6 +51,8 @@ namespace utf8 {
 			return utf::illegal;
 		case 2: // non-overloading 2 bytes
 			if(0xC2 <= seq0 && seq0 <= 0xDF) {
+				if(html && seq0==0xC2 && seq1<=0x9F)
+					return utf::illegal; // C1 is illegal
 				if(0x80 <= seq1 && seq1<= 0xBF)
 					break;
 			}
@@ -101,6 +100,8 @@ namespace utf8 {
 			}
 
 		}
+		if(!decode)
+			return 1;
 		switch(len) {
 		case 1:
 			return seq0;
@@ -151,18 +152,18 @@ namespace utf8 {
 		}
 		else if(value <=0x7FF) {
 			out.c[0]=(value >> 6) | 0xC0;
-			out.c[1]=value & 0x3F;
+			out.c[1]=value & 0x3F | 0x80;
 		}
 		else if(value <=0xFFFF) {
 			out.c[0]=(value >> 12) | 0xE0;
-			out.c[1]=(value >> 6) & 0x3F;
-			out.c[2]=value & 0x3F;
+			out.c[1]=(value >> 6) & 0x3F | 0x80;
+			out.c[2]=value & 0x3F | 0x80;
 		}
 		else {
 			out.c[0]=(value >> 18) | 0xF0;
-			out.c[1]=(value >> 12) & 0x3F;
-			out.c[2]=(value >> 6) & 0x3F;
-			out.c[3]=value & 0x3F;
+			out.c[1]=(value >> 12) & 0x3F | 0x80;
+			out.c[2]=(value >> 6) & 0x3F | 0x80;
+			out.c[3]=value & 0x3F | 0x80;
 		}
 		return out;
 	}

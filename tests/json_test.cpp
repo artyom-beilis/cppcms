@@ -24,7 +24,7 @@ void test2(json::value &v)
 	TEST(v("x").real()==13.5);
 	TEST(v["x"].real()==13.5);
 	TEST(v("y").wstr()==L"אב");
-	TEST(v("y").str()=="א");
+	TEST(v("y").str()=="אב");
 	TEST(v.type()==json::is_object);
 }
 

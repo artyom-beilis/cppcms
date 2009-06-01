@@ -8,7 +8,7 @@ namespace cppcms { namespace encoding {
 	template<typename Iterator>
 	bool utf8_valid(Iterator p,Iterator e)
 	{
-		return utf8::validate(p,e);
+		return utf8::validate(p,e,true);
 	}
 
 	template<typename Iterator>
@@ -18,7 +18,7 @@ namespace cppcms { namespace encoding {
 			unsigned c=(unsigned char)*p++;
 			if(c==0x09 || c==0xA || c==0xD)
 				continue;
-			if(c<0x20 || 0x1E< c)
+			if(c<0x20 || 0x7E < c)
 				return false;
 		}
 		return true;

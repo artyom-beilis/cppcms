@@ -4,6 +4,7 @@
 #include <errno.h>
 #include <string>
 #include <stdexcept>
+#include <iostream>
 
 namespace cppcms { namespace encoding {
 
@@ -137,9 +138,55 @@ namespace cppcms { namespace encoding {
 
 	validators_set::validators_set() 
 	{
-		predefined_["utf-8"]=&utf8_valid<char const *>;
 
 		encoding_tester_type iso_tester=&iso_8859_1_2_4_5_9_10_13_14_15_16_valid<char const *>;
+
+		
+		predefined_["latin1"]=iso_tester;
+		
+		predefined_["iso88591"]=iso_tester;
+		predefined_["iso88592"]=iso_tester;
+		predefined_["iso88594"]=iso_tester;
+		predefined_["iso88595"]=iso_tester;
+		predefined_["iso88599"]=iso_tester;
+		predefined_["iso885910"]=iso_tester;
+		predefined_["iso885913"]=iso_tester;
+		predefined_["iso885914"]=iso_tester;
+		predefined_["iso885915"]=iso_tester;
+		predefined_["iso885916"]=iso_tester;
+
+		predefined_["8859_1"]=iso_tester;
+		predefined_["8859_2"]=iso_tester;
+		predefined_["8859_4"]=iso_tester;
+		predefined_["8859_5"]=iso_tester;
+		predefined_["8859_9"]=iso_tester;
+		predefined_["8859_10"]=iso_tester;
+		predefined_["8859_13"]=iso_tester;
+		predefined_["8859_14"]=iso_tester;
+		predefined_["8859_15"]=iso_tester;
+		predefined_["8859_16"]=iso_tester;
+
+		predefined_["iso8859-1"]=iso_tester;
+		predefined_["iso8859-2"]=iso_tester;
+		predefined_["iso8859-4"]=iso_tester;
+		predefined_["iso8859-5"]=iso_tester;
+		predefined_["iso8859-9"]=iso_tester;
+		predefined_["iso8859-10"]=iso_tester;
+		predefined_["iso8859-13"]=iso_tester;
+		predefined_["iso8859-14"]=iso_tester;
+		predefined_["iso8859-15"]=iso_tester;
+		predefined_["iso8859-16"]=iso_tester;
+		
+		predefined_["iso_8859-1"]=iso_tester;
+		predefined_["iso_8859-2"]=iso_tester;
+		predefined_["iso_8859-4"]=iso_tester;
+		predefined_["iso_8859-5"]=iso_tester;
+		predefined_["iso_8859-9"]=iso_tester;
+		predefined_["iso_8859-10"]=iso_tester;
+		predefined_["iso_8859-13"]=iso_tester;
+		predefined_["iso_8859-14"]=iso_tester;
+		predefined_["iso_8859-15"]=iso_tester;
+		predefined_["iso_8859-16"]=iso_tester;
 
 		predefined_["iso-8859-1"]=iso_tester;
 		predefined_["iso-8859-2"]=iso_tester;
@@ -152,23 +199,49 @@ namespace cppcms { namespace encoding {
 		predefined_["iso-8859-15"]=iso_tester;
 		predefined_["iso-8859-16"]=iso_tester;
 
+		predefined_["iso88593"]=&iso_8859_3_valid<char const *>;
+		predefined_["iso88596"]=&iso_8859_6_valid<char const *>;
+		predefined_["iso88597"]=&iso_8859_7_valid<char const *>;
+		predefined_["iso88598"]=&iso_8859_8_valid<char const *>;
+		predefined_["iso885911"]=&iso_8859_11_valid<char const *>;
+
+		predefined_["iso8859-3"]=&iso_8859_3_valid<char const *>;
+		predefined_["iso8859-6"]=&iso_8859_6_valid<char const *>;
+		predefined_["iso8859-7"]=&iso_8859_7_valid<char const *>;
+		predefined_["iso8859-8"]=&iso_8859_8_valid<char const *>;
+		predefined_["iso8859-11"]=&iso_8859_11_valid<char const *>;
+		
+		predefined_["8859_3"]=&iso_8859_3_valid<char const *>;
+		predefined_["8859_6"]=&iso_8859_6_valid<char const *>;
+		predefined_["8859_7"]=&iso_8859_7_valid<char const *>;
+		predefined_["8859_8"]=&iso_8859_8_valid<char const *>;
+		predefined_["8859_11"]=&iso_8859_11_valid<char const *>;
+
+		predefined_["iso_8859-3"]=&iso_8859_3_valid<char const *>;
+		predefined_["iso_8859-6"]=&iso_8859_6_valid<char const *>;
+		predefined_["iso_8859-7"]=&iso_8859_7_valid<char const *>;
+		predefined_["iso_8859-8"]=&iso_8859_8_valid<char const *>;
+		predefined_["iso_8859-11"]=&iso_8859_11_valid<char const *>;
+	
 		predefined_["iso-8859-3"]=&iso_8859_3_valid<char const *>;
 		predefined_["iso-8859-6"]=&iso_8859_6_valid<char const *>;
 		predefined_["iso-8859-7"]=&iso_8859_7_valid<char const *>;
 		predefined_["iso-8859-8"]=&iso_8859_8_valid<char const *>;
 		predefined_["iso-8859-11"]=&iso_8859_11_valid<char const *>;
 
-		predefined_["windows-1250"]=&windows_1250_valid<char const *>;
-		predefined_["windows-1251"]=&windows_1251_valid<char const *>;
-		predefined_["windows-1252"]=&windows_1252_valid<char const *>;
-		predefined_["windows-1253"]=&windows_1253_valid<char const *>;
-		predefined_["windows-1255"]=&windows_1255_valid<char const *>;
-		predefined_["windows-1256"]=&windows_1256_valid<char const *>;
-		predefined_["windows-1257"]=&windows_1257_valid<char const *>;
-		predefined_["windows-1258"]=&windows_1258_valid<char const *>;
+		predefined_["cp1250"]=predefined_["windows-1250"]=&windows_1250_valid<char const *>;
+		predefined_["cp1251"]=predefined_["windows-1251"]=&windows_1251_valid<char const *>;
+		predefined_["cp1252"]=predefined_["windows-1252"]=&windows_1252_valid<char const *>;
+		predefined_["cp1253"]=predefined_["windows-1253"]=&windows_1253_valid<char const *>;
+		predefined_["cp1255"]=predefined_["windows-1255"]=&windows_1255_valid<char const *>;
+		predefined_["cp1256"]=predefined_["windows-1256"]=&windows_1256_valid<char const *>;
+		predefined_["cp1257"]=predefined_["windows-1257"]=&windows_1257_valid<char const *>;
+		predefined_["cp1258"]=predefined_["windows-1258"]=&windows_1258_valid<char const *>;
 
-		predefined_["koi8-r"]=&koi8_valid<char const *>;
-		predefined_["koi8-u"]=&koi8_valid<char const *>;
+		predefined_["koi8"]=predefined_["koi8r"]=predefined_["koi8-r"]=&koi8_valid<char const *>;
+		predefined_["koi8u"]=predefined_["koi8-u"]=&koi8_valid<char const *>;
+		
+		predefined_["utf8"]=predefined_["utf-8"]=&utf8_valid<char const *>;
 	}
 
 	validator validators_set::operator[](std::string s) const
@@ -224,7 +297,8 @@ namespace cppcms { namespace encoding {
 		result.reserve(s.size());
 		std::string::const_iterator p=s.begin(),e=s.end();
 		while(p!=e) {
-			uint32_t point=utf8::next(p,e);
+			std::cerr<<p-s.begin()<<std::endl;
+			uint32_t point=utf8::next(p,e,false,true);
 			if(point==utf::illegal)
 				break;
 			if(sizeof(wchar_t)==2) {
