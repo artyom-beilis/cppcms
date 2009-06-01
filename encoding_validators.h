@@ -1,98 +1,15 @@
 #ifndef CPPCMS_ENCODING_VALIDATORS_H
-#define CPPCMS_ENCODING_VALIDATORA_H
+#define CPPCMS_ENCODING_VALIDATORS_H
+
+#include "utf_iterator.h"
 
 namespace cppcms { namespace encoding {
-
-	// Based on: http://www.w3.org/International/questions/qa-forms-utf-8
 
 	template<typename Iterator>
 	bool utf8_valid(Iterator p,Iterator e)
 	{
-		for(;p!=e;++p) {
-			unsigned char c=*p;
-			unsigned char seq0,seq1=0,seq2=0,seq3=0;
-			seq0=c;
-			int len=1;
-			if((c & 0xC0) == 0xC0) {
-				++p;
-				if(p==e)
-					return false;
-				seq1=*p;
-				len=2;
-			}
-			if((c & 0xE0) == 0xE0) {
-				++p;
-				if(p==e)
-					return false;
-				seq2=*p;
-				len=3;
-			}
-			if((c & 0xF0) == 0xF0) {
-				++p;
-				if(p==e)
-					return false;
-				seq3=*p;
-				len=4;
-			}
-			switch(len) {
-			case 1: // ASCII
-				if(seq0==0x9 || seq0==0x0A || seq0==0x0D || (0x20<=seq0 && seq0<=0x7E))
-					break;
-				return false;
-			case 2: // non-overloading 2 bytes
-				if(0xC2 <= seq0 && seq0 <= 0xDF) {
-					if(0x80 <= seq1 && seq1<= 0xBF)
-						break;
-				}
-				return false;
-			case 3: 
-				if(seq0==0xE0) { // exclude overloadings
-					if(0xA0 <=seq1 && seq1<= 0xBF && 0x80 <=seq2 && seq2<=0xBF)
-						break;
-				}
-				else if( (0xE1 <= seq0 && seq0 <=0xEC) || seq0==0xEE || seq0==0xEF) { // stright 3 bytes
-					if(	0x80 <=seq1 && seq1<=0xBF &&
-						0x80 <=seq2 && seq2<=0xBF)
-						break;
-				}
-				else if(seq0 == 0xED) { // exclude surrogates
-					if(	0x80 <=seq1 && seq1<=0x9F &&
-						0x80 <=seq2 && seq2<=0xBF)
-						break;
-				}
-				return false;
-			case 4:
-				switch(seq0) {
-				case 0xF0: // planes 1-3
-					if(	0x90 <=seq1 && seq1<=0xBF &&
-						0x80 <=seq2 && seq2<=0xBF &&
-						0x80 <=seq3 && seq3<=0xBF)
-						break;
-					return false;
-				case 0xF1: // planes 4-15
-				case 0xF2:
-				case 0xF3:
-					if(	0x80 <=seq1 && seq1<=0xBF &&
-						0x80 <=seq2 && seq2<=0xBF &&
-						0x80 <=seq3 && seq3<=0xBF)
-						break;
-					return false;
-				case 0xF4: // pane 16
-					if(	0x80 <=seq1 && seq1<=0x8F &&
-						0x80 <=seq2 && seq2<=0xBF &&
-						0x80 <=seq3 && seq3<=0xBF)
-						break;
-					return false;
-				default:
-					return false;
-				}
-
-
-			}
-		}
-		return true;
-	} // valid
-	
+		return utf8::validate(p,e);
+	}
 
 	template<typename Iterator>
 	bool ascii_valid(Iterator p,Iterator e)

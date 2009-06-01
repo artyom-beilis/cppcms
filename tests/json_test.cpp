@@ -13,7 +13,7 @@ void test1(json::value const &v)
 	TEST(v("foo.lst")[3].boolean()==true);
 	TEST(v("x").real()==13.5);
 	TEST(v["x"].real()==13.5);
-	TEST(v("y").str()=="True Name");
+	TEST(v("y").str()=="אב");
 	TEST(v.type()==json::is_object);
 }
 void test2(json::value &v)
@@ -23,7 +23,8 @@ void test2(json::value &v)
 	TEST(v("foo.lst")[3].boolean()==true);
 	TEST(v("x").real()==13.5);
 	TEST(v["x"].real()==13.5);
-	TEST(v("y").str()=="True Name");
+	TEST(v("y").wstr()==L"אב");
+	TEST(v("y").str()=="א");
 	TEST(v.type()==json::is_object);
 }
 
@@ -41,7 +42,7 @@ int main()
 		v("foo.lst")[1]=15;
 		v["foo"]["lst"][3]=true;
 		v["x"]=13.5;
-		v["y"]="True Name";
+		v["y"]="אב";
 		cout<<v<<endl;
 		cout<<v.save(json::readable)<<endl;
 		test1(v);

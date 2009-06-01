@@ -186,7 +186,28 @@ namespace cppcms { namespace encoding {
 
 	std::string to_string(std::wstring const &s)
 	{
-		throw std::runtime_error("Unsuppoteed");
+		std::string result;
+		result.reserve(s.size());
+		if(sizeof(wchar_t)==2) {
+			std::wstring::const_iterator p=s.begin(),e=s.end();
+			while(p!=e) {
+				uint32_t point;
+				if(sizeof(wchar_t)==2) {
+					point=utf16::next(p,e);
+					if(point==utf::illegal)
+						break;
+				}
+				else {
+					point=*p++;
+					if(!utf::valid(point))
+						break;
+				}
+				utf8::seq s=utf8::encode(point);
+				result+=s.c[0];
+				result.append(s.c+1);
+			}
+		}
+		return result;
 	}
 	std::string to_string(std::wstring const &s,std::locale const &locale)
 	{
@@ -199,7 +220,23 @@ namespace cppcms { namespace encoding {
 
 	std::wstring to_wstring(std::string const &s)
 	{
-		throw std::runtime_error("Unsuppoteed");
+		std::wstring result;
+		result.reserve(s.size());
+		std::string::const_iterator p=s.begin(),e=s.end();
+		while(p!=e) {
+			uint32_t point=utf8::next(p,e);
+			if(point==utf::illegal)
+				break;
+			if(sizeof(wchar_t)==2) {
+				utf16::seq s=utf16::encode(point);
+				result+=wchar_t(s.c[0]);
+				if(s.c[1]) result+=wchar_t(s.c[1]);
+			}
+			else {
+				result+=wchar_t(point);
+			}
+		}
+		return result;
 	}
 	std::wstring to_wstring(std::string const &s,std::locale const &locale)
 	{
