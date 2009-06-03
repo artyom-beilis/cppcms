@@ -5,6 +5,9 @@
 #include <map>
 #include <locale>
 #include "defs.h"
+			
+// For unit test;
+int cppcms_validator_test_function(); 
 
 namespace cppcms {
 	namespace encoding {
@@ -34,7 +37,7 @@ namespace cppcms {
 		};
 		
 		class CPPCMS_API validators_set {
-			friend int test_function(); 
+			friend int ::cppcms_validator_test_function(); 
 			std::map<std::string,encoding_tester_type> predefined_;
 		public:
 			validators_set();
@@ -54,10 +57,12 @@ namespace cppcms {
 			~converter();
 
 			std::wstring operator()(std::string const &);
-			std::wstring operator()(char const *begin,char const *end);
 			std::string operator()(std::wstring const &);
-			std::string operator()(wchar_t const *begin,wchar_t const *end);
 		};
+		
+		char const *native_unicode_encoding();
+		char const *native_wchar_encoding();
+
 
 		std::string CPPCMS_API to_string(std::wstring const &);
 		std::string CPPCMS_API to_string(std::wstring const &,std::locale const &locale);

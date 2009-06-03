@@ -8,27 +8,25 @@
 
 namespace cppcms { namespace encoding {
 
-	namespace {
-		char const *native_unicode_encoding()
-		{
-			char const *le="UTF-32LE";
-			char const *be="UTF-32BE";
-			uint16_t v=0x0a0b;
-			char const *utf=*(char*)&v== 0x0a ? be : le;
-			return utf;
-		}
-		char const *native_wchar_encoding()
-		{
-			if(sizeof(wchar_t)==4)
-				return native_unicode_encoding();
-			if(sizeof(wchar_t)!=2)
-				throw std::runtime_error("wchar_t does not support unicode!");
-			char const *le="UTF-16LE";
-			char const *be="UTF-16BE";
-			uint16_t v=0x0a0b;
-			char const *utf=*(char*)&v== 0x0a ? be : le;
-			return utf;
-		}
+	char const *native_unicode_encoding()
+	{
+		char const *le="UTF-32LE";
+		char const *be="UTF-32BE";
+		uint16_t v=0x0a0b;
+		char const *utf=*(char*)&v== 0x0a ? be : le;
+		return utf;
+	}
+	char const *native_wchar_encoding()
+	{
+		if(sizeof(wchar_t)==4)
+			return native_unicode_encoding();
+		if(sizeof(wchar_t)!=2)
+			throw std::runtime_error("wchar_t does not support unicode!");
+		char const *le="UTF-16LE";
+		char const *be="UTF-16BE";
+		uint16_t v=0x0a0b;
+		char const *utf=*(char*)&v== 0x0a ? be : le;
+		return utf;
 	}
 	
 	class iconv_validator {
@@ -238,10 +236,11 @@ namespace cppcms { namespace encoding {
 		predefined_["cp1257"]=predefined_["windows-1257"]=&windows_1257_valid<char const *>;
 		predefined_["cp1258"]=predefined_["windows-1258"]=&windows_1258_valid<char const *>;
 
-		predefined_["koi8"]=predefined_["koi8r"]=predefined_["koi8-r"]=&koi8_valid<char const *>;
+		predefined_["koi8r"]=predefined_["koi8-r"]=&koi8_valid<char const *>;
 		predefined_["koi8u"]=predefined_["koi8-u"]=&koi8_valid<char const *>;
 		
 		predefined_["utf8"]=predefined_["utf-8"]=&utf8_valid<char const *>;
+		predefined_["us-ascii"]=predefined_["ascii"]=&ascii_valid<char const *>;
 	}
 
 	validator validators_set::operator[](std::string s) const

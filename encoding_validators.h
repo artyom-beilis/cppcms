@@ -152,7 +152,7 @@ namespace cppcms { namespace encoding {
 			unsigned c=(unsigned char)*p++;
 			if(c==0x09 || c==0xA || c==0xD)
 				continue;
-			if(c<0x20 || 0x1F==c)
+			if(c<0x20 || 0x7F==c)
 				return false;
 			switch(c) {
 			case 0x81:
@@ -172,7 +172,7 @@ namespace cppcms { namespace encoding {
 			unsigned c=(unsigned char)*p++;
 			if(c==0x09 || c==0xA || c==0xD)
 				continue;
-			if(c<0x20 || 0x1F==c || c==152)
+			if(c<0x20 || 0x7F==c || c==152)
 				return false;
 		}
 		return true;
@@ -184,7 +184,7 @@ namespace cppcms { namespace encoding {
 			unsigned c=(unsigned char)*p++;
 			if(c==0x09 || c==0xA || c==0xD)
 				continue;
-			if(c<0x20 || 0x1F==c)
+			if(c<0x20 || 0x7F==c)
 				return false;
 			switch(c) {
 			case 0x81:
@@ -204,7 +204,7 @@ namespace cppcms { namespace encoding {
 			unsigned c=(unsigned char)*p++;
 			if(c==0x09 || c==0xA || c==0xD)
 				continue;
-			if(c<0x20 || 0x1F==c)
+			if(c<0x20 || 0x7F==c)
 				return false;
 			switch(c) {
 			case 0x81:
@@ -237,7 +237,7 @@ namespace cppcms { namespace encoding {
 			unsigned c=(unsigned char)*p++;
 			if(c==0x09 || c==0xA || c==0xD)
 				continue;
-			if(c<0x20 || 0x1F==c)
+			if(c<0x20 || 0x7F==c)
 				return false;
 			switch(c) {
 			case 0x81:
@@ -260,7 +260,7 @@ namespace cppcms { namespace encoding {
 			unsigned c=(unsigned char)*p++;
 			if(c==0x09 || c==0xA || c==0xD)
 				continue;
-			if(c<0x20 || 0x1F==c)
+			if(c<0x20 || 0x7F==c)
 				return false;
 			switch(c) {
 			case 0x81:
@@ -302,7 +302,7 @@ namespace cppcms { namespace encoding {
 			unsigned c=(unsigned char)*p++;
 			if(c==0x09 || c==0xA || c==0xD)
 				continue;
-			if(c<0x20 || 0x1F==c)
+			if(c<0x20 || 0x7F==c)
 				return false;
 		}
 		return true;
@@ -314,7 +314,7 @@ namespace cppcms { namespace encoding {
 			unsigned c=(unsigned char)*p++;
 			if(c==0x09 || c==0xA || c==0xD)
 				continue;
-			if(c<0x20 || 0x1F==c)
+			if(c<0x20 || 0x7F==c)
 				return false;
 			switch(c) {
 			case 0x81:
@@ -342,7 +342,7 @@ namespace cppcms { namespace encoding {
 			unsigned c=(unsigned char)*p++;
 			if(c==0x09 || c==0xA || c==0xD)
 				continue;
-			if(c<0x20 || 0x1F==c)
+			if(c<0x20 || c==0x7F)
 				return false;
 			switch(c) {
 			case 0x81:
@@ -366,7 +366,7 @@ namespace cppcms { namespace encoding {
 			unsigned c=(unsigned char)*p++;
 			if(c==0x09 || c==0xA || c==0xD)
 				continue;
-			if(c<0x20 || 0x1F==c)
+			if(c<0x20 || 0x7F==c)
 				return false;
 		}
 		return true;
