@@ -6,5 +6,4 @@ json_test_SOURCES=json_test.cpp
 base64_test_SOURCES=base64_test.cpp
 validator_test_SOURCES=validator_test.cpp
 
-
-TESTS=$(check_PROGRAMS)
+TESTS=json_test
