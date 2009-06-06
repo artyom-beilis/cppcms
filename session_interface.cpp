@@ -191,14 +191,14 @@ void session_interface::load_data(data_t &data,std::string const &s)
 
 
 
-void session_interface::update_exposed()
+void session_interface::update_exposed(bool force)
 {
 	for(data_t::iterator p=data.begin();p!=data.end();++p) {
 		data_t::iterator p2=data_copy.find(p->first);
-		if(p->second.exposed && (p2==data_copy.end() || !p2->second.exposed || p->second.value!=p2->second.value)){
+		if(p->second.exposed && (force || p2==data_copy.end() || !p2->second.exposed || p->second.value!=p2->second.value)){
 			set_session_cookie(cookie_age(),p->second.value,p->first);
 		}
-		else if(!p->second.exposed && p2!=data_copy.end() && p2->second.exposed) {
+		else if(!p->second.exposed && ((p2!=data_copy.end() && p2->second.exposed) || force)) {
 			set_session_cookie(-1,"",p->first);
 		}
 	}
@@ -224,6 +224,7 @@ void session_interface::save()
 
 	time_t now = time(NULL);
 
+	bool force_update=false;
 	if(data==data_copy) {
 		if(how==fixed) {
 			return;
@@ -234,6 +235,7 @@ void session_interface::save()
 				return;
 			}
 		}
+		force_update=true;
 	}
 
 	string ar;
@@ -244,7 +246,7 @@ void session_interface::save()
 	set_session_cookie(cookie_age(),temp_cookie);
 	temp_cookie.clear();
 
-	update_exposed();	
+	update_exposed(force_update);	
 	saved=true;
 }
 
