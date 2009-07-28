@@ -1,5 +1,7 @@
 #include "encoding.h"
 #include <iostream>
+#include <iconv.h>
+#include <stdlib.h>
 
 using namespace std;
 using namespace cppcms;
@@ -69,6 +71,7 @@ void unitest(std::string enc)
 
 	validator val=valid[enc];
 	if(val.valid(&c,&c+1)) { cerr<<"Failed on charrecter 0"<< endl; exit(1); }
+	unsigned min_len=0;
 	for(unsigned i=1;i!=0;i++) {
 		uint32_t range=i;
 		while((0xFF000000u & range)==0) {
@@ -81,6 +84,9 @@ void unitest(std::string enc)
 			range<<=8;
 		}while(0xFF000000u & range);
 		orig_size=in_size;
+		if(orig_size < min_len)
+			continue;
+		min_len=orig_size;
 		
 
 		union { uint32_t u[4]; char r[16]; } u;
