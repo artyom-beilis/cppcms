@@ -1,13 +1,127 @@
 #include "global_config.h"
+#include "cppcms_error.h"
+#include <map>
 #include <stdio.h>
 #include <ctype.h>
 #include <stdlib.h>
 #include <string.h>
+#include <boost/any.hpp>
 
-
+using namespace std;
 namespace cppcms {
 
-bool cppcms_config::get_tocken(FILE *f,tocken_t &T)
+
+class cppcms_config_impl {
+public:
+	typedef std::map<string,boost::any> data_t;
+	typedef std::pair<data_t::const_iterator,data_t::const_iterator> range_t;
+	
+private:
+
+	enum { WORD, INT, DOUBLE, STR };
+	
+	typedef std::pair<int,string> tocken_t;
+	typedef std::pair<string,string> key_t;
+
+	data_t data;
+	string filename;
+	int line_counter;
+	bool loaded;
+	bool get_tocken(FILE *,tocken_t &T);
+
+public:
+	template<typename T>
+	T const *get_ptr(string const &name) const {
+		std::map<string,boost::any>::const_iterator it;
+		if((it=data.find(name))==data.end()) {
+			return NULL;
+		}
+		T const *res=boost::any_cast<T>(&it->second);
+		if(!res) {
+			throw cppcms_error("Type mistmach for field "+name);
+		}
+		return res;
+	}
+
+	template<typename T>
+	T const &get(string const &name,T const &def) const
+	{
+		T const *p=get_ptr<T>(name);
+		if(!p) return def;
+		return *p;
+	}
+	template<typename T>
+	T const &get(string const &name) const
+	{
+		T const *p=get_ptr<T>(name);
+		if(!p) throw cppcms_error("Configuration parameter "+name+" not found");
+		return *p;
+	}
+	template<typename T>
+	T const &get_default(string const &name) const
+	{
+		T const *p=get_ptr<T>(name);
+		static const T v;
+		if(!p) return v;
+		return *p;
+	}
+
+	data_t const &get_data() const 
+	{
+		return data;
+	}
+
+	size_t size() const { return data.size(); }
+
+	void load(char const *filename);
+	void load(int argc,char *argv[],char const *def=NULL);
+
+	range_t prefix(string pref) const {
+		range_t res;
+		res.first=data.lower_bound(pref+'.');
+		res.second=data.upper_bound(pref+char('.'+1));
+		return res;
+	}
+
+	cppcms_config_impl() { loaded = false;}
+
+	// { begin depricated
+	int lval(string m) const { return ival(m); }
+	int lval(string m,int def) const { return ival(m,def); }
+	vector<int> const &llist(string m) const { return ilist(m); }
+	// } end depricated
+	int ival(string m) const {
+		return get<int>(m);
+	}
+	int ival(string m,int def) const {
+		return get<int>(m,def);
+	}
+	double dval(string m) const {
+		return get<double>(m);
+	}
+	double dval(string m,double def) const {
+		return get<double>(m,def); 
+	}
+	string const &sval(string m) const {
+		return get<string>(m);
+	}
+	string sval(string m,string def) const {
+		return get<string>(m,def);
+	}
+	vector<int> const &ilist(string m) const {
+		return get_default<vector<int> >(m);
+	}
+	vector<double> const &dlist(string m) const {
+		return get_default<vector<double> >(m);
+	}
+
+	vector<string> const &slist(string m) const {
+		return get_default<vector<string> >(m);
+	}
+
+};
+
+bool cppcms_config_impl::get_tocken(FILE *f,tocken_t &T)
 {
 	int c;
 	while((c=fgetc(f))!=EOF) {
@@ -114,7 +228,7 @@ bool cppcms_config::get_tocken(FILE *f,tocken_t &T)
 	return false;
 }
 
-void cppcms_config::load(char const *fname)
+void cppcms_config_impl::load(char const *fname)
 {
 	if(loaded){
 		return;
@@ -226,7 +340,7 @@ void cppcms_config::load(char const *fname)
 }
 
 
-void cppcms_config::load(int argc,char *argv[],char const *def)
+void cppcms_config_impl::load(int argc,char *argv[],char const *def)
 {
 	if(loaded) {
 		return;
@@ -252,4 +366,68 @@ void cppcms_config::load(int argc,char *argv[],char const *def)
 	load(def_file);
 }
 
+
+int cppcms_config::ival(std::string m) const
+{
+	return pimpl_->ival(m);
 }
+int cppcms_config::ival(std::string m,int def) const
+{
+	return pimpl_->ival(m,def);
+}
+double cppcms_config::dval(std::string m) const
+{
+	return pimpl_->dval(m);
+}
+double cppcms_config::dval(std::string m,double def) const
+{
+	return pimpl_->dval(m,def);
+}
+std::string cppcms_config::sval(std::string m) const
+{
+	return pimpl_->sval(m);
+}
+std::string cppcms_config::sval(std::string m,std::string def) const
+{
+	return pimpl_->sval(m,def);
+}
+std::vector<int> const &cppcms_config::ilist(std::string m) const
+{
+	return pimpl_->ilist(m);
+}
+std::vector<double> const &cppcms_config::dlist(std::string m) const
+{
+	return pimpl_->dlist(m);
+}
+std::vector<std::string> const &cppcms_config::slist(std::string m) const
+{
+	return pimpl_->slist(m);
+}
+void cppcms_config::load(std::string const &filename)
+{
+	pimpl_->load(filename.c_str());
+}
+void cppcms_config::load(int argc,char *argv[],char const *def)
+{
+	pimpl_->load(argc,argv,def);
+}
+cppcms_config::cppcms_config():
+	pimpl_(new cppcms_config_impl())
+{
+}
+cppcms_config::~cppcms_config()
+{
+}
+cppcms_config::cppcms_config(cppcms_config const &other) :
+	pimpl_(other.pimpl_)
+{
+}
+
+cppcms_config const &cppcms_config::operator=(cppcms_config const &other)
+{
+	pimpl_=other.pimpl_;
+	return *this;
+}
+
+
+} /// cppcms
