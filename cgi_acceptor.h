@@ -2,6 +2,7 @@
 #define CPPCMS_CGI_ACCEPTOR_H
 
 namespace cppcms {
+namespace impl {
 	namespace cgi {
 
 		template<typename Proto,class ServerAPI>
@@ -49,8 +50,35 @@ namespace cppcms {
 			boost::asio::basic_socket_acceptor<Proto> acceptor_;
 		};
 
+		template<typename API>
+		class unix_socket_acceptor : public socket_acceptor<boost::asio::local::stream_protocol,API> 
+		{
+		public:
+			unix_socket_acceptor(service &srv,std::string const &path,int backlog) :
+				socket_acceptor(srv)
+			{
+				acceptor_.open();
+				acceptor_.bind(boost::asio::local::endpoint(path));
+				acceptor_.listen(backlog);
+			}
+		}
+		template<typename API>
+		class tcp_socket_acceptor : public socket_acceptor<boost::asio::ip::tcp,API> 
+		{
+		public:
+			tcp_socket_acceptor(service &srv,std::string const &ip,int port,int backlog) :
+				socket_acceptor(srv)
+			{
+				acceptor_.open();
+				boost::asio::ip::endpoint ep(boost::asio::ip::address::from_string(ip),port);
+				acceptor_.bind(ep);
+				acceptor_.listen(backlog);
+			}
+		}
+
 
 	} // cgi
+} // impl
 } // cppcms
 
 

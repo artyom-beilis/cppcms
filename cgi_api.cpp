@@ -105,6 +105,23 @@ void connection::on_post_data_read()
 	setup_application();	
 }
 
+void connection::response_404()
+{
+	content_.response().status(http::response::not_found);
+	content_.response().out() <<
+		"<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.01 Transitional//EN\"\n"
+		"	\"http://www.w3.org/TR/html4/loose.dtd\">\n"
+		"<html>\n"
+		"  <head>\n"
+		"    <title>404 - Not Found</title>\n"
+		"  </head>\n"
+		"  <body>\n"
+		"    <h1>404 - Not Found</h1>\n"
+		"  </body>\n"
+		"</html>\n";
+}
+
+
 void connection::setup_application()
 {
 	std::string path = getenv("PATH_INFO");
@@ -113,19 +130,7 @@ void connection::setup_application()
 	application_ = service().applications_pool().get(path,matched);
 	
 	if(application_.get() == 0) {
-		content_.response().status(http::response::not_found);
-		content_.response().out() <<
-			"<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.01 Transitional//EN\"\n"
-			"	\"http://www.w3.org/TR/html4/loose.dtd\">\n"
-			"<html>\n"
-			"  <head>\n"
-			"    <title>404 - Not Found</title>\n"
-			"  </head>\n"
-			"  <body>\n"
-			"    <h1>404 - Not Found</h1>\n"
-			"  </body>\n"
-			"</html>\n";
-
+		response_404();
 		on_ready_response();
 		return;
 	}
@@ -148,7 +153,7 @@ void connection::dispatch(std::string const &path,bool in_thread)
 	boost::function<void()> handle;
 	try {
 		application_->on_start();
-		application_->dispatcher().run(path);
+		application_->dispatcher().dispatch(path);
 		handle=boost::bind(&connection::on_ready_response,shared_from_this());
 	}
 	catch(std::exception const &e){

@@ -10,9 +10,6 @@
 #include <list>
 
 namespace cppcms {
-	namespace util {
-		class regex;
-	}
 
 	class application;
 
@@ -50,15 +47,16 @@ namespace cppcms {
 
 		///
 		/// Mount application thus every request that mathces the regular
-		/// expression \a match is redirected to \a app
+		/// expression \a match is redirected to \a app, with parameter
+		/// part.
 		///
-		void mount(util::regex const &match,application &app);
+		void mount(std::string match,application &app,int part);
 
 		///
 		/// Assign \a handler to pattern \a regex thus if URL that matches
 		/// this pattern requested, \a handler is called
 		///
-		void assign(util::regex const &match,handler);
+		void assign(std::string match,handler);
 		///
 		/// Assign \a handler to pattern \a regex thus if URL that matches
 		/// this pattern requested, \a handler is called with first parameters
@@ -69,32 +67,41 @@ namespace cppcms {
 		/// "/page/13/to_be_or_not", then handler would be called with "to_be_or_not"
 		/// as its first parameter
 		///
-		void assign(util::regex const &match,handler1,int exp1);
+		void assign(std::string match,handler1,int exp1);
 		///
 		/// Assign \a handler to pattern \a regex thus if URL that matches
 		/// this pattern requested, \a handler is called with 1st and 2nd  parameters
 		/// the string that was matched at position \a exp1 and \a exp2
 		///
-		void assign(util::regex const &match,handler2,int exp1,int exp2);
+		void assign(std::string match,handler2,int exp1,int exp2);
 		///
 		/// Assign \a handler to pattern \a regex thus if URL that matches
 		/// this pattern requested, \a handler is called with 1st, 2nd and 3rd parameters
 		/// the string that was matched at position \a exp1, \a exp2 and \a exp2
 		///
-		void assign(util::regex const &match,handler3,int exp1,int exp2,int exp3);
+		void assign(std::string match,handler3,int exp1,int exp2,int exp3);
 		///
 		/// Assign \a handler to pattern \a regex thus if URL that matches
 		/// this pattern requested, \a handler is called with 1st, 2nd, 3rd and 4th parameters
 		/// the string that was matched at position \a exp1, \a exp2, \a exp2 and \a exp3
 		///
-		void assign(util::regex const &match,handler4,int exp1,int exp2,int exp3,int exp4);
+		void assign(std::string match,handler4,int exp1,int exp2,int exp3,int exp4);
 
 		///
 		/// Try to find match between \a url and registered handlers and applications.
 		/// If the match was found, the handler is called and \a true returned, otherwise
 		/// \a false is returned.
 		///
-		bool dispatch(std::string url);
+		
+		void dispatch(std::string url);
+
+
+		///
+		/// Try to find if this a url handler should be executed 
+		/// asynchronously, if so it returns true, otherwise returns false
+		///
+		
+		bool is_async(std::string url);
 
 		url_dispatcher();
 		~url_dispatcher();
