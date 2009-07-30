@@ -18,7 +18,7 @@ namespace cppcms {
 	///
 	/// This class is used in context of \a cppcms::application  with its \a url member function.
 	/// It uses regular expression to bind between url and callbacks that actually process the
-	/// request. It also allows mount sub-applications to the root of 
+	/// request. It also allows mount sub-applications to the root of
 	/// the primary application. For example:
 	///
 	/// \code
@@ -28,22 +28,23 @@ namespace cppcms {
 	///      ...
 	/// public:
 	///    my_web_project() {
-	///	static const util::regex rusers("^/users.*$");
-	///     url().mount(rusers,users_);
-	///	static const util::regex rpage("^/page/(\\d+)/?$");
-	///	url().assign(rpage,bind1st(mem_fun(&my_web_project::display_page),this));
+	///     url().mount("^/users/(.*)$",users_,1);
+	///	url().assign("^/page/(\\d+)/?$",bind1st(mem_fun(&my_web_project::display_page),this),1);
 	///	...
 	/// \endcode
 	///
 
 	class CPPCMS_API url_dispatcher : public util::noncopyable {
 	public:
-		// Handlers 
+		// Handlers
 		typedef util::callback0 handler;
 		typedef util::callback1<std::string> handler1;
 		typedef util::callback2<std::string,std::string> handler2;
 		typedef util::callback3<std::string,std::string,std::string> handler3;
 		typedef util::callback4<std::string,std::string,std::string,std::string> handler4;
+
+		typedef enum { none , synchronous, asynchronous } dispatch_type;
+
 
 		///
 		/// Mount application thus every request that mathces the regular
@@ -56,52 +57,52 @@ namespace cppcms {
 		/// Assign \a handler to pattern \a regex thus if URL that matches
 		/// this pattern requested, \a handler is called
 		///
-		void assign(std::string match,handler);
+		void assign(std::string regex,handler handler);
 		///
 		/// Assign \a handler to pattern \a regex thus if URL that matches
 		/// this pattern requested, \a handler is called with first parameters
 		/// the string that was matched at position \a exp1.
 		///
-		/// For example: if 
+		/// For example: if
 		/// regular expression is "^/page/(\\d+)/(\\w+)$" , exp1=2, and the url is
 		/// "/page/13/to_be_or_not", then handler would be called with "to_be_or_not"
 		/// as its first parameter
 		///
-		void assign(std::string match,handler1,int exp1);
+		void assign(std::string regex,handler1 handler,int exp1);
 		///
 		/// Assign \a handler to pattern \a regex thus if URL that matches
 		/// this pattern requested, \a handler is called with 1st and 2nd  parameters
 		/// the string that was matched at position \a exp1 and \a exp2
 		///
-		void assign(std::string match,handler2,int exp1,int exp2);
+		void assign(std::string regex,handler2 handler,int exp1,int exp2);
 		///
 		/// Assign \a handler to pattern \a regex thus if URL that matches
 		/// this pattern requested, \a handler is called with 1st, 2nd and 3rd parameters
 		/// the string that was matched at position \a exp1, \a exp2 and \a exp2
 		///
-		void assign(std::string match,handler3,int exp1,int exp2,int exp3);
+		void assign(std::string regex,handler3 handler,int exp1,int exp2,int exp3);
 		///
 		/// Assign \a handler to pattern \a regex thus if URL that matches
 		/// this pattern requested, \a handler is called with 1st, 2nd, 3rd and 4th parameters
-		/// the string that was matched at position \a exp1, \a exp2, \a exp2 and \a exp3
+		/// the string that was matched at position \a exp1, \a exp2, \a exp3 and \a exp4
 		///
-		void assign(std::string match,handler4,int exp1,int exp2,int exp3,int exp4);
+		void assign(std::string regex,handler4 handler,int exp1,int exp2,int exp3,int exp4);
 
 		///
 		/// Try to find match between \a url and registered handlers and applications.
-		/// If the match was found, the handler is called and \a true returned, otherwise
-		/// \a false is returned.
+		/// If the match was found, it returns the method, how handler should bd dispatched
+		/// synchronous or asynchronous, meaning the handler would be executed in thread pool
+		/// or in the main non-blocking loop
 		///
-		
-		void dispatch(std::string url);
+
+		dispatch_type dispatchable(std::string url);
 
 
 		///
-		/// Try to find if this a url handler should be executed 
-		/// asynchronously, if so it returns true, otherwise returns false
+		/// Dispatch the handler that was previously prepared with \a dispatchable
 		///
-		
-		bool is_async(std::string url);
+
+		void dispatch();
 
 		url_dispatcher();
 		~url_dispatcher();
@@ -112,7 +113,7 @@ namespace cppcms {
 		/// as simple as assign(expr,&bar::foo,this);
 		///
 		template<typename C>
-		void assign(util::regex const &match,void (C::*member)(),C *object)
+		void assign(std::string regex,void (C::*member)(),C *object)
 		{
 			assign(match,util::mem_bind(member,object));
 		}
@@ -121,7 +122,7 @@ namespace cppcms {
 		/// assignment of \a member function of an \a object with signature void handler(string)
 		///
 		template<typename C>
-		void assign(util::regex const &match,void (C::*member)(std::string),C *object,int e1)
+		void assign(std::string regex,void (C::*member)(std::string),C *object,int e1)
 		{
 			assign(match,util::mem_bind(member,object),e1);
 		}
@@ -130,7 +131,7 @@ namespace cppcms {
 		/// assignment of \a member function of an \a object with signature void handler(string,string)
 		///
 		template<typename C>
-		void assign(util::regex const &match,void (C::*member)(std::string,std::string),C *object,int e1,int e2)
+		void assign(std::string regex,void (C::*member)(std::string,std::string),C *object,int e1,int e2)
 		{
 			assign(match,util::mem_bind(member,object),e1,e2);
 		}
@@ -139,7 +140,7 @@ namespace cppcms {
 		/// This template function is a shortcut to assign(regex,callback,int,int,int). It allows
 		/// assignment of \a member function of an \a object with signature void handler(string,string,string)
 		///
-		void assign(util::regex const &match,void (C::*member)(std::string,std::string,std::string),C *object,int e1,int e2,int e3)
+		void assign(std::string regex,void (C::*member)(std::string,std::string,std::string),C *object,int e1,int e2,int e3)
 		{
 			assign(match,util::mem_bind(member,object),e1,e2,e3);
 		}
@@ -148,17 +149,12 @@ namespace cppcms {
 		/// assignment of \a member function of an \a object with signature void handler(string,string,string,string)
 		///
 		template<typename C>
-		void assign(util::regex const &match,void (C::*member)(std::string,std::string,std::string,std::string),C *object,int e1,int e2,int e3,int e4)
+		void assign(std::string regex,void (C::*member)(std::string,std::string,std::string,std::string),C *object,int e1,int e2,int e3,int e4)
 		{
 			assign(match,util::mem_bind(member,object),e1,e2,e3,e4);
 		}
 
-
-
-
 	private:
-		struct option;
-		std::list<option> options_;
 		struct data;
 		util::hold_ptr<data> d;
 	};

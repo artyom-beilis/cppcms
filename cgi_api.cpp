@@ -29,7 +29,7 @@ namespace {
 }
 
 
-namespace cppcms { namespace cgi { 
+namespace cppcms { namespace cgi {
 
 void connection::on_accepted()
 {
@@ -41,17 +41,17 @@ long long connection::check_valid_content_length()
 	std::string content_type = getenv("CONTENT_TYPE");
 	std::string s_content_length=getenv("CONTENT_LENGTH");
 	long long content_length = s_content_length.empty() ? atoll(getenv("CONTENT_LENGTH")) : 0;
-	
+
 	if(content_length >0) {
 		if(is_prefix_of("application/x-www-form-urlencoded",content_type)) {
 			if(content_length > service().settings().ival("security.post_size_limit",4*1024)*1024) {
-				return -1; 
+				return -1;
 			}
 		}
 		else if(is_prefix_of("multipart/form-data",content_type)) {
 			long long allowed=service().settings().ival("security.post_file_size_limit",64*1024)*1024;
 			if(allowed > 0 && content_length <allowed) {
-				return -1; 
+				return -1;
 			}
 		}
 		else {
@@ -89,7 +89,7 @@ void connection::on_content_recieved(boost::system::error_code const &e,size_t r
 	if(loaded_content_size_ < content_length_) {
 		async_read_some_post_data(&content_[loaded_content_size_],content_length_ - loaded_content_size_,
 			boost::bind(&connection::on_content_recieved,shared_from_this(),
-				_1,_2));	
+				_1,_2));
 	}
 	else {
 		on_post_data_read();
@@ -102,21 +102,22 @@ void connection::on_post_data_read()
 
 	if(content_length_ > 0)
 		content_.request().assign_url_encoded_post_data(&content_.front(),&content_.front()+content_length_);
-	setup_application();	
+	setup_application();
 }
 
-void connection::response_404()
+void connection::make_error_response(int status,char const *msg="")
 {
-	content_.response().status(http::response::not_found);
+	content_.response().status(status);
 	content_.response().out() <<
 		"<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.01 Transitional//EN\"\n"
 		"	\"http://www.w3.org/TR/html4/loose.dtd\">\n"
 		"<html>\n"
 		"  <head>\n"
-		"    <title>404 - Not Found</title>\n"
+		"    <title>"<<status<<" &emdash; "<< http::response::status_to_string(status)<<"</title>\n"
 		"  </head>\n"
 		"  <body>\n"
-		"    <h1>404 - Not Found</h1>\n"
+		"    <h1>"<<status<<" &emdash; "<< http::response::status_to_string(status)<<"</h1>\n"
+		"    <p>"<<msg<<"</p>\n"
 		"  </body>\n"
 		"</html>\n";
 }
@@ -128,32 +129,32 @@ void connection::setup_application()
 	std::string matched;
 
 	application_ = service().applications_pool().get(path,matched);
-	
-	if(application_.get() == 0) {
+
+	url_dispatched::dispatch_type how;
+	if(application_.get() == 0 || (how=application_->dispatcher().dispatchable(path))!=url_dispatcher::none) {
 		response_404();
 		on_ready_response();
 		return;
 	}
 
-	if(application_->dispatcher().is_async(matched)) {
-		dispatch(matched,false);
+	if(how == url_dispatcher::asynchronous) {
+		dispatch(false);
 	}
 	else {
 		service().workers_pool().post(
 			boost::bind(
 				&connection::dispatch,
 				shared_from_this(),
-				matched,
 				true));
 	}
 }
 
-void connection::dispatch(std::string const &path,bool in_thread)
+void connection::dispatch(bool in_thread)
 {
 	boost::function<void()> handle;
 	try {
 		application_->on_start();
-		application_->dispatcher().dispatch(path);
+		application_->dispatcher().dispatch();
 		handle=boost::bind(&connection::on_ready_response,shared_from_this());
 	}
 	catch(std::exception const &e){
@@ -172,24 +173,10 @@ void connection::on_error(std::string const &msg)
 	int mode = content_.response().io_mode();
 	if(mode==http::response::normal || mode==http::response::nogzip) {
 		content_.response().clear();
-		content_.response().status(http::response::internal_server_error);
-		std::ostream &out=content_.response().out();
-
-		out<<	"<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.01 Transitional//EN\"\n"
-			"	\"http://www.w3.org/TR/html4/loose.dtd\">\n"
-			"<html>\n"
-			"  <head>\n"
-			"    <title>500 - Internal Server Error</title>\n"
-			"  </head>\n"
-			"  <body>\n"
-			"    <h1>500 - Internal Server Error</h1>\n";
-		if(service().is_developmet_mode()) {
-			out<<
-			"    <p>" << util::escape(msg) <<"</p>\n"; 
-		}
-
-		out<<	"  </body>\n"
-			"</html>\n";
+		if(service().is_developmet_mode())
+			make_error_response(500,msg.c_str());
+		else
+			make_error_response(500);
 		write_response();
 	}
 	else {
@@ -205,7 +192,7 @@ void connection::on_ready_response()
 	service().applications_pool().put(application_);
 	int mode = content_.response().io_mode();
 	if(mode==http::response::normal || mode==http::response::nogzip) {
-		write_response();	
+		write_response();
 	}
 	else {
 		// user had written its own result
@@ -228,7 +215,7 @@ void connection::write_output(boost::system::error_code const &e,size_t written)
 		async_read_some_post_data(output_ + output_written_, output_size_ - output_written_,
 			boost::bind(&connection::write_output,shared_from_this(),_1,_2));
 	}
-	on_response_complete();	
+	on_response_complete();
 }
 
 void connection::on_response_complete()

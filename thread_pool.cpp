@@ -59,7 +59,7 @@ namespace impl {
 					if(shut_down_)
 						return;
 					if(!queue_.empty()) {
-						job=queue_.front();
+						queue_.front().swap(job);
 						queue_.pop();
 					}
 					else {

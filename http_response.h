@@ -69,7 +69,7 @@ namespace http {
 				// the data is buffered and transferred asynchronously
 				// in one chunk only, for long poll
 			asynchronous_chunked,
-				// allow many chunks being transferred, each 
+				// allow many chunks being transferred, each
 				// push transferees one chunk
 			asynchronous_multipart,
 				// use multipart transfer encoding, requires parameter
@@ -81,7 +81,7 @@ namespace http {
 
 
 		// Standard HTTP Response Headers RFC 2616
-		
+
 		void accept_ranges(std::string const &);
 		void age(unsigned seconds);
 		void allow(std::string const &);
@@ -126,15 +126,15 @@ namespace http {
 
 		io_mode_type io_mode();
 		void io_mode(io_mode_type);
-		std::ostream &out(); 
+		std::ostream &out();
 		void copy_to_cache(std::string const &key);
 
 		static std::string make_http_time(time_t);
+		static char const *status_to_string(int status);
 
 		response(context &);
 		~response();
 	private:
-		static char const *status_to_string(int status);
 		bool need_gzip();
 		void write_http_headers();
 
@@ -147,7 +147,7 @@ namespace http {
 		std::string cache_key_;
 
 		uint32_t disable_compression_ : 1;
-		uint32_t ostream_requested_ : 1; 
+		uint32_t ostream_requested_ : 1;
 		uint32_t copy_to_cache_ : 1;
 		uint32_t reserved_ : 29;
 	};
