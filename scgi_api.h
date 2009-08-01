@@ -109,10 +109,12 @@ namespace cgi {
 		std::map<std::string,std::string> env_;
 	};
 
-	typedef scgi<boost::asio::local::stream_protocol> unix_socket_scgi;
 	typedef scgi<boost::asio::ip::tcp> tcp_socket_scgi;
-	typedef unix_socket_acceptor<unix_socket_scgi>    unix_socket_scgi_acceptor;
 	typedef tcp_socket_acceptor<tcp_socket_scgi>    tcp_socket_scgi_acceptor;
+#ifndef _WIN32
+	typedef scgi<boost::asio::local::stream_protocol> unix_socket_scgi;
+	typedef unix_socket_acceptor<unix_socket_scgi>    unix_socket_scgi_acceptor;
+#endif
 
 };
 

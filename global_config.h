@@ -19,6 +19,33 @@ public:
 	double dval(std::string m,double def) const;
 	std::string sval(std::string m) const;
 	std::string sval(std::string m,std::string def) const;
+
+	int integer(std::string m) const
+	{
+		return ival(m);
+	}
+	int integer(std::string m,int def) const
+	{
+		return	ival(m,def);
+	}
+	double real(std::string m) const
+	{
+		return dval(m);
+	}
+	double real(std::string m,double def) const
+	{
+		return dval(m,def);
+	}
+	std::string str(std::string m) const
+	{
+		return sval(m);
+	}
+	std::string str(std::string m,std::string def) const
+	{
+		return sval(m,def);
+	}
+
+
 	std::vector<int> const &ilist(std::string m) const;
 	std::vector<double> const &dlist(std::string m) const;
 	std::vector<std::string> const &slist(std::string m) const;

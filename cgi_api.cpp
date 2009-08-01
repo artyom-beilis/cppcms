@@ -141,7 +141,7 @@ void connection::setup_application()
 		dispatch(false);
 	}
 	else {
-		service().workers_pool().post(
+		service().thread_pool().post(
 			boost::bind(
 				&connection::dispatch,
 				shared_from_this(),

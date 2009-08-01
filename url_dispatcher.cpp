@@ -23,7 +23,7 @@ namespace cppcms {
 			}
 
 			virtual void dispatch() = 0;
-			virtual dispatch_type dispatchable(std::string path) = 0;
+			virtual url_dispatcher::dispatch_type dispatchable() = 0;
 
 
 
@@ -35,18 +35,18 @@ namespace cppcms {
 		struct mounted : public option {
 			mounted(std::string expr,int select,application *app) :
 				option(expr),
-				select_(p),
+				select_(select),
 				app_(app)
 			{
 			}
 
-			virtual dispatch_type dispatchable()
+			virtual url_dispatcher::dispatch_type dispatchable()
 			{
-				return app_->dispatcher(match_[select_]);
+				return app_->dispatcher().dispatchable(match_[select_]);
 			}
 			virtual void dispatch()
 			{
-				app_->dispatch();
+				app_->dispatcher().dispatch();
 			}
 		private:
 			application *app_;
@@ -63,13 +63,13 @@ namespace cppcms {
 				select_[2]=c;
 				select_[3]=d;
 			}
-			virtual dispatch_type dispatchable()
+			virtual url_dispatcher::dispatch_type dispatchable()
 			{
 				return async_ ? url_dispatcher::asynchronous : url_dispatcher::synchronous;
 			}
 			virtual void dispatch()
 			{
-				execute_handler(handle_,select_,match_);
+				execute_handler(handle_);
 			}
 		private:
 			void execute_handler(url_dispatcher::handler const &h)
@@ -111,8 +111,8 @@ namespace cppcms {
 
 
 	struct url_dispatcher::data {
-		std::vector<boost::shared_ptr<option> > options_;
-		boost::shared_ptr<option> last_option_;
+		std::vector<boost::shared_ptr<option> > options;
+		boost::shared_ptr<option> last_option;
 	};
 
 	// Meanwhile nothing
@@ -128,50 +128,50 @@ namespace cppcms {
 	{
 		unsigned i;
 		for(i=0;i<d->options.size();i++) {
-			if(d->options[i]->match())
-				d->last_option_=d->options[i];
-			return d->last_option_->dispatchable();
+			if(d->options[i]->matches(path))
+				d->last_option=d->options[i];
+			return d->last_option->dispatchable();
 		}
 		return none;
 	}
 
-	bool url_dispatcher::dispatch()
+	void url_dispatcher::dispatch()
 	{
-		if(d->last_option_)
-			d->last_option_->dispatch();
-		d->last_option_.reset();
+		if(d->last_option)
+			d->last_option->dispatch();
+		d->last_option.reset();
 	}
 
 	void url_dispatcher::mount(std::string match,application &app,int select)
 	{
-		d->options_.push_back(boost::shared_ptr<option>(new mounted(match,&app,select)));
+		d->options.push_back(boost::shared_ptr<option>(new mounted(match,select,&app)));
 	}
 
 
 
 	void url_dispatcher::assign(std::string expr,handler h)
 	{
-		d->options_.push_back(make_handler(expr,h,false));
+		d->options.push_back(make_handler(expr,h,false));
 	}
 
-	void url_dispatcher::assign(std::string expr,handler1 h,int a)
+	void url_dispatcher::assign(std::string expr,handler1 h,int p1)
 	{
-		d->options_.push_back(make_handler(expr,h,false,a));
+		d->options.push_back(make_handler(expr,h,false,p1));
 	}
 
-	void url_dispatcher::assign(std::string expr,handler2 h,int a,int b)
+	void url_dispatcher::assign(std::string expr,handler2 h,int p1,int p2)
 	{
-		d->options_.push_back(make_handler(expr,h,false,a,b));
+		d->options.push_back(make_handler(expr,h,false,p1,p2));
 	}
 
-	void url_dispatcher::assign(std::string expr,handler3 h,int a,int b,int c)
+	void url_dispatcher::assign(std::string expr,handler3 h,int p1,int p2,int p3)
 	{
-		d->options_.push_back(make_handler(expr,h,false,a,b,c));
+		d->options.push_back(make_handler(expr,h,false,p1,p2,p3));
 	}
 
-	void url_dispatcher::assign(std::string expr,handler4 h,int a,int b,int c,int d)
+	void url_dispatcher::assign(std::string expr,handler4 h,int p1,int p2,int p3,int p4)
 	{
-		d->options_.push_back(make_handler(expr,h,false,a,b,c,d));
+		d->options.push_back(make_handler(expr,h,false,p1,p2,p3,p4));
 	}
 
 } // namespace cppcms

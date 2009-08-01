@@ -23,6 +23,7 @@ namespace cgi {
 	class acceptor : public util::noncopyable {
 	public:
 		virtual void async_accept() = 0;
+		virtual void stop() = 0;
 		virtual ~acceptor(){}
 	};
 
