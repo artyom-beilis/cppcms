@@ -1,7 +1,8 @@
 #ifndef CPPCMS_SERVICE_IMPL_H
 #define CPPCMS_SERVICE_IMPL_H
 
-#include <boost/asio.hpp>
+#include "asio_config.h"
+#include <memory>
 
 namespace cppcms {
 class service;
@@ -10,6 +11,9 @@ class applications_pool;
 class thread_pool;
 
 namespace impl {
+	namespace cgi {
+		class acceptor;
+	}
 
 	class service : public util::noncopyable {
 	public:
@@ -30,7 +34,9 @@ namespace impl {
 		std::auto_ptr<thread_pool> thread_pool_;
 
 		boost::asio::io_service io_service_;
-#ifndef _WIN32
+#if defined(__CYGWIN__)
+		boost::asio::ip::tcp::socket sig_,breaker_;
+#else
 		boost::asio::local::stream_protocol::socket sig_,breaker_;
 #endif
 

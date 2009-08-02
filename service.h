@@ -8,7 +8,7 @@
 
 namespace cppcms {
 	namespace impl {
-		class service_impl;
+		class service;
 	}
 
 	class applications_pool;
@@ -22,16 +22,20 @@ namespace cppcms {
 		~service();
 
 		void run();
+		void stop();
 
 		cppcms::applications_pool &appications_pool();
 		cppcms::thread_pool &thread_pool();
 		cppcms::cppcms_config const &settings();
 
-		cppcms::impl::service_impl &impl();
+		cppcms::impl::service &impl();
 	private:
 		void start_acceptor();
+		void setup_exit_handling();
 		int threads_no();
-		util::hold_ptr<impl::service_impl> impl_;
+		int procs_no();
+		bool prefork();
+		util::hold_ptr<impl::service> impl_;
 	};
 
 } //

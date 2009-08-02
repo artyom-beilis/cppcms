@@ -1,6 +1,8 @@
 #ifndef CPPCMS_ERROR_CATEGORY_H
 #define CPPCMS_ERROR_CATEGORY_H
 
+#include <boost/system/system_error.hpp>
+
 namespace cppcms {
 	namespace impl {
 		namespace errc {
@@ -18,8 +20,8 @@ namespace cppcms {
 			virtual std::string message(int cat) const
 			{
 				switch(cat) {
-				case ok: return "ok";
-				case protocol_violation: return "protocol violation";
+				case errc::ok: return "ok";
+				case errc::protocol_violation: return "protocol violation";
 				default:
 					return "unknown";
 				}

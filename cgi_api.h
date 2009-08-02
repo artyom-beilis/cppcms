@@ -1,16 +1,9 @@
 #ifndef CPPCMS_IMPL_CGI_API_H
 #define CPPCMS_IMPL_CGI_API_H
 
-#ifdef CPPCMS_PRIV_BOOST_H
-#include <cppcms_boost/enable_shared_from_this.hpp>
-#include <cppcms_boost/function.hpp>
-#include <cppcms_boost/system/error_code.hpp>
-namespace boost = cppcms_boost;
-#else // general boost
 #include <boost/enable_shared_from_this.hpp>
 #include <boost/function.hpp>
 #include <boost/system/error_code.hpp>
-#endif
 
 
 namespace cppcms {
@@ -28,22 +21,26 @@ namespace cgi {
 	};
 
 	class connection :
-		public boost::shared_from_this<connection>,
+		public boost::enable_shared_from_this<connection>,
 		public util::noncopyable
 	{
 	public:
 		void on_accepted();
+		connection(cppcms::service &srv);
 		virtual ~connection();
 
 		// These are abstract member function that should be implemented by
 		// actual protocol like FCGI, SCGI, HTTP or CGI
 
 		virtual void async_read_headers(handler const &h) = 0;
-		// should be called only after headers are read
 		virtual std::string getenv(std::string const &key) = 0;
-		virtual void async_read_some(void *,size_t n,io_handler const &h) = 0;
-		virtual void async_write_some(void *,size_t n,io_handler const &h) = 0;
 		virtual bool keep_alive() = 0;
+
+		// Concept implementation headers		
+		
+		virtual void async_read_some(boost::asio::mutable_buffers_1 const &buf,io_handler const &h) = 0;
+		virtual void async_write_some(boost::asio::const_buffers_1 const &buf,io_handler const &h) = 0;
+		virtual boost::asio::io_service &io_service() = 0;
 
 		// end of abstract functions
 	private:

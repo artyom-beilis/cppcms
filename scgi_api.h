@@ -1,15 +1,22 @@
 #ifndef CPPCMS_IMPL_SCGI_API_H
 #define CPPCMS_IMPL_SCGI_API_H
 
+#include "cgi_api.h"
+#include "asio_config.h"
+#include "service.h"
+#include "service_impl.h"
+#include "cppcms_error_category.h"
+
+
 namespace cppcms {
 namespace impl {
 namespace cgi {
 	template<typename Proto,typename API> class socket_acceptor;
 	template<typename Proto>
-	class scgi : public api {
+	class scgi : public connection {
 	public:
-		scgi(service &srv) :
-			api(srv),
+		scgi(cppcms::service &srv) :
+			connection(srv),
 			start_(0),
 			end_(0),
 			socket_(srv.impl().io_service())
@@ -19,7 +26,7 @@ namespace cgi {
 		{
 			buffer_.resize(16);
 			boost::asio::async_read(
-				*socket_
+				socket_,
 				boost::asio::buffer(buffer_),
 				boost::bind(
 					&scgi::on_first_read,
@@ -49,7 +56,7 @@ namespace cgi {
 			}
 			size_t size=n;
 			buffer_.resize(sep_ + 2 + len); // len of number + ':' + content + ','
-			boost::asio::async_read(*socket_,
+			boost::asio::async_read(socket_,
 					boost::asio::buffer(&buffer_[size],buffer_.size() - size),
 					boost::bind(	&scgi::on_headers_chunk_read,
 							shared_from_this(),
@@ -69,7 +76,7 @@ namespace cgi {
 			while(p < &buffer_.back()) {
 				std::string key=p;
 				p+=key.size();
-				if(p>=&buffer.back())
+				if(p>=&buffer_.back())
 					break;
 				std::string value=p;
 				p+=value.size();
@@ -88,9 +95,17 @@ namespace cgi {
 				return std::string();
 			return p->second;
 		}
-		virtual void async_read_some(void *p,size_t n,io_handler const &h)
+		virtual void async_read_some(boost::asio::mutable_buffers_1 const &buf,io_handler const &h)
 		{
-			socket_.async_read_some(boost::asio::buffer(p,n),h);
+			socket_.async_read_some(buf,h);
+		}
+		virtual void async_write_some(boost::asio::const_buffers_1 const &buf,io_handler const &h)
+		{
+			socket_.async_write_some(buf,h);
+		}
+		virtual boost::asio::io_service &io_service()
+		{
+			return socket_.io_service();
 		}
 		virtual bool keep_alive()
 		{
@@ -98,10 +113,10 @@ namespace cgi {
 		}
 
 	private:
-		size_t start_,end_;
+		size_t start_,end_,sep_;
 		boost::shared_ptr<scgi<Proto> > shared_from_this()
 		{
-			return boost::static_pointer_cast<scgi<Proto> >(api::shared_from_this());
+			return boost::static_pointer_cast<scgi<Proto> >(connection::shared_from_this());
 		}
 		friend class socket_acceptor<Proto,scgi<Proto> >;
 		boost::asio::basic_stream_socket<Proto> socket_;
@@ -111,12 +126,10 @@ namespace cgi {
 
 	typedef scgi<boost::asio::ip::tcp> tcp_socket_scgi;
 	typedef tcp_socket_acceptor<tcp_socket_scgi>    tcp_socket_scgi_acceptor;
-#ifndef _WIN32
+#if !defined(_WIN32) && !defined(__CYGWIN__)
 	typedef scgi<boost::asio::local::stream_protocol> unix_socket_scgi;
 	typedef unix_socket_acceptor<unix_socket_scgi>    unix_socket_scgi_acceptor;
 #endif
-
-};
 
 
 } // cgi

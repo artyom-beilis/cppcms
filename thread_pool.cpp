@@ -18,9 +18,19 @@ namespace impl {
 		thread_pool(int threads)
 		{
 			workers_.resize(threads);
+			#ifndef _WIN32
+			sigset_t set,old;
+			sigfillset(&set);
+			pthread_sigmask(SIG_BLOCK,&set,&old);
+			#endif
 			for(int i=0;i<threads;i++) {
 				workers_[i].reset(new boost::thread(boost::bind(&thread_pool::worker,this)));
 			}
+	
+			#ifndef _WIN32
+			pthread_sigmask(SIG_SETMASK,&old,0);
+			#endif
+	
 		}
 		void stop()
 		{

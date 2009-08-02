@@ -74,7 +74,7 @@ void connection::on_headers_read(boost::system::error_code const &e)
 	loaded_content_size_ = 0;
 	if(content_length_ > 0) {
 		content_.resize(content_length_);
-		async_read_some_post_data(&content_.front(),content_length_,
+		async_read_some(boost::asio::buffer(&content_.front(),content_length_),
 			boost::bind(&connection::on_content_recieved,shared_from_this(),
 				_1,_2));
 		return;
@@ -87,7 +87,7 @@ void connection::on_content_recieved(boost::system::error_code const &e,size_t r
 	if(e || read==0) return;
 	loaded_content_size_ +=read;
 	if(loaded_content_size_ < content_length_) {
-		async_read_some_post_data(&content_[loaded_content_size_],content_length_ - loaded_content_size_,
+		async_read_some(boost::asio::buffer(&content_[loaded_content_size_],content_length_ - loaded_content_size_),
 			boost::bind(&connection::on_content_recieved,shared_from_this(),
 				_1,_2));
 	}
@@ -202,24 +202,17 @@ void connection::on_ready_response()
 
 void connection::write_response()
 {
-	output_written_ = 0;
-	output_ = content_.response().output(output_size_);
-	write_output(boost::system::error_code(),0);
+	size_t size;
+	char const *output = context_.response().output(size);
+	boost::asio::async_write(
+		*this,
+		boost::asio::buffer(output,size),
+		boost::bind(&connection::on_response_complete,shared_from_this,_1));
 }
 
-void connection::write_output(boost::system::error_code const &e,size_t written)
+void connection::on_response_complete(boost::system::error_code const &e)
 {
-	if(e) return; // Destroy
-	output_written_ +=written;
-	while(output_size_ > output_written_) {
-		async_read_some_post_data(output_ + output_written_, output_size_ - output_written_,
-			boost::bind(&connection::write_output,shared_from_this(),_1,_2));
-	}
-	on_response_complete();
-}
-
-void connection::on_response_complete()
-{
+	if(e) return;
 	if(keep_alive()) {
 		context_.reset();
 		on_accepted();

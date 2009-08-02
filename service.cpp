@@ -1,19 +1,26 @@
 #include "service.h"
+#include "service_impl.h"
 #include "applications_pool.h"
 #include "thread_pool.h"
 #include "global_config.h"
+#include "cppcms_error.h"
+#include "cgi_acceptor.h"
+#include "cgi_api.h"
+#include "scgi_api.h"
 
-#include <boost/asio.hpp>
+
+
+#include "asio_config.h"
 
 namespace cppcms {
 
 
 service::service(int argc,char *argv[]) :
-	impl_(new impl::service)
+	impl_(new impl::service())
 {
 	impl_->settings_.reset(new cppcms_config());
-	impl_->settings_.load(argc,argv);
-	int apps=settings.integer("service.applications_pool_size",threads_no()*2);
+	impl_->settings_->load(argc,argv);
+	int apps=settings().integer("service.applications_pool_size",threads_no()*2);
 	impl_->applications_pool_.reset(new cppcms::applications_pool(*this,apps));
 
 }
@@ -26,15 +33,33 @@ int service::threads_no()
 	return settings().integer("service.worker_threads",5);
 }
 
-#ifdef _WIN32
-void service::setup_exit_handling()
-{
-	throw cppcms_error("TODO Setup exit handling");
-}
-
-#else
-
 namespace {
+#if defined(__CYGWIN__)
+	void make_socket_pair(boost::asio::ip::tcp::socket &s1,boost::asio::ip::tcp::socket &s2)
+	{
+		boost::asio::ip::tcp::acceptor acceptor(s1.io_service(),
+			boost::asio::ip::tcp::endpoint(boost::asio::ip::tcp::v4(), 0));
+		boost::asio::ip::tcp::endpoint server_endpoint = acceptor.local_endpoint();
+		server_endpoint.address(boost::asio::ip::address_v4::loopback());
+		s1.lowest_layer().connect(server_endpoint);
+		acceptor.accept(s2.lowest_layer());
+	}
+
+	SOCKET notification_socket;
+	void handler(int nothing)
+	{
+		char c='A';
+		if(send(notification_socket,&c,1,0) <= 0) {
+			perror("notification failed");
+			exit(1);
+		}
+	}
+#else
+	void make_socket_pair(boost::asio::local::stream_protocol::socket &s1,boost::asio::local::stream_protocol::socket &s2)
+	{
+		boost::asio::local::connect_pair(sig_,breaker_);
+	}
+
 	int notification_socket;
 	void handler(int nothing)
 	{
@@ -50,7 +75,18 @@ namespace {
 			return;
 		}
 	}
+#endif
+} // anon
+
+#ifdef _WIN32
+void service::setup_exit_handling()
+{
+	throw cppcms_error("TODO Setup exit handling");
 }
+
+#else 
+
+
 
 void service::setup_exit_handling()
 {
@@ -63,7 +99,7 @@ void service::setup_exit_handling()
 
 	pthread_sigmask(SIG_BLOCK,&set,0);
 
-	boost::asio::local::connect_pair(sig_,breaker_);
+	make_socket_pair(sig_,breaker_);
 
 	static char c;
 
@@ -95,12 +131,25 @@ void service::run()
 	impl_->io_service().run();
 }
 
-#ifdef _WIN32
+int service::procs_no()
+{
+	int procs=settings().integer("service.procs",0);
+	if(procs < 0)
+		procs = 0;
+	#if defined(_WIN32) || defined(__CYGWIN)
+	if(procs > 0)
+		throw cppcms_error("Prefork is not supported under Windows");
+	#endif
+	return procs;
+}
+
+#if defined(_WIN32) || defined(__CYGWIN__)
 bool service::prefork()
 {
+	procs_no();
 	return false;
 }
-#else // POSIX
+#else // UNIX
 bool service::prefork()
 {
 	int procs=settings().integer("service.procs",0);
@@ -154,33 +203,35 @@ bool service::prefork()
 
 void service::start_acceptor()
 {
+	using namespace impl::cgi;
 	std::string api=settings().str("service.api");
 	std::string ip=settings().str("service.ip","127.0.0.1");
 	int port=0;
-	std::string socket=settings().integer("service.socket","");
-	int blacklog=settings().integer("service.backlog",threads_no() * 2);
+	std::string socket=settings().str("service.socket","");
+	int backlog=settings().integer("service.backlog",threads_no() * 2);
 
 	bool tcp=socket.empty();
 
 	if(tcp && port==0) {
 		port=settings().integer("service.port");
 	}
-#endif
 
 	if(tcp) {
 		if(api=="scgi")
 			impl_->acceptor_.reset(
-			       new tcp_socket_acceptor<scgi_api<boost::asio::ip::tcp> >(*this,ip,port,backlog));
+			       new tcp_socket_acceptor<scgi<boost::asio::ip::tcp> >(*this,ip,port,backlog));
 		else
 			throw cppcms_error("Unknown service.api: " + api);
 	}
 	else {
-#ifdef _WIN32
+#ifdef _WIN32  
 		throw cppcms_error("Unix domain sockets are not supported under Windows... (isn't it obvious?)");
+#elif defined(__CYGWIN__)
+		throw cppcms_error("CppCMS uses native Win32 sockets under cygwin, so Unix sockets are not supported");
 #else
 		if(api=="scgi")
 			impl_->acceptor_.reset(
-				new unix_socket_acceptor<scgi_api<boost::asio::local::stream_protocol> >(*this,socket,backlog));
+				new unix_socket_acceptor<scgi<boost::asio::local::stream_protocol> >(*this,socket,backlog));
 		else
 			throw cppcms_error("Unknown service.api: " + api);
 #endif
@@ -195,15 +246,7 @@ cppcms::applications_pool &service::appications_pool()
 cppcms::thread_pool &service::thread_pool()
 {
 	if(!impl_->thread_pool_.get()) {
-#ifndef _WIN32
-		sigset_t set,old;
-		sigfillset(&set);
-		pthread_sigmask(SIG_BLOCK,&set,&old);
-#endif
-		cppcms::thread_pool_.reset(new cppcms::thread_pool(threads_no()));
-#ifndef _WIN32
-		pthread_sigmask(SIG_SETMASK,&old,0);
-#endif
+		impl_->thread_pool_.reset(new cppcms::thread_pool(threads_no()));
 	}
 	return *impl_->thread_pool_;
 }
@@ -213,15 +256,15 @@ cppcms::cppcms_config const &service::settings()
 	return *impl_->settings_;
 }
 
-cppcms::impl::service_impl &service::impl()
+cppcms::impl::service &service::impl()
 {
 	return *impl_;
 }
 
 void service::stop()
 {
-	if(acceptor_.get())
-		acceptor_->stop();
+	if(impl_->acceptor_.get())
+		impl_->acceptor_->stop();
 	thread_pool().stop();
 	impl_->io_service().stop();
 }
