@@ -8,9 +8,8 @@
 #include "cgi_api.h"
 #include "scgi_api.h"
 
-
-
 #include "asio_config.h"
+#include <sys/wait.h>
 
 namespace cppcms {
 
@@ -57,7 +56,7 @@ namespace {
 #else
 	void make_socket_pair(boost::asio::local::stream_protocol::socket &s1,boost::asio::local::stream_protocol::socket &s2)
 	{
-		boost::asio::local::connect_pair(sig_,breaker_);
+		boost::asio::local::connect_pair(s1,s2);
 	}
 
 	int notification_socket;
@@ -99,12 +98,12 @@ void service::setup_exit_handling()
 
 	pthread_sigmask(SIG_BLOCK,&set,0);
 
-	make_socket_pair(sig_,breaker_);
+	make_socket_pair(impl_->sig_,impl_->breaker_);
 
 	static char c;
 
 	impl_->breaker_.async_read_some(boost::asio::buffer(&c,1),
-					boost::bind(&service::stop(),this));
+					boost::bind(&service::stop,this));
 
 	notification_socket=impl_->sig_.native();
 
@@ -156,6 +155,7 @@ bool service::prefork()
 	if(procs<=0)
 		return false;
 	std::vector<int> pids(procs,0);
+	
 	for(int i=0;i<procs;i++) {
 		int pid=::fork();
 		if(pid < 0) {
@@ -191,7 +191,7 @@ bool service::prefork()
 
 	sigprocmask(SIG_UNBLOCK,&set,NULL);
 
-	for(i=0;i<procs;i++) {
+	for(int i=0;i<procs;i++) {
 		::kill(pids[i],SIGTERM);
 		int stat;
 		::waitpid(pids[i],&stat,0);

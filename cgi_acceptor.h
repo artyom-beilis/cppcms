@@ -81,7 +81,7 @@ namespace impl {
 				acceptor.open(ep.protocol());
 				acceptor.set_option(boost::asio::local::stream_protocol::acceptor::reuse_address(true));
 				::unlink(path.c_str());
-				acceptor.bind(boost::asio::local::endpoint(path));
+				acceptor.bind(boost::asio::local::stream_protocol::endpoint(path));
 				acceptor.listen(backlog);
 			}
 		};
