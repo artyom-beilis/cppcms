@@ -11,7 +11,7 @@
 
 namespace cppcms {
 
-namespace cgi { class api; }
+namespace impl { namespace cgi { class connection; } }
 namespace http {
 
 	class cookie;
@@ -81,25 +81,24 @@ namespace http {
 		files_type files();
 
 	public:
-		request(cgi::io *io);
-		bool prepare();
+		request();
 		~request();
 	private:
 
-		friend class cgi::api;
+		friend class impl::cgi::connection;
+
+		void set_post_data(std::vector<char> &post_data);
+		bool prepare();
 
 		bool parse_cookies();
 		std::string urlencoded_decode(char const *,char const *);
 		bool parse_form_urlencoded(char const *begin,char const *end,form_type &out);
-
-		void assign_url_encoded_post_data(char const *begin,char const *end);
 
 		struct data;
 		form_type get_;
 		form_type post_;
 		files_type files_;
 		cookies_type cookies_;
-		cgi::io *conn_;
 		util::hold_ptr<data> d;
 	};
 

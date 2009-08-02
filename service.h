@@ -24,7 +24,7 @@ namespace cppcms {
 		void run();
 		void stop();
 
-		cppcms::applications_pool &appications_pool();
+		cppcms::applications_pool &applications_pool();
 		cppcms::thread_pool &thread_pool();
 		cppcms::cppcms_config const &settings();
 

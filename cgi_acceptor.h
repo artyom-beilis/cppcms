@@ -15,7 +15,7 @@ namespace impl {
 		public:
 			socket_acceptor(cppcms::service &srv) :
 				srv_(srv),
-				acceptor_(srv_.impl().io_service()),
+				acceptor_(srv_.impl().get_io_service()),
 				stopped_(false)
 			{
 			}

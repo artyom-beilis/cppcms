@@ -9,7 +9,7 @@
 #include <iostream>
 
 namespace cppcms {
-namespace cgi { class io; }
+namespace impl { namespace cgi { class connection;  }}
 namespace http {
 
 	class context;
@@ -135,6 +135,10 @@ namespace http {
 		response(context &);
 		~response();
 	private:
+		friend class impl::cgi::connection;
+
+		std::pair<char const *,size_t> output();
+
 		bool need_gzip();
 		void write_http_headers();
 

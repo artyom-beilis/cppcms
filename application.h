@@ -3,6 +3,7 @@
 
 #include "defs.h"
 #include "noncopyable.h"
+#include "hold_ptr.h"
 
 namespace cppcms {
 

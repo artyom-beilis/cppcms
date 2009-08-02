@@ -37,7 +37,7 @@ namespace {
 #if defined(__CYGWIN__)
 	void make_socket_pair(boost::asio::ip::tcp::socket &s1,boost::asio::ip::tcp::socket &s2)
 	{
-		boost::asio::ip::tcp::acceptor acceptor(s1.io_service(),
+		boost::asio::ip::tcp::acceptor acceptor(s1.get_io_service(),
 			boost::asio::ip::tcp::endpoint(boost::asio::ip::tcp::v4(), 0));
 		boost::asio::ip::tcp::endpoint server_endpoint = acceptor.local_endpoint();
 		server_endpoint.address(boost::asio::ip::address_v4::loopback());
@@ -128,7 +128,7 @@ void service::run()
 	impl_->acceptor_->async_accept();
 
 	setup_exit_handling();
-	impl_->io_service().run();
+	impl_->get_io_service().run();
 }
 
 int service::procs_no()
@@ -239,7 +239,7 @@ void service::start_acceptor()
 
 }
 
-cppcms::applications_pool &service::appications_pool()
+cppcms::applications_pool &service::applications_pool()
 {
 	return *impl_->applications_pool_;
 }
@@ -266,7 +266,7 @@ void service::stop()
 	if(impl_->acceptor_.get())
 		impl_->acceptor_->stop();
 	thread_pool().stop();
-	impl_->io_service().stop();
+	impl_->get_io_service().stop();
 }
 
 namespace impl {

@@ -19,7 +19,7 @@ namespace cgi {
 			connection(srv),
 			start_(0),
 			end_(0),
-			socket_(srv.impl().io_service())
+			socket_(srv.impl().get_io_service())
 		{
 		}
 		virtual void async_read_headers(handler const &h)
@@ -95,17 +95,17 @@ namespace cgi {
 				return std::string();
 			return p->second;
 		}
-		virtual void async_read_some(boost::asio::mutable_buffers_1 const &buf,io_handler const &h)
+		virtual void async_read_some(void *p,size_t s,io_handler const &h)
 		{
-			socket_.async_read_some(buf,h);
+			socket_.async_read_some(boost::asio::buffer(p,s),h);
 		}
-		virtual void async_write_some(boost::asio::const_buffers_1 const &buf,io_handler const &h)
+		virtual void async_write_some(void const *p,size_t s,io_handler const &h)
 		{
-			socket_.async_write_some(buf,h);
+			socket_.async_write_some(boost::asio::buffer(p,s),h);
 		}
-		virtual boost::asio::io_service &io_service()
+		virtual boost::asio::io_service &get_io_service()
 		{
-			return socket_.io_service();
+			return socket_.get_io_service();
 		}
 		virtual bool keep_alive()
 		{
