@@ -81,7 +81,7 @@ namespace http {
 		files_type files();
 
 	public:
-		request();
+		request(impl::cgi::connection &);
 		~request();
 	private:
 
@@ -100,6 +100,7 @@ namespace http {
 		files_type files_;
 		cookies_type cookies_;
 		util::hold_ptr<data> d;
+		impl::cgi::connection *conn_;
 	};
 
 

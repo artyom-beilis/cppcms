@@ -1,5 +1,5 @@
+#include "cgi_api.h"
 #include "http_request.h"
-#include "cgi_io.h"
 #include "http_cookie.h"
 #include "http_file.h"
 
@@ -38,7 +38,14 @@ namespace {
 
 struct request::data {
 	std::vector<boost::shared_ptr<file> > files;
+	std::vector<char> post_data;
 };
+
+void request::set_post_data(std::vector<char> &post_data)
+{
+	d->post_data.clear();
+	d->post_data.swap(post_data);
+}
 
 
 // TODO: Find correct RFC for proprer decoding
@@ -79,41 +86,25 @@ bool request::parse_form_urlencoded(char const *begin,char const *end,form_type 
 	return true;
 }
 
-void request::assign_url_encoded_post_data(char const *begin,char const *end)
-{
-	parse_form_urlencoded(begin,end,post_)
-}
-
 bool request::prepare()
 {
 	std::string query=query_string();
 	if(!parse_form_urlencoded(query.data(),query.data()+query.size(),get_)) 
 		return false;
 	
-	unsigned long long length=content_length();
-	std::string content_type=this->content_type();
-	if(is_prefix_of("application/x-www-form-urlencoded",content_type)) {
-		if(length > 16*1024*1024) // Too Big??
+	if(is_prefix_of("application/x-www-form-urlencoded",content_type())) {
+		char const *pdata=&d->post_data.front();
+		if(!parse_form_urlencoded(pdata,pdata+d->post_data.size(),post_)) 
 			return false;
-		std::vector<char> content(length,0);
-		if(conn_->read(&content.front(),length)!=length)
-			return false;
-		if(!parse_form_urlencoded(&content.front(),&content.front()+length,post_))
-			return false;
-	}
-	else if(is_prefix_of("multipart/form-data",content_type)) {
-		// not supported meanwhile
-		// TODO
-		return false;
 	}
 	if(!parse_cookies())
 		return false;
 	return true;
 }
 
-request::request(cgi::io *io) :
-	conn_(io),
-	d(new data)
+request::request(impl::cgi::connection &conn) :
+	d(new data),
+	conn_(&conn)
 {
 }
 
