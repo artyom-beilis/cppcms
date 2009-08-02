@@ -8,7 +8,6 @@
 #include "http_context.h"
 #include "http_request.h"
 #include "http_cookie.h"
-#include "cgi_io.h"
 #include "global_config.h"
 #include "cppcms_error.h"
 #include "util.h"
@@ -43,6 +42,21 @@ namespace {
 
 
 
+namespace  {
+	struct output_device : public boost::iostreams::sink {
+		impl::cgi::connection *conn_;
+	public:
+		output_device(impl::cgi::connection *conn) : conn_(conn) {}
+		std::streamsize write(char const *data,std::streamsize n)
+		{
+			size_t all=0;
+			while(all < n)
+				all += conn_->write_some(data,n);
+			return all;
+		}
+	};
+}
+
 struct response::data {
 	typedef bool (*compare_type)(std::string const &left,std::string const &right);
 	typedef std::map<std::string,std::string,compare_type> headers_type;
@@ -51,13 +65,19 @@ struct response::data {
 	std::ostringstream buffer;
 	boost::iostreams::filtering_ostream filter;
 	std::ostringstream cached;
+	std::ostringstream buffered;
+	boost::iostreams::stream<output_device> output;
 
-	data() : headers(string_i_comp) {}
+	data(impl::cgi::connection *conn) : 
+		headers(string_i_comp),
+		output(output_device(conn),conn->service().settings().integer("service.output_buffer_size",16384))
+	{
+	}
 };
 
 
 response::response(context &context) :
-	d(new data()),
+	d(new data(context.connection())),
 	context_(context),
 	stream_(0),
 	io_mode_(normal),
@@ -66,14 +86,14 @@ response::response(context &context) :
 	copy_to_cache_(0)
 {
 	set_content_header("text/html");
-	if(context_.settings().ival("server.disable_xpowered_by",0)==0) {
+	if(context_.settings().integer("server.disable_xpowered_by",0)==0) {
 		set_header("X-Powered-By", PACKAGE_NAME "/" PACKAGE_VERSION);
 	}
 }
 
 void response::set_content_header(std::string const &content_type)
 {
-	std::string charset=context_.settings().sval("l10n.charset","");
+	std::string charset=context_.settings().str("l10n.charset","");
 	if(charset.empty())
 		set_header("Content-Type",content_type);
 	else
@@ -109,6 +129,11 @@ void response::set_header(std::string const &name,std::string const &value)
 		d->headers[name]=value;
 }
 
+void response::finalize()
+{
+	d->filter.reset();
+}
+
 std::string response::get_header(std::string const &name)
 {
 	data::headers_type::const_iterator p=d->headers.find(name);
@@ -128,7 +153,7 @@ bool response::need_gzip()
 		return false;
 	if(io_mode_!=normal)
 		return false;
-	if(context_.settings().ival("gzip.enable",1)==0)
+	if(context_.settings().integer("gzip.enable",1)==0)
 		return false;
 	if(context_.request().http_accept_encoding().find("gzip")==std::string::npos)
 		return false;
@@ -155,9 +180,9 @@ void response::io_mode(response::io_mode_type mode)
 	io_mode_=mode;
 }
 
-void response::write_http_headers()
+void response::write_http_headers(std::ostream &stream)
 {
-	std::ostream &out=context_.io().out();
+	std::ostream &out=d->output;
 	for(data::headers_type::const_iterator h=d->headers.begin();h!=d->headers.end();++h) {
 		out<<h->first<<':'<<h->second<<"\r\n";
 	}
@@ -165,6 +190,7 @@ void response::write_http_headers()
 		out<<d->cookies[i]<<"\r\n";
 	}
 	out<<"\r\n";
+	out<<flush;
 }
 
 
@@ -180,16 +206,20 @@ std::ostream &response::out()
 
 	if(ostream_requested_)
 		return *stream_;
-	
+
+	std::ostream &real_sink = io_mode_ == asynchronous ? d->buffered  : d->output ;
+
 	ostream_requested_=1;
+	
+	write_http_headers(real_sink);
 	
 	if(need_gzip()) {
 		gzip_params params;
 
-		int level=context_.settings().ival("gzip.level",-1);
+		int level=context_.settings().integer("gzip.level",-1);
 		if(level!=-1)
 			params.level=level;
-		int buffer=context_.settings().ival("gzip.buffer",-1);
+		int buffer=context_.settings().integer("gzip.buffer",-1);
 		if(buffer!=1)
 			d->filter.push(gzip_compressor(params,buffer));
 		else
@@ -204,13 +234,24 @@ std::ostream &response::out()
 	}
 	
 	if(stream_)
-		d->filter.push(context_.io().out());
+		d->filter.push(real_sink);
 	else
-		stream_=&context_.io().out();
+		stream_=&real_sink;
 
 	return *stream_;
 }
 
+std::string response::get_async_chunk()
+{
+	std::string result=d->buffer.str();
+	d->buffer.str("");
+	return result;
+}
+
+bool result::some_output_was_written()
+{
+	return ostream_requested_;
+}
 
 char const *response::status_to_string(int status)
 {

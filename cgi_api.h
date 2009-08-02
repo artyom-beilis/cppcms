@@ -59,6 +59,7 @@ namespace cgi {
 		
 		virtual void async_read_some(void *,size_t,io_handler const &h) = 0;
 		virtual void async_write_some(void const *,size_t,io_handler const &h) = 0;
+		virtual size_t write_some(void const *,size_t) = 0;
 		virtual boost::asio::io_service &get_io_service() = 0;
 
 		/****************************************************************************/
@@ -75,10 +76,7 @@ namespace cgi {
 		void make_error_response(int statis,char const *msg="");
 		void setup_application();
 		void dispatch(bool thread);
-		void on_error(std::string const &msg);
-		void on_response_ready();
-		void write_response();
-		void on_response_complete(boost::system::error_code const &e=boost::system::error_code());
+		void on_response_complete();
 
 		std::auto_ptr<http::context> context_;
 		std::vector<char> content_;

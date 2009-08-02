@@ -103,6 +103,10 @@ namespace cgi {
 		{
 			socket_.async_write_some(boost::asio::buffer(p,s),h);
 		}
+		virtual size_t write_some(void const *buffer,size_t n)
+		{
+			return socket_.write_some(boost::asio::buffer(buffer,n));
+		}
 		virtual boost::asio::io_service &get_io_service()
 		{
 			return socket_.get_io_service();

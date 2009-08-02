@@ -111,6 +111,7 @@ void connection::process_request(boost::system::error_code const &e)
 
 void connection::make_error_response(int status,char const *msg)
 {
+	context_->response().io_mode(http::response::asynchronous);
 	context_->response().status(status);
 	context_->response().out() <<
 		"<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.01 Transitional//EN\"\n"
@@ -123,7 +124,7 @@ void connection::make_error_response(int status,char const *msg)
 		"    <h1>"<<status<<" &emdash; "<< http::response::status_to_string(status)<<"</h1>\n"
 		"    <p>"<<msg<<"</p>\n"
 		"  </body>\n"
-		"</html>\n";
+		"</html>\n"<<std::flush;
 }
 
 
@@ -137,7 +138,6 @@ void connection::setup_application()
 	url_dispatcher::dispatch_type how;
 	if(application_.get() == 0 || (how=application_->dispatcher().dispatchable(path))!=url_dispatcher::none) {
 		make_error_response(http::response::not_found);
-		write_response();
 		return;
 	}
 
@@ -155,62 +155,22 @@ void connection::setup_application()
 
 void connection::dispatch(bool in_thread)
 {
-	boost::function<void()> handle;
 	try {
 		application_->dispatcher().dispatch();
-		handle=boost::bind(&connection::on_response_ready,shared_from_this());
+		context_->response().finalize();
 	}
 	catch(std::exception const &e){
-		handle=boost::bind(&connection::on_error,shared_from_this(),std::string(e.what()));
+		// TODO
 	}
 	if(in_thread)
-		get_io_service().post(handle);
+		get_io_service().post(boost::bind(&connection::on_response_complete,shared_from_this()));
 	else
-		handle();
-}
-
-void connection::on_error(std::string const &msg)
-{
-	service().applications_pool().put(application_);
-	int mode = context_->response().io_mode();
-	if(mode==http::response::normal || mode==http::response::nogzip) {
-		context_->response().clear();
-		// TODO make levels
-		make_error_response(http::response::internal_server_error,msg.c_str());
-		write_response();
-	}
-	else {
-		// Just destroy the object... Can't do more
-		// TODO log the error
-		return;
-	}
-}
-
-void connection::on_response_ready()
-{
-	service().applications_pool().put(application_);
-	int mode = context_->response().io_mode();
-	if(mode==http::response::normal || mode==http::response::nogzip) {
-		write_response();
-	}
-	else {
-		// user had written its own result
 		on_response_complete();
-	}
 }
 
-void connection::write_response()
+void connection::on_response_complete()
 {
-	std::pair<char const *,size_t> content=context_->response().output();
-	async_write(
-		content.first,
-		content.second,
-		boost::bind(&connection::on_response_complete,shared_from_this(),_1));
-}
-
-void connection::on_response_complete(boost::system::error_code const &e)
-{
-	if(e) return;
+	service().applications_pool().put(application_);
 	if(keep_alive()) {
 		context_.reset();
 		on_accepted();

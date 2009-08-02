@@ -1,3 +1,4 @@
+#define CPPCMS_SOURCE
 #include "service.h"
 #include "service_impl.h"
 #include "applications_pool.h"

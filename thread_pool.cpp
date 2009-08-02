@@ -1,3 +1,4 @@
+#define CPPCMS_SOURCE
 #include "thread_pool.h"
 #include <queue>
 #include <boost/thread.hpp>

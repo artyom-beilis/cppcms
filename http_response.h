@@ -60,22 +60,13 @@ namespace http {
 		} status_type;
 		typedef enum {
 		// synchronous io
-			normal, // write request, use buffering, compression,
+			normal, // write request, use buffering, possible compression,
 			nogzip, // as normal but disable gzip
 			direct, // use direct connection for transferring huge
 				// amount of data, for example big csv, file download
-		// async TODO
 			asynchronous,
-				// the data is buffered and transferred asynchronously
-				// in one chunk only, for long poll
-			asynchronous_chunked,
-				// allow many chunks being transferred, each
-				// push transferees one chunk
-			asynchronous_multipart,
-				// use multipart transfer encoding, requires parameter
-				// content type, default is "multipart/mixed"
-			asynchronous_raw
-				// use your own asynchronous data transfer
+				// the data is buffered and never transferred
+				// untill it is requested explicitly
 
 		} io_mode_type;
 
@@ -132,6 +123,7 @@ namespace http {
 		static std::string make_http_time(time_t);
 		static char const *status_to_string(int status);
 
+
 		response(context &);
 		~response();
 	private:
@@ -140,7 +132,10 @@ namespace http {
 		std::pair<char const *,size_t> output();
 
 		bool need_gzip();
-		void write_http_headers();
+		bool some_output_was_written();
+		void write_http_headers(std::ostream &);
+		std::string get_async_chunk();
+		void finalize();
 
 		struct data;
 		util::hold_ptr<data> d;
