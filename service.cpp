@@ -9,7 +9,10 @@
 #include "scgi_api.h"
 
 #include "asio_config.h"
+
+#if !defined(_WIN32) && !defined(__CYGWIN__)
 #include <sys/wait.h>
+#endif
 
 namespace cppcms {
 
@@ -33,7 +36,7 @@ int service::threads_no()
 }
 
 namespace {
-#if defined(__CYGWIN__)
+#if defined(__CYGWIN__) || defined(_WIN32)
 	void make_socket_pair(boost::asio::ip::tcp::socket &s1,boost::asio::ip::tcp::socket &s2)
 	{
 		boost::asio::ip::tcp::acceptor acceptor(s1.get_io_service(),
