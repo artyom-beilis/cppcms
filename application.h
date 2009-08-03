@@ -9,13 +9,13 @@ namespace cppcms {
 
 	class service;
 	class cppcms_config;
-	class context;
 	class url_dispatcher;
 	class applications_pool;
 
 	namespace http {
 		class request;
 		class response;
+		class context;
 	}
 
 	class CPPCMS_API application : public util::noncopyable {
@@ -24,17 +24,22 @@ namespace cppcms {
 		~application();
 
 		cppcms::service &service();
-		cppcms_config const &config();
-		cppcms::context &context();
+		cppcms_config const &settings();
+		http::context &context();
 		http::request &request();
 		http::response &response();
 		url_dispatcher &dispatcher();
-	private:
-		struct data;
-		util::hold_ptr<data> d;
 
+		void assign_context(http::context *conn);
+	private:
 		void pool_id(int id);
 		int pool_id();
+
+
+		struct data; // future use
+		util::hold_ptr<data> d;
+
+
 		friend class applications_pool;
 	};
 

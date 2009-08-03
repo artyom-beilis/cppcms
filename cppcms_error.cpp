@@ -1,3 +1,4 @@
+#define CPPCMS_SOURCE
 #include "cppcms_error.h"
 #include <iostream>
 #include <string.h>

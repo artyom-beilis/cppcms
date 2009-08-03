@@ -35,8 +35,8 @@ namespace cppcms {
 		struct mounted : public option {
 			mounted(std::string expr,int select,application *app) :
 				option(expr),
-				select_(select),
-				app_(app)
+				app_(app),
+				select_(select)
 			{
 			}
 

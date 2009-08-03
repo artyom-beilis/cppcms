@@ -35,7 +35,12 @@ namespace impl {
 			virtual void stop()
 			{
 				stopped_=true;
-				acceptor_.cancel();
+				boost::system::error_code e;
+				#ifdef CPPCMS_WIN32
+				acceptor_.close(e);
+				#else
+				acceptor_.cancel(e);
+				#endif	
 			}
 		private:
 			void on_accept(boost::system::error_code const &e)
@@ -51,7 +56,7 @@ namespace impl {
 			{
 				socket->set_option(boost::asio::ip::tcp::no_delay(true));
 			}
-#if !defined(_WIN32) && !defined(__CYGWIN__)
+#if !defined(CPPCMS_WIN32)
 			void set_options(boost::asio::local::stream_protocol::socket *socket)
 			{
 				// nothing;
@@ -66,7 +71,7 @@ namespace impl {
 			bool stopped_;
 		};
 
-#if !defined(_WIN32) && !defined(__CYGWIN__)
+#if !defined(CPPCMS_WIN32)
 		template<typename API>
 		class unix_socket_acceptor : public socket_acceptor<boost::asio::local::stream_protocol,API>
 		{

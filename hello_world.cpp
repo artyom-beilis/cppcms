@@ -1,180 +1,37 @@
 #include "application.h"
-#include "manager.h"
-#include "hello_world_view.h"
-#include "regex.h"
-using namespace cppcms;
+#include "url_dispatcher.h"
+#include "applications_pool.h"
+#include "service.h"
+#include "http_response.h"
 
-class my_hello_world : public application {
+
+class hello : public cppcms::application {
 public:
-	my_hello_world(worker_thread &w) :
-		application(w)
+	hello(cppcms::service &srv) : 
+		cppcms::application(srv)
 	{
-		using util::regex;
-		static const regex std("^/?$");
-		url.assign(std,&my_hello_world::std,this);
-		static const regex test("^/test$");
-		url.assign(test,&my_hello_world::test,this);
-		static const regex test2("^/test2$");
-		url.assign(test2,&my_hello_world::test2,this);
-		static const regex cache("^/cache$");
-		url.assign(cache,&my_hello_world::cache_test,this);
-		static const regex png("^/png$");
-		url.assign(png,&my_hello_world::png,this);
-		use_template("view2");
-	};
-	void test();
-	void png();
-	void test2();
-	void std();
-	void cache_test();
+		dispatcher().assign(".*",&hello::hello_world,this);
+	}
+	void hello_world()
+	{
+		response().out() <<
+			"<html><body>\n"
+			"<h1>Hello World!</h1>\n"
+			"<body></html>\n";
+	}
 };
 
-void my_hello_world::png()
-{
-	ifstream file("test.png");
-	if(!file) {
-		cout<<"File test.png not found";
-		return ;
-	}
-	vector<char> buffer(1024);
 
-	set_header(new cgicc::HTTPContentHeader("image/png"));
-	
-	set_user_io();
-	ostream &cout=cgi_conn->cout();
-
-	for(;;) {
-		file.read(&buffer.front(),1024);
-		cout.write(&buffer.front(),file.gcount());
-		if(file.eof())
-			break;
-	}
-	file.close();
-}
-
-
-void my_hello_world::test2()
-{
-	if(!session.is_set("test")) {
-		session["test"]="1";
-		cout<<"Set 1";
-	}
-	else {
-		int state=session.get<int>("test");
-		switch(state) {
-		case 1:
-			if(!session.is_exposed("test")) {
-				cout<<"Expose 1";
-				session.expose("test");
-			}
-			else {
-				session["test"]="2";
-				cout<<"Change exposed to 2";
-			}
-			break;
-		case 2:
-			if(session.is_exposed("test")) {
-				session.hide("test");
-				cout<<"Hidden 2";
-			}
-			else {
-				session["test"]="3";
-				cout<<"Hidden 2 moved to 3 and exposed";
-				session.expose("test");
-			}
-			break;
-		case 3:
-			session.del("test");
-			cout<<"Remove 3 and remove from hidden";
-			break;
-		default:
-			cout<<"Error";
-		}
-	}
-
-}
-
-void my_hello_world::test()
-{
-	if(!session.is_set("time")) {
-		cout<<"No Time\n";
-	}
-	else {
-		time_t given=session.get<time_t>("time");
-		cout<<asctime(gmtime(&given))<<"<br/>\n";
-		if(session.is_set("msg")) {
-			cout<<session["msg"]<<"<br/>";
-		}
-		if(given % 3 == 0) {
-			cout<<"SET LONG MESSAGE";
-			session["msg"]="Looooooooooooooooooooooooooooooong msg";
-		}
-		else {
-			cout<<"UNSET LONG MESSAGE";
-			session.del("msg");
-		}
-		cout<<"<br/>"<<endl;
-		if(session.is_set("msg")) {
-			int val=given % 2;
-			session.expose("msg",val);
-			cout<<(val ? "exposed" : "hidden")<<endl;
-		}
-		//session.clear();
-	}
-	session.set<time_t>("time",time(NULL));
-}
-
-void my_hello_world::std()
-{
-	view::hello v(this);
-
-	if(env->getRequestMethod()=="POST") {
-		v.form.load(*cgi);
-		if(v.form.validate()) {
-			session["name"]=v.form.username.get();
-			v.username=v.form.username.get();
-			v.realname=v.form.name.get();
-			v.ok=v.form.ok.get();
-			v.password=v.form.p1.get();
-			v.form.clear();
-		}
-	}
-
-	v.title="Cool";
-	if(session.is_set("name"))
-		v.title+=":"+session["name"];
-
-	v.msg=gettext("Hello World");
-
-	for(int i=0;i<15;i++)
-		v.numbers.push_back(i);
-	v.lst.push_back(view::data("Hello",10));
-	render("hello",v);
-}
-
-void my_hello_world::cache_test()
-{
-	string tmp;
-	bool from_cache=true;
-	if(!cache.fetch_frame("test",tmp,true)) {
-		tmp="test value";
-		from_cache=false;
-		cache.store_frame("test",tmp,5);
-	}
-	if(from_cache)
-		cout <<"Fetched ["<<tmp<<"] from cache";
-	else
-		cout <<"Fetched ["<<tmp<<"] from start";
-}
-
-int main(int argc,char ** argv)
+int main(int argc,char **argv)
 {
 	try {
-		manager app(argc,argv);
-		app.set_worker(new application_factory<my_hello_world>());
-		app.execute();
+		cppcms::service service(argc,argv);
+		service.applications_pool().mount(".*",cppcms::applications_factory<hello>());
+		service.run();
 	}
 	catch(std::exception const &e) {
-		cerr<<e.what()<<endl;
+		std::cerr<<e.what()<<std::endl;
+		return 1;
 	}
+	return 0;
 }

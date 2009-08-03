@@ -15,5 +15,19 @@
 #	define CPPCMS_API __attribute__((visibility("default")))
 #endif
 
+#if (defined(WIN32) || defined(_WIN32) || defined(__WIN32)) && !defined(__CYGWIN__)
+#define CPPCMS_WIN_NATIVE
+#endif
+#if defined(__CYGWIN__)
+#define CPPCMS_CYGWIN
+#endif
+
+#if defined(CPPCMS_WIN_NATIVE) || defined(CPPCMS_CYGWIN)
+#define CPPCMS_WIN32
+#endif
+
+#if !defined(CPPCMS_WIN_NATIVE)
+#define CPPCMS_POSIX
+#endif
 
 #endif /// CPPCMS_DEFS_H

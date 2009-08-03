@@ -1,3 +1,4 @@
+#define CPPCMS_SOURCE
 #include "http_cookie.h"
 #include "http_protocol.h"
 #include "cppcms_error.h"

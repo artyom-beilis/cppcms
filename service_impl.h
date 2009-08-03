@@ -34,7 +34,7 @@ namespace impl {
 		std::auto_ptr<thread_pool> thread_pool_;
 
 		boost::asio::io_service io_service_;
-#if defined(__CYGWIN__) || defined(_WIN32)
+#ifdef CPPCMS_WIN32
 		boost::asio::ip::tcp::socket sig_,breaker_;
 #else
 		boost::asio::local::stream_protocol::socket sig_,breaker_;

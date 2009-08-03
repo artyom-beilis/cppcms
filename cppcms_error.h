@@ -1,13 +1,14 @@
 #ifndef CPPCMS_ERROR_H
 #define CPPCMS_ERROR_H
 
+#include "defs.h"
 #include <string>
 #include <stdexcept>
 
 namespace cppcms {
 
 
-class cppcms_error : public std::runtime_error {
+class CPPCMS_API cppcms_error : public std::runtime_error {
 	std::string strerror(int err);
 public:
 	cppcms_error(int err,std::string const &error);

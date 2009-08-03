@@ -1,6 +1,7 @@
 # Server API settings
 
-server.api = "fastcgi"				# fastcgi -- preferred API
+service.worker_threads = 0
+service.api = "scgi"				# fastcgi -- preferred API
 						# scgi	  -- simplefied FCGI API -- yet another alternative
 						# cgi	  -- Use only in case you application does huge amount of work
 						#            such the fork()+exec() time in neligable
@@ -23,7 +24,8 @@ server.buffer = 100				# Default 1 -- relevant for multi-threaded model
 						#              How many requests may be "on-hold" even if
 						#              thread pool is full. Also sets "listen(2) backlog parameter
 
-server.socket = "/tmp/hello-fastcgi.socket"     # Default is "" -- use default socket given
+service.port =  8000
+# service.socket = "/tmp/hello-fastcgi.socket"     # Default is "" -- use default socket given
 						#              by web server -
 
 # server.disable_xpowered_by	= 0		# Disable X-Powered-By header (default enabled)

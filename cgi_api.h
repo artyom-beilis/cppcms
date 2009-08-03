@@ -4,13 +4,11 @@
 #include "noncopyable.h"
 
 #include <vector>
-
-#include "asio_config.h"
-
 #include <boost/enable_shared_from_this.hpp>
 #include <boost/function.hpp>
 #include <boost/system/error_code.hpp>
 
+namespace boost { namespace asio { class io_service; } }
 
 
 namespace cppcms {
@@ -69,7 +67,6 @@ namespace cgi {
 		void async_write(void const *,size_t,io_handler const &h);
 	private:
 		void load_content(boost::system::error_code const &e);
-		void on_content_read(boost::system::error_code const &e);
 		void process_request(boost::system::error_code const &e);
 
 		void load_multipart_form_data();
@@ -77,12 +74,14 @@ namespace cgi {
 		void setup_application();
 		void dispatch(bool thread);
 		void on_response_complete();
+		void try_restart(boost::system::error_code const &);
 
 		std::auto_ptr<http::context> context_;
 		std::vector<char> content_;
 		std::auto_ptr<application> application_;
 
 		cppcms::service *service_;
+		std::string async_chunk_;
 
 	};
 

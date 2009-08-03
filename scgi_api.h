@@ -130,7 +130,7 @@ namespace cgi {
 
 	typedef scgi<boost::asio::ip::tcp> tcp_socket_scgi;
 	typedef tcp_socket_acceptor<tcp_socket_scgi>    tcp_socket_scgi_acceptor;
-#if !defined(_WIN32) && !defined(__CYGWIN__)
+#if !defined(CPPCMS_WIN32)
 	typedef scgi<boost::asio::local::stream_protocol> unix_socket_scgi;
 	typedef unix_socket_acceptor<unix_socket_scgi>    unix_socket_scgi_acceptor;
 #endif

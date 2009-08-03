@@ -1,48 +1,84 @@
 #define CPPCMS_SOURCE
+
 #include "application.h"
+#include "http_context.h"
+#include "service.h"
+#include "cppcms_error.h"
+#include "url_dispatcher.h"
+
 
 namespace cppcms {
-application::application(worker_thread &w) :
-	worker(w),
-	url(w.url),
-	app(worker.app),
-	cgi(worker.cgi),
-	env(worker.env),
-	cgi_conn(worker.cgi_conn),
-	cache(worker.cache),
-	session(worker.session),
-	cout(worker.cout),
-	on_start(worker.on_start),
-	on_end(worker.on_end)
+
+struct application::data {
+	data(cppcms::service *s):
+		service(s),
+		conn(0),
+		pool_id(-1)
+	{
+	}
+	cppcms::service *service;
+	http::context *conn;
+	int pool_id;
+	url_dispatcher url;
+};
+
+application::application(cppcms::service &srv) :
+	d(new data(&srv))
 {
+
 }
 
 application::~application()
 {
 }
 
-void application::on_404()
+cppcms::service &application::service()
 {
-	set_header(new cgicc::HTTPStatusHeader(404,"Not found"));
-	cout<<	"<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.0 Transitional//EN\"\n"
-		"         \"http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd\">\n"
-		"<html>\n"
-		"  <head>\n"
-		"    <title>404 - Not Found</title>\n"
-		"  </head>\n"
-		"  <body>\n"
-		"    <h1>404 - Not Found</h1>\n"
-		"  </body>\n"
-		"</html>\n";
+	return *d->service;
 }
 
-void application::main()
+cppcms_config const &application::settings() 
 {
-	on_start();
-	if(url.dispatch(env->getPathInfo())<0) {
-		on_404();
-	}
-	on_end();
+	return service().settings();
 }
 
+http::request &application::request()
+{
+	return context().request();
 }
+http::response &application::response()
+{
+	return context().response();
+}
+
+url_dispatcher &application::dispatcher()
+{
+	return d->url;
+}
+
+
+http::context &application::context()
+{
+	if(!d->conn)
+		throw cppcms_error("Trying to access uninitialized context");
+	return *d->conn;
+}
+
+void application::assign_context(http::context *conn)
+{
+	d->conn=conn;
+}
+
+void application::pool_id(int id)
+{
+	d->pool_id=id;
+}
+
+int application::pool_id()
+{
+	return d->pool_id;
+}
+
+
+
+} // cppcms

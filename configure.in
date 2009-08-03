@@ -82,33 +82,6 @@ AC_TRY_RUN([	#include <pthread.h>
 			echo "Check: process shared mutex... ok"],[echo "Check: process shared mutex not supported"],[echo "Cross compile, assume no"])
 
 
-if test "x$enable_forkcache" != "xno" ; then
-	AC_CHECK_LIB(mm,main,[
-		have_mm=yes
-		CPPCMS_LIBS="-lmm $CPPCMS_LIBS"
-		AC_DEFINE([EN_FORK_CACHE],[],["Enable fork cache"])
-		],
-		[	echo "======================================================================"
-			echo "               OSSP mm library (libmm) not installed" 
-			echo "               The fork cache backend is disabled "
-			echo "======================================================================" ]) 
-fi
-
-AM_CONDITIONAL(EN_FORK_CACHE,[test "x$have_mm" = "xyes" ])
-
-if test "x$enable_fastcgi" != "xno" ; then
-	AC_CHECK_LIB(fcgi++,main,[
-		have_fcgi=yes
-		CPPCMS_LIBS="-lfcgi++ -lfcgi $CPPCMS_LIBS"
-		AC_DEFINE([EN_FCGI_BACKEND],[],["Enable fastcgi backend"])
-		],
-		[	echo "======================================================================"
-			echo "Fast CGI library not installed"  
-			echo "============== FastCGI API will be disabled ==========================" 
-			echo "You still have scgi and cgi API" ])
-fi
-AM_CONDITIONAL(EN_FCGI_BACKEND,[test "x$have_fcgi" = "xyes" ])
-
 if test "x$enable_crypt" != "xno" ; then
 	AC_CHECK_LIB(gcrypt,main,[
 		have_gcrypt=yes
@@ -120,19 +93,6 @@ if test "x$enable_crypt" != "xno" ; then
 			echo "=====================================================================" ])
 fi
 AM_CONDITIONAL(EN_ENCR_SESSIONS,[test "x$have_gcrypt" = "xyes" ])
-
-if test "x$enable_sqlite" != "xno" ; then
-	AC_CHECK_LIB(sqlite3,sqlite3_open,[
-		have_sqlite3=yes
-		LIBS="-lsqlite3 $LIBS"
-		AC_DEFINE([EN_SQLITE_SESSIONS],[],["Enable sqlite sessions"])
-		],
-		[	echo "====================================================================="
-			echo "libsqlite3 not found, Sqlite sessions backend is disabled"
-			echo "=====================================================================" ])
-fi
-AM_CONDITIONAL(EN_SQLITE_SESSIONS,[test "x$have_sqlite3" = "xyes" ])
-
 
 have_auto_type_detection=no
 
@@ -226,12 +186,13 @@ then
 	fi
 fi
 
+case $host in 
+	*cygwin*) CPPCMS_LIBS="-lws2_32 -lwsock32 $CPPCMS_LIBS"
+esac
+
 if test "x$have_asio" = "xyes" 
 then
 	AC_DEFINE([EN_TCP_CACHE],[],["Enable tcp cache"])
-	case $host in 
-		*cygwin*) LIBS="-lws2_32 $LIBS"
-	esac
 fi
 
 
@@ -250,34 +211,36 @@ then
 	AC_SEARCH_LIBS(gethostbyname,nsl socket)
 fi
 
-if test "x$bsts" = "x"
-then
 	AC_CHECK_LIB(boost_regex,main,[
 		CPPCMS_LIBS="-lboost_regex $CPPCMS_LIBS"
-		],
-		[AC_CHECK_LIB(boost_regex-gcc-mt,main,[
+		],[AC_CHECK_LIB(boost_regex-gcc-mt,main,[
 			CPPCMS_LIBS="-lboost_regex-gcc-mt $CPPCMS_LIBS"
 			],[ echo "boost::regex not found" ; exit -1])])
-	if test "x$cms_bld" = "xnormal"
-	then
-		AC_CHECK_LIB(boost_iostreams,main,[
-			CPPCMS_LIBS="-lboost_iostreams $CPPCMS_LIBS"
-			],[AC_CHECK_LIB(boost_iostreams-gcc-mt,main,[
-				CPPCMS_LIBS="-lboost_iostreams-gcc-mt $CPPCMS_LIBS"
-				],[ echo "boost::iostreams not found" ; exit -1])])
-	fi
-	AC_CHECK_LIB(boost_signals,main,[
-		CPPCMS_LIBS="-lboost_signals $CPPCMS_LIBS"
-		],[AC_CHECK_LIB(boost_signals-gcc-mt,main,[
-			CPPCMS_LIBS="-lboost_signals-gcc-mt $CPPCMS_LIBS"
-			],[ echo "boost::signals not found" ; exit -1])])
-else
-	CPPCMS_LIBS="-lboost_regex-$bsts -lboost_iostreams-$bsts -lboost_signals-$bsts $CPPCMS_LIBS"
-	if test "x$cms_bld" = "xnormal"
-	then
-		CPPCMS_LIBS="-lboost_iostreams-$bsts CPPCMS_LIBS"
-	fi
-fi
+
+	AC_CHECK_LIB(boost_iostreams,main,[
+		CPPCMS_LIBS="-lboost_iostreams $CPPCMS_LIBS"
+		],[AC_CHECK_LIB(boost_iostreams-gcc-mt,main,[
+			CPPCMS_LIBS="-lboost_iostreams-gcc-mt $CPPCMS_LIBS"
+			],[ echo "boost::iostreams not found" ; exit -1])])
+
+	AC_CHECK_LIB(boost_system,main,[
+		CPPCMS_LIBS="-lboost_system $CPPCMS_LIBS"
+		],[AC_CHECK_LIB(boost_system-gcc-mt,main,[
+			CPPCMS_LIBS="-lboost_system-gcc-mt $CPPCMS_LIBS"
+			],[ echo "boost::system not found" ; exit -1])])
+
+	AC_CHECK_LIB(boost_thread,main,[
+		CPPCMS_LIBS="-lboost_thread $CPPCMS_LIBS"
+		],[AC_CHECK_LIB(boost_thread-gcc-mt,main,[
+			CPPCMS_LIBS="-lboost_thread-gcc-mt $CPPCMS_LIBS"
+			],[ echo "boost::thread not found" ; exit -1])])
+
+	AC_CHECK_LIB(boost_date_time,main,[
+		CPPCMS_LIBS="-lboost_date_time $CPPCMS_LIBS"
+		],[AC_CHECK_LIB(boost_date_time-gcc-mt,main,[
+			CPPCMS_LIBS="-lboost_date_time-gcc-mt $CPPCMS_LIBS"
+			],[ echo "boost::date_time not found" ; exit -1])])
+
 
 CPPCMS_LIBS="$CPPCMS_LIBS $LIBS"
 TCPSCALE_LIBS="$LIBS"

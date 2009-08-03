@@ -1,3 +1,4 @@
+#define CPPCMS_SOURCE
 #include "global_config.h"
 #include "cppcms_error.h"
 #include <map>

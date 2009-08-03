@@ -62,8 +62,6 @@ namespace http {
 		// synchronous io
 			normal, // write request, use buffering, possible compression,
 			nogzip, // as normal but disable gzip
-			direct, // use direct connection for transferring huge
-				// amount of data, for example big csv, file download
 			asynchronous,
 				// the data is buffered and never transferred
 				// untill it is requested explicitly

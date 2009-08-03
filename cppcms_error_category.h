@@ -13,19 +13,8 @@ namespace cppcms {
 		}
 		class error_category : public boost::system::error_category {
 		public:
-			virtual char const *name() const
-			{
-				return "cppcms::io";
-			}
-			virtual std::string message(int cat) const
-			{
-				switch(cat) {
-				case errc::ok: return "ok";
-				case errc::protocol_violation: return "protocol violation";
-				default:
-					return "unknown";
-				}
-			}
+			virtual char const *name() const;
+			virtual std::string message(int cat) const;
 		};
 
 		extern const error_category cppcms_category;

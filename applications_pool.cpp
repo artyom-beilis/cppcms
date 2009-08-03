@@ -1,3 +1,4 @@
+#define CPPCMS_SOURCE
 #include "applications_pool.h"
 #include "application.h"
 #include <set>

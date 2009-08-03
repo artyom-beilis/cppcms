@@ -16,11 +16,13 @@ namespace cppcms {
 
 		class CPPCMS_API context : private util::noncopyable {
 			struct data;
-			util::hold_ptr<data> d_;
+			util::hold_ptr<data> d;
+			impl::cgi::connection *conn_;
 		public:
 			context(impl::cgi::connection *conn);
 			~context();
 
+			impl::cgi::connection &connection();
 			http::request &request();
 			http::response &response();
 			cppcms_config const &settings();

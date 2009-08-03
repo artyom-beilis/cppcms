@@ -1,3 +1,4 @@
+#define CPPCMS_SOURCE
 #include "cgi_api.h"
 #include "http_request.h"
 #include "http_cookie.h"

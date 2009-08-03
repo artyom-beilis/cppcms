@@ -1,3 +1,4 @@
+#define CPPCMS_SOURCE
 #include "asio_config.h"
 
 #include "application.h"
@@ -37,6 +38,16 @@ namespace {
 
 
 namespace cppcms { namespace impl { namespace cgi {
+
+connection::connection(cppcms::service &srv) :
+	service_(&srv)
+{
+}
+
+connection::~connection()
+{
+}
+
 
 cppcms::service &connection::service()
 {
@@ -86,7 +97,7 @@ void connection::load_content(boost::system::error_code const &e)
 
 	async_read(	&content_.front(),
 			content_.size(),
-			boost::bind(&connection::on_content_read,shared_from_this(),_1));
+			boost::bind(&connection::process_request,shared_from_this(),_1));
 
 }
 
@@ -138,8 +149,11 @@ void connection::setup_application()
 	url_dispatcher::dispatch_type how;
 	if(application_.get() == 0 || (how=application_->dispatcher().dispatchable(path))!=url_dispatcher::none) {
 		make_error_response(http::response::not_found);
+		on_response_complete();
 		return;
 	}
+
+	application_->assign_context(context_.get());
 
 	if(how == url_dispatcher::asynchronous) {
 		dispatch(false);
@@ -157,10 +171,15 @@ void connection::dispatch(bool in_thread)
 {
 	try {
 		application_->dispatcher().dispatch();
-		context_->response().finalize();
+		context_->response().out() << std::flush;
 	}
 	catch(std::exception const &e){
-		// TODO
+		if(!context_->response().some_output_was_written()) {
+			if(!in_thread) 
+				context_->response().io_mode(http::response::asynchronous);
+			make_error_response(http::response::internal_server_error);
+		}
+		// TODO log it
 	}
 	if(in_thread)
 		get_io_service().post(boost::bind(&connection::on_response_complete,shared_from_this()));
@@ -170,12 +189,32 @@ void connection::dispatch(bool in_thread)
 
 void connection::on_response_complete()
 {
+	application_->assign_context(0);
 	service().applications_pool().put(application_);
+
+	if(context_->response().io_mode() == http::response::asynchronous) {
+		async_chunk_=context_->response().get_async_chunk();
+		if(!async_chunk_.empty()) {
+			async_write(
+				async_chunk_.c_str(),
+				async_chunk_.size(),
+				boost::bind(&connection::try_restart,shared_from_this(),_1));
+			return;
+		}
+	}
+	try_restart(boost::system::error_code());
+}
+
+void connection::try_restart(boost::system::error_code const &e)
+{
+	if(e) return;
+
 	if(keep_alive()) {
 		context_.reset();
 		on_accepted();
 	}
 }
+
 
 namespace {
 	struct reader {

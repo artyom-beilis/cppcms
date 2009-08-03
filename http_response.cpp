@@ -1,19 +1,22 @@
 #define CPPCMS_SOURCE
-#include <iostream>
-#include <sstream>
-#include <iterator>
-#include <map>
-
+#include "cgi_api.h"
 #include "http_response.h"
 #include "http_context.h"
 #include "http_request.h"
 #include "http_cookie.h"
 #include "global_config.h"
 #include "cppcms_error.h"
-#include "util.h"
+#include "service.h"
 #include "config.h"
+#include "util.h"
+
+#include <iostream>
+#include <sstream>
+#include <iterator>
+#include <map>
 
 #include <boost/lexical_cast.hpp>
+#include <boost/iostreams/stream.hpp>
 #include <boost/iostreams/filtering_stream.hpp>
 #include <boost/iostreams/filter/gzip.hpp>
 #include <boost/iostreams/tee.hpp>
@@ -43,13 +46,13 @@ namespace {
 
 
 namespace  {
-	struct output_device : public boost::iostreams::sink {
+	class output_device : public boost::iostreams::sink {
 		impl::cgi::connection *conn_;
 	public:
 		output_device(impl::cgi::connection *conn) : conn_(conn) {}
 		std::streamsize write(char const *data,std::streamsize n)
 		{
-			size_t all=0;
+			std::streamsize all=0;
 			while(all < n)
 				all += conn_->write_some(data,n);
 			return all;
@@ -77,7 +80,7 @@ struct response::data {
 
 
 response::response(context &context) :
-	d(new data(context.connection())),
+	d(new data(&context.connection())),
 	context_(context),
 	stream_(0),
 	io_mode_(normal),
@@ -89,6 +92,10 @@ response::response(context &context) :
 	if(context_.settings().integer("server.disable_xpowered_by",0)==0) {
 		set_header("X-Powered-By", PACKAGE_NAME "/" PACKAGE_VERSION);
 	}
+}
+
+response::~response()
+{
 }
 
 void response::set_content_header(std::string const &content_type)
@@ -190,7 +197,7 @@ void response::write_http_headers(std::ostream &stream)
 		out<<d->cookies[i]<<"\r\n";
 	}
 	out<<"\r\n";
-	out<<flush;
+	out<<std::flush;
 }
 
 
@@ -207,11 +214,16 @@ std::ostream &response::out()
 	if(ostream_requested_)
 		return *stream_;
 
-	std::ostream &real_sink = io_mode_ == asynchronous ? d->buffered  : d->output ;
+	std::ostream *real_sink = 0;
+
+	if(io_mode_ == asynchronous)
+		real_sink = &d->buffered;
+	else
+		real_sink = &d->output;
 
 	ostream_requested_=1;
 	
-	write_http_headers(real_sink);
+	write_http_headers(*real_sink);
 	
 	if(need_gzip()) {
 		gzip_params params;
@@ -234,9 +246,9 @@ std::ostream &response::out()
 	}
 	
 	if(stream_)
-		d->filter.push(real_sink);
+		d->filter.push(*real_sink);
 	else
-		stream_=&real_sink;
+		stream_=real_sink;
 
 	return *stream_;
 }
@@ -248,7 +260,7 @@ std::string response::get_async_chunk()
 	return result;
 }
 
-bool result::some_output_was_written()
+bool response::some_output_was_written()
 {
 	return ostream_requested_;
 }

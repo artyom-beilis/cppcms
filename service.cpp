@@ -11,7 +11,7 @@
 
 #include "asio_config.h"
 
-#if !defined(_WIN32) && !defined(__CYGWIN__)
+#ifdef CPPCMS_POSIX
 #include <sys/wait.h>
 #endif
 
@@ -37,7 +37,7 @@ int service::threads_no()
 }
 
 namespace {
-#if defined(__CYGWIN__) || defined(_WIN32)
+#if defined(CPPCMS_WIN32)
 	void make_socket_pair(boost::asio::ip::tcp::socket &s1,boost::asio::ip::tcp::socket &s2)
 	{
 		boost::asio::ip::tcp::acceptor acceptor(s1.get_io_service(),
@@ -81,7 +81,7 @@ namespace {
 #endif
 } // anon
 
-#ifdef _WIN32
+#ifdef CPPCMS_WIN_NATIVE
 void service::setup_exit_handling()
 {
 	throw cppcms_error("TODO Setup exit handling");
@@ -90,17 +90,8 @@ void service::setup_exit_handling()
 #else 
 
 
-
 void service::setup_exit_handling()
 {
-
-	sigset_t set;
-	sigemptyset(&set);
-	sigaddset(&set,SIGINT);
-	sigaddset(&set,SIGTERM);
-	sigaddset(&set,SIGUSR1);
-
-	pthread_sigmask(SIG_BLOCK,&set,0);
 
 	make_socket_pair(impl_->sig_,impl_->breaker_);
 
@@ -112,8 +103,10 @@ void service::setup_exit_handling()
 	notification_socket=impl_->sig_.native();
 
 	struct sigaction sa;
+
 	memset(&sa,0,sizeof(sa));
 	sa.sa_handler=handler;
+	
 	sigaction(SIGINT,&sa,0);
 	sigaction(SIGTERM,&sa,0);
 	sigaction(SIGUSR1,&sa,0);
@@ -131,6 +124,7 @@ void service::run()
 	impl_->acceptor_->async_accept();
 
 	setup_exit_handling();
+
 	impl_->get_io_service().run();
 }
 
@@ -139,14 +133,14 @@ int service::procs_no()
 	int procs=settings().integer("service.procs",0);
 	if(procs < 0)
 		procs = 0;
-	#if defined(_WIN32) || defined(__CYGWIN)
+	#ifdef CPPCMS_WIN32
 	if(procs > 0)
 		throw cppcms_error("Prefork is not supported under Windows");
 	#endif
 	return procs;
 }
 
-#if defined(_WIN32) || defined(__CYGWIN__)
+#ifdef CPPCMS_WIN32
 bool service::prefork()
 {
 	procs_no();
@@ -228,9 +222,9 @@ void service::start_acceptor()
 			throw cppcms_error("Unknown service.api: " + api);
 	}
 	else {
-#ifdef _WIN32  
+#ifdef CPPCMS_WIN_NATIVE 
 		throw cppcms_error("Unix domain sockets are not supported under Windows... (isn't it obvious?)");
-#elif defined(__CYGWIN__)
+#elif defined CPPCMS_CYGWIN
 		throw cppcms_error("CppCMS uses native Win32 sockets under cygwin, so Unix sockets are not supported");
 #else
 		if(api=="scgi")
@@ -267,10 +261,14 @@ cppcms::impl::service &service::impl()
 
 void service::stop()
 {
+	std::cout<<"Shutting down"<<std::endl;
 	if(impl_->acceptor_.get())
 		impl_->acceptor_->stop();
+	std::cout<<"Acceptor down"<<std::endl;
 	thread_pool().stop();
+	std::cout<<"Thread pool"<<std::endl;
 	impl_->get_io_service().stop();
+	std::cout<<"Io Service down"<<std::endl;
 }
 
 namespace impl {

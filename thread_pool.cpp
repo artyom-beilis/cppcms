@@ -19,7 +19,7 @@ namespace impl {
 		thread_pool(int threads)
 		{
 			workers_.resize(threads);
-			#ifndef _WIN32
+			#if !defined(CPPCMS_WIN_NATIVE)
 			sigset_t set,old;
 			sigfillset(&set);
 			pthread_sigmask(SIG_BLOCK,&set,&old);
@@ -28,7 +28,7 @@ namespace impl {
 				workers_[i].reset(new boost::thread(boost::bind(&thread_pool::worker,this)));
 			}
 	
-			#ifndef _WIN32
+			#if !defined(CPPCMS_WIN_NATIVE)
 			pthread_sigmask(SIG_SETMASK,&old,0);
 			#endif
 	
