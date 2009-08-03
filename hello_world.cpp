@@ -28,9 +28,10 @@ int main(int argc,char **argv)
 		cppcms::service service(argc,argv);
 		service.applications_pool().mount(".*",cppcms::applications_factory<hello>());
 		service.run();
+		std::cout<<"Done..."<<std::endl;
 	}
 	catch(std::exception const &e) {
-		std::cerr<<e.what()<<std::endl;
+		std::cerr<<"Catched exception: "<<e.what()<<std::endl;
 		return 1;
 	}
 	return 0;

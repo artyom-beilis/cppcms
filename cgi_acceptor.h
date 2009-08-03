@@ -48,7 +48,6 @@ namespace impl {
 				if(!e) {
 					set_options(asio_socket_);
 					api_->on_accepted();
-					return;
 				}
 				async_accept();
 			}

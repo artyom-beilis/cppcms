@@ -15,6 +15,8 @@
 #include <sys/wait.h>
 #endif
 
+#include <iostream>
+
 namespace cppcms {
 
 
@@ -261,14 +263,10 @@ cppcms::impl::service &service::impl()
 
 void service::stop()
 {
-	std::cout<<"Shutting down"<<std::endl;
-	if(impl_->acceptor_.get())
-		impl_->acceptor_->stop();
-	std::cout<<"Acceptor down"<<std::endl;
+//	if(impl_->acceptor_.get())
+//		impl_->acceptor_->stop();
 	thread_pool().stop();
-	std::cout<<"Thread pool"<<std::endl;
 	impl_->get_io_service().stop();
-	std::cout<<"Io Service down"<<std::endl;
 }
 
 namespace impl {

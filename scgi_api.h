@@ -6,7 +6,7 @@
 #include "service.h"
 #include "service_impl.h"
 #include "cppcms_error_category.h"
-
+#include <iostream>
 
 namespace cppcms {
 namespace impl {
@@ -44,7 +44,7 @@ namespace cgi {
 				return;
 			}
 			sep_=std::find(buffer_.begin(),buffer_.begin()+n,':') - buffer_.begin();
-			if(sep_ > 16) {
+			if(sep_ >= 16) {
 				h(boost::system::error_code(errc::protocol_violation,cppcms_category));
 				return;
 			}
@@ -75,14 +75,15 @@ namespace cgi {
 			char const *p=&buffer_[sep_ + 1];
 			while(p < &buffer_.back()) {
 				std::string key=p;
-				p+=key.size();
+				p+=key.size()+1;
 				if(p>=&buffer_.back())
 					break;
 				std::string value=p;
-				p+=value.size();
+				p+=value.size()+1;
 				env_.insert(std::pair<std::string,std::string>(key,value));
 			}
 			buffer_.clear();
+
 			h(boost::system::error_code());
 		}
 
@@ -114,6 +115,13 @@ namespace cgi {
 		virtual bool keep_alive()
 		{
 			return false;
+		}
+
+		virtual void close()
+		{
+			boost::system::error_code e;
+			socket_.shutdown(boost::asio::basic_stream_socket<Proto>::shutdown_both,e);
+			socket_.close(e);
 		}
 
 	private:

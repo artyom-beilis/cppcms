@@ -1,6 +1,9 @@
 # Server API settings
 
-service.worker_threads = 0
+
+service.port =  8000
+#service.socket = "/tmp/scgi.socket"     # Default is "" -- use default socket given
+service.worker_threads = 5
 service.api = "scgi"				# fastcgi -- preferred API
 						# scgi	  -- simplefied FCGI API -- yet another alternative
 						# cgi	  -- Use only in case you application does huge amount of work
@@ -24,8 +27,6 @@ server.buffer = 100				# Default 1 -- relevant for multi-threaded model
 						#              How many requests may be "on-hold" even if
 						#              thread pool is full. Also sets "listen(2) backlog parameter
 
-service.port =  8000
-# service.socket = "/tmp/hello-fastcgi.socket"     # Default is "" -- use default socket given
 						#              by web server -
 
 # server.disable_xpowered_by	= 0		# Disable X-Powered-By header (default enabled)
@@ -35,7 +36,7 @@ service.port =  8000
 
 # ZLib Compression: 
 
-# gzip.enable = 1				# Default 0 -- Enable gzip compression recomended to turn on
+# gzip.enable = 0				# Default 0 -- Enable gzip compression recomended to turn on
 # gzip.level = 1				# Default: zlib defailt, defines compression level 
 # gzip.buffer = 4096				# Default: zlib default, defines buffer size for zlib
 

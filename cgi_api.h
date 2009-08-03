@@ -52,6 +52,7 @@ namespace cgi {
 		virtual void async_read_headers(handler const &h) = 0;
 		virtual std::string getenv(std::string const &key) = 0;
 		virtual bool keep_alive() = 0;
+		virtual void close() = 0;
 
 		// Concept implementation headers		
 		

@@ -27,13 +27,13 @@ namespace impl {
 
 	private:
 		friend class cppcms::service;
+		boost::asio::io_service io_service_;
 
 		std::auto_ptr<cgi::acceptor> acceptor_;
 		std::auto_ptr<cppcms_config> settings_;
 		std::auto_ptr<applications_pool> applications_pool_;
 		std::auto_ptr<thread_pool> thread_pool_;
 
-		boost::asio::io_service io_service_;
 #ifdef CPPCMS_WIN32
 		boost::asio::ip::tcp::socket sig_,breaker_;
 #else

@@ -5,6 +5,10 @@
 #include <boost/shared_ptr.hpp>
 #include <boost/bind.hpp>
 
+#if defined(CPPCMS_POSIX)
+#include <signal.h>
+#endif 
+
 namespace cppcms {
 namespace impl {
 	class thread_pool : public util::noncopyable {
@@ -19,7 +23,7 @@ namespace impl {
 		thread_pool(int threads)
 		{
 			workers_.resize(threads);
-			#if !defined(CPPCMS_WIN_NATIVE)
+			#if defined(CPPCMS_POSIX)
 			sigset_t set,old;
 			sigfillset(&set);
 			pthread_sigmask(SIG_BLOCK,&set,&old);
@@ -28,7 +32,7 @@ namespace impl {
 				workers_[i].reset(new boost::thread(boost::bind(&thread_pool::worker,this)));
 			}
 	
-			#if !defined(CPPCMS_WIN_NATIVE)
+			#if defined(CPPCMS_POSIX)
 			pthread_sigmask(SIG_SETMASK,&old,0);
 			#endif
 	

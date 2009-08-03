@@ -147,7 +147,7 @@ void connection::setup_application()
 	application_ = service().applications_pool().get(path,matched);
 
 	url_dispatcher::dispatch_type how;
-	if(application_.get() == 0 || (how=application_->dispatcher().dispatchable(path))!=url_dispatcher::none) {
+	if(application_.get() == 0 || (how=application_->dispatcher().dispatchable(path))==url_dispatcher::none) {
 		make_error_response(http::response::not_found);
 		on_response_complete();
 		return;
@@ -172,6 +172,7 @@ void connection::dispatch(bool in_thread)
 	try {
 		application_->dispatcher().dispatch();
 		context_->response().out() << std::flush;
+		context_->response().finalize();
 	}
 	catch(std::exception const &e){
 		if(!context_->response().some_output_was_written()) {
@@ -179,7 +180,10 @@ void connection::dispatch(bool in_thread)
 				context_->response().io_mode(http::response::asynchronous);
 			make_error_response(http::response::internal_server_error);
 		}
-		// TODO log it
+		else {
+			// TODO log it
+			std::cerr<<"Catched excepion ["<<e.what()<<"]"<<std::endl;
+		}
 	}
 	if(in_thread)
 		get_io_service().post(boost::bind(&connection::on_response_complete,shared_from_this()));
@@ -213,6 +217,7 @@ void connection::try_restart(boost::system::error_code const &e)
 		context_.reset();
 		on_accepted();
 	}
+	close();
 }
 
 

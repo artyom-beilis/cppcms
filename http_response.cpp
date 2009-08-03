@@ -66,10 +66,10 @@ struct response::data {
 	headers_type headers;
 	std::vector<cookie> cookies;
 	std::ostringstream buffer;
-	boost::iostreams::filtering_ostream filter;
 	std::ostringstream cached;
 	std::ostringstream buffered;
 	boost::iostreams::stream<output_device> output;
+	boost::iostreams::filtering_ostream filter;
 
 	data(impl::cgi::connection *conn) : 
 		headers(string_i_comp),
@@ -139,6 +139,7 @@ void response::set_header(std::string const &name,std::string const &value)
 void response::finalize()
 {
 	d->filter.reset();
+	d->output<<std::flush;
 }
 
 std::string response::get_header(std::string const &name)
@@ -222,17 +223,24 @@ std::ostream &response::out()
 		real_sink = &d->output;
 
 	ostream_requested_=1;
+
+	bool gzip = need_gzip();
 	
+	if(gzip) {
+		content_encoding("gzip");
+	}
+
+	// Now we shoulde write headers -- before comrpession
 	write_http_headers(*real_sink);
 	
-	if(need_gzip()) {
+	if(gzip) {
 		gzip_params params;
 
 		int level=context_.settings().integer("gzip.level",-1);
 		if(level!=-1)
 			params.level=level;
 		int buffer=context_.settings().integer("gzip.buffer",-1);
-		if(buffer!=1)
+		if(buffer!=-1)
 			d->filter.push(gzip_compressor(params,buffer));
 		else
 			d->filter.push(gzip_compressor(params));
