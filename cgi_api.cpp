@@ -68,7 +68,7 @@ void connection::load_content(boost::system::error_code const &e)
 	std::string content_type = getenv("CONTENT_TYPE");
 	std::string s_content_length=getenv("CONTENT_LENGTH");
 
-	long long content_length = s_content_length.empty() ? atoll(s_content_length.c_str()) : 0;
+	long long content_length = s_content_length.empty() ? 0 : atoll(s_content_length.c_str());
 
 	if(content_length < 0)  {
 		// TODO log
@@ -93,12 +93,15 @@ void connection::load_content(boost::system::error_code const &e)
 	}
 
 	content_.clear();
-	content_.resize(content_length,0);
 
-	async_read(	&content_.front(),
-			content_.size(),
-			boost::bind(&connection::process_request,shared_from_this(),_1));
-
+	if(content_length > 0) {
+		content_.resize(content_length,0);
+		async_read(	&content_.front(),
+				content_.size(),
+				boost::bind(&connection::process_request,shared_from_this(),_1));
+	}
+	else 
+		process_request(boost::system::error_code());
 }
 
 void connection::load_multipart_form_data()
@@ -114,9 +117,11 @@ void connection::process_request(boost::system::error_code const &e)
 {
 	if(e) return;
 	context_.reset(new http::context(this));
-	context_->request().set_post_data(content_);
-	if(!context_->request().prepare())
+	if(!content_.empty())
+		context_->request().set_post_data(content_);
+	if(!context_->request().prepare()) {
 		return;
+	}
 	setup_application();
 }
 

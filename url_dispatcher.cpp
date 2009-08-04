@@ -128,9 +128,10 @@ namespace cppcms {
 	{
 		unsigned i;
 		for(i=0;i<d->options.size();i++) {
-			if(d->options[i]->matches(path))
+			if(d->options[i]->matches(path)) {
 				d->last_option=d->options[i];
-			return d->last_option->dispatchable();
+				return d->last_option->dispatchable();
+			}
 		}
 		return none;
 	}

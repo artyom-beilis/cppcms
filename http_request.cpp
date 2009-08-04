@@ -58,13 +58,18 @@ std::string request::urlencoded_decode(char const *begin,char const *end)
 		char c=*begin;
 		switch(c) {
 		case '+': result+=' ';
+			break;
 		case '%':
 			if(end-begin >= 3 && xdigit(begin[1]) && xdigit(begin[2])) {
 				char buf[3]={begin[1],begin[2],0};
 				int value;
 				sscanf(buf,"%x",&value);
 				result+=char(value);
+				begin+=2;
 			}
+			break;
+		default:
+			result+=c;
 		
 		}
 	}
@@ -82,7 +87,7 @@ bool request::parse_form_urlencoded(char const *begin,char const *end,form_type 
 		std::string name=urlencoded_decode(p,name_end);
 		std::string value=urlencoded_decode(name_end+1,e);
 		out.insert(std::make_pair(name,value));
-		p=e;
+		p=e+1;
 	}
 	return true;
 }
