@@ -1,7 +1,9 @@
+#define CPPCMS_SOURCE
 #include "util.h"
 #include <stdio.h>
 
 namespace cppcms {
+namespace util {
 
 std::string escape(std::string const &s)
 {
@@ -54,4 +56,5 @@ std::string urlencode(std::string const &s)
 	return content;
 }
 
-}
+} // util
+} // util

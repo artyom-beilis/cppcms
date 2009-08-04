@@ -33,7 +33,8 @@ libcppcms_la_SOURCES = \
 	applications_pool.cpp \
 	application.cpp \
 	url_dispatcher.cpp \
-	http_cookie.cpp 
+	http_cookie.cpp  \
+	util.cpp
 
 
 

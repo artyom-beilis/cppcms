@@ -4,11 +4,11 @@
 #include "http_context.h"
 #include "http_request.h"
 #include "http_cookie.h"
+#include "http_protocol.h"
 #include "global_config.h"
 #include "cppcms_error.h"
 #include "service.h"
 #include "config.h"
-#include "util.h"
 
 #include <iostream>
 #include <sstream>
@@ -28,18 +28,7 @@ namespace {
 
 	bool string_i_comp(std::string const &left,std::string const &right)
 	{
-		size_t lsize=left.size();
-		size_t rsize=right.size();
-		for(size_t i=0;i<lsize && i<rsize;i++) {
-			char cl=util::ascii_tolower(left[i]);
-			char cr=util::ascii_tolower(right[i]);
-			if(cl<cr) return true;
-			if(cl>cr) return false;
-			// if(cl==cr) continue
-		}
-		if(lsize<rsize)
-			return true;
-		return false;
+		return http::protocol::compare(left,right) < 0;
 	}
 } // anon
 

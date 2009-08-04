@@ -3,39 +3,80 @@
 #include "http_request.h"
 #include "http_cookie.h"
 #include "http_file.h"
+#include "http_protocol.h"
 
 #include <stdio.h>
 #include <boost/shared_ptr.hpp>
 
 namespace cppcms { namespace http {
 
+bool request::read_key_value(
+		std::string::const_iterator &p,
+		std::string::const_iterator e,
+		std::string &key,
+		std::string &value)
+{
+	std::string::const_iterator tmp;
+	p=http::protocol::skip_ws(p,e);
+	tmp=p;
+	p=http::protocol::tocken(p,e);
+	if(p==tmp && p<e) {
+		return false;
+	}
+	key.assign(tmp,p);
+	p=http::protocol::skip_ws(p,e);
+	if(p<e && *p!='=') {
+		return false;
+	}
+	p=http::protocol::skip_ws(p+1,e);
+	if(*p=='"') {
+		tmp=p;
+		value=http::protocol::unquote(p,e);
+		if(p==tmp) {
+			return false;
+		}
+	}
+	else {
+		tmp=p;
+		p=http::protocol::tocken(p,e);
+		value.assign(tmp,p);
+	}
+	p=http::protocol::skip_ws(p,e);
+	if(p<e && (*p==';' || *p==',' ))
+		p=http::protocol::skip_ws(p+1,e);
+	return true;
+}
+
 bool request::parse_cookies()
 {
-	std::string cookie=http_cookie();
-	// TODO
+	std::string const cookie_str=http_cookie();
+	std::string::const_iterator p=cookie_str.begin(),e=cookie_str.end();
+	p=http::protocol::skip_ws(p,e);
+	http::cookie cookie;
+	while(p<e) {
+		std::string key,value;
+		if(!read_key_value(p,e,key,value)) {
+			return false;
+		}
+		if(key[0]=='$') {
+			if(cookie.name().empty()) {
+				if(http::protocol::compare(key,"$Path")==0)
+					cookie.name(value);
+				else if(http::protocol::compare(key,"$Domain")==0)
+					cookie.domain(value);
+			}
+		}
+		else {
+			if(!cookie.name().empty())
+				cookies_.insert(std::make_pair(cookie.name(),cookie));
+			cookie=http::cookie(key,value);
+		}
+	}
+	if(!cookie.name().empty())
+		cookies_.insert(std::make_pair(cookie.name(),cookie));
 	return true;	
 }
 
-namespace {
-	bool inline xdigit(int c) { return ('0'<=c && c<='9') || ('a'<=c && c<='f') || ('A'<=c && c<='F'); }
-	char ascii_to_lower(char c)
-	{
-		if('A'<=c && c<='Z')
-			return 'a'+(c-'A');
-		return c;
-	}
-	bool is_prefix_of(char const *prefix,std::string const &s)
-	{
-		size_t len=strlen(prefix);
-		if(s.size() < len)
-			return false;
-		for(size_t i=0;i<len;i++) {
-			if(ascii_to_lower(prefix[i]!=ascii_to_lower(s[i])))
-				return false;
-		}
-		return true;
-	}
-}
 
 struct request::data {
 	std::vector<boost::shared_ptr<file> > files;
@@ -60,7 +101,7 @@ std::string request::urlencoded_decode(char const *begin,char const *end)
 		case '+': result+=' ';
 			break;
 		case '%':
-			if(end-begin >= 3 && xdigit(begin[1]) && xdigit(begin[2])) {
+			if(end-begin >= 3 && http::protocol::xdigit(begin[1]) && http::protocol::xdigit(begin[2])) {
 				char buf[3]={begin[1],begin[2],0};
 				int value;
 				sscanf(buf,"%x",&value);
@@ -98,7 +139,7 @@ bool request::prepare()
 	if(!parse_form_urlencoded(query.data(),query.data()+query.size(),get_)) 
 		return false;
 	
-	if(is_prefix_of("application/x-www-form-urlencoded",content_type())) {
+	if(http::protocol::is_prefix_of("application/x-www-form-urlencoded",content_type())) {
 		char const *pdata=&d->post_data.front();
 		if(!parse_form_urlencoded(pdata,pdata+d->post_data.size(),post_)) 
 			return false;

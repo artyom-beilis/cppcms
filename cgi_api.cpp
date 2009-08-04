@@ -6,35 +6,15 @@
 #include "http_context.h"
 #include "http_request.h"
 #include "http_response.h"
+#include "http_protocol.h"
 #include "applications_pool.h"
 #include "thread_pool.h"
 #include "service.h"
 #include "global_config.h"
 #include "cgi_api.h"
+#include "util.h"
 
 #include <boost/bind.hpp>
-
-
-namespace {
-	bool inline xdigit(int c) { return ('0'<=c && c<='9') || ('a'<=c && c<='f') || ('A'<=c && c<='F'); }
-	char ascii_to_lower(char c)
-	{
-		if('A'<=c && c<='Z')
-			return 'a'+(c-'A');
-		return c;
-	}
-	bool is_prefix_of(char const *prefix,std::string const &s)
-	{
-		size_t len=strlen(prefix);
-		if(s.size() < len)
-			return false;
-		for(size_t i=0;i<len;i++) {
-			if(ascii_to_lower(prefix[i]!=ascii_to_lower(s[i])))
-				return false;
-		}
-		return true;
-	}
-}
 
 
 namespace cppcms { namespace impl { namespace cgi {
@@ -75,7 +55,7 @@ void connection::load_content(boost::system::error_code const &e)
 		return;
 	}
 
-	if(is_prefix_of("multipart/form-data",content_type)) {
+	if(http::protocol::is_prefix_of("multipart/form-data",content_type)) {
 		// 64 MB
 		long long allowed=service().settings().integer("security.multipart_form_data_limit",64*1024)*1024;
 		if(content_length > allowed) { 
@@ -138,7 +118,7 @@ void connection::make_error_response(int status,char const *msg)
 		"  </head>\n"
 		"  <body>\n"
 		"    <h1>"<<status<<" &emdash; "<< http::response::status_to_string(status)<<"</h1>\n"
-		"    <p>"<<msg<<"</p>\n"
+		"    <p>"<<util::escape(msg)<<"</p>\n"
 		"  </body>\n"
 		"</html>\n"<<std::flush;
 }
@@ -183,7 +163,8 @@ void connection::dispatch(bool in_thread)
 		if(!context_->response().some_output_was_written()) {
 			if(!in_thread) 
 				context_->response().io_mode(http::response::asynchronous);
-			make_error_response(http::response::internal_server_error);
+			make_error_response(http::response::internal_server_error,e.what());
+			context_->response().finalize();
 		}
 		else {
 			// TODO log it

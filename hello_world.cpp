@@ -4,6 +4,10 @@
 #include "service.h"
 #include "http_response.h"
 #include "http_request.h"
+#include "http_cookie.h"
+#include <sstream>
+#include <stdexcept>
+
 
 class hello : public cppcms::application {
 public:
@@ -13,14 +17,28 @@ public:
 		dispatcher().assign("^/(\\d+)$",&hello::num,this,1);
 		dispatcher().assign("^/get$",&hello::gform,this);
 		dispatcher().assign("^/post$",&hello::pform,this);
+		dispatcher().assign("^/err$",&hello::err,this);
 		dispatcher().assign(".*",&hello::hello_world,this);
+	}
+	void err()
+	{
+		throw std::runtime_error("Foo<Bar>!!!");
 	}
 	void hello_world()
 	{
+		std::ostringstream ss;
+		ss<<time(NULL);
+		response().set_cookie(cppcms::http::cookie("test",ss.str()));
 		response().out() <<
 			"<html><body>\n"
-			"<h1>Hello World!</h1>\n"
+			"<h1>Hello World!</h1>\n";
+		cppcms::http::request::cookies_type::const_iterator p;
+		for(p=request().cookies().begin();p!=request().cookies().end();++p) {
+			response().out()<<p->second<<"<br/>\n";
+		}
+		response().out() <<
 			"<body></html>\n";
+
 	}
 	void num(std::string s)
 	{

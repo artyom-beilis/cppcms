@@ -1,18 +1,15 @@
 #ifndef CPPCMS_UTIL_H
 #define CPPCMS_UTIL_H
+
+#include "defs.h"
 #include <string>
+
 namespace cppcms {
-std::string escape(std::string const &s);
-std::string urlencode(std::string const &s);
-namespace util {
-	inline char ascii_tolower(char c)
-	{
-		if(c<'A' || c>'Z') return c;
-		return c-'A'+'a';
+
+	namespace util {
+		std::string CPPCMS_API escape(std::string const &s);
+		std::string CPPCMS_API urlencode(std::string const &s);
 	}
-}
-
-
 }
 
 #endif

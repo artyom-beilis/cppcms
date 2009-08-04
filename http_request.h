@@ -93,6 +93,11 @@ namespace http {
 		bool parse_cookies();
 		std::string urlencoded_decode(char const *,char const *);
 		bool parse_form_urlencoded(char const *begin,char const *end,form_type &out);
+		bool read_key_value(
+				std::string::const_iterator &p,
+				std::string::const_iterator e,
+				std::string &key,
+				std::string &value);
 
 		struct data;
 		form_type get_;
