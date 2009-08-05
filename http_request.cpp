@@ -4,6 +4,7 @@
 #include "http_cookie.h"
 #include "http_file.h"
 #include "http_protocol.h"
+#include "util.h"
 
 #include <stdio.h>
 #include <boost/shared_ptr.hpp>
@@ -89,34 +90,6 @@ void request::set_post_data(std::vector<char> &post_data)
 	d->post_data.swap(post_data);
 }
 
-
-// TODO: Find correct RFC for proprer decoding
-std::string request::urlencoded_decode(char const *begin,char const *end)
-{
-	std::string result;
-	result.reserve(end-begin);
-	for(;begin<end;begin++) {
-		char c=*begin;
-		switch(c) {
-		case '+': result+=' ';
-			break;
-		case '%':
-			if(end-begin >= 3 && http::protocol::xdigit(begin[1]) && http::protocol::xdigit(begin[2])) {
-				char buf[3]={begin[1],begin[2],0};
-				int value;
-				sscanf(buf,"%x",&value);
-				result+=char(value);
-				begin+=2;
-			}
-			break;
-		default:
-			result+=c;
-		
-		}
-	}
-	return result;
-}
-
 bool request::parse_form_urlencoded(char const *begin,char const *end,form_type &out)
 {
 	char const *p;
@@ -125,8 +98,8 @@ bool request::parse_form_urlencoded(char const *begin,char const *end,form_type 
 		char const *name_end=std::find(p,e,'=');
 		if(name_end==e || name_end==p)
 			return false;
-		std::string name=urlencoded_decode(p,name_end);
-		std::string value=urlencoded_decode(name_end+1,e);
+		std::string name=util::urldecode(p,name_end);
+		std::string value=util::urldecode(name_end+1,e);
 		out.insert(std::make_pair(name,value));
 		p=e+1;
 	}

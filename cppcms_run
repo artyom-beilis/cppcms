@@ -425,11 +425,11 @@ fi
 
 # Setup runtime parameters
 
-SOCKET=`find_param $APP_CONFIG_FILE server.socket`
-API=`find_param $APP_CONFIG_FILE server.api`
+SOCKET=`find_param $APP_CONFIG_FILE service.socket`
+API=`find_param $APP_CONFIG_FILE service.api`
 
 if [ "$SOCKET" == "" ] || [ "$API" == "" ] ; then
-	echo "Can't find server.api and server.socket if $APP_CONFIG_FILE"
+	echo "Can't find service.api or service.socket in $APP_CONFIG_FILE"
 	echo "Aborting"
 	exit 1
 fi

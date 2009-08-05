@@ -9,6 +9,8 @@ namespace cppcms {
 	namespace util {
 		std::string CPPCMS_API escape(std::string const &s);
 		std::string CPPCMS_API urlencode(std::string const &s);
+		std::string CPPCMS_API urldecode(std::string const &s);
+		std::string CPPCMS_API urldecode(char const *begin,char const *end);
 	}
 }
 

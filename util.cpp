@@ -1,5 +1,6 @@
 #define CPPCMS_SOURCE
 #include "util.h"
+#include "http_protocol.h"
 #include <stdio.h>
 
 namespace cppcms {
@@ -56,5 +57,36 @@ std::string urlencode(std::string const &s)
 	return content;
 }
 
+
+std::string urldecode(std::string const &s)
+{
+	return urldecode(s.c_str(),s.c_str()+s.size());
+}
+// TODO: Find correct RFC for proprer decoding
+std::string urldecode(char const *begin,char const *end)
+{
+	std::string result;
+	result.reserve(end-begin);
+	for(;begin<end;begin++) {
+		char c=*begin;
+		switch(c) {
+		case '+': result+=' ';
+			break;
+		case '%':
+			if(end-begin >= 3 && http::protocol::xdigit(begin[1]) && http::protocol::xdigit(begin[2])) {
+				char buf[3]={begin[1],begin[2],0};
+				int value;
+				sscanf(buf,"%x",&value);
+				result+=char(value);
+				begin+=2;
+			}
+			break;
+		default:
+			result+=c;
+		
+		}
+	}
+	return result;
+}
 } // util
 } // util
