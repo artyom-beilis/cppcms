@@ -22,7 +22,7 @@ namespace cppcms {
 		~service();
 
 		void run();
-		void stop();
+		void shutdown();
 
 		cppcms::applications_pool &applications_pool();
 		cppcms::thread_pool &thread_pool();
@@ -30,6 +30,7 @@ namespace cppcms {
 
 		cppcms::impl::service &impl();
 	private:
+		void stop();
 		void start_acceptor();
 		void setup_exit_handling();
 		int threads_no();

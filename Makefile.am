@@ -9,7 +9,7 @@ noinst_PROGRAMS = hello_world
 
 hello_world_SOURCES= hello_world.cpp
 hello_world_LDADD= libcppcms.la
-hello_world_CXXFLAGS= -g -Wall 
+hello_world_CXXFLAGS=-g -Wall
 
 
 
@@ -48,7 +48,7 @@ libcppcms_la_SOURCES = \
 
 libcppcms_la_LDFLAGS  = -no-undefined -version-info 0:0:0
 libcppcms_la_LIBADD = @CPPCMS_LIBS@
-libcppcms_la_CXXFLAGS = -g -Wall
+libcppcms_la_CXXFLAGS =-g -Wall
 
 #if EN_FORK_CACHE
 #libcppcms_la_SOURCES += process_cache.cpp

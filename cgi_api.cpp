@@ -88,18 +88,26 @@ void connection::load_multipart_form_data()
 {
 	// TODO Load it
 	context_.reset(new http::context(this));
-	if(!context_->request().prepare())
+
+	if(!context_->request().prepare()) {
+		context_->response().io_mode(http::response::asynchronous);
+		make_error_response(http::response::bad_request);
 		return;
+	}
 	setup_application();
 }
 
 void connection::process_request(boost::system::error_code const &e)
 {
 	if(e) return;
+
 	context_.reset(new http::context(this));
 	if(!content_.empty())
 		context_->request().set_post_data(content_);
+
 	if(!context_->request().prepare()) {
+		context_->response().io_mode(http::response::asynchronous);
+		make_error_response(http::response::bad_request);
 		return;
 	}
 	setup_application();
@@ -107,17 +115,16 @@ void connection::process_request(boost::system::error_code const &e)
 
 void connection::make_error_response(int status,char const *msg)
 {
-	context_->response().io_mode(http::response::asynchronous);
 	context_->response().status(status);
 	context_->response().out() <<
 		"<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.01 Transitional//EN\"\n"
 		"	\"http://www.w3.org/TR/html4/loose.dtd\">\n"
 		"<html>\n"
 		"  <head>\n"
-		"    <title>"<<status<<" &emdash; "<< http::response::status_to_string(status)<<"</title>\n"
+		"    <title>"<<status<<" &mdash; "<< http::response::status_to_string(status)<<"</title>\n"
 		"  </head>\n"
 		"  <body>\n"
-		"    <h1>"<<status<<" &emdash; "<< http::response::status_to_string(status)<<"</h1>\n"
+		"    <h1>"<<status<<" &mdash; "<< http::response::status_to_string(status)<<"</h1>\n"
 		"    <p>"<<util::escape(msg)<<"</p>\n"
 		"  </body>\n"
 		"</html>\n"<<std::flush;
@@ -133,6 +140,7 @@ void connection::setup_application()
 
 	url_dispatcher::dispatch_type how;
 	if(application_.get() == 0 || (how=application_->dispatcher().dispatchable(path))==url_dispatcher::none) {
+		context_->response().io_mode(http::response::asynchronous);
 		make_error_response(http::response::not_found);
 		on_response_complete();
 		return;
@@ -161,7 +169,7 @@ void connection::dispatch(bool in_thread)
 	}
 	catch(std::exception const &e){
 		if(!context_->response().some_output_was_written()) {
-			if(!in_thread) 
+			if(!in_thread)
 				context_->response().io_mode(http::response::asynchronous);
 			make_error_response(http::response::internal_server_error,e.what());
 			context_->response().finalize();

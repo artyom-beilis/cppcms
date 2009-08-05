@@ -39,6 +39,8 @@ int service::threads_no()
 }
 
 namespace {
+	cppcms::service *the_service;
+
 #if defined(CPPCMS_WIN32)
 	void make_socket_pair(boost::asio::ip::tcp::socket &s1,boost::asio::ip::tcp::socket &s2)
 	{
@@ -50,51 +52,38 @@ namespace {
 		acceptor.accept(s2.lowest_layer());
 	}
 
-	SOCKET notification_socket;
-	void handler(int nothing)
+	BOOL WINAPI handler(DWORD ctrl_type)
 	{
-		char c='A';
-		if(send(notification_socket,&c,1,0) <= 0) {
-			perror("notification failed");
-			exit(1);
+		switch (ctrl_type)
+		{
+		case CTRL_C_EVENT:
+		case CTRL_BREAK_EVENT:
+		case CTRL_CLOSE_EVENT:
+		case CTRL_SHUTDOWN_EVENT:
+			the_service->shutdown();
+			return TRUE;
+		default:
+			return FALSE;
 		}
 	}
+
 #else
 	void make_socket_pair(boost::asio::local::stream_protocol::socket &s1,boost::asio::local::stream_protocol::socket &s2)
 	{
 		boost::asio::local::connect_pair(s1,s2);
 	}
 
-	int notification_socket;
 	void handler(int nothing)
 	{
-		char c='A';
-		for(;;){
-			int res=::write(notification_socket,&c,1);
-			if(res<0 && errno == EINTR)
-				continue;
-			if(res<=0) {
-				perror("shudown notification failed");
-				exit(1);
-			}
-			return;
-		}
+		the_service->shutdown();
 	}
+
 #endif
 } // anon
 
-#ifdef CPPCMS_WIN_NATIVE
-void service::setup_exit_handling()
-{
-	throw cppcms_error("TODO Setup exit handling");
-}
-
-#else 
-
 
 void service::setup_exit_handling()
 {
-
 	make_socket_pair(impl_->sig_,impl_->breaker_);
 
 	static char c;
@@ -102,7 +91,14 @@ void service::setup_exit_handling()
 	impl_->breaker_.async_read_some(boost::asio::buffer(&c,1),
 					boost::bind(&service::stop,this));
 
-	notification_socket=impl_->sig_.native();
+	impl_->notification_socket_=impl_->sig_.native();
+	the_service=this;
+
+	#ifdef CPPCMS_WIN32
+
+	SetConsoleCtrlHandler(handler, TRUE);
+
+	#else
 
 	struct sigaction sa;
 
@@ -112,9 +108,33 @@ void service::setup_exit_handling()
 	sigaction(SIGINT,&sa,0);
 	sigaction(SIGTERM,&sa,0);
 	sigaction(SIGUSR1,&sa,0);
+
+	#endif
 }
 
+
+
+void service::shutdown()
+{
+	char c='A';
+#ifdef CPPCMS_WIN32
+	if(send(impl_->notification_socket_,&c,1,0) <= 0) {
+		perror("notification failed");
+		exit(1);
+	}
+#else
+	for(;;){
+		int res=::write(notification_socket_,&c,1);
+		if(res<0 && errno == EINTR)
+			continue;
+		if(res<=0) {
+			perror("shudown notification failed");
+			exit(1);
+		}
+		return;
+	}
 #endif
+}
 
 void service::run()
 {
@@ -263,8 +283,8 @@ cppcms::impl::service &service::impl()
 
 void service::stop()
 {
-//	if(impl_->acceptor_.get())
-//		impl_->acceptor_->stop();
+	if(impl_->acceptor_.get())
+		impl_->acceptor_->stop();
 	thread_pool().stop();
 	impl_->get_io_service().stop();
 }

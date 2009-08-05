@@ -35,8 +35,10 @@ namespace impl {
 		std::auto_ptr<thread_pool> thread_pool_;
 
 #ifdef CPPCMS_WIN32
+		SOCKET notification_socket_;
 		boost::asio::ip::tcp::socket sig_,breaker_;
 #else
+		int notification_socket_;
 		boost::asio::local::stream_protocol::socket sig_,breaker_;
 #endif
 

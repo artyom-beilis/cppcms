@@ -136,8 +136,9 @@ bool request::parse_form_urlencoded(char const *begin,char const *end,form_type 
 bool request::prepare()
 {
 	std::string query=query_string();
-	if(!parse_form_urlencoded(query.data(),query.data()+query.size(),get_)) 
-		return false;
+	if(!parse_form_urlencoded(query.data(),query.data()+query.size(),get_))  {
+		get_.clear();
+	}
 	
 	if(http::protocol::is_prefix_of("application/x-www-form-urlencoded",content_type())) {
 		char const *pdata=&d->post_data.front();

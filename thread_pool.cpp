@@ -20,7 +20,8 @@ namespace impl {
 			queue_.push(job);
 			cond_.notify_one();
 		}
-		thread_pool(int threads)
+		thread_pool(int threads) :
+			shut_down_(false)
 		{
 			workers_.resize(threads);
 			#if defined(CPPCMS_POSIX)

@@ -50,12 +50,17 @@ namespace cgi {
 			}
 			buffer_[sep_]=0;
 			int len=atoi(&buffer_.front());
-			if(len > 16384) {
+			if(len < 0 || 16384 < len) {
 				h(boost::system::error_code(errc::protocol_violation,cppcms_category));
 				return;
 			}
 			size_t size=n;
 			buffer_.resize(sep_ + 2 + len); // len of number + ':' + content + ','
+			if(buffer_.size() <= size) {
+				// It can't be so short so
+				h(boost::system::error_code(errc::protocol_violation,cppcms_category));
+				return;
+			}
 			boost::asio::async_read(socket_,
 					boost::asio::buffer(&buffer_[size],buffer_.size() - size),
 					boost::bind(	&scgi::on_headers_chunk_read,
@@ -72,6 +77,7 @@ namespace cgi {
 				h(boost::system::error_code(errc::protocol_violation,cppcms_category));
 				return;
 			}
+
 			char const *p=&buffer_[sep_ + 1];
 			while(p < &buffer_.back()) {
 				std::string key=p;
