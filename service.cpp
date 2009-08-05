@@ -124,7 +124,7 @@ void service::shutdown()
 	}
 #else
 	for(;;){
-		int res=::write(notification_socket_,&c,1);
+		int res=::write(impl_->notification_socket_,&c,1);
 		if(res<0 && errno == EINTR)
 			continue;
 		if(res<=0) {
@@ -239,7 +239,7 @@ void service::start_acceptor()
 	if(tcp) {
 		if(api=="scgi")
 			impl_->acceptor_.reset(
-			       new tcp_socket_acceptor<scgi<boost::asio::ip::tcp> >(*this,ip,port,backlog));
+			       new tcp_socket_scgi_acceptor(*this,ip,port,backlog));
 		else
 			throw cppcms_error("Unknown service.api: " + api);
 	}
@@ -250,8 +250,10 @@ void service::start_acceptor()
 		throw cppcms_error("CppCMS uses native Win32 sockets under cygwin, so Unix sockets are not supported");
 #else
 		if(api=="scgi")
-			impl_->acceptor_.reset(
-				new unix_socket_acceptor<scgi<boost::asio::local::stream_protocol> >(*this,socket,backlog));
+			if(socket=="stdin")
+				impl_->acceptor_.reset(new unix_socket_scgi_acceptor(*this,backlog));
+			else
+				impl_->acceptor_.reset(new unix_socket_scgi_acceptor(*this,socket,backlog));
 		else
 			throw cppcms_error("Unknown service.api: " + api);
 #endif

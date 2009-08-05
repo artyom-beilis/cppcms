@@ -159,8 +159,7 @@ bool response::need_gzip()
 		// he may compress data on its own... disable compression
 		return false;
 	std::string const content_type=get_header("Content-Type");
-	// TODO fix according to RFC
-	if(content_type.substr(0,5)=="text/")
+	if(protocol::is_prefix_of("text/",content_type))
 		return true;
 	return false;
 }

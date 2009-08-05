@@ -75,6 +75,15 @@ namespace impl {
 		class unix_socket_acceptor : public socket_acceptor<boost::asio::local::stream_protocol,API>
 		{
 		public:
+			// Listen on fd provided as stdin
+			unix_socket_acceptor(cppcms::service &srv,int backlog)  :
+				socket_acceptor<boost::asio::local::stream_protocol,API>(srv)
+			{
+				boost::asio::local::stream_protocol::acceptor 
+					&acceptor=socket_acceptor<boost::asio::local::stream_protocol,API>::acceptor_;
+				acceptor.assign(boost::asio::local::stream_protocol(),0);
+				acceptor.listen(backlog);
+			}
 			unix_socket_acceptor(cppcms::service &srv,std::string const &path,int backlog) :
 				socket_acceptor<boost::asio::local::stream_protocol,API>(srv)
 			{
