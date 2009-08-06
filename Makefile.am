@@ -34,7 +34,9 @@ libcppcms_la_SOURCES = \
 	application.cpp \
 	url_dispatcher.cpp \
 	http_cookie.cpp  \
-	util.cpp
+	util.cpp \
+	locale_mo_file.cpp \
+	locale_gettext.cpp
 
 
 

@@ -1,4 +1,4 @@
-#include "mo_file.h"
+#include "locale_mo_file.h"
 
 /********************************************************
  * This file was adopted by Artyom Tonkikh for 		*
@@ -69,8 +69,17 @@ THE SOFTWARE.
 
 
 // From the header file:
+// From the .cpp fie:
 
-namespace thr_safe_gettext {
+#include <stdio.h>
+#include <stdlib.h>
+#include <assert.h>
+#include <sys/stat.h>
+#include <string.h>
+
+
+
+namespace cppcms { namespace locale { namespace impl {
 
 struct Localization_Text {
     Localization_Text(char const*);
@@ -88,14 +97,6 @@ struct Localization_Text {
     int hash_offset;
 };
 
-
-// From the .cpp fie:
-
-#include <stdio.h>
-#include <stdlib.h>
-#include <assert.h>
-#include <sys/stat.h>
-#include <string.h>
 
 // This is just the common hashpjw routine, pasted in:
 
@@ -293,23 +294,30 @@ Localization_Text::~Localization_Text() {
 }
 
 
-//
-// Call text_lookup to go from a source string to a translated string.
-// This is the main entry point that you would use.  (The only other
-// entry point is to construct a Localization_Text() to initialize
-// things.)
-//
-
-extern "C" char const *thr_safe_gettext_text_lookup(void *the_localization_text, char const *s,int std_id) 
+dictionary::dictionary(std::auto_ptr<Localization_Text> l) : loc_(l)
 {
-    Localization_Text *loc = (Localization_Text *)the_localization_text;
-    if (!loc || !loc->mo_data) return NULL;
+}
+
+dictionary::~dictionary()
+{
+}
+
+dictionary *dictionary::load(char const *fname)
+{
+	std::auto_ptr<Localization_Text> loc(new Localization_Text(fname));
+	if(!loc->mo_data) 
+		return 0;
+	return new dictionary(loc);
+}
+
+char const *dictionary::lookup(char const *s,int std_id) const 
+{
 
     int len;
-    int target_index = get_target_index(loc, s);
+    int target_index = get_target_index(loc_.get(), s);
     if (target_index == -1) return NULL;  // Maybe we want to log an error?
 
-    char *tmp=get_translated_string(loc, target_index, &len);
+    char *tmp=get_translated_string(loc_.get(), target_index, &len);
 
     char *p=tmp;
     while(std_id>0 && p-tmp<len) {
@@ -326,14 +334,9 @@ extern "C" char const *thr_safe_gettext_text_lookup(void *the_localization_text,
     	return NULL;
 }
 
-extern "C" void *thr_safe_gettext_load(char const *mo_file)
-{
-	return new Localization_Text(mo_file);
-}
 
-extern "C" void thr_safe_gettext_unload(void *ptr)
-{
-	delete (Localization_Text*)ptr;
-}
+} // impl
+} // locale
+} // cppcms
 
-} // END OF thr_safe_gettext namespace
+
