@@ -13,6 +13,9 @@ namespace cppcms {
 
 	class applications_pool;
 	class thread_pool;
+	namespace locale {
+		class pool;
+	}
 	class cppcms_config;
 
 	class CPPCMS_API service : public util::noncopyable
@@ -27,6 +30,7 @@ namespace cppcms {
 		cppcms::applications_pool &applications_pool();
 		cppcms::thread_pool &thread_pool();
 		cppcms::cppcms_config const &settings();
+		cppcms::locale::pool const &locale_pool();
 
 		cppcms::impl::service &impl();
 	private:

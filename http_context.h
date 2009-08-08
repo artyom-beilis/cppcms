@@ -8,6 +8,7 @@
 namespace cppcms {
 
 	class cppcms_config;
+	namespace locale { class l10n; }
 	namespace impl { namespace cgi { class connection; } }
 
 	namespace http {
@@ -26,6 +27,7 @@ namespace cppcms {
 			http::request &request();
 			http::response &response();
 			cppcms_config const &settings();
+			cppcms::locale::l10n &locale();
 		};
 	}
 

@@ -33,6 +33,7 @@ namespace impl {
 		std::auto_ptr<cppcms_config> settings_;
 		std::auto_ptr<applications_pool> applications_pool_;
 		std::auto_ptr<thread_pool> thread_pool_;
+		std::auto_ptr<locale::pool> locale_pool_;
 
 #ifdef CPPCMS_WIN32
 		SOCKET notification_socket_;

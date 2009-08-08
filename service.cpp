@@ -8,6 +8,7 @@
 #include "cgi_acceptor.h"
 #include "cgi_api.h"
 #include "scgi_api.h"
+#include "locale_pool.h"
 
 #include "asio_config.h"
 
@@ -138,6 +139,7 @@ void service::shutdown()
 
 void service::run()
 {
+	locale_pool();
 	start_acceptor();
 	if(prefork()) {
 		return;
@@ -289,6 +291,22 @@ void service::stop()
 		impl_->acceptor_->stop();
 	thread_pool().stop();
 	impl_->get_io_service().stop();
+}
+
+locale::pool const &service::locale_pool()
+{
+	if(!impl_->locale_pool_.get()) {
+		std::string path=settings().str("locale.gettext_path","/usr/local/locale");
+		impl_->locale_pool_.reset(new locale::pool(path));
+		std::vector<std::string> const 	&locales=settings().slist("locale.locales"),
+						&domains=settings().slist("locale.dettext_domains");
+		for(unsigned i=0;i<domains.size();i++)
+			impl_->locale_pool_->add_gettext_domain(domains[i]);
+		for(unsigned i=0;i<locales.size();i++)
+			impl_->locale_pool_->load(locales[i]);
+		
+	}
+	return *impl_->locale_pool_;
 }
 
 namespace impl {

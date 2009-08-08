@@ -36,7 +36,9 @@ libcppcms_la_SOURCES = \
 	http_cookie.cpp  \
 	util.cpp \
 	locale_mo_file.cpp \
-	locale_gettext.cpp
+	locale_gettext.cpp \
+	locale.cpp \
+	locale_pool.cpp
 
 
 

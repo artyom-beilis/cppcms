@@ -37,6 +37,7 @@ public:
 			response().out()<<p->second<<"<br/>\n";
 		}
 		response().out() <<
+			"Pid="<<getpid()<<
 			"<body></html>\n";
 
 	}

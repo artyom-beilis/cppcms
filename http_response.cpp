@@ -9,6 +9,7 @@
 #include "cppcms_error.h"
 #include "service.h"
 #include "config.h"
+#include "locale.h"
 
 #include <iostream>
 #include <sstream>
@@ -246,6 +247,7 @@ std::ostream &response::out()
 	else
 		stream_=real_sink;
 
+	stream_->imbue(context_.locale().get());
 	return *stream_;
 }
 
