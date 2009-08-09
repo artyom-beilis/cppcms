@@ -5,7 +5,7 @@
 #include "http_context.h"
 #include "http_request.h"
 #include "http_response.h"
-#include "locale.h"
+#include "locale_environment.h"
 
 namespace cppcms {
 namespace http {
@@ -13,7 +13,7 @@ namespace http {
 	struct context::data {
 		http::request request;
 		http::response response;
-		cppcms::locale::l10n locale;
+		cppcms::locale::environment locale;
 		data(context &cntx) :
 			request(cntx.connection()),
 			response(cntx),
@@ -53,7 +53,7 @@ cppcms_config const &context::settings()
 	return conn_->service().settings();
 }
 
-cppcms::locale::l10n &context::locale()
+cppcms::locale::environment &context::locale()
 {
 	return d->locale;
 }

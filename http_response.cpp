@@ -9,7 +9,7 @@
 #include "cppcms_error.h"
 #include "service.h"
 #include "config.h"
-#include "locale.h"
+#include "locale_environment.h"
 
 #include <iostream>
 #include <sstream>

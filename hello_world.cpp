@@ -5,6 +5,8 @@
 #include "http_response.h"
 #include "http_request.h"
 #include "http_cookie.h"
+#include "locale_environment.h"
+#include "http_context.h"
 #include <sstream>
 #include <stdexcept>
 
@@ -36,9 +38,15 @@ public:
 		for(p=request().cookies().begin();p!=request().cookies().end();++p) {
 			response().out()<<p->second<<"<br/>\n";
 		}
-		response().out() <<
-			"Pid="<<getpid()<<
-			"<body></html>\n";
+		response().out()<<
+			gt("hello\n") <<"<br>";
+		for(int i=0;i<30;i++) {
+			char buf[40];
+			snprintf(buf,40,ngt("passed one day","passed %d days",i),i);
+			response().out()<<buf<<"<br>";
+		}
+		response().out()
+			<<"<body></html>\n";
 
 	}
 	void num(std::string s)

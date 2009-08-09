@@ -6,17 +6,21 @@
 #include "hold_ptr.h"
 #include "noncopyable.h"
 #include <string>
+#include <locale>
+
 
 namespace cppcms {
+
+class cppcms_config;
+
 namespace locale {
 	class CPPCMS_API pool : util::noncopyable {
 	public:
-		void load(std::string name);
-		void add_gettext_domain(std::string name);
+		pool(cppcms_config const &conf);
+		~pool();
+
 		std::locale const &get(std::string const &name) const;
 
-		pool(std::string path);
-		~pool();
 	private:
 		struct data;
 		util::hold_ptr<data> d;

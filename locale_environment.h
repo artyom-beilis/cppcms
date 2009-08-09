@@ -1,5 +1,5 @@
-#ifndef CPPCMS_LOCALE_H
-#define CPPCMS_LOCALE_H
+#ifndef CPPCMS_LOCALE_ENVIRONMENT_H
+#define CPPCMS_LOCALE_ENVIRONMENT_H
 
 #include "defs.h"
 #include "hold_ptr.h"
@@ -10,7 +10,7 @@ namespace cppcms {
 	class service;
 	namespace locale {
 		
-		class CPPCMS_API l10n : public util::noncopyable {
+		class CPPCMS_API environment : public util::noncopyable {
 		public:
 			std::locale const &get();
 			void set(std::locale const &);
@@ -23,8 +23,8 @@ namespace cppcms {
 			char const *ngt(char const *s,char const *p,int n);
 
 
-			l10n(cppcms::service &srv);
-			~l10n();
+			environment(cppcms::service &srv);
+			~environment();
 
 		private:
 			void setup();

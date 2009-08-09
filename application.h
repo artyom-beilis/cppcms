@@ -12,6 +12,9 @@ namespace cppcms {
 	class url_dispatcher;
 	class applications_pool;
 
+	namespace locale {
+		class environment;
+	}
 	namespace http {
 		class request;
 		class response;
@@ -29,6 +32,10 @@ namespace cppcms {
 		http::request &request();
 		http::response &response();
 		url_dispatcher &dispatcher();
+		locale::environment &locale();
+
+		char const *gt(char const *s);
+		char const *ngt(char const *s,char const *p,int n);
 
 		void assign_context(http::context *conn);
 	private:

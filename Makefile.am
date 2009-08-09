@@ -37,7 +37,7 @@ libcppcms_la_SOURCES = \
 	util.cpp \
 	locale_mo_file.cpp \
 	locale_gettext.cpp \
-	locale.cpp \
+	locale_environment.cpp \
 	locale_pool.cpp
 
 

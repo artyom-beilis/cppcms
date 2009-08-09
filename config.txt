@@ -1,10 +1,10 @@
 # Server API settings
 
 
-#service.port =  8001
-service.procs = 5
+service.port =  8001
+service.procs = 0
 service.ip = "127.0.0.1"
-service.socket = "/tmp/scgi.socket"     # Default is "" -- use default socket given
+#service.socket = "/tmp/scgi.socket"     # Default is "" -- use default socket given
 service.worker_threads = 5
 service.api = "scgi"				# fastcgi -- preferred API
 						# scgi	  -- simplefied FCGI API -- yet another alternative
@@ -61,11 +61,11 @@ server.buffer = 100				# Default 1 -- relevant for multi-threaded model
 
 
 # Localization
-locale.dir="./transtext/locale"			# path to locale directory
-locale.lang_list = { "he"  "en" }		# list of supported languages
-locale.lang_default = "he"			# default language (default first one)
-locale.domain_list = { "app" "test" }		# list of supported domains
-locale.domain_default = "test"			# default domain (default first one)
+locale.locales ={ "he_IL.UTF-8" "en_US.UTF-8" }	# list of supported languages
+locale.default =  "he_IL.UTF-8"			# default language (default first one)
+locale.gettext_domains = { "app" "test" }	# list of supported domains
+locale.default_gettext_domain = "test"		# default domain (default first one)
+locale.gettext_path="./transtext/locale"	# path to locale directory
 
 
 # General Session settings

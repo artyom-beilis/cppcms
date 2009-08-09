@@ -5,6 +5,8 @@
 #include "service.h"
 #include "cppcms_error.h"
 #include "url_dispatcher.h"
+#include "locale_environment.h"
+#include "locale_gettext.h"
 
 
 namespace cppcms {
@@ -62,6 +64,21 @@ http::context &application::context()
 	if(!d->conn)
 		throw cppcms_error("Trying to access uninitialized context");
 	return *d->conn;
+}
+
+cppcms::locale::environment &application::locale()
+{
+	return context().locale();
+}
+
+char const *application::gt(char const *s)
+{
+	return locale().gt(s);
+}
+
+char const *application::ngt(char const *s,char const *p,int n)
+{
+	return locale().ngt(s,p,n);
 }
 
 void application::assign_context(http::context *conn)

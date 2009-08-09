@@ -296,14 +296,7 @@ void service::stop()
 locale::pool const &service::locale_pool()
 {
 	if(!impl_->locale_pool_.get()) {
-		std::string path=settings().str("locale.gettext_path","/usr/local/locale");
-		impl_->locale_pool_.reset(new locale::pool(path));
-		std::vector<std::string> const 	&locales=settings().slist("locale.locales"),
-						&domains=settings().slist("locale.dettext_domains");
-		for(unsigned i=0;i<domains.size();i++)
-			impl_->locale_pool_->add_gettext_domain(domains[i]);
-		for(unsigned i=0;i<locales.size();i++)
-			impl_->locale_pool_->load(locales[i]);
+		impl_->locale_pool_.reset(new locale::pool(settings()));
 		
 	}
 	return *impl_->locale_pool_;

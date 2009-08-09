@@ -116,7 +116,9 @@ struct gettext::data {
 };
 
 
-gettext::gettext(std::size_t refs) : std::locale::facet(refs)
+gettext::gettext(std::size_t refs) : 
+	std::locale::facet(refs),
+	d(new data)
 {
 }
 gettext::~gettext()
@@ -126,8 +128,6 @@ gettext::~gettext()
 
 bool gettext::load(std::string locale,std::string dir,std::string domain)
 {
-	if(!d.get()) d.reset(new data);
-
 	std::auto_ptr<impl::dictionary> dic;
 
 	static boost::regex lreg("^([a-zA-Z]+)(_([a-zA-Z])+)?(\\.([a-zA-Z0-9_\\-]+))?(\\@(.*))?$");
@@ -146,7 +146,7 @@ bool gettext::load(std::string locale,std::string dir,std::string domain)
 		std::string path=dir + "/" + variants[i] +"/LC_MESSAGES/" + domain + ".mo";
 		dic.reset(impl::dictionary::load(path.c_str()));
 		if(dic.get()) {
-			d->translators[locale].reset(new impl::trans_thread_safe(dic.release()));
+			d->translators[domain].reset(new impl::trans_thread_safe(dic.release()));
 			return true;
 		}
 	}
