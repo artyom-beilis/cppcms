@@ -113,6 +113,7 @@ std::locale::id gettext::id;
 struct gettext::data {
 	typedef std::map<std::string,boost::shared_ptr<tr> > translators_type;
 	translators_type translators;
+	std::string default_domain;
 };
 
 
@@ -153,6 +154,16 @@ bool gettext::load(std::string locale,std::string dir,std::string domain)
 	return false;
 }
 
+void gettext::set_default_domain(std::string domain)
+{
+	d->default_domain=domain;
+}
+
+
+gettext::tr const &gettext::do_dictionary() const
+{
+	return do_dictionary(d->default_domain.c_str());
+}
 
 gettext::tr const &gettext::do_dictionary(char const *domain) const
 {

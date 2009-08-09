@@ -127,9 +127,9 @@ class class_block:
 		output( "{")
 		if self.uses!='' : 
 			output( "\t%s &content;" % self.uses)
-			output( "\t%s(cppcms::base_view::settings _s,%s &_content): %s,content(_content)" % ( self.class_name,self.uses,constructor ))
+			output( "\t%s(std::ostream &_s,%s &_content): %s,content(_content)" % ( self.class_name,self.uses,constructor ))
 		else:
-			output( "\t%s(cppcms::base_view::settings _s): %s" % ( self.class_name,constructor ))
+			output( "\t%s(std::ostream &_s): %s" % ( self.class_name,constructor ))
 		output("\t{")
 		output('\t\tset_domain("%s");' % gettext_domain() )
 		output("\t};")
@@ -216,7 +216,7 @@ class template_block:
 def inline_content(s):
 	global ignore_inline
 	if not ignore_inline:
-		output( 'cout<<"%s";' % to_string(s))
+		output( 'out()<<"%s";' % to_string(s))
 
 def error_exit(x):
 	global exit_flag
@@ -504,14 +504,14 @@ class form_block:
 		ident=make_ident(m.group(5))
 		global html_type_code
 		if m.group(1)=='error':
-			output('cout<<%s.render_error();' % ident)
+			output('out()<<%s.render_error();' % ident)
 		elif m.group(1)=='input':
-			output('cout<<%s.render_input(%s);' % ( ident , html_type_code ));
+			output('out()<<%s.render_input(%s);' % ( ident , html_type_code ));
 		else:
 			html_code='cppcms::base_form::' + m.group(3)
 			if m.group(4):
 				html_code=html_code + '|cppcms::base_form::error_no';
-			output('cout<<%s.render(%s);' % (ident , html_code + '|' + html_type_code))
+			output('out()<<%s.render(%s);' % (ident , html_code + '|' + html_type_code))
 
 
 
@@ -520,7 +520,7 @@ class filters_show_block(base_show):
 	def use(self,m):
 		expr=self.prepare(m.group(1));
 		if expr!="":
-			output('cout<<%s;' % expr)
+			output('out()<<%s;' % expr)
 
 def make_format_params(s):
 	pattern=r'^(([^,\("]|'+str_match+'|\(([^"\)]|'+str_match+')*\))+)(,(.*))?$'
@@ -548,9 +548,9 @@ class ngettext_block:
 		if m.group(11):
 			params=make_format_params(m.group(12))
 		if not params:
-			output( "cout<<ngettext(%s,%s,%s);" % (s1,s2,idt))
+			output( "out()<<ngettext(%s,%s,%s);" % (s1,s2,idt))
 		else:
-			output( "cppcms::util::format(cout,ngettext(%s,%s,%s),(%s));" % (s1,s2,idt, '),('.join(params)))
+			output( "cppcms::util::format(out(),ngettext(%s,%s,%s),(%s));" % (s1,s2,idt, '),('.join(params)))
 			
 
 class gettext_block:
@@ -561,9 +561,9 @@ class gettext_block:
 		if m.group(3):
 			params=make_format_params(m.group(4))
 		if not params:
-			output( "cout<<gettext(%s);" % s)
+			output( "out()<<gettext(%s);" % s)
 		else:
-			output( "cppcms::util::format(cout,gettext(%s)),(%s));" % (s , '),('.join(params)))
+			output( "cppcms::util::format(out(),gettext(%s)),(%s));" % (s , '),('.join(params)))
 
 
 class include_block:

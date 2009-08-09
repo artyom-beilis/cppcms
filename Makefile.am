@@ -13,11 +13,11 @@ hello_world_CXXFLAGS=-g -Wall
 
 
 
-#hello_world_view1.cpp: hello_world_skin1.tmpl hello_world_view1.tmpl
-#	./cppcms_tmpl_cc hello_world_skin1.tmpl hello_world_view1.tmpl -o hello_world_view1.cpp -n view1 -d test
+hello_world_view1.cpp: hello_world_skin1.tmpl hello_world_view1.tmpl
+	./cppcms_tmpl_cc hello_world_skin1.tmpl hello_world_view1.tmpl -o hello_world_view1.cpp -n view1 -d test
 
-#hello_world_view2.cpp: hello_world_skin2.tmpl hello_world_view1.tmpl
-#	./cppcms_tmpl_cc hello_world_skin2.tmpl hello_world_view1.tmpl -o hello_world_view2.cpp -n view2 -d test
+hello_world_view2.cpp: hello_world_skin2.tmpl hello_world_view1.tmpl
+	./cppcms_tmpl_cc hello_world_skin2.tmpl hello_world_view1.tmpl -o hello_world_view2.cpp -n view2 -d test
 
 lib_LTLIBRARIES     = libcppcms.la
 libcppcms_la_SOURCES = \

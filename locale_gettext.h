@@ -28,12 +28,19 @@ namespace locale {
 		{
 			return do_dictionary(domain);
 		}
+
+		tr const &dictionary() const
+		{
+			return do_dictionary();
+		}
 		
 		bool load(std::string locale_name,std::string path,std::string domain);
+		void set_default_domain(std::string domain);
 
 	protected:
 
 		virtual tr const &do_dictionary(char const *domain) const;
+		virtual tr const &do_dictionary() const;
 
 	private:
 

@@ -18,7 +18,6 @@ environment::environment(cppcms::service &srv) :
 	service_(srv),
 	d(new data)
 {
-	d->domain_name=service_.settings().str("locale.default_gettext_domain","");
 	d->locale_name=service_.settings().str("locale.default","C");
 	setup();
 }
@@ -34,7 +33,10 @@ void environment::setup()
 
 	if(std::has_facet<cppcms::locale::gettext>(*d->locale)){
 		cppcms::locale::gettext const &gt=std::use_facet<cppcms::locale::gettext>(*d->locale);
-		d->current=&gt.dictionary(d->domain_name.c_str());
+		if(d->domain_name.empty())
+			d->current=&gt.dictionary();
+		else
+			d->current=&gt.dictionary(d->domain_name.c_str());
 	}
 	else {
 		static cppcms::locale::gettext::tr const tr;

@@ -1,10 +1,10 @@
 # Server API settings
 
 
-service.port =  8001
+#service.port =  8001
 service.procs = 0
 service.ip = "127.0.0.1"
-#service.socket = "/tmp/scgi.socket"     # Default is "" -- use default socket given
+service.socket = "/tmp/scgi.socket"     # Default is "" -- use default socket given
 service.worker_threads = 5
 service.api = "scgi"				# fastcgi -- preferred API
 						# scgi	  -- simplefied FCGI API -- yet another alternative

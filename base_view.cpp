@@ -1,12 +1,12 @@
 #define CPPCMS_SOURCE
 #include "base_view.h"
 #include "util.h"
-#include "http_context.h"
 #include "locale_gettext.h"
 #include "locale_environment.h"
 #include "base64.h"
 #include "locale_info.h"
 #include "utf_iterator.h"
+#include "cppcms_error.h"
 
 #include <vector>
 
@@ -14,22 +14,23 @@ namespace cppcms {
 
 struct base_view::data {
 	std::ostream *out;
-	http::context *context;
 	locale::gettext::tr const *tr;
 };
 
-base_view::base_view(http::context &context,std::ostream &out) :
+base_view::base_view(std::ostream &out) :
 	d(new data)
 {
 	d->out=&out;
-	d->context=&context;
-	set_domain(context.locale().gettext_domain());
+	set_domain("");
 }
 
 void base_view::set_domain(std::string domain)
 {
 	if(std::has_facet<cppcms::locale::gettext>(out().getloc())) {
-		d->tr = &std::use_facet<cppcms::locale::gettext>(out().getloc()).dictionary(domain.c_str());
+		if(!domain.empty())
+			d->tr = &std::use_facet<cppcms::locale::gettext>(out().getloc()).dictionary(domain.c_str());
+		else
+			d->tr = &std::use_facet<cppcms::locale::gettext>(out().getloc()).dictionary();
 	}
 	else {
 		static const locale::gettext::tr t;
@@ -163,6 +164,45 @@ void base_view::to_upper(std::ostream &out,std::string const &s)
 }
 
 
+namespace details {
+
+struct views_storage::data {};
+
+views_storage &views_storage::instance() {
+	static views_storage this_instance;
+	return this_instance;
+};
+
+void views_storage::add_view(std::string t,std::string v,view_factory_type f)
+{
+	storage[t][v]=f;
+}
+
+void views_storage::remove_views(std::string t)
+{
+	storage.erase(t);
+}
+
+std::auto_ptr<base_view> views_storage::fetch_view(std::string t,std::string v,std::ostream &s,base_content *c)
+{
+	templates_type::iterator p=storage.find(t);
+	if(p==storage.end())
+		throw cppcms_error("Can't find skin "+t);
+	template_views_type::iterator p2=p->second.find(v);
+	if(p2==p->second.end())
+		throw cppcms_error("Can't find template "+v);
+	view_factory_type &f=p2->second;
+	return f(s,c);
+}
+views_storage::views_storage()
+{
+}
+
+views_storage::~views_storage()
+{
+}
 
 
-}// CPPCMS
+} // details
+
+}// cppcms

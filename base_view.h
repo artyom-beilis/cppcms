@@ -8,9 +8,11 @@
 #include <string>
 #include <map>
 #include <ctime>
+#include <memory>
 
 #include "format.h"
 #include "hold_ptr.h"
+#include "base_content.h"
 
 namespace cppcms {
 	namespace http {
@@ -75,7 +77,7 @@ public: //Filters
 
 protected:
 
-	base_view(http::context &context,std::ostream &out);
+	base_view(std::ostream &out);
 
 	void set_domain(std::string domain);
 	char const *gettext(char const *);
@@ -97,8 +99,43 @@ void CPPCMS_API base_view::escape(std::ostream &,std::string const &s);
 
 void CPPCMS_API operator<<(std::ostream &,std::tm const &t);
 
+namespace details {
 
+	template<typename T,typename VT>
+	std::auto_ptr<base_view> view_builder(std::ostream &stream,base_content *c) 
+	{
+		std::auto_ptr<base_view> p(new T(stream,dynamic_cast<VT &>(*c)));
+		return p;
+	};
 
+	class CPPCMS_API views_storage : public util::noncopyable  {
+	public:
+		typedef std::auto_ptr<base_view> (*view_factory_type)(std::ostream &,base_content *c);
+
+		void add_view(	std::string template_name,
+				std::string view_name,
+				view_factory_type);
+		void remove_views(std::string template_name);
+		std::auto_ptr<base_view> fetch_view(	std::string template_name,
+							std::string view_name,
+							std::ostream &out,
+							base_content *c);
+		static views_storage &instance();
+
+	private:
+		typedef std::map<std::string,view_factory_type> template_views_type;
+		typedef std::map<std::string,template_views_type> templates_type;
+
+		templates_type storage;
+
+		struct data;
+		util::hold_ptr<data> d;
+		
+		views_storage();
+		~views_storage();
+	};
+
+} // details
 } // cppcms
 
 

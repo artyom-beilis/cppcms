@@ -25,6 +25,10 @@ pool::pool(cppcms_config const &settings) :
 {
 	d->path=settings.str("locale.gettext_path","/usr/local/locale");
 	d->domains=settings.slist("locale.gettext_domains");
+	std::string default_domain;
+	if(!d->domains.empty())
+		default_domain=d->domains.front();
+	default_domain=settings.str("locale.default_gettext_domain",default_domain);
 	std::vector<std::string> const 	&locales=settings.slist("locale.locales");
 
 	for(unsigned i=0;i<locales.size();i++) {
