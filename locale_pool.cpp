@@ -40,6 +40,7 @@ pool::pool(cppcms_config const &settings) :
 		for(unsigned i=0;i < d->domains.size();i++) {
 			gt->load(name,d->path,d->domains[i]);
 		}
+		gt->set_default_domain(default_domain);
 
 		boost::shared_ptr<std::locale> base;
 
