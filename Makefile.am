@@ -38,7 +38,11 @@ libcppcms_la_SOURCES = \
 	locale_mo_file.cpp \
 	locale_gettext.cpp \
 	locale_environment.cpp \
-	locale_pool.cpp
+	locale_pool.cpp \
+	format.cpp \
+	base64.cpp \
+	locale_info.cpp \
+	base_view.cpp 
 
 
 

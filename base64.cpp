@@ -6,6 +6,7 @@
  *    and they are subject to MIT license by (c) Trantor Standard Systems Inc., 2001
  */
 
+#define CPPCMS_SOURCE
 #include "base64.h"
 
 

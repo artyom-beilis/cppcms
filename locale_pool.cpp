@@ -2,6 +2,7 @@
 #include "locale_pool.h"
 #include "cppcms_error.h"
 #include "locale_gettext.h"
+#include "locale_info.h"
 #include "global_config.h"
 #include <vector>
 #include <map>
@@ -46,6 +47,8 @@ pool::pool(cppcms_config const &settings) :
 		}
 
 		boost::shared_ptr<std::locale> combined(new std::locale(*base,gt.release()));
+		base=combined;
+		combined.reset(new std::locale(*base,new info(name)));
 		d->locales[name]=combined;
 	}
 }

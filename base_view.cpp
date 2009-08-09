@@ -1,80 +1,168 @@
+#define CPPCMS_SOURCE
 #include "base_view.h"
-#include "worker_thread.h"
 #include "util.h"
-#include <boost/format.hpp>
+#include "http_context.h"
+#include "locale_gettext.h"
+#include "locale_environment.h"
+#include "base64.h"
+#include "locale_info.h"
+#include "utf_iterator.h"
+
+#include <vector>
 
 namespace cppcms {
 
+struct base_view::data {
+	std::ostream *out;
+	http::context *context;
+	locale::gettext::tr const *tr;
+};
 
-base_view::settings::settings(worker_thread *w) : worker(w) , output(&w->get_cout()) {};
-base_view::settings::settings(worker_thread *w,ostream *o) : worker(w), output(o) {};
-
-string base_view::escape(string const &s)
+base_view::base_view(http::context &context,std::ostream &out) :
+	d(new data)
 {
-	return cppcms::escape(s);
+	d->out=&out;
+	d->context=&context;
+	set_domain(context.locale().gettext_domain());
 }
 
-string base_view::urlencode(string const &s)
+void base_view::set_domain(std::string domain)
 {
-	return cppcms::urlencode(s);
+	if(std::has_facet<cppcms::locale::gettext>(out().getloc())) {
+		d->tr = &std::use_facet<cppcms::locale::gettext>(out().getloc()).dictionary(domain.c_str());
+	}
+	else {
+		static const locale::gettext::tr t;
+		d->tr=&t;
+	}
 }
 
-string base_view::intf(int val,string f)
+std::ostream &base_view::out()
 {
-	return (boost::format(f) % val).str();
-}
-
-string base_view::strftime(std::tm const &t,string f)
-{
-	char buf[128];
-	buf[0]=0;
-	std::strftime(buf,sizeof(buf),f.c_str(),&t);
-	return buf;
-}
-
-void base_view::set_domain(char const *s)
-{
-	tr=worker.domain_gettext(s);
+	return *d->out;
 }
 
 char const *base_view::gettext(char const *s)
 {
-	return tr->gettext(s);
+	return d->tr->gettext(s);
 }
 
 char const *base_view::ngettext(char const *s,char const *s1,int m)
 {
-	return tr->ngettext(s,s1,m);
+	return d->tr->ngettext(s,s1,m);
 }
 
-
-namespace details {
-
-views_storage &views_storage::instance() {
-	static views_storage this_instance;
-	return this_instance;
-};
-
-void views_storage::add_view(string t,string v,view_factory_t f)
+base_view::~base_view()
 {
-	storage[t][v]=f;
 }
 
-void views_storage::remove_views(string t)
+void base_view::render()
 {
-	storage.erase(t);
 }
 
-base_view *views_storage::fetch_view(string t,string v,base_view::settings s,base_content *c)
+
+
+void base_view::date(std::ostream &s,std::tm const &t)
 {
-	templates_t::iterator p=storage.find(t);
-	if(p==storage.end()) return NULL;
-	template_views_t::iterator p2=p->second.find(v);
-	if(p2==p->second.end()) return NULL;
-	view_factory_t &f=p2->second;
-	return f(s,c);
+	if(s.getloc().name()!="C")
+		strftime("%x")(s,t);
+	else
+		strftime("%Y-%m-%d")(s,t);
 }
 
-};
+void base_view::time(std::ostream &s,std::tm const &t)
+{
+	if(s.getloc().name()!="C")
+		strftime("%X")(s,t);
+	else
+		strftime("%H:%M:%S")(s,t);
+}
+
+base_view::strftime::strftime(std::string f) : format_(f)
+{
+}
+
+base_view::strftime::~strftime()
+{
+}
+
+void base_view::strftime::operator()(std::ostream &out,std::tm const &time) const
+{
+	char const *begin=format_.data();
+	char const *end=begin+format_.size();
+	std::use_facet<std::time_put<char> >(out.getloc()).put(out,out,' ',&time,begin,end);
+}
+
+void base_view::urlencode(std::ostream &out,std::string const &s)
+{
+	out << util::urlencode(s); 
+}
+
+void base_view::base64_encode(std::ostream &os,std::string const &s)
+{
+	using namespace cppcms::b64url;
+	unsigned char const *begin=reinterpret_cast<unsigned char const *>(s.c_str());
+	unsigned char const *end=begin+s.size();
+	std::vector<unsigned char> out(encoded_size(s.size())+1);
+	encode(begin,end,&out.front());
+	out.back()=0;
+
+	char const *buf=reinterpret_cast<char const *>(out.front());
+	os<<buf;
+}
+
+namespace {
+
+void to_something(	std::ostream &out,
+			std::string const &s,
+			char (std::ctype<char>::*narop)(char) const,
+			wchar_t (std::ctype<wchar_t>::*wideop)(wchar_t) const)
+{
+	using namespace std;
+
+	std::locale l=out.getloc();
+	if(!has_facet<locale::info>(l)
+	   || !use_facet<locale::info>(l).is_utf8()
+	   || !has_facet<ctype<wchar_t> >(l))
+	{
+		ctype<char> const &converter=use_facet<ctype<char> >(l);
+		for(unsigned i=0;i<s.size();i++)
+			out.put((converter.*narop)(s[i]));
+		return;
+	}
+	ctype<wchar_t> const &converter=use_facet<ctype<wchar_t> >(l);
+	
+	std::string::const_iterator p=s.begin(),e=s.end();
+	
+	uint32_t code_point;
+
+	while(p!=e && (code_point=cppcms::utf8::next(p,e,false,true))!=utf::illegal) {
+		if(sizeof(wchar_t) == 4 || code_point <=0xFFFF)
+			code_point=(converter.*wideop)(code_point);
+		utf8::seq s=utf8::encode(code_point);
+		unsigned i=0;
+		do {
+			out.put(s.c[i]);
+			i++;
+		}while(i<sizeof(s.c) && s.c[i]!=0);
+	}
+	if(p!=e) {
+		out.write(s.c_str() + (p-s.begin()), (e-p));
+	}
+
+}
+} // anonymous
+void base_view::to_lower(std::ostream &out,std::string const &s)
+{
+	to_something(out,s,&std::ctype<char>::tolower,&std::ctype<wchar_t>::tolower);
+}
+
+void base_view::to_upper(std::ostream &out,std::string const &s)
+{
+	to_something(out,s,&std::ctype<char>::toupper,&std::ctype<wchar_t>::toupper);
+}
+
+
+
 
 }// CPPCMS

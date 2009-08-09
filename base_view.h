@@ -1,111 +1,105 @@
-#ifndef CPPCMS_BASEVIEW_H
-#define CPPCMS_BASEVIEW_H
+#ifndef CPPCMS_BASE_VIEW_H
+#define CPPCMS_BASE_VIEW_H
+
+#include "defs.h"
 
 #include <ostream>
 #include <sstream>
 #include <string>
 #include <map>
 #include <ctime>
-#include "cppcms_error.h"
-#include "config.h"
+
 #include "format.h"
+#include "hold_ptr.h"
 
 namespace cppcms {
-using namespace std;
-
-// Just simple polimorphic class
-class base_content {
-public:
-	virtual ~base_content() {};
-};
-
-namespace transtext  { class trans; }
-
-class worker_thread;
-class base_view {
-public:
-	struct settings {
-		worker_thread *worker;
-		ostream *output;
-		settings(worker_thread *w);
-		settings(worker_thread *w,ostream *o);
-	};
-protected:
-	worker_thread &worker;
-	ostream &cout;
-	transtext::trans const *tr;
-
-	base_view(settings s) :
-		worker(*s.worker),
-		cout(*s.output)
-	{
+	namespace http {
+		class context;
 	}
+	namespace filters {
 
-	void set_domain(char const *);
+
+		
+	} // filters
+
+
+class CPPCMS_API base_view : util::noncopyable {
+public:
+	virtual void render();
+	virtual ~base_view();
+
+
+public: //Filters
+
+
+	class CPPCMS_API intf {
+		std::string format_;
+	public:
+		intf(std::string f);
+		~intf();
+		void operator()(std::ostream &out,int x) const;
+	};
+		
+	class CPPCMS_API doublef {
+		std::string format_;
+	public:
+		doublef(std::string f);
+		~doublef();
+		void operator()(std::ostream &out,double x) const;
+	};
+
+	class CPPCMS_API strftime {
+		std::string format_;
+	public:
+		strftime(std::string f);
+		~strftime();
+		void operator()(std::ostream &out,std::tm const &t) const;
+	};
+		
+	static void date(std::ostream &,std::tm const &t);
+	static void time(std::ostream &,std::tm const &t);
+	static void urlencode(std::ostream &, std::string const &s);
+// TODO	static void js_urlencode(std::ostream &, std::string const &s);
+	static void base64_encode(std::ostream &, std::string const &s);
+	static void raw(std::ostream &out,std::string const &s);
+
+	template<typename T>
+	void escape(std::ostream &s,T const &v)
+	{
+		s<<v;
+	};
+
+	static void to_upper(std::ostream &,std::string const &s);
+	static void to_lower(std::ostream &,std::string const &s);
+
+
+protected:
+
+	base_view(http::context &context,std::ostream &out);
+
+	void set_domain(std::string domain);
 	char const *gettext(char const *);
 	char const *ngettext(char const *,char const *,int n);
 
-	template<typename T>
-	string escape(T const &v)
-	{
-		ostringstream s;
-		s<<v;
-		return s.str();
-	};
+	std::ostream &out();
 
-	string escape(string const &s);
 
-	inline string raw(string s) { return s; };
-	string intf(int val,string f);
-	string strftime(std::tm const &t,string f);
-	string date(std::tm const &t) { return strftime(t,"%Y-%m-%d"); };
-	string time(std::tm const &t) { return strftime(t,"%H:%M"); };
-	string timesec(std::tm const &t) { return strftime(t,"%T"); };
-	string escape(std::tm const &t) { return strftime(t,"%Y-%m-%d %T"); }
-	string urlencode(string const &s);
 
-public:
-	virtual void render() {};
-	virtual ~base_view() {};
-};
 
-namespace details {
-
-template<typename T,typename VT>
-base_view *view_builder(base_view::settings s,base_content *c) {
-	VT *p=dynamic_cast<VT *>(c);
-	if(!p) throw cppcms_error("Incorrect content type");
-	return new T(s,*p);
-};
-
-class views_storage {
-public:
-	typedef base_view *(*view_factory_t)(base_view::settings s,base_content *c);
 private:
-	typedef map<string,view_factory_t> template_views_t;
-	typedef map<string,template_views_t> templates_t;
+	struct data;
+	util::hold_ptr<data> d;
 
-	templates_t storage;
-public:
-
-	void add_view(	string template_name,
-			string view_name,
-			view_factory_t);
-	void remove_views(string template_name);
-	base_view *fetch_view(string template_name,string view_name,base_view::settings ,base_content *c);
-	static views_storage &instance();
 };
 
-}; // DETAILS
+template<>
+void CPPCMS_API base_view::escape(std::ostream &,std::string const &s);
+
+void CPPCMS_API operator<<(std::ostream &,std::tm const &t);
 
 
-}; // CPPCMS
 
-#define cppcms_view(X)			\
-	do {				\
-		void X##_symbol();	\
-		X##_symbol();		\
-	} while(0)			
+} // cppcms
 
 
 #if defined(HAVE_CPP_0X_AUTO)
@@ -117,9 +111,7 @@ public:
 #elif defined(HAVE_UNDERSCORE_TYPEOF)
 #	define CPPCMS_TYPEOF(x) __typeof__(x)
 #else
-#	define CPPCMS_TYPEOF(x) \
-#		error "There is no automatic type identification for this compiler, " \
-		" please use <% for X in Y as Z %> statement"
+#	define CPPCMS_TYPEOF(x) automatic_type_identification_is_not_supported_by_this_compiler
 #endif
 
 

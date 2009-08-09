@@ -7,6 +7,7 @@
 #include "http_cookie.h"
 #include "locale_environment.h"
 #include "http_context.h"
+#include "format.h"
 #include <sstream>
 #include <stdexcept>
 
@@ -41,9 +42,7 @@ public:
 		response().out()<<
 			gt("hello\n") <<"<br>";
 		for(int i=0;i<30;i++) {
-			char buf[40];
-			snprintf(buf,40,ngt("passed one day","passed %d days",i),i);
-			response().out()<<buf<<"<br>";
+			cppcms::util::format(response().out(),ngt("passed one day","passed %1% days",i),i) << "<br>";
 		}
 		response().out()
 			<<"<body></html>\n";
