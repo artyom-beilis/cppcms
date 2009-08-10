@@ -9,6 +9,7 @@
 #include "cppcms_error.h"
 
 #include <vector>
+#include <boost/format.hpp>
 
 namespace cppcms {
 
@@ -162,6 +163,29 @@ void base_view::to_upper(std::ostream &out,std::string const &s)
 {
 	to_something(out,s,&std::ctype<char>::toupper,&std::ctype<wchar_t>::toupper);
 }
+
+base_view::doublef::~doublef(){}
+base_view::intf::~intf(){}
+
+base_view::doublef::doublef(std::string f) : format_(f) {}
+base_view::intf::intf(std::string f) : format_(f) {}
+
+void base_view::intf::operator()(std::ostream &out,int x) const
+{
+	boost::format f(format_);
+	f.exceptions(0);
+	out<<f % x;
+}
+
+void base_view::doublef::operator()(std::ostream &out,double x) const
+{
+	boost::format f(format_);
+	f.exceptions(0);
+	out<<f % x;
+}
+
+
+
 
 
 namespace details {

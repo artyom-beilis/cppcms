@@ -45,8 +45,12 @@ namespace protocol {
 	{
 		while(p<end) {
 			switch(*p) {
-			case '\r':
-			case '\n':
+			case '\r': // Check for LWS (CRLF 1*( SP | HT))
+				if(p+2 < end && *(p+1)=='\n' && (*(p+2)==' ' || *(p+2)=='\t')) {
+					p+=2;
+					break;
+				}
+				return p;
 			case ' ':
 			case '\t':
 				break;

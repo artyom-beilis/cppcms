@@ -1,5 +1,5 @@
-#ifndef CPPCMS_LOCALE_SPLITTER_H
-#define CPPCMS_LOCALE_SPLITTER_H
+#ifndef CPPCMS_LOCALE_GETTEXT_H
+#define CPPCMS_LOCALE_GETTEXT_H
 
 #include "defs.h"
 #include "hold_ptr.h"

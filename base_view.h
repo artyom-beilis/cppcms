@@ -15,15 +15,6 @@
 #include "base_content.h"
 
 namespace cppcms {
-	namespace http {
-		class context;
-	}
-	namespace filters {
-
-
-		
-	} // filters
-
 
 class CPPCMS_API base_view : util::noncopyable {
 public:
@@ -32,7 +23,6 @@ public:
 
 
 public: //Filters
-
 
 	class CPPCMS_API intf {
 		std::string format_;
