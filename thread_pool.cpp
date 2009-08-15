@@ -1,6 +1,6 @@
 #define CPPCMS_SOURCE
 #include "thread_pool.h"
-#include <queue>
+#include <list>
 #include <boost/thread.hpp>
 #include <boost/shared_ptr.hpp>
 #include <boost/bind.hpp>
@@ -14,14 +14,28 @@ namespace impl {
 	class thread_pool : public util::noncopyable {
 	public:
 
-		void post(util::callback0 const &job)
+		bool cancel(int id) {
+			boost::unique_lock<boost::mutex> lock(mutex_);
+			queue_type::iterator p;
+			for(p=queue_.begin();p!=queue_.end();++p) {
+				if(p->first==id) {
+					queue_.erase(p);
+					return true;
+				}
+			}
+			return false;
+		}
+		int post(util::callback0 const &job)
 		{
 			boost::unique_lock<boost::mutex> lock(mutex_);
-			queue_.push(job);
+			int id=job_id_++;
+			queue_.push_back(std::make_pair(id,job));
 			cond_.notify_one();
+			return id;
 		}
 		thread_pool(int threads) :
-			shut_down_(false)
+			shut_down_(false),
+			job_id_(0)
 		{
 			workers_.resize(threads);
 			#if defined(CPPCMS_POSIX)
@@ -75,8 +89,8 @@ namespace impl {
 					if(shut_down_)
 						return;
 					if(!queue_.empty()) {
-						queue_.front().swap(job);
-						queue_.pop();
+						queue_.front().second.swap(job);
+						queue_.pop_front();
 					}
 					else {
 						cond_.wait(lock);
@@ -92,7 +106,9 @@ namespace impl {
 		boost::condition_variable cond_;
 
 		bool shut_down_;	
-		std::queue<util::callback0> queue_;
+		int job_id_;
+		typedef std::list<std::pair<int,util::callback0> > queue_type;
+		queue_type queue_;
 		std::vector<boost::shared_ptr<boost::thread> > workers_;
 
 	};
@@ -106,14 +122,19 @@ thread_pool::thread_pool(int n) :
 {
 }
 
-void thread_pool::post(util::callback0  const &job)
+int thread_pool::post(util::callback0  const &job)
 {
-	impl_->post(job);
+	return impl_->post(job);
 }
 
 void thread_pool::stop()
 {
 	impl_->stop();
+}
+
+bool thread_pool::cancel(int id)
+{
+	return impl_->cancel(id);
 }
 
 thread_pool::~thread_pool()

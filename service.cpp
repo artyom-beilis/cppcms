@@ -8,6 +8,7 @@
 #include "cgi_acceptor.h"
 #include "cgi_api.h"
 #include "scgi_api.h"
+#include "fastcgi_api.h"
 #include "locale_pool.h"
 
 #include "asio_config.h"
@@ -240,8 +241,9 @@ void service::start_acceptor()
 
 	if(tcp) {
 		if(api=="scgi")
-			impl_->acceptor_.reset(
-			       new tcp_socket_scgi_acceptor(*this,ip,port,backlog));
+			impl_->acceptor_ = scgi_api_tcp_socket_factory(*this,ip,port,backlog);
+		else if(api=="fastcgi")
+			impl_->acceptor_ = fastcgi_api_tcp_socket_factory(*this,ip,port,backlog);
 		else
 			throw cppcms_error("Unknown service.api: " + api);
 	}
@@ -253,9 +255,14 @@ void service::start_acceptor()
 #else
 		if(api=="scgi")
 			if(socket=="stdin")
-				impl_->acceptor_.reset(new unix_socket_scgi_acceptor(*this,backlog));
+				impl_->acceptor_ = scgi_api_unix_socket_factory(*this,backlog);
 			else
-				impl_->acceptor_.reset(new unix_socket_scgi_acceptor(*this,socket,backlog));
+				impl_->acceptor_ = scgi_api_unix_socket_factory(*this,socket,backlog);
+		else if(api=="fastcgi")
+			if(socket=="stdin")
+				impl_->acceptor_ = fastcgi_api_unix_socket_factory(*this,backlog);
+			else
+				impl_->acceptor_ = fastcgi_api_unix_socket_factory(*this,socket,backlog);
 		else
 			throw cppcms_error("Unknown service.api: " + api);
 #endif

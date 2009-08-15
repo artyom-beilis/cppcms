@@ -3,6 +3,8 @@
 
 #include "asio_config.h"
 #include "cgi_api.h"
+#include "service.h"
+#include "service_impl.h"
 
 #include <boost/bind.hpp>
 

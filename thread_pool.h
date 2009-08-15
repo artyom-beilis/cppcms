@@ -15,7 +15,8 @@ namespace cppcms {
 	class CPPCMS_API thread_pool : public util::noncopyable {
 	public:
 
-		void post(util::callback0 const &job);	
+		int post(util::callback0 const &job);	
+		bool cancel(int id);
 		thread_pool(int threads);
 		void stop();
 		~thread_pool();

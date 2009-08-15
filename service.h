@@ -33,12 +33,13 @@ namespace cppcms {
 		cppcms::locale::pool const &locale_pool();
 
 		cppcms::impl::service &impl();
+		
+		int threads_no();
+		int procs_no();
 	private:
 		void stop();
 		void start_acceptor();
 		void setup_exit_handling();
-		int threads_no();
-		int procs_no();
 		bool prefork();
 		util::hold_ptr<impl::service> impl_;
 	};

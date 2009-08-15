@@ -58,6 +58,7 @@ namespace cgi {
 		
 		virtual void async_read_some(void *,size_t,io_handler const &h) = 0;
 		virtual void async_write_some(void const *,size_t,io_handler const &h) = 0;
+		virtual void async_write_eof(handler const &h) = 0;
 		virtual size_t write_some(void const *,size_t) = 0;
 		virtual boost::asio::io_service &get_io_service() = 0;
 

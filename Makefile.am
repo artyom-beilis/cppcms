@@ -42,7 +42,9 @@ libcppcms_la_SOURCES = \
 	format.cpp \
 	base64.cpp \
 	locale_info.cpp \
-	base_view.cpp 
+	base_view.cpp \
+	scgi_api.cpp \
+	fastcgi_api.cpp
 
 
 
