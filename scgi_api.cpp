@@ -1,4 +1,5 @@
 #define CPPCMS_SOURCE
+#include "asio_config.h"
 #include "cgi_api.h"
 #include "cgi_acceptor.h"
 #include "asio_config.h"

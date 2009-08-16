@@ -235,6 +235,12 @@ fi
 			CPPCMS_LIBS="-lboost_thread-gcc-mt $CPPCMS_LIBS"
 			],[ echo "boost::thread not found" ; exit -1])])
 
+	AC_CHECK_LIB(boost_filesystem,main,[
+		CPPCMS_LIBS="-lboost_filesystem $CPPCMS_LIBS"
+		],[AC_CHECK_LIB(boost_filesystem-gcc-mt,main,[
+			CPPCMS_LIBS="-lboost_filesystem-gcc-mt $CPPCMS_LIBS"
+			],[ echo "boost::date_time not found" ; exit -1])])
+
 	AC_CHECK_LIB(boost_date_time,main,[
 		CPPCMS_LIBS="-lboost_date_time $CPPCMS_LIBS"
 		],[AC_CHECK_LIB(boost_date_time-gcc-mt,main,[

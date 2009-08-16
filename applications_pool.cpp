@@ -1,6 +1,9 @@
 #define CPPCMS_SOURCE
 #include "applications_pool.h"
 #include "application.h"
+#include "service.h"
+#include "global_config.h"
+#include "cppcms_error.h"
 #include <set>
 #include <vector>
 #include <boost/regex.hpp>
@@ -10,15 +13,30 @@ namespace cppcms {
 
 	namespace {
 		struct app_data : public util::noncopyable {
-			app_data(std::string e,std::auto_ptr<applications_pool::factory> f,int m) :
-				expr(e),
-				match(m),
+			app_data(std::string script,std::auto_ptr<applications_pool::factory> f) :
+				script_name(script),
+				match(0),
+				use_regex(0),
 				factory(f),
 				size(0)
 			{
+				check();
 			}
+			app_data(std::string script,std::string pat,int select,std::auto_ptr<applications_pool::factory> f) :
+				script_name(script),
+				expr(pat),
+				match(select),
+				use_regex(1),
+				factory(f),
+				size(0)
+			{
+				check();
+			}
+
+			std::string script_name;
 			boost::regex expr;
 			int match;
+			bool use_regex;
 			std::auto_ptr<applications_pool::factory> factory;
 
 			int size;
@@ -29,6 +47,17 @@ namespace cppcms {
 				std::set<application *>::iterator p;
 				for(p=pool.begin();p!=pool.end();++p) {
 					delete *p;
+				}
+			}
+
+			void check() const
+			{
+				if(	!script_name.empty() 
+					&& script_name[0]!='/' 
+					&& script_name[0]!='.' 
+					&& script_name!="*")
+				{
+					throw cppcms_error("Scipt name should be either '*', start with '.' or '/' or be empty");
 				}
 			}
 		};
@@ -50,28 +79,63 @@ applications_pool::applications_pool(service &srv,int limit) :
 applications_pool::~applications_pool()
 {
 }
-
-void applications_pool::mount(std::string pattern,std::auto_ptr<factory> aps,int select)
+void applications_pool::mount(std::auto_ptr<factory> aps)
 {
-	d->apps.push_back(boost::shared_ptr<app_data>(new app_data(pattern,aps,select)));
+	std::string script_name=srv_->settings().str("service.default_script_name","*");
+	d->apps.push_back(boost::shared_ptr<app_data>(new app_data(script_name,aps)));
+}
+void applications_pool::mount(std::auto_ptr<factory> aps,std::string path_info,int select)
+{
+	std::string script_name=srv_->settings().str("service.default_script_name","*");
+	d->apps.push_back(boost::shared_ptr<app_data>(new app_data(script_name,path_info,select,aps)));
+}
+void applications_pool::mount(std::auto_ptr<factory> aps,std::string script_name)
+{
+	d->apps.push_back(boost::shared_ptr<app_data>(new app_data(script_name,aps)));
+}
+void applications_pool::mount(std::auto_ptr<factory> aps,std::string script_name,std::string path_info,int select)
+{
+	d->apps.push_back(boost::shared_ptr<app_data>(new app_data(script_name,path_info,select,aps)));
 }
 
-std::auto_ptr<application> applications_pool::get(std::string path,std::string &matched)
+
+std::auto_ptr<application> applications_pool::get(std::string script_name,std::string path_info,std::string &matched)
 {
 	for(unsigned i=0;i<d->apps.size();i++) {
-		boost::cmatch match;
-		if(boost::regex_match(path.c_str(),match,d->apps[i]->expr)) {
-			matched=match[d->apps[i]->match];
-			if(d->apps[i]->pool.empty()) {
-				std::auto_ptr<application> app=(*d->apps[i]->factory)(*srv_);
-				app->pool_id(i);
-				return app;
+		std::string const sn=d->apps[i]->script_name;
+		if(sn!="*") {
+			if(sn[0]=='/')
+				if(script_name!=sn)
+					continue;
+			else { // if(sn[0]=='.') 
+				if(	script_name.size() <= sn.size() 
+					|| script_name.substr(script_name.size() - sn.size())!=sn)
+				{
+					continue;
+				}
 			}
-			d->apps[i]->size--;
-			std::auto_ptr<application> app(*(d->apps[i]->pool.begin()));
-			d->apps[i]->pool.erase(app.get());
+		}
+		
+		boost::cmatch match;
+		if(!d->apps[i]->use_regex) {
+			matched=path_info;
+		}
+		else if(boost::regex_match(path_info.c_str(),match,d->apps[i]->expr)) {
+			matched=match[d->apps[i]->match];
+		}
+		else {
+			continue;
+		}
+		
+		if(d->apps[i]->pool.empty()) {
+			std::auto_ptr<application> app=(*d->apps[i]->factory)(*srv_);
+			app->pool_id(i);
 			return app;
 		}
+		d->apps[i]->size--;
+		std::auto_ptr<application> app(*(d->apps[i]->pool.begin()));
+		d->apps[i]->pool.erase(app.get());
+		return app;
 	}
 	return std::auto_ptr<application>();
 }

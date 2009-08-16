@@ -133,13 +133,14 @@ void connection::make_error_response(int status,char const *msg)
 
 void connection::setup_application()
 {
-	std::string path = getenv("PATH_INFO");
+	std::string path_info = getenv("PATH_INFO");
+	std::string script_name = getenv("SCRIPT_NAME");
 	std::string matched;
 
-	application_ = service().applications_pool().get(path,matched);
+	application_ = service().applications_pool().get(script_name,path_info,matched);
 
 	url_dispatcher::dispatch_type how;
-	if(application_.get() == 0 || (how=application_->dispatcher().dispatchable(path))==url_dispatcher::none) {
+	if(application_.get() == 0 || (how=application_->dispatcher().dispatchable(matched))==url_dispatcher::none) {
 		context_->response().io_mode(http::response::asynchronous);
 		make_error_response(http::response::not_found);
 		on_response_complete();

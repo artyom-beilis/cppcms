@@ -1,16 +1,18 @@
 # Server API settings
 
 
-#service.port =  8001
-service.procs = 5
+service.port =  8080
+service.procs = 0
 service.ip = "127.0.0.1"
-service.socket = "/tmp/scgi.socket"     # Default is "" -- use default socket given
+#service.socket = "/tmp/scgi.socket"     # Default is "" -- use default socket given
 service.worker_threads = 5
-service.api = "scgi"				# fastcgi -- preferred API
+service.api = "http"				# fastcgi -- preferred API
 						# scgi	  -- simplefied FCGI API -- yet another alternative
 						# cgi	  -- Use only in case you application does huge amount of work
 						#            such the fork()+exec() time in neligable
 						#            Recomended for debug purposes only
+
+http.script_names = { "/hello" }
 
 # Server work mode
 

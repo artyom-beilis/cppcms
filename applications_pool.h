@@ -21,8 +21,12 @@ namespace cppcms {
 			virtual ~factory(){}
 		};
 
-		void mount(std::string pattern,std::auto_ptr<factory> aps,int select=0);
-		std::auto_ptr<application> get(std::string path,std::string &match);
+		void mount(std::auto_ptr<factory> aps);
+		void mount(std::auto_ptr<factory> aps,std::string path_info,int select);
+		void mount(std::auto_ptr<factory> aps,std::string script_name);
+		void mount(std::auto_ptr<factory> aps,std::string script_name,std::string path_info, int select);
+
+		std::auto_ptr<application> get(std::string script_name,std::string path_info,std::string &match);
 		void put(std::auto_ptr<application> app);
 
 		applications_pool(service &srv,int pool_size_limit);
