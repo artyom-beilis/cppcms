@@ -45,6 +45,7 @@ libcppcms_la_SOURCES = \
 	base_view.cpp \
 	internal_file_server.cpp \
 	scgi_api.cpp \
+	fastcgi_api.cpp \
 	http_api.cpp
 
 

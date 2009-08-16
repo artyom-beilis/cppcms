@@ -15,6 +15,9 @@
 #include <algorithm>
 #include <boost/lexical_cast.hpp>
 
+//#define DEBUG_HTTP_PARSER
+
+
 namespace cppcms {
 namespace impl {
 namespace cgi {
@@ -64,47 +67,53 @@ namespace cgi {
 
 			input_body_.resize(n);
 
-			switch(input_parser_.step()) {
-			case parser::more_data:
-				// Assuming body_ptr == body.size()
-				async_read_headers(h);
-				break;
-			case parser::got_header:
-				if(!first_header_observerd_) {
-					std::string::iterator rmethod,query=input_parser_.header_.end();
-					rmethod=std::find(input_parser_.header_.begin(),input_parser_.header_.end(),' ');
-					if(rmethod!=input_parser_.header_.end()) 
-						query=std::find(rmethod+1,input_parser_.header_.end(),' ');
-					if(query!=input_parser_.header_.end()) {
-						request_method_.assign(input_parser_.header_.begin(),rmethod);
-						request_uri_.assign(rmethod+1,query);
+			for(;;) {
+
+				switch(input_parser_.step()) {
+				case parser::more_data:
+					// Assuming body_ptr == body.size()
+					async_read_headers(h);
+					break;
+				case parser::got_header:
+					if(!first_header_observerd_) {
 						first_header_observerd_=true;
+						std::string::iterator rmethod,query=input_parser_.header_.end();
+						rmethod=std::find(	input_parser_.header_.begin(),
+									input_parser_.header_.end(),
+									' ');
+						if(rmethod!=input_parser_.header_.end()) 
+							query=std::find(rmethod+1,input_parser_.header_.end(),' ');
+						if(query!=input_parser_.header_.end()) {
+							request_method_.assign(input_parser_.header_.begin(),rmethod);
+							request_uri_.assign(rmethod+1,query);
+							first_header_observerd_=true;
+						}
+						else {
+							h(boost::system::error_code(errc::protocol_violation,cppcms_category));
+							return;
+						}
 					}
-					else {
-						h(boost::system::error_code(errc::protocol_violation,cppcms_category));
-						return;
+					else { // Any other header
+						std::string name;
+						std::string value;
+						if(!parse_single_header(input_parser_.header_,name,value))  {
+							h(boost::system::error_code(errc::protocol_violation,cppcms_category));
+							return;
+						}
+						if(name=="CONTENT_LENGTH" || name=="CONTENT_TYPE")
+							env_[name]=value;
+						else
+							env_["HTTP_"+name]=value;
 					}
+					break;
+				case parser::end_of_headers:
+					process_request(h);				
+					break;
+				case parser::error_observerd:
+					h(boost::system::error_code(errc::protocol_violation,cppcms_category));
+					return;
+					break;
 				}
-				else { // Any other header
-					std::string name;
-					std::string value;
-					if(!parse_single_header(input_parser_.header_,name,value))  {
-						h(boost::system::error_code(errc::protocol_violation,cppcms_category));
-						return;
-					}
-					if(name=="CONTENT_LENGTH" || name=="CONTENT_TYPE")
-						env_[name]=value;
-					else
-						env_["HTTP_"+name]=value;
-				}
-				break;
-			case parser::end_of_headers:
-				process_request(h);				
-				break;
-			case parser::error_observerd:
-				h(boost::system::error_code(errc::protocol_violation,cppcms_category));
-				return;
-				break;
 			}
 
 
@@ -121,8 +130,13 @@ namespace cgi {
 		}
 		virtual void async_read_some(void *p,size_t s,io_handler const &h)
 		{
+			std::cerr<<"Read Some:"<<input_body_ptr_<<" "<<input_body_.size()<<" "<<s<<std::endl;
+			if(input_body_ptr_==input_body_.size()) {
+				input_body_.clear();
+				input_body_ptr_=0;
+			}
 			if(!input_body_.empty()) {
-				if(input_body_.size() - input_body_ptr_ > s) {
+				if(input_body_.size() - input_body_ptr_ < s) {
 					s=input_body_.size() -  input_body_ptr_;
 				}
 				memcpy(p,&input_body_[input_body_ptr_],s);
@@ -177,44 +191,51 @@ namespace cgi {
 			char const *ptr=reinterpret_cast<char const *>(p);
 			output_body_.insert(output_body_.end(),ptr,ptr+s);
 
-			switch(output_parser_.step()) {
-			case parser::more_data:
-				if(!h.empty()) h(boost::system::error_code(),s);
-				return s;
-				break;
-			case parser::got_header:
-				{
-					std::string name,value;
-					if(!parse_single_header(output_parser_.header_,name,value))  {
-						h(boost::system::error_code(errc::protocol_violation,cppcms_category),s);
-						return s;
+			for(;;) {
+				switch(output_parser_.step()) {
+				case parser::more_data:
+					if(!h.empty())
+						h(boost::system::error_code(),s);
+					return s;
+				case parser::got_header:
+					{
+						std::string name,value;
+						if(!parse_single_header(output_parser_.header_,name,value))  {
+							h(boost::system::error_code(errc::protocol_violation,cppcms_category),s);
+							return s;
+						}
+						if(name=="STATUS") {
+							response_line_ = "HTTP/1.0 "+value+"\r\n";
+							return write_response(h,s);
+						}
 					}
-					if(name=="STATUS") {
-						response_line_ = "HTTP/1.0 "+value+"\r\n";
-						return write_response(h,s);
-					}
+					break;
+				case parser::end_of_headers:
+					response_line_ = "HTTP/1.0 200 Ok\r\n";
+					return write_response(h,s);
+				case parser::error_observerd:
+					h(boost::system::error_code(errc::protocol_violation,cppcms_category),0);
+					return 0;
 				}
-				break;
-			case parser::end_of_headers:
-				response_line_ = "HTTP/1.0 200 Ok\r\n";
-				return write_response(h,s);
-			case parser::error_observerd:
-				h(boost::system::error_code(errc::protocol_violation,cppcms_category),0);
-				return 0;
 			}
-			return 0;
 	
 		}
 		size_t write_response(io_handler const &h,size_t s)
 		{
 			boost::array<boost::asio::const_buffer,2> packet = {
-				boost::asio::buffer(response_line_),
-				boost::asio::buffer(output_body_)
+				{
+					boost::asio::buffer(response_line_),
+					boost::asio::buffer(output_body_)
+				}
 			};
+#ifdef DEBUG_HTTP_PARSER
+			std::cerr<<"["<<response_line_<<std::string(output_body_.begin(),output_body_.end())
+				<<"]"<<std::endl;
+#endif
 			headers_done_=true;
 			if(h.empty()) {
 				boost::system::error_code e;
-				return boost::asio::write(socket_,packet,boost::asio::transfer_all(),e);
+				boost::asio::write(socket_,packet,boost::asio::transfer_all(),e);
 				if(e) return 0;
 				return s;
 			}
@@ -252,21 +273,27 @@ namespace cgi {
 				if(	request_uri_.size() >= name.size() 
 					&& memcmp(request_uri_.c_str(),name.c_str(),name.size())==0)
 				{
-					env_["SCRIPT_NAME"]==name;
+					env_["SCRIPT_NAME"]=name;
 					size_t pos=request_uri_.find('?');
-					env_["PATH_INFO"]=request_uri_.substr(name.size(),pos);
-					env_["QUERY_STRING"]=request_uri_.substr(pos+1);
+					if(pos==std::string::npos)
+						env_["PATH_INFO"]=request_uri_.substr(name.size());
+					else {
+						env_["PATH_INFO"]=request_uri_.substr(name.size(),pos-name.size());
+						env_["QUERY_STRING"]=request_uri_.substr(pos+1);
+					}
 					h(boost::system::error_code());
 					return;
-
 				}
 			}
 			
-			env_["SCRIPT_NAME"]=="";
 			size_t pos=request_uri_.find('?');
-			env_["PATH_INFO"]=request_uri_.substr(0,pos);
-			env_["QUERY_STRING"]=request_uri_.substr(pos+1);
-
+			if(pos==std::string::npos)
+				env_["PATH_INFO"]=request_uri_;
+			else {
+				env_["PATH_INFO"]=request_uri_.substr(0,pos);
+				env_["QUERY_STRING"]=request_uri_.substr(pos+1);
+			}
+			
 			h(boost::system::error_code());
 
 		}
@@ -276,17 +303,16 @@ namespace cgi {
 					boost::bind(h,boost::system::error_code()));
 		}
 
-		bool parse_single_header(std::string &name,std::string &value,std::string const &header)
+		bool parse_single_header(std::string const &header,std::string &name,std::string &value)
 		{
 			std::string::const_iterator p=header.begin(),e=header.end(),name_end;
 
 			p=cppcms::http::protocol::skip_ws(p,e);
 			name_end=cppcms::http::protocol::tocken(p,e);
-
 			if(name_end==p)
 				return false;
 			name.assign(p,name_end);
-
+			p=name_end;
 			p=cppcms::http::protocol::skip_ws(p,e);
 			if(p==e || *p!=':')
 				return false;
@@ -295,7 +321,7 @@ namespace cgi {
 			value.assign(p,e);
 			for(unsigned i=0;i<name.size();i++) {
 				if(name[i] == '-') 
-					name[i]=='_';
+					name[i]='_';
 				else if('a' <= name[i] && name[i] <='z')
 					name[i]=name[i]-'a' + 'A';
 			}
@@ -360,19 +386,36 @@ namespace cgi {
 			enum { more_data, got_header, end_of_headers , error_observerd };
 			int step()
 			{
+#ifdef DEBUG_HTTP_PARSER
+				static char const *states[]= {
+					"idle",
+					"input_observed",
+					"last_lf_exptected",
+					"lf_exptected",
+					"space_or_other_exptected",
+					"quote_expected",
+					"pass_quote_exptected",
+					"closing_bracket_expected",
+					"pass_closing_bracket_expected"
+				};
+#endif
 				for(;;) {
-					std::cerr<<"Step: "<<std::flush;
 					int c=getc();
+#if defined DEBUG_HTTP_PARSER
+					std::cerr<<"Step("<<body_ptr_<<":"<<body_.size()<<": "<<std::flush;
+					if(c>=32)
+						std::cerr<<"["<<char(c)<<"] "<<states[state_]<<std::endl;
+					else
+						std::cerr<<c<<" "<<states[state_]<<std::endl;
+#endif
+
 					if(c<0)
 						return more_data;
 
-					if(c>=32)
-						std::cerr<<"["<<char(c)<<"] "<<state_<<std::endl;
-					else
-						std::cerr<<c<<" "<<state_<<std::endl;
 
 					switch(state_)  {
 					case idle:
+						header_.clear();
 						switch(c) {
 						case '\r':
 							state_=last_lf_exptected;
@@ -404,6 +447,9 @@ namespace cgi {
 						ungetc(c);
 						header_.resize(header_.size()-2);
 						state_=idle;
+#ifdef DEBUG_HTTP_PARSER
+						std::cerr<<"["<<header_<<"]"<<std::endl;
+#endif
 						return got_header;					
 					case input_observed:
 						switch(c) {
