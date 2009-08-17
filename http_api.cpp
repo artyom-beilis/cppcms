@@ -201,18 +201,14 @@ namespace cgi {
 							return s;
 						}
 						if(name=="STATUS") {
-							response_line_ = 
-								"HTTP/1.0 "+value+"\r\n"
-								"Connection: close\r\n";
+							response_line_ = "HTTP/1.0 "+value+"\r\n";
 
 							return write_response(h,s);
 						}
 					}
 					break;
 				case parser::end_of_headers:
-					response_line_ = 
-						"HTTP/1.0 200 Ok\r\n"
-						"Connection: close\r\n";
+					response_line_ = "HTTP/1.0 200 Ok\r\n";
 
 					return write_response(h,s);
 				case parser::error_observerd:
@@ -224,6 +220,11 @@ namespace cgi {
 		}
 		size_t write_response(io_handler const &h,size_t s)
 		{
+			char const *addon = 
+				"Server: CppCMS-Embedded/" PACKAGE_VERSION "\r\n"
+				"Connection: close\r\n";
+
+			response_line_.append(addon);
 
 			boost::array<boost::asio::const_buffer,2> packet = {
 				{
