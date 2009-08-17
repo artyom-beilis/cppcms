@@ -96,14 +96,15 @@ void service::setup_exit_handling()
 					boost::bind(&service::stop,this));
 
 	impl_->notification_socket_=impl_->sig_.native();
+
+	if(settings().integer("service.disable_global_exit_handling",0))
+		return;
+
 	the_service=this;
 
 	#ifdef CPPCMS_WIN32
-
 	SetConsoleCtrlHandler(handler, TRUE);
-
 	#else
-
 	struct sigaction sa;
 
 	memset(&sa,0,sizeof(sa));
@@ -112,7 +113,6 @@ void service::setup_exit_handling()
 	sigaction(SIGINT,&sa,0);
 	sigaction(SIGTERM,&sa,0);
 	sigaction(SIGUSR1,&sa,0);
-
 	#endif
 }
 

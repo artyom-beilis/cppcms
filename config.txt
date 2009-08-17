@@ -1,6 +1,8 @@
 # Server API settings
 
 
+# service.disable_global_exit_handling = 1
+
 service.port =  8080
 #service.port =  8001
 service.procs = 0
