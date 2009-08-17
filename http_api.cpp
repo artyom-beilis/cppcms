@@ -33,7 +33,7 @@ namespace cgi {
 		{
 
 			env_["SERVER_SOFTWARE"]=PACKAGE_NAME "/" PACKAGE_VERSION;
-			env_["SERVER_NAME"]=srv.settings().str("http.server_name","127.0.0.1");
+			env_["SERVER_NAME"]=srv.settings().str("service.ip","127.0.0.1");
 			env_["SERVER_PORT"]=boost::lexical_cast<std::string>(srv.settings().integer("service.port"));
 			env_["GATEWAY_INTERFACE"]="CGI/1.0";
 			env_["SERVER_PROTOCOL"]="HTTP/1.0";
@@ -261,6 +261,7 @@ namespace cgi {
 			}
 
 			env_["REQUEST_METHOD"]=request_method_;
+			env_["REMOTE_HOST"] = env_["REMOTE_ADDR"] = socket_.remote_endpoint().address().to_string();
 
 			if(request_uri_.empty() || request_uri_[0]!='/') {
 				response("HTTP/1.0 400 Bad Request\r\n\r\n",h);
@@ -444,6 +445,9 @@ namespace cgi {
 						break;
 					case space_or_other_exptected:
 						if(c==' ' || c=='\t') {
+							// Convert LWS to space as required by
+							// RFC, so remove last CRLF
+							header_.resize(header_.size() - 2);
 							state_=input_observed;
 							break;
 						}
