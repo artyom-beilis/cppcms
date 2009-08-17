@@ -197,11 +197,17 @@ void connection::on_response_complete()
 			async_write(
 				async_chunk_.c_str(),
 				async_chunk_.size(),
-				boost::bind(&connection::try_restart,shared_from_this(),_1));
+				boost::bind(&connection::finalize_response,shared_from_this(),_1));
 			return;
 		}
 	}
-	try_restart(boost::system::error_code());
+	finalize_response(boost::system::error_code());
+}
+
+void connection::finalize_response(boost::system::error_code const &e)
+{
+	if(e) return;
+	async_write_eof(boost::bind(&connection::try_restart,shared_from_this(),_1));
 }
 
 void connection::try_restart(boost::system::error_code const &e)

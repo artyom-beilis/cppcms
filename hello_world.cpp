@@ -21,7 +21,14 @@ public:
 		dispatcher().assign("^/get$",&hello::gform,this);
 		dispatcher().assign("^/post$",&hello::pform,this);
 		dispatcher().assign("^/err$",&hello::err,this);
+		dispatcher().assign("^/forward$",&hello::forward,this);
 		dispatcher().assign(".*",&hello::hello_world,this);
+	}
+
+	void forward()
+	{
+		//response().set_redirect_header("http://127.0.0.1:8080/hello");
+		response().set_redirect_header("/hello");
 	}
 	void err()
 	{

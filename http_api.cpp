@@ -1,6 +1,3 @@
-#ifndef CPPCMS_IMPL_SCGI_API_H
-#define CPPCMS_IMPL_SCGI_API_H
-
 #define CPPCMS_SOURCE
 #include "asio_config.h"
 #include "cgi_api.h"
@@ -73,7 +70,7 @@ namespace cgi {
 				case parser::more_data:
 					// Assuming body_ptr == body.size()
 					async_read_headers(h);
-					break;
+					return;
 				case parser::got_header:
 					if(!first_header_observerd_) {
 						first_header_observerd_=true;
@@ -130,7 +127,6 @@ namespace cgi {
 		}
 		virtual void async_read_some(void *p,size_t s,io_handler const &h)
 		{
-			std::cerr<<"Read Some:"<<input_body_ptr_<<" "<<input_body_.size()<<" "<<s<<std::endl;
 			if(input_body_ptr_==input_body_.size()) {
 				input_body_.clear();
 				input_body_ptr_=0;
@@ -205,13 +201,19 @@ namespace cgi {
 							return s;
 						}
 						if(name=="STATUS") {
-							response_line_ = "HTTP/1.0 "+value+"\r\n";
+							response_line_ = 
+								"HTTP/1.0 "+value+"\r\n"
+								"Connection: close\r\n";
+
 							return write_response(h,s);
 						}
 					}
 					break;
 				case parser::end_of_headers:
-					response_line_ = "HTTP/1.0 200 Ok\r\n";
+					response_line_ = 
+						"HTTP/1.0 200 Ok\r\n"
+						"Connection: close\r\n";
+
 					return write_response(h,s);
 				case parser::error_observerd:
 					h(boost::system::error_code(errc::protocol_violation,cppcms_category),0);
@@ -222,6 +224,7 @@ namespace cgi {
 		}
 		size_t write_response(io_handler const &h,size_t s)
 		{
+
 			boost::array<boost::asio::const_buffer,2> packet = {
 				{
 					boost::asio::buffer(response_line_),
@@ -549,4 +552,3 @@ namespace cgi {
 } // cppcms
 
 
-#endif

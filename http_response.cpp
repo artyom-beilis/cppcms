@@ -181,7 +181,7 @@ void response::write_http_headers(std::ostream &stream)
 {
 	std::ostream &out=d->output;
 	for(data::headers_type::const_iterator h=d->headers.begin();h!=d->headers.end();++h) {
-		out<<h->first<<':'<<h->second<<"\r\n";
+		out<<h->first<<": "<<h->second<<"\r\n";
 	}
 	for(unsigned i=0;i<d->cookies.size();i++) {
 		out<<d->cookies[i]<<"\r\n";

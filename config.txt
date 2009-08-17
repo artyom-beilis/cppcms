@@ -2,9 +2,10 @@
 
 
 service.port =  8080
+#service.port =  8001
 service.procs = 0
-#service.ip = "127.0.0.1"
-service.ip = "0.0.0.0"
+service.ip = "127.0.0.1"
+#service.ip = "0.0.0.0"
 #service.socket = "/tmp/scgi.socket"     # Default is "" -- use default socket given
 service.worker_threads = 5
 service.api = "http"				# fastcgi -- preferred API

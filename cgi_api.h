@@ -76,6 +76,7 @@ namespace cgi {
 		void setup_application();
 		void dispatch(bool thread);
 		void on_response_complete();
+		void finalize_response(boost::system::error_code const &e);
 		void try_restart(boost::system::error_code const &);
 
 		std::auto_ptr<http::context> context_;
