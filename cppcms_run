@@ -119,7 +119,7 @@ $API.server = ( "$SCRIPT" => ( "localhost" => (
   "check-local" => "disable",
 EOF
 
-if [ "$SOCKER" != "" ]; then
+if [ "$SOCKET" != "" ]; then
 cat >> $CONFIG_FILE << EOF
   "socket" => "$SOCKET"
 EOF
@@ -372,7 +372,7 @@ cat >$DIR/apache.conf << EOF
 	LoadModule mime_module $APACHE_MOD_DIR/mod_mime.so
 
 	FastCgiIpcDir $DIR/ipc
-	FastCgiExternalServer $DIR/myapp.fcgi $SERVICE_PORT
+	FastCgiExternalServer $DIR/myapp.fcgi $SERVICE_POINT
 
 	ScriptAliasMatch ^$SCRIPT(.*)$ $DIR/myapp.fcgi\$1
 	AddHandler fastcgi-script .fcgi
