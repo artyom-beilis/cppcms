@@ -136,6 +136,9 @@ namespace cgi {
 			header_.content_length =s;
 			header_.padding_length =7 - (s % 8);
 			static char pad[8];
+			
+			header_.to_net();
+
 			boost::array<boost::asio::const_buffer,3> packet = {
 				{
 					boost::asio::buffer(&header_,sizeof(header_)),
@@ -143,16 +146,17 @@ namespace cgi {
 					boost::asio::buffer(pad,header_.padding_length)
 				}
 			};
-			header_.to_net();
 			if(async) {
 				boost::asio::async_write(socket_,
 						packet,
 						boost::bind(	h,
 								boost::asio::placeholders::error,
-								boost::asio::placeholders::bytes_transferred));
-				return 0;
+								s));
+				return s;
 			}
-			return	boost::asio::write(socket_,boost::asio::buffer(packet));
+			
+			boost::asio::write(socket_,packet);
+			return s;
 		}
 		virtual boost::asio::io_service &get_io_service()
 		{
@@ -167,7 +171,6 @@ namespace cgi {
 		virtual void close()
 		{
 			boost::system::error_code e;
-			socket_.shutdown(boost::asio::basic_stream_socket<Proto>::shutdown_both,e);
 			socket_.close(e);
 		}
 		
@@ -187,9 +190,26 @@ namespace cgi {
 			eof_.headers_[1].to_net();
 			eof_.headers_[2].to_net();
 			eof_.record_.to_net();
+
+
 			boost::asio::async_write(	socket_,
 							boost::asio::buffer(&eof_,sizeof(eof_)),
-							boost::bind(h,_1));
+							boost::bind(	&fastcgi::on_written_eof,
+									shared_from_this(),
+									_1,
+									h));
+		}
+
+		virtual void on_written_eof(boost::system::error_code const &e,handler const &h)
+		{
+			if(e) { h(e); return; }
+
+			if(!keep_alive_) {
+				boost::system::error_code e;
+				socket_.shutdown(boost::asio::basic_stream_socket<Proto>::shutdown_both,e);
+			}
+
+			h(boost::system::error_code());
 		}
 
 	private:
@@ -209,11 +229,11 @@ namespace cgi {
 			unsigned char reserverd;
 			void to_host() { 
 				request_id = ntohs(request_id);
-				content_length = ntohs(padding_length);
+				content_length = ntohs(content_length);
 			}
 			void to_net() { 
 				request_id = htons(request_id);
-				content_length = htons(padding_length);
+				content_length = htons(content_length);
 			}
 		};
 
@@ -313,6 +333,7 @@ namespace cgi {
 	
 		void on_start_request(boost::system::error_code const &e,handler const &h)
 		{
+
 			if(header_.version!=fcgi_version_1)
 			{
 				h(boost::system::error_code(errc::protocol_violation,cppcms_category));
@@ -346,6 +367,7 @@ namespace cgi {
 				async_read_headers(h);
 				return;
 			}
+			
 			if(body_.size()!=sizeof(fcgi_request_body)) {
 				h(boost::system::error_code(errc::protocol_violation,cppcms_category));
 				return;
@@ -398,7 +420,7 @@ namespace cgi {
 				if(nlen == 0xFFFFFFFFu || vlen == 0xFFFFFFFFu)
 					return false;
 				std::string name;
-				if(uint32_t(e - p) < nlen) { // don't chage order -- prevent integer overflow
+				if(uint32_t(e - p) >= nlen) { // don't chage order -- prevent integer overflow
 					name.assign(p,p+nlen);
 					p+=nlen;
 				}
@@ -406,7 +428,7 @@ namespace cgi {
 					return false;
 				}
 				std::string value;
-				if(uint32_t(e - p) < vlen) { // don't chage order -- prevent integer overflow
+				if(uint32_t(e - p) >= vlen) { // don't chage order -- prevent integer overflow
 					value.assign(p,p+vlen);
 					p+=vlen;
 				}
@@ -434,13 +456,16 @@ namespace cgi {
 				}
 				return;
 			}
+
+
 			parse_pairs(env_);
+
 			body_.clear();
+
 			std::string content_length=getenv("CONTENT_LENGTH");
 			if(content_length.empty() || (content_length_ =  atoll(content_length.c_str())) <=0)
 				content_length_=0;
 			if(content_length_==0) {
-				body_.clear();
 				async_read_record(boost::bind(
 					&fastcgi::stdin_eof_expected,
 					shared_from_this(),
@@ -453,7 +478,9 @@ namespace cgi {
 
 		void stdin_eof_expected(boost::system::error_code const &e,handler const &h)
 		{
-			if(header_.type!=fcgi_data || header_.content_length!=0) {
+			if(e) { h(e); return; }
+			if(header_.type!=fcgi_stdin || header_.content_length!=0) {
+				std::cerr<<int(header_.type) <<" "<<header_.content_length<<std::endl;
 				h(boost::system::error_code(errc::protocol_violation,cppcms_category));
 				return;				
 			}
