@@ -117,7 +117,22 @@ server.bind = "$HOST"
 
 $API.server = ( "$SCRIPT" => ( "localhost" => (
   "check-local" => "disable",
+EOF
+
+if [ "$SOCKER" != "" ]; then
+cat >> $CONFIG_FILE << EOF
   "socket" => "$SOCKET"
+EOF
+else
+
+cat >> $CONFIG_FILE << EOF
+  "host" => "$SERVICE_IP",
+  "port" => $SERVICE_PORT
+EOF
+
+fi
+
+cat >> $CONFIG_FILE << EOF
   )))
 
 
@@ -150,6 +165,13 @@ CONFIG_FILE=$DIR/cppcms-nginx.conf
 case `uname` in 
 	*CYGWIN*) EVENT="use poll;" ;;
 esac
+
+if [ "$SOCKET" != "" ]; then
+	SERVICE_POINT="unix:$SOCKET"
+else
+	SERVICE_POINT="$SERVICE_IP:$SERVICE_PORT"
+fi
+
 
 cat >$CONFIG_FILE <<EOF
 
@@ -220,7 +242,7 @@ http {
 	}
 
 	location ~ ^$SCRIPT.*$ {
-		fastcgi_pass unix:$SOCKET;
+		fastcgi_pass $SERVICE_POINT;
 		fastcgi_param  QUERY_STRING       \$query_string;
 		fastcgi_param  REQUEST_METHOD     \$request_method;
 		fastcgi_param  CONTENT_TYPE       \$content_type;
@@ -332,6 +354,12 @@ cat >$DIR/mime.types <<EOF
 	    video/x-mng                           mng
 EOF
 
+if [ "$SOCKET" != "" ]; then
+	SERVICE_POINT="-socket $SOCKET"
+else
+	SERVICE_POINT="-host $SERVICE_IP:$SERVICE_PORT"
+fi
+
 cat >$DIR/apache.conf << EOF
 	Listen $HOST:$PORT
 	PidFile $PID_FILE
@@ -344,7 +372,7 @@ cat >$DIR/apache.conf << EOF
 	LoadModule mime_module $APACHE_MOD_DIR/mod_mime.so
 
 	FastCgiIpcDir $DIR/ipc
-	FastCgiExternalServer $DIR/myapp.fcgi -socket $SOCKET
+	FastCgiExternalServer $DIR/myapp.fcgi $SERVICE_PORT
 
 	ScriptAliasMatch ^$SCRIPT(.*)$ $DIR/myapp.fcgi\$1
 	AddHandler fastcgi-script .fcgi
@@ -356,6 +384,11 @@ EOF
 
 WEB_SERVER="$WEB_SERVER -f $DIR/apache.conf"
 
+}
+
+find_numeric_param()
+{
+	perl -e "while(<>) { print \"\$1\" if /^\s*$2\s*=\s*(\d+)\s*(#.*)?/}" <$1
 }
 
 find_param()
@@ -426,13 +459,28 @@ fi
 # Setup runtime parameters
 
 SOCKET=`find_param $APP_CONFIG_FILE service.socket`
+SERVICE_IP=`find_param $APP_CONFIG_FILE service.ip`
+SERVICE_PORT=`find_numeric_param $APP_CONFIG_FILE service.port`
 API=`find_param $APP_CONFIG_FILE service.api`
 
-if [ "$SOCKET" == "" ] || [ "$API" == "" ] ; then
+if [ "$API" == "" ] ; then
 	echo "Can't find service.api or service.socket in $APP_CONFIG_FILE"
 	echo "Aborting"
 	exit 1
 fi
+
+if [ "$SERVICE_IP" == "" ]; then
+	SERVICE_IP=127.0.0.1
+fi
+
+echo "Socket=$SOCKET Port=$SERVICE_PORT"
+
+if [ "$SOCKET" == "" ] && [ "$SERVICE_PORT" == "" ] ; then
+	echo "Can't find service.socket or service.ip and service.port in $APP_CONFIG_FILE"
+	echo "Aborting"
+	exit 1
+fi
+
 
 DIR="`pwd`/cppcms_rundir"
 PID_FILE="$DIR/srv.pid"
@@ -444,7 +492,13 @@ echo "Web Server Port:$PORT"
 echo "Document Root:$ROOT"
 echo "Script:$SCRIPT"
 echo "Api:$API"
-echo "Socket:$SOCKET"
+if [ "$SOCKET" != "" ]; then
+	echo "Socket:$SOCKET"
+else
+	echo "Service IP:$SERVICE_IP"
+	echo "Service Port:$SERVICE_PORT"
+fi
+
 
 # Configure web server
 if [ "$TRY_SETUP" != "" ]; then
