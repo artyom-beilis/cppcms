@@ -181,7 +181,7 @@ namespace cgi {
 				eof_.headers_[i].version=fcgi_version_1;
 				eof_.headers_[i].request_id=request_id_;
 			}
-			eof_.headers_[0].type=fcgi_stdin;
+			eof_.headers_[0].type=fcgi_stdout;
 			eof_.headers_[1].type=fcgi_stderr;
 			eof_.headers_[2].type=fcgi_end_request;
 			eof_.headers_[2].content_length=8;
@@ -375,6 +375,7 @@ namespace cgi {
 			fcgi_request_body *body=reinterpret_cast<fcgi_request_body*>(&body_.front());
 			body->to_host();
 			keep_alive_=body->flags & fcgi_keep_conn;
+			
 			if(body->role!=fcgi_responder) {
 				header_.type=fcgi_end_request;
 				body_.assign(0,8);
