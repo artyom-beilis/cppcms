@@ -124,3 +124,7 @@ session.sqlite_db = "./sessions/s.db"		# The base name of slite DB for the sqlit
 session.tcp_ips = { "127.0.0.1" }
 session.tcp_ports = { 3000 }
 
+
+file_server.enable = 1
+#file_server.doument_root = "C:\cygwin\home\artyom\Projects\cppcms\framework-refactoring"
+#file_server.mime_types = "mime.type"

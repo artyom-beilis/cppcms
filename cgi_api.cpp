@@ -128,6 +128,7 @@ void connection::make_error_response(int status,char const *msg)
 		"    <p>"<<util::escape(msg)<<"</p>\n"
 		"  </body>\n"
 		"</html>\n"<<std::flush;
+	context_->response().finalize();
 }
 
 
@@ -173,7 +174,6 @@ void connection::dispatch(bool in_thread)
 			if(!in_thread)
 				context_->response().io_mode(http::response::asynchronous);
 			make_error_response(http::response::internal_server_error,e.what());
-			context_->response().finalize();
 		}
 		else {
 			// TODO log it
@@ -188,8 +188,10 @@ void connection::dispatch(bool in_thread)
 
 void connection::on_response_complete()
 {
-	application_->assign_context(0);
-	service().applications_pool().put(application_);
+	if(application_.get()) {
+		application_->assign_context(0);
+		service().applications_pool().put(application_);
+	}
 
 	if(context_->response().io_mode() == http::response::asynchronous) {
 		async_chunk_=context_->response().get_async_chunk();

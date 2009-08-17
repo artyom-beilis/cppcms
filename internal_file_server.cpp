@@ -18,11 +18,11 @@ namespace impl {
 
 file_server::file_server(cppcms::service &srv) : application(srv)
 {
-	document_root_ = settings().str("http.document_root","./");
+	document_root_ = settings().str("file_server.document_root",".");
 
 	dispatcher().assign("^(.*)$",&file_server::serve_file,this,1);
 
-	std::string mime_file=settings().str("http.mime_types","");
+	std::string mime_file=settings().str("file_server.mime_types","");
 
 
 	if(mime_file.empty()) {
@@ -108,10 +108,13 @@ file_server::~file_server()
 
 void file_server::serve_file(std::string file_name)
 {
-	if(file_name.find("..") || file_name.empty() || file_name[0]!='/') {
+	if(file_name.find("..")!=std::string::npos || file_name.empty() || file_name[0]!='/') {
 		show404();
 		return;
 	}
+
+	if(file_name[file_name.size()-1]=='/')
+		file_name+="index.html";
 	
 	fs::path full = fs::path(document_root_,fs::native) / fs::path(file_name);
 	
@@ -124,12 +127,11 @@ void file_server::serve_file(std::string file_name)
 	}
 
 	if(fs::is_directory(status)) {
-		full = full / fs::path("index.html");
-		status = fs::status(full,e);
-		if(e) {
+		if(fs::is_regular_file(fs::status(full / "index.html",e))) 
+			response().set_redirect_header(file_name + "/");
+		else
 			show404();
-			return;
-		}
+		return;
 	}
 
 	if(!fs::is_regular_file(status)) {

@@ -55,7 +55,6 @@ struct response::data {
 	typedef std::map<std::string,std::string,compare_type> headers_type;
 	headers_type headers;
 	std::vector<cookie> cookies;
-	std::ostringstream buffer;
 	std::ostringstream cached;
 	std::ostringstream buffered;
 	boost::iostreams::stream<output_device> output;
@@ -177,9 +176,8 @@ void response::io_mode(response::io_mode_type mode)
 	io_mode_=mode;
 }
 
-void response::write_http_headers(std::ostream &stream)
+void response::write_http_headers(std::ostream &out)
 {
-	std::ostream &out=d->output;
 	for(data::headers_type::const_iterator h=d->headers.begin();h!=d->headers.end();++h) {
 		out<<h->first<<": "<<h->second<<"\r\n";
 	}
@@ -203,15 +201,16 @@ std::ostream &response::out()
 
 	if(ostream_requested_)
 		return *stream_;
+	
+	ostream_requested_=1;
 
 	std::ostream *real_sink = 0;
 
-	if(io_mode_ == asynchronous)
+	if(io_mode_ == asynchronous) 
 		real_sink = &d->buffered;
-	else
+	else 
 		real_sink = &d->output;
 
-	ostream_requested_=1;
 
 	bool gzip = need_gzip();
 	
@@ -253,8 +252,8 @@ std::ostream &response::out()
 
 std::string response::get_async_chunk()
 {
-	std::string result=d->buffer.str();
-	d->buffer.str("");
+	std::string result=d->buffered.str();
+	d->buffered.str("");
 	return result;
 }
 

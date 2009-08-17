@@ -102,19 +102,23 @@ void applications_pool::mount(std::auto_ptr<factory> aps,std::string script_name
 std::auto_ptr<application> applications_pool::get(std::string script_name,std::string path_info,std::string &matched)
 {
 	for(unsigned i=0;i<d->apps.size();i++) {
-		std::string const sn=d->apps[i]->script_name;
-		if(sn!="*") {
-			if(sn[0]=='/')
-				if(script_name!=sn)
+		std::string const expected_name=d->apps[i]->script_name;
+		if(expected_name!="*" && !expected_name.empty()) {
+			if(expected_name[0]=='/')
+				if(script_name!=expected_name)
 					continue;
 			else { // if(sn[0]=='.') 
-				if(	script_name.size() <= sn.size() 
-					|| script_name.substr(script_name.size() - sn.size())!=sn)
+				if(	script_name.size() <= expected_name.size() 
+					|| script_name.substr(script_name.size() - expected_name.size())!=expected_name)
 				{
 					continue;
 				}
 			}
 		}
+		else if(expected_name=="*" && script_name.empty())
+			continue;
+		else if(expected_name.empty() && !script_name.empty())
+			continue;
 		
 		boost::cmatch match;
 		if(!d->apps[i]->use_regex) {

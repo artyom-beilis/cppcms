@@ -11,6 +11,7 @@
 #include "http_api.h"
 #include "fastcgi_api.h"
 #include "locale_pool.h"
+#include "internal_file_server.h"
 
 #include "asio_config.h"
 
@@ -143,6 +144,10 @@ void service::run()
 {
 	locale_pool();
 	start_acceptor();
+
+	if(settings().integer("file_server.enable",0))
+		applications_pool().mount(applications_factory<cppcms::impl::file_server>(),"");
+
 	if(prefork()) {
 		return;
 	}
