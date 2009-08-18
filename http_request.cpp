@@ -210,6 +210,13 @@ request::form_type const &request::post()
 {
 	return post_;
 }
+request::form_type const &request::post_or_get()
+{
+	if(request_method()=="POST")
+		return post_;
+	else
+		return get_;
+}
 request::files_type request::files()
 {
 	files_type files(d->files.size());

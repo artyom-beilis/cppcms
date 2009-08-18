@@ -78,6 +78,7 @@ namespace http {
 		cookies_type const &cookies();
 		form_type const &get();
 		form_type const &post();
+		form_type const &post_or_get();
 		files_type files();
 
 	public:
