@@ -112,6 +112,9 @@ namespace http {
 		void set_plain_text_header();
 		void set_redirect_header(std::string const &location,int status = found);
 		void set_cookie(cookie const &);
+		
+		void make_error_response(int stat,std::string const &msg = std::string());
+
 
 		io_mode_type io_mode();
 		void io_mode(io_mode_type);
@@ -121,6 +124,8 @@ namespace http {
 		static std::string make_http_time(time_t);
 		static char const *status_to_string(int status);
 
+		bool some_output_was_written();
+		void finalize();
 
 		response(context &);
 		~response();
@@ -130,10 +135,8 @@ namespace http {
 		std::pair<char const *,size_t> output();
 
 		bool need_gzip();
-		bool some_output_was_written();
 		void write_http_headers(std::ostream &);
 		std::string get_async_chunk();
-		void finalize();
 
 		struct data;
 		util::hold_ptr<data> d;

@@ -39,6 +39,11 @@ namespace cgi {
 			env_["SERVER_PROTOCOL"]="HTTP/1.0";
 
 		}
+		~http()
+		{
+			boost::system::error_code e;
+			socket_.shutdown(boost::asio::ip::tcp::socket::shutdown_both,e);
+		}
 		virtual void async_read_headers(handler const &h)
 		{
 			input_body_.reserve(8192);
@@ -46,7 +51,7 @@ namespace cgi {
 			input_body_ptr_=0;
 			socket_.async_read_some(boost::asio::buffer(input_body_),
 				boost::bind(	&http::some_headers_data_read,
-						shared_from_this(),
+						self(),
 						boost::asio::placeholders::error,
 						boost::asio::placeholders::bytes_transferred,
 						h));
@@ -244,7 +249,7 @@ namespace cgi {
 				return s;
 			}
 			boost::asio::async_write(socket_,packet,
-				boost::bind(&http::do_write,shared_from_this(),_1,h,s));
+				boost::bind(&http::do_write,self(),_1,h,s));
 			return s;
 		}
 
@@ -515,9 +520,9 @@ namespace cgi {
 
 		};
 
-		boost::shared_ptr<http> shared_from_this()
+		intrusive_ptr<http> self()
 		{
-			return boost::static_pointer_cast<http>(connection::shared_from_this());
+			return this;
 		}
 		
 		friend class socket_acceptor<boost::asio::ip::tcp,http>;

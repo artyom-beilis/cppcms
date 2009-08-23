@@ -2,9 +2,9 @@
 #define CPPCMS_IMPL_CGI_API_H
 
 #include "noncopyable.h"
-
+#include "refcounted.h"
+#include "intrusive_ptr.h"
 #include <vector>
-#include <boost/enable_shared_from_this.hpp>
 #include <boost/function.hpp>
 #include <boost/system/error_code.hpp>
 
@@ -15,7 +15,8 @@ namespace cppcms {
 	class service;
 	class application;
 	namespace http {
-		class context;
+		class request;
+		class response;
 	}
 
 
@@ -24,6 +25,7 @@ namespace cgi {
 
 	typedef boost::function<void(boost::system::error_code const &e)> handler;
 	typedef boost::function<void(boost::system::error_code const &e,size_t)> io_handler;
+	typedef boost::function<void(bool)> ehandler;
 
 	class acceptor : public util::noncopyable {
 	public:
@@ -32,17 +34,29 @@ namespace cgi {
 		virtual ~acceptor(){}
 	};
 
-	class connection :
-		public boost::enable_shared_from_this<connection>,
-		public util::noncopyable
+	class connection : public refcounted
 	{
 	public:
-		void on_accepted();
 		connection(cppcms::service &srv);
 		virtual ~connection();
-		
 		cppcms::service &service();
+	
+		void async_prepare_request(	http::request &request,
+						ehandler const &on_post_data_ready);
 
+		void async_write_response(	http::response &response,
+						bool complete_response,
+						ehandler const &on_response_written);
+
+		void async_complete_response(	ehandler const &on_response_complete);
+
+		virtual std::string getenv(std::string const &key) = 0;
+		size_t write(void const *data,size_t n);
+		bool is_reuseable();
+	
+		std::string last_error();
+	
+	protected:
 
 		/****************************************************************************/
 
@@ -50,7 +64,6 @@ namespace cgi {
 		// actual protocol like FCGI, SCGI, HTTP or CGI
 
 		virtual void async_read_headers(handler const &h) = 0;
-		virtual std::string getenv(std::string const &key) = 0;
 		virtual bool keep_alive() = 0;
 		virtual void close() = 0;
 
@@ -65,26 +78,26 @@ namespace cgi {
 		/****************************************************************************/
 
 	protected:
+		intrusive_ptr<connection> self();
 		void async_read(void *,size_t,io_handler const &h);
 		void async_write(void const *,size_t,io_handler const &h);
 	private:
-		void load_content(boost::system::error_code const &e);
-		void process_request(boost::system::error_code const &e);
 
-		void load_multipart_form_data();
-		void make_error_response(int statis,char const *msg="");
-		void setup_application();
-		void dispatch(bool thread);
-		void on_response_complete();
-		void finalize_response(boost::system::error_code const &e);
-		void try_restart(boost::system::error_code const &);
+		struct reader;
+		struct writer;
 
-		std::auto_ptr<http::context> context_;
+		friend struct reader;
+		friend struct writer;
+		void set_error(ehandler const &h,std::string s);
+		void load_content(boost::system::error_code const &e,http::request *request,ehandler const &h);
+		void on_post_data_loaded(boost::system::error_code const &e,http::request *r,ehandler const &h);
+		void on_async_write_written(boost::system::error_code const &e,bool complete_response,ehandler const &h);
+		void on_eof_written(boost::system::error_code const &e,ehandler const &h);
+
 		std::vector<char> content_;
-		std::auto_ptr<application> application_;
-
 		cppcms::service *service_;
 		std::string async_chunk_;
+		std::string error_;
 
 	};
 

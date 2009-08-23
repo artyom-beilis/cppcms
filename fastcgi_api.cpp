@@ -28,10 +28,15 @@ namespace cgi {
 			int threads=srv.threads_no();
 			cuncurrency_hint_=srv.settings().integer("fastcgi.cuncurrency_hint",procs*threads);
 		}
+		~fastcgi()
+		{
+			boost::system::error_code e;
+			socket_.shutdown(boost::asio::basic_stream_socket<Proto>::shutdown_both,e);
+		}
 		virtual void async_read_headers(handler const &h)
 		{
 			reset_all();
-			async_read_record(boost::bind(&fastcgi::on_start_request,shared_from_this(),_1,h));
+			async_read_record(boost::bind(&fastcgi::on_start_request,self(),_1,h));
 		}
 
 		// should be called only after headers are read
@@ -68,7 +73,7 @@ namespace cgi {
 				if(read_length_ >= content_length_) {
 					async_read_record(boost::bind(
 						&fastcgi::on_read_stdin_eof_expected,
-						shared_from_this(),
+						self(),
 						_1,
 						h,
 						s));
@@ -80,7 +85,7 @@ namespace cgi {
 			else {
 				async_read_record(boost::bind(
 					&fastcgi::on_some_input_recieved,
-					shared_from_this(),
+					self(),
 					_1,h,p,s));
 				return;
 			}
@@ -195,7 +200,7 @@ namespace cgi {
 			boost::asio::async_write(	socket_,
 							boost::asio::buffer(&eof_,sizeof(eof_)),
 							boost::bind(	&fastcgi::on_written_eof,
-									shared_from_this(),
+									self(),
 									_1,
 									h));
 		}
@@ -359,7 +364,7 @@ namespace cgi {
 						add_pair(name,"0");
 				}
 				async_send_respnse(boost::bind(	&fastcgi::on_params_response_sent,
-								shared_from_this(),
+								self(),
 								_1,
 								h));
 			}
@@ -383,7 +388,7 @@ namespace cgi {
 				body->protocol_status=fcgi_unknown_role;
 				body->to_net();
 				async_send_respnse(boost::bind(	&fastcgi::on_params_response_sent,
-								shared_from_this(),
+								self(),
 								_1,
 								h));
 				return;
@@ -391,7 +396,7 @@ namespace cgi {
 			request_id_=header_.request_id;
 			
 			body_.clear();
-			async_read_record(boost::bind(&fastcgi::params_record_expected,shared_from_this(),_1,h));
+			async_read_record(boost::bind(&fastcgi::params_record_expected,self(),_1,h));
 		}
 
 		uint32_t read_len(unsigned char const *&p,unsigned char const *e)
@@ -448,7 +453,7 @@ namespace cgi {
 			if(header_.content_length!=0) { // eof
 				if(body_.size() < 16384) {
 					async_read_record(boost::bind(	&fastcgi::params_record_expected,
-									shared_from_this(),
+									self(),
 									_1,
 									h));
 				}
@@ -469,7 +474,7 @@ namespace cgi {
 			if(content_length_==0) {
 				async_read_record(boost::bind(
 					&fastcgi::stdin_eof_expected,
-					shared_from_this(),
+					self(),
 					_1,
 					h));
 				return;
@@ -517,7 +522,7 @@ namespace cgi {
 			boost::asio::async_read(socket_,
 						boost::asio::buffer(&header_,sizeof(header_)),
 						boost::bind(	&fastcgi::on_header_read,
-								shared_from_this(),
+								self(),
 								boost::asio::placeholders::error,
 								h));
 		}
@@ -535,7 +540,7 @@ namespace cgi {
 			boost::asio::async_read(socket_,
 						boost::asio::buffer(&body_[cur_size],rec_size),
 						boost::bind(	&fastcgi::on_body_read,
-								shared_from_this(),
+								self(),
 								boost::asio::placeholders::error,
 								h));
 		}
@@ -567,9 +572,9 @@ namespace cgi {
 		}
 
 
-		boost::shared_ptr<fastcgi<Proto> > shared_from_this()
+		intrusive_ptr<fastcgi<Proto> > self()
 		{
-			return boost::static_pointer_cast<fastcgi<Proto> >(connection::shared_from_this());
+			return this;
 		}
 		
 		

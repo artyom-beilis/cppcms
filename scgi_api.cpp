@@ -23,6 +23,11 @@ namespace cgi {
 			socket_(srv.impl().get_io_service())
 		{
 		}
+		~scgi()
+		{
+			boost::system::error_code e;
+			socket_.shutdown(boost::asio::basic_stream_socket<Proto>::shutdown_both,e);
+		}
 		virtual void async_read_headers(handler const &h)
 		{
 			buffer_.resize(16);
@@ -31,7 +36,7 @@ namespace cgi {
 				boost::asio::buffer(buffer_),
 				boost::bind(
 					&scgi::on_first_read,
-					shared_from_this(),
+					self(),
 					boost::asio::placeholders::error,
 					boost::asio::placeholders::bytes_transferred,
 					h));
@@ -65,7 +70,7 @@ namespace cgi {
 			boost::asio::async_read(socket_,
 					boost::asio::buffer(&buffer_[size],buffer_.size() - size),
 					boost::bind(	&scgi::on_headers_chunk_read,
-							shared_from_this(),
+							self(),
 							boost::asio::placeholders::error,
 							h));
 		}
@@ -140,9 +145,9 @@ namespace cgi {
 
 	private:
 		size_t start_,end_,sep_;
-		boost::shared_ptr<scgi<Proto> > shared_from_this()
+		intrusive_ptr<scgi<Proto> > self()
 		{
-			return boost::static_pointer_cast<scgi<Proto> >(connection::shared_from_this());
+			return this;
 		}
 		friend class socket_acceptor<Proto,scgi<Proto> >;
 		boost::asio::basic_stream_socket<Proto> socket_;

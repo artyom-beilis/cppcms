@@ -5,6 +5,7 @@
 #include "cgi_api.h"
 #include "service.h"
 #include "service_impl.h"
+#include "http_context.h"
 
 #include <boost/bind.hpp>
 
@@ -26,7 +27,7 @@ namespace impl {
 				if(stopped_)
 					return;
 				ServerAPI *api=new ServerAPI(srv_);
-				api_.reset(api);
+				api_=api;
 				asio_socket_ = &api->socket_;
 				acceptor_.async_accept(
 					*asio_socket_,
@@ -49,7 +50,9 @@ namespace impl {
 			{
 				if(!e) {
 					set_options(asio_socket_);
-					api_->on_accepted();
+					intrusive_ptr<http::context> context(new http::context(api_));
+					api_=0;
+					context->run();	
 				}
 				async_accept();
 			}
@@ -66,7 +69,7 @@ namespace impl {
 		protected:
 
 			cppcms::service &srv_;
-			boost::shared_ptr<connection> api_;
+			intrusive_ptr<connection> api_;
 			boost::asio::basic_stream_socket<Proto> *asio_socket_;
 			boost::asio::basic_socket_acceptor<Proto> acceptor_;
 			bool stopped_;

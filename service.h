@@ -4,6 +4,8 @@
 #include "defs.h"
 #include "noncopyable.h"
 #include "hold_ptr.h"
+#include "callback0.h"
+
 
 
 namespace cppcms {
@@ -33,6 +35,8 @@ namespace cppcms {
 		cppcms::locale::pool const &locale_pool();
 
 		cppcms::impl::service &impl();
+
+		void post(util::callback0 const &handler);
 		
 		int threads_no();
 		int procs_no();

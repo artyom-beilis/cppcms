@@ -271,6 +271,8 @@ void service::start_acceptor()
 				impl_->acceptor_ = fastcgi_api_unix_socket_factory(*this,backlog);
 			else
 				impl_->acceptor_ = fastcgi_api_unix_socket_factory(*this,socket,backlog);
+		else if(api=="http")
+			throw cppcms_error("HTTP API is not supported over Unix Domain sockets");
 		else
 			throw cppcms_error("Unknown service.api: " + api);
 #endif
@@ -298,6 +300,11 @@ cppcms::cppcms_config const &service::settings()
 cppcms::impl::service &service::impl()
 {
 	return *impl_;
+}
+
+void service::post(util::callback0 const &handler)
+{
+	impl_->get_io_service().post(handler);
 }
 
 void service::stop()

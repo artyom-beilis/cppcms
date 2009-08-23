@@ -28,7 +28,6 @@ namespace cppcms {
 	///      ...
 	/// public:
 	///    my_web_project() {
-	///     url().mount("^/users/(.*)$",users_,1);
 	///	url().assign("^/page/(\\d+)/?$",bind1st(mem_fun(&my_web_project::display_page),this),1);
 	///	...
 	/// \endcode
@@ -46,12 +45,6 @@ namespace cppcms {
 		typedef enum { none , synchronous, asynchronous } dispatch_type;
 
 
-		///
-		/// Mount application thus every request that mathces the regular
-		/// expression \a match is redirected to \a app, with parameter
-		/// part.
-		///
-		void mount(std::string match,application &app,int part);
 
 		///
 		/// Assign \a handler to pattern \a regex thus if URL that matches
@@ -155,6 +148,10 @@ namespace cppcms {
 		}
 
 	private:
+		
+		friend class application;
+		void mount(std::string match,application &app,int part);
+
 		struct data;
 		util::hold_ptr<data> d;
 	};

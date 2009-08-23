@@ -46,7 +46,8 @@ libcppcms_la_SOURCES = \
 	internal_file_server.cpp \
 	scgi_api.cpp \
 	fastcgi_api.cpp \
-	http_api.cpp
+	http_api.cpp \
+	atomic_counter.cpp 
 
 
 

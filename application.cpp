@@ -7,7 +7,14 @@
 #include "url_dispatcher.h"
 #include "locale_environment.h"
 #include "locale_gettext.h"
+#include "intrusive_ptr.h"
+#include "applications_pool.h"
+#include "http_response.h"
 
+#include <set>
+#include <vector>
+
+#include <boost/bind.hpp>
 
 namespace cppcms {
 
@@ -19,19 +26,30 @@ struct application::data {
 	{
 	}
 	cppcms::service *service;
-	http::context *conn;
+	intrusive_ptr<http::context> conn;
+	typedef std::set<intrusive_ptr<http::context> > all_conn_type;
+	all_conn_type all_conn;
 	int pool_id;
 	url_dispatcher url;
+	std::vector<application *> managed_children;
 };
 
-application::application(cppcms::service &srv) :
-	d(new data(&srv))
+application::application(cppcms::service &srv,application *p) :
+	d(new data(&srv)),
+	refs_(0)
 {
-
+	if(p==0)
+		parent_=root_=this;
+	else
+		parent(p);	
 }
 
 application::~application()
 {
+	for(unsigned i=0;i<d->managed_children.size();i++) {
+		delete d->managed_children[i];
+		d->managed_children[i]=0;
+	}
 }
 
 cppcms::service &application::service()
@@ -61,9 +79,9 @@ url_dispatcher &application::dispatcher()
 
 http::context &application::context()
 {
-	if(!d->conn)
-		throw cppcms_error("Trying to access uninitialized context");
-	return *d->conn;
+	if(!root()->d->conn)
+		throw cppcms_error("Access to unassigned context");
+	return *root()->d->conn;
 }
 
 cppcms::locale::environment &application::locale()
@@ -81,9 +99,16 @@ char const *application::ngt(char const *s,char const *p,int n)
 	return locale().ngt(s,p,n);
 }
 
-void application::assign_context(http::context *conn)
+void application::assign_context(intrusive_ptr<http::context> conn)
 {
-	d->conn=conn;
+	if(parent()!=this)
+		throw cppcms_error("Can assign context to only root of applications tree");
+	if(conn == 0)
+		d->conn = 0;
+	else {
+		d->conn=conn;
+		d->all_conn.insert(conn);
+	}
 }
 
 void application::pool_id(int id)
@@ -96,6 +121,90 @@ int application::pool_id()
 	return d->pool_id;
 }
 
+application *application::parent()
+{
+	return parent_;
+}
+
+application *application::root()
+{
+	return root_;
+}
+
+void application::parent(application *app)
+{
+	parent_=app;
+	root_=app->root();
+}
+
+
+void application::add(application &app)
+{
+	if(app.parent()!=this)
+		app.parent(this);
+}
+void application::add(application &app,std::string regex,int part)
+{
+	add(app);
+	url_dispatcher().mount(regex,app,part);
+}
+void application::assign(application *app)
+{
+	d->managed_children.push_back(app);
+	add(*app);
+}
+
+
+void application::assign(application *app,std::string regex,int part)
+{
+	d->managed_children.push_back(app);
+	add(*app,regex,part);
+}
+
+
+void application::release_all_contexts()
+{
+	d->conn=0;
+	for(data::all_conn_type::iterator p=d->all_conn.begin();p!=d->all_conn.end();++p) {
+		intrusive_ptr<http::context> context=*p;
+		context->response().out() << std::flush;
+		context->response().finalize();
+		context->service().post(boost::bind(&http::context::on_response_complete,context));
+	}
+	d->all_conn.clear();
+}
+
+void intrusive_ptr_add_ref(application *app)
+{
+	++(app->root()->refs_);
+}
+
+// REMEMBER THIS IS CALLED FROM DESTRUCTOR!!!
+void intrusive_ptr_release(application *app_in)
+{
+	// it is called in destructors... So be very careful
+	try {
+		app_in = app_in->root();
+		long refs=--(app_in->refs_);
+		if(refs > 0)
+			return;
+		
+		std::auto_ptr<application> app(app_in);
+		app_in=0;
+
+		app->release_all_contexts();
+
+		// return the application to pool... or delete it if "pooled"
+		if(app->pool_id() >= 0) {
+			cppcms::service &service=app->service();
+			service.applications_pool().put(app);
+		}
+	}
+	catch(...) 
+	{
+		// FIXME LOG IT?
+	}
+}
 
 
 } // cppcms

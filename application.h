@@ -3,7 +3,10 @@
 
 #include "defs.h"
 #include "noncopyable.h"
+#include "atomic_counter.h"
 #include "hold_ptr.h"
+#include "intrusive_ptr.h"
+
 
 namespace cppcms {
 
@@ -11,6 +14,7 @@ namespace cppcms {
 	class cppcms_config;
 	class url_dispatcher;
 	class applications_pool;
+	class application;
 
 	namespace locale {
 		class environment;
@@ -21,9 +25,12 @@ namespace cppcms {
 		class context;
 	}
 
+	void CPPCMS_API intrusive_ptr_add_ref(application *p);
+	void CPPCMS_API intrusive_ptr_release(application *p);
+
 	class CPPCMS_API application : public util::noncopyable {
 	public:
-		application(cppcms::service &srv);
+		application(cppcms::service &srv,application *parent = 0);
 		~application();
 
 		cppcms::service &service();
@@ -37,8 +44,22 @@ namespace cppcms {
 		char const *gt(char const *s);
 		char const *ngt(char const *s,char const *p,int n);
 
-		void assign_context(http::context *conn);
+		void assign_context(intrusive_ptr<http::context> conn);
+
+		void add(application &app);
+		void add(application &app,std::string regex,int part);
+
+		void assign(application *app);
+		void assign(application *app,std::string regex,int part);
+
+		application *parent();
+		application *root();
+
 	private:
+
+		void release_all_contexts();
+		void parent(application *parent);
+
 		void pool_id(int id);
 		int pool_id();
 
@@ -46,8 +67,13 @@ namespace cppcms {
 		struct data; // future use
 		util::hold_ptr<data> d;
 
+		application *parent_;
+		application *root_;
 
+		atomic_counter refs_;
 		friend class applications_pool;
+		friend void intrusive_ptr_add_ref(application *p);
+		friend void intrusive_ptr_release(application *p);
 	};
 
 } // cppcms

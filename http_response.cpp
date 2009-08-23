@@ -10,6 +10,7 @@
 #include "service.h"
 #include "config.h"
 #include "locale_environment.h"
+#include "util.h"
 
 #include <iostream>
 #include <sstream>
@@ -42,10 +43,9 @@ namespace  {
 		output_device(impl::cgi::connection *conn) : conn_(conn) {}
 		std::streamsize write(char const *data,std::streamsize n)
 		{
-			std::streamsize all=0;
-			while(all < n)
-				all += conn_->write_some(data,n);
-			return all;
+			if(n==0)
+				return 0;
+			return conn_->write(data,n);
 		}
 	};
 }
@@ -308,6 +308,25 @@ char const *response::status_to_string(int status)
 	default:  return "Unknown";
 	}
 }
+
+void response::make_error_response(int stat,std::string const &msg)
+{
+	status(stat);
+	out() <<"<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.01 Transitional//EN\"\n"
+		"	\"http://www.w3.org/TR/html4/loose.dtd\">\n"
+		"<html>\n"
+		"  <head>\n"
+		"    <title>"<<stat<<" &mdash; "<< http::response::status_to_string(stat)<<"</title>\n"
+		"  </head>\n"
+		"  <body>\n"
+		"    <h1>"<<stat<<" &mdash; "<< http::response::status_to_string(stat)<<"</h1>\n";
+	if(!msg.empty()) {
+		out()<<"    <p>"<<util::escape(msg)<<"</p>\n";
+	}
+	out()<<	"  </body>\n"
+		"</html>\n"<<std::flush;
+}
+
 
 void response::accept_ranges(std::string const &s) { set_header("Accept-Ranges",s); }
 void response::age(unsigned seconds) { set_header("Age",boost::lexical_cast<std::string>(seconds)); }
