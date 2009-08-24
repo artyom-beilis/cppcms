@@ -31,7 +31,7 @@ namespace cppcms {
 	class CPPCMS_API application : public util::noncopyable {
 	public:
 		application(cppcms::service &srv,application *parent = 0);
-		~application();
+		virtual ~application();
 
 		cppcms::service &service();
 		cppcms_config const &settings();
