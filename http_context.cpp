@@ -49,11 +49,10 @@ void context::on_request_ready(bool error)
 	std::string script_name = conn_->getenv("SCRIPT_NAME");
 	std::string matched;
 
-	intrusive_ptr<application> app = service().applications_pool().get(script_name,path_info,matched).release();
+	intrusive_ptr<application> app = service().applications_pool().get(script_name,path_info,matched);
 
 	url_dispatcher::dispatch_type how;
-	bool make_404 = (app.get() == 0) 
-			|| ((how=app->dispatcher().dispatchable(matched))==url_dispatcher::none);
+	bool make_404 = !app || ((how=app->dispatcher().dispatchable(matched))==url_dispatcher::none);
 
 	if(make_404) {
 		app=0;
@@ -64,11 +63,14 @@ void context::on_request_ready(bool error)
 	}
 
 	app->assign_context(self());
-	bool sync = how != url_dispatcher::asynchronous;
-	if(sync)
+	bool sync = !app->is_asynchronous() && (how != url_dispatcher::asynchronous);
+	if(sync) {
 		app->service().thread_pool().post(boost::bind(&context::dispatch,app,true));
-	else
+	}
+	else {
+		response().io_mode(http::response::asynchronous);
 		app->service().post(boost::bind(&context::dispatch,app,false));
+	}
 }
 
 /* static */

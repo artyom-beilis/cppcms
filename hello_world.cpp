@@ -8,9 +8,78 @@
 #include "locale_environment.h"
 #include "http_context.h"
 #include "format.h"
+#include "aio_timer.h"
 #include <sstream>
 #include <stdexcept>
 
+
+class stock : public cppcms::application {
+public:
+	stock(cppcms::service &srv) : cppcms::application(srv),timer_(srv)
+	{
+		dispatcher().assign("^/price$",&stock::get,this);
+		dispatcher().assign("^/update$",&stock::update,this);
+		price_=10.3;
+		counter_=0;
+		on_timeout(true);
+	}
+private:
+	
+	void on_timeout(bool x)
+	{
+		broadcast();
+		timer_.expires_from_now(10);
+		timer_.async_wait(cppcms::util::mem_bind(&stock::on_timeout,this));
+	}
+	void get()
+	{
+		response().set_plain_text_header();
+		cppcms::http::request::form_type::const_iterator p=request().get().find("from"),
+			e=request().get().end();
+		if(p==e || atoi(p->second.c_str()) < counter_) {
+			response().out() << price_<<std::endl;
+			release_context(last_assigned_context());
+			return;
+		}
+		all_.push_back(last_assigned_context());
+	}
+	void broadcast()
+	{
+		for(unsigned i=0;i<all_.size();i++) {
+			all_[i]->response().out() << counter_<<":"<<price_ << std::endl;
+			release_context(all_[i]);
+		}
+		all_.clear();
+	}
+	void update()
+	{
+		if(request().request_method()=="POST") {
+			cppcms::http::request::form_type::const_iterator p=request().post().find("price"),
+				e=request().post().end();
+			if(p!=e) {
+				price_ = atof(p->second.c_str());
+				counter_ ++ ;
+				for(unsigned i=0;i<all_.size();i++) {
+					all_[i]->response().out() << price_ << std::endl;
+					release_context(all_[i]);
+				}
+				all_.clear();
+			}
+		}
+		response().out() <<
+			"<html>"
+			"<body><form action='/stock/update' method='post'> "
+			"<input type='text' name='price' /><br/>"
+			"<input type='submit' value='Update Price' name='submit' />"
+			"</form></body></html>"<<std::endl;
+		release_context(last_assigned_context());
+	}
+
+	int counter_;
+	double price_;
+	std::vector<cppcms::http::context *> all_;
+	cppcms::aio::timer timer_;
+};
 
 class hello : public cppcms::application {
 public:
@@ -112,7 +181,8 @@ int main(int argc,char **argv)
 {
 	try {
 		cppcms::service service(argc,argv);
-		service.applications_pool().mount(cppcms::applications_factory<hello>());
+		service.applications_pool().mount(cppcms::applications_factory<hello>(),"/hello");
+		service.applications_pool().mount(new stock(service),"/stock");
 		service.run();
 		std::cout<<"Done..."<<std::endl;
 	}

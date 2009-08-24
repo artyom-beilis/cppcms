@@ -55,9 +55,14 @@ namespace cppcms {
 		application *parent();
 		application *root();
 
+		http::context *last_assigned_context();
+		void release_context(http::context *conn);
+		void release_all_contexts();
+
+		bool is_asynchronous();
+
 	private:
 
-		void release_all_contexts();
 		void parent(application *parent);
 
 		void pool_id(int id);

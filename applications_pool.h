@@ -4,6 +4,7 @@
 #include "defs.h"
 #include "noncopyable.h"
 #include "hold_ptr.h"
+#include "intrusive_ptr.h"
 
 #include <memory>
 #include <string>
@@ -26,15 +27,25 @@ namespace cppcms {
 		void mount(std::auto_ptr<factory> aps,std::string script_name);
 		void mount(std::auto_ptr<factory> aps,std::string script_name,std::string path_info, int select);
 
-		std::auto_ptr<application> get(std::string script_name,std::string path_info,std::string &match);
-		void put(std::auto_ptr<application> app);
+		void mount(application *app);
+		void mount(application *app,std::string path_info,int select);
+		void mount(application *app,std::string script_name);
+		void mount(application *app,std::string script_name,std::string path_info, int select);
+
+		intrusive_ptr<application> get(std::string script_name,std::string path_info,std::string &match);
+		void put(application *app);
 
 		applications_pool(service &srv,int pool_size_limit);
 		~applications_pool();
 
 	private:
-		service *srv_;
+		struct basic_app_data;
+		struct app_data;
+		struct long_running_app_data;
 		struct data;
+		std::string script_name();
+		bool matched(basic_app_data &data,std::string script_name,std::string path_info,std::string &matched);
+		service *srv_;
 		util::hold_ptr<data> d;
 	};
 

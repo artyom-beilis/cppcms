@@ -16,7 +16,7 @@ service.api = "http"				# fastcgi -- preferred API
 						#            such the fork()+exec() time in neligable
 						#            Recomended for debug purposes only
 
-http.script_names = { "/hello" }
+http.script_names = { "/stock" "/hello" }
 
 # Server work mode
 

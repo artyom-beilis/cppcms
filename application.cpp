@@ -84,6 +84,12 @@ http::context &application::context()
 	return *root()->d->conn;
 }
 
+http::context *application::last_assigned_context()
+{
+	return &*root()->d->conn;
+}
+
+
 cppcms::locale::environment &application::locale()
 {
 	return context().locale();
@@ -97,6 +103,10 @@ char const *application::gt(char const *s)
 char const *application::ngt(char const *s,char const *p,int n)
 {
 	return locale().ngt(s,p,n);
+}
+bool application::is_asynchronous()
+{
+	return pool_id() < 0;
 }
 
 void application::assign_context(intrusive_ptr<http::context> conn)
@@ -161,17 +171,25 @@ void application::assign(application *app,std::string regex,int part)
 	add(*app,regex,part);
 }
 
+void application::release_context(http::context *conn)
+{
+	intrusive_ptr<http::context> context=conn;
+	context->response().out() << std::flush;
+	context->response().finalize();
+	context->service().post(boost::bind(&http::context::on_response_complete,context));
+	root()->d->all_conn.erase(context);
+}
 
 void application::release_all_contexts()
 {
-	d->conn=0;
-	for(data::all_conn_type::iterator p=d->all_conn.begin();p!=d->all_conn.end();++p) {
+	root()->d->conn=0;
+	for(data::all_conn_type::iterator p=root()->d->all_conn.begin();p!=root()->d->all_conn.end();++p) {
 		intrusive_ptr<http::context> context=*p;
 		context->response().out() << std::flush;
 		context->response().finalize();
 		context->service().post(boost::bind(&http::context::on_response_complete,context));
 	}
-	d->all_conn.clear();
+	root()->d->all_conn.clear();
 }
 
 void intrusive_ptr_add_ref(application *app)
@@ -180,25 +198,27 @@ void intrusive_ptr_add_ref(application *app)
 }
 
 // REMEMBER THIS IS CALLED FROM DESTRUCTOR!!!
-void intrusive_ptr_release(application *app_in)
+void intrusive_ptr_release(application *app)
 {
 	// it is called in destructors... So be very careful
 	try {
-		app_in = app_in->root();
-		long refs=--(app_in->refs_);
+		app = app->root();
+		long refs=--(app->refs_);
 		if(refs > 0)
 			return;
 		
-		std::auto_ptr<application> app(app_in);
-		app_in=0;
-
-		app->release_all_contexts();
-
-		// return the application to pool... or delete it if "pooled"
-		if(app->pool_id() >= 0) {
-			cppcms::service &service=app->service();
-			service.applications_pool().put(app);
+		cppcms::service &service=app->service();
+		try {
+			app->release_all_contexts();
 		}
+		catch(...) {
+			// we must unassign it in order to make sure it
+			// would not be accessed again
+			if(app->pool_id() < 0)
+				service.applications_pool().put(app);
+			throw;
+		}
+		// return the application to pool... or delete it if "pooled"
 	}
 	catch(...) 
 	{
