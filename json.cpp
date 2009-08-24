@@ -1,5 +1,5 @@
+#define CPPCMS_SOURCE
 #include "json.h"
-#include "encoding.h"
 #include <sstream>
 #include <stdio.h>
 #include <typeinfo>
@@ -7,279 +7,168 @@
 #include <iostream>
 #include <stdexcept>
 
+#include <boost/variant.hpp>
 
 namespace cppcms {
 namespace json {
 
-	struct value_data {
-		value_data() : type(is_null) {}
-		json_type type;
-		std::string str_;
-		object obj_;
-		array arr_;
-		double num_;
-		bool bool_;
-		void clear() {
-			switch(type) {
-			case is_string: str_.clear(); break;
-			case is_object: obj_.clear(); break;
-			case is_array: arr_.clear(); break;
-			default: ;
-			}
-			type=is_null;
+
+	typedef boost::variant<
+			undefined,
+			null,
+			bool,
+			double,
+			std::string,
+			json::object,
+			json::array
+		>  variant_type;
+
+	struct value::data {
+	public:
+		variant_type &value()
+		{
+			return value_;			
 		}
-		void set(bool v) { clear() ; type=is_boolean; bool_=v; }
-		void set(double v) { clear() ; type=is_number; num_=v; }
-		void set(std::string v) { clear() ; type=is_string; str_=v; }
-		void set(object const &v) { clear() ; type=is_object; obj_=v; }
-		void set(array const &v) { clear() ; type=is_array; arr_=v; }
+
+		variant_type const &value() const
+		{
+			return value_;
+			
+		}
+	private:
+		variant_type value_;
 	};
-
-	bool value::is_null() const
+	using namespace std;
+	
+	value::copyable::copyable() :
+		d(new value::data()) 
 	{
-		return d->type==json::is_null;
 	}
-	void value::null()
+	value::copyable::~copyable()
 	{
-		d->clear();
 	}
-	double value::real() const
+	value::copyable::copyable(copyable const &r) : 
+		d(r.d) 
 	{
-		if(d->type==is_number)
-			return d->num_;
-		throw std::bad_cast();
 	}
-	double value::real(double def) const
+	value::copyable const &value::copyable::operator=(value::copyable const &r)
 	{
-		if(d->type==is_number)
-			return d->num_;
-		else if(d->type==json::is_null)
-			return def;
-		throw std::bad_cast();
+		if(&r!=this)
+			d=r.d;
+		return *this;
 	}
-	int value::integer() const
+	
+	template<typename T>
+	T &get_variant_value(variant_type &v)
 	{
-		double real_value=real();
-		int value=static_cast<int>(real_value);
-		if(value!=real_value)
+		try {
+			return boost::get<T>(v);
+		}
+		catch(boost::bad_get const &e) {
 			throw std::bad_cast();
-		return value;
+		}
 	}
-	int value::integer(int def) const
+	template<typename T>
+	T const &get_variant_value(variant_type const &v)
 	{
-		double real_value=real(def);
-		int value=static_cast<int>(real_value);
-		if(value!=real_value)
+		try {
+			return boost::get<T>(v);
+		}
+		catch(boost::bad_get const &e) {
 			throw std::bad_cast();
-		return value;
-	}
-	bool value::boolean() const
-	{
-		if(d->type==is_boolean)
-			return d->bool_;
-		throw std::bad_cast();
-	}
-	bool value::boolean(bool def) const
-	{
-		if(d->type==is_boolean)
-			return d->bool_;
-		if(d->type==json::is_null)
-			return def;
-		throw std::bad_cast();
-	}
-	std::string value::str() const
-	{
-		if(d->type==is_string)
-			return d->str_;
-		throw std::bad_cast();
-	}
-	std::string value::str(std::string def) const
-	{
-		if(d->type==is_string)
-			return d->str_;
-		if(d->type==json::is_null)
-			return def;
-		throw std::bad_cast();
+		}
 	}
 
-	std::wstring value::wstr() const
+	double const &value::number() const
 	{
-		return encoding::to_wstring(str());
+		return get_variant_value<double>(d->value());
 	}
-	std::wstring value::wstr(std::wstring def) const
+	bool const &value::boolean() const
 	{
-		if(d->type==json::is_null)
-			return def;
-		return encoding::to_wstring(str());
+		return get_variant_value<bool>(d->value());
+	}
+	std::string const &value::str() const
+	{
+		return get_variant_value<std::string>(d->value());
 	}
 
 	json::object const &value::object() const
 	{
-		if(d->type==is_object)
-			return d->obj_;
-		throw std::bad_cast();
-	}
-	json::object &value::object()
-	{
-		if(d->type==is_object)
-			return d->obj_;
-		throw std::bad_cast();
+		return get_variant_value<json::object>(d->value());
 	}
 	json::array const &value::array() const
 	{
-		if(d->type==is_array)
-			return d->arr_;
-		throw std::bad_cast();
+		return get_variant_value<json::array>(d->value());
+	}
+	double &value::number() 
+	{
+		return get_variant_value<double>(d->value());
+	}
+	bool &value::boolean()
+	{
+		return get_variant_value<bool>(d->value());
+	}
+	std::string &value::str()
+	{
+		return get_variant_value<std::string>(d->value());
+	}
+
+	json::object &value::object()
+	{
+		return get_variant_value<json::object>(d->value());
 	}
 	json::array &value::array()
 	{
-		if(d->type==is_array)
-			return d->arr_;
-		throw std::bad_cast();
+		return get_variant_value<json::array>(d->value());
 	}
 
-	value const &value::operator=(double v)
+	bool value::is_undefined() const
 	{
-		d->set(v);
-		return *this;
+		return d->value().which()==json::is_undefined;
 	}
-	value const &value::operator=(bool v)
+	bool value::is_null() const
 	{
-		d->set(v);
-		return *this;
-	}
-	value const &value::operator=(int v)
-	{
-		d->set(double(v));
-		return *this;
-	}
-	value const &value::operator=(std::string v)
-	{
-		d->set(v);
-		return *this;
-	}
-	value const &value::operator=(std::wstring v)
-	{
-		d->set(encoding::to_string(v));
-		return *this;
-	}
-	value const &value::operator=(char const *v)
-	{
-		d->set(std::string(v));
-		return *this;
-	}
-	value const &value::operator=(wchar_t const *v)
-	{
-		d->set(encoding::to_string(v));
-		return *this;
-	}
-	value const &value::operator=(json::object const &v)
-	{
-		d->set(v); return *this;
-	}
-	value const &value::operator=(json::array const &v)
-	{
-		d->set(v); return *this;
+		return d->value().which()==json::is_undefined;
 	}
 
-	value &value::operator[](unsigned pos)
+
+	void value::undefined()
 	{
-		if(is_null())
-			d->set(json::array());
-		if(d->type!=is_array)
-			throw std::bad_cast();
-		if(d->arr_.size()<=pos)
-			d->arr_.resize(pos+1);
-		return d->arr_[pos];
+		d->value()=json::undefined();
 	}
-	value const &value::operator[](unsigned pos) const
+	void value::null()
 	{
-		static value null;
-		if(is_null())
-			return null;
-		if(d->type!=is_array)
-			throw std::bad_cast();
-		if(d->arr_.size()<=pos)
-			return null;
-		return d->arr_[pos];
+		d->value()=json::null();
 	}
-	value const &value::operator()(std::string const &path) const
+	void value::boolean(bool x)
 	{
-		static const value null;
-		if(is_null())
-			return null;
-		json::object const &members=object();
-		json::object::const_iterator p;
-		std::string::const_iterator i=find(path.begin(),path.end(),'.');
-		if(i==path.end()) {
-			if((p=members.find(path))!=members.end())
-				return p->second;
-			return null;
-		}
-		std::string prefix(path.begin(),i);
-		value const &tmp=(*this)[prefix];
-		if(tmp.is_null())
-			return null;
-		return tmp[std::string(i+1,path.end())];
+		d->value()=x;
 	}
-	value &value::operator()(std::string const &path)
+	void value::number(double x)
 	{
-		if(is_null())
-			d->set(json::object());
-		json::object::iterator p;
-		json::object &members=object();
-		std::string::const_iterator i=find(path.begin(),path.end(),'.');
-		if(i==path.end())
-			return members[path];
-		std::string prefix(path.begin(),i);
-		value &tmp=(*this)[prefix];
-		return tmp[std::string(i+1,path.end())];
+		d->value()=x;
 	}
-	value const &value::operator[](std::string const &entry) const
+	void value::str(std::string const &x)
 	{
-		static const value null;
-		if(is_null())
-			return null;
-		json::object const &members=object();
-		json::object::const_iterator p;
-		if((p=members.find(entry))!=members.end())
-			return p->second;
-		return null;
+		d->value()=x;
 	}
-	value &value::operator[](std::string const &entry)
+	void value::object(json::object const &x)
 	{
-		if(is_null())
-			d->set(json::object());
-		json::object::iterator p;
-		json::object &members=object();
-		return members[entry];
+		d->value()=x;
+	}
+	void value::array(json::array const &x)
+	{
+		d->value()=x;
 	}
 
-	value::value() : d(new value_data) { }
-	value::value(value const &other) : d(other.d) {}
-	value const &value::operator=(value const &other)
+	json_type value::type() const
 	{
-		d=other.d;
-		return *this;
+		return json_type(d->value().which());
 	}
-	value::~value()  {}
-
 
 	namespace {
-		std::string uchar(unsigned v)
-		{
-			char buf[8];
-			snprintf(buf,sizeof(buf),"\\u%04X",v);
-			std::string res=buf;
-			return res;
-		}
-		std::string uchar(std::string::const_iterator p,std::string::const_iterator e)
-		{
 
-			return uchar(*p);
-		}
-
-		std::string escape(std::string const &input,bool utf)
+		std::string escape(std::string const &input)
 		{
 			std::string result;
 			result.reserve(input.size());
@@ -300,10 +189,9 @@ namespace json {
 				case '\t': result+="\\t"; break;
 				default:
 					if(0x00<=*i && *i<=0x1F) {
-						uchar(*i);
-					}
-					else if((*i & 0x80) && !utf) {
-						result+=uchar(i,end);
+						char buf[8];
+						snprintf(buf,sizeof(buf),"\\u%04X",*i);
+						result+=buf;
 					}
 					else {
 						result+=*i;
@@ -353,61 +241,67 @@ namespace json {
 	} // namespace anonymous
 
 
-	json_type value::type() const
+	void value::write(std::ostream &out,int tabs) const
 	{
-		return d->type;
+		std::locale original(out.getloc());
+		out.imbue(std::locale("C"));
+		try {
+			write_value(out,tabs);
+		}
+		catch(...) {
+			out.imbue(original);
+			throw;
+		}
+		out.imbue(original);
+
 	}
 
-	void value::write(std::ostream &out,int tabs,bool utf) const
+	void value::write_value(std::ostream &out,int tabs) const
 	{
-		if(is_null()) {
+		switch(type()) {
+		case json::is_undefined:
+			throw std::bad_cast();
+		case json::is_null:
 			out<<"null";
-			return;
-		}
-		switch(d->type) {
-		case is_number:
-			out<<d->num_;
+		case json::is_number:
+			out<<number();
 			break;
-		case is_string:
-			out<<escape((d->str_),utf);
+		case json::is_string:
+			out<<escape(str());
 			break;
-		case is_boolean:
-			out<< (d->bool_ ? "true" : "false") ;
+		case json::is_boolean:
+			out<< (boolean() ? "true" : "false") ;
 			break;
-		case is_array:
+		case json::is_array:
 			{
-				json::array const &a=d->arr_;
-				if(!a.empty()) {
-					unsigned i;
-					indent(out,'[',tabs);
-					for(i=0;i<a.size();) {
-						a[i].write(out,tabs,utf);
-						i++;
-						if(i<a.size())
-							indent(out,',',tabs);
-					}
-					indent(out,']',tabs);
+				json::array const &a=array();
+				unsigned i;
+				indent(out,'[',tabs);
+				for(i=0;i<a.size();) {
+					a[i].write_value(out,tabs);
+					i++;
+					if(i<a.size())
+						indent(out,',',tabs);
 				}
+				indent(out,']',tabs);
 			}
 			break;
-		case is_object:
+		case json::is_object:
 			{
-				json::object const &obj=d->obj_;
+				json::object const &obj=object();
 				object::const_iterator p,end;
 				p=obj.begin();
 				end=obj.end();
-				if(p!=end) {
-					indent(out,'{',tabs);
-					while(p!=end) {
-						out<<escape(p->first,utf);
-						indent(out,':',tabs);
-						p->second.write(out,tabs,utf);
-						++p;
-						if(p!=end)
-							indent(out,',',tabs);
-					}
-					indent(out,'}',tabs);
+				indent(out,'{',tabs);
+				while(p!=end) {
+					out<<escape(p->first);
+					indent(out,':',tabs);
+					p->second.write_value(out,tabs);
+					++p;
+					if(p!=end)
+						indent(out,',',tabs);
 				}
+				indent(out,'}',tabs);
 			}
 			break;
 		default:
@@ -415,40 +309,168 @@ namespace json {
 		}
 	}
 
+	void value::save(std::ostream &out,int how) const
+	{
+		int tabs=(how & readable) ? 0 : -1;
+		write(out,tabs);
+	}
+	
 	std::string value::save(int how) const
 	{
 		std::ostringstream ss;
-		ss.imbue(std::locale("C"));
-		bool utf=(how & us_ascii) == 0;
 		int tabs=(how & readable) ? 0 : -1;
-		write(ss,tabs,utf);
+		write(ss,tabs);
 		return ss.str();
 	}
 
 	std::ostream &operator<<(std::ostream &out,value const &v)
 	{
-		out<<v.save();
+		v.save(out);
 		return out;
 	}
 
 	bool value::operator==(value const &other) const
 	{
-		if(d->type!=other.d->type)
-			return false;
-		switch(d->type) {
-		case json::is_null: return true;
-		case is_number: return d->num_==other.d->num_;
-		case is_string: return d->str_==other.d->str_;
-		case is_boolean: return d->bool_==other.d->bool_;
-		case is_object: return d->obj_==other.d->obj_;
-		case is_array: return d->arr_==other.d->arr_;
-		default: return false;
-		}
+		return d->value()==other.d->value();
 	}
 	bool value::operator!=(value const &other) const
 	{
-		return !(*this == other);
+		return !(*this==other);
 	}
+
+
+	// returns empty if not found
+	value const &value::find(std::string path) const
+	{
+		static value const empty;
+		value const *ptr=this;
+		size_t pos=0;
+		size_t new_pos;
+		do {
+			new_pos=path.find('.',pos);
+			std::string part=path.substr(pos,new_pos - pos);
+			if(new_pos!=std::string::npos)
+				new_pos++;
+			if(part.empty())
+				return empty;
+			if(ptr->type()!=json::is_object)
+				return empty;
+			json::object const &obj=ptr->object();
+			json::object::const_iterator p;
+			if((p=obj.find(part))==obj.end())
+				return empty;
+			ptr=&p->second;
+			pos=new_pos;
+
+		} while(new_pos < path.size());
+		return *ptr;
+	}
+	
+	// throws if not found
+	value const &value::at(std::string path) const
+	{
+		value const &v=find(path);
+		if(v.is_undefined())
+			throw std::bad_cast();
+		return v;
+	}
+	value &value::at(std::string path)
+	{
+		value *ptr=this;
+		size_t pos=0;
+		size_t new_pos;
+		do {
+			new_pos=path.find('.',pos);
+			std::string part=path.substr(pos,new_pos - pos);
+			if(new_pos!=std::string::npos)
+				new_pos++;
+			if(part.empty())
+				throw std::bad_cast();
+			if(ptr->type()!=json::is_object)
+				throw std::bad_cast();
+			json::object &obj=ptr->object();
+			json::object::iterator p;
+			if((p=obj.find(part))==obj.end())
+				throw std::bad_cast();
+			ptr=&p->second;
+			pos=new_pos;
+
+		} while(new_pos < path.size());
+		return *ptr;
+	}
+	void value::at(std::string path,value const &v)
+	{
+		value *ptr=this;
+		size_t pos=0;
+		size_t new_pos;
+		do {
+			new_pos=path.find('.',pos);
+			std::string part=path.substr(pos,new_pos - pos);
+
+
+			if(new_pos!=std::string::npos)
+				new_pos++;
+			if(part.empty())
+				throw std::bad_cast();
+			if(ptr->type()!=json::is_object) {
+				*ptr=json::object();
+			}
+			json::object &obj=ptr->object();
+			json::object::iterator p;
+			if((p=obj.find(part))==obj.end()) {
+				ptr=&obj.insert(std::make_pair(part,json::value())).first->second;
+			}
+			else
+				ptr=&p->second;
+			pos=new_pos;
+
+		} while(new_pos < path.size());
+		*ptr=v;
+	}
+
+	value &value::operator[](std::string name)
+	{
+		if(type()!=json::is_object)
+			set_value(json::object());
+
+		json::object &self=object();
+
+		json::object::iterator p=self.find(name);
+		if(p==self.end())
+			return self.insert(std::make_pair(name,value())).first->second;
+		return p->second;
+	}
+
+	value const &value::operator[](std::string name) const
+	{
+		if(type()!=json::is_object)
+			throw std::bad_cast();
+		json::object const &self=object();
+		json::object::const_iterator p=self.find(name);
+		if(p==self.end())
+			throw std::bad_cast();
+		return p->second;
+	}
+
+	value &value::operator[](size_t n)
+	{
+		if(type()!=json::is_array)
+			set_value(json::array());
+		json::array &self=array();
+		if(n>=self.size())
+			self.resize(n+1);
+		return self[n];
+	}
+	
+	value const &value::operator[](size_t n) const
+	{
+		if(type()!=json::is_array)
+			throw std::bad_cast();
+		return array().at(n);
+	}
+
+
+
 /*
 	namespace {
 
@@ -771,10 +793,6 @@ namespace json {
 
 */
 
-	int value::load(std::string const &s)
-	{
-		throw std::runtime_error("Unsupported");
-	}
 
 } // json
 

@@ -8,96 +8,302 @@
 #include <map>
 #include <string>
 #include <ostream>
+#include <istream>
 
 
 namespace cppcms {
 namespace json {
 
+
+
+
 	class value;
+
+	struct null {};
+	struct undefined {};
+
+	inline bool operator==(undefined const &l,undefined const &r) {return true;}
+	inline bool operator!=(undefined const &l,undefined const &r) {return false;}
+	inline bool operator==(null const &l,null const &r) {return true;}
+	inline bool operator!=(null const &l,null const &r) {return false;}
+
 
 	typedef std::vector<value> array;
 	typedef std::map<std::string,value> object;
 
+	template<typename T>
+	struct traits;
+
+
 	typedef enum {
+		is_undefined,
 		is_null,
-		is_number,
 		is_boolean,
+		is_number,
 		is_string,
 		is_object,
 		is_array
 	} json_type;
 
 	enum {
-		utf8 = 0,
-		us_ascii = 1,
 		compact = 0,
-		readable = 4
+		readable = 1
 	};
 
-	class value_data;
 	class CPPCMS_API value {
-		void write(std::ostream &out,int tabs,bool utf) const;
 	public:
 
 		json_type type() const;
-
+		
+		bool is_undefined() const;
 		bool is_null() const;
-		void null();
 
-
-		double real() const;
-		double real(double) const;
-		int integer() const;
-		int integer(int) const;
-		bool boolean() const;
-		bool boolean(bool) const;
-
-		std::string str() const;
-		std::wstring wstr() const;
-		std::string str(std::string) const;
-		std::wstring wstr(std::wstring) const;
-
+		bool const &boolean() const;
+		double const &number() const;
+		std::string const &str() const;
 		json::object const &object() const;
-		json::object &object();
 		json::array const &array() const;
+
+		bool &boolean();
+		double &number();
+		std::string &str();
+		json::object &object();
 		json::array &array();
 
-		value const &operator=(double v);
-		value const &operator=(bool v);
-		value const &operator=(int v);
-		value const &operator=(std::string);
-		value const &operator=(std::wstring);
-		value const &operator=(char const *);
-		value const &operator=(wchar_t const *);
-		value const &operator=(json::object const &);
-		value const &operator=(json::array const &);
+		void undefined();
+		void null();
 
-		value &operator[](unsigned pos);
-		value const &operator[](unsigned pos) const;
-		value const &operator()(std::string const &path) const;
-		value &operator()(std::string const &path);
-		value const &operator[](std::string const &entry) const;
-		value &operator[](std::string const &entry);
+		void boolean(bool);
+		void number(double );
+		void str(std::string const &);
+		void object(json::object const &);
+		void array(json::array const &);
 
-		std::string save(int how=(utf8 | compact)) const;
-		int load(std::string const &s);
+
+		template<typename T>
+		T get_value() const
+		{
+			return traits<T>::get(*this);
+		}
+		
+		template<typename T>
+		void set_value(T const &v)
+		{
+			traits<T>::set(*this,v);
+		}
+
+
+		// returns empty if not found
+		value const &find(std::string) const; 		
+
+		// throws if not found
+		value const &at(std::string) const;  
+		value &at(std::string);
+
+		// sets 
+		void at(std::string,value const &v);
+
+		
+
+		template<typename T>
+		value(T const &v)
+		{
+			set_value(v);
+		}
+
+		json_type type(std::string path) const
+		{
+			return find(path).type();
+		}
+
+
+		template<typename T>
+		void set(std::string path,T const &v)
+		{
+			at(path,value(v));
+		}
+
+		template<typename T>
+		T get(std::string path) const
+		{
+			return at(path).get_value<T>();
+		}
+		template<typename T>
+		T get(std::string path,T const &def) const
+		{
+			value const &v=find(path);
+			if(v.is_undefined())
+				return def;
+			try {
+				T tmp=get_value<T>(v);
+				return tmp;
+			}
+			catch(std::bad_cast const &e) {
+				return def;
+			}
+		}
+
+		value &operator[](std::string name);
+		value const &operator[](std::string name) const;
+		value &operator[](size_t n);
+		value const &operator[](size_t n) const;
+
+
+		std::string save(int how=compact) const;
+		void save(std::ostream &out,int how=compact) const;
 
 		bool operator==(value const &other) const;
 		bool operator!=(value const &other) const;
 
 
-		value();
-		value(value const &);
-		value const &operator=(value const &);
-		~value();
+		value(value const &other) :
+			d(other.d)
+		{
+		}
+		value const &operator=(value const &other)
+		{
+			d=other.d;
+			return *this;
+		}
+		value()
+		{
+		}
+
+		~value()
+		{
+		}
 
 	private:
-		util::copy_ptr<value_data> d;
+
+		void write(std::ostream &out,int tabs) const;
+		void write_value(std::ostream &out,int tabs) const;
+
+		struct data;
+		struct copyable {
+
+			data *operator->() { return &*d; }
+			data &operator*() { return *d; }
+			data const *operator->() const { return &*d; }
+			data const &operator*() const { return *d; }
+
+			copyable();
+			copyable(copyable const &r);
+			copyable const &operator=(copyable const &r);
+			~copyable();
+		private:
+			util::copy_ptr<data> d;
+		} d;
+
+		friend struct copyable;
 	};
 
-	value parse(std::string const &);
-	value parse(char const *begin,char const *end);
-	std::ostream &operator<<(std::ostream &out,value const &v);
+
+	template<typename T>
+	struct traits {
+		static T get(value const &v);
+		static void set(value &v,T const &in);
+	};
+
+	template<typename T1,typename T2>
+	struct traits<std::pair<T1,T2> > {
+		static std::pair<T1,T2> get(value const &v)
+		{
+			if(v.object().size()!=2)
+				throw std::bad_cast();
+			std::pair<T1,T2> pair(v.get_value<T1>("first"),v.get_value<T2>("second"));
+			return pair;
+		}
+		static void set(value &v,std::pair<T1,T2> const &in)
+		{
+			v=json::object();
+			v.set_value("first",in.first);
+			v.set_value("second",in.second);
+		}
+	};
+
+	template<typename T>
+	struct traits<std::vector<T> > {
+		static T get(value const &v)
+		{
+			std::vector<T> result;
+			json::array const &a=v.array();
+			result.resize(a.size());
+			for(unsigned i=0;i<a.size();i++) 
+				result[i]=a[i].get_value<T>();
+			return result;
+		}
+		static void set(value &v,T const &in)
+		{
+			v=json::array();
+			json::array a=v.array();
+			a.resize(in.size());
+			for(unsigned i=0;i<in.size();i++)
+				a[i].set_value(in[i]);
+		}
+	};
+
+
+	#define CPPCMS_JSON_SPECIALIZE(type,method) 	\
+	template<>					\
+	struct traits<type> {				\
+		static type get(value const &v)		\
+		{					\
+			return v.method();		\
+		}					\
+		static void set(value &v,type const &in)\
+		{					\
+			v.method(in);			\
+		}					\
+	};
+
+	CPPCMS_JSON_SPECIALIZE(bool,boolean);
+	CPPCMS_JSON_SPECIALIZE(double,number);
+	CPPCMS_JSON_SPECIALIZE(std::string,str);
+	CPPCMS_JSON_SPECIALIZE(json::object,object);
+	CPPCMS_JSON_SPECIALIZE(json::array,array);
+
+	#undef CPPCMS_JSON_SPECIALIZE
+
+	template<>					
+	struct traits<int> {				
+		static int get(value const &v)		
+		{					
+			return static_cast<int>(v.number());
+		}					
+		static void set(value &v,int const &in)
+		{					
+			v.number(in);			
+		}					
+	};
+	template<>					
+	struct traits<json::null> {				
+		static void set(value &v,json::null const &in)
+		{					
+			v.null();
+		}					
+	};
+
+	template<int n>					
+	struct traits<char[n]> {			
+		typedef char array_type[n];
+		static void set(value &v,array_type const &in)
+		{					
+			v.str(in);
+		}					
+	};
+
+	template<>					
+	struct traits<char const *> {			
+		static void set(value &v,char const * const &in)
+		{					
+			v.str(in);
+		}					
+	};
+
+
+	std::istream CPPCMS_API &operator>>(std::istream &in,value &v);
+	std::ostream CPPCMS_API &operator<<(std::ostream &out,value const &v);
+
 
 } // json
 } // cppcms
