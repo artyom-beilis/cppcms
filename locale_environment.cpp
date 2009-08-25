@@ -2,7 +2,7 @@
 #include "locale_environment.h"
 #include "service.h"
 #include "locale_pool.h"
-#include "global_config.h"
+#include "json.h"
 
 namespace cppcms {
 namespace locale {
@@ -18,7 +18,7 @@ environment::environment(cppcms::service &srv) :
 	service_(srv),
 	d(new data)
 {
-	d->locale_name=service_.settings().str("locale.default","C");
+	d->locale_name=service_.settings().get("locale.default","C");
 	setup();
 }
 

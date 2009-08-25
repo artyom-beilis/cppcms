@@ -2,11 +2,11 @@
 #define CPPCMS_SERVICE_IMPL_H
 
 #include "asio_config.h"
+#include "json.h"
 #include <memory>
 
 namespace cppcms {
 class service;
-class cppcms_config;
 class applications_pool;
 class thread_pool;
 
@@ -30,7 +30,7 @@ namespace impl {
 		boost::asio::io_service io_service_;
 
 		std::auto_ptr<cgi::acceptor> acceptor_;
-		std::auto_ptr<cppcms_config> settings_;
+		std::auto_ptr<json::value> settings_;
 		std::auto_ptr<applications_pool> applications_pool_;
 		std::auto_ptr<thread_pool> thread_pool_;
 		std::auto_ptr<locale::pool> locale_pool_;

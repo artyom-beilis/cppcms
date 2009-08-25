@@ -26,7 +26,6 @@ libcppcms_la_SOURCES = \
 	http_request.cpp \
 	http_response.cpp \
 	http_context.cpp \
-	global_config.cpp \
 	cppcms_error.cpp \
 	cppcms_error_category.cpp \
 	thread_pool.cpp \
@@ -48,7 +47,8 @@ libcppcms_la_SOURCES = \
 	fastcgi_api.cpp \
 	http_api.cpp \
 	atomic_counter.cpp \
-	aio_timer.cpp
+	aio_timer.cpp \
+	json.cpp
 
 
 

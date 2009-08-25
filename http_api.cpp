@@ -5,7 +5,7 @@
 #include "service.h"
 #include "service_impl.h"
 #include "cppcms_error_category.h"
-#include "global_config.h"
+#include "json.h"
 #include "http_protocol.h"
 #include "config.h"
 #include <iostream>
@@ -33,8 +33,8 @@ namespace cgi {
 		{
 
 			env_["SERVER_SOFTWARE"]=PACKAGE_NAME "/" PACKAGE_VERSION;
-			env_["SERVER_NAME"]=srv.settings().str("service.ip","127.0.0.1");
-			env_["SERVER_PORT"]=boost::lexical_cast<std::string>(srv.settings().integer("service.port"));
+			env_["SERVER_NAME"]=srv.settings().get("service.ip","127.0.0.1");
+			env_["SERVER_PORT"]=boost::lexical_cast<std::string>(srv.settings().get<int>("service.port"));
 			env_["GATEWAY_INTERFACE"]="CGI/1.0";
 			env_["SERVER_PROTOCOL"]="HTTP/1.0";
 
@@ -274,7 +274,8 @@ namespace cgi {
 				return;
 			}
 			
-			std::vector<std::string> const &script_names=service().settings().slist("http.script_names");
+			std::vector<std::string> const &script_names=
+				service().settings().get("http.script_names",std::vector<std::string>());
 
 			for(unsigned i=0;i<script_names.size();i++) {
 

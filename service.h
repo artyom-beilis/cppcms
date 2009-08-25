@@ -18,11 +18,14 @@ namespace cppcms {
 	namespace locale {
 		class pool;
 	}
-	class cppcms_config;
+	namespace json {
+		class value;
+	}
 
 	class CPPCMS_API service : public util::noncopyable
 	{
 	public:
+		service(json::value const &v);
 		service(int argc,char *argv[]);
 		~service();
 
@@ -31,7 +34,7 @@ namespace cppcms {
 
 		cppcms::applications_pool &applications_pool();
 		cppcms::thread_pool &thread_pool();
-		cppcms::cppcms_config const &settings();
+		json::value const &settings();
 		cppcms::locale::pool const &locale_pool();
 
 		cppcms::impl::service &impl();
@@ -41,6 +44,8 @@ namespace cppcms {
 		int threads_no();
 		int procs_no();
 	private:
+		void setup();
+		void load_settings(int argc,char *argv[]);
 		void stop();
 		void start_acceptor();
 		void setup_exit_handling();

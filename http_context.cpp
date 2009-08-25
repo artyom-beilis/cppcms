@@ -144,7 +144,7 @@ http::response &context::response()
 	return d->response;
 }
 
-cppcms_config const &context::settings()
+json::value const &context::settings()
 {
 	return conn_->service().settings();
 }

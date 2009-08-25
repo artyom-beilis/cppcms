@@ -59,6 +59,19 @@ int main()
 			cout<<line_no<<endl;
 			cout<<"-------------"<<endl;
 		}
+		std::vector<std::string> vals;
+		vals.push_back("Yes");
+		vals.push_back("No");
+		v.set("z",vals);
+		cout<<v<<endl;
+		vals.clear();
+		vals = v.get("z",std::vector<std::string>());
+		cout<<vals.size()<<endl;
+		cout<<vals.at(0)<<" "<<vals.at(1)<<endl;
+
+		cout<<v.get("foo.bar",5)<<endl;
+		cout<<v.get<int>("foo.bar")<<endl;
+		cout<<v.get("x","Nothing")<<endl;
 		
 	}
 	catch(std::exception const &e)

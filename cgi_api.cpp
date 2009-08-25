@@ -7,7 +7,7 @@
 #include "http_protocol.h"
 #include "service.h"
 #include "service_impl.h"
-#include "global_config.h"
+#include "json.h"
 #include "cgi_api.h"
 #include "util.h"
 
@@ -66,7 +66,7 @@ void connection::load_content(boost::system::error_code const &e,http::request *
 
 	if(http::protocol::is_prefix_of("multipart/form-data",content_type)) {
 		// 64 MB
-		long long allowed=service().settings().integer("security.multipart_form_data_limit",64*1024)*1024;
+		long long allowed=service().settings().get("security.multipart_form_data_limit",64*1024)*1024;
 		if(content_length > allowed) { 
 			set_error(h,"security violation: multipart/form-data content length too big");
 			return;
@@ -75,7 +75,7 @@ void connection::load_content(boost::system::error_code const &e,http::request *
 		return;
 	}
 
-	long long allowed=service().settings().integer("security.content_length_limit",1024)*1024;
+	long long allowed=service().settings().get("security.content_length_limit",1024)*1024;
 	if(content_length > allowed) {
 		set_error(h,"security violation POST content length too big");
 		// TODO log

@@ -3,7 +3,7 @@
 #include "cppcms_error.h"
 #include "locale_gettext.h"
 #include "locale_info.h"
-#include "global_config.h"
+#include "json.h"
 #include <vector>
 #include <map>
 #include <boost/shared_ptr.hpp>
@@ -20,20 +20,18 @@ struct pool::data {
 	data() : fallback(std::locale::classic()) {}
 };
 
-pool::pool(cppcms_config const &settings) :
+pool::pool(json::value const &settings) :
 	d(new data)
 {
-	d->path=settings.str("locale.gettext_path","/usr/local/locale");
-	d->domains=settings.slist("locale.gettext_domains");
+	d->path=settings.get("locale.gettext_path","/usr/local/locale");
+	d->domains=settings.get("locale.gettext_domains",std::vector<std::string>());
 	std::string default_domain;
 	if(!d->domains.empty())
 		default_domain=d->domains.front();
-	default_domain=settings.str("locale.default_gettext_domain",default_domain);
-	std::vector<std::string> const 	&locales=settings.slist("locale.locales");
+	default_domain=settings.get("locale.default_gettext_domain",default_domain);
+	std::vector<std::string> const &locales=settings.get("locale.locales",std::vector<std::string>());
 
 	for(unsigned i=0;i<locales.size();i++) {
-
-
 		std::string name=locales[i];
 		std::auto_ptr<gettext> gt(new gettext());
 

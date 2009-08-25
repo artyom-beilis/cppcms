@@ -2,8 +2,8 @@
 #include "applications_pool.h"
 #include "application.h"
 #include "service.h"
-#include "global_config.h"
 #include "cppcms_error.h"
+#include "json.h"
 #include <set>
 #include <vector>
 #include <boost/regex.hpp>
@@ -105,7 +105,7 @@ applications_pool::~applications_pool()
 
 std::string applications_pool::script_name()
 {
-	return srv_->settings().str("service.default_script_name","*");
+	return srv_->settings().get("service.default_script_name","*");
 }
 
 void applications_pool::mount(std::auto_ptr<factory> aps)

@@ -10,13 +10,12 @@
 
 
 namespace cppcms {
-
-class cppcms_config;
+namespace json { class value; }
 
 namespace locale {
 	class CPPCMS_API pool : util::noncopyable {
 	public:
-		pool(cppcms_config const &conf);
+		pool(json::value const &conf);
 		~pool();
 
 		std::locale const &get(std::string const &name) const;

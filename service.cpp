@@ -3,7 +3,6 @@
 #include "service_impl.h"
 #include "applications_pool.h"
 #include "thread_pool.h"
-#include "global_config.h"
 #include "cppcms_error.h"
 #include "cgi_acceptor.h"
 #include "cgi_api.h"
@@ -12,6 +11,7 @@
 #include "fastcgi_api.h"
 #include "locale_pool.h"
 #include "internal_file_server.h"
+#include "json.h"
 
 #include "asio_config.h"
 
@@ -20,26 +20,110 @@
 #endif
 
 #include <iostream>
+#include <fstream>
+#include <boost/lexical_cast.hpp>
+#include <boost/regex.hpp>
 
 namespace cppcms {
 
+service::service(json::value const &v) :
+	impl_(new impl::service())
+{
+	impl_->settings_.reset(new json::value(v));
+	setup();
+}
 
 service::service(int argc,char *argv[]) :
 	impl_(new impl::service())
 {
-	impl_->settings_.reset(new cppcms_config());
-	impl_->settings_->load(argc,argv);
-	int apps=settings().integer("service.applications_pool_size",threads_no()*2);
-	impl_->applications_pool_.reset(new cppcms::applications_pool(*this,apps));
+	impl_->settings_.reset(new json::value());
+	load_settings(argc,argv);
+	setup();
+}
+
+void service::load_settings(int argc,char *argv[])
+{
+	using std::string;
+	std::string file_name;
+	char const *e = getenv("CPPCMS_CONFIG");
+	if(e) 
+		file_name = e;
+	else {
+		for(int i=1;i<argc;i++) {
+			if(argv[i]==std::string("-c")) {
+				if(!file_name.empty()) {
+					throw cppcms_error("Switch -c can't be used twice");
+				}
+				if(i+1 < argc)
+					file_name=argv[i+1];
+				else
+					throw cppcms_error("Switch -c requires configuration file parameters");
+				i++;
+			}
+			else if(argv[i]==std::string("-U")) 
+				break;
+		}
+	}
+	
+	json::value &val=*impl_->settings_;
+
+
+	if(!file_name.empty()) {
+		std::ifstream fin(file_name.c_str());
+		if(!fin)
+			throw cppcms_error("Failed to open filename:"+file_name);
+		int line_no=0;
+		if(!val.load(fin,true,&line_no)) {
+			std::ostringstream ss;
+			ss<<"Error reading configurarion file "<<file_name<<" in line:"<<line_no;
+			throw cppcms_error(ss.str());
+		}
+	}
+	
+	boost::regex r("^--((\\w+)(\\.\\w+)*)=((true)|(false)|(null)|(-?\\d+(\\.\\d+)?([eE][\\+-]?\\d+)?)|(.*))$");
+
+	for(int i=1;i<argc;i++) {
+		std::string arg=argv[i];
+		if(arg=="-c") {
+			i++;
+			continue;
+		}
+		if(arg=="-U")
+			break;
+		if(arg.substr(0,2)=="--") {
+			boost::cmatch m;
+			if(!boost::regex_match(arg.c_str(),m,r))
+				throw cppcms_error("Invalid switch: "+arg);
+			std::string path=m[1];
+			if(!m[5].str().empty())
+				val.set(path,true);
+			else if(!m[6].str().empty())
+				val.set(path,false);
+			else if(!m[7].str().empty())
+				val.set(path,json::null());
+			else if(!m[8].str().empty())
+				val.set(path,boost::lexical_cast<double>(m[8].str()));
+			else
+				val.set(path,m[4].str());
+		}
+	}
 
 }
+
+void service::setup()
+{
+	int apps=settings().get("service.applications_pool_size",threads_no()*2);
+	impl_->applications_pool_.reset(new cppcms::applications_pool(*this,apps));
+}
+
+
 service::~service()
 {
 }
 
 int service::threads_no()
 {
-	return settings().integer("service.worker_threads",5);
+	return settings().get("service.worker_threads",5);
 }
 
 namespace {
@@ -97,7 +181,7 @@ void service::setup_exit_handling()
 
 	impl_->notification_socket_=impl_->sig_.native();
 
-	if(settings().integer("service.disable_global_exit_handling",0))
+	if(settings().get("service.disable_global_exit_handling",false))
 		return;
 
 	the_service=this;
@@ -145,7 +229,7 @@ void service::run()
 	locale_pool();
 	start_acceptor();
 
-	if(settings().integer("file_server.enable",0))
+	if(settings().get("file_server.enable",false))
 		applications_pool().mount(applications_factory<cppcms::impl::file_server>(),"");
 
 	if(prefork()) {
@@ -161,7 +245,7 @@ void service::run()
 
 int service::procs_no()
 {
-	int procs=settings().integer("service.procs",0);
+	int procs=settings().get("service.procs",0);
 	if(procs < 0)
 		procs = 0;
 	#ifdef CPPCMS_WIN32
@@ -180,7 +264,7 @@ bool service::prefork()
 #else // UNIX
 bool service::prefork()
 {
-	int procs=settings().integer("service.procs",0);
+	int procs=settings().get("service.procs",0);
 	if(procs<=0)
 		return false;
 	std::vector<int> pids(procs,0);
@@ -233,16 +317,16 @@ bool service::prefork()
 void service::start_acceptor()
 {
 	using namespace impl::cgi;
-	std::string api=settings().str("service.api");
-	std::string ip=settings().str("service.ip","127.0.0.1");
+	std::string api=settings().get<std::string>("service.api");
+	std::string ip=settings().get("service.ip","127.0.0.1");
 	int port=0;
-	std::string socket=settings().str("service.socket","");
-	int backlog=settings().integer("service.backlog",threads_no() * 2);
+	std::string socket=settings().get("service.socket","");
+	int backlog=settings().get("service.backlog",threads_no() * 2);
 
 	bool tcp=socket.empty();
 
 	if(tcp && port==0) {
-		port=settings().integer("service.port");
+		port=settings().get<int>("service.port");
 	}
 
 	if(tcp) {
@@ -292,7 +376,7 @@ cppcms::thread_pool &service::thread_pool()
 	return *impl_->thread_pool_;
 }
 
-cppcms::cppcms_config const &service::settings()
+json::value const &service::settings()
 {
 	return *impl_->settings_;
 }

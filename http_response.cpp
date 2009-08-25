@@ -5,7 +5,7 @@
 #include "http_request.h"
 #include "http_cookie.h"
 #include "http_protocol.h"
-#include "global_config.h"
+#include "json.h"
 #include "cppcms_error.h"
 #include "service.h"
 #include "config.h"
@@ -62,7 +62,7 @@ struct response::data {
 
 	data(impl::cgi::connection *conn) : 
 		headers(string_i_comp),
-		output(output_device(conn),conn->service().settings().integer("service.output_buffer_size",16384))
+		output(output_device(conn),conn->service().settings().get("service.output_buffer_size",16384))
 	{
 	}
 };
@@ -78,7 +78,7 @@ response::response(context &context) :
 	copy_to_cache_(0)
 {
 	set_content_header("text/html");
-	if(context_.settings().integer("server.disable_xpowered_by",0)==0) {
+	if(context_.settings().get("server.disable_xpowered_by",false)==0) {
 		set_header("X-Powered-By", PACKAGE_NAME "/" PACKAGE_VERSION);
 	}
 }
@@ -89,7 +89,7 @@ response::~response()
 
 void response::set_content_header(std::string const &content_type)
 {
-	std::string charset=context_.settings().str("l10n.charset","");
+	std::string charset=context_.settings().get("l10n.charset","");
 	if(charset.empty())
 		set_header("Content-Type",content_type);
 	else
@@ -150,7 +150,7 @@ bool response::need_gzip()
 		return false;
 	if(io_mode_!=normal)
 		return false;
-	if(context_.settings().integer("gzip.enable",1)==0)
+	if(context_.settings().get("gzip.enable",true)==0)
 		return false;
 	if(context_.request().http_accept_encoding().find("gzip")==std::string::npos)
 		return false;
@@ -224,10 +224,10 @@ std::ostream &response::out()
 	if(gzip) {
 		gzip_params params;
 
-		int level=context_.settings().integer("gzip.level",-1);
+		int level=context_.settings().get("gzip.level",-1);
 		if(level!=-1)
 			params.level=level;
-		int buffer=context_.settings().integer("gzip.buffer",-1);
+		int buffer=context_.settings().get("gzip.buffer",-1);
 		if(buffer!=-1)
 			d->filter.push(gzip_compressor(params,buffer));
 		else

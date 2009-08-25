@@ -4,7 +4,7 @@
 #include "service.h"
 #include "http_response.h"
 #include "internal_file_server.h"
-#include "global_config.h"
+#include "json.h"
 #include <sstream>
 #include <fstream>
 #include <boost/filesystem/operations.hpp>
@@ -18,11 +18,11 @@ namespace impl {
 
 file_server::file_server(cppcms::service &srv) : application(srv)
 {
-	document_root_ = settings().str("file_server.document_root",".");
+	document_root_ = settings().get("file_server.document_root",".");
 
 	dispatcher().assign("^(.*)$",&file_server::serve_file,this,1);
 
-	std::string mime_file=settings().str("file_server.mime_types","");
+	std::string mime_file=settings().get("file_server.mime_types","");
 
 
 	if(mime_file.empty()) {
@@ -144,7 +144,7 @@ void file_server::serve_file(std::string file_name)
 		response().content_type(p->second);
 	else
 		response().content_type("application/octet-stream");
-	if(!settings().integer("http.allow_deflate",0)) {
+	if(!settings().get("http.allow_deflate",false)) {
 		response().io_mode(http::response::nogzip);
 	}
 	std::ifstream file(full.file_string().c_str(),std::ifstream::binary | std::ifstream::in);

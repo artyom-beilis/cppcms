@@ -11,7 +11,6 @@
 namespace cppcms {
 
 	class service;
-	class cppcms_config;
 	class url_dispatcher;
 	class applications_pool;
 	class application;
@@ -24,6 +23,9 @@ namespace cppcms {
 		class response;
 		class context;
 	}
+	namespace json {
+		class value;
+	}
 
 	void CPPCMS_API intrusive_ptr_add_ref(application *p);
 	void CPPCMS_API intrusive_ptr_release(application *p);
@@ -34,7 +36,7 @@ namespace cppcms {
 		virtual ~application();
 
 		cppcms::service &service();
-		cppcms_config const &settings();
+		json::value const &settings();
 		http::context &context();
 		http::request &request();
 		http::response &response();

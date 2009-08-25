@@ -7,8 +7,7 @@
 #include <vector>
 #include <map>
 #include <string>
-#include <ostream>
-#include <istream>
+#include <iostream>
 
 
 namespace cppcms {
@@ -45,10 +44,31 @@ namespace json {
 		is_array
 	} json_type;
 
+
 	enum {
 		compact = 0,
 		readable = 1
 	};
+	
+	class CPPCMS_API bad_value_cast : public std::bad_cast {
+	public:
+
+		bad_value_cast(); 
+		bad_value_cast(std::string const &s);
+		bad_value_cast(std::string const &s,json_type actual);
+		bad_value_cast(std::string const &s,json_type expected, json_type actual);
+
+		virtual ~bad_value_cast() throw();
+		virtual const char* what() const throw();
+	private:
+		std::string msg_;
+	};
+	
+	class value;
+
+	std::istream CPPCMS_API &operator>>(std::istream &in,value &v);
+	std::ostream CPPCMS_API &operator<<(std::ostream &out,value const &v);
+	std::ostream CPPCMS_API &operator<<(std::ostream &out,json_type);
 
 	class CPPCMS_API value {
 	public:
@@ -123,11 +143,25 @@ namespace json {
 			at(path,value(v));
 		}
 
+		std::string get(std::string path,char const *def) const
+		{
+			value const &v=find(path);
+			if(v.is_undefined())
+				return def;
+			try {
+				return v.get_value<std::string>();
+			}
+			catch(std::bad_cast const &e) {
+				return def;
+			}
+		}
+
 		template<typename T>
 		T get(std::string path) const
 		{
 			return at(path).get_value<T>();
 		}
+
 		template<typename T>
 		T get(std::string path,T const &def) const
 		{
@@ -135,8 +169,7 @@ namespace json {
 			if(v.is_undefined())
 				return def;
 			try {
-				T tmp=get_value<T>(v);
-				return tmp;
+				return v.get_value<T>();
 			}
 			catch(std::bad_cast const &e) {
 				return def;
@@ -220,7 +253,7 @@ namespace json {
 		static std::pair<T1,T2> get(value const &v)
 		{
 			if(v.object().size()!=2)
-				throw std::bad_cast();
+				throw bad_value_cast("Object with two members expected");
 			std::pair<T1,T2> pair(v.get_value<T1>("first"),v.get_value<T2>("second"));
 			return pair;
 		}
@@ -234,7 +267,7 @@ namespace json {
 
 	template<typename T>
 	struct traits<std::vector<T> > {
-		static T get(value const &v)
+		static std::vector<T> get(value const &v)
 		{
 			std::vector<T> result;
 			json::array const &a=v.array();
@@ -243,10 +276,10 @@ namespace json {
 				result[i]=a[i].get_value<T>();
 			return result;
 		}
-		static void set(value &v,T const &in)
+		static void set(value &v,std::vector<T> const &in)
 		{
 			v=json::array();
-			json::array a=v.array();
+			json::array &a=v.array();
 			a.resize(in.size());
 			for(unsigned i=0;i<in.size();i++)
 				a[i].set_value(in[i]);
@@ -312,8 +345,6 @@ namespace json {
 	};
 
 
-	std::istream CPPCMS_API &operator>>(std::istream &in,value &v);
-	std::ostream CPPCMS_API &operator<<(std::ostream &out,value const &v);
 
 
 } // json

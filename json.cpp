@@ -15,6 +15,35 @@
 namespace cppcms {
 namespace json {
 
+	bad_value_cast::bad_value_cast() : msg_("cppcms::json::bad_cast") 
+	{
+	}
+	bad_value_cast::bad_value_cast(std::string const &s) : msg_("cppcms::json::bad_cast: "+s ) 
+	{
+	}
+	bad_value_cast::bad_value_cast(std::string const &s,json_type actual) : 
+		msg_("cppcms::json::bad_cast: ")
+	{
+		std::ostringstream msg;
+		msg<<"errpr converting from "<<actual;
+		msg_ +=msg.str();
+
+	}
+	bad_value_cast::bad_value_cast(std::string const &s,json_type expected, json_type actual) : 
+		msg_("cppcms::json::bad_cast: ")
+	{
+		std::ostringstream msg;
+		msg<<"error converting from "<<actual<<" to "<<expected;
+		msg_ +=msg.str();
+
+	}
+	bad_value_cast::~bad_value_cast() throw()
+	{
+	}
+	const char* bad_value_cast::what() const throw()
+	{
+		return msg_.c_str();
+	}
 
 	typedef boost::variant<
 			undefined,
@@ -68,7 +97,7 @@ namespace json {
 			return boost::get<T>(v);
 		}
 		catch(boost::bad_get const &e) {
-			throw std::bad_cast();
+			throw bad_value_cast("",json_type(v.which()));
 		}
 	}
 	template<typename T>
@@ -78,7 +107,7 @@ namespace json {
 			return boost::get<T>(v);
 		}
 		catch(boost::bad_get const &e) {
-			throw std::bad_cast();
+			throw bad_value_cast("",json_type(v.which()));
 		}
 	}
 
@@ -263,7 +292,7 @@ namespace json {
 	{
 		switch(type()) {
 		case json::is_undefined:
-			throw std::bad_cast();
+			throw bad_value_cast("Can't write undefined value to stream");
 		case json::is_null:
 			out<<"null";
 		case json::is_number:
@@ -308,7 +337,7 @@ namespace json {
 			}
 			break;
 		default:
-			throw std::bad_cast();
+			throw bad_value_cast("Unknown type found: internal error");
 		}
 	}
 
@@ -374,7 +403,7 @@ namespace json {
 	{
 		value const &v=find(path);
 		if(v.is_undefined())
-			throw std::bad_cast();
+			throw bad_value_cast("Value not found at "+path );
 		return v;
 	}
 	value &value::at(std::string path)
@@ -388,13 +417,13 @@ namespace json {
 			if(new_pos!=std::string::npos)
 				new_pos++;
 			if(part.empty())
-				throw std::bad_cast();
+				throw bad_value_cast("Invalid path provided");
 			if(ptr->type()!=json::is_object)
-				throw std::bad_cast();
+				throw bad_value_cast("",ptr->type(),json::is_object);
 			json::object &obj=ptr->object();
 			json::object::iterator p;
 			if((p=obj.find(part))==obj.end())
-				throw std::bad_cast();
+				throw bad_value_cast("Member "+part+" not found");
 			ptr=&p->second;
 			pos=new_pos;
 
@@ -414,7 +443,7 @@ namespace json {
 			if(new_pos!=std::string::npos)
 				new_pos++;
 			if(part.empty())
-				throw std::bad_cast();
+				throw bad_value_cast("Invalid path provided");
 			if(ptr->type()!=json::is_object) {
 				*ptr=json::object();
 			}
@@ -447,11 +476,11 @@ namespace json {
 	value const &value::operator[](std::string name) const
 	{
 		if(type()!=json::is_object)
-			throw std::bad_cast();
+			throw bad_value_cast("",type(),json::is_object);
 		json::object const &self=object();
 		json::object::const_iterator p=self.find(name);
 		if(p==self.end())
-			throw std::bad_cast();
+			throw bad_value_cast("Member "+name+" not found");
 		return p->second;
 	}
 
@@ -468,7 +497,7 @@ namespace json {
 	value const &value::operator[](size_t n) const
 	{
 		if(type()!=json::is_array)
-			throw std::bad_cast();
+			throw bad_value_cast("",type(),json::is_array);
 		return array().at(n);
 	}
 
@@ -956,6 +985,22 @@ namespace json {
 		if(!parse_stream(in,v,false,line_no))
 			in.setstate( std::istream::failbit );
 		return in;
+	}
+	
+	std::ostream &operator<<(std::ostream &out,json_type t)
+	{
+		switch(t) {
+		case is_undefined: out<<"undefined"; break;
+		case is_null: out<<"null"; break;
+		case is_boolean: out<<"boolean"; break;
+		case is_number: out<<"number"; break;
+		case is_string: out<<"string"; break;
+		case is_object: out<<"object"; break;
+		case is_array: out<<"array"; break;
+		default:
+			out<<"Illegal";
+		}
+		return out;
 	}
 
 

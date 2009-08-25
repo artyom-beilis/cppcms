@@ -5,7 +5,7 @@
 #include "service.h"
 #include "service_impl.h"
 #include "cppcms_error_category.h"
-#include "global_config.h"
+#include "json.h"
 #include <iostream>
 #include <boost/array.hpp>
 
@@ -26,7 +26,7 @@ namespace cgi {
 			int procs=srv.procs_no();
 			if(procs < 1) procs=1;
 			int threads=srv.threads_no();
-			cuncurrency_hint_=srv.settings().integer("fastcgi.cuncurrency_hint",procs*threads);
+			cuncurrency_hint_=srv.settings().get("fastcgi.cuncurrency_hint",procs*threads);
 		}
 		~fastcgi()
 		{

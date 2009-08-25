@@ -8,9 +8,8 @@
 
 namespace cppcms {
 
-	class cppcms_config;
 	class service;
-
+	namespace json { class value; }
 	namespace locale { class environment; }
 	namespace impl { namespace cgi { class connection; } }
 
@@ -27,7 +26,7 @@ namespace cppcms {
 			impl::cgi::connection &connection();
 			http::request &request();
 			http::response &response();
-			cppcms_config const &settings();
+			json::value const &settings();
 			cppcms::locale::environment &locale();
 			cppcms::service &service();
 

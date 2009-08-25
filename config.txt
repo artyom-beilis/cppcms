@@ -10,7 +10,9 @@ service.ip = "127.0.0.1"
 #service.ip = "0.0.0.0"
 #service.socket = "/tmp/scgi.socket"     # Default is "" -- use default socket given
 service.worker_threads = 5
-service.api = "http"				# fastcgi -- preferred API
+#service.api = "fastcgi"			
+service.api = "http"			
+						# fastcgi -- preferred API
 						# scgi	  -- simplefied FCGI API -- yet another alternative
 						# cgi	  -- Use only in case you application does huge amount of work
 						#            such the fork()+exec() time in neligable

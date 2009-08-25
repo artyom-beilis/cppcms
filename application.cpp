@@ -57,7 +57,7 @@ cppcms::service &application::service()
 	return *d->service;
 }
 
-cppcms_config const &application::settings() 
+json::value const &application::settings() 
 {
 	return service().settings();
 }
