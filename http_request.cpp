@@ -122,6 +122,10 @@ bool request::prepare()
 		return false;
 	return true;
 }
+std::pair<void *,size_t> request::raw_post_data()
+{
+	return std::pair<void *,size_t>(&d->post_data.front(),d->post_data.size());
+}
 
 request::request(impl::cgi::connection &conn) :
 	d(new data),

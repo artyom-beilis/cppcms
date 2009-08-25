@@ -80,6 +80,8 @@ namespace http {
 		form_type const &post();
 		form_type const &post_or_get();
 		files_type files();
+		
+		std::pair<void *,size_t> raw_post_data();
 
 	public:
 		request(impl::cgi::connection &);
