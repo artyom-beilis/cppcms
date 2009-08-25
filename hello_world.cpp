@@ -22,12 +22,16 @@ public:
 		dispatcher().assign("^/update$",&stock::update,this);
 		price_=10.3;
 		counter_=0;
-		on_timeout(true);
 		std::cout<<"stock()"<<std::endl;
+		async_run();
 	}
-	~stock()
+	virtual ~stock()
 	{
 		std::cout<<"~stock()"<<std::endl;
+	}
+	void async_run()
+	{
+		on_timeout(false);
 	}
 private:
 
@@ -98,6 +102,11 @@ public:
 		dispatcher().assign("^/err$",&hello::err,this);
 		dispatcher().assign("^/forward$",&hello::forward,this);
 		dispatcher().assign(".*",&hello::hello_world,this);
+		std::cout<<"hello()"<<std::endl;
+	}
+	~hello()
+	{
+		std::cout<<"~hello()"<<std::endl;
 	}
 
 	void forward()
@@ -187,9 +196,8 @@ int main(int argc,char **argv)
 {
 	try {
 		cppcms::service service(argc,argv);
-		//service.applications_pool().mount(cppcms::applications_factory<hello>(),"/hello");
-		service.applications_pool().mount(cppcms::applications_factory<hello>());
-		//service.applications_pool().mount(new stock(service),"/stock");
+		service.applications_pool().mount(cppcms::applications_factory<hello>(),"/hello");
+		service.applications_pool().mount(new stock(service),"/stock");
 		service.run();
 		std::cout<<"Done..."<<std::endl;
 	}

@@ -208,16 +208,20 @@ void intrusive_ptr_release(application *app)
 			return;
 		
 		cppcms::service &service=app->service();
+
 		try {
 			app->release_all_contexts();
 		}
 		catch(...) {
-			// we must unassign it in order to make sure it
-			// would not be accessed again
-			if(app->pool_id() < 0)
+			if(app->pool_id() < 0) {
 				service.applications_pool().put(app);
+			}
+			else
+				delete app;
 			throw;
 		}
+
+		service.applications_pool().put(app);
 		// return the application to pool... or delete it if "pooled"
 	}
 	catch(...) 

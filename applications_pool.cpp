@@ -88,9 +88,9 @@ namespace cppcms {
 		typedef std::map<application *,boost::shared_ptr<long_running_app_data> > long_running_aps_type;
 		long_running_aps_type long_running_aps;
 		int limit;
-		boost::mutex mutex;
+		boost::recursive_mutex mutex;
 	};
-	typedef boost::unique_lock<boost::mutex> lock_it;
+	typedef boost::unique_lock<boost::recursive_mutex> lock_it;
 
 
 applications_pool::applications_pool(service &srv,int limit) :
@@ -129,26 +129,28 @@ void applications_pool::mount(std::auto_ptr<factory> aps,std::string script_name
 	d->apps.push_back(boost::shared_ptr<app_data>(new app_data(script_name,path_info,select,aps)));
 }
 
-void applications_pool::mount(application *app)
+void applications_pool::mount(intrusive_ptr<application> app)
 {
 	lock_it lock(d->mutex);
-	d->long_running_aps[app]=boost::shared_ptr<long_running_app_data>(new long_running_app_data(script_name()));
+	d->long_running_aps[app.get()]=
+		boost::shared_ptr<long_running_app_data>(new long_running_app_data(script_name()));
 }
-void applications_pool::mount(application *app,std::string path_info,int select)
+void applications_pool::mount(intrusive_ptr<application> app,std::string path_info,int select)
 {
 	lock_it lock(d->mutex);
-	d->long_running_aps[app]=
+	d->long_running_aps[app.get()]=
 		boost::shared_ptr<long_running_app_data>(new long_running_app_data(script_name(),path_info,select));
 }
-void applications_pool::mount(application *app,std::string script_name)
+void applications_pool::mount(intrusive_ptr<application> app,std::string script_name)
 {
 	lock_it lock(d->mutex);
-	d->long_running_aps[app]=boost::shared_ptr<long_running_app_data>(new long_running_app_data(script_name));
+	d->long_running_aps[app.get()]=
+		boost::shared_ptr<long_running_app_data>(new long_running_app_data(script_name));
 }
-void applications_pool::mount(application *app,std::string script_name,std::string path_info,int select)
+void applications_pool::mount(intrusive_ptr<application> app,std::string script_name,std::string path_info,int select)
 {
 	lock_it lock(d->mutex);
-	d->long_running_aps[app]=
+	d->long_running_aps[app.get()]=
 		boost::shared_ptr<long_running_app_data>(new long_running_app_data(script_name,path_info,select));
 }
 
@@ -224,8 +226,10 @@ void applications_pool::put(application *app)
 		delete app;
 		return;
 	}
-	if(unsigned(id) >= d->apps.size() || d->apps[id]->size >= d->limit)
+	if(unsigned(id) >= d->apps.size() || d->apps[id]->size >= d->limit) {
+		delete app;
 		return;
+	}
 	d->apps[id]->pool.insert(app);
 	d->apps[id]->size++;
 }

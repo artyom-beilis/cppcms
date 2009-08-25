@@ -187,14 +187,14 @@ namespace {
 
 void service::setup_exit_handling()
 {
-	make_socket_pair(impl_->sig_,impl_->breaker_);
+	make_socket_pair(*impl_->sig_,*impl_->breaker_);
 
 	static char c;
 
-	impl_->breaker_.async_read_some(boost::asio::buffer(&c,1),
+	impl_->breaker_->async_read_some(boost::asio::buffer(&c,1),
 					boost::bind(&service::stop,this));
 
-	impl_->notification_socket_=impl_->sig_.native();
+	impl_->notification_socket_=impl_->sig_->native();
 
 	if(settings().get("service.disable_global_exit_handling",false))
 		return;
@@ -437,13 +437,24 @@ locale::pool const &service::locale_pool()
 
 namespace impl {
 	service::service() :
-		io_service_(),
-		sig_(io_service_),
-		breaker_(io_service_)
+		io_service_(new boost::asio::io_service()),
+		sig_(new loopback_socket_type(*io_service_)),
+		breaker_(new loopback_socket_type(*io_service_))
 	{
 	}
 	service::~service()
 	{
+		acceptor_.reset();
+		thread_pool_.reset();
+		sig_.reset();
+		breaker_.reset();
+		io_service_.reset();
+		// applications pool should be destroyed after
+		// io_service, because soma apps may try unregister themselfs
+		applications_pool_.reset();
+		locale_pool_.reset();
+		settings_.reset();
+
 	}
 } // impl
 

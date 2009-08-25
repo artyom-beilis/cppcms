@@ -21,13 +21,13 @@ namespace impl {
 		~service();
 		boost::asio::io_service &get_io_service()
 		{
-			return io_service_;
+			return *io_service_;
 		}
 
 
 	private:
 		friend class cppcms::service;
-		boost::asio::io_service io_service_;
+		std::auto_ptr<boost::asio::io_service> io_service_;
 
 		std::auto_ptr<cgi::acceptor> acceptor_;
 		std::auto_ptr<json::value> settings_;
@@ -36,12 +36,15 @@ namespace impl {
 		std::auto_ptr<locale::pool> locale_pool_;
 
 #ifdef CPPCMS_WIN32
-		SOCKET notification_socket_;
-		boost::asio::ip::tcp::socket sig_,breaker_;
+		typedef SOCKET native_socket_type;
+		typedef boost::asio::ip::tcp::socket loopback_socket_type;
 #else
-		int notification_socket_;
-		boost::asio::local::stream_protocol::socket sig_,breaker_;
+		typedef int native_socket_type;
+		typedef boost::asio::local::stream_protocol::socket loopback_socket_type;
 #endif
+		native_socket_type notification_socket_;
+		std::auto_ptr<loopback_socket_type> sig_,breaker_;
+
 
 	};
 

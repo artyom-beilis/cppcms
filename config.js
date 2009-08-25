@@ -8,7 +8,7 @@
 		"worker_threads": 5,
 		"api" : "http",
 		"port" : 8080,
-		"ip" : "127.0.0.1"
+		"ip" : "0.0.0.0"
 		//  "socket" : "/tmp/scgi.socket"
 	},
 	"http" : {

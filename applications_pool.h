@@ -27,10 +27,10 @@ namespace cppcms {
 		void mount(std::auto_ptr<factory> aps,std::string script_name);
 		void mount(std::auto_ptr<factory> aps,std::string script_name,std::string path_info, int select);
 
-		void mount(application *app);
-		void mount(application *app,std::string path_info,int select);
-		void mount(application *app,std::string script_name);
-		void mount(application *app,std::string script_name,std::string path_info, int select);
+		void mount(intrusive_ptr<application> app);
+		void mount(intrusive_ptr<application> app,std::string path_info,int select);
+		void mount(intrusive_ptr<application> app,std::string script_name);
+		void mount(intrusive_ptr<application> app,std::string script_name,std::string path_info, int select);
 
 		intrusive_ptr<application> get(std::string script_name,std::string path_info,std::string &match);
 		void put(application *app);
