@@ -151,6 +151,7 @@ namespace json {
 
 		std::string save(int how=compact) const;
 		void save(std::ostream &out,int how=compact) const;
+		bool load(std::istream &in,bool full,int *line_number=0);
 
 		bool operator==(value const &other) const;
 		bool operator!=(value const &other) const;
@@ -173,6 +174,11 @@ namespace json {
 		{
 		}
 
+		void swap(value &other)
+		{
+			d.swap(other.d);
+		}
+
 	private:
 
 		void write(std::ostream &out,int tabs) const;
@@ -190,6 +196,11 @@ namespace json {
 			copyable(copyable const &r);
 			copyable const &operator=(copyable const &r);
 			~copyable();
+
+			void swap(copyable &other) 
+			{
+				d.swap(other.d);
+			}
 		private:
 			util::copy_ptr<data> d;
 		} d;

@@ -142,11 +142,7 @@ void to_something(	std::ostream &out,
 		if(sizeof(wchar_t) == 4 || code_point <=0xFFFF)
 			code_point=(converter.*wideop)(code_point);
 		utf8::seq s=utf8::encode(code_point);
-		unsigned i=0;
-		do {
-			out.put(s.c[i]);
-			i++;
-		}while(i<sizeof(s.c) && s.c[i]!=0);
+		out.write(s.c,s.len);
 	}
 	if(p!=e) {
 		out.write(s.c_str() + (p-s.begin()), (e-p));

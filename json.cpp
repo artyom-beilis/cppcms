@@ -5,7 +5,10 @@
 #include <typeinfo>
 #include <algorithm>
 #include <iostream>
+#include <locale>
 #include <stdexcept>
+#include <stack>
+#include "utf_iterator.h"
 
 #include <boost/variant.hpp>
 
@@ -469,329 +472,492 @@ namespace json {
 		return array().at(n);
 	}
 
+//#define DEBUG_PARSER
 
 
-/*
 	namespace {
 
-	enum {	tock_eof = 256,
-		tock_err,
-		tock_str,
-		tock_bool,
-		tock_null,
-		tock_num }
-
-	std::pair<int,value> tocken(int c)
-	{
-		return std::pair<int,value>(c,value());
-	}
-	std::pair<int,value> tocken(int c,value const &v)
-	{
-		return std::pair<int,value>(c,v);
-	}
-
-
-	std::pair<int,value> check_string(std::string::const_iterator &p,std::string::const_iterator e)
-	{
-		std::string result;
-		bool prev_surragate=false;
-		uint16_t upair[2];
-		for(;p!=e;) {
-			std::string::const_iterator prev=p;
-			uint32_t c=utf8::next(p,e,false,true); // Decode, ignore special
-			if(prev_surragate){
-				if(!(c=='\\' && p+1!=e && *(p+1)=='u'))
-					return tocken(tock_err);
-			}
-			if(c==utf::illegal)
-				return tocken(tock_err);
-			else if(c=='"'){
-				value v=result;
-				return tocken(tock_str,v);
-			}
-			else if(c=='\\') {
-				if(p==e) return tocken(tock_err);
-				c=(unsigned char)*p++;
-				switch(c) {
-				case '\\': result+='\\'; break;
-				case '/': result+='/'; break;
-				case 'n': result+='\n'; break;
-				case 'r': result+='\r'; break;
-				case 't': result+='\t'; break;
-				case 'f': result+='\f'; break;
-				case 'b': result+='\b'; break;
-				case 'u':
-					{
-						uint16_t x=0;
-						for(int n=0;n<4;n++) {
-							if(p!=e) return tocken(tock_err);
-							c=*p++;
-							if('0'<=c && c<='9')
-								x=(x<<4) | (c-'0')
-							else if('a'<=c && c<='f')
-								x=(x<<4) | (c-'a'+10)
-							else if('A'<=c && c<='F')
-								x=(x<<4) | (c-'A'+10)
-							else
-								return tocken(tock_err);
-						}
-						if(prev_surragate && 0xDC00 <=x && x<=0xDFFF) {
-							upair[1]=x;
-							uint16_t *ptr=upair;
-							prev_surragate=false;
-							result+=utf8::encode(utf16::next(ptr,ptr+2)).c;
-						}
-						else if(prev_surragate)
-							return tocken(tock_err);
-						else if(0xD800 <= x && x<=0xDBFF) {
-							prev_surragate=true;
-							upair[0]=x;
-						}
-						else if(0xDC00 <=x && x<=0xDFFF)
-							return tocken(tock_err);
-						else if(x==0)
-							result+='\0';
-						else 
-							result+=utf8::encode(x).c;
-						break;
-
-					}
-				case '"': result+='"'; break;
-				default: return tocken(tock_err);
-				}
-			}
-			else {
-				result.append(prev,p);
-			}
-		}
-	}
-	std::pair<int,value> check_number(std::string::const_iterator &p,std::string::const_iterator e)
-	{
-		enum {	start,
-			minus_found,
-			diggit_found,
-			point_found,
-			exp_found,
-			exp_sign_found,
-			exp_digit_found
-			stop,
-			syntax}
-		state=start;
-		std::string::const_iterator begin=p;
-		
-		for(;state!=stop && state!=syntax && p!=e;) {
-			c=*p++;
-			switch(state) {
-			case start:
-				if(c=='-')
-					stat=minus_found;
-				else if('1'<=c && c<='9')
-					state=diggit_found;
-				else if(c=='0')
-					state=stop;
-				else
-					state=syntax;
-				break;
-			case minus_found:
-				if('1'<=c && c<='9')
-					state=digit_found;
-				else if(c=='.')
-					state=point_found;
-				else
-					state=syntax;
-				break;
-			case digit_found:
-				if('0'<=c && c<='9')
-					;
-				else if(c=='.')
-					state=point_found;
-				else if(c=='e' || c=='E')
-					state=exp_found;
-				else
-					state=stop;
-				break;
-			case point_found:
-				if('0'<=c && c<='9')
-					;
-				else if(c=='e' || c=='E')
-					state=exp_found;
-				else
-					state=stop;
-				break;
-			case exp_found:
-				if(c=='-' || c=='+')
-					state=exp_sign_found;
-				else if('1'<=c && c<='9')
-					state=exp_digit_found;
-				else
-					state=syntax;
-				break;
-			case exp_sign_found:
-				if('1'<=c && c<='9')
-					state=exp_digit_found;
-				else
-					state=syntax;
-				break;
-			case exp_digit_found:
-				if('0'<=c && c<='9')
-					;
-				else
-					state=stop;
-			default:
-				throw std::runtime_error("Internal state error");:			
-			}
-		}
-		if(state==syntax || state==minus_found || state==exp_found || state==exp_sign_found)
-			return tocken(tock_err);
-		if(p!=e)
-			p--;
-		std::string num(begin,p);
-		value v=atof(num.c_str());
-		return tocken(tock_num,v);
-	}
-
-
-	std::pair<int,value> next_tocken(std::string::const_iterator &p,std::string::const_iterator e,int &lines)
-	{
-		if(p==e) {
-			return tocken(tock_eof);
-		}
-		while(p!=e) {
-			char c=*p++;
-			switch(c) {
-			case	'/':
-				if(p!=e && *p=='/') {
-					while(p!=e && '\n'!=*p++)
-						;
-					break;
-				}
-				return tocken(tock_err);
-
-			case	'\r':
-				lines++;
-				// Fall
-			case	' ':
-			case	'\t':
-			case	'\n':	
-			case	'\f':
-
-				break;
-
-			case	'[':
-			case	'{':
-			case	']':
-			case	'}':
-			case	',':
-			case	':':
-
-				return tocken(c);
-			case	't':
-				if(	p!=e && 'r'==*p++
-					&& p!=e && 'u'==*p++
-					&& p!=e && 'e'==*p++)
-				{
-					value v=true;
-					return tocken(tock_bool,v);
-				}
-				return tocken(tock_err);
-			case	'f':
-				if(	p!=e && 'a'==*p++
-					&& p!=e && 'l'==*p++
-					&& p!=e && 's'==*p++
-					&& p!=e && 'e'==*p++)
-				{
-					value v=false;
-					return tocken(tock_bool,v);
-				}
-				return tocken(error);
-			case	'n':
-				if(	p!=e && 'u'==*p++
-					&& p!=e && 'l'==*p++
-					&& p!=e && 'l'==*p++)
-				{
-					return tocken(tock_null);
-				}
-				return tocken(tock_err);
-			case	'"':
-				return check_string(p,e);
-			case	'-':
-			case	'0':
-			case	'1':
-			case	'2':
-			case	'3':
-			case	'4':
-			case	'5':
-			case	'6':
-			case	'7':
-			case	'8':
-			case	'9':
-				p--;
-				return check_number(p,e);
-			default:
-				return tocken(tock_err);
-			}
-		}
-		return tocken(tock_eof);
-	}
-
-	} // anon namespace
-	int value::load(std::string const &s)
-	{
-		lines=0;
-		std::string::const_iterator p=s.begin(),e=s.end();
-		stack<value> st;
-		enum {
-			idle,
-			arr_open_found,
-			obj_open_found,
-			arr_comma_expected,
-			obj_col_expected,
-			obj_value_expected,
-			obj_comma_expected,
-			end_of_obj_found,
-			error
+		enum {	
+			tock_eof = 255,
+			tock_err,
+			tock_str,
+			tock_number,
+			tock_true,
+			tock_false,
+			tock_null 
 		};
 
-		}
-		int state=idle;
-		value curr;
-		for(;;) {
-			std::pair<int,value> tock=next_tocken(p,e);
-			int tid;
-			switch(state) {
-			case idle:
-				switch(tid) {
-				case '[': state=arr_open_found; curr=array(); break;
-				case '{': state=obj_open_found; curr=object(); break;
-				default: state=error; break;
-				}
-				break;
-			case arr_open_found:
-				switch(tid) {
-				case tock_num:
-				case tock_str:
-				case tock_bool:
-				case tock_null:
-					curr.array().push_back(tock.second);
-					state=arr_comma_expected;
-					break;
-				default: state=error; break;
-				}
-				break;
-			case arr_comma_expected:
-				if(tid==',') { state=arr_open_found; break; }
-				// TODO
-			case obj_open_found:
-				if(tid!=tock_str) { state=error; break; }
-				str=tock.second.str();
-				state=obj_comma_expected;
-				break;
-			case 
+
+		struct tockenizer {
+		public:
+			tockenizer(std::istream &in) : 
+				real(0),
+				line(1),
+				is_(in),
+				locale_(in.getloc())
+			{
+				is_.imbue(std::locale::classic());
 			}
+			~tockenizer()
+			{
+				is_.imbue(locale_);
+			}
+
+			std::string str;
+			double real;
+			int line;
+#ifdef DEBUG_PARSER
+			std::string write_tocken(int c)
+			{
+				std::ostringstream ss;
+				if(c>=255) {
+					static char const *name[] = {
+						"eof",
+						"err",
+						"str",
+						"number",
+						"true",
+						"false",
+						"null"
+					};
+					ss<<name[c - 255];
+				}
+				else {
+					ss<<char(c);
+				}
+				if(c==tock_str)
+					ss<<" "<<str;
+				else if(c==tock_number)
+					ss<<" "<<real;
+				return ss.str();
+
+			}
+#endif
+
+			int next()
+			{
+				for(;;) {
+					char c;
+					if(!is_.get(c))
+						return tock_eof;
+					
+					switch(c) {
+					case '[':
+					case '{':
+					case ':':
+					case ',':
+					case '}':
+					case ']':
+						return c;
+					case ' ':
+					case '\t':
+					case '\r':
+						break;
+					case '\n':
+						line++;
+						break;
+					case '"':
+						is_.unget();
+						if(parse_string())
+							return tock_str;
+						return tock_err;
+					case 't':
+						if(check("rue"))
+							return tock_true;
+						return tock_err;
+					case 'n':
+						if(check("ull"))
+							return tock_null;
+						return tock_err;
+					case 'f':
+						if(check("alse"))
+							return tock_false;
+						return tock_err;
+					case '-':
+					case '0':
+					case '1':
+					case '2':
+					case '3':
+					case '4':
+					case '5':
+					case '6':
+					case '7':
+					case '8':
+					case '9':
+						is_.unget();
+						if(parse_number())
+							return tock_number;
+						return tock_err;
+					case '/':
+						if(check("/")) {
+							while(is_.get(c) && c!='\n')
+								;
+							if(c=='\n')
+								break;
+							return tock_eof;
+						}
+						return tock_err;
+					default:
+						return tock_err;
+					}
+				}
+			}
+		private:
+			std::istream &is_;
+			std::locale locale_;
+
+			bool check(char const *s)
+			{
+				char c;
+				while(*s && is_.get(c) && c==*s)
+					s++;
+				return *s==0;
+			}
+			bool parse_string()
+			{
+				char c;
+				str.clear();
+				if(!is_.get(c) || c!='"')
+					return false;
+				bool second_surragate_expected=false;
+				uint16_t first_surragate = 0;
+				for(;;) {
+					if(!is_.get(c))
+						return false;
+					if(second_surragate_expected && c!='\\')
+						return false;
+					if(0<= c && c <= 0x1F)
+						return false;
+					if(c=='"')
+						break;
+					if(c=='\\') {
+						if(!is_.get(c))
+							return false;
+						if(second_surragate_expected && c!='u')
+							return false;
+
+						switch(c) {
+						case	'"':
+						case	'\\':
+						case	'/':
+							str+=char(c);
+							break;
+
+						case	'b': str+='\b'; break;
+						case	'f': str+='\f'; break;
+						case	'n': str+='\n'; break;
+						case	'r': str+='\r'; break; 
+						case	't': str+='\t'; break;
+						case	'u': 
+							{
+								uint16_t x;
+								if(!read_4_digits(x))
+									return false;
+								if(second_surragate_expected) {
+									if(!utf16::is_second_surrogate(x))
+										return false;
+									append(utf16::combine_surrogate(first_surragate,x));
+								}
+								else if(utf16::is_first_surrogate(x)) {
+									second_surragate_expected=true;
+									first_surragate=x;
+								}
+								else {
+									append(x);
+								}
+								
+							}
+							break;
+						default:
+							return false;
+						}
+					}
+					else {
+						str+=char(c);
+					}
+				}
+				if(!utf8::validate(str.begin(),str.end()))
+					return false;
+				return true;
+			}
+
+			bool read_4_digits(uint16_t &x)
+			{
+				char buf[5]={0};
+				if(!is_.get(buf,5))
+					return false;
+				for(unsigned i=0;i<4;i++) {
+
+					char c=buf[i];
+
+					if(	('0'<= c && c<='9')
+						|| ('A'<= c && c<='F')
+						|| ('a'<= c && c<='f') )
+					{
+						continue;
+					}
+					return false;
+				}
+				unsigned v;
+				sscanf(buf,"%x",&v);
+				x=v;
+				return true;
+			}
+
+			void append(uint32_t x)
+			{
+				utf8::seq s=utf8::encode(x);
+				str.append(s.c,s.len);
+			}
+
+
+			bool parse_number()
+			{
+				is_ >> real;
+				return is_;
+			}
+			
+		};
+
+		typedef enum {
+			st_init = 0,
+			st_object_or_array_expected = 0 ,
+			st_object_key_or_close_expected,
+			st_object_colon_expected,
+			st_object_value_expected,
+			st_object_close_or_comma_expected,
+			st_array_value_or_close_expected,
+			st_array_close_or_comma_expected,
+			st_error,
+			st_done
+		} state_type;
+
+#ifdef DEBUG_PARSER
+		std::ostream &operator<<(std::ostream &out,state_type t)
+		{
+			static char const *names[] = {
+				"st_object_or_array_expected",
+				"st_object_key_or_close_expected",
+				"st_object_colon_expected",
+				"st_object_value_expected",
+				"st_object_close_or_comma_expected",
+				"st_array_value_or_close_expected",
+				"st_array_close_or_comma_expected",
+				"st_error",
+				"st_done"
+			};
+			out<<names[t];
+			return out;
 		}
+#endif
+
+		bool parse_stream(std::istream &in,value &out,bool force_eof,int &error_at_line)
+		{
+			tockenizer tock(in);
+			value result;
+		
+			state_type state=st_init;
+			
+			std::string key;
+
+			std::stack<std::pair<state_type,value *> > stack;
+
+			stack.push(std::make_pair(st_done,&result));
+
+			while(!stack.empty() && state !=st_error && state!=st_done) {
+
+				int c=tock.next();
+#ifdef DEBUG_PARSER
+				std::cout<<state<<" "<<tock.write_tocken(c)<<std::endl;
+#endif
+
+				switch(state) {
+				case st_object_or_array_expected:
+					if(c=='[')  {
+						*stack.top().second=json::array();
+						state=st_array_value_or_close_expected;
+					}
+					else if(c=='{') {
+						*stack.top().second=json::object();
+						state=st_object_key_or_close_expected;
+					}
+					else
+						state = st_error;
+					break;
+
+				case st_object_key_or_close_expected:
+					if(c=='}') {
+						state=stack.top().first;
+						stack.pop();
+					}
+					else if (c==tock_str) {
+						key=tock.str;
+						state = st_object_colon_expected;
+					}
+					else
+						state = st_error;
+					break;
+				case st_object_colon_expected:
+					if(c!=':')
+						state=st_error;
+					else
+						state=st_object_value_expected;
+					break;
+				case st_object_value_expected:
+					{
+						json::object &obj = stack.top().second->object();
+						std::pair<json::object::iterator,bool> res=
+							obj.insert(std::make_pair(key,json::value()));
+
+						if(res.second==false) {
+							state=st_error;
+							break;
+						}
+						json::value &val=res.first->second;
+
+						if(c==tock_str) { 
+							val=tock.str;
+							state=st_object_close_or_comma_expected;
+						}
+						else if(c==tock_true) {
+							val=true;
+							state=st_object_close_or_comma_expected;
+						}
+						else if(c==tock_false) {
+							val=false;
+							state=st_object_close_or_comma_expected;
+						}
+						else if(c==tock_null) {
+							val=null();
+							state=st_object_close_or_comma_expected;
+						}
+						else if(c==tock_number) {
+							val=tock.real;
+							state=st_object_close_or_comma_expected;
+						}
+						else if(c=='[') {
+							val=json::array();
+							state=st_array_value_or_close_expected;
+							stack.push(std::make_pair(st_object_close_or_comma_expected,&val));
+						}
+						else if(c=='{') {
+							val=json::object();
+							state=st_object_key_or_close_expected;
+							stack.push(std::make_pair(st_object_close_or_comma_expected,&val));
+						}
+						else 
+							state=st_error;
+					}
+					break;
+				case st_object_close_or_comma_expected:
+					if(c==',')
+						state=st_object_key_or_close_expected;
+					else if(c=='}') {
+						state=stack.top().first;
+						stack.pop();
+					}
+					else
+						state=st_error;
+					break;
+				case st_array_value_or_close_expected:
+					{
+						if(c==']') {
+							state=stack.top().first;
+							stack.pop();
+							break;
+						}
+
+						json::array &ar = stack.top().second->array();
+						ar.push_back(json::value());
+						json::value &val=ar.back();
+
+						if(c==tock_str)  {
+							val=tock.str; 
+							state=st_array_close_or_comma_expected;
+						}
+						else if(c==tock_true) {
+							val=true;
+							state=st_array_close_or_comma_expected;
+						}
+						else if(c==tock_false) {
+							val=false;
+							state=st_array_close_or_comma_expected;
+						}
+						else if(c==tock_null) {
+							val=null();
+							state=st_array_close_or_comma_expected;
+						}
+						else if(c==tock_number) {
+							val=tock.real;
+							state=st_array_close_or_comma_expected;
+						}
+						else if(c=='[') {
+							val=json::array();
+							state=st_array_value_or_close_expected;
+							stack.push(std::make_pair(st_array_close_or_comma_expected,&val));
+						}
+						else if(c=='{') {
+							val=json::object();
+							state=st_object_key_or_close_expected;
+							stack.push(std::make_pair(st_array_close_or_comma_expected,&val));
+						}
+						else 
+							state=st_error;
+						break;
+					}
+				case st_array_close_or_comma_expected:
+					if(c==']') {
+						state=stack.top().first;
+						stack.pop();
+					}
+					else if(c==',')
+						state=st_array_value_or_close_expected;
+					else
+						state=st_error;
+					break;
+				case st_done:
+				case st_error:
+					break;
+
+				};
+			}
+			if(state==st_done) { 
+				if(force_eof) {
+					if(tock.next()!=tock_eof) {
+						error_at_line=tock.line;
+						return false;
+					}
+				}
+				out.swap(result);
+				return true;
+			}
+			error_at_line=tock.line;
+			return false;
+
+		}
+	} // anonymous
+
+	bool value::load(std::istream &in,bool full,int *line_number)
+	{
+		int err_line;
+		value v;
+		if(!parse_stream(in,*this,full,err_line)) {
+			if(line_number)
+				*line_number=err_line;
+			return false;
+		}
+		return true;
+
+	}
+	
+	std::istream &operator>>(std::istream &in,value &v)
+	{
+		int line_no;
+		if(!parse_stream(in,v,false,line_no))
+			in.setstate( std::istream::failbit );
+		return in;
 	}
 
-*/
 
 
 } // json

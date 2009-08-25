@@ -1,5 +1,6 @@
 #include "json.h"
 #include <iostream>
+#include <sstream>
 #include <stdexcept>
 using namespace cppcms;
 using namespace std;
@@ -8,7 +9,7 @@ using namespace std;
 
 
 char const *jsn_str=
-		"{ \"x\" : 10 , \"o\" : { \"test\" : [ 10,20,true ], \"post\" : 13.01 }, \"yes\" : \"\\u05d0א\" }";
+		"{ \"t\" : [{},{},{},{ \"x\":1},[]],\"x\" : { \"o\" : { \"test\" : [ 10,20,true ], \"post\" : 13.01 }, \"yes\" : \"\\u05d0א\" }}";
 
 
 int main()
@@ -31,9 +32,34 @@ int main()
 		
 		v.set("x",13.5);
 		v["x"]="hello";
+		cout<<"-------------"<<endl;
 		cout<<v<<endl;
+		cout<<"-------------"<<endl;
 
-		cout<<v.save(json::readable)<<endl;
+		std::stringstream res(v.save(json::readable));
+		cout<<res.str()<<endl;
+
+		json::value v2;
+		int line_no = -1 ;
+		cout<<"-------------"<<endl;
+		if(v2.load(res,true,&line_no)) {
+			v2.save(cout,json::readable);
+			cout<<"-------------"<<endl;
+		}
+		else {
+			cout<<line_no<<endl;
+			cout<<"-------------"<<endl;
+		}
+		std::stringstream ss(jsn_str);
+		if(v2.load(ss,true,&line_no)) {
+			v2.save(cout,json::readable);
+			cout<<"-------------"<<endl;
+		}
+		else {
+			cout<<line_no<<endl;
+			cout<<"-------------"<<endl;
+		}
+		
 	}
 	catch(std::exception const &e)
 	{

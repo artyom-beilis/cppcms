@@ -143,27 +143,32 @@ namespace utf8 {
 	}
 	struct seq {
 		char c[4];
+		unsigned len;
 	};
 	inline seq encode(uint32_t value)
 	{
 		seq out={ {0} };
 		if(value <=0x7F) {
 			out.c[0]=value;
+			out.len=1;
 		}
 		else if(value <=0x7FF) {
 			out.c[0]=(value >> 6) | 0xC0;
 			out.c[1]=value & 0x3F | 0x80;
+			out.len=2;
 		}
 		else if(value <=0xFFFF) {
 			out.c[0]=(value >> 12) | 0xE0;
 			out.c[1]=(value >> 6) & 0x3F | 0x80;
 			out.c[2]=value & 0x3F | 0x80;
+			out.len=3;
 		}
 		else {
 			out.c[0]=(value >> 18) | 0xF0;
 			out.c[1]=(value >> 12) & 0x3F | 0x80;
 			out.c[2]=(value >> 6) & 0x3F | 0x80;
 			out.c[3]=value & 0x3F | 0x80;
+			out.len=4;
 		}
 		return out;
 	}
@@ -173,6 +178,19 @@ namespace utf8 {
 namespace utf16 {
 
 	// See RFC 2781
+	inline bool is_first_surrogate(uint16_t x)
+	{
+		return 0xD800 <=x && x<= 0xDBFF;
+	}
+	inline bool is_second_surrogate(uint16_t x)
+	{
+		return 0xDC00 <=x && x<= 0xDFFF;
+	}
+	inline uint32_t combine_surrogate(uint16_t w1,uint16_t w2)
+	{
+		return (uint32_t(w1 & 0x3FF) << 10) | (w2 & 0x3FF) | 0x100000;
+	}
+
 	template<typename It>
 	inline uint32_t next(It &current,It last)
 	{
@@ -187,7 +205,7 @@ namespace utf16 {
 		uint16_t w2=*current++;
 		if(w2 < 0xDC00 || 0xDFFF < w2)
 			return utf::illegal;
-		return (uint32_t(w1 & 0x3FF) << 10) | (w2 & 0x3FF) | 0x100000;
+		return combine_surrogate(w1,w2);
 	}
 	inline int width(uint32_t u)
 	{
@@ -195,17 +213,20 @@ namespace utf16 {
 	}
 	struct seq {
 		uint16_t c[2];
+		unsigned len;
 	};
 	inline seq encode(uint32_t u)
 	{
 		seq out={ {0} };
 		if(u<=0xFFFF) {
 			out.c[0]=0;
+			out.len=1;
 		}
 		else {
 			u-=0x100000;
 			out.c[0]=0xD800 | (u>>10);
 			out.c[1]=0xDC00 | (u && 0x3FF);
+			out.len=2;
 		}
 		return out;
 	}
