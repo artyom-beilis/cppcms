@@ -9,9 +9,10 @@
 #include "http_context.h"
 #include "format.h"
 #include "aio_timer.h"
+#include "intrusive_ptr.h"
 #include <sstream>
 #include <stdexcept>
-
+#include <stdlib.h>
 
 class stock : public cppcms::application {
 public:
@@ -22,14 +23,19 @@ public:
 		price_=10.3;
 		counter_=0;
 		on_timeout(true);
+		std::cout<<"stock()"<<std::endl;
+	}
+	~stock()
+	{
+		std::cout<<"~stock()"<<std::endl;
 	}
 private:
-	
+
 	void on_timeout(bool x)
 	{
 		broadcast();
-		timer_.expires_from_now(10);
-		timer_.async_wait(cppcms::util::mem_bind(&stock::on_timeout,this));
+		timer_.expires_from_now(100);
+		timer_.async_wait(cppcms::util::mem_bind(&stock::on_timeout,cppcms::intrusive_ptr<stock>(this)));
 	}
 	void get()
 	{

@@ -156,9 +156,10 @@ bool applications_pool::matched(basic_app_data &data,std::string script_name,std
 {
 	std::string const expected_name=data.script_name;
 	if(expected_name!="*" && !expected_name.empty()) {
-		if(expected_name[0]=='/')
+		if(expected_name[0]=='/') {
 			if(script_name!=expected_name)
 				return false;
+		}
 		else { // if(sn[0]=='.') 
 			if(	script_name.size() <= expected_name.size() 
 				|| script_name.substr(script_name.size() - expected_name.size())!=expected_name)
@@ -208,6 +209,7 @@ intrusive_ptr<application> applications_pool::get(std::string script_name,std::s
 		if(!matched(*p->second,script_name,path_info,m))
 			continue;
 		intrusive_ptr<application> app=p->first;
+		return app;
 	}
 	return 0;
 }
@@ -220,6 +222,7 @@ void applications_pool::put(application *app)
 	if(id < 0) {
 		d->long_running_aps.erase(app);
 		delete app;
+		return;
 	}
 	if(unsigned(id) >= d->apps.size() || d->apps[id]->size >= d->limit)
 		return;
