@@ -80,7 +80,7 @@ void context::dispatch(intrusive_ptr<application> app,bool syncronous)
 		app->dispatcher().dispatch();
 	}
 	catch(std::exception const &e){
-		if(!app->response().some_output_was_written()) {
+		if(app->last_assigned_context() && !app->response().some_output_was_written()) {
 			app->response().make_error_response(http::response::internal_server_error,e.what());
 		}
 		else {
