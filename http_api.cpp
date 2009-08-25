@@ -34,7 +34,7 @@ namespace cgi {
 
 			env_["SERVER_SOFTWARE"]=PACKAGE_NAME "/" PACKAGE_VERSION;
 			env_["SERVER_NAME"]=srv.settings().get("service.ip","127.0.0.1");
-			env_["SERVER_PORT"]=boost::lexical_cast<std::string>(srv.settings().get<int>("service.port"));
+			env_["SERVER_PORT"]=boost::lexical_cast<std::string>(srv.settings().get("service.port",8080));
 			env_["GATEWAY_INTERFACE"]="CGI/1.0";
 			env_["SERVER_PROTOCOL"]="HTTP/1.0";
 
@@ -274,8 +274,15 @@ namespace cgi {
 				return;
 			}
 			
-			std::vector<std::string> const &script_names=
+
+			std::vector<std::string> script_names = 
 				service().settings().get("http.script_names",std::vector<std::string>());
+
+			std::string additional=service().settings().get("http.script","");
+			
+			if(!additional.empty())
+				script_names.push_back(additional);
+
 
 			for(unsigned i=0;i<script_names.size();i++) {
 

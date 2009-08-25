@@ -45,24 +45,25 @@ void service::load_settings(int argc,char *argv[])
 {
 	using std::string;
 	std::string file_name;
-	char const *e = getenv("CPPCMS_CONFIG");
-	if(e) 
-		file_name = e;
-	else {
-		for(int i=1;i<argc;i++) {
-			if(argv[i]==std::string("-c")) {
-				if(!file_name.empty()) {
-					throw cppcms_error("Switch -c can't be used twice");
-				}
-				if(i+1 < argc)
-					file_name=argv[i+1];
-				else
-					throw cppcms_error("Switch -c requires configuration file parameters");
-				i++;
+	
+	for(int i=1;i<argc;i++) {
+		if(argv[i]==std::string("-c")) {
+			if(!file_name.empty()) {
+				throw cppcms_error("Switch -c can't be used twice");
 			}
-			else if(argv[i]==std::string("-U")) 
-				break;
+			if(i+1 < argc)
+				file_name=argv[i+1];
+			else
+				throw cppcms_error("Switch -c requires configuration file parameters");
+			i++;
 		}
+		else if(argv[i]==std::string("-U")) 
+			break;
+	}
+	
+	if(file_name.empty()) {
+		char const *e = getenv("CPPCMS_CONFIG");
+		if(e) file_name = e;
 	}
 	
 	json::value &val=*impl_->settings_;
@@ -80,7 +81,7 @@ void service::load_settings(int argc,char *argv[])
 		}
 	}
 	
-	boost::regex r("^--((\\w+)(\\.\\w+)*)=((true)|(false)|(null)|(-?\\d+(\\.\\d+)?([eE][\\+-]?\\d+)?)|(.*))$");
+	boost::regex r("^--((\\w+)(-\\w+)*)=((true)|(false)|(null)|(-?\\d+(\\.\\d+)?([eE][\\+-]?\\d+)?)|([\\[\\{].*[\\]\\}])|(.*))$");
 
 	for(int i=1;i<argc;i++) {
 		std::string arg=argv[i];
@@ -95,6 +96,9 @@ void service::load_settings(int argc,char *argv[])
 			if(!boost::regex_match(arg.c_str(),m,r))
 				throw cppcms_error("Invalid switch: "+arg);
 			std::string path=m[1];
+			for(unsigned i=0;i<path.size();i++)
+				if(path[i]=='-')
+					path[i]='.';
 			if(!m[5].str().empty())
 				val.set(path,true);
 			else if(!m[6].str().empty())
@@ -103,9 +107,20 @@ void service::load_settings(int argc,char *argv[])
 				val.set(path,json::null());
 			else if(!m[8].str().empty())
 				val.set(path,boost::lexical_cast<double>(m[8].str()));
+			else if(!m[11].str().empty()) {
+				std::istringstream ss(m[11].str());
+				json::value tmp;
+				if(!tmp.load(ss,true))
+					throw cppcms_error("Invadid json expresson: " + m[11].str());
+				val.set(path,tmp);
+			}
 			else
 				val.set(path,m[4].str());
 		}
+	}
+
+	if(val.is_undefined()) {
+		throw cppcms_error("No configuration defined");
 	}
 
 }
@@ -318,16 +333,28 @@ void service::start_acceptor()
 {
 	using namespace impl::cgi;
 	std::string api=settings().get<std::string>("service.api");
-	std::string ip=settings().get("service.ip","127.0.0.1");
-	int port=0;
 	std::string socket=settings().get("service.socket","");
 	int backlog=settings().get("service.backlog",threads_no() * 2);
 
-	bool tcp=socket.empty();
+	std::string ip;
+	int port=0;
 
-	if(tcp && port==0) {
-		port=settings().get<int>("service.port");
+	bool tcp;
+
+	if(socket.empty()) {
+		ip=settings().get("service.ip","127.0.0.1");
+		port=settings().get("service.port",8080);
+		tcp=true;
 	}
+	else {
+		if(	!settings().find("service.port").is_undefined()
+			|| !settings().find("service.ip").is_undefined())
+		{
+			throw cppcms_error("Can't define both UNIX socket and TCP port/ip");
+		}
+		tcp=false;
+	}
+
 
 	if(tcp) {
 		if(api=="scgi")

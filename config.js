@@ -13,6 +13,7 @@
 	},
 	"http" : {
 		"script_names" : [ "/stock", "/hello" ]
+		//"script" : "/hello"
 	},
 	"gzip" : {
 		"enable" : true, // Default true

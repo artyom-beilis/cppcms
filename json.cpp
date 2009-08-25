@@ -210,7 +210,6 @@ namespace json {
 				switch(*i) {
 				case 0x22:
 				case 0x5C:
-				case 0x2F:
 					result+='\\';
 					result+=*i;
 					break;

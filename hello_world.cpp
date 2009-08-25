@@ -187,8 +187,9 @@ int main(int argc,char **argv)
 {
 	try {
 		cppcms::service service(argc,argv);
-		service.applications_pool().mount(cppcms::applications_factory<hello>(),"/hello");
-		service.applications_pool().mount(new stock(service),"/stock");
+		//service.applications_pool().mount(cppcms::applications_factory<hello>(),"/hello");
+		service.applications_pool().mount(cppcms::applications_factory<hello>());
+		//service.applications_pool().mount(new stock(service),"/stock");
 		service.run();
 		std::cout<<"Done..."<<std::endl;
 	}
