@@ -14,99 +14,55 @@
 #include <stdexcept>
 #include <stdlib.h>
 
-/*
-class chat_room : public cppcms::application {
+
+class chat : public cppcms::application {
 public:
-	chat_room(cppcms::service &srv,int idle) : 
-		cppcms::application(srv),
-		timer_(srv),
-		idle_time_(idle)
+	chat(cppcms::service &srv) : cppcms::application(srv)
 	{
-		on_timeout(true);
-		dispatcher().assign("^.*$",cppcms::util::mem_bind(&chat_room::json_call,self()));
+		dispatcher().assign("^/post$",&chat::post,this);
+		dispatcher().assign("^/get/(\\d+)$",&chat::get,this,1);
+	}
+	void post()
+	{
+		if(request().request_method()=="POST") {
+			if(request().post().find("message")!=request().post().end()) {
+				messages_.push_back(request().post().find("message")->second);
+				broadcast();
+			}
+		}
+		release_context()->async_complete_response();
+	}
+	void get(std::string no)
+	{
+		unsigned pos=atoi(no.c_str());
+		if(pos < messages_.size()) {
+			response().set_plain_text_header();
+			response().out()<<messages_[pos];
+			release_context()->async_complete_response();
+		}
+		else if(pos == messages_.size()) {
+			waiters_.push_back(release_context());
+		}
+		else {
+			response().status(404);
+			release_context()->async_complete_response();
+		}
+	}
+	void broadcast()
+	{
+		for(unsigned i=0;i<waiters_.size();i++) {
+			waiters_[i]->response().set_plain_text_header();
+			waiters_[i]->response().out() << messages_.back();
+			waiters_[i]->async_complete_response();
+			waiters_[i]=0;
+		}
+		waiters_.clear();
 	}
 private:
-
-	void on_error()
-	{
-		response().status(cppcms::http::response::bad_request);
-		release_context(last_assigned_context());
-		return;
-	}
-	void json_call()
-	{
-		using namespace cppcms;
-		if(request().content_type()!="application/json") {
-			on_error();
-		}
-		std::pair<void *,size_t> data=request().raw_post_data();
-		std::istringstream ss(std::string((char *)data.first,data.second));
-		json::value v;
-		if(!v.load(ss,true)) {
-			on_error();
-			return;
-		}
-		if(	v.find("method").type()!=cppcms::json::is_string 
-			|| v.find("params").type()!=json::is_array
-			|| v.find("id").type()==json::is_undefined)
-		{
-			on_error();
-			return;
-		}
-		std::string method=v.get<std::string>("method");
-		json::array params=v.at("params").array();
-		json::value id=v.at("id");
-		json::value resp;
-		resp.set("id",id);
-		resp.set("result",json::null());
-		resp.set("error",json::null());
-		
-		bool write=true;
-		if(method=="submit")
-			submit=(params,resp);
-		else if(method=="fetch")
-			write=fetch(params,resp);
-		else {
-			resp.set("error","Undefined Method "+method);
-		}
-		if(write) {
-			response().content_type("application/json");
-			response().out() << resp;
-			release_context(last_assigned_context());
-		}
-		else {
-			assign_context(0);
-		}
-	}
-	
-	void submit(json::array const &params,json::value &output)
-	{
-		if(params.size()!=1 || !params[0].type()==json::is_string) {
-			output.set("error","Invalid input parameters");
-			return;
-		}
-	}
-
-	intrusive_ptr<chat_room> self()
-	{
-		return this;
-	}
-	void update_timer()
-	{
-		timer_.cancel();
-	}
-	void on_timeout(bool canceled)
-	{
-		if(canceled) {
-			timer_.expires_from_now(idle);
-			timer_.async_wait(cppcms::util::mem_bind(&stock::on_timeout,self()));
-		}
-
-		release_all_contexts();
-		// And Die ;)
-	}
+	std::vector<std::string> messages_;
+	std::vector<cppcms::intrusive_ptr<cppcms::http::context> > waiters_;
 };
-*/
+
 
 class stock : public cppcms::application {
 public:
@@ -292,6 +248,8 @@ int main(int argc,char **argv)
 {
 	try {
 		cppcms::service service(argc,argv);
+		cppcms::intrusive_ptr<chat> c=new chat(service);
+		service.applications_pool().mount(c,"/chat");
 		service.applications_pool().mount(cppcms::applications_factory<hello>(),"/hello");
 		service.applications_pool().mount(new stock(service),"/stock");
 		service.run();

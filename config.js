@@ -12,7 +12,7 @@
 		//  "socket" : "/tmp/scgi.socket"
 	},
 	"http" : {
-		"script_names" : [ "/stock", "/hello" ]
+		"script_names" : [ "/stock", "/hello" , "/chat" ]
 		//"script" : "/hello"
 	},
 	"gzip" : {
@@ -38,8 +38,8 @@
 
 	"file_server" : {
 		"enable" : true,
-		"doument_root" : ".",
-		"mime_types" : "mime.type"
+		"doument_root" : "."
+		// "mime_types" : "mime.type"
 	}
 	
 }
