@@ -46,7 +46,6 @@ namespace cppcms {
 		char const *gt(char const *s);
 		char const *ngt(char const *s,char const *p,int n);
 
-		void assign_context(intrusive_ptr<http::context> conn);
 
 		void add(application &app);
 		void add(application &app,std::string regex,int part);
@@ -57,14 +56,15 @@ namespace cppcms {
 		application *parent();
 		application *root();
 
-		http::context *last_assigned_context();
-		void release_context(http::context *conn);
-		void release_all_contexts();
+		intrusive_ptr<http::context> release_context();
+		intrusive_ptr<http::context> get_context();
+		void assign_context(intrusive_ptr<http::context> conn);
 
 		bool is_asynchronous();
 
 	private:
 
+		void recycle();
 		void parent(application *parent);
 
 		void pool_id(int id);

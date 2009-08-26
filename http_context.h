@@ -5,6 +5,8 @@
 #include "hold_ptr.h"
 #include "intrusive_ptr.h"
 #include "refcounted.h"
+#include "callback0.h"
+#include "callback1.h"
 
 namespace cppcms {
 
@@ -31,7 +33,42 @@ namespace cppcms {
 			cppcms::service &service();
 
 			void run();
-			void on_response_complete();
+
+			typedef enum {
+				operation_completed,
+				operation_aborted
+			} complition_type;
+
+			typedef util::callback1<complition_type> handler;
+
+			///
+			/// Send all pending output data to the client and
+			/// finalize the connection. Note, you can't use this 
+			/// object for communication any more.
+			///
+			void async_complete_response();
+			
+			///
+			/// Send all pending data to user, when operation is complete
+			/// call handler \a h with status.
+			///
+			/// Note: if the status is operation_aborted, you can't use
+			/// this connection any more, the peer gone.
+			///
+
+			void async_flush_output(handler const &h);
+
+			///
+			/// Set handler for peer reset events. It is useful to cleanup
+			/// connections that had timeout or just disconnected by user
+			///
+			/// Notes: 
+			/// 1. if async_complete_response was called, handler would not
+			///    be called any more.
+			/// 2. If async_flush_output fails, this does not mean that 
+			///    this handler would be called as well, so you need to check both
+			///
+			void async_on_peer_reset(util::callback0 const &h);
 		private:
 			void on_request_ready(bool error);
 			static void dispatch(intrusive_ptr<application> app,bool syncronous);

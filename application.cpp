@@ -27,8 +27,6 @@ struct application::data {
 	}
 	cppcms::service *service;
 	intrusive_ptr<http::context> conn;
-	typedef std::set<intrusive_ptr<http::context> > all_conn_type;
-	all_conn_type all_conn;
 	int pool_id;
 	url_dispatcher url;
 	std::vector<application *> managed_children;
@@ -76,6 +74,10 @@ url_dispatcher &application::dispatcher()
 	return d->url;
 }
 
+intrusive_ptr<http::context> application::get_context()
+{
+	return root()->d->conn;
+}
 
 http::context &application::context()
 {
@@ -84,9 +86,11 @@ http::context &application::context()
 	return *root()->d->conn;
 }
 
-http::context *application::last_assigned_context()
+intrusive_ptr<http::context> application::release_context()
 {
-	return &*root()->d->conn;
+	intrusive_ptr<http::context> ptr=root()->d->conn;
+	assign_context(0);
+	return ptr;
 }
 
 
@@ -111,14 +115,7 @@ bool application::is_asynchronous()
 
 void application::assign_context(intrusive_ptr<http::context> conn)
 {
-	if(parent()!=this)
-		throw cppcms_error("Can assign context to only root of applications tree");
-	if(conn == 0)
-		d->conn = 0;
-	else {
-		d->conn=conn;
-		d->all_conn.insert(conn);
-	}
+	root()->d->conn=conn;
 }
 
 void application::pool_id(int id)
@@ -171,25 +168,14 @@ void application::assign(application *app,std::string regex,int part)
 	add(*app,regex,part);
 }
 
-void application::release_context(http::context *conn)
+void application::recycle()
 {
-	intrusive_ptr<http::context> context=conn;
-	context->response().out() << std::flush;
-	context->response().finalize();
-	context->service().post(boost::bind(&http::context::on_response_complete,context));
-	root()->d->all_conn.erase(context);
-}
-
-void application::release_all_contexts()
-{
-	root()->d->conn=0;
-	for(data::all_conn_type::iterator p=root()->d->all_conn.begin();p!=root()->d->all_conn.end();++p) {
-		intrusive_ptr<http::context> context=*p;
-		context->response().out() << std::flush;
-		context->response().finalize();
-		context->service().post(boost::bind(&http::context::on_response_complete,context));
+	if(root()->d->conn) {
+		response().out() << std::flush;
+		response().finalize();
+		context().async_complete_response();
 	}
-	root()->d->all_conn.clear();
+	assign_context(0);
 }
 
 void intrusive_ptr_add_ref(application *app)
@@ -210,7 +196,7 @@ void intrusive_ptr_release(application *app)
 		cppcms::service &service=app->service();
 
 		try {
-			app->release_all_contexts();
+			app->recycle();
 		}
 		catch(...) {
 			if(app->pool_id() < 0) {

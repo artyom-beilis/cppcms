@@ -10,6 +10,7 @@
 #include "applications_pool.h"
 #include "thread_pool.h"
 #include "url_dispatcher.h"
+#include "cppcms_error.h"
 
 #include <boost/bind.hpp>
 
@@ -58,7 +59,7 @@ void context::on_request_ready(bool error)
 		app=0;
 		response().io_mode(http::response::asynchronous);
 		response().make_error_response(http::response::not_found);
-		on_response_complete();
+		async_complete_response();
 		return;
 	}
 
@@ -80,7 +81,7 @@ void context::dispatch(intrusive_ptr<application> app,bool syncronous)
 		app->dispatcher().dispatch();
 	}
 	catch(std::exception const &e){
-		if(app->last_assigned_context() && !app->response().some_output_was_written()) {
+		if(app->get_context() && !app->response().some_output_was_written()) {
 			app->response().make_error_response(http::response::internal_server_error,e.what());
 		}
 		else {
@@ -90,7 +91,26 @@ void context::dispatch(intrusive_ptr<application> app,bool syncronous)
 	}
 }
 
-void context::on_response_complete()
+namespace {
+	void wrapper(context::handler const &h,bool r)
+	{
+		h(r ? context::operation_aborted : context::operation_completed);
+	}
+}
+
+
+void context::async_flush_output(context::handler const &h)
+{
+	if(response().io_mode() != http::response::asynchronous) {
+		throw cppcms_error("Can't use asynchronouse operations when I/O mode is synchronous");
+	}
+	conn_->async_write_response(
+		response(),
+		false,
+		boost::bind(wrapper,h,_1));
+}
+
+void context::async_complete_response()
 {
 	if(response().io_mode() == http::response::asynchronous) {
 		conn_->async_write_response(
