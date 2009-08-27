@@ -143,6 +143,10 @@ context::~context()
 {
 }
 
+void context::async_on_peer_reset(util::callback0 const &h)
+{
+	conn_->aync_wait_for_close_by_peer(h);
+}
 
 impl::cgi::connection &context::connection()
 {

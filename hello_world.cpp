@@ -13,6 +13,8 @@
 #include <sstream>
 #include <stdexcept>
 #include <stdlib.h>
+#include <set>
+#include <boost/bind.hpp>
 
 
 class chat : public cppcms::application {
@@ -34,6 +36,7 @@ public:
 	}
 	void get(std::string no)
 	{
+		std::cerr<<"Get:"<<waiters_.size()<<std::endl;
 		unsigned pos=atoi(no.c_str());
 		if(pos < messages_.size()) {
 			response().set_plain_text_header();
@@ -41,26 +44,37 @@ public:
 			release_context()->async_complete_response();
 		}
 		else if(pos == messages_.size()) {
-			waiters_.push_back(release_context());
+			cppcms::intrusive_ptr<cppcms::http::context> context=release_context();
+			waiters_.insert(context);
+			context->async_on_peer_reset(
+				boost::bind(
+					&chat::remove_context,
+					cppcms::intrusive_ptr<chat>(this),
+					context));
 		}
 		else {
 			response().status(404);
 			release_context()->async_complete_response();
 		}
 	}
+	void remove_context(cppcms::intrusive_ptr<cppcms::http::context> context)
+	{
+		std::cerr<<"Connection closed"<<std::endl;
+		waiters_.erase(context);
+	}
 	void broadcast()
 	{
-		for(unsigned i=0;i<waiters_.size();i++) {
-			waiters_[i]->response().set_plain_text_header();
-			waiters_[i]->response().out() << messages_.back();
-			waiters_[i]->async_complete_response();
-			waiters_[i]=0;
+		for(waiters_type::iterator waiter=waiters_.begin();waiter!=waiters_.end();++waiter) {
+			(*waiter)->response().set_plain_text_header();
+			(*waiter)->response().out() << messages_.back();
+			(*waiter)->async_complete_response();
 		}
 		waiters_.clear();
 	}
 private:
 	std::vector<std::string> messages_;
-	std::vector<cppcms::intrusive_ptr<cppcms::http::context> > waiters_;
+	typedef std::set<cppcms::intrusive_ptr<cppcms::http::context> > waiters_type;
+	waiters_type waiters_;
 };
 
 
