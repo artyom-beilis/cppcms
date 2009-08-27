@@ -96,18 +96,6 @@ namespace cgi {
 				return;
 			}
 		}
-		virtual void async_read_eof(callback const &h)
-		{
-			static char a;
-			socket_.async_read_some(boost::asio::buffer(&a,1),
-						boost::bind(	&http::on_eof,
-								self(),
-								h));
-		}
-		void on_eof(callback const &h)
-		{
-			h();
-		}
 	private:
 		void on_some_input_recieved(boost::system::error_code const &e,io_handler const &h,void *p,size_t s)
 		{
