@@ -142,6 +142,12 @@ namespace cgi {
 			socket_.shutdown(boost::asio::basic_stream_socket<Proto>::shutdown_receive,e);
 			socket_.close(e);
 		}
+		
+		virtual void async_read_eof(callback const &h)
+		{
+			static char a;
+			socket_.async_read_some(boost::asio::buffer(&a,1),boost::bind(h));
+		}
 
 	private:
 		size_t start_,end_,sep_;

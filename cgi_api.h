@@ -25,6 +25,7 @@ namespace cgi {
 
 	typedef boost::function<void(boost::system::error_code const &e)> handler;
 	typedef boost::function<void(boost::system::error_code const &e,size_t)> io_handler;
+	typedef boost::function<void()> callback;
 	typedef boost::function<void(bool)> ehandler;
 
 	class acceptor : public util::noncopyable {
@@ -49,6 +50,8 @@ namespace cgi {
 						ehandler const &on_response_written);
 
 		void async_complete_response(	ehandler const &on_response_complete);
+		
+		void aync_wait_for_close_by_peer(callback const &on_eof);
 
 		virtual std::string getenv(std::string const &key) = 0;
 		size_t write(void const *data,size_t n);
@@ -70,6 +73,7 @@ namespace cgi {
 		// Concept implementation headers		
 		
 		virtual void async_read_some(void *,size_t,io_handler const &h) = 0;
+		virtual void async_read_eof(callback const &h) = 0;
 		virtual void async_write_some(void const *,size_t,io_handler const &h) = 0;
 		virtual void async_write_eof(handler const &h) = 0;
 		virtual size_t write_some(void const *,size_t) = 0;
@@ -93,11 +97,13 @@ namespace cgi {
 		void on_post_data_loaded(boost::system::error_code const &e,http::request *r,ehandler const &h);
 		void on_async_write_written(boost::system::error_code const &e,bool complete_response,ehandler const &h);
 		void on_eof_written(boost::system::error_code const &e,ehandler const &h);
+		void handle_eof(callback const &on_eof);
 
 		std::vector<char> content_;
 		cppcms::service *service_;
 		std::string async_chunk_;
 		std::string error_;
+		bool request_in_progress_;
 
 	};
 

@@ -17,7 +17,8 @@
 namespace cppcms { namespace impl { namespace cgi {
 
 connection::connection(cppcms::service &srv) :
-	service_(&srv)
+	service_(&srv),
+	request_in_progress_(true)
 {
 }
 
@@ -39,6 +40,18 @@ void connection::async_prepare_request(	http::request &request,
 					boost::function<void(bool)> const &h)
 {
 	async_read_headers(boost::bind(&connection::load_content,self(),_1,&request,h));
+}
+
+void connection::aync_wait_for_close_by_peer(boost::function<void()> const &on_eof)
+{
+	async_read_eof(boost::bind(&connection::handle_eof,self(),on_eof));
+}
+
+void connection::handle_eof(callback const &on_eof)
+{
+	if(request_in_progress_) {
+		on_eof();
+	}
 }
 
 void connection::set_error(ehandler const &h,std::string s)
@@ -144,6 +157,7 @@ void connection::on_async_write_written(boost::system::error_code const &e,bool 
 {
 	if(complete_response) {
 		async_write_eof(boost::bind(&connection::on_eof_written,self(),_1,h));
+		request_in_progress_=false;
 		return;
 	}
 	service().impl().get_io_service().post(boost::bind(h,false));
@@ -151,6 +165,7 @@ void connection::on_async_write_written(boost::system::error_code const &e,bool 
 void connection::async_complete_response(ehandler const &h)
 {
 	async_write_eof(boost::bind(&connection::on_eof_written,self(),_1,h));
+	request_in_progress_=false;
 }
 
 void connection::on_eof_written(boost::system::error_code const &e,ehandler const &h)

@@ -9,6 +9,12 @@
 #include <iostream>
 #include <boost/array.hpp>
 
+#if defined(CPPCMS_WIN32) && _WIN32_WINNT <= 0x0501 && !defined(BOOST_ASIO_DISABLE_IOCP)
+#define NO_CANCELIO
+#endif
+
+
+
 namespace cppcms {
 namespace impl {
 namespace cgi {
@@ -89,6 +95,18 @@ namespace cgi {
 					_1,h,p,s));
 				return;
 			}
+		}
+		virtual void async_read_eof(callback const &h)
+		{
+			static char a;
+			socket_.async_read_some(boost::asio::buffer(&a,1),
+						boost::bind(	&http::on_eof,
+								self(),
+								h));
+		}
+		void on_eof(callback const &h)
+		{
+			h();
 		}
 	private:
 		void on_some_input_recieved(boost::system::error_code const &e,io_handler const &h,void *p,size_t s)
@@ -195,6 +213,11 @@ namespace cgi {
 			eof_.headers_[1].to_net();
 			eof_.headers_[2].to_net();
 			eof_.record_.to_net();
+			
+			#if !defined(NO_CANCELIO)
+			// Stop reading EOF from socket
+			socket_.cancel();
+			#endif
 
 
 			boost::asio::async_write(	socket_,
@@ -209,14 +232,37 @@ namespace cgi {
 		{
 			if(e) { h(e); return; }
 
+			#if defined(NO_CANCELIO)
+			
+			// Windows XP and below not support CancelIO... So we just close
+			// socket, because we can't stop asyncronous EOF reading...
+
+			keep_alive_=false;
+			boost::system::error_code e;
+			socket_.shutdown(boost::asio::basic_stream_socket<Proto>::shutdown_both,e);
+			socket_.close(e);
+
+			#else
+
+			// Stop reading from socket
 			if(!keep_alive_) {
 				boost::system::error_code e;
 				socket_.shutdown(boost::asio::basic_stream_socket<Proto>::shutdown_both,e);
 			}
 
+			#endif
+
 			h(boost::system::error_code());
 		}
 
+		// This is not really correct because server may try
+		// to multiplex or ask control... But meanwhile it is good enough
+		virtual void async_read_eof(callback const &h)
+		{
+			static char a;
+			socket_.async_read_some(boost::asio::buffer(&a,1),boost::bind(h));
+		}
+	
 	private:
 
 		// 

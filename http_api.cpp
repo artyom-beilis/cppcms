@@ -185,6 +185,11 @@ namespace cgi {
 			socket_.shutdown(boost::asio::ip::tcp::socket::shutdown_receive,e);
 			socket_.close(e);
 		}
+		virtual void async_read_eof(callback const &h)
+		{
+			static char a;
+			socket_.async_read_some(boost::asio::buffer(&a,1),boost::bind(h));
+		}
 
 	private:
 		size_t process_output_headers(void const *p,size_t s,io_handler const &h=io_handler())

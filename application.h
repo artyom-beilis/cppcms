@@ -61,6 +61,7 @@ namespace cppcms {
 		void assign_context(intrusive_ptr<http::context> conn);
 
 		bool is_asynchronous();
+		long refs();
 
 	private:
 
