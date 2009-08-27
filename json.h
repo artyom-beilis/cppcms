@@ -243,11 +243,16 @@ namespace json {
 	};
 
 
+/*****************************************************************
+
 	template<typename T>
 	struct traits {
 		static T get(value const &v);
 		static void set(value &v,T const &in);
+		static json::value schema();
 	};
+
+*******************************************************************/
 
 	template<typename T1,typename T2>
 	struct traits<std::pair<T1,T2> > {
@@ -263,6 +268,14 @@ namespace json {
 			v=json::object();
 			v.set_value("first",in.first);
 			v.set_value("second",in.second);
+		}
+		static json::value schema()
+		{
+			json::value sch;
+			sch.set("type","object");
+			sch.set("properties.first.type",traits<T1>::schema());
+			sch.set("properties.second.type",traits<T1>::schema());
+			return sch;
 		}
 	};
 
@@ -285,10 +298,17 @@ namespace json {
 			for(unsigned i=0;i<in.size();i++)
 				a[i].set_value(in[i]);
 		}
+		static json::value schema()
+		{
+			json::value sch;
+			sch.set("type","array");
+			sch.set("items.type",traits<T>::schema());
+			return sch;
+		}
 	};
 
 
-	#define CPPCMS_JSON_SPECIALIZE(type,method) 	\
+	#define CPPCMS_JSON_SPECIALIZE(type,method,sch) \
 	template<>					\
 	struct traits<type> {				\
 		static type get(value const &v)		\
@@ -299,13 +319,17 @@ namespace json {
 		{					\
 			v.method(in);			\
 		}					\
+		static json::value schema()		\
+		{					\
+			return sch;			\
+		}					\
 	};
 
-	CPPCMS_JSON_SPECIALIZE(bool,boolean);
-	CPPCMS_JSON_SPECIALIZE(double,number);
-	CPPCMS_JSON_SPECIALIZE(std::string,str);
-	CPPCMS_JSON_SPECIALIZE(json::object,object);
-	CPPCMS_JSON_SPECIALIZE(json::array,array);
+	CPPCMS_JSON_SPECIALIZE(bool,boolean,"boolean");
+	CPPCMS_JSON_SPECIALIZE(double,number,"number");
+	CPPCMS_JSON_SPECIALIZE(std::string,str,"string");
+	CPPCMS_JSON_SPECIALIZE(json::object,object,"object");
+	CPPCMS_JSON_SPECIALIZE(json::array,array,"array");
 
 	#undef CPPCMS_JSON_SPECIALIZE
 
@@ -319,6 +343,10 @@ namespace json {
 		{					
 			v.number(in);			
 		}					
+		static json::value schema()
+		{		
+			return "integer";
+		}			
 	};
 	template<>					
 	struct traits<json::null> {				
