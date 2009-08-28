@@ -3,7 +3,7 @@
 noinst_PROGRAMS = hello_world
 #noinst_HEADERS = hello_world_view.h
 #dist_bin_SCRIPTS = cppcms_tmpl_cc cppcms_run
-#bin_PROGRAMS = cppcms_make_key
+bin_PROGRAMS = cppcms_config_find_param # cppcms_make_key
 
 #EXTRA_DIST = hello_world_skin1.tmpl hello_world_view1.tmpl hello_world_skin2.tmpl Changelog autogen.sh config.txt
 
@@ -51,6 +51,7 @@ libcppcms_la_SOURCES = \
 	json.cpp
 
 
+cppcms_config_find_param_SOURCES=cppcms_config_find_param.cpp json.cpp
 
 
 #libcppcms_la_SOURCES = global_config.cpp manager.cpp worker_thread.cpp \

@@ -301,7 +301,7 @@ if [ "$APACHE_MOD_DIR" == "" ] ; then
 		 /usr/local/lib/httpd/modules \
 		 /opt/lib/httpd/modules
 	do
-		if [ -f $p/mod_fastcgi.* ] ; then
+		if [ -f $p/mod_fastcgi.* ] || [ -f $p/mod_scgi.* ] ; then
 			APACHE_MOD_DIR="$p"
 			break;
 		fi
@@ -309,7 +309,7 @@ if [ "$APACHE_MOD_DIR" == "" ] ; then
 fi
 if [ "$APACHE_MOD_DIR" == "" ] ; then
 	if [ "$1" == "exit" ] ; then
-		echo "Can't find "mod_fastcgi" try specifing APACHE_MOD_DIR"
+		echo "Can't find "mod_fastcgi/mod_scgi" try specifing APACHE_MOD_DIR"
 		exit 1;
 	else
 		WEB_SERVER=""
@@ -317,9 +317,9 @@ if [ "$APACHE_MOD_DIR" == "" ] ; then
 	fi
 fi
 
-if [ "$API" != "fastcgi" ] ; then
+if [ "$API" == "scgi" ] && [ "$SOCKET" != "" ]; then
 	if [ "$1" == "exit" ] ; then 
-		echo "Apache2 supports fastcgi only"
+		echo "Apache2 supports scgi over tcp sockets only"
 		exit 1
 	else
 		WEB_SERVER=""
@@ -366,34 +366,44 @@ cat >$DIR/apache.conf << EOF
 	ErrorLog $DIR/apache.log
 
 	TypesConfig $DIR/mime.types
+	<VirtualHost *>
+		DocumentRoot $ROOT
+	</VirtualHost>
 
 	LoadModule alias_module $APACHE_MOD_DIR/mod_alias.so
-	LoadModule fastcgi_module $APACHE_MOD_DIR/mod_fastcgi.so
 	LoadModule mime_module $APACHE_MOD_DIR/mod_mime.so
+EOF
+
+if [ "$API" == "fastcgi" ];
+then
+cat >>$DIR/apache.conf <<EOF
+	LoadModule fastcgi_module $APACHE_MOD_DIR/mod_fastcgi.so
 
 	FastCgiIpcDir $DIR/ipc
 	FastCgiExternalServer $DIR/myapp.fcgi $SERVICE_POINT
 
 	ScriptAliasMatch ^$SCRIPT(.*)$ $DIR/myapp.fcgi\$1
 	AddHandler fastcgi-script .fcgi
-
-	<VirtualHost *>
-		DocumentRoot $ROOT
-	</VirtualHost>
 EOF
+else
+cat >>$DIR/apache.conf <<EOF
+	LoadModule scgi_module $APACHE_MOD_DIR/mod_scgi.so
+	SCGIMount $SCRIPT $SERVICE_IP:$SERVICE_PORT
+EOF
+
+fi
 
 WEB_SERVER="$WEB_SERVER -f $DIR/apache.conf"
 
 }
 
-find_numeric_param()
-{
-	perl -e "while(<>) { print \"\$1\" if /^\s*$2\s*=\s*(\d+)\s*(#.*)?/}" <$1
-}
-
 find_param()
 {
-	perl -e "while(<>) { print \"\$1\" if /^\s*$2\s*=\s*\"([^\"]+)\"\s*(#.*)?/}" <$1
+	if [ -e ./cppcms_config_find_param ]; then
+		./cppcms_config_find_param $2 $1
+	else
+		cppcms_config_find_param $2 $1
+	fi
 }
 
 help()
@@ -460,7 +470,7 @@ fi
 
 SOCKET=`find_param $APP_CONFIG_FILE service.socket`
 SERVICE_IP=`find_param $APP_CONFIG_FILE service.ip`
-SERVICE_PORT=`find_numeric_param $APP_CONFIG_FILE service.port`
+SERVICE_PORT=`find_param $APP_CONFIG_FILE service.port`
 API=`find_param $APP_CONFIG_FILE service.api`
 
 if [ "$API" == "" ] ; then
