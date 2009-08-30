@@ -226,16 +226,16 @@ namespace cgi {
 			// socket, because we can't stop asyncronous EOF reading...
 
 			keep_alive_=false;
-			boost::system::error_code e;
-			socket_.shutdown(boost::asio::basic_stream_socket<Proto>::shutdown_both,e);
-			socket_.close(e);
+			boost::system::error_code err;
+			socket_.shutdown(boost::asio::basic_stream_socket<Proto>::shutdown_both,err);
+			socket_.close(err);
 
 			#else
 
 			// Stop reading from socket
 			if(!keep_alive_) {
-				boost::system::error_code e;
-				socket_.shutdown(boost::asio::basic_stream_socket<Proto>::shutdown_both,e);
+				boost::system::error_code err;
+				socket_.shutdown(boost::asio::basic_stream_socket<Proto>::shutdown_both,err);
 			}
 
 			#endif
