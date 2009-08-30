@@ -351,21 +351,68 @@ if [ "$APACHE_MOD_DIR" == "" ] ; then
 		 /opt/lib/apache/modules \
 		 /usr/lib/httpd/modules \
 		 /usr/local/lib/httpd/modules \
-		 /opt/lib/httpd/modules
+		 /opt/lib/httpd/modules \
+		 /usr/lib/apache2 \
+		 /usr/local/lib/apache2 \
+		 /opt/lib/apache2 \
+		 /usr/lib/httpd2 \
+		 /usr/local/lib/httpd2 \
+		 /opt/lib/httpd2 \
+		 /usr/lib/apache \
+		 /usr/local/lib/apache \
+		 /opt/lib/apache \
+		 /usr/lib/httpd \
+		 /usr/local/lib/httpd \
+		 /opt/lib/httpd
+ 
 	do
-		if [ -f $p/mod_fastcgi.* ] || [ -f $p/mod_scgi.* ] ; then
+		if [ -f $p/mod_alias.so ]; then
 			APACHE_MOD_DIR="$p"
+			APACHE_MOD_EXT=so
+			break;
+		elif [ -f $p/mod_alias.dll ]; then
+			APACHE_MOD_DIR="$p"
+			APACHE_MOD_EXT=dll
 			break;
 		fi
 	done
 fi
+
 if [ "$APACHE_MOD_DIR" == "" ] ; then
 	if [ "$1" == "exit" ] ; then
-		echo "Can't find "mod_fastcgi/mod_scgi" try specifing APACHE_MOD_DIR"
+		echo "Can't find apache modules directory try specifing APACHE_MOD_DIR"
 		exit 1;
 	else
 		WEB_SERVER=""
 		return
+	fi
+fi
+
+
+if ! [ -f "$APACHE_MOD_DIR/mod_fastcgi.$APACHE_MOD_EXT" ] && [ "$API" == "fastcgi" ]; then
+	if [ "$1" == "exit" ] ; then 
+		echo "Can't find apache fastcgi modue"
+		exit 1
+	else
+		WEB_SERVER=""
+	fi
+fi
+
+if ! [ -f "$APACHE_MOD_DIR/mod_scgi.$APACHE_MOD_EXT" ] && [ "$API" == "scgi" ]; then
+	if [ "$1" == "exit" ] ; then 
+		echo "Can't find apache scgi modue"
+		exit 1
+	else
+		WEB_SERVER=""
+	fi
+fi
+
+if ! [ -f "$APACHE_MOD_DIR/mod_proxy.$APACHE_MOD_EXT" ] && [ "$API" == "http" ]; then
+	if [ "$1" == "exit" ] ; then 
+		echo "Can't find apache proxy modue"
+		exit 1
+	else
+		WEB_SERVER=""
 	fi
 fi
 
@@ -422,14 +469,16 @@ cat >$DIR/apache.conf << EOF
 		DocumentRoot $ROOT
 	</VirtualHost>
 
-	LoadModule alias_module $APACHE_MOD_DIR/mod_alias.so
-	LoadModule mime_module $APACHE_MOD_DIR/mod_mime.so
+	LoadModule alias_module $APACHE_MOD_DIR/mod_alias.$APACHE_MOD_EXT
+	LoadModule mime_module $APACHE_MOD_DIR/mod_mime.$APACHE_MOD_EXT
 EOF
 
 if [ "$API" == "fastcgi" ];
 then
+
+
 cat >>$DIR/apache.conf <<EOF
-	LoadModule fastcgi_module $APACHE_MOD_DIR/mod_fastcgi.so
+	LoadModule fastcgi_module $APACHE_MOD_DIR/mod_fastcgi.$APACHE_MOD_EXT
 
 	FastCgiIpcDir $DIR/ipc
 	FastCgiExternalServer $DIR/myapp.fcgi $SERVICE_POINT
@@ -437,11 +486,30 @@ cat >>$DIR/apache.conf <<EOF
 	ScriptAliasMatch ^$SCRIPT(.*)$ $DIR/myapp.fcgi\$1
 	AddHandler fastcgi-script .fcgi
 EOF
-else
+
+
+elif [ "$API" == "scgi" ];
+then
+
+
 cat >>$DIR/apache.conf <<EOF
-	LoadModule scgi_module $APACHE_MOD_DIR/mod_scgi.so
+	LoadModule scgi_module $APACHE_MOD_DIR/mod_scgi.$APACHE_MOD_EXT
 	SCGIMount $SCRIPT $SERVICE_IP:$SERVICE_PORT
 EOF
+
+elif [ "$API" == "http" ]; 
+then
+
+
+cat >>$DIR/apache.conf <<EOF
+	LoadModule proxy_module $APACHE_MOD_DIR/mod_proxy.$APACHE_MOD_EXT
+	ProxyPass $SCRIPT http://$SERVICE_IP:$SERVICE_PORT$SCRIPT
+EOF
+
+
+else
+	echo "$API is not supported by apache"
+	exit 1;
 
 fi
 
