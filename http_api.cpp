@@ -272,7 +272,26 @@ namespace cgi {
 			}
 
 			env_["REQUEST_METHOD"]=request_method_;
-			env_["REMOTE_HOST"] = env_["REMOTE_ADDR"] = socket_.remote_endpoint().address().to_string();
+			std::string remote_addr;
+			if(service().settings().get("http.proxy.behind",false)) {
+				remote_addr=socket_.remote_endpoint().address().to_string();
+			}
+			else {
+				std::vector<std::string> default_headers;
+				default_headers.push_back("X-Forwarded-For");
+
+				std::vector<std::string> headers = 
+					service().settings().get("http.proxy.remote_addr_headers",default_headers);
+
+				for(unsigned i=0;i<headers.size();i++) {
+					std::map<std::string,std::string>::const_iterator p;
+					if((p=env_.find(headers[i]))!=env_.end()) {
+						remote_addr=p->second;
+						break;
+					}
+				}
+			}
+			env_["REMOTE_HOST"] = env_["REMOTE_ADDR"] = remote_addr;
 
 			if(request_uri_.empty() || request_uri_[0]!='/') {
 				response("HTTP/1.0 400 Bad Request\r\n\r\n",h);

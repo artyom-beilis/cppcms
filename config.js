@@ -1,5 +1,5 @@
 // CppCMS Configuration file
-// JSON format
+// Extended JSON format, "//" like comments are allowed
 
 {
 	// Service description
@@ -7,11 +7,20 @@
 		"procs" : 0,
 		"worker_threads": 5,
 		"api" : "http",
-		"port" : 8080,
-		"ip" : "0.0.0.0"
+		"port" : 8001,
+		// "ip" : "0.0.0.0"
+		"ip" : "127.0.0.1"
 		//  "socket" : "/tmp/scgi.socket"
 	},
 	"http" : {
+		"proxy" : {
+			"behind" : true,
+			"remote_addr_headers" : 
+				[ 
+			 		"X-Real-IP", // Nginx One
+					"X-Forwarded-For" // Standard One
+				]
+		},
 		"script_names" : [ "/stock", "/hello" , "/chat" ]
 		//"script" : "/hello"
 	},

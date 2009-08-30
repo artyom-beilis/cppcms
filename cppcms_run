@@ -168,22 +168,36 @@ nginx()
 {
 
 locate_server nginx $1
+
 [ "$WEB_SERVER" == "" ] && return
 
-if [ "$API" != "fastcgi" ] ; then
-	if [ "$1" == "exit" ] ; then 
-		echo "Nginx supports fastcgi only"
-		exit 1
-	else
-		WEB_SERVER=""
-		return
-	fi
-fi
+case $API in
+	fastcgi) ;;
+	http)	if [ "$SOCKET" != "" ]; then
+			if [ "$1" == "exit" ]; then
+				echo "http is supported over TCP/IP only" ; exit 1 
+			else
+				WEB_SERVER=""
+				return
+			fi
+		fi
+
+		;;
+	*) 
+		if [ "$1" == "exit" ]; then
+			echo "Mod $API is not supported by lightppd" ; exit 1 
+		else
+			WEB_SERVER=""
+			return
+		fi
+	;;
+esac
 
 CONFIG_FILE=$DIR/cppcms-nginx.conf 
 
 # This is fix for cygwin specific issue
 # of select
+
 case `uname` in 
 	*CYGWIN*) EVENT="use poll;" ;;
 esac
@@ -257,7 +271,12 @@ http {
         location / {
             index  index.html index.htm;
         }
-	
+EOF
+
+if [ "$API" != "http" ]; then 
+
+cat >>$CONFIG_FILE <<EOF
+
 	set \$path_info "";
 	if ( \$fastcgi_script_name ~ ^$SCRIPT(.*)\$ ) {
 		set \$path_info \$1;
@@ -286,11 +305,22 @@ http {
 		fastcgi_param  SERVER_PORT        \$server_port;
 		fastcgi_param  SERVER_NAME        \$server_name;
 	}
+EOF
 
+else # http
+
+cat >>$CONFIG_FILE <<EOF
+	location ~ ^$SCRIPT.*$ {
+		proxy_pass http://$SERVICE_IP:$SERVICE_PORT;
+		proxy_set_header  X-Forwarded-For \$remote_addr;
+	}
+EOF
+fi
+
+
+cat >>$CONFIG_FILE <<EOF
     }
-
 }
-
 EOF
 
 
