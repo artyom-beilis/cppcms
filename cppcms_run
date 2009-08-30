@@ -40,6 +40,16 @@ CONFIG_FILE=$DIR/lighty.conf
 case $API in
 	fastcgi) ;;
 	scgi) ;;
+	http)	if [ "$SOCKET" != "" ]; then
+			if [ "$1" == "exit" ]; then
+				echo "http is supported over TCP/IP only" ; exit 1 
+			else
+				WEB_SERVER=""
+				return
+			fi
+		fi
+
+		;;
 	*) 
 		if [ "$1" == "exit" ]; then
 			echo "Mod $API is not supported by lightppd" ; exit 1 
@@ -50,9 +60,16 @@ case $API in
 	;;
 esac
 
+if [ "$API" == "http" ]; then
+	LIGHTTPD_MODULE=proxy
+else
+	LIGHTTPD_MODULE=$API
+fi
+
+
 cat > $CONFIG_FILE << EOF
 
-server.modules              = ("mod_$API")
+server.modules              = ("mod_$LIGHTTPD_MODULE")
 server.document-root        = "$ROOT"
 server.pid-file		    = "$PID_FILE"
 # mimetype mapping
@@ -115,9 +132,15 @@ mimetype.assign             = (
 server.port = $PORT
 server.bind = "$HOST"
 
-$API.server = ( "$SCRIPT" => ( "localhost" => (
+
+$LIGHTTPD_MODULE.server = ( "$SCRIPT" => ( "localhost" => (
+EOF
+
+if [ "$LIGHTTPD_MODULE" != "http" ]; then
+cat >> $CONFIG_FILE << EOF
   "check-local" => "disable",
 EOF
+fi
 
 if [ "$SOCKET" != "" ]; then
 cat >> $CONFIG_FILE << EOF
@@ -134,7 +157,6 @@ fi
 
 cat >> $CONFIG_FILE << EOF
   )))
-
 
 EOF
 
@@ -482,8 +504,6 @@ fi
 if [ "$SERVICE_IP" == "" ]; then
 	SERVICE_IP=127.0.0.1
 fi
-
-echo "Socket=$SOCKET Port=$SERVICE_PORT"
 
 if [ "$SOCKET" == "" ] && [ "$SERVICE_PORT" == "" ] ; then
 	echo "Can't find service.socket or service.ip and service.port in $APP_CONFIG_FILE"
