@@ -662,7 +662,7 @@ void manager::set_cache(cache_factory *c)
 
 void manager::set_api(cgi_api *a)
 {
-	api=auto_ptr<cgi_api>(get_api());
+	api.reset(a);
 }
 
 void manager::set_mod(web_application *m)
