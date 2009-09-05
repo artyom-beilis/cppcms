@@ -1,5 +1,5 @@
 #ifndef CPPCMS_FORM_H
-#define CPPCMS_FORM_H 
+#define CPPCMS_FORM_H
 
 #include "defs.h"
 #include "noncopyable.h"
@@ -14,39 +14,72 @@
 
 namespace cppcms {
 
+	///
+	/// \brief This class is base class of any form or form-widget used in CppCMS.
+	///
+	/// It provides abstract basic operations that every widget or form should implement
+	///
+
 	class CPPCMS_API base_form {
 	public:
+		enum {
+			as_html = 0,	///< render form/widget as ordinary HTML
+			as_xhtml= 1,	///< render form/widget as XHTML
 
-		virtual void render(std::ostream &output,unsigned int flags) = 0;
-		virtual void load(http::context &) = 0;
-		virtual bool validate() = 0;
-		virtual void clear() = 0;
+			error_with    = 0 << 1, ///< display error message for widgets that failed validation
+			error_without = 1 << 1, ///< do not display error message for invalid widgets
 
-
-
-		enum {	
-			as_html = 0,
-			as_xhtml= 1,
-
-			error_with    = 0 << 1
-			error_without = 1 << 1,
-
-			as_p	= 0 << 2,
-			as_table= 1 << 2,
-			as_ul 	= 2 << 2,
-			as_dl	= 3 << 2,
-			as_space= 4 << 2
+			as_p	= 0 << 2, ///< Render each widget using paragraphs
+			as_table= 1 << 2, ///< Render each widget using table
+			as_ul 	= 2 << 2, ///< Render each widget using unordered list
+			as_dl	= 3 << 2, ///< Render each widget using definitions list
+			as_space= 4 << 2  ///< Render each widget using simple blank space separators
 
 			// to be extended
-		}
+		};
+
+
+		///
+		/// Render the widget to std::ostream \a output with control flags \a flags.
+		/// Usually this function is called directly by template rendering functions
+		///
+
+		virtual void render(std::ostream &output,unsigned int flags) = 0;
+
+
+		///
+		/// Load the information of form from the provided http::context \a context.
+		/// User calls this function for loading all information from the raw POST/GET
+		/// form to internal widget representation.
+		///
+
+		virtual void load(http::context &context) = 0;
+
+		///
+		/// Validate the form according to defined rules. If all checks are OK
+		/// true is returned. If some widget or form fails, false is returned.
+		///
+
+		virtual bool validate() = 0;
+
+		///
+		/// Clear the form from all user provided data.
+		///
+		virtual void clear() = 0;
+
 
 		virtual ~base_form(){}
 	};
 
-
+	///
+	/// \brief The \a form is a container that used to collect other widgets and forms to single unit
+	///
+	/// Generally various widgets and forms are combined into single form in order to simplify rendering
+	/// and validaion of forms that include more then one widget
+	///
 
 	class CPPCMS_API form :	public util::noncopyable,
-				public base_form 
+				public base_form
 	{
 	public:
 
@@ -56,14 +89,28 @@ namespace cppcms {
 
 
 		///
-		/// Render all widgets of this form to the \a output, using 
+		/// Render all widgets and sub-forms to \a output, using
 		/// base_form \a flags
 		///
-		
+
 		virtual void render(std::ostream &output,unsigned int flags);
 
-		virtual void load(http::context &);
+
+		///
+		/// Load all information from widgets from http::context \a cont
+		///
+		virtual void load(http::context &cont);
+
+		///
+		/// validate all subforms and widgets. If at least one of them fails,
+		/// false is returned. Otherwise, true is returned.
+		///
+
 		virtual bool validate();
+
+		///
+		/// Clear all subforms and widgets for all loaded data.
+		///
 		virtual void clear();
 
 		///
@@ -81,11 +128,29 @@ namespace cppcms {
 
 		void attach(base_form *subform);
 
+		///
+		/// Shortcut to \a add
+		///
 		inline form &operator + (base_form &f)
 		{
-			append(&f); 
-			return *this; 
+			add(&f);
+			return *this;
 		}
+
+		///
+		/// \brief Input iterator that is used to iterate over all widgets of the form
+		///
+		/// This class is mainly used by templates framework for widgets rendering. It
+		/// walks on all widgets and subforms recursively.
+		///
+		/// Note: it walks over widgets only:
+		///
+		/// \code
+		/// iterator p=f.begin();
+		/// if(p!=f.end())
+		///   if p!=f.end() --> *p is derived from widgets::base_widget.
+		/// \endcode
+		///
 
 		class iterator : public std::iterator<std::input_iterator_tag,base_from>
 		{
@@ -97,7 +162,7 @@ namespace cppcms {
 
 			pointer_type operator->() const
 			{
-				return get()
+				return get();
 			}
 			reference operator*() const
 			{
@@ -125,11 +190,11 @@ namespace cppcms {
 				return *this;
 			}
 
-			
+
 		private:
-			
+
 			friend class form;
-			
+
 			void equal(iterator const &other) const;
 			void next();
 			pointer_type get() const;
@@ -138,7 +203,14 @@ namespace cppcms {
 
 		};
 
+		///
+		/// Returns an iterator to the first widget.
+		///
 		iterator begin();
+
+		///
+		/// Returns the end-iterator for walking over all widgets.
+		///
 		iterator end();
 
 
@@ -165,13 +237,13 @@ namespace cppcms {
 			base_widget(base_widget const &other);
 			base_widget const &operator = (base_widget const &other);
 			virtual ~base_widget();
-			
-				
+
+
 			bool set();
 			bool valid();
 			std::string id();
 			std::string name();
-			std::string message()
+			std::string message();
 			std::string error_message();
 			std::string help();
 
@@ -179,7 +251,7 @@ namespace cppcms {
 			void valid(bool);
 			void id(std::string);
 			void name(std::string);
-			void message(std::string)
+			void message(std::string);
 			void error_message(std::string);
 			void help(std::string);
 
@@ -225,7 +297,7 @@ namespace cppcms {
 			string &str();
 			string const &get();
 			virtual bool validate();
-			virtual void load(cgicc::Cgicc const &cgi);
+			virtual void load(http::context &);
 		};
 
 
@@ -243,7 +315,7 @@ namespace cppcms {
 				non_empty_(false)
 			{
 			}
-			
+
 			void non_empty()
 			{
 				non_empty_=true;
@@ -301,7 +373,7 @@ namespace cppcms {
 				if(flags & as_xhtml)
 					outout<<"/>";
 				else
-					output<<">"
+					output<<">";
 			}
 
 			void load(http::context &context)
@@ -392,7 +464,7 @@ namespace cppcms {
 		class regex_field : public text {
 			util::regex const *exp;
 		public:
-			regex_field() : exp(0) {}	
+			regex_field() : exp(0) {}
 			regex_field(util::regex const &e,string name="",string msg="") : text(name,msg),exp(&e) {}
 			virtual bool validate();
 		};
@@ -427,10 +499,10 @@ namespace cppcms {
 			void add(string val,string opt,bool selected=false);
 			void add(int val,string opt,bool selected=false);
 			void add(string v,bool s=false) { add(v,v,s); }
-			void add(int v,bool s=false) { 
+			void add(int v,bool s=false) {
 				ostringstream ss;
 				ss<<v;
-				add(v,ss.str(),s); 
+				add(v,ss.str(),s);
 			}
 			set<string> &get() { return chosen; };
 			set<int> geti();
@@ -456,7 +528,7 @@ namespace cppcms {
 			void add(int v) {
 				ostringstream ss;
 				ss<<v;
-				add(v,ss.str()); 
+				add(v,ss.str());
 			}
 			void set(string value);
 			void set(int value);
