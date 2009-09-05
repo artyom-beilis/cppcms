@@ -407,9 +407,9 @@ if ! [ -f "$APACHE_MOD_DIR/mod_scgi.$APACHE_MOD_EXT" ] && [ "$API" == "scgi" ]; 
 	fi
 fi
 
-if ! [ -f "$APACHE_MOD_DIR/mod_proxy.$APACHE_MOD_EXT" ] && [ "$API" == "http" ]; then
+if ! [ -f "$APACHE_MOD_DIR/mod_proxy_http.$APACHE_MOD_EXT" ] && [ "$API" == "http" ]; then
 	if [ "$1" == "exit" ] ; then 
-		echo "Can't find apache proxy modue"
+		echo "Can't find apache proxy_http modue"
 		exit 1
 	else
 		WEB_SERVER=""
@@ -503,6 +503,7 @@ then
 
 cat >>$DIR/apache.conf <<EOF
 	LoadModule proxy_module $APACHE_MOD_DIR/mod_proxy.$APACHE_MOD_EXT
+	LoadModule proxy_http_module $APACHE_MOD_DIR/mod_proxy_http.$APACHE_MOD_EXT
 	ProxyPass $SCRIPT http://$SERVICE_IP:$SERVICE_PORT$SCRIPT
 EOF
 
