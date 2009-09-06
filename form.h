@@ -14,6 +14,10 @@
 
 namespace cppcms {
 
+	namespace widgets {
+		class base_widget;
+	}
+
 	///
 	/// \brief This class is base class of any form or form-widget used in CppCMS.
 	///
@@ -68,7 +72,8 @@ namespace cppcms {
 		virtual void clear() = 0;
 
 
-		virtual ~base_form(){}
+		base_form();
+		virtual ~base_form();
 	};
 
 	///
@@ -114,29 +119,52 @@ namespace cppcms {
 		virtual void clear();
 
 		///
-		/// Adds \a subform to form, the ownership is not transferred to
-		/// to the parent, it is useful for normal widgets
+		/// adds \a subform to form, the ownership is not transferred to
+		/// to the parent
 		///
 
-		void add(base_form &subform);
+		void add(form &subform);
 
 		///
-		/// Add \a subform to form, the owenrshit is transferred to
-		/// the parent widget and subform will be destroyed together with
+		/// add \a subform to form, the owenrshit is transferred to
+		/// the parent and subform will be destroyed together with
+		/// the parent
+		///
+
+		void attach(form *subform);
+
+		///
+		/// adds \a widget to form, the ownership is not transferred to
+		/// to the parent
+		///
+
+		void add(widgets::base_widget &widget);
+
+		///
+		/// add \a widget to form, the owenrshit is transferred to
+		/// the parent the widget will be destroyed together with
 		/// the parent form
 		///
 
-		void attach(base_form *subform);
+		void attach(widgets::base_widget *widget);
 
 		///
 		/// Shortcut to \a add
 		///
-		inline form &operator + (base_form &f)
+		inline form &operator + (form &f)
 		{
 			add(&f);
 			return *this;
 		}
-
+		
+		///
+		/// Shortcut to \a add
+		///
+		inline form &operator + (widgets::base_widget &f)
+		{
+			add(&f);
+			return *this;
+		}
 		///
 		/// \brief Input iterator that is used to iterate over all widgets of the form
 		///
@@ -195,7 +223,7 @@ namespace cppcms {
 
 			friend class form;
 
-			void equal(iterator const &other) const;
+			bool equal(iterator const &other) const;
 			void next();
 			pointer_type get() const;
 
@@ -228,14 +256,14 @@ namespace cppcms {
 
 	namespace widgets {
 
-		class CPPCMS_API base_widget : public base_form {
+		class CPPCMS_API base_widget : 	
+			public base_form,
+			public util::noncopyable
+		{
 		public:
-
-			base_widget(std::string name,std::string msg="");
-
 			base_widget();
-			base_widget(base_widget const &other);
-			base_widget const &operator = (base_widget const &other);
+			base_widget(std::string name);
+			base_widget(std::string name,std::string msg);
 			virtual ~base_widget();
 
 
@@ -259,7 +287,6 @@ namespace cppcms {
 			virtual void render(std::ostream &output,unsigned int flags);
 			virtual void render_input_start(std::ostream &output,unsigned flags) = 0;
 			virtual void render_input_end(std::ostream &output,unsigned flags) = 0;
-			virtual void render_error(unsigned flags);
 			virtual void clear();
 			virtual bool validate();
 
@@ -274,7 +301,7 @@ namespace cppcms {
 			bool is_set_;
 
 			struct data;
-			util::copy_ptr<data> d;
+			util::hold_ptr<data> d;
 		};
 
 

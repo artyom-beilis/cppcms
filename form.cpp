@@ -2,15 +2,309 @@
 #include "form.h"
 #include "util.h"
 
-#include <cgicc/Cgicc.h>
 #include <boost/format.hpp>
 #include <iostream>
 #include "cppcms_error.h"
 
 namespace cppcms {
+
+base_form::base_form()
+{
+}
 base_form::~base_form()
 {
 }
+
+form::form()
+{
+}
+form::~form()
+{
+	for(unsigned i=0;i<elements_.size();i++) {
+		if(elements_[i].second)
+			delete elements_[i].first;
+	}
+}
+
+
+// Meanwhile -- empty
+struct form::data {
+// TOADD
+};
+
+void form::render(std::ostream &output,unsigned int flags)
+{
+	for(unsigned int i=0;i<elements_.size();i++) {
+		elements_[i].first->render(output,flags);
+	}
+}
+
+void form::load(http::context &cont) 
+{
+	for(unsigned int i=0;i<elements_.size();i++) {
+		elements_[i].first->load(cont);
+	}
+}
+
+bool form::validate() 
+{
+	bool result=true;
+	for(unsigned int i=0;i<elements_.size();i++) {
+		if(!elements_[i].first->validate())
+			result=false;
+	}
+	return result;
+}
+
+void form::clear()
+{
+	for(unsigned int i=0;i<elements_.size();i++) {
+		elements_[i].first->clear();
+	}
+}
+
+void form::add(base_form &subform)
+{
+	elements_.push_back(std::make_pair(&subform,false));
+}
+
+void form::attach(base_form *subform)
+{
+	elements_.push_back(std::make_pair(subform,true));
+}
+
+struct form::iterator::data {
+	std::stack<std::pair<form *,size_t> > stack;
+	int pos;
+	data() : pos(-1) {}	
+};
+
+form::iterator::iterator() : d(new form::iterator::data)
+{
+}
+
+form::iterator::~iterator()
+{
+}
+
+form::iterator::iterator(form::iterator const &other)  : d(other.d)
+{
+}
+
+form::iterator const &form::iterator::operator=(form::iterator const &other)
+{
+	d=other.d;
+	return *this;
+}
+
+bool form::iterator::equal(form::iterator const &other)
+{
+	return d->stack == other.d->stack && d->pos=other.d->pos;
+}
+
+void form::iterator::next()
+{
+	for(;;) {
+		if(d->stack.empty()) {
+			d->pos=-1;
+			return;
+		}
+
+		form *top=d->stack.top().first;
+		d->pos++;
+
+		if((size_t)pos >= top->elements_.size() ) {
+			d->pos=d->stack.top().second;
+			d->stack.pop();
+			continue;
+		}
+
+		if(dynamic_cast<widgets::base_widget *>(top->elements_[d->pos].first)!=0)
+			return;
+
+		form &f=dynamic_cast<form &>(*top->elements_[d->pos].first);
+		
+		d->stack.push_back(std::make_pair(&f,d->pos));
+		d->pos=-1;
+	}
+}
+
+form::iterator::pointer_type form::iterator::get() const
+{
+	return static_cast<base_widget *>(d->stack.top().first)->elements_[d->pos].first
+}
+
+form::iterator form::begin()
+{
+	form::iterator p;
+	p.d->stack.push(std::make_pair(this,-1));
+	++p;
+	return p;
+}
+
+form::iterator form::end()
+{
+	return form::iterator();
+}
+
+
+namespace widgets {
+
+struct base_widget::data {};
+
+base_widget::base_widget() : is_valid_(true), is_set_(false)
+{
+}
+
+base_widget::base_widget(std::string name) : name_(name), is_valid_(true), is_set_(false)
+{
+}
+
+base_widget::base_widget(std::string name,std::string msg) : name_(name),msg_(msg) , is_valid_(true), is_set_(false)
+{
+}
+
+bool base_widget::set()
+{
+	return is_set_;
+}
+bool base_widget::valid()
+{
+	return is_valid_;
+}
+std::string base_widget::id()
+{
+	return id_;
+}
+std::string base_widget::name()
+{
+	return name_;
+}
+std::string base_widget::message()
+{
+	return message_;
+}
+std::string base_widget::error_message()
+{
+	return error_message_;
+}
+std::string base_widget::help()
+{
+	return help_;
+}
+
+void base_widget::set(bool v)
+{
+	is_set_=v;
+}
+void base_widget::valid(bool v)
+{
+	is_valid_=v;
+}
+void base_widget::id(std::string v)
+{
+	id_=v;
+}
+void base_widget::name(std::string v)
+{
+	name_=v;
+}
+void base_widget::message(std::string v)
+{
+	message_=v;
+}
+void base_widget::error_message(std::string v)
+{
+	error_message_=v;
+}
+void base_widget::help(std::string v)
+{
+	help_=v;
+}
+
+void base_widget::render(std::ostream &output,unsigned int flags)
+{
+	int how = flags & (~3);
+	bool no_error = flags & error_without;
+	std::string err = error_message();
+	if(err.empty()) err="*";
+
+	switch(how) {
+	case as_p: output<<"<p>"; break;
+	case as_table: output<<"<tr><th>"; break;
+	case as_ul: output<<"<li>"; break;
+	case as_dl: output<<"<dt>"; break;
+	default;
+	}
+	if(!id().empty() && !msg().empty()) {
+		output<<"<label for=\"" << id() << "\">" << util::escape(msg()) <<":</label> ";
+	}
+	else {
+		output<<"&nbsp;";
+	}
+	switch(how) {
+	case as_table: output<<"</th><td>"; break;
+	case as_dl: output<<"</dt><dd>"; break;
+	default;
+	}
+
+	if(!valid() && !no_error) {
+		output<<"<span class=\"cppcms_form_error\">"<<util::escape(err)<<"</span> "
+	}
+	else {
+		output<<"&nbsp;";
+	}
+	output<<"<span class=\"cppcms_form_input\">";
+	render_input_start(output,flags);
+	render_input_end(output,flags);
+	output<<"</span>";
+
+	if(!help().empty()) {
+		output<<"<span class=\"cppcms_form_help\">"<<util::escape(help)<<"</span>";
+	}
+		
+	switch(how) {
+	case as_p: output<<"</p>"; break;
+	case as_table: output<<"</td><tr>"; break;
+	case as_ul: output<<"</li>"; break;
+	case as_dl: output<<"</dd>"; break;
+	case as_space: 
+		if(flags & as_xhtml) 
+			output<<"<br />";
+		else
+			output<<"<br>";
+		break;
+	default;
+	}
+}
+
+void base_widget::clear()
+{
+	set(false);
+}
+
+bool base_widget::validate()
+{
+	valid(true);
+	return true;
+}
+
+
+} // widgets 
+
+} // cppcms
+/*
+
+
+////////////////////////////////////////
+/////////////////////////////////
+
+
+/// Old Code
+
+
+
+
 
 void form::append(base_form *ptr)
 {
@@ -568,4 +862,4 @@ void submit::load(cgicc::Cgicc const &cgi)
 
 } // Namespace widgets 
 
-} // namespace cppcms
+} // namespace cppcms*/
