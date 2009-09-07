@@ -48,7 +48,9 @@ libcppcms_la_SOURCES = \
 	http_api.cpp \
 	atomic_counter.cpp \
 	aio_timer.cpp \
-	json.cpp
+	json.cpp \
+	encoding.cpp \
+	locale_charset.cpp
 
 
 cppcms_config_find_param_SOURCES=cppcms_config_find_param.cpp json.cpp
