@@ -3,6 +3,8 @@
 #include "cppcms_error.h"
 #include "locale_gettext.h"
 #include "locale_info.h"
+#include "locale_charset.h"
+#include "encoding.h"
 #include "json.h"
 #include <vector>
 #include <map>
@@ -31,6 +33,8 @@ pool::pool(json::value const &settings) :
 	default_domain=settings.get("locale.default_gettext_domain",default_domain);
 	std::vector<std::string> const &locales=settings.get("locale.locales",std::vector<std::string>());
 
+	intrusive_ptr<encoding::validators_set> validators(new encoding::validators_set);
+
 	for(unsigned i=0;i<locales.size();i++) {
 		std::string name=locales[i];
 		std::auto_ptr<gettext> gt(new gettext());
@@ -51,7 +55,12 @@ pool::pool(json::value const &settings) :
 
 		boost::shared_ptr<std::locale> combined(new std::locale(*base,gt.release()));
 		base=combined;
-		combined.reset(new std::locale(*base,new info(name)));
+
+		std::auto_ptr<info> inf(new info(name));
+		std::string enc=inf->encoding();
+		combined.reset(new std::locale(*base,inf.release()));
+		base=combined;
+		combined.reset(new std::locale(*base,new charset(enc,validators)));
 		d->locales[name]=combined;
 	}
 }

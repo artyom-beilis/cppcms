@@ -1,5 +1,7 @@
+#define CPPCMS_SOURCE
 #include "encoding_validators.h"
 #include "encoding.h"
+#include "cppcms_error.h"
 #include <iconv.h>
 #include <errno.h>
 #include <string>
@@ -8,7 +10,19 @@
 
 namespace cppcms { namespace encoding {
 
-	char const *native_unicode_encoding()
+	typedef size_t (*posix_iconv_type)(iconv_t cd,char **, size_t *t,char **,size_t *);
+	typedef size_t (*gnu_iconv_type)(iconv_t cd,char const **, size_t *t,char **,size_t *);
+
+	size_t do_iconv(posix_iconv_type cv,iconv_t cd,char const **inbuf, size_t *inbytesleft,char **outbuf,size_t *outbytesleft)
+	{
+		return cv(cd,const_cast<char **>(inbuf),inbytesleft,outbuf,outbytesleft);
+	}
+	size_t do_iconv(gnu_iconv_type cv,iconv_t cd,char const **inbuf, size_t *inbytesleft,char **outbuf,size_t *outbytesleft)
+	{
+		return cv(cd,inbuf,inbytesleft,outbuf,outbytesleft);
+	}
+
+	char const *native_utf32_encoding()
 	{
 		char const *le="UTF-32LE";
 		char const *be="UTF-32BE";
@@ -16,17 +30,23 @@ namespace cppcms { namespace encoding {
 		char const *utf=*(char*)&v== 0x0a ? be : le;
 		return utf;
 	}
-	char const *native_wchar_encoding()
+	
+	char const *native_utf16_encoding()
 	{
-		if(sizeof(wchar_t)==4)
-			return native_unicode_encoding();
-		if(sizeof(wchar_t)!=2)
-			throw std::runtime_error("wchar_t does not support unicode!");
 		char const *le="UTF-16LE";
 		char const *be="UTF-16BE";
 		uint16_t v=0x0a0b;
 		char const *utf=*(char*)&v== 0x0a ? be : le;
 		return utf;
+	}
+
+	char const *native_wchar_encoding()
+	{
+		if(sizeof(wchar_t)==4)
+			return native_utf32_encoding();
+		if(sizeof(wchar_t)==2)
+			return native_utf16_encoding();
+		throw std::runtime_error("wchar_t does not support unicode!");
 	}
 	
 	class iconv_validator {
@@ -40,7 +60,7 @@ namespace cppcms { namespace encoding {
 		iconv_validator(std::string const &charset) :
 			descriptor_((iconv_t)(-1))
 		{
-			descriptor_=iconv_open(native_unicode_encoding(),charset.c_str());
+			descriptor_=iconv_open(native_utf32_encoding(),charset.c_str());
 			if(descriptor_==(iconv_t)(-1)) {
 				throw std::runtime_error("Failed to load iconv tables for:" + charset);
 			}
@@ -72,7 +92,7 @@ namespace cppcms { namespace encoding {
 				uint32_t *output=buffer;
 				size_t outsize=sizeof(buffer);
 
-				size_t res=iconv(descriptor_,const_cast<char**>(&begin),&input,(char**)&output,&outsize);
+				size_t res=do_iconv(::iconv,descriptor_,&begin,&input,(char**)&output,&outsize);
 
 				if(res==(size_t)(-1) && errno==E2BIG)  {
 					if(!check_symbols(buffer,output))
@@ -88,6 +108,7 @@ namespace cppcms { namespace encoding {
 
 	};
 
+	struct validator::data {};
 
 	validator::validator(encoding_tester_type enc) :
 		tester_(enc),
@@ -133,6 +154,8 @@ namespace cppcms { namespace encoding {
 			return tester_(begin,end);
 		return iconv_->valid(begin,end);
 	}
+
+	struct validators_set::data {};
 
 	validators_set::validators_set() 
 	{
@@ -243,6 +266,15 @@ namespace cppcms { namespace encoding {
 		predefined_["us-ascii"]=predefined_["ascii"]=&ascii_valid<char const *>;
 	}
 
+	validators_set::~validators_set()
+	{
+	}
+
+	void validators_set::add(std::string const &encoding,encoding_tester_type tester) 
+	{
+		predefined_[encoding]=tester;
+	}
+
 	validator validators_set::operator[](std::string s) const
 	{
 		for(unsigned i=0;i<s.size();i++) {
@@ -255,72 +287,84 @@ namespace cppcms { namespace encoding {
 		}
 		return validator(s);
 	}
-
-	std::string to_string(std::wstring const &s)
-	{
-		std::string result;
-		result.reserve(s.size());
-		if(sizeof(wchar_t)==2) {
-			std::wstring::const_iterator p=s.begin(),e=s.end();
-			while(p!=e) {
-				uint32_t point;
-				if(sizeof(wchar_t)==2) {
-					point=utf16::next(p,e);
-					if(point==utf::illegal)
-						break;
-				}
-				else {
-					point=*p++;
-					if(!utf::valid(point))
-						break;
-				}
-				utf8::seq s=utf8::encode(point);
-				result+=s.c[0];
-				result.append(s.c+1);
-			}
-		}
-		return result;
-	}
-	std::string to_string(std::wstring const &s,std::locale const &locale)
-	{
-		throw std::runtime_error("Unsuppoteed");
-	}
-	std::string to_string(std::wstring const &s,std::string const &encoding)
-	{
-		throw std::runtime_error("Unsuppoteed");
-	}
-
-	std::wstring to_wstring(std::string const &s)
-	{
-		std::wstring result;
-		result.reserve(s.size());
-		std::string::const_iterator p=s.begin(),e=s.end();
-		while(p!=e) {
-			std::cerr<<p-s.begin()<<std::endl;
-			uint32_t point=utf8::next(p,e,false,true);
-			if(point==utf::illegal)
-				break;
-			if(sizeof(wchar_t)==2) {
-				utf16::seq s=utf16::encode(point);
-				result+=wchar_t(s.c[0]);
-				if(s.c[1]) result+=wchar_t(s.c[1]);
-			}
-			else {
-				result+=wchar_t(point);
-			}
-		}
-		return result;
-	}
-	std::wstring to_wstring(std::string const &s,std::locale const &locale)
-	{
-		throw std::runtime_error("Unsuppoteed");
-	}
-	std::wstring to_wstring(std::string const &s,std::string const &encoding)
-	{
-		throw std::runtime_error("Unsuppoteed");
-	}
-
 	
+	struct converter::data 
+	{
+	};	
+
+	converter::converter(std::string charset) :
+		charset_(charset)
+	{	
+	}
+
+	converter::~converter()
+	{
+	}
+
+	namespace {
+		template<typename CharOut>
+		std::basic_string<CharOut> convert_to(char const *to,char const *from,char const *begin,char const *end)
+		{
+			iconv_t d=iconv_open(to,from);
+			if(d==(iconv_t)(-1)) 
+				throw cppcms_error("Unsupported encoding "+std::string(to));
+			std::basic_string<CharOut> result;
+			try {
+				CharOut buffer[256];
+				size_t input=end-begin;
+				while(begin!=end) {
+					CharOut *output=buffer;
+					size_t outsize=sizeof(buffer);
+
+					size_t res=do_iconv(::iconv,d,&begin,&input,(char**)&output,&outsize);
+
+					if(res==(size_t)(-1) && errno==E2BIG)  {
+						result.append(buffer,output);
+						continue;
+					}
+					if(res!=(size_t)(-1) && input==0) {
+						result.append(buffer,output);
+						break;
+					}
+					throw cppcms_error("Encoding conversion failed");
+				}
+				
+			}
+			catch(...) {
+				iconv_close(d);
+			}
+			iconv_close(d);
+			return result;
+		}
+
+	} // namespace
+
+	std::string converter::to_utf8(char const *begin,char const *end)
+	{
+		return convert_to<char>("utf-8",charset_.c_str(),begin,end);
+	}
+	std::basic_string<uint16_t> converter::to_utf16(char const *begin,char const *end)
+	{
+		return convert_to<uint16_t>(native_utf16_encoding(),charset_.c_str(),begin,end);
+	}
+	std::basic_string<uint32_t> converter::to_utf32(char const *begin,char const *end)
+	{
+		return convert_to<uint32_t>(native_utf32_encoding(),charset_.c_str(),begin,end);
+	}
+
+	std::string converter::from_utf8(char const *begin,char const *end)
+	{
+		return convert_to<char>(charset_.c_str(),"utf-8",begin,end);
+	}
+	std::string converter::from_utf16(uint16_t const *begin,uint16_t const *end)
+	{
+		return convert_to<char>(charset_.c_str(),native_utf16_encoding(),(char const *)begin,(char const *)end);
+	}
+	std::string converter::from_utf32(uint32_t const *begin,uint32_t const *end)
+	{
+		return convert_to<char>(charset_.c_str(),native_utf32_encoding(),(char const *)begin,(char const *)end);
+	}
+
 	
 	
 } } // cppcms::encoding

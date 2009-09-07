@@ -5,6 +5,11 @@
 #include <map>
 #include <locale>
 #include "defs.h"
+#include "hold_ptr.h"
+#include "copy_ptr.h"
+#include "noncopyable.h"
+#include "refcounted.h"
+#include "intrusive_ptr.h"
 			
 // For unit test;
 int cppcms_validator_test_function(); 
@@ -17,12 +22,7 @@ namespace cppcms {
 		class iconv_validator;
 
 		class CPPCMS_API validator {
-			std::string charset_;
-			encoding_tester_type tester_;
-			iconv_validator *iconv_;
-
 		public:
-
 			validator(encoding_tester_type tester);
 			validator(std::string charset);
 
@@ -34,43 +34,54 @@ namespace cppcms {
 			bool valid(std::string const &str);
 
 			~validator();
+		private:
+			std::string charset_;
+			encoding_tester_type tester_;
+			iconv_validator *iconv_;
+
+			struct data;
+			util::copy_ptr<data> d;
 		};
 		
-		class CPPCMS_API validators_set {
-			friend int ::cppcms_validator_test_function(); 
-			std::map<std::string,encoding_tester_type> predefined_;
+		class CPPCMS_API validators_set : 
+			public refcounted,
+			public util::noncopyable
+		{
 		public:
 			validators_set();
-			void add(std::string const &encoding,encoding_tester_type tester) 
-			{
-				predefined_[encoding]=tester;
-			}
+			~validators_set();
+
+			void add(std::string const &encoding,encoding_tester_type tester);
 			validator operator[](std::string) const;
+		private:
+			struct data;
+			util::hold_ptr<data> d;
+			friend int ::cppcms_validator_test_function(); 
+			std::map<std::string,encoding_tester_type> predefined_;
 		};
 
-		class CPPCMS_API converter {
-			std::string encoding_;
+		char const CPPCMS_API *native_utf32_encoding();
+		char const CPPCMS_API *native_utf16_encoding();
+		char const CPPCMS_API *native_wchar_encoding();
+
+		class CPPCMS_API converter : util::noncopyable {
 		public:
-			converter(std::string const &encoding);
-			converter(converter const &other);
-			converter const &operator=(converter const &other);
+			converter(std::string charset);
 			~converter();
 
-			std::wstring operator()(std::string const &);
-			std::string operator()(std::wstring const &);
+			std::string to_utf8(char const *begin,char const *end);
+			std::basic_string<uint16_t> to_utf16(char const *begin,char const *end);
+			std::basic_string<uint32_t> to_utf32(char const *begin,char const *end);
+
+			std::string from_utf8(char const *begin,char const *end);
+			std::string from_utf16(uint16_t const *begin,uint16_t const *end);
+			std::string from_utf32(uint32_t const *begin,uint32_t const *end);
+		private:
+			std::string charset_;
+			struct data;
+			util::hold_ptr<data> d;
 		};
-		
-		char const *native_unicode_encoding();
-		char const *native_wchar_encoding();
 
-
-		std::string CPPCMS_API to_string(std::wstring const &);
-		std::string CPPCMS_API to_string(std::wstring const &,std::locale const &locale);
-		std::string CPPCMS_API to_string(std::wstring const &,std::string const &encoding);
-
-		std::wstring CPPCMS_API to_wstring(std::string const &);
-		std::wstring CPPCMS_API to_wstring(std::string const &,std::locale const &locale);
-		std::wstring CPPCMS_API to_wstring(std::string const &,std::string const &encoding);
 
 	}  // encoding
 } // cppcms

@@ -96,6 +96,22 @@ AM_CONDITIONAL(EN_ENCR_SESSIONS,[test "x$have_gcrypt" = "xyes" ])
 
 have_auto_type_detection=no
 
+AC_CHECK_SIZEOF([wchar_t])
+
+AC_TRY_COMPILE([#include <string>
+		],
+		[std::wstring s;],
+		[AC_DEFINE([HAVE_STD_WSTRING],[],["Have std::wstring"])
+			have_auto_type_detection=yes
+			echo "std::wstring... ok"],[echo "std::wstring... not supported"])
+
+AC_TRY_COMPILE([#include <string>
+		],
+		[std::u16string s16; std::u32string s32;],
+		[AC_DEFINE([HAVE_CPP0X_UXSTRING],[],["Have C++0x std::uXXstring"])
+			have_auto_type_detection=yes
+			echo "std::uXXstring... ok"],[echo "std::uXXstring... not supported"])
+
 AC_TRY_COMPILE([],[int \$1=10;],[
 	AC_DEFINE([HAVE_DOLLAR_SIGN],[],["Can use $ in indentifiers"])
 	echo "Check: $ is supported in identifiers"
@@ -146,8 +162,6 @@ fi
 
 
 
-AC_CHECK_HEADER(fastcgi/fcgiapp.h ,[AC_DEFINE([EN_FASTCGI_LONG_PATH],[],["Fastcgi headers in fastcgi dir"])],[])
-
 if test "x$enable_tcpcache" != "xno" ; then
 
 	store_flags="$CXXFLAGS"
@@ -197,8 +211,6 @@ fi
 
 
 AM_CONDITIONAL(EN_TCP_CACHE,[test "x$have_asio" = "xyes" ])
-
-AC_CHECK_LIB(cgicc,main,[CPPCMS_LIBS="-lcgicc $CPPCMS_LIBS"],[echo "cgicc not found" ; exit -1])
 
 if test "x$cms_bld" = "xnormal"
 then
