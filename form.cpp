@@ -150,17 +150,34 @@ form::iterator form::end()
 
 namespace widgets {
 
+////////////////////////////////
+// widgets::base_widget
+////////////////////////////////
+
+
 struct base_widget::data {};
 
-base_widget::base_widget() : is_valid_(true), is_set_(false)
+base_widget::base_widget() : 
+	is_valid_(1),
+	is_set_(0),
+	is_disabled_(0)
 {
 }
 
-base_widget::base_widget(std::string name) : name_(name), is_valid_(true), is_set_(false)
+base_widget::base_widget(std::string name) :
+	name_(name), 
+	is_valid_(1),
+	is_set_(0),
+	is_disabled_(0)
 {
 }
 
-base_widget::base_widget(std::string name,std::string msg) : name_(name),msg_(msg) , is_valid_(true), is_set_(false)
+base_widget::base_widget(std::string name,std::string msg) :
+	name_(name),
+	msg_(msg),
+	is_valid_(1),
+	is_set_(0),
+	is_disabled_(0)
 {
 }
 
@@ -222,6 +239,16 @@ void base_widget::help(std::string v)
 	help_=v;
 }
 
+void base_widget::attributes_string(std::string v)
+{
+	attr_=v;
+}
+
+std::string base_widget::attributes_string()
+{
+	return attr_;
+}
+
 void base_widget::render(std::ostream &output,unsigned int flags)
 {
 	int how = flags & (~3);
@@ -256,6 +283,7 @@ void base_widget::render(std::ostream &output,unsigned int flags)
 	}
 	output<<"<span class=\"cppcms_form_input\">";
 	render_input_start(output,flags);
+	output<<attr_;
 	render_input_end(output,flags);
 	output<<"</span>";
 
@@ -288,6 +316,153 @@ bool base_widget::validate()
 	valid(true);
 	return true;
 }
+
+////////////////////////////////
+// widgets::text
+////////////////////////////////
+
+
+struct text::data {}
+
+
+
+text::text() : low_(0),high_(-1),validate_charset_(true)
+{
+}
+
+text::text(std::string name) : base_widget(name), low_(0),high_(-1),validate_charset_(true)
+
+{
+}
+
+text::text(std::string name,std::string msg) : base_widget(name,msg), low_(0),high_(-1),validate_charset_(true)
+
+{
+}
+
+text::~text()
+{
+}
+
+std::string text::value()
+{
+	if(!set())
+		throw cppcms_error("Value was not loaded");
+	return value_;
+}
+
+void text::value(std::string v)
+{
+	set(true);
+	value_=v;
+}
+
+std::string text::value(std::locale const &v)
+{
+	return std::use_facet<locale::charset>(v).to_utf8(value_);
+}
+#ifdef HAVE_STD_WSTRING
+std::string text::value_wstring(std::locale const &v)
+{
+	return std::use_facet<locale::charset>(v).to_wstring(value_);
+}
+
+void text::value(std::wstring v,std::locale const &l)
+{
+	value(std::use_facet<locale::charset>(l).from_wstring(v));
+}
+
+#endif
+
+#ifdef HAVE_CPP0X_UXSTRING
+
+std::u16string text::value_u16string(std::locale const &v)
+{
+	return std::use_facet<locale::charset>(v).to_u16string(value_);
+}
+
+void text::value(std::u16string v,std::locale const &l)
+{
+	value(std::use_facet<locale::charset>(l).from_u16string(v));
+}
+
+
+std::u32string text::value_u32string(std::locale const &v)
+{
+	return std::use_facet<locale::charset>(v).to_u32string(value_);
+}
+
+void text::value(std::u32string v,std::locale const &l)
+{
+	value(std::use_facet<locale::charset>(l).from_u32string(v));
+}
+
+#endif
+
+#ifdef HAVE_ICU
+icu::UnicodeString text::value_icu_string(std::locale const &v)
+{
+	return std::use_facet<locale::charset>(v).to_icu_string(value_);
+}
+void text::value(icu::UnicodeString const &v,std::locale const &l)
+{
+	value(std::use_facet<locale::charset>(l).from_icu_string(v));
+}
+
+#endif
+
+void text::non_empty()
+{
+	limits(1,-1);
+}
+
+void text::limits(int min,int max)
+{
+	low_=min;
+	high_=max;
+}
+
+void text::disable_charset_validation()
+{
+	validate_charset_=false;
+}
+
+void text::load(http::context &context)
+{
+	value_.clear();
+	set(false);
+	valid(true);
+	if(name().empty()) {
+		return;
+	}
+	http::request::form_type::const_iterator p;
+	p=context.request().post_or_get().find(name());
+	if(p==context.request().post_or_get().end()) {
+		return;	
+	}
+	value_=p->second;
+	set(true);
+	if(validate_charset_) {
+		locale::charset const &charset=std::use_facet<locale::charset>(context.locale().get());
+		if(!charset.validate(value))
+			valid(false);
+	}
+}
+
+bool text::validate()
+{
+	if(!valid())
+		return false;
+	if(!set() && low_=0 && high_==-1) {
+		valid(true);
+		return true;
+	}
+	if(value_.size() < low_ || (high_ >=0 && value_.size() > size_t(high_))) {
+		valid(false);
+		return false;
+	}
+}
+
 
 
 } // widgets 

@@ -256,38 +256,197 @@ namespace cppcms {
 
 	namespace widgets {
 
+		///
+		/// \brief this class is the base class of all renderable widgets that can be
+		/// used together with forms
+		///
+		/// All cppcms widgets are derived from this class. User, who want to create 
+		/// its own custom widgets must derive them from this class
+		///
+
 		class CPPCMS_API base_widget : 	
 			public base_form,
 			public util::noncopyable
 		{
 		public:
+
+			///
+			/// Default constructor
+			///
 			base_widget();
+
+			///
+			/// Construct and set \a name attribute of input html form.
+			/// Same as construct object and call name(v);
+			/// 
 			base_widget(std::string name);
+
+			///
+			/// Construct widget and set \a name attribute and short description
+			/// text that would be shown near widget \a msg.
+			/// 
+			
 			base_widget(std::string name,std::string msg);
+			
 			virtual ~base_widget();
-
-
+			
+			/// 
+			/// Check if a value was assigned to widget. Usually becomes true
+			/// when user assignees value to widget or the widget is loaded.
+			/// 
 			bool set();
+
+			///
+			/// After executing validation, each widget can be tested for validity
+			///
 			bool valid();
+
+			///
+			/// Get html id attribute
+			///
 			std::string id();
+
+			///
+			/// Get html name attribute
+			/// 
 			std::string name();
+
+			///
+			/// Set short message that would be displayed near the widget
+			/// 
 			std::string message();
+
+			///
+			/// Get associated error message that would be displayed near the widget
+			/// if widget validation failed.
+			/// 
 			std::string error_message();
+
+			///
+			/// Get long description for specific widget
+			///
+
 			std::string help();
 
+			///
+			/// Get disabled html attribute
+			///
+
+			bool disabled();
+
+			///
+			/// Get the general user defined attributes string that can be added to widget
+			/// 
+			std::string attributes_string();
+
+			///
+			/// Set the existence of content for widget. By default the widget is not set.
+			/// Any value fetch from "unset" widget by convention should throw an exception
+			/// Calling set with true -- changes state to "set" and with false to "unset"
+			///
+			
 			void set(bool);
+
+			///
+			/// Set validity state of widget. By default the widget is valid. When it
+			/// passes validation its validity state is changed by calling this function
+			///
+			/// Note: widget maybe not-set but still valid and it may be set but not-valid
+			///
+
 			void valid(bool);
+
+			///
+			/// Set html id attribute of the widget
+			///
 			void id(std::string);
-			void name(std::string);
+
+			///
+			/// Set html name attribute of the widget. Note: if this attribute
+			/// is not set, the widget would not be able to be loaded from POST/GET
+			/// data.
+			///
+			
+			void name(std::string)
+
+			///
+			/// Set short description for the widget. Generally it is good idea to
+			/// define this value.
+			///
+			/// Short message can be also set using base_widget constructor
+			///
 			void message(std::string);
+
+			///
+			/// Set error message that is displayed for invalid widgets.
+			///
+			/// If it is not set, simple "*" is shown
+			///
 			void error_message(std::string);
+
+			///
+			/// Set longer help message that describes this widget
+			///
 			void help(std::string);
 
+			///
+			/// Set general html attributes that are not supported
+			/// directly. For example:
+			///
+			/// \code
+			///  my_widget.attributes_string("style='direction:rtl' onclick='return foo()'");
+			/// \endcode
+			///
+			/// This string is inserted as-is just behind render_input_start
+			/// 
+			void attributes_string(std::string v);
+
+
+			///
+			/// Render full widget with error messages and decorations as paragraphs
+			/// or table elements to \a output
+			///
 
 			virtual void render(std::ostream &output,unsigned int flags);
+
+			///
+			/// This is pure-virtual member function that should be implemented by each widget
+			/// 
+			/// It executes actual rendering of the input HTML form up to the position where
+			/// user can insert its own data in HTML templates
+			///
+			/// For example, render_input_start would render:
+			/// \code
+			///  <input type="text" value="yossi"
+			/// \endcode
+			///
+			/// and the render_input_end would render:
+			/// \code
+			///   />
+			/// \endcode
+			/// 
+			/// The html template designer can write:
+			/// \code
+			///   <% formstart wiget %> style="text:align-right" <% formend widget %>
+			/// \endcode
+			/// 
+			/// And the additional html code would be inserted withing the widget.
+			///
 			virtual void render_input_start(std::ostream &output,unsigned flags) = 0;
+
+			///
+			/// See \a render_input_start
+			/// 
 			virtual void render_input_end(std::ostream &output,unsigned flags) = 0;
+
+			///
+			/// Clean the form. Calls set(false) as well
+			///
 			virtual void clear();
+
+			///
+			/// Validate form. If not overridden it sets widget to valid
+			///
 			virtual bool validate();
 
 		private:
@@ -296,9 +455,12 @@ namespace cppcms {
 			std::string msg_;
 			std::string error_msg_;
 			std::string help_;
+			std::string attr_;
 
-			bool is_valid_;
-			bool is_set_;
+			uint32_t is_valid_  : 1;
+			uint32_t is_set_ : 1;
+			uint32_t is_disabled_ : 1;
+			uint32_t reserverd_ : 29;
 
 			struct data;
 			util::hold_ptr<data> d;
@@ -307,24 +469,53 @@ namespace cppcms {
 
 
 		class text : public base_widget {
-		protected:
-			string type;
-			unsigned low;
-			int high;
 		public:
-			string value;
-			text(string name="",string msg="") : base_widget(name,msg) , type("text"){ low=0,high=-1; };
+			text();
+			text(std::string name);
+			text(std::string name,std::string msg);
+			~text();
 
-			void set_limits(int min,int max) { low=min,high=max; }
-			void set_nonempty() { low = 1, high=-1;};
-			void set_limits(string e,int min,int max) { error_msg=e; set_limits(min,max); }
-			void set_nonempty(string e){ error_msg=e; set_nonempty(); };
-			virtual string render_input(int how);
-			void set(string const &s);
-			string &str();
-			string const &get();
+			std::string value();
+			std::string value(std::locale const &);
+
+			void value(std::string v);
+			void value(std::string v,std::locale const &);
+
+			#ifdef HAVE_STD_WSTRING
+			std::wstring value_wstring(std::locale const &);
+			void value(std::wstring v,std::locale const &);
+			#endif
+
+			#ifdef HAVE_CPP0X_UXSTRING
+			std::u16string value_u16string(std::locale const &);
+			std::u32string value_u32string(std::locale const &);
+			void value(std::u16string v,std::locale const &);
+			void value(std::u32string v,std::locale const &);
+			#endif
+
+			#ifdef HAVE_ICU
+			icu::UnicodeString value_icu_string(std::locale const &);
+			void value(icu::UnicodeString const &v,std::locale const &);
+			#endif
+
+
+			
+			void non_empty();
+			void limits(int min,int max);
+			void disable_charset_validation();
+
+			virtual void render_input_start(std::ostream &output,unsigned flags) = 0;
+			virtual void render_input_end(std::ostream &output,unsigned flags) = 0;
+			
 			virtual bool validate();
 			virtual void load(http::context &);
+		private:
+			std::string value_;
+			unsigned low_;
+			int high_;
+			bool validate_charset_;
+			struct data;
+			util::hold_ptr<data> d;
 		};
 
 
