@@ -389,7 +389,7 @@ void base_text::value(std::string v,std::locale const &l)
 }
 
 #ifdef HAVE_STD_WSTRING
-std::string base_text::value_wstring()
+std::wstring base_text::value_wstring()
 {
 	return locale::charset().to_wstring(value_);
 }
@@ -399,7 +399,7 @@ void base_text::value(std::wstring v)
 	value(locale::charset().from_wstring(v));
 }
 
-std::string base_text::value_wstring(std::locale const &v)
+std::wstring base_text::value_wstring(std::locale const &v)
 {
 	return std::use_facet<locale::charset>(v).to_wstring(value_);
 }

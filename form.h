@@ -3,6 +3,7 @@
 
 #include "defs.h"
 #include "noncopyable.h"
+#include "config.h"
 
 #include <string>
 #include <set>
@@ -15,6 +16,7 @@
 #include "http_context.h"
 #include "http_request.h"
 #include "http_response.h"
+#include "locale_environment.h"
 #include "copy_ptr.h"
 #include "cppcms_error.h"
 #include "util.h"
