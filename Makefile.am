@@ -50,7 +50,8 @@ libcppcms_la_SOURCES = \
 	aio_timer.cpp \
 	json.cpp \
 	encoding.cpp \
-	locale_charset.cpp
+	locale_charset.cpp \
+	form.cpp
 
 
 cppcms_config_find_param_SOURCES=cppcms_config_find_param.cpp json.cpp

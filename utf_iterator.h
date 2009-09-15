@@ -1,6 +1,7 @@
 #ifndef CPPCMS_UTF_ITERATOR_H
 #define CPPCMS_UTF_ITERATOR_H
 #include <stdint.h>
+#include <string.h>
 
 namespace cppcms {
 
@@ -117,9 +118,20 @@ namespace utf8 {
 
 
 	template<typename Iterator>
+	bool validate(Iterator p,Iterator e,size_t &count,bool html=false)
+	{
+		while(p!=e) {
+			if(next(p,e,html)==utf::illegal)
+				return false;
+			count++;
+		}
+		return true;
+	}
+	
+	template<typename Iterator>
 	bool validate(Iterator p,Iterator e,bool html=false)
 	{
-		while(p!=e)
+		while(p!=e) 
 			if(next(p,e,html)==utf::illegal)
 				return false;
 		return true;

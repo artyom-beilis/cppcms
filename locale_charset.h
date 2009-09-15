@@ -18,16 +18,18 @@ namespace locale {
 	class CPPCMS_API charset : public std::locale::facet {
 	public:
 		static std::locale::id id;
+		charset(std::size_t refs=0);
+		charset(std::string charset,std::size_t refs=0);
 		charset(std::string charset,intrusive_ptr<encoding::validators_set> p,std::size_t refs=0);
 		~charset();
 		
-		bool validate(char const *begin,char const *end) const
+		bool validate(char const *begin,char const *end,size_t &count) const
 		{
-			return do_validate(begin,end);
+			return do_validate(begin,end,count);
 		}
-		bool validate(std::string const &s) const
+		bool validate(std::string const &s,size_t &count) const
 		{
-			return do_validate(s.data(),s.data()+s.size());
+			return do_validate(s.data(),s.data()+s.size(),count);
 		}
 
 		std::string to_utf8(std::string const &v) const
@@ -104,7 +106,7 @@ namespace locale {
 
 
 	private:
-		virtual bool do_validate(char const *begin,char const *end) const;
+		virtual bool do_validate(char const *begin,char const *end,size_t &count) const;
 
 		virtual std::string do_to_utf8(std::string const &v) const;
 		virtual std::string do_from_utf8(std::string const &v) const;

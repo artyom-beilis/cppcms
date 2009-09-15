@@ -87,6 +87,25 @@ private:
 template<>
 void CPPCMS_API base_view::escape(std::ostream &,std::string const &s);
 
+#ifdef HAVE_STD_WSTRING
+template<>
+void CPPCMS_API base_view::escape(std::ostream &,std::wstring const &s);
+#endif
+
+#ifdef HAVE_CPP0X_UXSTRING
+template<>
+void CPPCMS_API base_view::escape(std::ostream &,std::u16string const &s);
+template<>
+void CPPCMS_API base_view::escape(std::ostream &,std::u32string const &s);
+#endif
+
+#ifdef HAVE_ICU
+template<>
+void CPPCMS_API base_view::escape(std::ostream &,icu::UnicodeString const &s);
+#endif
+
+
+
 void CPPCMS_API operator<<(std::ostream &,std::tm const &t);
 
 namespace details {

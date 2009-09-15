@@ -6,15 +6,16 @@
 namespace cppcms { namespace encoding {
 
 	template<typename Iterator>
-	bool utf8_valid(Iterator p,Iterator e)
+	bool utf8_valid(Iterator p,Iterator e,size_t &count)
 	{
-		return utf8::validate(p,e,true);
+		return utf8::validate(p,e,count,true);
 	}
 
 	template<typename Iterator>
-	bool ascii_valid(Iterator p,Iterator e)
+	bool ascii_valid(Iterator p,Iterator e,size_t &count)
 	{
 		while(p!=e) {
+			count++;
 			unsigned c=(unsigned char)*p++;
 			if(c==0x09 || c==0xA || c==0xD)
 				continue;
@@ -24,9 +25,10 @@ namespace cppcms { namespace encoding {
 		return true;
 	}
 	template<typename Iterator>
-	bool iso_8859_1_2_4_5_9_10_13_14_15_16_valid(Iterator p,Iterator e)
+	bool iso_8859_1_2_4_5_9_10_13_14_15_16_valid(Iterator p,Iterator e,size_t &count)
 	{
 		while(p!=e) {
+			count++;
 			unsigned c=(unsigned char)*p++;
 			if(c==0x09 || c==0xA || c==0xD)
 				continue;
@@ -36,9 +38,10 @@ namespace cppcms { namespace encoding {
 		return true;
 	}
 	template<typename Iterator>
-	bool iso_8859_3_valid(Iterator p,Iterator e)
+	bool iso_8859_3_valid(Iterator p,Iterator e,size_t &count)
 	{
 		while(p!=e) {
+			count++;
 			unsigned c=(unsigned char)*p++;
 			if(c==0x09 || c==0xA || c==0xD)
 				continue;
@@ -58,9 +61,10 @@ namespace cppcms { namespace encoding {
 		return true;
 	}
 	template<typename Iterator>
-	bool iso_8859_6_valid(Iterator p,Iterator e)
+	bool iso_8859_6_valid(Iterator p,Iterator e,size_t &count)
 	{
 		while(p!=e) {
+			count++;
 			unsigned c=(unsigned char)*p++;
 			if(c==0x09 || c==0xA || c==0xD)
 				continue;
@@ -81,9 +85,10 @@ namespace cppcms { namespace encoding {
 	}
 
 	template<typename Iterator>
-	bool iso_8859_7_valid(Iterator p,Iterator e)
+	bool iso_8859_7_valid(Iterator p,Iterator e,size_t &count)
 	{
 		while(p!=e) {
+			count++;
 			unsigned c=(unsigned char)*p++;
 			if(c==0x09 || c==0xA || c==0xD)
 				continue;
@@ -100,9 +105,10 @@ namespace cppcms { namespace encoding {
 	}
 
 	template<typename Iterator>
-	bool iso_8859_8_valid(Iterator p,Iterator e)
+	bool iso_8859_8_valid(Iterator p,Iterator e,size_t &count)
 	{
 		while(p!=e) {
+			count++;
 			unsigned c=(unsigned char)*p++;
 			if(c==0x09 || c==0xA || c==0xD)
 				continue;
@@ -122,9 +128,10 @@ namespace cppcms { namespace encoding {
 	}
 
 	template<typename Iterator>
-	bool iso_8859_11_valid(Iterator p,Iterator e)
+	bool iso_8859_11_valid(Iterator p,Iterator e,size_t &count)
 	{
 		while(p!=e) {
+			count++;
 			unsigned c=(unsigned char)*p++;
 			if(c==0x09 || c==0xA || c==0xD)
 				continue;
@@ -146,9 +153,10 @@ namespace cppcms { namespace encoding {
 	}
 
 	template<typename Iterator>
-	bool windows_1250_valid(Iterator p,Iterator e)
+	bool windows_1250_valid(Iterator p,Iterator e,size_t &count)
 	{
 		while(p!=e) {
+			count++;
 			unsigned c=(unsigned char)*p++;
 			if(c==0x09 || c==0xA || c==0xD)
 				continue;
@@ -166,9 +174,10 @@ namespace cppcms { namespace encoding {
 		return true;
 	}
 	template<typename Iterator>
-	bool windows_1251_valid(Iterator p,Iterator e)
+	bool windows_1251_valid(Iterator p,Iterator e,size_t &count)
 	{
 		while(p!=e) {
+			count++;
 			unsigned c=(unsigned char)*p++;
 			if(c==0x09 || c==0xA || c==0xD)
 				continue;
@@ -178,9 +187,10 @@ namespace cppcms { namespace encoding {
 		return true;
 	}
 	template<typename Iterator>
-	bool windows_1252_valid(Iterator p,Iterator e)
+	bool windows_1252_valid(Iterator p,Iterator e,size_t &count)
 	{
 		while(p!=e) {
+			count++;
 			unsigned c=(unsigned char)*p++;
 			if(c==0x09 || c==0xA || c==0xD)
 				continue;
@@ -198,9 +208,10 @@ namespace cppcms { namespace encoding {
 		return true;
 	}
 	template<typename Iterator>
-	bool windows_1253_valid(Iterator p,Iterator e)
+	bool windows_1253_valid(Iterator p,Iterator e,size_t &count)
 	{
 		while(p!=e) {
+			count++;
 			unsigned c=(unsigned char)*p++;
 			if(c==0x09 || c==0xA || c==0xD)
 				continue;
@@ -231,9 +242,10 @@ namespace cppcms { namespace encoding {
 	}
 
 	template<typename Iterator>
-	bool windows_1254_valid(Iterator p,Iterator e)
+	bool windows_1254_valid(Iterator p,Iterator e,size_t &count)
 	{
 		while(p!=e) {
+			count++;
 			unsigned c=(unsigned char)*p++;
 			if(c==0x09 || c==0xA || c==0xD)
 				continue;
@@ -254,9 +266,10 @@ namespace cppcms { namespace encoding {
 	}
 
 	template<typename Iterator>
-	bool windows_1255_valid(Iterator p,Iterator e)
+	bool windows_1255_valid(Iterator p,Iterator e,size_t &count)
 	{
 		while(p!=e) {
+			count++;
 			unsigned c=(unsigned char)*p++;
 			if(c==0x09 || c==0xA || c==0xD)
 				continue;
@@ -296,9 +309,10 @@ namespace cppcms { namespace encoding {
 	}
 
 	template<typename Iterator>
-	bool windows_1256_valid(Iterator p,Iterator e)
+	bool windows_1256_valid(Iterator p,Iterator e,size_t &count)
 	{
 		while(p!=e) {
+			count++;
 			unsigned c=(unsigned char)*p++;
 			if(c==0x09 || c==0xA || c==0xD)
 				continue;
@@ -308,9 +322,10 @@ namespace cppcms { namespace encoding {
 		return true;
 	}
 	template<typename Iterator>
-	bool windows_1257_valid(Iterator p,Iterator e)
+	bool windows_1257_valid(Iterator p,Iterator e,size_t &count)
 	{
 		while(p!=e) {
+			count++;
 			unsigned c=(unsigned char)*p++;
 			if(c==0x09 || c==0xA || c==0xD)
 				continue;
@@ -336,9 +351,10 @@ namespace cppcms { namespace encoding {
 	}
 
 	template<typename Iterator>
-	bool windows_1258_valid(Iterator p,Iterator e)
+	bool windows_1258_valid(Iterator p,Iterator e,size_t &count)
 	{
 		while(p!=e) {
+			count++;
 			unsigned c=(unsigned char)*p++;
 			if(c==0x09 || c==0xA || c==0xD)
 				continue;
@@ -360,9 +376,10 @@ namespace cppcms { namespace encoding {
 		return true;
 	}
 	template<typename Iterator>
-	bool koi8_valid(Iterator p,Iterator e)
+	bool koi8_valid(Iterator p,Iterator e,size_t &count)
 	{
 		while(p!=e) {
+			count++;
 			unsigned c=(unsigned char)*p++;
 			if(c==0x09 || c==0xA || c==0xD)
 				continue;

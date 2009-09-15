@@ -10,6 +10,7 @@
 #include "service.h"
 #include "config.h"
 #include "locale_environment.h"
+#include "locale_info.h"
 #include "util.h"
 
 #include <iostream>
@@ -89,11 +90,13 @@ response::~response()
 
 void response::set_content_header(std::string const &content_type)
 {
-	std::string charset=context_.settings().get("l10n.charset","");
-	if(charset.empty())
+	if(context_.settings().get("locale.disable_charset_in_content_type",false)) {
 		set_header("Content-Type",content_type);
-	else
+	}
+	else {
+		std::string charset=std::use_facet<locale::info>(context_.locale().get()).encoding();
 		set_header("Content-Type",content_type+"; charset="+charset);
+	}
 }
 void response::set_html_header()
 {

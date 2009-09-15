@@ -12,6 +12,14 @@
 #include <ostream>
 #include <sstream>
 
+#include "http_context.h"
+#include "http_request.h"
+#include "http_response.h"
+#include "copy_ptr.h"
+#include "cppcms_error.h"
+#include "util.h"
+#include "regex.h"
+
 namespace cppcms {
 
 	namespace widgets {
@@ -153,7 +161,7 @@ namespace cppcms {
 		///
 		inline form &operator + (form &f)
 		{
-			add(&f);
+			add(f);
 			return *this;
 		}
 		
@@ -162,7 +170,7 @@ namespace cppcms {
 		///
 		inline form &operator + (widgets::base_widget &f)
 		{
-			add(&f);
+			add(f);
 			return *this;
 		}
 		///
@@ -180,7 +188,7 @@ namespace cppcms {
 		/// \endcode
 		///
 
-		class iterator : public std::iterator<std::input_iterator_tag,base_from>
+		class CPPCMS_API iterator : public std::iterator<std::input_iterator_tag,widgets::base_widget>
 		{
 		public:
 			iterator();
@@ -188,11 +196,11 @@ namespace cppcms {
 			iterator(iterator const &other);
 			iterator const &operator = (iterator const &other);
 
-			pointer_type operator->() const
+			widgets::base_widget *operator->() const
 			{
 				return get();
 			}
-			reference operator*() const
+			widgets::base_widget &operator*() const
 			{
 				return *get();
 			}
@@ -225,8 +233,9 @@ namespace cppcms {
 
 			bool equal(iterator const &other) const;
 			void next();
-			pointer_type get() const;
+			widgets::base_widget *get() const;
 
+			struct data;
 			util::copy_ptr<data> d;
 
 		};
@@ -335,6 +344,12 @@ namespace cppcms {
 			bool disabled();
 
 			///
+			/// Set/Unset disabled html attribute
+			///
+
+			void disabled(bool);
+
+			///
 			/// Get the general user defined attributes string that can be added to widget
 			/// 
 			std::string attributes_string();
@@ -367,7 +382,7 @@ namespace cppcms {
 			/// data.
 			///
 			
-			void name(std::string)
+			void name(std::string);
 
 			///
 			/// Set short description for the widget. Generally it is good idea to
@@ -410,7 +425,7 @@ namespace cppcms {
 			virtual void render(std::ostream &output,unsigned int flags);
 
 			///
-			/// This is pure-virtual member function that should be implemented by each widget
+			/// This is a virtual member function that should be implemented by each widget
 			/// 
 			/// It executes actual rendering of the input HTML form up to the position where
 			/// user can insert its own data in HTML templates
@@ -452,8 +467,8 @@ namespace cppcms {
 		private:
 			std::string id_;
 			std::string name_;
-			std::string msg_;
-			std::string error_msg_;
+			std::string message_;
+			std::string error_message_;
 			std::string help_;
 			std::string attr_;
 
@@ -466,79 +481,435 @@ namespace cppcms {
 			util::hold_ptr<data> d;
 		};
 
+		///
+		/// \brief this is the widget that is used as base for text input field representation
+		///
+		/// This widget is used as base class for other widgets that are used for
+		/// text input like: text, textarea, etc.
+		///
+		/// This widget does much more then reading simple filed data from the POST
+		/// or GET form, it performs charset validation and if required conversion
+		/// to and from Unicode charset to locale charset.
+		///
 
 
-		class text : public base_widget {
+		class CPPCMS_API base_text : public base_widget {
 		public:
-			text();
-			text(std::string name);
-			text(std::string name,std::string msg);
-			~text();
+			
+			///
+			/// Create an empty widget
+			/// 
+			base_text();
 
+			///
+			/// Create a widget with http attribute name - \a name
+			///
+			base_text(std::string name);
+
+			///
+			/// Create a widget with http attribute name - \a name
+			/// and short description \a msg.
+			///
+			base_text(std::string name,std::string msg);
+
+			~base_text();
+
+			///
+			/// Get the string that contains input value of the widget
+			/// the string is returned in locale specific representation.
+			/// i.e. if the locale is ru_RU.ISO8859-5 (8 bit encoding)
+			/// then the string is encoded in ISO-8859-5 encoding.
+			/// If the locale is ru_RU.UTF-8 that the string is encoded
+			/// in UTF-8.
+			///
+			
+			
 			std::string value();
-			std::string value(std::locale const &);
+			
+			///
+			/// Get the string that contains input value of the widget
+			/// converting the string from the locale \a loc to
+			/// UTF-8 Unicode encoding. If the locale uses UTF-8
+			/// natively it is just copied without conversion.
+			///
+
+			std::string value(std::locale const &loc);
+
+			
+			///
+			/// Set the widget content before rendering, the value \a v 
+			/// is assumed to be encoding according to current locale.
+			/// It should be encoded appropriately.
+			///
+			/// For example. If the locale is ru_RU.ISO8859-5, then \a v
+			/// should be encoded as ISO-8859-5 if it is ru_RU.UTF-8
+			/// then it should be encoded as UTF-8 string.
+			///
 
 			void value(std::string v);
-			void value(std::string v,std::locale const &);
+
+			///
+			/// Set the widget content before rendering, to value \a v,
+			/// where string \a v is encoded in UTF-8 Unicode encoding,
+			/// and it is converted to locale specific encoding defined
+			/// by locale \a loc.
+			///
+			/// If the locale uses UTF-8 encoding natively then the string
+			/// is just copied.
+			///
+			void value(std::string v,std::locale const &loc);
 
 			#ifdef HAVE_STD_WSTRING
-			std::wstring value_wstring(std::locale const &);
-			void value(std::wstring v,std::locale const &);
+
+			///
+			/// Get the value of the widget represented as wide character string.
+			/// 
+			/// Please note, std::wstring may represent UTF-16 variable length
+			/// encoded string (mostly on Win32) or fixed length encoded UTF-32 string
+			/// (mostly UNIX platforms) according to sizeof(wchar_t). So if you develop
+			/// cross platform applications, never assume that one wchar_t represents
+			/// one code point.
+			///
+			/// Important Note: it assumes that the current locale character encoding is UTF-8.
+			/// Never use it if you support non UTF-8 encodings.
+			///
+			std::wstring value_wstring();
+
+			///
+			/// Set the content of widget converting wide character string to UTF-8 string.
+			///
+			/// Please note, std::wstring may represent UTF-16 variable length
+			/// encoded string (mostly on Win32) or fixed length encoded UTF-32 string
+			/// (mostly UNIX platforms) according to sizeof(wchar_t). So if you develop
+			/// cross platform applications, never assume that one wchar_t represents
+			/// one code point.
+			///
+			/// Important Note: it assumes that the current locale character encoding is UTF-8.
+			/// Never use it if you support non UTF-8 encodings.
+			///
+			void value(std::wstring v);
+
+			///
+			/// Get the value of the widget represented as wide character
+			/// string converting it from the locale's \a loc encoding.
+			///
+			/// Please note, std::wstring may represent UTF-16 variable length
+			/// encoded string (mostly on Win32) or fixed length encoded UTF-32 string
+			/// (mostly UNIX platforms) according to sizeof(wchar_t). So if you develop
+			/// cross platform applications, never assume that one wchar_t represents
+			/// one code point.
+			///
+			
+			std::wstring value_wstring(std::locale const &loc);
+			
+			///
+			/// Set the content of widget converting wide character string to the locale's \a loc
+			/// encoding.
+			///
+			/// Please note, std::wstring may represent UTF-16 variable length
+			/// encoded string (mostly on Win32) or fixed length encoded UTF-32 string
+			/// (mostly UNIX platforms) according to sizeof(wchar_t). So if you develop
+			/// cross platform applications, never assume that one wchar_t represents
+			/// one code point.
+			///
+			void value(std::wstring v,std::locale const &loc);
+
 			#endif
 
 			#ifdef HAVE_CPP0X_UXSTRING
+			///
+			/// Get the value of the widget represented as UTF-16 encoded
+			/// string converting it from the locale's \a loc encoding.
+			///
 			std::u16string value_u16string(std::locale const &);
+			///
+			/// Get the value of the widget represented as UTF-32 encoded
+			/// string converting it from the locale's \a loc encoding.
+			///
 			std::u32string value_u32string(std::locale const &);
+			///
+			/// Set the content of widget converting UTF-16 encoded string to the locale's \a loc
+			/// encoding.
+			///
 			void value(std::u16string v,std::locale const &);
+			///
+			/// Set the content of widget converting UTF-32 encoded string to the locale's \a loc
+			/// encoding.
+			///
 			void value(std::u32string v,std::locale const &);
+
+			///
+			/// Get the value of the widget represented as utf16 encoded string.
+			/// 
+			/// Important Note: it assumes that the current locale character encoding is UTF-8.
+			/// Never use it if you support non UTF-8 encodings.
+			///
+			std::u16string value_u16string();
+
+			///
+			/// Get the value of the widget represented as utf32 encoded string.
+			/// 
+			/// Important Note: it assumes that the current locale character encoding is UTF-8.
+			/// Never use it if you support non UTF-8 encodings.
+			///
+			std::u32string value_u32string();
+			
+			///
+			/// Set the content of widget converting utf-16 encoded string to UTF-8 string.
+			///
+			/// Important Note: it assumes that the current locale character encoding is UTF-8.
+			/// Never use it if you support non UTF-8 encodings.
+			///
+			void value(std::u16string v);
+			
+			///
+			/// Set the content of widget converting utf-32 encoded string to UTF-8 string.
+			///
+			/// Important Note: it assumes that the current locale character encoding is UTF-8.
+			/// Never use it if you support non UTF-8 encodings.
+			///
+			void value(std::u32string v);
+
 			#endif
 
 			#ifdef HAVE_ICU
+			///
+			/// Get the value of the widget represented ICU UnicodeString.
+			/// 
+			/// Important Note: it assumes that the current locale character encoding is UTF-8.
+			/// Never use it if you support non UTF-8 encodings.
+			///
+			
+			icu::UnicodeString value_icu_string();
+			///
+			/// Set the content of widget ICU UnicodeString string to UTF-8 string.
+			///
+			/// Important Note: it assumes that the current locale character encoding is UTF-8.
+			/// Never use it if you support non UTF-8 encodings.
+			///
+			void value(icu::UnicodeString const &v);
+
+			///
+			/// Get the value of the widget represented as ICU UnicodeString
+			/// converting it from the locale's \a loc encoding.
+			///
+
 			icu::UnicodeString value_icu_string(std::locale const &);
+			///
+			/// Set the content of widget converting ICU UnocodeString to the locale's \a loc
+			/// encoding.
+			///
 			void value(icu::UnicodeString const &v,std::locale const &);
+
 			#endif
 
 
 			
+			///
+			/// Acknowledge the validator that this text widget should contain some text.
+			/// similar to limits(1,-1)
+			///
 			void non_empty();
+			///
+			/// Set minimum and maximum limits for text size. Note max == -1 indicates that there
+			/// is no maximal limit, min==0 indicates that there is no minimal limit.
+			///
+			/// Note: these numbers represent the length in Unicode code points (even if the encoding
+			/// is not Unicode). If character set validation is disabled, then these number represent
+			/// the number of octets in the string.
+			///
 			void limits(int min,int max);
-			void disable_charset_validation();
+
+			///
+			/// Get minimal and maximal size limits, 
+			///
+			
+			std::pair<int,int> limits();
+
+			///
+			/// Acknowledge the validator if it should not check the validity of the charset.
+			/// Default -- enabled
+			///
+			/// Generally you should not use this option unless you want to load some raw data as
+			/// form input, or the character set is different from the defined in locale.
+			///
+			void validate_charset(bool );
+			
+			///
+			/// Returns true if charset validation is enabled.
+			///
+
+			bool validate_charset();
 
 			virtual void render_input_start(std::ostream &output,unsigned flags) = 0;
 			virtual void render_input_end(std::ostream &output,unsigned flags) = 0;
 			
+			///
+			/// Validate the widget content according to rules and charset encoding.
+			///
+			/// Notes:
+			/// 
+			/// -  The charset validation is very efficient for variable length UTF-8 encoding, 
+			///    and most popular fixed length ISO-8859-*, windows-125* and koi8* encodings, for other
+			///    encodings iconv conversion is used for actual validation.
+			/// -  Special characters (that not allowed in HTML) are assumed as forbidden, even they are
+			///    valid code points (like NUL = 0 or DEL=127).
+			/// 
 			virtual bool validate();
+
+			///
+			/// Load the widget for http::context. It used the locale given in the context for
+			/// validation of text.
+			///
 			virtual void load(http::context &);
 		private:
 			std::string value_;
-			unsigned low_;
+			int low_;
 			int high_;
 			bool validate_charset_;
+			size_t code_points_;
+			struct data;
+			util::hold_ptr<data> d;
+		};
+
+		///
+		/// \brief This class represents html input of type text
+		/// 
+		
+		class CPPCMS_API text : public base_text 
+		{
+		public:
+			///
+			/// Create an empty text widget
+			/// 
+			text();
+
+			///
+			/// Create a text widget with http attribute name - \a name
+			///
+			text(std::string name);
+
+			///
+			/// Create a text widget with http attribute name - \a name
+			/// and short description \a msg.
+			///
+			text(std::string name,std::string msg);
+
+			///
+			/// Set html attribute size of the widget
+			///
+
+			void size(int n);
+
+			///
+			/// Get html attribute size of the widget, -1 undefined
+			///
+
+			int size();
+
+			~text();
+
+
+			virtual void render_input_start(std::ostream &output,unsigned flags);
+			virtual void render_input_end(std::ostream &output,unsigned flags);
+		protected:
+			void type(std::string str);
+		private:
+			int size_;
+			std::string type_;
+			struct data;
+			util::hold_ptr<data> d;
+		};
+
+		class CPPCMS_API textarea : public base_text 
+		{
+		public:
+			///
+			/// Create an empty text widget
+			/// 
+			textarea();
+
+			///
+			/// Create a text widget with http attribute name - \a name
+			///
+			textarea(std::string name);
+
+			///
+			/// Create a text widget with http attribute name - \a name
+			/// and short description \a msg.
+			///
+			textarea(std::string name,std::string msg);
+
+			~textarea();
+
+			///
+			/// Get number of rows in textarea -- default -1 -- undefined
+			///
+			int rows();
+			///
+			/// Get number of columns in textarea -- default -1 -- undefined
+			///
+			int cols();
+
+			///
+			/// Set number of rows in textarea
+			///
+			void rows(int n);
+			///
+			/// Set number of columns in textarea
+			///
+			void cols(int n);
+
+			virtual void render_input_start(std::ostream &output,unsigned flags);
+			virtual void render_input_end(std::ostream &output,unsigned flags);
+		private:
+			int rows_,cols_;
+
 			struct data;
 			util::hold_ptr<data> d;
 		};
 
 
-
-
+		///
+		/// \brief Widget for number input. It is template class that assumes that T is number
+		///
 
 		template<typename T>
-		class number: public text {
+		class number: public base_widget {
 		public:
-			number(string name="",string msg="") :
-				text(name,msg),
-				value_(0),
-				check_low_(false),
-				check_high_(false),
-				non_empty_(false)
+
+			number() 
 			{
+				init();
 			}
 
+			///
+			/// Construct widget with html attribute name \a name
+			///
+			number(std::string name) : base_widget(name)
+			{
+				init();
+			}
+			///
+			/// Construct widget with html attribute name \a name and description \a msg
+			///
+			number(std::string name,std::string msg) : base_widget(name,msg)
+			{
+				init();
+			}
+
+			///
+			/// Defines that this widget should have some value
+			///
 			void non_empty()
 			{
 				non_empty_=true;
 			}
 
+
+			///
+			/// Get loaded widget value
+			///
 			T value()
 			{
 				if(!set())
@@ -546,55 +917,98 @@ namespace cppcms {
 				return value_;
 			}
 
+			///
+			/// Set widget value
+			///
 			void value(T v)
 			{
 				set(true);
 				value_=v;
 			}
 
+			/// 
+			/// Set minimal input number value
+			///
 			void low(T a)
 			{
 				min_=a;
 				check_low_=true;
-				set_nonempty();
+				non_empty();
 			}
+
+			/// 
+			/// Set maximal input number value
+			///
 
 			void high(T b)
 			{
 				max_=b;
 				check_high_=true;
-				set_nonempty();
+				non_empty();
 			}
 
+			///
+			/// Same as low(a); high(b);
+			///			
 			void range(T a,T b)
 			{
-				set_low(a);
-				set_high(b);
+				low(a);
+				high(b);
 			}
 
-			void render_input_start(std::ostream &output,unsigned flags)
+			///
+			/// Render first part of widget
+			///
+			
+			virtual void render_input_start(std::ostream &output,unsigned flags)
 			{
 				output<<"<input ";
 			}
 
-			void render_input_end(std::ostream &output,unsigned flags)
+			///
+			/// Render second part of widget
+			///
+			
+			virtual void render_input_end(std::ostream &output,unsigned flags)
 			{
-				render_element(output,id(),"id");
-				render_element(output,name(),"name");
+				std::string v=id();
+				if(!v.empty())
+					output<<"id=\""<<v<<"\" ";
+				v=name();
+				if(!v.empty())
+					output<<"name=\""<<v<<"\" ";
+
 				output<<" type=\"text\" ";
 
 				if(set())
-					output<<"value="<<value_<<"\" ";
+					output<<"value=\""<<value_<<"\" ";
 				else
-					render_element(output,loaded_string_,"value");
+					output<<"value=\""<<util::escape(loaded_string_)<<"\" ";
+
+				if(disabled()) {
+					if(flags & as_xhtml) 
+						output<<"disabled=\"disabled\" ";
+					else
+						output<<"disabled ";
+				}
 
 				if(flags & as_xhtml)
-					outout<<"/>";
+					output<<"/>";
 				else
 					output<<">";
 			}
 
-			void load(http::context &context)
+			virtual void clear()
+			{
+				base_widget::clear();
+				loaded_string_.clear();
+			}
+
+			///
+			/// Load widget data
+			///
+			
+			virtual void load(http::context &context)
 			{
 				loaded_string_.clear();
 
@@ -617,10 +1031,15 @@ namespace cppcms {
 					ss>>value_;
 					if(ss.fail() || !ss.eof())
 						valid(false);
+					else
+						set(true);
 				}
 			}
-
-			bool validate()
+			
+			///
+			/// Validate widget
+			///
+			virtual bool validate()
 			{
 				if(!valid())
 					return false;
@@ -636,19 +1055,16 @@ namespace cppcms {
 					return false;
 				}
 				if(check_high_ && value_ > max_) {
-					valud(false);
+					valid(false);
 					return false;
 				}
 				return true;
 			}
 
 		private:
-
-			void render_element(std::ostream &out,std::string const &v,char const *field)
+			void init()
 			{
-				if(v.empty())
-					return;
-				out<<" "<<field<<"=\""<<util::escape(v)<<"\" ";
+				check_low_=check_high_=non_empty_=false;
 			}
 
 			T min_,max_,value_;
@@ -659,39 +1075,53 @@ namespace cppcms {
 			std::string loaded_string_;
 		};
 
-
-
-
-
-
-		class password: public text {
-			password *other;
+		/// 
+		/// \brief The password widget is a simple text widget with some different
+		//  
+		
+		class CPPCMS_API password: public text {
 		public:
-			password(string name="",string msg="") : text(name,msg),other(0) {} ;
-			void set_equal(password &p2) { other=&p2; } ;
+			password();
+			password(std::string name);
+			password(std::string name,std::string msg);
+			~password();
+
+			void check_equal(password &p2);
 			virtual bool validate();
-			virtual string render_input(int how);
-		};
-		class textarea: public text {
-		public:
-			int rows,cols;
-			textarea(string name="",string msg="") : text(name,msg) { rows=cols=-1; };
-			virtual string render_input(int how);
+		private:
+			struct data;
+			util::hold_ptr<data> d;
+			password *password_to_check_;
 		};
 
-		class regex_field : public text {
-			util::regex const *exp;
+		
+
+		class CPPCMS_API regex_field : public text {
 		public:
-			regex_field() : exp(0) {}
-			regex_field(util::regex const &e,string name="",string msg="") : text(name,msg),exp(&e) {}
+			regex_field(util::regex const &e);
+			regex_field(util::regex const &e,std::string name);
+			regex_field(util::regex const &e,std::string name,std::string msg);
+			~regex_field();
+			
 			virtual bool validate();
+		private:
+			util::regex const *expression_;
+			struct data;
+			util::hold_ptr<data> d;
 		};
 
-		class email : public regex_field {
+		class CPPCMS_API email : public regex_field {
 		public:
-			email(string name="",string msg="");
+			email();
+			~email();
+			email(std::string name);
+			email(std::string name,std::string msg);
+		private:
+			static util::regex const email_expression_;
+			struct data;
+			util::hold_ptr<data> d;
 		};
-
+/*
 		class checkbox: public base_widget {
 		public:
 			string input_value;
@@ -785,7 +1215,7 @@ namespace cppcms {
 			submit(string name="",string button="",string msg="") : base_widget(name,msg), value(button),pressed(false) {};
 			virtual string render_input(int);
 			virtual void load(cgicc::Cgicc const &cgi);
-		};
+		};  */
 
 	} // widgets
 

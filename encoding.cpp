@@ -71,10 +71,11 @@ namespace cppcms { namespace encoding {
 			if(descriptor_!=(iconv_t)(-1))
 				iconv_close(descriptor_);
 		}
-		bool check_symbols(uint32_t const *begin,uint32_t const *end)
+		bool check_symbols(uint32_t const *begin,uint32_t const *end,size_t &count)
 		{
 			while(begin!=end) {
 				uint32_t c=*begin++;
+				count++;
 				if(c==0x09 || c==0xA || c==0xD)
 					continue;
 				if(c<0x20 || (0x7F<=c && c<=0x9F))
@@ -83,7 +84,7 @@ namespace cppcms { namespace encoding {
 			return true;
 		}
 
-		bool valid(char const *begin,char const *end)
+		bool valid(char const *begin,char const *end,size_t &count)
 		{
 			iconv(descriptor_,0,0,0,0); // reset
 			uint32_t buffer[64];
@@ -95,12 +96,12 @@ namespace cppcms { namespace encoding {
 				size_t res=do_iconv(::iconv,descriptor_,&begin,&input,(char**)&output,&outsize);
 
 				if(res==(size_t)(-1) && errno==E2BIG)  {
-					if(!check_symbols(buffer,output))
+					if(!check_symbols(buffer,output,count))
 						return false;
 					continue;
 				}
 				if(res!=(size_t)(-1) && input==0)
-					return check_symbols(buffer,output);
+					return check_symbols(buffer,output,count);
 				return false;
 			}
 			return true;
@@ -144,15 +145,15 @@ namespace cppcms { namespace encoding {
 			delete iconv_;
 	}
 
-	bool validator::valid(std::string const &s)
+	bool validator::valid(std::string const &s,size_t &count)
 	{
-		return valid(s.data(),s.data()+s.size());
+		return valid(s.data(),s.data()+s.size(),count);
 	}
-	bool validator::valid(char const *begin,char const *end)
+	bool validator::valid(char const *begin,char const *end,size_t &count)
 	{
 		if(tester_)
-			return tester_(begin,end);
-		return iconv_->valid(begin,end);
+			return tester_(begin,end,count);
+		return iconv_->valid(begin,end,count);
 	}
 
 	struct validators_set::data {};

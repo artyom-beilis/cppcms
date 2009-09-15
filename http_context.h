@@ -11,6 +11,7 @@
 namespace cppcms {
 
 	class service;
+	class application;
 	namespace json { class value; }
 	namespace locale { class environment; }
 	namespace impl { namespace cgi { class connection; } }

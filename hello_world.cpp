@@ -10,6 +10,7 @@
 #include "format.h"
 #include "aio_timer.h"
 #include "intrusive_ptr.h"
+#include "form.h"
 #include <sstream>
 #include <stdexcept>
 #include <stdlib.h>
@@ -157,6 +158,32 @@ private:
 	cppcms::aio::timer timer_;
 };
 
+class my_form : public cppcms::form
+{
+public:
+	cppcms::widgets::text name;
+	cppcms::widgets::number<double> age;
+	cppcms::widgets::password p1;
+	cppcms::widgets::password p2;
+	cppcms::widgets::textarea description;
+	
+	my_form() :
+		name("name","Your Name"),
+		age("age","Your Age"),
+		p1("p1","Password"),
+		p2("p2","Confirm"),
+		description("descr","Describe")
+	{
+		name.limits(2,30);
+		age.range(0,120);
+		p1.check_equal(p2);
+		p1.non_empty();
+		*this + name + age + p1 + p2 + description;
+	}
+};
+
+
+
 class hello : public cppcms::application {
 public:
 	hello(cppcms::service &srv) : 
@@ -167,12 +194,42 @@ public:
 		dispatcher().assign("^/post$",&hello::pform,this);
 		dispatcher().assign("^/err$",&hello::err,this);
 		dispatcher().assign("^/forward$",&hello::forward,this);
+		dispatcher().assign("^/form$",&hello::form,this);
 		dispatcher().assign(".*",&hello::hello_world,this);
 		std::cout<<"hello()"<<std::endl;
 	}
 	~hello()
 	{
 		std::cout<<"~hello()"<<std::endl;
+	}
+
+	void form()
+	{
+		my_form f;
+		bool ok=false;
+		if(request().request_method()=="POST") {
+			f.load(context());
+			if(f.validate()) {
+				ok=true;	
+			}
+		}
+		response().out()<<
+			"<html><body>\n";
+		if(ok) {
+			response().out() << f.name.value() <<" " <<f.age.value();
+			f.clear();
+		}
+		
+		response().out()<<
+			"<form action='" <<
+				request().script_name() + request().path_info()
+			<<  "' method='post'>\n"
+			"<table>\n";
+
+		f.render(response().out(),cppcms::form::as_table);
+
+		response().out()<<"</table><input type='submit' value='Send' ></form>\n";
+		response().out()<<"</form></body></html>"<<std::endl;
 	}
 
 	void forward()

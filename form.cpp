@@ -1,10 +1,10 @@
 #define CPPCMS_SOURCE
 #include "form.h"
-#include "util.h"
-
-#include <boost/format.hpp>
 #include <iostream>
-#include "cppcms_error.h"
+#include <stack>
+#include <boost/format.hpp>
+#include "locale_charset.h"
+#include "locale_environment.h"
 
 namespace cppcms {
 
@@ -50,8 +50,7 @@ bool form::validate()
 {
 	bool result=true;
 	for(unsigned int i=0;i<elements_.size();i++) {
-		if(!elements_[i].first->validate())
-			result=false;
+		result = elements_[i].first->validate() & result;
 	}
 	return result;
 }
@@ -63,14 +62,23 @@ void form::clear()
 	}
 }
 
-void form::add(base_form &subform)
+void form::add(widgets::base_widget &form)
 {
-	elements_.push_back(std::make_pair(&subform,false));
+	elements_.push_back(widget_type(&form,false));
+}
+void form::add(form &subform)
+{
+	elements_.push_back(widget_type(&subform,false));
 }
 
-void form::attach(base_form *subform)
+void form::attach(form *subform)
 {
-	elements_.push_back(std::make_pair(subform,true));
+	elements_.push_back(widget_type(subform,true));
+}
+
+void form::attach(widgets::base_widget *subform)
+{
+	elements_.push_back(widget_type(subform,true));
 }
 
 struct form::iterator::data {
@@ -97,9 +105,9 @@ form::iterator const &form::iterator::operator=(form::iterator const &other)
 	return *this;
 }
 
-bool form::iterator::equal(form::iterator const &other)
+bool form::iterator::equal(form::iterator const &other) const
 {
-	return d->stack == other.d->stack && d->pos=other.d->pos;
+	return (d->stack == other.d->stack) && (d->pos == other.d->pos);
 }
 
 void form::iterator::next()
@@ -113,7 +121,7 @@ void form::iterator::next()
 		form *top=d->stack.top().first;
 		d->pos++;
 
-		if((size_t)pos >= top->elements_.size() ) {
+		if((size_t)d->pos >= top->elements_.size() ) {
 			d->pos=d->stack.top().second;
 			d->stack.pop();
 			continue;
@@ -124,14 +132,14 @@ void form::iterator::next()
 
 		form &f=dynamic_cast<form &>(*top->elements_[d->pos].first);
 		
-		d->stack.push_back(std::make_pair(&f,d->pos));
+		d->stack.push(std::make_pair(&f,d->pos));
 		d->pos=-1;
 	}
 }
 
-form::iterator::pointer_type form::iterator::get() const
+widgets::base_widget *form::iterator::get() const
 {
-	return static_cast<base_widget *>(d->stack.top().first)->elements_[d->pos].first
+	return static_cast<widgets::base_widget *>(d->stack.top().first->elements_[d->pos].first);
 }
 
 form::iterator form::begin()
@@ -174,10 +182,14 @@ base_widget::base_widget(std::string name) :
 
 base_widget::base_widget(std::string name,std::string msg) :
 	name_(name),
-	msg_(msg),
+	message_(msg),
 	is_valid_(1),
 	is_set_(0),
 	is_disabled_(0)
+{
+}
+
+base_widget::~base_widget()
 {
 }
 
@@ -244,6 +256,16 @@ void base_widget::attributes_string(std::string v)
 	attr_=v;
 }
 
+bool base_widget::disabled()
+{
+	return is_disabled_;
+}
+
+void base_widget::disabled(bool v)
+{
+	is_disabled_=v;
+}
+
 std::string base_widget::attributes_string()
 {
 	return attr_;
@@ -261,10 +283,10 @@ void base_widget::render(std::ostream &output,unsigned int flags)
 	case as_table: output<<"<tr><th>"; break;
 	case as_ul: output<<"<li>"; break;
 	case as_dl: output<<"<dt>"; break;
-	default;
+	default: ;
 	}
-	if(!id().empty() && !msg().empty()) {
-		output<<"<label for=\"" << id() << "\">" << util::escape(msg()) <<":</label> ";
+	if(!id().empty() && !message().empty()) {
+		output<<"<label for=\"" << id() << "\">" << util::escape(message()) <<":</label> ";
 	}
 	else {
 		output<<"&nbsp;";
@@ -272,11 +294,11 @@ void base_widget::render(std::ostream &output,unsigned int flags)
 	switch(how) {
 	case as_table: output<<"</th><td>"; break;
 	case as_dl: output<<"</dt><dd>"; break;
-	default;
+	default: ;
 	}
 
 	if(!valid() && !no_error) {
-		output<<"<span class=\"cppcms_form_error\">"<<util::escape(err)<<"</span> "
+		output<<"<span class=\"cppcms_form_error\">"<<util::escape(err)<<"</span> ";
 	}
 	else {
 		output<<"&nbsp;";
@@ -288,21 +310,21 @@ void base_widget::render(std::ostream &output,unsigned int flags)
 	output<<"</span>";
 
 	if(!help().empty()) {
-		output<<"<span class=\"cppcms_form_help\">"<<util::escape(help)<<"</span>";
+		output<<"<span class=\"cppcms_form_help\">"<<util::escape(help())<<"</span>";
 	}
 		
 	switch(how) {
-	case as_p: output<<"</p>"; break;
-	case as_table: output<<"</td><tr>"; break;
-	case as_ul: output<<"</li>"; break;
-	case as_dl: output<<"</dd>"; break;
+	case as_p: output<<"</p>\n"; break;
+	case as_table: output<<"</td><tr>\n"; break;
+	case as_ul: output<<"</li>\n"; break;
+	case as_dl: output<<"</dd>\n"; break;
 	case as_space: 
 		if(flags & as_xhtml) 
-			output<<"<br />";
+			output<<"<br />\n";
 		else
-			output<<"<br>";
+			output<<"<br>\n";
 		break;
-	default;
+	default: ;
 	}
 }
 
@@ -318,56 +340,71 @@ bool base_widget::validate()
 }
 
 ////////////////////////////////
-// widgets::text
+// widgets::base_text
 ////////////////////////////////
 
 
-struct text::data {}
+struct base_text::data {};
 
 
-
-text::text() : low_(0),high_(-1),validate_charset_(true)
+base_text::base_text() : low_(0),high_(-1),validate_charset_(true)
 {
 }
 
-text::text(std::string name) : base_widget(name), low_(0),high_(-1),validate_charset_(true)
-
-{
-}
-
-text::text(std::string name,std::string msg) : base_widget(name,msg), low_(0),high_(-1),validate_charset_(true)
+base_text::base_text(std::string name) : base_widget(name), low_(0),high_(-1),validate_charset_(true)
 
 {
 }
 
-text::~text()
+base_text::base_text(std::string name,std::string msg) : base_widget(name,msg), low_(0),high_(-1),validate_charset_(true)
+
 {
 }
 
-std::string text::value()
+base_text::~base_text()
+{
+}
+
+std::string base_text::value()
 {
 	if(!set())
 		throw cppcms_error("Value was not loaded");
 	return value_;
 }
 
-void text::value(std::string v)
+void base_text::value(std::string v)
 {
 	set(true);
 	value_=v;
 }
 
-std::string text::value(std::locale const &v)
+std::string base_text::value(std::locale const &v)
 {
 	return std::use_facet<locale::charset>(v).to_utf8(value_);
 }
+
+void base_text::value(std::string v,std::locale const &l)
+{
+	value(std::use_facet<locale::charset>(l).from_utf8(v));
+}
+
 #ifdef HAVE_STD_WSTRING
-std::string text::value_wstring(std::locale const &v)
+std::string base_text::value_wstring()
+{
+	return locale::charset().to_wstring(value_);
+}
+
+void base_text::value(std::wstring v)
+{
+	value(locale::charset().from_wstring(v));
+}
+
+std::string base_text::value_wstring(std::locale const &v)
 {
 	return std::use_facet<locale::charset>(v).to_wstring(value_);
 }
 
-void text::value(std::wstring v,std::locale const &l)
+void base_text::value(std::wstring v,std::locale const &l)
 {
 	value(std::use_facet<locale::charset>(l).from_wstring(v));
 }
@@ -376,23 +413,45 @@ void text::value(std::wstring v,std::locale const &l)
 
 #ifdef HAVE_CPP0X_UXSTRING
 
-std::u16string text::value_u16string(std::locale const &v)
+std::u16string base_text::value_u16string()
+{
+	return locale::charset().to_u16string(value_);
+}
+
+void base_text::value(std::u16string v)
+{
+	value(locale::charset().from_u16string(v));
+}
+
+
+std::u32string base_text::value_u32string()
+{
+	return locale::charset().to_u32string(value_);
+}
+
+void base_text::value(std::u32string v)
+{
+	value(locale::charset().from_u32string(v));
+}
+
+
+std::u16string base_text::value_u16string(std::locale const &v)
 {
 	return std::use_facet<locale::charset>(v).to_u16string(value_);
 }
 
-void text::value(std::u16string v,std::locale const &l)
+void base_text::value(std::u16string v,std::locale const &l)
 {
 	value(std::use_facet<locale::charset>(l).from_u16string(v));
 }
 
 
-std::u32string text::value_u32string(std::locale const &v)
+std::u32string base_text::value_u32string(std::locale const &v)
 {
 	return std::use_facet<locale::charset>(v).to_u32string(value_);
 }
 
-void text::value(std::u32string v,std::locale const &l)
+void base_text::value(std::u32string v,std::locale const &l)
 {
 	value(std::use_facet<locale::charset>(l).from_u32string(v));
 }
@@ -400,36 +459,56 @@ void text::value(std::u32string v,std::locale const &l)
 #endif
 
 #ifdef HAVE_ICU
-icu::UnicodeString text::value_icu_string(std::locale const &v)
+icu::UnicodeString base_text::value_icu_string()
+{
+	return locale::charset().to_icu_string(value_);
+}
+void base_text::value(icu::UnicodeString const &v)
+{
+	value(locale::charset().from_icu_string(v));
+}
+
+icu::UnicodeString base_text::value_icu_string(std::locale const &v)
 {
 	return std::use_facet<locale::charset>(v).to_icu_string(value_);
 }
-void text::value(icu::UnicodeString const &v,std::locale const &l)
+void base_text::value(icu::UnicodeString const &v,std::locale const &l)
 {
 	value(std::use_facet<locale::charset>(l).from_icu_string(v));
 }
 
 #endif
 
-void text::non_empty()
+void base_text::non_empty()
 {
 	limits(1,-1);
 }
 
-void text::limits(int min,int max)
+void base_text::limits(int min,int max)
 {
 	low_=min;
 	high_=max;
 }
 
-void text::disable_charset_validation()
+std::pair<int,int> base_text::limits()
 {
-	validate_charset_=false;
+	return std::make_pair(low_,high_);
 }
 
-void text::load(http::context &context)
+void base_text::validate_charset(bool v)
+{
+	validate_charset_=v;
+}
+
+bool base_text::validate_charset()
+{
+	return validate_charset_;
+}
+
+void base_text::load(http::context &context)
 {
 	value_.clear();
+	code_points_ = 0;
 	set(false);
 	valid(true);
 	if(name().empty()) {
@@ -443,26 +522,183 @@ void text::load(http::context &context)
 	value_=p->second;
 	set(true);
 	if(validate_charset_) {
+		code_points_ = 0;
 		locale::charset const &charset=std::use_facet<locale::charset>(context.locale().get());
-		if(!charset.validate(value))
+		if(!charset.validate(value_,code_points_))
 			valid(false);
+	}
+	else {
+		code_points_=value_.size();
 	}
 }
 
-bool text::validate()
+bool base_text::validate()
 {
 	if(!valid())
 		return false;
-	if(!set() && low_=0 && high_==-1) {
+	if(!set() && low_==0 && high_==-1) {
 		valid(true);
 		return true;
 	}
-	if(value_.size() < low_ || (high_ >=0 && value_.size() > size_t(high_))) {
+	if(code_points_ < size_t(low_) || (high_ >=0 && code_points_ > size_t(high_))) {
 		valid(false);
 		return false;
 	}
+	return true;
 }
 
+
+//////////////////////////////////////////////
+/// widgets::text
+/////////////////////////////////////////////
+
+struct text::data {};
+
+text::text() : size_(-1),type_("text") {}
+text::~text() {}
+
+text::text(std::string n) : base_text(n) , size_(-1),type_("text") {}
+text::text(std::string n,std::string m) : base_text(n,m),size_(-1),type_("text") {}
+
+void text::type(std::string t)
+{
+	type_=t;
+}
+
+void text::render_input_start(std::ostream &output,unsigned flags)
+{
+	output<<"<input type=\""<<type_<<"\" ";
+
+	std::string v;
+	v=id();
+	if(!v.empty()) output << "id=\"" << v << "\" ";
+	v=name();
+	if(!v.empty()) output << "name=\"" << v << "\" ";
+	if(disabled()) {
+		if(flags & as_xhtml)
+			output << "disabled=\"disabled\" ";
+		else
+			output << "disabled ";
+	}
+	if(size_ >= 0)
+		output << boost::format("size=\"%1%\" ",std::locale::classic()) % size_;
+	
+	std::pair<int,int> lm=limits();
+	
+	if(lm.second >= 0 && validate_charset()) {
+		output << boost::format("maxlength=\"%1%\" ",std::locale::classic()) % lm.second;
+	}
+	
+	if(set()) {
+		output << "value=\""<<util::escape(value())<<"\"";
+	}
+}
+
+void text::render_input_end(std::ostream &output,unsigned flags)
+{
+	if(flags & as_xhtml)
+		output<<" />";
+	else
+		output<<" >";
+}
+//////////////////////////////////////////////
+/// widgets::textarea
+/////////////////////////////////////////////
+
+
+struct textarea::data {};
+
+textarea::textarea() : rows_(-1), cols_(-1) {}
+textarea::~textarea() {}
+
+textarea::textarea(std::string n) : base_text(n), rows_(-1), cols_(-1) {}
+textarea::textarea(std::string n,std::string m) : base_text(n,m), rows_(-1), cols_(-1)  {}
+
+int textarea::rows() { return rows_; }
+int textarea::cols() { return cols_; }
+
+void textarea::rows(int n) { rows_ = n; }
+void textarea::cols(int n) { cols_ = n; }
+
+void textarea::render_input_start(std::ostream &output,unsigned flags)
+{
+	output<<"<textarea ";
+
+	std::string v;
+	v=id();
+	if(!v.empty()) output << "id=\"" << v << "\" ";
+	v=name();
+	if(!v.empty()) output << "name=\"" << v << "\" ";
+	if(disabled()) {
+		if(flags & as_xhtml)
+			output << "disabled=\"disabled\" ";
+		else
+			output << "disabled ";
+	}
+
+	if(rows_ >= 0) {
+		output<<boost::format("rows=\"%1%\"",std::locale::classic()) % rows_;
+	}
+	if(cols_ >= 0) {
+		output<<boost::format("cols=\"%1%\"",std::locale::classic()) % cols_;
+	}
+}
+
+void textarea::render_input_end(std::ostream &output,unsigned flags)
+{
+	if(set()) {
+		output << ">"<<util::escape(value())<<"</textarea>";
+	}
+	else {
+		output << "></textarea>";
+	}
+}
+
+
+////////////////////////
+/// Password widget  ///
+////////////////////////
+struct password::data {};
+
+password::password() : password_to_check_(0)
+{
+	type("password");
+}
+password::password(std::string name) : text(name), password_to_check_(0) 
+{
+	type("password");
+}
+
+password::password(std::string name,std::string msg) : text(name,msg), password_to_check_(0) 
+{
+	type("password");
+}
+password::~password() 
+{
+}
+
+void password::check_equal(password &p2)
+{
+	password_to_check_ = &p2;
+}
+
+bool password::validate()
+{
+	if(!text::validate()) {
+		value("");
+		return false;
+	}
+	if(password_to_check_) {
+		if(!password_to_check_->set() || password_to_check_->value()!=value()) {
+			valid(false);
+			value("");
+			password_to_check_->value("");
+			return false;
+		}
+	}
+	return true;
+
+}
 
 
 } // widgets 

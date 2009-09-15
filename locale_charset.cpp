@@ -11,6 +11,23 @@ struct charset::data {};
 
 std::locale::id charset::id;
 
+charset::charset(std::size_t refs) :
+	std::locale::facet(refs),
+	is_utf8_(true),
+	validators_(0)
+{
+}
+
+
+charset::charset(std::string charset,std::size_t refs) :
+	std::locale::facet(refs),
+	name_(charset),
+	validators_(0)
+{
+	is_utf8_ = charset=="utf8" || charset=="UTF8" || charset=="utf-8" || charset=="UTF-8";
+}
+
+
 charset::charset(std::string charset,intrusive_ptr<encoding::validators_set> p,std::size_t refs) :
 	std::locale::facet(refs),
 	name_(charset),
@@ -24,10 +41,12 @@ charset::~charset()
 }
 
 
-bool charset::do_validate(char const *begin,char const *end) const
+bool charset::do_validate(char const *begin,char const *end,size_t &count) const
 {
+	if(!validators_)
+		return true;
 	encoding::validator v=(*validators_)[name_];
-	return v.valid(begin,end);
+	return v.valid(begin,end,count);
 }
 std::string charset::do_to_utf8(std::string const &v) const
 {

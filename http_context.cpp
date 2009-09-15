@@ -19,13 +19,12 @@ namespace cppcms {
 namespace http {
 
 	struct context::data {
-		http::request request;
-		http::response response;
 		cppcms::locale::environment locale;
+		http::request request;
+		std::auto_ptr<http::response> response;
 		data(context &cntx) :
-			request(cntx.connection()),
-			response(cntx),
-			locale(cntx.connection().service())
+			locale(cntx.connection().service()),
+			request(cntx.connection())
 		{
 		}
 	};
@@ -33,7 +32,8 @@ namespace http {
 context::context(intrusive_ptr<impl::cgi::connection> conn) :
 	conn_(conn)
 {
-	d.reset(new data(*this));	
+	d.reset(new data(*this));
+	d->response.reset(new http::response(*this));
 }
 
 
@@ -165,7 +165,7 @@ http::request &context::request()
 
 http::response &context::response()
 {
-	return d->response;
+	return *d->response;
 }
 
 json::value const &context::settings()

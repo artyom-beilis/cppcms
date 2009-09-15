@@ -17,7 +17,7 @@ int cppcms_validator_test_function();
 namespace cppcms {
 	namespace encoding {
 		
-		typedef bool (*encoding_tester_type)(char const *begin,char const *end);
+		typedef bool (*encoding_tester_type)(char const *begin,char const *end,size_t &count);
 		
 		class iconv_validator;
 
@@ -30,8 +30,8 @@ namespace cppcms {
 			validator const &operator=(validator const &other);
 
 
-			bool valid(char const *begin,char const *end);
-			bool valid(std::string const &str);
+			bool valid(char const *begin,char const *end,size_t &count);
+			bool valid(std::string const &str,size_t &count);
 
 			~validator();
 		private:
