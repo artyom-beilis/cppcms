@@ -51,6 +51,8 @@ libcppcms_la_SOURCES = \
 	json.cpp \
 	encoding.cpp \
 	locale_charset.cpp \
+	locale_icu_locale.cpp \
+	locale_convert.cpp \
 	form.cpp
 
 

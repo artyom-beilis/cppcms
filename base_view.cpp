@@ -4,8 +4,7 @@
 #include "locale_gettext.h"
 #include "locale_environment.h"
 #include "base64.h"
-#include "locale_info.h"
-#include "utf_iterator.h"
+#include "locale_convert.h"
 #include "cppcms_error.h"
 
 #include <vector>
@@ -113,51 +112,22 @@ void base_view::base64_encode(std::ostream &os,std::string const &s)
 	os<<buf;
 }
 
-namespace {
-
-void to_something(	std::ostream &out,
-			std::string const &s,
-			char (std::ctype<char>::*narop)(char) const,
-			wchar_t (std::ctype<wchar_t>::*wideop)(wchar_t) const)
-{
-	using namespace std;
-
-	std::locale l=out.getloc();
-	if(!has_facet<locale::info>(l)
-	   || !use_facet<locale::info>(l).is_utf8()
-	   || !has_facet<ctype<wchar_t> >(l))
-	{
-		ctype<char> const &converter=use_facet<ctype<char> >(l);
-		for(unsigned i=0;i<s.size();i++)
-			out.put((converter.*narop)(s[i]));
-		return;
-	}
-	ctype<wchar_t> const &converter=use_facet<ctype<wchar_t> >(l);
-	
-	std::string::const_iterator p=s.begin(),e=s.end();
-	
-	uint32_t code_point;
-
-	while(p!=e && (code_point=cppcms::utf8::next(p,e,false,true))!=utf::illegal) {
-		if(sizeof(wchar_t) == 4 || code_point <=0xFFFF)
-			code_point=(converter.*wideop)(code_point);
-		utf8::seq s=utf8::encode(code_point);
-		out.write(s.c,s.len);
-	}
-	if(p!=e) {
-		out.write(s.c_str() + (p-s.begin()), (e-p));
-	}
-
-}
-} // anonymous
 void base_view::to_lower(std::ostream &out,std::string const &s)
 {
-	to_something(out,s,&std::ctype<char>::tolower,&std::ctype<wchar_t>::tolower);
+	locale::convert const &conv=std::use_facet<locale::convert>(out.getloc());
+	out<<conv.to_lower(s);
 }
 
 void base_view::to_upper(std::ostream &out,std::string const &s)
 {
-	to_something(out,s,&std::ctype<char>::toupper,&std::ctype<wchar_t>::toupper);
+	locale::convert const &conv=std::use_facet<locale::convert>(out.getloc());
+	out<<conv.to_upper(s);
+}
+
+void base_view::to_title(std::ostream &out,std::string const &s)
+{
+	locale::convert const &conv=std::use_facet<locale::convert>(out.getloc());
+	out<<conv.to_upper(s);
 }
 
 base_view::doublef::~doublef(){}

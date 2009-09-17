@@ -5,8 +5,13 @@
 #include "hold_ptr.h"
 #include "intrusive_ptr.h"
 #include "config.h"
+
 #include <locale>
 #include <string>
+
+#ifdef HAVE_ICU
+#include <unicode/unistr.h>
+#endif
 
 namespace cppcms { 
 	namespace encoding {

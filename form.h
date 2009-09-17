@@ -13,6 +13,10 @@
 #include <ostream>
 #include <sstream>
 
+#ifdef HAVE_ICU
+#include <unicode/unistr.h>
+#endif
+
 #include "http_context.h"
 #include "http_request.h"
 #include "http_response.h"
@@ -549,6 +553,21 @@ namespace cppcms {
 			///
 
 			void value(std::string v);
+			
+			///
+			/// Set the widget content before rendering, the value \a v 
+			/// is assumed to be encoding according to current locale.
+			/// It should be encoded appropriately.
+			///
+			/// For example. If the locale is ru_RU.ISO8859-5, then \a v
+			/// should be encoded as ISO-8859-5 if it is ru_RU.UTF-8
+			/// then it should be encoded as UTF-8 string.
+			///
+
+			void value(char const *str)
+			{
+				value(std::string(str));
+			}
 
 			///
 			/// Set the widget content before rendering, to value \a v,
@@ -577,6 +596,23 @@ namespace cppcms {
 			///
 			std::wstring value_wstring();
 
+			///
+			/// Set the content of widget converting wide character string to UTF-8 string.
+			///
+			/// Please note, std::wstring may represent UTF-16 variable length
+			/// encoded string (mostly on Win32) or fixed length encoded UTF-32 string
+			/// (mostly UNIX platforms) according to sizeof(wchar_t). So if you develop
+			/// cross platform applications, never assume that one wchar_t represents
+			/// one code point.
+			///
+			/// Important Note: it assumes that the current locale character encoding is UTF-8.
+			/// Never use it if you support non UTF-8 encodings.
+			///
+			void value(wchar_t const *s)
+			{
+				value(std::wstring(s));
+			}
+	
 			///
 			/// Set the content of widget converting wide character string to UTF-8 string.
 			///

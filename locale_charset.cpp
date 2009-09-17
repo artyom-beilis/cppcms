@@ -3,6 +3,7 @@
 #include "encoding.h"
 #include "utf_iterator.h"
 #include "cppcms_error.h"
+#include <iostream>
 
 namespace cppcms {
 namespace locale {

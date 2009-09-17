@@ -63,6 +63,7 @@ public: //Filters
 
 	static void to_upper(std::ostream &,std::string const &s);
 	static void to_lower(std::ostream &,std::string const &s);
+	static void to_title(std::ostream &,std::string const &s);
 
 
 protected:

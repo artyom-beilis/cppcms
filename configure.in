@@ -22,8 +22,11 @@ AC_ARG_ENABLE(forkcache,[AS_HELP_STRING([--disable-forkcache],[Disable shared me
 AC_ARG_ENABLE(fastcgi,[AS_HELP_STRING([--disable-fastcgi],[Disable fastcgi interface])])
 AC_ARG_ENABLE(tcpcache,[AS_HELP_STRING([--disable-tcpcache],[Disable distributed cache system])])
 AC_ARG_ENABLE(crypt,[AS_HELP_STRING([--disable-crypt],[Disable encrypted sessions backend])])
+AC_ARG_ENABLE(icu,[AS_HELP_STRING([--disable-icu],[Disable ICU support])])
 AC_ARG_ENABLE(sqlite,[AS_HELP_STRING([--disable-sqlite],[Disable sqlite sessions backend])])
 AC_ARG_ENABLE(boostsuffix,[AS_HELP_STRING([--enable-boostsuffix],[Specify custom suffix for boost libraries])])
+
+
 
 if test "x$enable_boostsuffix" != "xyes"  && test "x$enable_boostsuffix" != "xno"
 then
@@ -49,6 +52,10 @@ fi
 
 CPPCMS_LIBS=""
 
+
+
+
+
 MY_SAVE_LIBS="$LIBS"
 
 case $host in
@@ -57,6 +64,17 @@ case $host in
 		CXXFLAGS="-pthreads $CXXFLAGS" 
 		LDFLAGS="-pthreads $LDFLAGS" 
 esac
+
+if test "x$enable_icu" != "xno" ; then
+	AC_CHECK_LIB(icuuc,main,[
+		have_icu=yes
+		CPPCMS_LIBS="-licui18n -licuuc -licudata $CPPCMS_LIBS"
+		AC_DEFINE([HAVE_ICU],[],["Enable ICU support"])
+		],
+		[	echo "====================================================================="
+			echo "ICU not found, ICU support is disabled"
+			echo "=====================================================================" ])
+fi
 
 
 if test "x$cms_bld" != "xcgi" 

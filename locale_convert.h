@@ -2,112 +2,140 @@
 #define CPPCMS_LOCALE_ICU_H
 
 #include "defs.h"
+#include "config.h"
+#include "hold_ptr.h"
 #include <locale>
+
 
 namespace cppcms {
 namespace locale {
 
-#ifdef HAVE_ICU
-	typedef icu::UnicodeString unicode_string;
-#else
-	typedef std::basic_string<wchar_t> unicode_string;
-#endif
+	class convert_impl;
 
+	///
+	/// \brief This class provides basic unicode aware string manipulation utilities
+	///
+	/// If CppCMS is compiled with ICU support it performs these operations using ICU
+	/// library, otherwise it uses std::locale facets for these operations, so some
+	/// functionality may have lower quality or not supported at all
+	///
 
 	class CPPCMS_API convert : public std::locale::facet {
 	public:
 		static std::locale::id id;
 
+		typedef enum {	norm_default,	/// < Default Unicode normalization as provided by ICU
+				norm_nfc,	/// < NFC Unicode normalization
+				norm_nfd,	/// < NFD Unicode normalization
+				norm_nfkc,	/// < NFKC Unicode normalization
+				norm_nfkd	/// < NFKD Unicode normalization
+		} norm_type;
+		
+
+		///
+		/// Create convert facet.
+		///
+		/// \a charset, \a icu_locale and \a info facets should be assigned to \a source
+		/// 
+
 		convert(std::locale const &source,size_t refs=0);
 		virtual ~convert();
 
-		template<typename Char>
-		std::basic_string<Char> to_upper(std::basic_string<Char> const &str) const
-		{
-			to_std<Char>(to_uni(str).do_to_upper(get()));
-		}
+		///
+		/// Convert string in current locale representation (utf8 or other encoding)
+		/// to upper case.
+		///
+		
+		std::string to_upper(std::string const &str) const;
+		///
+		/// Convert string in current locale representation (utf8 or other encoding)
+		/// to lower case.
+		///
+		
+		std::string to_lower(std::string const &str) const;
 
-		template<typename Char>
-		std::basic_string<Char> to_lower(std::basic_string<Char> const &str) const
-		{
-			to_std<Char>(to_uni(str).do_to_lower(get()));
-		}
+		///
+		/// Convert string in current locale representation (utf8 or other encoding)
+		/// to title case.
+		///
+		std::string to_title(std::string const &str) const;
 
-		template<typename Char>
-		std::basic_string<Char> to_title(std::basic_string<Char> const &str) const
-		{
-			to_std<Char>(to_uni(str).do_to_title(get()));
-		}
+		///
+		/// Perform Unicode normalization of the string in current locale representation
+		/// (utf8 or other encoding). Such conversion may be meaningless for non-Unicode locale.
+		///
+		/// Note: if CppCMS is compiled without support of ICU this function does nothing.
+		///
 
-		enum {	norm_default,
-			norm_nfc,
-			norm_nfd,
-			norm_nfkc,
-			norm_nfkd
-		} norm_type;
+		std::string to_normal(std::string const &str,norm_type how = norm_default) const;
 
-		template<typename Char>
-		std::basic_string<Char> to_normal(std::basic_string<Char> const &str,norm_type how=normalize_default) const
-		{
-			to_std<Char>(do_to_normal(to_icu(str),how));
-		}
+		#ifdef HAVE_STD_WSTRING
+		///
+		/// Convert wide character string to upper case 
+		///
+		std::wstring to_upper(std::wstring const &str) const;
+		///
+		/// Convert wide character string to lower case 
+		///
+		std::wstring to_lower(std::wstring const &str) const;
+		///
+		/// Convert wide character string to title case 
+		///
+		std::wstring to_title(std::wstring const &str) const;
+		///
+		/// Perform Unicode normalization of the wide character string
+		///
+		/// Note: if CppCMS is compiled without support of ICU this function does nothing.
+		///
+		std::wstring to_normal(std::wstring const &str,norm_type how = norm_default) const;
+		#endif
 
-		template<Char>
-		std::basic_string<Char> to_std(unicode_string const &str);
+		#ifdef HAVE_CPP0X_UXSTRING
+		///
+		/// Convert utf16 string to upper case 
+		///
+		std::u16string to_upper(std::u16string const &str) const;
+		///
+		/// Convert utf16 string to lower case 
+		///
+		std::u16string to_lower(std::u16string const &str) const;
+		///
+		/// Convert utf16 string to title case 
+		///
+		std::u16string to_title(std::u16string const &str) const;
+		///
+		/// Perform Unicode normalization of utf16 string
+		///
+		/// Note: if CppCMS is compiled without support of ICU this function does nothing.
+		///
+		std::u16string to_normal(std::u16string const &str,norm_type how = norm_default) const;
 
-		template<Char>
-		unicode_string to_uni(std::basic_string<Char> const &str);
+		///
+		/// Convert utf32 string to upper case 
+		///
+		std::u32string to_upper(std::u32string const &str) const;
+		///
+		/// Convert utf32 string to lower case 
+		///
+		std::u32string to_lower(std::u32string const &str) const;
+		///
+		/// Convert utf32 string to title case 
+		///
+		std::u32string to_title(std::u32string const &str) const;
+		///
+		/// Perform Unicode normalization of utf32 string
+		///
+		/// Note: if CppCMS is compiled without support of ICU this function does nothing.
+		///
+		std::u32string to_normal(std::u32string const &str,norm_type how = norm_default) const;
+		#endif
 
 	private:
 		
-		unicode_string do_to_upper(unicode_string const &s) const;
-		unicode_string do_to_lower(unicode_string const &s) const;
-		unicode_string do_to_title(unicode_string const &s) const;
-		unicode_string do_to_normal(unicode_string const &s) const;
-
-		struct data;
-		util::hold_ptr<data> d;
+		util::hold_ptr<convert_impl> impl_;
 			
 	};
 
-	template<>
-	std::basic_string<char> CPPCMS_API unicode::to_std(unicode_string const &str);
-
-	template<>
-	unicode_string CPPCMS_API unicode::to_uni(std::basic_string<char> const &str);
-
-	template<>
-	std::basic_string<wchar_t> CPPCMS_API unicode::to_std(unicode_string const &str);
-
-	template<>
-	unicode_string cppcms_api unicode::to_uni(std::basic_string<wchar_t> const &str);
-
-	template<>
-	std::basic_string<uint16_t> cppcms_api unicode::to_std(unicode_string const &str);
-
-	template<>
-	unicode_string cppcms_api unicode::to_uni(std::basic_string<uint16_t> const &str);
-
-	template<>
-	std::basic_string<uint32_t> cppcms_api unicode::to_std(unicode_string const &str);
-
-	template<>
-	unicode_string cppcms_api unicode::to_uni(std::basic_string<uint32_t> const &str);
-
-	#ifdef HAVE_CPP0X_UXSTRING
-	template<>
-	std::basic_string<char16_t> CPPCMS_API unicode::to_std(unicode_string const &str);
-
-	template<>
-	unicode_string CPPCMS_API unicode::to_uni(std::basic_string<char16_t> const &str);
-
-	template<>
-	std::basic_string<char32_t> CPPCMS_API unicode::to_std(unicode_string const &str);
-
-	template<>
-	unicode_string CPPCMS_API unicode::to_uni(std::basic_string<char32_t> const &str);
-
-	#endif
 
 } // locale
 } // cppcms

@@ -231,13 +231,13 @@ namespace utf16 {
 	{
 		seq out={ {0} };
 		if(u<=0xFFFF) {
-			out.c[0]=0;
+			out.c[0]=u;
 			out.len=1;
 		}
 		else {
-			u-=0x100000;
+			u-=0x10000;
 			out.c[0]=0xD800 | (u>>10);
-			out.c[1]=0xDC00 | (u && 0x3FF);
+			out.c[1]=0xDC00 | (u & 0x3FF);
 			out.len=2;
 		}
 		return out;

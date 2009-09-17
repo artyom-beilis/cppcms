@@ -4,6 +4,8 @@
 #include "locale_gettext.h"
 #include "locale_info.h"
 #include "locale_charset.h"
+#include "locale_convert.h"
+#include "locale_icu_locale.h"
 #include "encoding.h"
 #include "json.h"
 #include <vector>
@@ -61,6 +63,14 @@ pool::pool(json::value const &settings) :
 		combined.reset(new std::locale(*base,inf.release()));
 		base=combined;
 		combined.reset(new std::locale(*base,new charset(enc,validators)));
+		base=combined;
+#ifdef HAVE_ICU
+		combined.reset(new std::locale(*base,new icu_locale(name)));
+		base=combined;
+#endif
+		combined.reset(new std::locale(*base,new convert(*base)));
+		base=combined;
+
 		d->locales[name]=combined;
 	}
 }

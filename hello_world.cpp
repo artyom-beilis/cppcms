@@ -6,11 +6,13 @@
 #include "http_request.h"
 #include "http_cookie.h"
 #include "locale_environment.h"
+#include "locale_charset.h"
 #include "http_context.h"
 #include "format.h"
 #include "aio_timer.h"
 #include "intrusive_ptr.h"
 #include "form.h"
+#include "locale_convert.h"
 #include <sstream>
 #include <stdexcept>
 #include <stdlib.h>
@@ -87,12 +89,10 @@ public:
 		dispatcher().assign("^/update$",&stock::update,this);
 		price_=10.3;
 		counter_=0;
-		std::cout<<"stock()"<<std::endl;
 		async_run();
 	}
 	~stock()
 	{
-		std::cout<<"~stock()"<<std::endl;
 	}
 	void async_run()
 	{
@@ -170,15 +170,15 @@ public:
 	my_form() :
 		name("name","Your Name"),
 		age("age","Your Age"),
-		p1("p1","Password"),
-		p2("p2","Confirm"),
+		//p1("p1","Password"),
+		//p2("p2","Confirm"),
 		description("descr","Describe")
 	{
 		name.limits(2,30);
 		age.range(0,120);
-		p1.check_equal(p2);
-		p1.non_empty();
-		*this + name + age + p1 + p2 + description;
+		//p1.check_equal(p2);
+		//p1.non_empty();
+		*this + name + age + /*p1 + p2 + */ description;
 	}
 };
 
@@ -196,11 +196,9 @@ public:
 		dispatcher().assign("^/forward$",&hello::forward,this);
 		dispatcher().assign("^/form$",&hello::form,this);
 		dispatcher().assign(".*",&hello::hello_world,this);
-		std::cout<<"hello()"<<std::endl;
 	}
 	~hello()
 	{
-		std::cout<<"~hello()"<<std::endl;
 	}
 
 	void form()
@@ -215,10 +213,26 @@ public:
 		}
 		response().out()<<
 			"<html><body>\n";
+	
+		cppcms::locale::convert const &cv=std::use_facet<cppcms::locale::convert>(locale().get());
+
+		if(f.name.set()) {
+			std::string name = f.name.value();
+			response().out() <<"Upper: "<<cv.to_upper(name)<<"<br>"<<std::endl;
+			response().out() <<"Lower: "<<cv.to_lower(name)<<"<br>"<<std::endl;
+			response().out() <<"Title: "<<cv.to_title(name)<<"<br>"<<std::endl;
+			response().out() <<"Normal: "<<cv.to_normal(name)<<"<br>"<<std::endl;
+
+		}
+
 		if(ok) {
+
 			response().out() << f.name.value() <<" " <<f.age.value();
+
 			f.clear();
 		}
+
+
 		
 		response().out()<<
 			"<form action='" <<
