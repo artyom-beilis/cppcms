@@ -11,6 +11,7 @@
 #endif
 
 #include <stdexcept>
+#include <typeinfo>
 
 namespace cppcms {
 namespace locale {
@@ -33,8 +34,8 @@ namespace locale {
 			else if(sizeof(Char) == 4) {
 				std::basic_string<Char> tmp;
 				tmp.reserve(str.length());
-				uint16_t *begin=reinterpret_cast<uint16_t const *>(str.getBuffer());
-				uint16_t *end=begin+str.length();
+				uint16_t const *begin=reinterpret_cast<uint16_t const *>(str.getBuffer());
+				uint16_t const *end=begin+str.length();
 				while(begin<end) {
 					uint32_t v=utf16::next(begin,end);
 					if(v!=utf::illegal)
