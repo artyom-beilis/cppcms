@@ -53,6 +53,7 @@ libcppcms_la_SOURCES = \
 	locale_charset.cpp \
 	locale_icu_locale.cpp \
 	locale_convert.cpp \
+	icu_util.cpp \
 	form.cpp
 
 

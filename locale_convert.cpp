@@ -8,6 +8,7 @@
 #ifdef HAVE_ICU
 #include <unicode/unistr.h>
 #include <unicode/normlzr.h>
+#include "icu_util.h"
 #endif
 
 #include <stdexcept>
@@ -23,45 +24,6 @@ namespace locale {
 			std_locale_(loc),
 			icu_locale_(std::use_facet<icu_locale>(loc).get())
 		{
-		}
-		
-		template<typename Char>
-		std::basic_string<Char> to_std(icu::UnicodeString const &str) const
-		{
-			if(sizeof(Char) == 2) {
-				return std::basic_string<Char>(reinterpret_cast<Char const *>(str.getBuffer()),str.length());
-			}
-			else if(sizeof(Char) == 4) {
-				std::basic_string<Char> tmp;
-				tmp.reserve(str.length());
-				uint16_t const *begin=reinterpret_cast<uint16_t const *>(str.getBuffer());
-				uint16_t const *end=begin+str.length();
-				while(begin<end) {
-					uint32_t v=utf16::next(begin,end);
-					if(v!=utf::illegal)
-						tmp+=(Char)(v);
-				}
-				return tmp;
-			}
-			else {
-				throw std::bad_cast();
-			}
-		}
-
-		template<typename Char>
-		icu::UnicodeString to_uni(std::basic_string<Char> const &s) const
-		{
-			if(sizeof(Char) == 2)  {
-				return icu::UnicodeString(reinterpret_cast<UChar const *>(s.data()),s.size());
-			}
-			else if(sizeof(Char) == 4)  {
-				icu::UnicodeString tmp(s.size(),0,0);
-				for(size_t i=0;i<s.size();i++)
-					tmp.append((UChar32)(s[i]));
-				return tmp;
-			}
-			else
-				throw std::bad_cast();
 		}
 
 		icu::UnicodeString normalize(icu::UnicodeString const &str,convert::norm_type how) const
@@ -89,17 +51,6 @@ namespace locale {
 		icu::Locale icu_locale_;
 	};
 
-	template<>
-	std::basic_string<char> convert_impl::to_std(icu::UnicodeString const &str) const
-	{
-		return std::use_facet<charset>(std_locale_).from_icu_string(str);
-	}
-	template<>
-	icu::UnicodeString convert_impl::to_uni(std::basic_string<char> const &str) const
-	{
-		return std::use_facet<charset>(std_locale_).to_icu_string(str);
-	}
-
 
 	std::locale::id convert::id;
 
@@ -114,72 +65,72 @@ namespace locale {
 	
 	std::string convert::to_upper(std::string const &str) const
 	{
-		return impl_->to_std<char>((impl_->to_uni(str).toUpper(impl_->icu_locale_)));
+		return util::icu_to_std<char>((util::std_to_icu(str).toUpper(impl_->icu_locale_)));
 	}
 	std::string convert::to_lower(std::string const &str) const
 	{
-		return impl_->to_std<char>((impl_->to_uni(str).toLower(impl_->icu_locale_)));
+		return util::icu_to_std<char>((util::std_to_icu(str).toLower(impl_->icu_locale_)));
 	}
 	std::string convert::to_title(std::string const &str) const
 	{
-		return impl_->to_std<char>((impl_->to_uni(str).toTitle(0,impl_->icu_locale_)));
+		return util::icu_to_std<char>((util::std_to_icu(str).toTitle(0,impl_->icu_locale_)));
 	}
 	std::string convert::to_normal(std::string const &str,norm_type how) const
 	{
-		return impl_->to_std<char>(impl_->normalize(impl_->to_uni(str),how));
+		return util::icu_to_std<char>(impl_->normalize(util::std_to_icu(str),how));
 	}
 
 	#ifdef HAVE_STD_WSTRING
 	std::wstring convert::to_upper(std::wstring const &str) const
 	{
-		return impl_->to_std<wchar_t>((impl_->to_uni(str).toUpper(impl_->icu_locale_)));
+		return util::icu_to_std<wchar_t>((util::std_to_icu(str).toUpper(impl_->icu_locale_)));
 	}
 	std::wstring convert::to_lower(std::wstring const &str) const
 	{
-		return impl_->to_std<wchar_t>((impl_->to_uni(str).toLower(impl_->icu_locale_)));
+		return util::icu_to_std<wchar_t>((util::std_to_icu(str).toLower(impl_->icu_locale_)));
 	}
 	std::wstring convert::to_title(std::wstring const &str) const
 	{
-		return impl_->to_std<wchar_t>((impl_->to_uni(str).toTitle(0,impl_->icu_locale_)));
+		return util::icu_to_std<wchar_t>((util::std_to_icu(str).toTitle(0,impl_->icu_locale_)));
 	}
 	std::wstring convert::to_normal(std::wstring const &str,norm_type how) const
 	{
-		return impl_->to_std<wchar_t>(impl_->normalize(impl_->to_uni(str),how));
+		return util::icu_to_std<wchar_t>(impl_->normalize(util::std_to_icu(str),how));
 	}
 	#endif
 
 	#ifdef HAVE_CPP0X_UXSTRING
 	std::u16string convert::to_upper(std::u16string const &str) const
 	{
-		return impl_->to_std<char16_t>((impl_->to_uni(str).toUpper(impl_->icu_locale_)));
+		return util::icu_to_std<char16_t>((util::std_to_icu(str).toUpper(impl_->icu_locale_)));:
 	}
 	std::u16string convert::to_lower(std::u16string const &str) const
 	{
-		return impl_->to_std<char16_t>((impl_->to_uni(str).toLower(impl_->icu_locale_)));
+		return util::icu_to_std<char16_t>((util::std_to_icu(str).toLower(impl_->icu_locale_)));
 	}
 	std::u16string convert::to_title(std::u16string const &str) const
 	{
-		return impl_->to_std<char16_t>((impl_->to_uni(str).toTitle(0,impl_->icu_locale_)));
+		return util::icu_to_std<char16_t>((util::std_to_icu(str).toTitle(0,impl_->icu_locale_)));
 	}
 	std::u16string convert::to_normal(std::u16string const &str,norm_type how) const
 	{
-		return impl_->to_std<char16_t>(impl_->normalize(impl_->to_uni(str),how));
+		return util::icu_to_std<char16_t>(impl_->normalize(util::std_to_icu(str),how));
 	}
 	std::u32string convert::to_upper(std::u32string const &str) const
 	{
-		return impl_->to_std<char32_t>((impl_->to_uni(str).toUpper(impl_->icu_locale_)));
+		return util::icu_to_std<char32_t>((util::std_to_icu(str).toUpper(impl_->icu_locale_)));
 	}
 	std::u32string convert::to_lower(std::u32string const &str) const
 	{
-		return impl_->to_std<char32_t>((impl_->to_uni(str).toLower(impl_->icu_locale_)));
+		return util::icu_to_std<char32_t>((util::std_to_icu(str).toLower(impl_->icu_locale_)));
 	}
 	std::u32string convert::to_title(std::u32string const &str) const
 	{
-		return impl_->to_std<char32_t>((impl_->to_uni(str).toTitle(0,impl_->icu_locale_)));
+		return util::icu_to_std<char32_t>((util::std_to_icu(str).toTitle(0,impl_->icu_locale_)));
 	}
 	std::u32string convert::to_normal(std::u32string const &str,norm_type how) const
 	{
-		return impl_->to_std<char32_t>(impl_->normalize(impl_->to_uni(str),how));
+		return util::icu_to_std<char32_t>(impl_->normalize(util::std_to_icu(str),how));
 	}
 	#endif
 #else 
