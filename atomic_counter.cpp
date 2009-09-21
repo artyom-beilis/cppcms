@@ -4,19 +4,13 @@
 
 #ifdef CPPCMS_WIN32
 #  include <windows.h>
-#else
-#  if __GNUC__ * 100 + __GNUC_MINOR__ >= 402
-#    include <ext/atomicity.h>
-#  else
-#    include <bits/atomicity.h>
-#  endif
 #endif
 
 
 
 namespace cppcms {
 
-#if defined(CPPCMS_WIN32) || defined(HAVE_GCC_EXCHANGE_AND_ADD) || defined(HAVE_SYNC_FETCH_AND_ADD)
+#if defined(CPPCMS_WIN32) || defined(HAVE_SYNC_FETCH_AND_ADD)
 	atomic_counter::atomic_counter(long value) : value_(value)
 	{
 	}
@@ -66,36 +60,10 @@ namespace cppcms {
 		return __sync_add_and_fetch( &value_, -1 );
 	}
 
-	long atomic_counter::get()
+	long atomic_counter::get() const
 	{
 		return __sync_fetch_and_add( &value_, 0 );
 	}
-
-#elif defined(HAVE_GCC_EXCHANGE_AND_ADD)
-	#if defined(__GLIBCXX__) // g++ 3.4+
-
-	using __gnu_cxx::__atomic_add;
-	using __gnu_cxx::__exchange_and_add;
-
-	#endif
-
-	long atomic_counter::inc()
-	{
-		return __exchange_and_add( &value_, +1 ) + 1;
-	}
-
-	long atomic_counter::dec()
-	{
-		return __exchange_and_add( &value_, -1 ) - 1;
-	}
-
-	long atomic_counter::get() const
-	{
-		return __exchange_and_add( &value_, 0 );
-	}
-
-
-
 
 #else // pthreads
 

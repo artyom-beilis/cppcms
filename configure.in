@@ -116,6 +116,10 @@ have_auto_type_detection=no
 
 AC_CHECK_SIZEOF([wchar_t])
 
+AC_TRY_COMPILE([],[volatile long v;__sync_add_and_fetch(&v,1);],
+		[AC_DEFINE([HAVE_SYNC_FETCH_AND_ADD],[],["Have __sync_fetch_and_add"])
+			echo "__sync_add_and_fetch... ok"],[echo "__sync_add_and_fetch ... not supported"])
+
 AC_TRY_COMPILE([#include <string>
 		],
 		[std::wstring s;],
