@@ -54,7 +54,8 @@ libcppcms_la_SOURCES = \
 	locale_icu_locale.cpp \
 	locale_convert.cpp \
 	icu_util.cpp \
-	form.cpp
+	form.cpp \
+	utf8_iterator.cpp
 
 
 cppcms_config_find_param_SOURCES=cppcms_config_find_param.cpp json.cpp

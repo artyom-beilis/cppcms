@@ -13,6 +13,7 @@
 #include "intrusive_ptr.h"
 #include "form.h"
 #include "locale_convert.h"
+#include "utf8_iterator.h"
 #include <sstream>
 #include <stdexcept>
 #include <stdlib.h>
@@ -201,6 +202,22 @@ public:
 	{
 	}
 
+	template<typename iterator> 
+	void devide(std::string const &str,char const *name)
+	{
+		response().out()<<name<<":";
+		iterator it(str,locale().get());
+		iterator prev = it;
+		++it;
+		response().out()<<std::string(*prev,*it);
+		while(*it!=str.end()) {
+			prev=it;
+			++it;
+			response().out()<<" | "<<std::string(*prev,*it);
+		}
+		response().out()<<"<br>\n";
+	}
+
 	void form()
 	{
 		my_form f;
@@ -223,6 +240,14 @@ public:
 			response().out() <<"Title: "<<cv.to_title(name)<<"<br>"<<std::endl;
 			response().out() <<"Normal: "<<cv.to_normal(name)<<"<br>"<<std::endl;
 
+		}
+		if(f.description.set()) {
+			std::string descr = f.description.value();
+			devide<cppcms::utf8::const_code_point_iterator>(descr,"code");
+			devide<cppcms::utf8::const_character_iterator>(descr,"char");
+			devide<cppcms::utf8::const_word_iterator>(descr,"word");
+			devide<cppcms::utf8::const_sentence_iterator>(descr,"sentence");
+			devide<cppcms::utf8::const_line_iterator>(descr,"line");
 		}
 
 		if(ok) {
