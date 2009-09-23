@@ -63,9 +63,14 @@ namespace cppcms {
 				
 				char const *next()
 				{
-					unsigned char tmp;
-					while(current_ < end_ && ((tmp = *current_++) & 0xC0) == 0xC0 || tmp == 0x80)
-						;
+					if(current_ >= end_)
+						return current_;
+
+					unsigned char tmp=*current_++;
+					if((tmp & 0x80) == 0)
+						return current_;
+					while(current_ < end_ && ((unsigned char)(*current_) & 0xC0) == 0x80)
+						current_ ++;
 					return current_;
 
 				}
@@ -94,12 +99,17 @@ namespace cppcms {
 
 				void curr(char const *iter)
 				{
-					if(iter <= begin_)
+					if(iter <= begin_) {
 						current_ = begin_;
+					}
 					else if(iter >= end_) {
 						current_ = end_;
 					}
-					while( current_ != end_ && ((unsigned char)(*current_)) & 0xC0 == 0x80)
+					else {
+						current_ = iter;
+					}
+
+					while( current_ != end_ && (((unsigned char)(*current_)) & 0xC0) == 0x80)
 						current_++;
 				}
 
@@ -286,18 +296,18 @@ namespace cppcms {
 
 			base_iterator const &operator=(iterator_type iter)
 			{
-				walker_.curr(iter - begin_);
+				walker_.curr(cbegin_ + (iter - begin_));
 				return *this;
 			}
 
 			iterator_type following(iterator_type pos)
 			{
-				return to_iterator(walker_.following(pos - begin_));
+				return to_iterator(walker_.following(cbegin_ + (pos - begin_)));
 			}
 			
 			iterator_type preceding(iterator_type pos)
 			{
-				return to_iterator(walker_.preceding(pos - begin_));
+				return to_iterator(walker_.preceding(cbegin_ + (pos - begin_)));
 			}
 
 			base_iterator operator++(int unused)

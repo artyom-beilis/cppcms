@@ -215,7 +215,22 @@ public:
 			++it;
 			response().out()<<" | "<<std::string(*prev,*it);
 		}
-		response().out()<<"<br>\n";
+		response().out()<<"<br>\n"<<name<<" reversed:";
+		it=str.end();
+		std::string::const_iterator p=*it;
+		--it;
+		response().out()<<std::string(*it,p);
+		while(*it!=str.begin()) {
+			p=*it;
+			--it;
+			response().out()<<" | "<<std::string(*it,p);
+		}
+		response().out()<<"<br>\nRandom "<<name<<":";
+		it = str.begin() + rand() % str.size();
+		prev=it;
+		it+=5;
+		prev-=5;
+		response().out()<<std::string(*prev,*it)<<"<br>\n";
 	}
 
 	void form()

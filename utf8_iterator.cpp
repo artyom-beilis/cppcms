@@ -11,6 +11,7 @@
 #include <unicode/utext.h>
 #endif
 #include <stdexcept>
+#include <typeinfo>
 
 
 namespace cppcms { namespace utf8 { namespace details {
@@ -21,7 +22,7 @@ namespace cppcms { namespace utf8 { namespace details {
 
 	class break_iterator_impl : util::noncopyable {
 	public:
-		break_iterator_impl(char const *b,char const *e,icu::BreakIterator *it,UText *text = 0) :
+		break_iterator_impl(char const *b,char const *e,icu::BreakIterator *it,UText *text = 0,size_t pos = (size_t)(-1)) :
 			begin_(b),
 			end_(e),
 			br_(it),
@@ -35,17 +36,21 @@ namespace cppcms { namespace utf8 { namespace details {
 					delete br_;
 					throw std::runtime_error(u_errorName(status));
 				}
-				
-				status = U_ZERO_ERROR;
-				br_->setText(text_,status);
-
-				if(!U_SUCCESS(status)) {
-					utext_close(text_);
-					delete br_;
-					throw std::runtime_error(u_errorName(status));
-				}
 			}
-			first();
+				
+			UErrorCode status = U_ZERO_ERROR;
+			br_->setText(text_,status);
+
+			if(!U_SUCCESS(status)) {
+				utext_close(text_);
+				delete br_;
+				throw std::runtime_error(u_errorName(status));
+			}
+
+			if(pos!=(size_t)(-1))
+				br_->isBoundary(pos);
+			else
+				first();
 		}
 		~break_iterator_impl()
 		{
@@ -59,8 +64,7 @@ namespace cppcms { namespace utf8 { namespace details {
 			if(!U_SUCCESS(status)) {
 				throw std::runtime_error(u_errorName(status));
 			}
-			
-			return new break_iterator_impl(begin_,end_,br_->clone(),text);
+			return new break_iterator_impl(begin_,end_,br_->clone(),text,br_->current());
 		}
 
 		bool equal(break_iterator_impl const &other) const
