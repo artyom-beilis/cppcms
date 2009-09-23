@@ -9,9 +9,12 @@
 #include <locale>
 #include <string>
 
-#ifdef HAVE_ICU
-#include <unicode/unistr.h>
+#ifndef HAVE_STD_WSTRING
+namespace std {
+	typedef basic_string<wchar_t> wstring;
+}
 #endif
+
 
 namespace cppcms { 
 	namespace encoding {
@@ -41,12 +44,32 @@ namespace locale {
 		{
 			return do_to_utf8(v);
 		}
+
 		std::string from_utf8(std::string const &v) const
 		{
 			return do_from_utf8(v);
 		}
 
-#ifdef HAVE_STD_WSTRING
+		std::basic_string<uint16_t> to_utf16(char const *begin,char const *end) const
+		{
+			return do_to_utf16(begin,end);
+		}
+
+		std::string from_utf16(uint16_t const *begin,uint16_t const *end) const
+		{
+			return do_from_utf16(begin,end);
+		}
+
+		std::basic_string<uint32_t> to_utf32(char const *begin,char const *end) const
+		{
+			return do_to_utf32(begin,end);
+		}
+
+		std::string from_utf32(uint32_t const *begin,uint32_t const *end) const
+		{
+			return do_from_utf32(begin,end);
+		}
+
 		std::wstring to_wstring(std::string const &v) const
 		{
 			#if SIZEOF_WCHAR_T==2
@@ -68,7 +91,6 @@ namespace locale {
 			return do_from_utf32(begin,end);
 			#endif
 		}
-#endif
 
 #ifdef HAVE_CPP0X_UXSTRING
 		std::u16string to_u16string(std::string const &v) const
@@ -94,21 +116,6 @@ namespace locale {
 			return do_from_utf32(begin,end);
 		}
 #endif
-
-#ifdef HAVE_ICU
-		icu::UnicodeString to_icu_string(std::string const &v) const
-		{
-			std::basic_string<uint16_t> tmp=do_to_utf16(v.data(),v.data()+v.size());
-			return icu::UnicodeString(reinterpret_cast<UChar const *>(tmp.data()),tmp.size());
-		}
-		std::string from_icu_string(icu::UnicodeString const &v) const
-		{
-			uint16_t const *begin=reinterpret_cast<uint16_t const *>(v.getBuffer());
-			uint16_t const *end=begin+v.length();
-			return do_from_utf16(begin,end);
-		}
-#endif
-
 
 	private:
 		virtual bool do_validate(char const *begin,char const *end,size_t &count) const;

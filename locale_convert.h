@@ -69,67 +69,6 @@ namespace locale {
 
 		std::string to_normal(std::string const &str,norm_type how = norm_default) const;
 
-		#ifdef HAVE_STD_WSTRING
-		///
-		/// Convert wide character string to upper case 
-		///
-		std::wstring to_upper(std::wstring const &str) const;
-		///
-		/// Convert wide character string to lower case 
-		///
-		std::wstring to_lower(std::wstring const &str) const;
-		///
-		/// Convert wide character string to title case 
-		///
-		std::wstring to_title(std::wstring const &str) const;
-		///
-		/// Perform Unicode normalization of the wide character string
-		///
-		/// Note: if CppCMS is compiled without support of ICU this function does nothing.
-		///
-		std::wstring to_normal(std::wstring const &str,norm_type how = norm_default) const;
-		#endif
-
-		#ifdef HAVE_CPP0X_UXSTRING
-		///
-		/// Convert utf16 string to upper case 
-		///
-		std::u16string to_upper(std::u16string const &str) const;
-		///
-		/// Convert utf16 string to lower case 
-		///
-		std::u16string to_lower(std::u16string const &str) const;
-		///
-		/// Convert utf16 string to title case 
-		///
-		std::u16string to_title(std::u16string const &str) const;
-		///
-		/// Perform Unicode normalization of utf16 string
-		///
-		/// Note: if CppCMS is compiled without support of ICU this function does nothing.
-		///
-		std::u16string to_normal(std::u16string const &str,norm_type how = norm_default) const;
-
-		///
-		/// Convert utf32 string to upper case 
-		///
-		std::u32string to_upper(std::u32string const &str) const;
-		///
-		/// Convert utf32 string to lower case 
-		///
-		std::u32string to_lower(std::u32string const &str) const;
-		///
-		/// Convert utf32 string to title case 
-		///
-		std::u32string to_title(std::u32string const &str) const;
-		///
-		/// Perform Unicode normalization of utf32 string
-		///
-		/// Note: if CppCMS is compiled without support of ICU this function does nothing.
-		///
-		std::u32string to_normal(std::u32string const &str,norm_type how = norm_default) const;
-		#endif
-
 	private:
 		
 		util::hold_ptr<convert_impl> impl_;

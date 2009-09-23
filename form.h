@@ -3,7 +3,6 @@
 
 #include "defs.h"
 #include "noncopyable.h"
-#include "config.h"
 
 #include <string>
 #include <set>
@@ -12,15 +11,9 @@
 #include <vector>
 #include <ostream>
 #include <sstream>
-
-#ifdef HAVE_ICU
-#include <unicode/unistr.h>
-#endif
-
 #include "http_context.h"
 #include "http_request.h"
 #include "http_response.h"
-#include "locale_environment.h"
 #include "copy_ptr.h"
 #include "cppcms_error.h"
 #include "util.h"
@@ -579,168 +572,6 @@ namespace cppcms {
 			/// is just copied.
 			///
 			void value(std::string v,std::locale const &loc);
-
-			#ifdef HAVE_STD_WSTRING
-
-			///
-			/// Get the value of the widget represented as wide character string.
-			/// 
-			/// Please note, std::wstring may represent UTF-16 variable length
-			/// encoded string (mostly on Win32) or fixed length encoded UTF-32 string
-			/// (mostly UNIX platforms) according to sizeof(wchar_t). So if you develop
-			/// cross platform applications, never assume that one wchar_t represents
-			/// one code point.
-			///
-			/// Important Note: it assumes that the current locale character encoding is UTF-8.
-			/// Never use it if you support non UTF-8 encodings.
-			///
-			std::wstring value_wstring();
-
-			///
-			/// Set the content of widget converting wide character string to UTF-8 string.
-			///
-			/// Please note, std::wstring may represent UTF-16 variable length
-			/// encoded string (mostly on Win32) or fixed length encoded UTF-32 string
-			/// (mostly UNIX platforms) according to sizeof(wchar_t). So if you develop
-			/// cross platform applications, never assume that one wchar_t represents
-			/// one code point.
-			///
-			/// Important Note: it assumes that the current locale character encoding is UTF-8.
-			/// Never use it if you support non UTF-8 encodings.
-			///
-			void value(wchar_t const *s)
-			{
-				value(std::wstring(s));
-			}
-	
-			///
-			/// Set the content of widget converting wide character string to UTF-8 string.
-			///
-			/// Please note, std::wstring may represent UTF-16 variable length
-			/// encoded string (mostly on Win32) or fixed length encoded UTF-32 string
-			/// (mostly UNIX platforms) according to sizeof(wchar_t). So if you develop
-			/// cross platform applications, never assume that one wchar_t represents
-			/// one code point.
-			///
-			/// Important Note: it assumes that the current locale character encoding is UTF-8.
-			/// Never use it if you support non UTF-8 encodings.
-			///
-			void value(std::wstring v);
-
-			///
-			/// Get the value of the widget represented as wide character
-			/// string converting it from the locale's \a loc encoding.
-			///
-			/// Please note, std::wstring may represent UTF-16 variable length
-			/// encoded string (mostly on Win32) or fixed length encoded UTF-32 string
-			/// (mostly UNIX platforms) according to sizeof(wchar_t). So if you develop
-			/// cross platform applications, never assume that one wchar_t represents
-			/// one code point.
-			///
-			
-			std::wstring value_wstring(std::locale const &loc);
-			
-			///
-			/// Set the content of widget converting wide character string to the locale's \a loc
-			/// encoding.
-			///
-			/// Please note, std::wstring may represent UTF-16 variable length
-			/// encoded string (mostly on Win32) or fixed length encoded UTF-32 string
-			/// (mostly UNIX platforms) according to sizeof(wchar_t). So if you develop
-			/// cross platform applications, never assume that one wchar_t represents
-			/// one code point.
-			///
-			void value(std::wstring v,std::locale const &loc);
-
-			#endif
-
-			#ifdef HAVE_CPP0X_UXSTRING
-			///
-			/// Get the value of the widget represented as UTF-16 encoded
-			/// string converting it from the locale's \a loc encoding.
-			///
-			std::u16string value_u16string(std::locale const &);
-			///
-			/// Get the value of the widget represented as UTF-32 encoded
-			/// string converting it from the locale's \a loc encoding.
-			///
-			std::u32string value_u32string(std::locale const &);
-			///
-			/// Set the content of widget converting UTF-16 encoded string to the locale's \a loc
-			/// encoding.
-			///
-			void value(std::u16string v,std::locale const &);
-			///
-			/// Set the content of widget converting UTF-32 encoded string to the locale's \a loc
-			/// encoding.
-			///
-			void value(std::u32string v,std::locale const &);
-
-			///
-			/// Get the value of the widget represented as utf16 encoded string.
-			/// 
-			/// Important Note: it assumes that the current locale character encoding is UTF-8.
-			/// Never use it if you support non UTF-8 encodings.
-			///
-			std::u16string value_u16string();
-
-			///
-			/// Get the value of the widget represented as utf32 encoded string.
-			/// 
-			/// Important Note: it assumes that the current locale character encoding is UTF-8.
-			/// Never use it if you support non UTF-8 encodings.
-			///
-			std::u32string value_u32string();
-			
-			///
-			/// Set the content of widget converting utf-16 encoded string to UTF-8 string.
-			///
-			/// Important Note: it assumes that the current locale character encoding is UTF-8.
-			/// Never use it if you support non UTF-8 encodings.
-			///
-			void value(std::u16string v);
-			
-			///
-			/// Set the content of widget converting utf-32 encoded string to UTF-8 string.
-			///
-			/// Important Note: it assumes that the current locale character encoding is UTF-8.
-			/// Never use it if you support non UTF-8 encodings.
-			///
-			void value(std::u32string v);
-
-			#endif
-
-			#ifdef HAVE_ICU
-			///
-			/// Get the value of the widget represented ICU UnicodeString.
-			/// 
-			/// Important Note: it assumes that the current locale character encoding is UTF-8.
-			/// Never use it if you support non UTF-8 encodings.
-			///
-			
-			icu::UnicodeString value_icu_string();
-			///
-			/// Set the content of widget ICU UnicodeString string to UTF-8 string.
-			///
-			/// Important Note: it assumes that the current locale character encoding is UTF-8.
-			/// Never use it if you support non UTF-8 encodings.
-			///
-			void value(icu::UnicodeString const &v);
-
-			///
-			/// Get the value of the widget represented as ICU UnicodeString
-			/// converting it from the locale's \a loc encoding.
-			///
-
-			icu::UnicodeString value_icu_string(std::locale const &);
-			///
-			/// Set the content of widget converting ICU UnocodeString to the locale's \a loc
-			/// encoding.
-			///
-			void value(icu::UnicodeString const &v,std::locale const &);
-
-			#endif
-
 
 			
 			///

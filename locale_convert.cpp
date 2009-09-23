@@ -65,273 +65,100 @@ namespace locale {
 	
 	std::string convert::to_upper(std::string const &str) const
 	{
-		return util::icu_to_std<char>((util::std_to_icu(str).toUpper(impl_->icu_locale_)));
+		return impl::icu_to_std((impl::std_to_icu(str).toUpper(impl_->icu_locale_)));
 	}
 	std::string convert::to_lower(std::string const &str) const
 	{
-		return util::icu_to_std<char>((util::std_to_icu(str).toLower(impl_->icu_locale_)));
+		return impl::icu_to_std((impl::std_to_icu(str).toLower(impl_->icu_locale_)));
 	}
 	std::string convert::to_title(std::string const &str) const
 	{
-		return util::icu_to_std<char>((util::std_to_icu(str).toTitle(0,impl_->icu_locale_)));
+		return impl::icu_to_std((impl::std_to_icu(str).toTitle(0,impl_->icu_locale_)));
 	}
 	std::string convert::to_normal(std::string const &str,norm_type how) const
 	{
-		return util::icu_to_std<char>(impl_->normalize(util::std_to_icu(str),how));
+		return impl::icu_to_std(impl_->normalize(impl::std_to_icu(str),how));
 	}
 
-	#ifdef HAVE_STD_WSTRING
-	std::wstring convert::to_upper(std::wstring const &str) const
-	{
-		return util::icu_to_std<wchar_t>((util::std_to_icu(str).toUpper(impl_->icu_locale_)));
-	}
-	std::wstring convert::to_lower(std::wstring const &str) const
-	{
-		return util::icu_to_std<wchar_t>((util::std_to_icu(str).toLower(impl_->icu_locale_)));
-	}
-	std::wstring convert::to_title(std::wstring const &str) const
-	{
-		return util::icu_to_std<wchar_t>((util::std_to_icu(str).toTitle(0,impl_->icu_locale_)));
-	}
-	std::wstring convert::to_normal(std::wstring const &str,norm_type how) const
-	{
-		return util::icu_to_std<wchar_t>(impl_->normalize(util::std_to_icu(str),how));
-	}
-	#endif
-
-	#ifdef HAVE_CPP0X_UXSTRING
-	std::u16string convert::to_upper(std::u16string const &str) const
-	{
-		return util::icu_to_std<char16_t>((util::std_to_icu(str).toUpper(impl_->icu_locale_)));:
-	}
-	std::u16string convert::to_lower(std::u16string const &str) const
-	{
-		return util::icu_to_std<char16_t>((util::std_to_icu(str).toLower(impl_->icu_locale_)));
-	}
-	std::u16string convert::to_title(std::u16string const &str) const
-	{
-		return util::icu_to_std<char16_t>((util::std_to_icu(str).toTitle(0,impl_->icu_locale_)));
-	}
-	std::u16string convert::to_normal(std::u16string const &str,norm_type how) const
-	{
-		return util::icu_to_std<char16_t>(impl_->normalize(util::std_to_icu(str),how));
-	}
-	std::u32string convert::to_upper(std::u32string const &str) const
-	{
-		return util::icu_to_std<char32_t>((util::std_to_icu(str).toUpper(impl_->icu_locale_)));
-	}
-	std::u32string convert::to_lower(std::u32string const &str) const
-	{
-		return util::icu_to_std<char32_t>((util::std_to_icu(str).toLower(impl_->icu_locale_)));
-	}
-	std::u32string convert::to_title(std::u32string const &str) const
-	{
-		return util::icu_to_std<char32_t>((util::std_to_icu(str).toTitle(0,impl_->icu_locale_)));
-	}
-	std::u32string convert::to_normal(std::u32string const &str,norm_type how) const
-	{
-		return util::icu_to_std<char32_t>(impl_->normalize(util::std_to_icu(str),how));
-	}
-	#endif
-#else 
-/////  NO ICU
+#else /////  NO ICU
 
 	class convert_impl : public util::noncopyable {
 	public:
-		convert_impl(std::locale const &l) : locale_(l)
+		
+		
+		convert_impl(std::locale const &l) : 
+			locale_(l),
+			cfacet_(0),
+			wfacet_(0),
+			charset_(0)
 		{
-		}
-
-		template<typename Char>
-		std::basic_string<Char> to_upper(std::basic_string<Char> const &str) const
-		{
-			if(std::had_facet<std::ctype<Char> >(locale_))
-				return facet_to(str,&std::ctype<Char>::toupper,locale_);
-			#ifdef HAVE_STD_WSTRING
-			else if(std::has_facet<std::ctype<wchar_t>(locale_)) 
-				return from_wstr<Char>(facet_to(to_wstr(str),&std::ctype<wchar_t>::toupper));
-			#endif
-			else
-				return facet_to(str,&std::ctype<char>::toupper,std::locale::classic());
-		}
-
-		template<typename Char>
-		std::basic_string<Char> to_lower(std::basic_string<Char> const &str) const
-		{
-			if(std::had_facet<std::ctype<Char> >(locale_))
-				return facet_to(str,&std::ctype<Char>::tolower,locale_);
-			#ifdef HAVE_STD_WSTRING
-			else if(std::has_facet<std::ctype<wchar_t>(locale_)) 
-				return from_wstr<Char>(facet_to(to_wstr(str),&std::ctype<wchar_t>::tolower));
-			#endif
-			else
-				return facet_to(str,&std::ctype<char>::toupper,std::locale::classic());
-		}
-	
-
-		template<typename Char>
-		std::basic_string<Char> to_title(std::basic_string<Char> const &str) const
-		{
-			if(std::have_facet<ctype<Char> >(locale_)) {
-				std::basic_string<Char> res = str;
-				titelize(std::use_facet<std::ctype<Char> >(locale_),res);
+			if(std::have_facet<std::ctype<wchar_t> >(locale_)) {
+				wfacet_ = & std::use_facet<std::ctype<wchar_t> >(locale_);
+				charset_ = & std::use_facet<charset>(locale_);
 			}
-			#ifdef HAVE_STD_WSTRING
-			else if(std::have_facet<ctype<wchar_t> >(locale_)) {
-				std::wstring w=to_wstr(str);
-				titelize(std::use_facet<std::ctype<wchar_t> >(locale_),w);
-				return from_wstr<Char>(w);
-			}
-			#endif
 			else {
-				std::basic_string<Char> res = str;
-				titleize(std::use_facet<std::ctype<char> >(std::locale::classic()),res);
-				return res;
+				cfacet_ = & std::use_facet<std::ctype<char> >(locale_);
 			}
 		}
 
-
-
-		#ifdef HAVE_STD_WSTRING
 		template<typename Char>
-		std::wstring to_wstr(std::basic_string<Char> const &str) const
+		void titelize(std::basic_string<Char> &str,std::ctype<Char> const *conv)
 		{
-			if(sizeof(Char)==sizeof(wchar_t))
-				return std::wstring(str.begin(),str.end());
-			else if(sizeof(Char)==2 && sizeof(wchar_t)==4) {
-				uint16_t const *begin=reinterpret_cast<uint16_t const *>(str.data());
-				uint16_t const *end=begin+str.size();
-				std::wstring tmp;
-				tmp.reserve(str.size());
-				uint32_t c;
-				while(begin < end && (c = utf16::next(begin,end))!=utf::illegal)
-					tmp.append(wchar_t(c));
-				return tmp;
+			bool prev_is_not_alpha = true;
+			for(unsigned i=0;i<str.size();i++) {
+				Char c=str[i];
+				if(prev_is_not_alpha)
+					str[i]=conv->toupper(c);
+				else
+					str[i]=conv->tolower(c);
+				prev_is_not_alpha=!conv->is(std::ctype_base::alpha,c);
 			}
-			else if(sizeof(Char)==4 && sizeof(wchar_t)==2) {
-				std::wstring tmp;
-				tmp.reserve(str.size());
-				for(unsigned i=0;i<str.size();i++) {
-					utf16::seq s=utf16::encode(str[i]);
-					tmp.append((wchar_t *)s.c,s.len);
-				}
-			}
-			else
-				throw std::bad_cast();
 		}
 		
-		template<typename Char>
-		std::basic_string<Char> from_wstr(std::wstring const &str) const
+		std::string to_upper(std::string const &str) const
 		{
-			if(sizeof(Char)==sizeof(wchar_t))
-				return std::basic_string<Char>(str.begin(),str.end());
-			else if(sizeof(wchar_t)==2 && sizeof(Char)==4) {
-				uint16_t const *begin=reinterpret_cast<uint16_t const *>(str.data());
-				uint16_t const *end=begin+str.size();
-				std::basic_string<Char> tmp;
-				tmp.reserve(str.size());
-				uint32_t c;
-				while(begin < end && (c = utf16::next(begin,end))!=utf::illegal)
-					tmp.append(Char(c));
+			if(wfacet_) {
+				std::wstring tmp=charset_->to_wstring(str)
+				wfacet_->toupper(&tmp[0],&tmp[0]+tmp.size());
+				return charset_->from_wstring(tmp);
+			}
+			std::string tmp=str;
+			facet_->toupper(&tmp[0],&tmp[0]+tmp.size());
+			return tmp;
+		}
+
+		std::string to_lower(std::string const &str) const
+		{
+			if(wfacet_) {
+				std::wstring tmp=charset_->to_wstring(str)
+				wfacet_->tolower(&tmp[0],&tmp[0]+tmp.size());
+				return charset_->from_wstring(tmp);
+			}
+			std::string tmp=str;
+			facet_->tolower(&tmp[0],&tmp[0]+tmp.size());
+			return tmp;
+		}
+		
+		std::string to_title(std::string const &str) const
+		{
+			if(wfacet_) {
+				std::wstring tmp=charset_->to_wstring(str)
+				titelize(tmp,wfacet_);
+				return charset_->from_wstring(tmp);
+			}
+			else {
+				std::string tmp=str;
+				titelize(tmp,cfacet_);
 				return tmp;
 			}
-			else if(sizeof(wchar_t)==4 && sizeof(Char)==2) {
-				std::wstring tmp;
-				tmp.reserve(str.size());
-				for(unsigned i=0;i<str.size();i++) {
-					utf16::seq s=utf16::encode(str[i]);
-					tmp.append((Char *)s.c,s.len);
-				}
-			}
-			else
-				throw std::bad_cast();
 		}
-		#endif
-
-
-		template<typename Char,typename CTypeChar>
-		void titelize(std::ctype<CTypeChar> const &type,std::basic_string<Char> &res)
+		std::string to_normal(std::string const &str,norm_type how) const
 		{
-			for(unsigned i=0;i<res.size();i++) {
-				if(sizeof(CTypeChar) != sizeof(Char) ){
-					if(res[i] < 0 || (i>0 && res[i-1] < 0))
-						continue;
-					if(res[i] > 0x7F || (i>0 && res[i-1] > 0x7F))
-						continue;
-				}
-				if(	type.is(std::ctype_base::alpha,res[i]) 
-					&& i>0
-					&& type.is(std::ctype_base::space | std::ctype_base::punct,res[i-1]))
-				{
-					res[i]=type.toupper(res[i]);
-				}
-			}
+			return str;
 		}
-
-		template<typename Char,typename CharF>
-		std::basic_string<Char> facet_to(
-					std::basic_string<Char> const &str,
-					CharF (std::ctype<CharF>::*to)(CharF) const,
-					std::locale const &loc) const
-		{
-			std::basic_string<Char> res=str;
-			std::ctype<CharF> const &conv=std::use_facet<std::ctype<CharF> >(loc);
-			for(unsigned i=0;i<res.size();i++) {
-				if(sizeof(Char) != sizeof(CharF)) 
-					if(res[i] < 0 || res[i] > 0x7F)
-						continue;
-				res[i]=(conv.*to)(res[i]);
-			}
-			return res;
-		}
-
-		friend class convert;
-		std::locale locale_;
-
-	}
-
 	
-	#ifdef HAVE_STD_WSTRING
-	template<>
-	std::string convert_impl::to_upper(std::string const &str) const
-	{
+#endif  /// ICU / NO ICU
 
-		if(!impl_->utf8_ || !std::has_facet<std::ctype<wchar_t> >(impl_->locale_)) {
-			return facet_to(str,&std::ctype<char>::toupper)
-		}
-		else {
-			return from_wstr<char>(facet_to(to_wstr(str),&std::ctype<wchar_t>::toupper));
-		}
-	}
-
-	template<>	
-	std::string convert_impl::to_lower(std::string const &str) const
-	{
-
-		if(!impl_->utf8_ || !std::has_facet<std::ctype<wchar_t> >(impl_->locale_)) {
-			return facet_to(str,&std::ctype<char>::tolower)
-		}
-		else {
-			return from_wstr<char>(facet_to(to_wstr(str),&std::ctype<wchar_t>::toupper));
-		}
-	}
-
-	template<>
-	std::wstring convert_impl::to_wstr(std::string const &str)
-	{
-		return std::use_facet<charset>(locale_).to_wstring(str);
-	}
-
-	template<>
-	std::string convert_impl::from_wstr(std::wstring const &str)
-	{
-		return std::use_facet<charset>(locale_).from_wstring(str);
-	}
-
-	#endif
-	
-	
-	
 	std::string convert::to_upper(std::string const &str) const
 	{
 		return impl_->to_upper(str);
@@ -346,65 +173,8 @@ namespace locale {
 	}
 	std::string convert::to_normal(std::string const &str,norm_type how) const
 	{
-		return str;
+		return impl_->to_normal(str,how);
 	}
-
-	#ifdef HAVE_STD_WSTRING
-	std::wstring convert::to_upper(std::wstring const &str) const
-	{
-		return impl_->to_upper(str);
-	}
-	std::wstring convert::to_lower(std::wstring const &str) const
-	{
-		return impl_->to_lower(str);
-	}
-	std::wstring convert::to_title(std::wstring const &str) const
-	{
-		return impl_->to_title(str);
-	}
-	std::wstring convert::to_normal(std::wstring const &str,norm_type how) const
-	{
-		return str;
-	}
-	#endif
-
-
-	#ifdef HAVE_CPP0X_UXSTRING
-	std::u16string convert::to_upper(std::u16string const &str) const
-	{
-		return impl_->to_upper(str);
-	}
-	std::u16string convert::to_lower(std::u16string const &str) const
-	{
-		return impl_->to_lower(str);
-	}
-	std::u16string convert::to_title(std::u16string const &str) const
-	{
-		return impl_->to_title(str);
-	}
-	std::u16string convert::to_normal(std::u16string const &str,norm_type how) const
-	{
-		return str;
-	}
-	std::u32string convert::to_upper(std::u32string const &str) const
-	{
-		return impl_->to_upper(str);
-	}
-	std::u32string convert::to_lower(std::u32string const &str) const
-	{
-		return impl_->to_lower(str);
-	}
-	std::u32string convert::to_title(std::u32string const &str) const
-	{
-		return impl_->to_title(str);
-	}
-	std::u32string convert::to_normal(std::u32string const &str,norm_type how) const
-	{
-		return str;
-	}
-	#endif
-
-#endif
 
 
 } /// locale

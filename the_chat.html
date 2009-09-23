@@ -22,7 +22,7 @@
 	function read_data() {
 		dojo.xhrGet( {
 			url: "/chat/get/" + message_count,
-			timeout: 120000,
+			timeout: 10000,
 			handleAs: "text",
 			load: function(response, ioArgs) {
 				dojo.byId("messages").innerHTML = response + '<br/>' + dojo.byId("messages").innerHTML;
