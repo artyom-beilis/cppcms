@@ -247,7 +247,7 @@ namespace cppcms {
 			}
 
 			base_iterator(StringType str,std::locale const &l = std::locale()) :
-				walker_(str.data(),str.data()+str.size(),l,TagType()),
+				walker_(&*str.begin(),&*str.end(),l,TagType()),
 				begin_(str.begin()),
 				cbegin_(str.data())
 			{
