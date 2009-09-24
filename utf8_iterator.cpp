@@ -197,7 +197,7 @@ namespace cppcms { namespace utf8 { namespace details {
 #else  /// NO ICU
 	
 	class break_iterator_impl {
-		code_point_iterator current_;
+		codepoint_iterator current_;
 	public:
 		typedef enum { charrecter, word, sentence, line } iter_type;
 
@@ -248,7 +248,19 @@ namespace cppcms { namespace utf8 { namespace details {
 		}
 		bool is_sentence_break()
 		{
-			return is(std::ctype_base::punct);
+			char const *ptr=curr();
+			if(ptr >= end_)
+				return false;
+			if(wfacet_) {
+				wchar_t v=utf8::next(ptr,end_);
+				static const std::basic_string<wchar_t> breakers(L".;?!");
+				return breakers.find(v)!=std::basic_string<wchar_t>::npos;
+			}
+			else {
+				char v=*ptr;
+				static const std::string breakers(".;?!");
+				return breakers.find(v)!=std::string::npos;
+			}
 		}
 		bool is_space()
 		{
@@ -257,11 +269,11 @@ namespace cppcms { namespace utf8 { namespace details {
 
 		bool equal(break_iterator_impl const &other) const
 		{
-			return current_ == other.current_;
+			return current_.equal(other.current_);
 		}
 		bool less(break_iterator_impl const &other) const
 		{
-			return current_ < other.current_;
+			return current_.less(other.current_);
 		}
 
 		char const *curr() const
@@ -271,19 +283,47 @@ namespace cppcms { namespace utf8 { namespace details {
 		char const *next()
 		{
 			switch(type_) {
-			case charrecter: return current_.next();
-			case word: while(is_alpha()) current_.next(); return curr();
-			case sentence: while(!is_sentence_break()) current_.next(); return current_.next(); 
-			case line: while(!is_space()) current_.next(); return curr();
+			case charrecter: 
+				return current_.next();
+			case word:
+				do 
+					current_.next();
+				while(current_.curr() < end_ && is_alpha());
+				return curr();
+			case sentence: 
+				while(current_.curr() < end_ && !is_sentence_break())
+					current_.next(); 
+				return current_.next(); 
+			case line:
+				do 
+					current_.next();
+				while(current_.curr() < end_ && !is_space());
+				return curr();
+			default: throw std::runtime_error("Internal Error in " __FILE__ );
 			}
 		}
-		char const *prev();
+		char const *prev()
 		{
 			switch(type_) {
-			case charrecter: return current_.prev();
-			case word: while(is_alpha()) current_.prev(); return curr();
-			case sentence: while(!is_sentence_break()) current_.prev(); return current_.prev(); 
-			case line: while(!is_space()) current_.prev(); return curr();
+			case charrecter: 
+				return current_.prev();
+			case word:
+				do
+					current_.prev();
+				while(current_.curr() > begin_ && is_alpha());
+				return curr();
+			case sentence: 
+				do 
+					current_.prev(); 
+				while(current_.curr() > begin_ && !is_sentence_break());
+				return current_.curr();
+				
+			case line: 
+				do
+					current_.prev(); 
+				while(current_.curr() > begin_ && !is_space());
+				return curr();
+			default: throw std::runtime_error("Internal Error in " __FILE__ );
 			}
 		}
 		char const *first()

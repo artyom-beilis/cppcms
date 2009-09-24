@@ -82,7 +82,7 @@ namespace locale {
 			wfacet_(0),
 			charset_(0)
 		{
-			if(std::have_facet<std::ctype<wchar_t> >(locale_)) {
+			if(std::has_facet<std::ctype<wchar_t> >(locale_)) {
 				wfacet_ = & std::use_facet<std::ctype<wchar_t> >(locale_);
 				charset_ = & std::use_facet<charset>(locale_);
 			}
@@ -92,7 +92,7 @@ namespace locale {
 		}
 
 		template<typename Char>
-		void titelize(std::basic_string<Char> &str,std::ctype<Char> const *conv)
+		void titelize(std::basic_string<Char> &str,std::ctype<Char> const *conv) const
 		{
 			bool prev_is_not_alpha = true;
 			for(unsigned i=0;i<str.size();i++) {
@@ -108,31 +108,35 @@ namespace locale {
 		std::string to_upper(std::string const &str) const
 		{
 			if(wfacet_) {
-				std::wstring tmp=charset_->to_wstring(str)
+				std::wstring tmp=charset_->to_wstring(str);
 				wfacet_->toupper(&tmp[0],&tmp[0]+tmp.size());
 				return charset_->from_wstring(tmp);
 			}
-			std::string tmp=str;
-			facet_->toupper(&tmp[0],&tmp[0]+tmp.size());
-			return tmp;
+			else {
+				std::string tmp=str;
+				cfacet_->toupper(&tmp[0],&tmp[0]+tmp.size());
+				return tmp;
+			}
 		}
 
 		std::string to_lower(std::string const &str) const
 		{
 			if(wfacet_) {
-				std::wstring tmp=charset_->to_wstring(str)
+				std::wstring tmp=charset_->to_wstring(str);
 				wfacet_->tolower(&tmp[0],&tmp[0]+tmp.size());
 				return charset_->from_wstring(tmp);
 			}
-			std::string tmp=str;
-			facet_->tolower(&tmp[0],&tmp[0]+tmp.size());
-			return tmp;
+			else {
+				std::string tmp=str;
+				cfacet_->tolower(&tmp[0],&tmp[0]+tmp.size());
+				return tmp;
+			}
 		}
 		
 		std::string to_title(std::string const &str) const
 		{
 			if(wfacet_) {
-				std::wstring tmp=charset_->to_wstring(str)
+				std::wstring tmp=charset_->to_wstring(str);
 				titelize(tmp,wfacet_);
 				return charset_->from_wstring(tmp);
 			}
@@ -142,23 +146,29 @@ namespace locale {
 				return tmp;
 			}
 		}
+	private:
+		std::locale locale_;
+		std::ctype<char> const *cfacet_;
+		std::ctype<wchar_t> const *wfacet_;
+		charset const *charset_;
+	};
 
-		std::string convert::to_upper(std::string const &str) const
-		{
-			return impl_->to_upper(str);
-		}
-		std::string convert::to_lower(std::string const &str) const
-		{
-			return impl_->to_lower(str);
-		}
-		std::string convert::to_title(std::string const &str) const
-		{
-			return impl_->to_title(str);
-		}
-		std::string convert::to_normal(std::string const &str,norm_type how) const
-		{
-			return str;
-		}
+	std::string convert::to_upper(std::string const &str) const
+	{
+		return impl_->to_upper(str);
+	}
+	std::string convert::to_lower(std::string const &str) const
+	{
+		return impl_->to_lower(str);
+	}
+	std::string convert::to_title(std::string const &str) const
+	{
+		return impl_->to_title(str);
+	}
+	std::string convert::to_normal(std::string const &str,norm_type how) const
+	{
+		return str;
+	}
 	
 #endif  /// ICU / NO ICU
 
