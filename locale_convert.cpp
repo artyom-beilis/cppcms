@@ -52,32 +52,22 @@ namespace locale {
 	};
 
 
-	std::locale::id convert::id;
-
-	convert::convert(std::locale const &l,size_t refs) : 
-		std::locale::facet(refs),
-		impl_(new convert_impl(l))
-	{
-	}
-	convert::~convert()
-	{
-	}
 	
 	std::string convert::to_upper(std::string const &str) const
 	{
-		return impl::icu_to_std((impl::std_to_icu(str).toUpper(impl_->icu_locale_)));
+		return impl::icu_to_std((impl::std_to_icu(str,impl_->std_locale_).toUpper(impl_->icu_locale_)),impl_->std_locale_);
 	}
 	std::string convert::to_lower(std::string const &str) const
 	{
-		return impl::icu_to_std((impl::std_to_icu(str).toLower(impl_->icu_locale_)));
+		return impl::icu_to_std((impl::std_to_icu(str,impl_->std_locale_).toLower(impl_->icu_locale_)),impl_->std_locale_);
 	}
 	std::string convert::to_title(std::string const &str) const
 	{
-		return impl::icu_to_std((impl::std_to_icu(str).toTitle(0,impl_->icu_locale_)));
+		return impl::icu_to_std((impl::std_to_icu(str,impl_->std_locale_).toTitle(0,impl_->icu_locale_)),impl_->std_locale_);
 	}
 	std::string convert::to_normal(std::string const &str,norm_type how) const
 	{
-		return impl::icu_to_std(impl_->normalize(impl::std_to_icu(str),how));
+		return impl::icu_to_std(impl_->normalize(impl::std_to_icu(str,impl_->std_locale_),how),impl_->std_locale_);
 	}
 
 #else /////  NO ICU
@@ -152,28 +142,35 @@ namespace locale {
 				return tmp;
 			}
 		}
-		std::string to_normal(std::string const &str,norm_type how) const
+
+		std::string convert::to_upper(std::string const &str) const
+		{
+			return impl_->to_upper(str);
+		}
+		std::string convert::to_lower(std::string const &str) const
+		{
+			return impl_->to_lower(str);
+		}
+		std::string convert::to_title(std::string const &str) const
+		{
+			return impl_->to_title(str);
+		}
+		std::string convert::to_normal(std::string const &str,norm_type how) const
 		{
 			return str;
 		}
 	
 #endif  /// ICU / NO ICU
 
-	std::string convert::to_upper(std::string const &str) const
+	std::locale::id convert::id;
+
+	convert::convert(std::locale const &l,size_t refs) : 
+		std::locale::facet(refs),
+		impl_(new convert_impl(l))
 	{
-		return impl_->to_upper(str);
 	}
-	std::string convert::to_lower(std::string const &str) const
+	convert::~convert()
 	{
-		return impl_->to_lower(str);
-	}
-	std::string convert::to_title(std::string const &str) const
-	{
-		return impl_->to_title(str);
-	}
-	std::string convert::to_normal(std::string const &str,norm_type how) const
-	{
-		return impl_->to_normal(str,how);
 	}
 
 

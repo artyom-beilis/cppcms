@@ -1,5 +1,6 @@
 #define CPPCMS_SOURCE
 #include "icu_util.h"
+
 #ifdef HAVE_ICU
 
 #include "locale_charset.h"
@@ -54,3 +55,5 @@ namespace cppcms { namespace impl {
 	}
 
 } } // cppcms::impl
+
+#endif
