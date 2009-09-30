@@ -3,7 +3,6 @@
 #include "util.h"
 #include "locale_gettext.h"
 #include "locale_environment.h"
-#include "base64.h"
 #include "locale_convert.h"
 #include "cppcms_error.h"
 
@@ -11,6 +10,7 @@
 #include <boost/format.hpp>
 
 namespace cppcms {
+namespace views {
 
 struct base_view::data {
 	std::ostream *out;
@@ -21,36 +21,11 @@ base_view::base_view(std::ostream &out) :
 	d(new data)
 {
 	d->out=&out;
-	set_domain("");
-}
-
-void base_view::set_domain(std::string domain)
-{
-	if(std::has_facet<cppcms::locale::gettext>(out().getloc())) {
-		if(!domain.empty())
-			d->tr = &std::use_facet<cppcms::locale::gettext>(out().getloc()).dictionary(domain.c_str());
-		else
-			d->tr = &std::use_facet<cppcms::locale::gettext>(out().getloc()).dictionary();
-	}
-	else {
-		static const locale::gettext::tr t;
-		d->tr=&t;
-	}
 }
 
 std::ostream &base_view::out()
 {
 	return *d->out;
-}
-
-char const *base_view::gettext(char const *s)
-{
-	return d->tr->gettext(s);
-}
-
-char const *base_view::ngettext(char const *s,char const *s1,int m)
-{
-	return d->tr->ngettext(s,s1,m);
 }
 
 base_view::~base_view()
@@ -60,98 +35,6 @@ base_view::~base_view()
 void base_view::render()
 {
 }
-
-
-
-void base_view::date(std::ostream &s,std::tm const &t)
-{
-	if(s.getloc().name()!="C")
-		strftime("%x")(s,t);
-	else
-		strftime("%Y-%m-%d")(s,t);
-}
-
-void base_view::time(std::ostream &s,std::tm const &t)
-{
-	if(s.getloc().name()!="C")
-		strftime("%X")(s,t);
-	else
-		strftime("%H:%M:%S")(s,t);
-}
-
-base_view::strftime::strftime(std::string f) : format_(f)
-{
-}
-
-base_view::strftime::~strftime()
-{
-}
-
-void base_view::strftime::operator()(std::ostream &out,std::tm const &time) const
-{
-	char const *begin=format_.data();
-	char const *end=begin+format_.size();
-	std::use_facet<std::time_put<char> >(out.getloc()).put(out,out,' ',&time,begin,end);
-}
-
-void base_view::urlencode(std::ostream &out,std::string const &s)
-{
-	out << util::urlencode(s); 
-}
-
-void base_view::base64_encode(std::ostream &os,std::string const &s)
-{
-	using namespace cppcms::b64url;
-	unsigned char const *begin=reinterpret_cast<unsigned char const *>(s.c_str());
-	unsigned char const *end=begin+s.size();
-	std::vector<unsigned char> out(encoded_size(s.size())+1);
-	encode(begin,end,&out.front());
-	out.back()=0;
-
-	char const *buf=reinterpret_cast<char const *>(out.front());
-	os<<buf;
-}
-
-void base_view::to_lower(std::ostream &out,std::string const &s)
-{
-	locale::convert const &conv=std::use_facet<locale::convert>(out.getloc());
-	out<<conv.to_lower(s);
-}
-
-void base_view::to_upper(std::ostream &out,std::string const &s)
-{
-	locale::convert const &conv=std::use_facet<locale::convert>(out.getloc());
-	out<<conv.to_upper(s);
-}
-
-void base_view::to_title(std::ostream &out,std::string const &s)
-{
-	locale::convert const &conv=std::use_facet<locale::convert>(out.getloc());
-	out<<conv.to_upper(s);
-}
-
-base_view::doublef::~doublef(){}
-base_view::intf::~intf(){}
-
-base_view::doublef::doublef(std::string f) : format_(f) {}
-base_view::intf::intf(std::string f) : format_(f) {}
-
-void base_view::intf::operator()(std::ostream &out,int x) const
-{
-	boost::format f(format_);
-	f.exceptions(0);
-	out<<f % x;
-}
-
-void base_view::doublef::operator()(std::ostream &out,double x) const
-{
-	boost::format f(format_);
-	f.exceptions(0);
-	out<<f % x;
-}
-
-
-
 
 
 namespace details {
@@ -194,5 +77,5 @@ views_storage::~views_storage()
 
 
 } // details
-
+} // views
 }// cppcms

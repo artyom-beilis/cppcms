@@ -8,7 +8,7 @@
 #include "locale_environment.h"
 #include "locale_charset.h"
 #include "http_context.h"
-#include "format.h"
+#include "filters.h"
 #include "aio_timer.h"
 #include "intrusive_ptr.h"
 #include "form.h"
@@ -19,6 +19,7 @@
 #include <stdlib.h>
 #include <set>
 #include <boost/bind.hpp>
+#include <fstream>
 
 
 class chat : public cppcms::application {
@@ -258,6 +259,33 @@ public:
 		}
 		if(f.description.set()) {
 			std::string descr = f.description.value();
+			if(!f.description.valid()) {
+				std::ofstream tmp("test.txt");
+				tmp<<descr;
+			}
+			
+			cppcms::utf8::word_iterator it(descr,locale().get());
+
+			do {
+				std::string::iterator p=*it;
+				++it;
+				if(it.type())
+					response().out()<<" + ["<<std::string(p,*it)<<"]<br>\n";
+			} while(*it!=descr.end());
+			
+			it.last();
+
+			do {
+				if(it.type()) {
+					cppcms::utf8::word_iterator tmp = it;
+					--tmp;
+					response().out()<<" - ["<<std::string(*tmp,*it)<<"]<br>\n";
+					it=tmp;
+				}
+				else 
+					--it;
+			} while(*it!=descr.begin());
+
 			devide<cppcms::utf8::const_code_point_iterator>(descr,"code");
 			devide<cppcms::utf8::const_character_iterator>(descr,"char");
 			devide<cppcms::utf8::const_word_iterator>(descr,"word");
@@ -297,8 +325,9 @@ public:
 	}
 	void hello_world()
 	{
+		using namespace cppcms::filters;
 		std::ostringstream ss;
-		ss<<time(NULL);
+		ss<<std::time(NULL);
 		response().set_cookie(cppcms::http::cookie("test",ss.str()));
 		response().out() <<
 			"<html><body>\n"
@@ -307,10 +336,20 @@ public:
 		for(p=request().cookies().begin();p!=request().cookies().end();++p) {
 			response().out()<<p->second<<"<br/>\n";
 		}
-		response().out()<<
-			gt("hello\n") <<"<br>";
+
+		time_t t=::time(NULL);
+		std::tm tt;
+		localtime_r(&t,&tt);
+
+		response().out() << cppcms::filters::date(tt) <<std::endl;
+
+		response().out() << cppcms::filters::escape(cppcms::filters::gt("hello\n")) << "<br>";
+		
 		for(int i=0;i<30;i++) {
-			cppcms::util::format(response().out(),ngt("passed one day","passed %1% days",i),i) << "<br>";
+			response().out() << format("To be or not to be %1%\n<br>",10);
+
+			response().out() << cppcms::filters::format(cppcms::filters::ngt("passed one day","passed %1% days",i),i) << "<br>\n";
+			//cppcms::util::format(response().out(),ngt("passed one day","passed %1% days",i),i) << "<br>";
 		}
 		response().out()
 			<<"<body></html>\n";

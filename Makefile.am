@@ -38,7 +38,6 @@ libcppcms_la_SOURCES = \
 	locale_gettext.cpp \
 	locale_environment.cpp \
 	locale_pool.cpp \
-	format.cpp \
 	base64.cpp \
 	locale_info.cpp \
 	base_view.cpp \
@@ -55,6 +54,7 @@ libcppcms_la_SOURCES = \
 	locale_convert.cpp \
 	icu_util.cpp \
 	form.cpp \
+	filters.cpp \
 	utf8_iterator.cpp
 
 

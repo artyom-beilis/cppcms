@@ -34,11 +34,11 @@
 			[ 
 				"he_IL.UTF-8",
 				"en_US.UTF-8",
-				"he_IL.ISO-8859-8",
+				"he_IL.cp1255",
 				"tr_TR.UTF-8" ],	
 		//"default" : "tr_TR.UTF-8",
 				// list of supported languages
-		//"default" :  "he_IL.ISO-8859-8",			// default language (default first one)
+		//"default" :  "he_IL.cp1255",			// default language (default first one)
 		"default" :  "he_IL.UTF-8",			// default language (default first one)
 		"gettext_domains" : [ "app", "test" ],		// list of supported domains
 		"default_gettext_domain" :  "test",		// default domain (default first one)

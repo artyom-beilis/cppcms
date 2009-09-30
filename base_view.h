@@ -10,104 +10,31 @@
 #include <ctime>
 #include <memory>
 
-#include "format.h"
 #include "hold_ptr.h"
 #include "base_content.h"
+#include "noncopyable.h"
+#include "filters.h"
 
 namespace cppcms {
+namespace views {
+using namespace filters;
 
 class CPPCMS_API base_view : util::noncopyable {
 public:
 	virtual void render();
 	virtual ~base_view();
-
-
-public: //Filters
-
-	class CPPCMS_API intf {
-		std::string format_;
-	public:
-		intf(std::string f);
-		~intf();
-		void operator()(std::ostream &out,int x) const;
-	};
-		
-	class CPPCMS_API doublef {
-		std::string format_;
-	public:
-		doublef(std::string f);
-		~doublef();
-		void operator()(std::ostream &out,double x) const;
-	};
-
-	class CPPCMS_API strftime {
-		std::string format_;
-	public:
-		strftime(std::string f);
-		~strftime();
-		void operator()(std::ostream &out,std::tm const &t) const;
-	};
-		
-	static void date(std::ostream &,std::tm const &t);
-	static void time(std::ostream &,std::tm const &t);
-	static void urlencode(std::ostream &, std::string const &s);
-// TODO	static void js_urlencode(std::ostream &, std::string const &s);
-	static void base64_encode(std::ostream &, std::string const &s);
-	static void raw(std::ostream &out,std::string const &s);
-
-	template<typename T>
-	void escape(std::ostream &s,T const &v)
-	{
-		s<<v;
-	};
-
-	static void to_upper(std::ostream &,std::string const &s);
-	static void to_lower(std::ostream &,std::string const &s);
-	static void to_title(std::ostream &,std::string const &s);
-
+	
 
 protected:
 
 	base_view(std::ostream &out);
-
-	void set_domain(std::string domain);
-	char const *gettext(char const *);
-	char const *ngettext(char const *,char const *,int n);
-
 	std::ostream &out();
-
-
-
 
 private:
 	struct data;
 	util::hold_ptr<data> d;
 
 };
-
-template<>
-void CPPCMS_API base_view::escape(std::ostream &,std::string const &s);
-
-#ifdef HAVE_STD_WSTRING
-template<>
-void CPPCMS_API base_view::escape(std::ostream &,std::wstring const &s);
-#endif
-
-#ifdef HAVE_CPP0X_UXSTRING
-template<>
-void CPPCMS_API base_view::escape(std::ostream &,std::u16string const &s);
-template<>
-void CPPCMS_API base_view::escape(std::ostream &,std::u32string const &s);
-#endif
-
-#ifdef HAVE_ICU
-template<>
-void CPPCMS_API base_view::escape(std::ostream &,icu::UnicodeString const &s);
-#endif
-
-
-
-void CPPCMS_API operator<<(std::ostream &,std::tm const &t);
 
 namespace details {
 
@@ -146,6 +73,7 @@ namespace details {
 	};
 
 } // details
+} // views
 } // cppcms
 
 
