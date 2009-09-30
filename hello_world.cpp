@@ -264,28 +264,6 @@ public:
 				tmp<<descr;
 			}
 			
-			cppcms::utf8::word_iterator it(descr,locale().get());
-
-			do {
-				std::string::iterator p=*it;
-				++it;
-				if(it.type())
-					response().out()<<" + ["<<std::string(p,*it)<<"]<br>\n";
-			} while(*it!=descr.end());
-			
-			it.last();
-
-			do {
-				if(it.type()) {
-					cppcms::utf8::word_iterator tmp = it;
-					--tmp;
-					response().out()<<" - ["<<std::string(*tmp,*it)<<"]<br>\n";
-					it=tmp;
-				}
-				else 
-					--it;
-			} while(*it!=descr.begin());
-
 			devide<cppcms::utf8::const_code_point_iterator>(descr,"code");
 			devide<cppcms::utf8::const_character_iterator>(descr,"char");
 			devide<cppcms::utf8::const_word_iterator>(descr,"word");
