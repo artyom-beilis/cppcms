@@ -1,10 +1,164 @@
 #define CPPCMS_SOURCE
 #include "filters.h"
 #include "base64.h"
+#include "locale_convert.h"
+#include "util.h"
 #include <iostream>
 
 namespace cppcms { namespace filters {
+
+	struct streamable::data {};
+	streamable::streamable() 
+	{
+		set(0,0,0);
+	}
+	streamable::streamable(streamable const &other)
+	{
+		set(other.ptr_,other.to_stream_,other.to_string_);
+	}
+	streamable::~streamable()
+	{
+	}
+	streamable const &streamable::operator=(streamable const &other)
+	{
+		if(&other!=this)
+			set(other.ptr_,other.to_stream_,other.to_string_);
+		return *this;
+	}
+	namespace {
+		void ch_to_stream(std::ostream &out,void const *p)
+		{
+			out<<reinterpret_cast<char const *>(p);
+		}
+		std::string ch_to_string(std::ios &ios,void const *p)
+		{
+			return reinterpret_cast<char const *>(p);
+		}
+	}
+	streamable::streamable(char const *ptr)
+	{
+		set(ptr,ch_to_stream,ch_to_string);
+	}
+	std::string streamable::get(std::ios &ios) const
+	{
+		return to_string_(ios,ptr_);
+	}
+	void streamable::operator()(std::ostream &out) const
+	{
+		to_stream_(out,ptr_);
+	}
+	void streamable::set(void const *ptr,to_stream_type tse,to_string_type tst)
+	{
+		ptr_=ptr;
+		to_stream_=tse;
+		to_string_=tst;
+	}
+
+///////////////////////////////////
 	
+	struct to_upper::data {};
+	to_upper::to_upper() {}
+	to_upper::~to_upper() {}
+	to_upper::to_upper(to_upper const &other) : obj_(other.obj_) {}
+	to_upper::to_upper(streamable const &obj) : obj_(obj) {}
+	to_upper const &to_upper::operator=(to_upper const &other){ obj_ = other.obj_; return *this; }
+	void to_upper::operator()(std::ostream &out) const
+	{
+		out << std::use_facet<locale::convert>(out.getloc()).to_upper(obj_.get(out));
+	}
+
+	struct to_lower::data {};
+	to_lower::to_lower() {}
+	to_lower::~to_lower() {}
+	to_lower::to_lower(to_lower const &other) : obj_(other.obj_) {}
+	to_lower::to_lower(streamable const &obj) : obj_(obj) {}
+	to_lower const &to_lower::operator=(to_lower const &other){ obj_ = other.obj_; return *this; }
+	void to_lower::operator()(std::ostream &out) const
+	{
+		out << std::use_facet<locale::convert>(out.getloc()).to_lower(obj_.get(out));
+	}
+
+	struct to_title::data {};
+	to_title::to_title() {}
+	to_title::~to_title() {}
+	to_title::to_title(to_title const &other) : obj_(other.obj_) {}
+	to_title::to_title(streamable const &obj) : obj_(obj) {}
+	to_title const &to_title::operator=(to_title const &other){ obj_ = other.obj_; return *this; }
+	void to_title::operator()(std::ostream &out) const
+	{
+		out << std::use_facet<locale::convert>(out.getloc()).to_title(obj_.get(out));
+	}
+
+	struct escape::data {};
+	escape::escape() {}
+	escape::~escape() {}
+	escape::escape(escape const &other) : obj_(other.obj_) {}
+	escape::escape(streamable const &obj) : obj_(obj) {}
+	escape const &escape::operator=(escape const &other){ obj_ = other.obj_; return *this; }
+	void escape::operator()(std::ostream &out) const
+	{
+		out << util::escape(obj_.get(out));
+	}
+
+	struct urlencode::data {};
+	urlencode::urlencode() {}
+	urlencode::~urlencode() {}
+	urlencode::urlencode(urlencode const &other) : obj_(other.obj_) {}
+	urlencode::urlencode(streamable const &obj) : obj_(obj) {}
+	urlencode const &urlencode::operator=(urlencode const &other){ obj_ = other.obj_; return *this; }
+	void urlencode::operator()(std::ostream &out) const
+	{
+		out << util::urlencode(obj_.get(out));
+	}
+
+	struct raw::data {};
+	raw::raw() {}
+	raw::~raw() {}
+	raw::raw(raw const &other) : obj_(other.obj_) {}
+	raw::raw(streamable const &obj) : obj_(obj) {}
+	raw const &raw::operator=(raw const &other){ obj_ = other.obj_; return *this; }
+	void raw::operator()(std::ostream &out) const
+	{
+		out << obj_;;
+	}
+
+	struct base64_urlencode::data {};
+	base64_urlencode::base64_urlencode() {}
+	base64_urlencode::~base64_urlencode() {}
+	base64_urlencode::base64_urlencode(base64_urlencode const &other) : obj_(other.obj_) {}
+	base64_urlencode::base64_urlencode(streamable const &obj) : obj_(obj) {}
+	base64_urlencode const &base64_urlencode::operator=(base64_urlencode const &other){ obj_ = other.obj_; return *this; }
+	void base64_urlencode::operator()(std::ostream &os) const
+	{
+		std::string const s=obj_.get(os);
+		using namespace cppcms::b64url;
+		unsigned char const *begin=reinterpret_cast<unsigned char const *>(s.c_str());
+		unsigned char const *end=begin+s.size();
+		std::vector<unsigned char> out(encoded_size(s.size())+1);
+		encode(begin,end,&out.front());
+		out.back()=0;
+		char const *buf=reinterpret_cast<char const *>(out.front());
+		os<<buf;
+	}
+
+	struct strftime::data {};
+	strftime::strftime() {}
+	strftime::~strftime() {}
+	strftime::strftime(strftime const &other) : format_(other.format_),t_(other.t_) {}
+	strftime::strftime(streamable const &obj,std::tm const &t) : format_(obj),t_(&t) {}
+	strftime const &strftime::operator=(strftime const &other)
+	{
+		format_ = other.format_;
+		t_=other.t_;
+		return *this;
+	}
+	void strftime::operator()(std::ostream &out) const
+	{
+		std::string fmt=format_.get(out);
+		std::use_facet<std::time_put<char> >(out.getloc()).put(out,out,' ',t_,fmt.data(),fmt.data()+fmt.size());
+	}
+
+
 	void format::init(streamable const &f)
 	{
 		format_=f;
@@ -86,47 +240,52 @@ namespace cppcms { namespace filters {
 		return oss.str();
 	}
 
+	struct date::data {};
+	struct time::data {};
+	struct datetime::data {};
 
+	date::date() : t_(0) {}
+	datetime::datetime() : t_(0){}
+	time::time() : t_(0) {}
+	
+	date::~date() {}
+	datetime::~datetime() {}
+	time::~time() {}
+	
+	date::date(date const &other) : t_(other.t_) {}
+	time::time(time const &other) : t_(other.t_) {}
+	datetime::datetime(datetime const &other) : t_(other.t_) {}
 
-	date::date(std::tm const &t) : tm_(t) {}
-	time::time(std::tm const &t) : tm_(t) {}
-	datetime::datetime(std::tm const &t) : tm_(t) {}
+	date const &date::operator=(date const &other) { t_=other.t_; return *this; }
+	time const &time::operator=(time const &other) { t_=other.t_; return *this; }
+	datetime const &datetime::operator=(datetime const &other) { t_=other.t_; return *this; }
+
+	date::date(std::tm const &t) : t_(&t) {}
+	time::time(std::tm const &t) : t_(&t) {}
+	datetime::datetime(std::tm const &t) : t_(&t) {}
 
 	void date::operator()(std::ostream &out) const
 	{
 		if(out.getloc().name()=="*")
-			out<<strftime("%Y-%m-%d",tm_);
+			out<<strftime("%Y-%m-%d",*t_);
 		else
-			out<<strftime("%x",tm_);
+			out<<strftime("%x",*t_);
 	}
 	
 	void time::operator()(std::ostream &out) const
 	{
 		if(out.getloc().name()=="*")
-			out<<strftime("%H:%M:%S",tm_);
+			out<<strftime("%H:%M:%S",*t_);
 		else
-			out<<strftime("%X",tm_);
+			out<<strftime("%X",*t_);
 	}
 	
 	void datetime::operator()(std::ostream &out) const
 	{
 		if(out.getloc().name()=="*")
-			out<<strftime("%Y-%m-%d %H:%M:%S",tm_);
+			out<<strftime("%Y-%m-%d %H:%M:%S",*t_);
 		else
-			out<<strftime("%c",tm_);
-	}
-
-	void base64_urlencode::operator()(std::ostream &os) const
-	{
-		std::string const s=obj_.get(os);
-		using namespace cppcms::b64url;
-		unsigned char const *begin=reinterpret_cast<unsigned char const *>(s.c_str());
-		unsigned char const *end=begin+s.size();
-		std::vector<unsigned char> out(encoded_size(s.size())+1);
-		encode(begin,end,&out.front());
-		out.back()=0;
-		char const *buf=reinterpret_cast<char const *>(out.front());
-		os<<buf;
+			out<<strftime("%c",*t_);
 	}
 
 

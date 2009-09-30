@@ -6,15 +6,14 @@
 #include <sstream>
 #include <vector>
 #include <iostream>
+#include "defs.h"
+#include "copy_ptr.h"
 
 #include "locale_gettext.h"
-#include "locale_convert.h"
-#include "util.h"
-
 namespace cppcms {
 	namespace filters {
 
-#define CPPCMS_STREAMED(Streamable) 								\
+		#define CPPCMS_STREAMED(Streamable)						\
 		inline std::ostream &operator<<(std::ostream &out,Streamable const &object)	\
 		{										\
 			object(out);								\
@@ -23,245 +22,338 @@ namespace cppcms {
 
 		
 
-		struct streamable {
+		class CPPCMS_API streamable {
+		public:
+			typedef void (*to_stream_type)(std::ostream &,void const *ptr);
+			typedef std::string (*to_string_type)(std::ios &,void const *ptr);
+			
 
-			streamable() : ptr_(0), info_(0), write_func_(0) {}
-		
-			/// Optimization for special case
-			streamable(char const *ptr) :
-				ptr_(ptr),
-				info_(&typeid(is_char_ptr)),
-				write_func_(write_char)
-			{
-			}
+			streamable();
+			~streamable();
+			streamable(streamable const &other);
+			streamable const &operator=(streamable const &other);
 
-			template<typename Streamable>
-			streamable(Streamable const &object) :
-				ptr_(&object),
-				info_(&typeid(object))
+			template<typename S>
+			streamable(S const &ptr)
 			{
-				write_func_=&write<Streamable>;
+				set(&ptr,to_stream<S>,to_string<S>);
 			}
 			
-			streamable(streamable const &s) :
-				ptr_(s.ptr_),
-				info_(s.info_),
-				write_func_(s.write_func_)
-			{
-			}
+			streamable(char const *ptr);
 
-			std::type_info const &typeinfo() const
-			{
-				return *info_;
-			}
-			void operator()(std::ostream &output) const
-			{
-				write_func_(output,ptr_);
-			}
-
-			template<typename T>
-			T const &get() const
-			{
-				return *reinterpret_cast<T const *>(ptr_);
-			}
-
-			std::string get(std::ostream &output) const
-			{
-				if(typeinfo() == typeid(std::string) )
-					return get<std::string>();
-				if(typeinfo() == typeid(is_char_ptr)) 
-					return reinterpret_cast<char const *>(ptr_);
-
-				std::ostringstream oss;
-				oss.imbue(output.getloc());
-				write_func_(oss,ptr_);
-				return oss.str();
-			}
+			void operator()(std::ostream &output) const;
+			std::string get(std::ios &ios) const;
 		private:
-			struct is_char_ptr{};
+			void set(void const *ptr,to_stream_type f1,to_string_type f2);
 
 			template<typename T>
-			static void write(std::ostream &out,void const *ptr)
+			static void to_stream(std::ostream &out,void const *ptr)
 			{
 				T const *object=reinterpret_cast<T const *>(ptr);
 				out << *object;
 			}
-			static inline void write_char(std::ostream &out,void const *ptr)
+			template<typename T>
+			std::string to_string(std::ios &out,void const *ptr)
 			{
-				out<<reinterpret_cast<char const *>(ptr);
+				T const *object=reinterpret_cast<T const *>(ptr);
+				std::ostringstream oss;
+				oss.copyfmt(out);
+				oss << *object;
+				return oss.str();
 			}
-
+		private:
+			struct data;
 			void const *ptr_;
-			std::type_info const *info_;
-			void (*write_func_)(std::ostream &out,void const *ptr);
-
+			to_stream_type to_stream_;
+			to_string_type to_string_;
+			util::copy_ptr<data> d;
 		};
 
 
 		CPPCMS_STREAMED(streamable)
-		
-		template<std::string (cppcms::locale::convert::*member)(std::string const &) const>
-		class to_something {
-		public:
-			template<typename Streamable>
-			to_something(Streamable const &str) : obj_(str)
-			{				
-			}
-			void operator()(std::ostream &output) const
-			{
-				(std::use_facet<locale::convert>(output.getloc()).*member)(obj_.get(output));
-			}
 
-		private:
-			streamable obj_;
+		///
+		/// \brief Output filter to_upper
+		///
+		/// Convert text to upper case according to locale
+		///
+		
+		class CPPCMS_API to_upper {					
+		public:	
+			to_upper();						
+			~to_upper();					
+			to_upper(to_upper const &);				
+			to_upper const &operator=(to_upper const &other);	
+			void operator()(std::ostream &out) const;
+			to_upper(streamable const &obj);
+
+		private:						
+			streamable obj_;			
+			struct data;					
+			util::copy_ptr<data> d;				
 		};
 
-		typedef to_something<&locale::convert::to_upper> to_upper;
-		typedef to_something<&locale::convert::to_lower> to_lower;
-		typedef to_something<&locale::convert::to_title> to_title;
+		inline std::ostream &operator<<(std::ostream &out,to_upper const &obj)
+		{
+			obj(out);
+			return out;
+		}
+	
+		///
+		/// \brief Output filter to_lower
+		///
+		/// Convert text to lower case according to locale
+		///
+		
+		class CPPCMS_API to_lower {					
+		public:	
+			to_lower();						
+			~to_lower();					
+			to_lower(to_lower const &);				
+			to_lower const &operator=(to_lower const &other);	
+			void operator()(std::ostream &out) const;
+			to_lower(streamable const &obj);
 
-		CPPCMS_STREAMED(to_upper)
-		CPPCMS_STREAMED(to_lower)
-		CPPCMS_STREAMED(to_title)
-
-		class to_normal {
-		public:
-			template<typename Streamable>
-			to_normal(Streamable const &str,locale::convert::norm_type how = locale::convert::norm_default) :
-				 obj_(str),
-				 how_(how)
-			{				
-			}
-			void operator()(std::ostream &output) const
-			{
-				std::use_facet<locale::convert>(output.getloc()).to_normal(obj_.get(output),how_);
-			}
-
-		private:
-			streamable obj_;
-			locale::convert::norm_type how_;
+		private:						
+			streamable obj_;			
+			struct data;					
+			util::copy_ptr<data> d;				
 		};
 
-		CPPCMS_STREAMED(to_normal)
+		inline std::ostream &operator<<(std::ostream &out,to_lower const &obj)
+		{
+			obj(out);
+			return out;
+		}
+		
+		///
+		/// \brief Output filter to_title
+		///
+		/// Convert text to title case according to locale
+		///
+		
+		class CPPCMS_API to_title {					
+		public:	
+			to_title();						
+			~to_title();					
+			to_title(to_title const &);				
+			to_title const &operator=(to_title const &other);	
+			void operator()(std::ostream &out) const;
+			to_title(streamable const &obj);
 
-		class escape {
-		public:
-			escape(streamable const &obj) : obj_(obj) {}
-			void operator()(std::ostream &output) const
-			{
-				output << util::escape(obj_.get(output));
-			}
-
-		private:
-			streamable obj_;
+		private:						
+			streamable obj_;			
+			struct data;					
+			util::copy_ptr<data> d;				
 		};
-		
-		CPPCMS_STREAMED(escape)
-		
-		class urlencode {
-		public:
-			urlencode(streamable const &obj) : obj_(obj) {}
-			void operator()(std::ostream &output) const
-			{
-				output << util::urlencode(obj_.get(output));
-			}
 
-		private:
-			streamable obj_;
+		inline std::ostream &operator<<(std::ostream &out,to_title const &obj)
+		{
+			obj(out);
+			return out;
+		}
+	
+		///
+		/// \brief Output filter escape
+		///
+		/// Escape text for HTML -- make text safe
+		///
+		
+		class CPPCMS_API escape {					
+		public:	
+			escape();						
+			~escape();					
+			escape(escape const &);				
+			escape const &operator=(escape const &other);	
+			void operator()(std::ostream &out) const;
+			escape(streamable const &obj);
+
+		private:						
+			streamable obj_;			
+			struct data;					
+			util::copy_ptr<data> d;				
 		};
+
+		inline std::ostream &operator<<(std::ostream &out,escape const &obj)
+		{
+			obj(out);
+			return out;
+		}
+
+
+		///
+		/// \brief Output filter urlencode
+		///
+		/// Perform urlencoding(percent encoding) of the text
+		///
 		
-		CPPCMS_STREAMED(urlencode)
-		
-		class base64_urlencode {
-		public:
-			base64_urlencode(streamable const &obj) : obj_(obj) {}
-			void operator()(std::ostream &output) const;
-		private:
-			streamable obj_;
+		class CPPCMS_API urlencode {					
+		public:	
+			urlencode();						
+			~urlencode();					
+			urlencode(urlencode const &);				
+			urlencode const &operator=(urlencode const &other);	
+			void operator()(std::ostream &out) const;
+			urlencode(streamable const &obj);
+
+		private:						
+			streamable obj_;			
+			struct data;					
+			util::copy_ptr<data> d;				
 		};
+
+		inline std::ostream &operator<<(std::ostream &out,urlencode const &obj)
+		{
+			obj(out);
+			return out;
+		}
+	
+		///
+		/// \brief Output filter base64_urlencode
+		///
+		/// Convert text to base64 format that is friendly to URL.
+		///
 		
-		CPPCMS_STREAMED(base64_urlencode)
+		class CPPCMS_API base64_urlencode {					
+		public:	
+			base64_urlencode();						
+			~base64_urlencode();					
+			base64_urlencode(base64_urlencode const &);				
+			base64_urlencode const &operator=(base64_urlencode const &other);	
+			void operator()(std::ostream &out) const;
+			base64_urlencode(streamable const &obj);
 
-		class raw {
-		public:
-			raw(streamable const &obj) : obj_(obj) {}
-			void operator()(std::ostream &output) const
-			{
-				output << obj_;
-			}
-
-		private:
-			streamable obj_;
+		private:						
+			streamable obj_;			
+			struct data;					
+			util::copy_ptr<data> d;				
 		};
+
+		inline std::ostream &operator<<(std::ostream &out,base64_urlencode const &obj)
+		{
+			obj(out);
+			return out;
+		}
 		
-		CPPCMS_STREAMED(raw)
+		///
+		/// \brief Output filter raw
+		///
+		/// Filter that does nothing
+		///
+		
+		class CPPCMS_API raw {					
+		public:	
+			raw();						
+			~raw();					
+			raw(raw const &);				
+			raw const &operator=(raw const &other);	
+			void operator()(std::ostream &out) const;
+			raw(streamable const &obj);
 
-		class strftime {
-		public:
-			strftime(char const *format,std::tm const &t) : 
-				c_format_(format),
-				t_(t)
-			{
-			}
+		private:						
+			streamable obj_;			
+			struct data;					
+			util::copy_ptr<data> d;				
+		};
 
-			strftime(streamable const &format,std::tm const &t) :
-				c_format_(0),
-				format_(format),
-				t_(t)
-			{
-			}
+		inline std::ostream &operator<<(std::ostream &out,raw const &obj)
+		{
+			obj(out);
+			return out;
+		}
+	
+		///
+		/// \brief Output filter strftime
+		///
+		/// Format time according to locale using time_put<char> facet. (has similar
+		/// parameters to C strftime
+		///
+		
+		class CPPCMS_API strftime {					
+		public:	
+			strftime();						
+			~strftime();					
+			strftime(strftime const &);				
+			strftime const &operator=(strftime const &other);	
+			void operator()(std::ostream &out) const;
+			strftime(streamable const &obj,std::tm const &t);
 
-			void operator()(std::ostream &out) const
-			{
-				char const *begin,*end;
-				if(c_format_) {
-					begin=end=c_format_;
-					while(*end) end++;
-				}
-				else {
-					std::string const fmt=format_.get(out);
-					begin=fmt.data();
-					end=begin+fmt.size();
-				}
-				
-				std::use_facet<std::time_put<char> >(out.getloc()).put(out,out,' ',&t_,begin,end);
-			}
-		private:
-			char const *c_format_;
+		private:						
 			streamable format_;
-			std::tm const &t_;
+			std::tm const *t_;
+			struct data;					
+			util::copy_ptr<data> d;				
 		};
 
-		CPPCMS_STREAMED(strftime)
+		inline std::ostream &operator<<(std::ostream &out,strftime const &obj)
+		{
+			obj(out);
+			return out;
+		}
+	
 
 		class CPPCMS_API date {
 		public:
+			date();
+			date(date const &other);
+			date const &operator=(date const &other);
+			~date();
+
 			date(std::tm const &t);
 			void operator()(std::ostream &out) const;
 		private:
-			std::tm const &tm_;
+			struct data;
+			std::tm const *t_;
+			util::copy_ptr<data> d;
 		};
 		
-		CPPCMS_STREAMED(date)
+		inline std::ostream &operator<<(std::ostream &out,date const &obj)
+		{
+			obj(out);
+			return out;
+		}
 		
 		class CPPCMS_API time {
 		public:
+			time();
+			time(time const &other);
+			time const &operator=(time const &other);
+			~time();
+
 			time(std::tm const &t);
 			void operator()(std::ostream &out) const;
 		private:
-			std::tm const &tm_;
+			struct data;
+			std::tm const *t_;
+			util::copy_ptr<data> d;
 		};
-		CPPCMS_STREAMED(time)
 		
+		inline std::ostream &operator<<(std::ostream &out,time const &obj)
+		{
+			obj(out);
+			return out;
+		}
 		class CPPCMS_API datetime {
 		public:
+			datetime();
+			datetime(datetime const &other);
+			datetime const &operator=(datetime const &other);
+			~datetime();
+
 			datetime(std::tm const &t);
 			void operator()(std::ostream &out) const;
 		private:
-			std::tm const &tm_;
+			struct data;
+			std::tm const *t_;
+			util::copy_ptr<data> d;
 		};
-		CPPCMS_STREAMED(datetime)
-
+		
+		inline std::ostream &operator<<(std::ostream &out,datetime const &obj)
+		{
+			obj(out);
+			return out;
+		}
+	
 		class gt {
 		public:
 			gt(char const *msg) : 
