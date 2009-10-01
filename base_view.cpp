@@ -10,7 +10,6 @@
 #include <boost/format.hpp>
 
 namespace cppcms {
-namespace views {
 
 struct base_view::data {
 	std::ostream *out;
@@ -77,5 +76,4 @@ views_storage::~views_storage()
 
 
 } // details
-} // views
 }// cppcms

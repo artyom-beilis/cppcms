@@ -34,10 +34,19 @@ namespace cppcms { namespace filters {
 		{
 			return reinterpret_cast<char const *>(p);
 		}
+		std::string s_to_string(std::ios &ios,void const *p)
+		{
+			return *reinterpret_cast<std::string const *>(p);
+		}
 	}
 	streamable::streamable(char const *ptr)
 	{
 		set(ptr,ch_to_stream,ch_to_string);
+	}
+	template<>
+	streamable::streamable(std::string const &str)
+	{
+		set(&str,to_stream<std::string>,s_to_string);
 	}
 	std::string streamable::get(std::ios &ios) const
 	{

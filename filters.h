@@ -69,6 +69,13 @@ namespace cppcms {
 			util::copy_ptr<data> d;
 		};
 
+		///
+		/// \brief we can specialize for string because std::string get(ios &) const may be much more
+		/// efficient.
+		///
+		template<>
+		CPPCMS_API streamable::streamable(std::string const &str);
+
 
 		CPPCMS_STREAMED(streamable)
 

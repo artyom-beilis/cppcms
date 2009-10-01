@@ -13,11 +13,8 @@
 #include "hold_ptr.h"
 #include "base_content.h"
 #include "noncopyable.h"
-#include "filters.h"
 
 namespace cppcms {
-namespace views {
-using namespace filters;
 
 class CPPCMS_API base_view : util::noncopyable {
 public:
@@ -73,7 +70,6 @@ namespace details {
 	};
 
 } // details
-} // views
 } // cppcms
 
 
