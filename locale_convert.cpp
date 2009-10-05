@@ -16,17 +16,29 @@
 
 namespace cppcms {
 namespace locale {
-#ifdef HAVE_ICU
-
 	class convert_impl : public util::noncopyable {
 	public:
-		convert_impl(std::locale const &loc) :
+		virtual std::string to_upper(std::string const &str) const = 0;
+		virtual std::string to_lower(std::string const &str) const = 0;
+		virtual std::string to_title(std::string const &str) const = 0;
+		virtual std::string to_normal(std::string const &str,convert::norm_type how) const = 0;
+		virtual ~convert_impl() {};
+	};
+
+
+	
+
+#ifdef HAVE_ICU
+
+	class icu_convert_impl : public convert_impl {
+	public:
+		icu_convert_impl(std::locale const &loc) :
 			std_locale_(loc),
 			icu_locale_(std::use_facet<icu_locale>(loc).get())
 		{
 		}
 
-		icu::UnicodeString normalize(icu::UnicodeString const &str,convert::norm_type how) const
+		static icu::UnicodeString normalize(icu::UnicodeString const &str,convert::norm_type how)
 		{
 			UNormalizationMode mode;
 			switch(how) {
@@ -45,6 +57,23 @@ namespace locale {
 				throw std::runtime_error(std::string("normalization failed:") + u_errorName(status));
 			return res;
 		}
+
+		std::string to_upper(std::string const &str) const
+		{
+			return impl::icu_to_std((impl::std_to_icu(str,std_locale_).toUpper(icu_locale_)),std_locale_);
+		}
+		std::string to_lower(std::string const &str) const
+		{
+			return impl::icu_to_std((impl::std_to_icu(str,std_locale_).toLower(icu_locale_)),std_locale_);
+		}
+		std::string to_title(std::string const &str) const
+		{
+			return impl::icu_to_std((impl::std_to_icu(str,std_locale_).toTitle(0,icu_locale_)),std_locale_);
+		}
+		std::string to_normal(std::string const &str,convert::norm_type how) const
+		{
+			return impl::icu_to_std(normalize(impl::std_to_icu(str,std_locale_),how),std_locale_);
+		}
 	private:
 		friend class convert;
 		std::locale std_locale_;
@@ -53,30 +82,14 @@ namespace locale {
 
 
 	
-	std::string convert::to_upper(std::string const &str) const
-	{
-		return impl::icu_to_std((impl::std_to_icu(str,impl_->std_locale_).toUpper(impl_->icu_locale_)),impl_->std_locale_);
-	}
-	std::string convert::to_lower(std::string const &str) const
-	{
-		return impl::icu_to_std((impl::std_to_icu(str,impl_->std_locale_).toLower(impl_->icu_locale_)),impl_->std_locale_);
-	}
-	std::string convert::to_title(std::string const &str) const
-	{
-		return impl::icu_to_std((impl::std_to_icu(str,impl_->std_locale_).toTitle(0,impl_->icu_locale_)),impl_->std_locale_);
-	}
-	std::string convert::to_normal(std::string const &str,norm_type how) const
-	{
-		return impl::icu_to_std(impl_->normalize(impl::std_to_icu(str,impl_->std_locale_),how),impl_->std_locale_);
-	}
 
-#else /////  NO ICU
+#endif
 
-	class convert_impl : public util::noncopyable {
+	class std_convert_impl : public convert_impl {
 	public:
 		
 		
-		convert_impl(std::locale const &l) : 
+		std_convert_impl(std::locale const &l) : 
 			locale_(l),
 			cfacet_(0),
 			wfacet_(0),
@@ -146,42 +159,61 @@ namespace locale {
 				return tmp;
 			}
 		}
+
+		std::string to_normal(std::string const &str,convert::norm_type how) const
+		{
+			#ifdef HAVE_ICU
+			return impl::icu_to_std(icu_convert_impl::normalize(impl::std_to_icu(str,locale_),how),locale_);
+			#else
+			return str;
+			#endif
+		}
 	private:
 		std::locale locale_;
 		std::ctype<char> const *cfacet_;
 		std::ctype<wchar_t> const *wfacet_;
 		charset const *charset_;
-	};
-
-	std::string convert::to_upper(std::string const &str) const
-	{
-		return impl_->to_upper(str);
-	}
-	std::string convert::to_lower(std::string const &str) const
-	{
-		return impl_->to_lower(str);
-	}
-	std::string convert::to_title(std::string const &str) const
-	{
-		return impl_->to_title(str);
-	}
-	std::string convert::to_normal(std::string const &str,norm_type how) const
-	{
-		return str;
-	}
+	}; // std_convert
 	
-#endif  /// ICU / NO ICU
-
+	
+	
 	std::locale::id convert::id;
 
-	convert::convert(std::locale const &l,size_t refs) : 
-		std::locale::facet(refs),
-		impl_(new convert_impl(l))
+	convert *convert::create(std::locale const &l,std::string provider)
+	{
+		#ifdef HAVE_ICU
+		char const *default_provider="icu";
+		#else 
+		char const *default_provider="std";
+		#endif
+
+		if(provider=="default")
+			provider=default_provider;
+
+		#ifdef HAVE_ICU
+		if(provider=="icu") {
+			return new convert(new icu_convert_impl(l));
+		}
+		#endif
+
+		if(provider=="std") {
+			return new convert(new std_convert_impl(l));
+		}
+		throw std::runtime_error("Unknown locale provider:"+provider);
+			 
+	}
+	
+	convert::convert(convert_impl *impl,size_t refs) : std::locale::facet(refs), impl_(impl)
 	{
 	}
 	convert::~convert()
 	{
 	}
+
+	std::string convert::to_upper(std::string const &str) const { return impl_->to_upper(str); }
+	std::string convert::to_lower(std::string const &str) const { return impl_->to_lower(str); }
+	std::string convert::to_title(std::string const &str) const { return impl_->to_title(str); }
+	std::string convert::to_normal(std::string const &str,norm_type how) const { return impl_->to_normal(str,how); }
 
 
 } /// locale

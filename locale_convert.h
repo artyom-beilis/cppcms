@@ -38,7 +38,7 @@ namespace locale {
 		/// \a charset, \a icu_locale and \a info facets should be assigned to \a source
 		/// 
 
-		convert(std::locale const &source,size_t refs=0);
+		convert(convert_impl *impl,size_t refs=0);
 		virtual ~convert();
 
 		///
@@ -68,6 +68,12 @@ namespace locale {
 		///
 
 		std::string to_normal(std::string const &str,norm_type how = norm_default) const;
+
+		///
+		/// Create instance of the facet
+		///
+
+		static convert *create(std::locale const &l,std::string provider="default");
 
 	private:
 		
