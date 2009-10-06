@@ -10,11 +10,11 @@ namespace cppcms { namespace filters {
 	struct streamable::data {};
 	streamable::streamable() 
 	{
-		set(0,0,0);
+		set(0,0,0,0);
 	}
 	streamable::streamable(streamable const &other)
 	{
-		set(other.ptr_,other.to_stream_,other.to_string_);
+		set(other.ptr_,other.to_stream_,other.to_string_,other.type_);
 	}
 	streamable::~streamable()
 	{
@@ -22,7 +22,7 @@ namespace cppcms { namespace filters {
 	streamable const &streamable::operator=(streamable const &other)
 	{
 		if(&other!=this)
-			set(other.ptr_,other.to_stream_,other.to_string_);
+			set(other.ptr_,other.to_stream_,other.to_string_,other.type_);
 		return *this;
 	}
 	namespace {
@@ -41,12 +41,12 @@ namespace cppcms { namespace filters {
 	}
 	streamable::streamable(char const *ptr)
 	{
-		set(ptr,ch_to_stream,ch_to_string);
+		set(ptr,ch_to_stream,ch_to_string,&typeid(char const *));
 	}
 	template<>
 	streamable::streamable(std::string const &str)
 	{
-		set(&str,to_stream<std::string>,s_to_string);
+		set(&str,to_stream<std::string>,s_to_string,&typeid(std::string));
 	}
 	std::string streamable::get(std::ios &ios) const
 	{
@@ -56,11 +56,18 @@ namespace cppcms { namespace filters {
 	{
 		to_stream_(out,ptr_);
 	}
-	void streamable::set(void const *ptr,to_stream_type tse,to_string_type tst)
+	
+	void streamable::set(void const *ptr,to_stream_type tse,to_string_type tst,std::type_info const *type)
 	{
 		ptr_=ptr;
 		to_stream_=tse;
 		to_string_=tst;
+		type_=type;
+	}
+
+	std::type_info const &streamable::type() const
+	{
+		return *type_;
 	}
 
 ///////////////////////////////////

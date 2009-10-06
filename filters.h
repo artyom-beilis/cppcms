@@ -36,7 +36,16 @@ namespace cppcms {
 			template<typename S>
 			streamable(S const &ptr)
 			{
-				set(&ptr,to_stream<S>,to_string<S>);
+				set(&ptr,to_stream<S>,to_string<S>,&typeid(S));
+			}
+
+			template<typename T>
+			T const &get() const
+			{
+				if(typeid(T) != type())
+					throw std::bad_cast();
+				T const *object=reinterpret_cast<T const *>(ptr_);
+				return *object;
 			}
 			
 			streamable(char const *ptr);
@@ -44,7 +53,7 @@ namespace cppcms {
 			void operator()(std::ostream &output) const;
 			std::string get(std::ios &ios) const;
 		private:
-			void set(void const *ptr,to_stream_type f1,to_string_type f2);
+			void set(void const *ptr,to_stream_type f1,to_string_type f2,std::type_info const *type);
 
 			template<typename T>
 			static void to_stream(std::ostream &out,void const *ptr)
@@ -61,11 +70,15 @@ namespace cppcms {
 				oss << *object;
 				return oss.str();
 			}
+			std::type_info const &type() const;
 		private:
 			struct data;
+
 			void const *ptr_;
 			to_stream_type to_stream_;
 			to_string_type to_string_;
+			std::type_info const *type_;
+
 			util::copy_ptr<data> d;
 		};
 
@@ -75,7 +88,6 @@ namespace cppcms {
 		///
 		template<>
 		CPPCMS_API streamable::streamable(std::string const &str);
-
 
 		CPPCMS_STREAMED(streamable)
 
