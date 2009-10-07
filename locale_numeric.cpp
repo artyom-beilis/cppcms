@@ -113,7 +113,7 @@ namespace locale {
 			return true;
 		}
 
-		numeric_impl::numeric_impl(std::locale const &std_loc) : locale_(std_loc)
+		numeric_impl(std::locale const &std_loc) : locale_(std_loc)
 		{
 			#define CPPCMS_ICU_VERSION (U_ICU_VERSION_MAJOR_NUM * 100 + U_ICU_VERSION_MINOR_NUM)
 			
