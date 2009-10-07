@@ -3,44 +3,63 @@
 #include <locale>
 
 #include "defs.h"
-#include "hold_ptr.hpp"
+#include "hold_ptr.h"
 
 namespace cppcms {
 	namespace locale {
-		class num_put_impl;
-		class CPPCMS_API num_put : public std::num_put<char> {
+		
+		
+		class numeric_impl;
+		
+		class CPPCMS_API numeric : public std::locale::facet {
 		public:
-			static num_put *create(std::locale const &l);
+
+			static std::locale::id id;
+
+			static numeric *create(std::locale const &l);
+
 			typedef enum {
-				format_default,
-				format_currency,
-				format_percent,
-				format_scientific,
-				format_spellout,
-				format_ordinal,
-				format_numbering
+				format_normal = 0,	///< Normal, locale default formatting
+				format_scientific,	///< scientific format
+				format_percent,		///< percent format
+				format_currency,	///< currency format
+				format_iso_currency,	///< currency with ISO currency marker -- '$' -> 'USD'
+				format_spellout,	///< spellout number if rules availible
+				format_ordinal,		///< display ordinal format 1st, 2nd etc.
+				format_numbering,	///< display alternative number format Roman, Hebrew
+
+				format_count,
 			} format_type;
 
-			iter_type put(format_type format,int width,int presision, char fill, iter_type out,int64_t value);
-			iter_type put(format_type format,int width,int presision, char fill, iter_type out,double value);
+			std::string format(format_type type,double value) const;
+			std::string format(format_type type,double value,int presision) const;
 
-		protected:
-			num_put(num_put_impl *,size_t refs=0);
-			virtual ~num_put();
+			std::string format(format_type type,long long value) const;
+			std::string format(format_type type,unsigned long long value) const;
 
-			virtual iter_type do_put (iter_type out, std::ios_base& str, char_type fill, bool val) const;
-			virtual iter_type do_put (iter_type out, std::ios_base& str, char_type fill, long val) const;
-			virtual iter_type do_put (iter_type out, std::ios_base& str, char_type fill, unsigned long val) const;
-			virtual iter_type do_put (iter_type out, std::ios_base& str, char_type fill, long long val) const;
-			virtual iter_type do_put (iter_type out, std::ios_base& str, char_type fill, unsigned long long val) const;
-			virtual iter_type do_put (iter_type out, std::ios_base& str, char_type fill, double val) const;
-			virtual iter_type do_put (iter_type out, std::ios_base& str, char_type fill, long double val) const;
-			virtual iter_type do_put (iter_type out, std::ios_base& str, char_type fill, const void* val) const;
+			std::string format(format_type type,long value) const;
+			std::string format(format_type type,unsigned long value) const;
+
+			std::string format(format_type type,int value) const;
+			std::string format(format_type type,unsigned value) const;
+			
+			bool parse(format_type type,std::string const &,double &value) const;
+
+			bool parse(format_type type,std::string const &,int &value) const;			
+			bool parse(format_type type,std::string const &,unsigned int &value) const;			
+
+			bool parse(format_type type,std::string const &,long &value) const;			
+			bool parse(format_type type,std::string const &,unsigned long &value) const;			
+
+			bool parse(format_type type,std::string const &,long long &value) const;			
+			bool parse(format_type type,std::string const &,unsigned long long &value) const;			
+
 		private:
-			hold_ptr<num_put_impl> impl_;
-			std::num_put<char> const &std() const;
-			bool use_std(std::ios_base &str) const;
-			format_type get_type(std::ios_base &str,bool is_double=false) const;
+			numeric(numeric_impl *,size_t refs=0);
+			virtual ~numeric();
+
+			util::hold_ptr<numeric_impl> impl_;
+
 		};
 	}
 }

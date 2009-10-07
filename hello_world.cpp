@@ -303,7 +303,7 @@ public:
 	}
 	void hello_world()
 	{
-		using namespace cppcms::filters;
+		using namespace cppcms;
 		std::ostringstream ss;
 		ss<<std::time(NULL);
 		response().set_cookie(cppcms::http::cookie("test",ss.str()));
@@ -319,14 +319,14 @@ public:
 		std::tm tt;
 		localtime_r(&t,&tt);
 
-		response().out() << cppcms::filters::date(tt) <<std::endl;
+		response().out() << filters::date(tt) <<std::endl;
 
-		response().out() << cppcms::filters::escape(cppcms::filters::gt("hello\n")) << "<br>";
+		response().out() << filters::escape(gt("hello\n")) << "<br>";
 		
 		for(int i=0;i<30;i++) {
 			response().out() << format("To be or not to be %1%\n<br>",10);
 
-			response().out() << cppcms::filters::format(cppcms::filters::ngt("passed one day","passed %1% days",i),i) << "<br>\n";
+			response().out() << format(ngt("passed one day","passed %1% days",i),i) << "<br>\n";
 			//cppcms::util::format(response().out(),ngt("passed one day","passed %1% days",i),i) << "<br>";
 		}
 		response().out()

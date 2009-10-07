@@ -7,7 +7,6 @@
 
 namespace cppcms { namespace filters {
 
-	struct streamable::data {};
 	streamable::streamable() 
 	{
 		set(0,0,0,0);
