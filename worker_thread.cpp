@@ -121,6 +121,7 @@ void worker_thread::run(cgicc_connection &cgi_conn)
 	}
 	catch(std::exception const &e) {
 		string msg=e.what();
+		cgi_out<<"Content-Type: text/html\n";
 		cgi_out<<HTTPStatusHeader(500,msg);
 		cgi_out<<"<html><body><p>"+msg+"</p><body></html>";
 		gzip=gzip_done=false;

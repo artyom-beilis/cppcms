@@ -22,6 +22,7 @@ application::~application()
 
 void application::on_404()
 {
+	add_header("Content-Type: text/html");
 	set_header(new cgicc::HTTPStatusHeader(404,"Not found"));
 	cout<<	"<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.0 Transitional//EN\"\n"
 		"         \"http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd\">\n"
