@@ -3,6 +3,8 @@
 
 #include <vector>
 #include <string>
+#include <stdint.h>
+#include <stdio.h>
 
 namespace cppcms {
 

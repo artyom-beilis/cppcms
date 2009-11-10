@@ -5,6 +5,9 @@
 #include <boost/shared_ptr.hpp>
 #include "session_api.h"
 
+#include <stdint.h>
+#include <stdio.h>
+
 namespace cppcms {
 	
 class session_server_storage;
