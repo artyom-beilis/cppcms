@@ -1,15 +1,22 @@
 cmake_minimum_required(VERSION 2.4)
 project(cppcms)
+add_subdirectory(boost_locale/libs/locale)
 
 include(CheckTypeSize)
-#include(CheckFunctionExists)
-#include(CheckLibraryExists)
+include(CheckFunctionExists)
+include(CheckCXXSourceCompiles)
 
 set(PACKAGE_NAME "CppCMS")
 set(PACKAGE_STRING "CppCMS/0.99.1")
 set(PACKAGE_VERSION "0.99.1")
 
-find_package(Boost 1.36.0 COMPONENTS system filesystem regex iostreams thread date_time)  
+
+find_library(BOOST_SYSTEM	boost_system-${BOOST_SUFFIX} 	NAMES boost_system 	boost_system-mt)
+find_library(BOOST_FILESYSTEM 	boost_filesystem-${BOOST_SUFFIX} NAMES boost_filesystem boost_filesystem-mt)
+find_library(BOOST_REGEX	boost_regex-${BOOST_SUFFIX} 	NAMES boost_regex 	boost_regex-mt)
+find_library(BOOST_IOSTREAMS	boost_iostreams-${BOOST_SUFFIX} NAMES boost_iostreams 	boost_iostreams-mt)
+find_library(BOOST_THREAD	boost_thread-${BOOST_SUFFIX} 	NAMES boost_thread 	boost_thread-mt)
+find_library(BOOST_DATE_TIME	boost_date_time-${BOOST_SUFFIX} NAMES boost_date_time 	boost_date_time-mt)
 
 find_library(ICU_UC icuuc)
 find_library(ICU_DATA icudata NAMES icudt)
@@ -21,18 +28,73 @@ endif(NOT ICU_UC OR NOT ICU_DATA OR NOT ICU_I18N)
 
 set(HAVE_ICU 1)
 
-if(NOT Boost_FOUND)
-	message(FATAL " Failed to find Boost >= 1.36 ")
-endif(NOT Boost_FOUND)
-
 find_library(ICONV_LIB iconv)
 
 include_directories(${CMAKE_BINARY_DIR})
 include_directories(boost_locale)
 include_directories(${Boost_INCLUDE_DIRS})
 
+		
 
-check_type_size(wchar_t SIZEOF_WCHAR_T) 
+Check_type_size(wchar_t SIZEOF_WCHAR_T) 
+
+check_cxx_source_compiles(
+	"int main() { volatile long v;__sync_add_and_fetch(&v,1); }"
+	HAVE_SYNC_FETCH_AND_ADD)
+check_cxx_source_compiles(
+	"#include <string> 
+	int main() { std::wstring s; }"
+	HAVE_STD_WSTRING)
+
+check_cxx_source_compiles(
+	"#include <string> 
+	int main() { std::u16string s16; std::u32string s32; }"
+	HAVE_CPP0X_UXSTRING)
+
+Check_cxx_source_compiles(
+	"#include <list> 
+	int main(){std::list<int> l; auto p=l.begin();}"
+	HAVE_CPP_0X_AUTO)
+
+check_cxx_source_compiles(
+	"#include <list> 
+	int main(){std::list<int> l; decltype(l.begin()) p=l.begin();}"
+	HAVE_CPP_0X_DECLTYPE)
+
+check_cxx_source_compiles(
+	"#include <list> 
+	int main(){std::list<int> l; typeof(l.begin()) p=l.begin();}"
+	HAVE_GCC_TYPEOF)
+
+check_cxx_source_compiles(
+	"#include <list> 
+	int main(){std::list<int> l; __typeof__(l.begin()) p=l.begin();}"
+	HAVE_UNDERSCORE_TYPEOF)
+
+if(${CMAKE_HOST_WIN32})
+	find_library(WS2_32 ws2_32)
+	find_library(WSOCK32 wsock32)
+else(${CMAKE_HOST_WIN32})
+	check_function_exists(socket HAVE_SOCKET)
+	if(NOT HAVE_SOCKET)
+		check_library_exists(socket socket "" LIB_SOCKET)
+		if(NOT HAVE_SOCKET)
+			message(FATAL " No library with socket found")
+		endif(NOT HAVE_SOCKET)
+	endif(NOT HAVE_SOCKET)
+
+	check_function_exists(gethostbyname HAVE_GETHOSTBYNAME)
+	if(NOT HAVE_GETHOSTBYNAME)
+		check_library_exists(socket gethostbyname "" LIB_GETHOSTBYNAME)
+		if(NOT LIB_GETHOSTBYNAME)
+			check_library_exists(nsl gethostbyname "" LIB_GETHOSTBYNAME)
+			if(NOT LIB_GETHOSTBYNAME)
+				message(FATAL " No library with gethostbyname found")
+			endif(NOT LIB_GETHOSTBYNAME)
+		endif(NOT LIB_GETHOSTBYNAME)
+	endif(NOT HAVE_GETHOSTBYNAME)
+endif(${CMAKE_HOST_WIN32}) 
+
 
 configure_file(config.cmake.h config.h)
 
@@ -85,17 +147,32 @@ add_library(cppcms SHARED ${CPPCMS_SOURCES})
 target_link_libraries(cppcms ${ICU_UC})
 target_link_libraries(cppcms ${ICU_DATA})
 target_link_libraries(cppcms ${ICU_I18N})
-target_link_libraries(cppcms ${Boost_LIBRARIES})
+target_link_libraries(cppcms ${BOOST_REGEX})
+target_link_libraries(cppcms ${BOOST_IOSTREAMS})
+target_link_libraries(cppcms ${BOOST_DATE_TIME})
+target_link_libraries(cppcms ${BOOST_THREAD})
+target_link_libraries(cppcms ${BOOST_FILESYSTEM})
+target_link_libraries(cppcms ${BOOST_SYSTEM})
+target_link_libraries(cppcms boost_locale)
 
-target_link_libraries(cppcms ${ICONV_LIB})
+if(ICONV_LIB)
+	target_link_libraries(cppcms ${ICONV_LIB})
+endif(ICONV_LIB)
+
+if(WS2_32 AND WSOCK32)
+	target_link_libraries(cppcms ws2_32)
+	target_link_libraries(cppcms wsock32)
+endif(WS2_32 AND WSOCK32) 
+
+if(LIB_GETHOSTBYNAME)
+	target_link_libraries(cppcms LIB_GETHOSTBYNAME)
+endif(LIB_GETHOSTBYNAME)
+
+if(LIB_SOCKET)
+	target_link_libraries(cppcms LIB_SOCKET)
+endif(LIB_SOCKET)
 
 add_executable(hello_world hello_world.cpp)
 target_link_libraries(hello_world cppcms)
-
-
-if(${CMAKE_HOST_WIN32})
-	target_link_libraries(cppcms ws2_32)
-	target_link_libraries(cppcms wsock32)
-endif(${CMAKE_HOST_WIN32}) 
 
 
