@@ -14,7 +14,6 @@
 #include "http_context.h"
 #include "http_request.h"
 #include "http_response.h"
-#include "locale_environment.h"
 #include "copy_ptr.h"
 #include "cppcms_error.h"
 #include "util.h"
@@ -897,7 +896,7 @@ namespace cppcms {
 						return;
 
 					std::istringstream ss(loaded_string_);
-					ss.imbue(context.locale().get());
+					ss.imbue(context.locale());
 					ss>>value_;
 					if(ss.fail() || !ss.eof())
 						valid(false);

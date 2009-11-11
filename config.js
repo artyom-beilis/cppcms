@@ -29,23 +29,14 @@
 		// "level" : 1,
 		// "buffer" : 4096
 	},
-	"l10n" : {
-		"defaults" : {
-			"encoding" : "UTF-8",
-			"locale" : "en_US",
-			"std_locale" : [ "ICU" , "C" ]
-		},
+	"localization" : {
+		"encoding" : "UTF-8",
 		"messages" : {
-			"paths" : [ "./transtext/locale" ],
+			"paths" : [ "../transtext/locale" ],
 			"domains" : [ "app", "test" ],
 			"default_domain" : ["test"]
 		},
-		"locales" : [
-			"he_IL",
-			"he_IL@calendar=hebrew",
-			"en_US",
-			{ "locale" : "ru_RU" , "std_locale" : "C" }
-		]
+		"locales" : [ "en_US", "he_IL", "he_IL@calendar=hebrew" ]
 	},
 	"locale" : {
 		"locales" : 

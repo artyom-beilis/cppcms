@@ -5,8 +5,6 @@
 #include "service.h"
 #include "cppcms_error.h"
 #include "url_dispatcher.h"
-#include "locale_environment.h"
-#include "locale_gettext.h"
 #include "intrusive_ptr.h"
 #include "applications_pool.h"
 #include "http_response.h"
@@ -100,20 +98,6 @@ intrusive_ptr<http::context> application::release_context()
 }
 
 
-cppcms::locale::environment &application::locale()
-{
-	return context().locale();
-}
-
-char const *application::gt(char const *s)
-{
-	return locale().gt(s);
-}
-
-char const *application::ngt(char const *s,char const *p,int n)
-{
-	return locale().ngt(s,p,n);
-}
 bool application::is_asynchronous()
 {
 	return pool_id() < 0;

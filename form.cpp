@@ -3,8 +3,6 @@
 #include <iostream>
 #include <stack>
 #include <boost/format.hpp>
-#include "locale_charset.h"
-#include "locale_environment.h"
 
 namespace cppcms {
 
@@ -380,12 +378,14 @@ void base_text::value(std::string v)
 
 std::string base_text::value(std::locale const &v)
 {
-	return std::use_facet<locale::charset>(v).to_utf8(value_);
+	//return std::use_facet<locale::charset>(v).to_utf8(value_);
+	return value_;
 }
 
 void base_text::value(std::string v,std::locale const &l)
 {
-	value(std::use_facet<locale::charset>(l).from_utf8(v));
+	//value(std::use_facet<locale::charset>(l).from_utf8(v));
+	value(v);
 }
 
 void base_text::non_empty()
@@ -432,9 +432,9 @@ void base_text::load(http::context &context)
 	set(true);
 	if(validate_charset_) {
 		code_points_ = 0;
-		locale::charset const &charset=std::use_facet<locale::charset>(context.locale().get());
+	/*	locale::charset const &charset=std::use_facet<locale::charset>(context.locale().get());
 		if(!charset.validate(value_,code_points_))
-			valid(false);
+			valid(false);*/
 	}
 	else {
 		code_points_=value_.size();

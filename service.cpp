@@ -1,4 +1,5 @@
 #define CPPCMS_SOURCE
+#include "asio_config.h"
 #include "service.h"
 #include "service_impl.h"
 #include "applications_pool.h"
@@ -9,11 +10,10 @@
 #include "scgi_api.h"
 #include "http_api.h"
 #include "fastcgi_api.h"
-#include "locale_pool.h"
 #include "internal_file_server.h"
 #include "json.h"
+#include "localization.h"
 
-#include "asio_config.h"
 
 #ifdef CPPCMS_POSIX
 #include <sys/wait.h>
@@ -23,6 +23,7 @@
 #include <fstream>
 #include <boost/lexical_cast.hpp>
 #include <boost/regex.hpp>
+
 
 namespace cppcms {
 
@@ -241,7 +242,6 @@ void service::shutdown()
 
 void service::run()
 {
-	locale_pool();
 	start_acceptor();
 
 	if(settings().get("file_server.enable",false))
@@ -426,14 +426,57 @@ void service::stop()
 	impl_->get_io_service().stop();
 }
 
-locale::pool const &service::locale_pool()
+locale::generator const &service::generator()
 {
-	if(!impl_->locale_pool_.get()) {
-		impl_->locale_pool_.reset(new locale::pool(settings()));
-		
+	if(impl_->locale_generator_.get())
+		return *impl_->locale_generator_.get();
+
+	typedef std::vector<std::string> vstr_type;
+	impl_->locale_generator_.reset(new locale::generator());
+	locale::generator &gen= *impl_->locale_generator_;
+	gen.characters(locale::char_facet);
+	std::string enc = settings().get("localization.encoding","");
+
+	if(!enc.empty())
+		gen.octet_encoding(enc);
+
+	vstr_type paths= settings().get("localization.messages.path",vstr_type());
+	vstr_type domains = settings().get("localization.messages.domains",vstr_type());
+
+	if(!paths.empty() && !domains.empty()) {
+		unsigned i;
+		for(i=0;i<paths.size();i++)
+			gen.add_messages_path(paths[i]);
+		for(i=0;i<domains.size();i++)
+			gen.add_messages_domain(domains[i]);
 	}
-	return *impl_->locale_pool_;
+
+	vstr_type locales = settings().get("localization.messages.locales",vstr_type());
+
+	if(locales.empty()) {
+		gen.preload("");
+		impl_->default_locale_=gen("");
+	}
+	else {
+		for(unsigned i=0;i<locales.size();i++)
+			gen.preload(locales[i]);
+		impl_->default_locale_=gen(locales[0]);
+	}
+
+	return *impl_->locale_generator_.get();
+
 }
+
+std::locale service::locale()
+{
+	generator();
+	return impl_->default_locale_;
+}
+std::locale service::locale(std::string const &name)
+{
+	return generator().get(name);
+}
+
 
 namespace impl {
 	service::service() :
@@ -452,7 +495,7 @@ namespace impl {
 		// applications pool should be destroyed after
 		// io_service, because soma apps may try unregister themselfs
 		applications_pool_.reset();
-		locale_pool_.reset();
+		locale_generator_.reset();
 		settings_.reset();
 
 	}

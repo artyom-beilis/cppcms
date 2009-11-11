@@ -5,15 +5,12 @@
 #include "http_response.h"
 #include "http_request.h"
 #include "http_cookie.h"
-#include "locale_environment.h"
-#include "locale_charset.h"
+#include "localization.h"
 #include "http_context.h"
 #include "filters.h"
 #include "aio_timer.h"
 #include "intrusive_ptr.h"
 #include "form.h"
-#include "locale_convert.h"
-#include "utf8_iterator.h"
 #include <sstream>
 #include <stdexcept>
 #include <stdlib.h>
@@ -203,35 +200,16 @@ public:
 	{
 	}
 
-	template<typename iterator> 
-	void devide(std::string const &str,char const *name)
+	void devide(cppcms::locale::boundary::boundary_type type,std::string const &str,char const *name)
 	{
 		response().out()<<name<<":";
-		iterator it(str,locale().get());
-		iterator prev = it;
-		++it;
-		response().out()<<std::string(*prev,*it);
-		while(*it!=str.end()) {
-			prev=it;
-			++it;
-			response().out()<<" | "<<std::string(*prev,*it);
+		using namespace cppcms::locale;
+		boundary::index_type indx = boundary::map(type,str,context().locale());
+
+		for(unsigned i=0;i<indx.size()-1;i++) {
+			response().out()<<"|"<<str.substr(indx[i].offset,indx[i+1].offset-indx[i].offset);
 		}
-		response().out()<<"<br>\n"<<name<<" reversed:";
-		it=str.end();
-		std::string::const_iterator p=*it;
-		--it;
-		response().out()<<std::string(*it,p);
-		while(*it!=str.begin()) {
-			p=*it;
-			--it;
-			response().out()<<" | "<<std::string(*it,p);
-		}
-		response().out()<<"<br>\nRandom "<<name<<":";
-		it = str.begin() + rand() % str.size();
-		prev=it;
-		it+=5;
-		prev-=5;
-		response().out()<<std::string(*prev,*it)<<"<br>\n";
+		response().out()<<"|<br>\n";
 	}
 
 	void form()
@@ -247,14 +225,15 @@ public:
 		response().out()<<
 			"<html><body>\n";
 	
-		cppcms::locale::convert const &cv=std::use_facet<cppcms::locale::convert>(locale().get());
+		std::locale loc = context().locale();
 
 		if(f.name.set()) {
+			using namespace cppcms::locale;
 			std::string name = f.name.value();
-			response().out() <<"Upper: "<<cv.to_upper(name)<<"<br>"<<std::endl;
-			response().out() <<"Lower: "<<cv.to_lower(name)<<"<br>"<<std::endl;
-			response().out() <<"Title: "<<cv.to_title(name)<<"<br>"<<std::endl;
-			response().out() <<"Normal: "<<cv.to_normal(name)<<"<br>"<<std::endl;
+			response().out() <<"Upper: "<<to_upper(name,loc)<<"<br>"<<std::endl;
+			response().out() <<"Lower: "<<to_lower(name,loc)<<"<br>"<<std::endl;
+			response().out() <<"Title: "<<to_title(name,loc)<<"<br>"<<std::endl;
+			response().out() <<"Fold Case: "<<fold_case(name,loc)<<"<br>"<<std::endl;
 
 		}
 		if(f.description.set()) {
@@ -263,12 +242,11 @@ public:
 				std::ofstream tmp("test.txt");
 				tmp<<descr;
 			}
-			
-			devide<cppcms::utf8::const_code_point_iterator>(descr,"code");
-			devide<cppcms::utf8::const_character_iterator>(descr,"char");
-			devide<cppcms::utf8::const_word_iterator>(descr,"word");
-			devide<cppcms::utf8::const_sentence_iterator>(descr,"sentence");
-			devide<cppcms::utf8::const_line_iterator>(descr,"line");
+			using namespace cppcms::locale;
+			devide(boundary::character,descr,"code");
+			devide(boundary::word,descr,"word");
+			devide(boundary::sentence,descr,"sentence");
+			devide(boundary::line,descr,"line");
 		}
 
 		if(ok) {
@@ -315,19 +293,14 @@ public:
 			response().out()<<p->second<<"<br/>\n";
 		}
 
-		time_t t=::time(NULL);
-		std::tm tt;
-		localtime_r(&t,&tt);
+		response().out() << filters::date(time(0)) <<std::endl;
 
-		response().out() << filters::date(tt) <<std::endl;
-
-		response().out() << filters::escape(gt("hello\n")) << "<br>";
+		response().out() << filters::escape(locale::translate("hello\n")) << "<br>";
 		
 		for(int i=0;i<30;i++) {
-			response().out() << format("To be or not to be %1%\n<br>",10);
+			response().out() << locale::format("To be or not to be {1}\n<br>") % 10;
 
-			response().out() << format(ngt("passed one day","passed %1% days",i),i) << "<br>\n";
-			//cppcms::util::format(response().out(),ngt("passed one day","passed %1% days",i),i) << "<br>";
+			response().out() << locale::format(locale::translate("passed one day","passed {1} days",i)) % i << "<br>\n";
 		}
 		response().out()
 			<<"<body></html>\n";

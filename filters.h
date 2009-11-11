@@ -8,8 +8,8 @@
 #include <iostream>
 #include "defs.h"
 #include "copy_ptr.h"
+#include "localization.h"
 
-#include "locale_gettext.h"
 namespace cppcms {
 	namespace filters {
 
@@ -287,35 +287,7 @@ namespace cppcms {
 			return out;
 		}
 	
-		///
-		/// \brief Output filter strftime
-		///
-		/// Format time according to locale using time_put<char> facet. (has similar
-		/// parameters to C strftime
-		///
-		
-		class CPPCMS_API strftime {					
-		public:	
-			strftime();						
-			~strftime();					
-			strftime(strftime const &);				
-			strftime const &operator=(strftime const &other);	
-			void operator()(std::ostream &out) const;
-			strftime(streamable const &obj,std::tm const &t);
 
-		private:						
-			streamable format_;
-			std::tm const *t_;
-			struct data;					
-			util::copy_ptr<data> d;				
-		};
-
-		inline std::ostream &operator<<(std::ostream &out,strftime const &obj)
-		{
-			obj(out);
-			return out;
-		}
-	
 
 		class CPPCMS_API date {
 		public:
@@ -324,11 +296,11 @@ namespace cppcms {
 			date const &operator=(date const &other);
 			~date();
 
-			date(std::tm const &t);
+			date(double time);
 			void operator()(std::ostream &out) const;
 		private:
 			struct data;
-			std::tm const *t_;
+			double time_;
 			util::copy_ptr<data> d;
 		};
 		
@@ -345,11 +317,11 @@ namespace cppcms {
 			time const &operator=(time const &other);
 			~time();
 
-			time(std::tm const &t);
+			time(double time);
 			void operator()(std::ostream &out) const;
 		private:
 			struct data;
-			std::tm const *t_;
+			double time_;
 			util::copy_ptr<data> d;
 		};
 		
@@ -365,11 +337,11 @@ namespace cppcms {
 			datetime const &operator=(datetime const &other);
 			~datetime();
 
-			datetime(std::tm const &t);
+			datetime(double t);
 			void operator()(std::ostream &out) const;
 		private:
 			struct data;
-			std::tm const *t_;
+			double time_;
 			util::copy_ptr<data> d;
 		};
 		
@@ -378,339 +350,14 @@ namespace cppcms {
 			obj(out);
 			return out;
 		}
-	
-		class gt {
-		public:
-			gt(char const *msg) : 
-				domain_(0),
-				msg_(msg)
-			{
-			}
-			gt(char const *domain,char const *msg) :
-				domain_(domain),
-				msg_(msg)
-			{
-			}
-			void operator()(std::ostream &out) const
-			{
-				locale::gettext const &trans = std::use_facet<locale::gettext>(out.getloc());
-				if(domain_)
-					out << trans.dictionary(domain_).gettext(msg_);
-				else
-					out << trans.dictionary().gettext(msg_);
-			}
-		private:
-			char const *domain_;
-			char const *msg_;
-		};
-		
-		CPPCMS_STREAMED(gt)
-		
-		class ngt {
-		public:
-			ngt(char const *s,char const *p,int n) : 
-				domain_(0),
-				s_(s),
-				p_(p),
-				n_(n)
-			{
-			}
-			ngt(char const *domain,char const *s,char const *p,int n) :
-				domain_(domain),
-				s_(s),
-				p_(p),
-				n_(n)
-			{
-			}
-			void operator()(std::ostream &out) const
-			{
-				locale::gettext const &trans = std::use_facet<locale::gettext>(out.getloc());
-				if(domain_)
-					out << trans.dictionary(domain_).ngettext(s_,p_,n_);
-				else
-					out << trans.dictionary().ngettext(s_,p_,n_);
-			}
-		private:
-			char const *domain_;
-			char const *s_,*p_;
-			int n_;
-		};
-		
-		CPPCMS_STREAMED(ngt)
 
-		class CPPCMS_API format {
-		public:
-			format(streamable const &f)
-			{
-				init(f);
-			}
-#ifdef CPPCMS_HAVE_VARIADIC_TEMPLATES
-			template<typename... Args>
-			format(streamable const &f,Args... args)
-			{
-				init(f);
-				add_args(args...);
-			}
-		private:
-			void add_args() 
-			{
-			}
-			template<typename T,typename... Args>
-			void add_args(T const &v,Args... args)
-			{
-				add(v);
-				add_args(args...);
-			}
-		public:
-#else			
-			template<typename T1>
-			format(	streamable const &f,
-				T1 const &v1)
-			{
-				init(f);
-				add(v1);
-			}			
-			template<	typename T1,
-					typename T2>
-			format(	streamable const &f,
-				T1 const &v1,
-				T2 const &v2)
-			{
-				init(f);
-				add(v1);
-				add(v2);
-			}			
-			template<	typename T1,
-					typename T2,
-					typename T3>
-			format(	streamable const &f,
-				T1 const &v1,
-				T2 const &v2,
-				T3 const &v3)
-			{
-				init(f);
-				add(v1);
-				add(v2);
-				add(v3);
-			}			
-			template<	typename T1,
-					typename T2,
-					typename T3,
-					typename T4>
-			format(	streamable const &f,
-				T1 const &v1,
-				T2 const &v2,
-				T3 const &v3,
-				T4 const &v4)
-			{
-				init(f);
-				add(v1);
-				add(v2);
-				add(v3);
-				add(v4);
-			}			
-			template<	typename T1,
-					typename T2,
-					typename T3,
-					typename T4,
-					typename T5>
-			format(	streamable const &f,
-				T1 const &v1,
-				T2 const &v2,
-				T3 const &v3,
-				T4 const &v4,
-				T5 const &v5)
-			{
-				init(f);
-				add(v1);
-				add(v2);
-				add(v3);
-				add(v4);
-				add(v5);
-			}			
-			template<	typename T1,
-					typename T2,
-					typename T3,
-					typename T4,
-					typename T5,
-					typename T6>
-			format(	streamable const &f,
-				T1 const &v1,
-				T2 const &v2,
-				T3 const &v3,
-				T4 const &v4,
-				T5 const &v5,
-				T6 const &v6)
-			{
-				init(f);
-				add(v1);
-				add(v2);
-				add(v4);
-				add(v5);
-				add(v6);
-			}			
-			template<	typename T1,
-					typename T2,
-					typename T3,
-					typename T4,
-					typename T5,
-					typename T6,
-					typename T7>
-			format(	streamable const &f,
-				T1 const &v1,
-				T2 const &v2,
-				T3 const &v3,
-				T4 const &v4,
-				T5 const &v5,
-				T6 const &v6,
-				T7 const &v7)
-			{
-				init(f);
-				add(v1);
-				add(v2);
-				add(v3);
-				add(v4);
-				add(v5);
-				add(v6);
-				add(v7);
-			}			
-			template<	typename T1,
-					typename T2,
-					typename T3,
-					typename T4,
-					typename T5,
-					typename T6,
-					typename T7,
-					typename T8>
-			format(	streamable const &f,
-				T1 const &v1,
-				T2 const &v2,
-				T3 const &v3,
-				T4 const &v4,
-				T5 const &v5,
-				T6 const &v6,
-				T7 const &v7,
-				T8 const &v8)
-			{
-				init(f);
-				add(v1);
-				add(v2);
-				add(v3);
-				add(v4);
-				add(v5);
-				add(v6);
-				add(v7);
-				add(v8);
-			}			
-			template<	typename T1,
-					typename T2,
-					typename T3,
-					typename T4,
-					typename T5,
-					typename T6,
-					typename T7,
-					typename T8,
-					typename T9>
-			format(	streamable const &f,
-				T1 const &v1,
-				T2 const &v2,
-				T3 const &v3,
-				T4 const &v4,
-				T5 const &v5,
-				T6 const &v6,
-				T7 const &v7,
-				T8 const &v8,
-				T9 const &v9)
-			{
-				init(f);
-				add(v1);
-				add(v2);
-				add(v3);
-				add(v4);
-				add(v5);
-				add(v6);
-				add(v7);
-				add(v8);
-				add(v9);
-			}			
-			template<	typename T1,
-					typename T2,
-					typename T3,
-					typename T4,
-					typename T5,
-					typename T6,
-					typename T7,
-					typename T8,
-					typename T9,
-					typename T10>
-			format(	streamable const &f,
-				T1 const &v1,
-				T2 const &v2,
-				T3 const &v3,
-				T4 const &v4,
-				T5 const &v5,
-				T6 const &v6,
-				T7 const &v7,
-				T8 const &v8,
-				T9 const &v9,
-				T10 const &v10)
-			{
-				init(f);
-				add(v1);
-				add(v2);
-				add(v3);
-				add(v4);
-				add(v5);
-				add(v6);
-				add(v7);
-				add(v8);
-				add(v9);
-				add(v10);
-			}
-#endif
-
-			template<typename Streamable>
-			format &operator % (Streamable const &object)
-			{
-				return add(streamable(object));
-			}
-
-			void operator()(std::ostream &output) const
-			{
-				write(output);
-			}
-			
-			std::string str(std::locale const &locale) const;
-
-			std::string str() const
-			{
-				return str(std::locale::classic());
-			}
-
-			format &add(streamable const &obj);
-		private:
-			void write(std::ostream &output) const;
-			void format_one(std::ostream &out,std::string::const_iterator &p,std::string::const_iterator e,int &pos) const;
-
-			void init(streamable const &f);
-
-			streamable const *at(size_t n) const;
-
-			streamable format_;
-			std::vector<streamable> vobjects_;
-			streamable objects_[10];
-			size_t size_;
-		};
-
-		CPPCMS_STREAMED(format)
+		using locale::translate;
+		using locale::format;
 	
 	}
 
 	///////////////////////////////
 
-	using filters::format;
-	using filters::ngt;
-	using filters::gt;
 }
 
 #undef CPPCMS_STREAMED

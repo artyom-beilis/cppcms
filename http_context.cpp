@@ -5,7 +5,6 @@
 #include "http_context.h"
 #include "http_request.h"
 #include "http_response.h"
-#include "locale_environment.h"
 #include "application.h"
 #include "applications_pool.h"
 #include "thread_pool.h"
@@ -19,11 +18,11 @@ namespace cppcms {
 namespace http {
 
 	struct context::data {
-		cppcms::locale::environment locale;
+		std::locale locale;
 		http::request request;
 		std::auto_ptr<http::response> response;
 		data(context &cntx) :
-			locale(cntx.connection().service()),
+			locale(cntx.connection().service().locale()),
 			request(cntx.connection())
 		{
 		}
@@ -173,7 +172,7 @@ json::value const &context::settings()
 	return conn_->service().settings();
 }
 
-cppcms::locale::environment &context::locale()
+std::locale context::locale()
 {
 	return d->locale;
 }

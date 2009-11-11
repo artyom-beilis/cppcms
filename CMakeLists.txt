@@ -28,15 +28,25 @@ endif(NOT ICU_UC OR NOT ICU_DATA OR NOT ICU_I18N)
 
 set(HAVE_ICU 1)
 
-find_library(ICONV_LIB iconv)
+
+check_cxx_source_compiles(
+	"#include <iconv.h>
+	 int main() { iconv_t v=iconv_open((char *)0,(char *)); "
+	 HAVE_ICONV)
+if(NOT HAVE_ICONV)
+	find_library(ICONV_LIB iconv)
+	if(NOT ICONV_LIB)
+		message(FATAL " Can't find iconv")
+	endif(NOT ICONV_LIB)
+endif(NOT HAVE_ICONV)
 
 include_directories(${CMAKE_BINARY_DIR})
 include_directories(boost_locale)
-include_directories(${Boost_INCLUDE_DIRS})
+
 
 		
 
-Check_type_size(wchar_t SIZEOF_WCHAR_T) 
+check_type_size(wchar_t SIZEOF_WCHAR_T) 
 
 check_cxx_source_compiles(
 	"int main() { volatile long v;__sync_add_and_fetch(&v,1); }"
@@ -113,12 +123,7 @@ set(CPPCMS_SOURCES
 	url_dispatcher.cpp 
 	http_cookie.cpp  
 	util.cpp 
-	locale_mo_file.cpp 
-	locale_gettext.cpp 
-	locale_environment.cpp 
-	locale_pool.cpp 
 	base64.cpp 
-	locale_info.cpp 
 	base_view.cpp 
 	internal_file_server.cpp 
 	scgi_api.cpp 
@@ -128,15 +133,8 @@ set(CPPCMS_SOURCES
 	aio_timer.cpp 
 	json.cpp 
 	encoding.cpp 
-	locale_charset.cpp 
-	locale_icu_locale.cpp 
-	locale_convert.cpp 
-	locale_numeric.cpp 
-	locale_collate.cpp 
-	icu_util.cpp 
 	form.cpp 
-	filters.cpp 
-	utf8_iterator.cpp)
+	filters.cpp)
 
 
 add_definitions(-DDLL_EXPORT)
@@ -160,8 +158,8 @@ if(ICONV_LIB)
 endif(ICONV_LIB)
 
 if(WS2_32 AND WSOCK32)
-	target_link_libraries(cppcms ws2_32)
-	target_link_libraries(cppcms wsock32)
+	target_link_libraries(cppcms ${WS2_32})
+	target_link_libraries(cppcms ${WSOCK32})
 endif(WS2_32 AND WSOCK32) 
 
 if(LIB_GETHOSTBYNAME)

@@ -3,6 +3,7 @@
 
 #include "asio_config.h"
 #include "json.h"
+#include "localization.h"
 #include <memory>
 
 namespace cppcms {
@@ -33,7 +34,8 @@ namespace impl {
 		std::auto_ptr<json::value> settings_;
 		std::auto_ptr<applications_pool> applications_pool_;
 		std::auto_ptr<thread_pool> thread_pool_;
-		std::auto_ptr<locale::pool> locale_pool_;
+		std::auto_ptr<locale::generator> locale_generator_;
+		std::locale default_locale_;
 
 #ifdef CPPCMS_WIN32
 		typedef SOCKET native_socket_type;

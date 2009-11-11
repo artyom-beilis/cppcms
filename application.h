@@ -41,11 +41,6 @@ namespace cppcms {
 		http::request &request();
 		http::response &response();
 		url_dispatcher &dispatcher();
-		locale::environment &locale();
-
-		char const *gt(char const *s);
-		char const *ngt(char const *s,char const *p,int n);
-
 
 		void add(application &app);
 		void add(application &app,std::string regex,int part);

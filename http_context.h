@@ -8,12 +8,13 @@
 #include "callback0.h"
 #include "callback1.h"
 
+#include <locale>
+
 namespace cppcms {
 
 	class service;
 	class application;
 	namespace json { class value; }
-	namespace locale { class environment; }
 	namespace impl { namespace cgi { class connection; } }
 
 	namespace http {
@@ -30,7 +31,7 @@ namespace cppcms {
 			http::request &request();
 			http::response &response();
 			json::value const &settings();
-			cppcms::locale::environment &locale();
+			std::locale locale();
 			cppcms::service &service();
 
 			void run();

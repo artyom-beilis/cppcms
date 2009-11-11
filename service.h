@@ -5,19 +5,18 @@
 #include "noncopyable.h"
 #include "hold_ptr.h"
 #include "callback0.h"
+#include <locale>
 
-
+namespace boost { namespace locale { class generator; }}
 
 namespace cppcms {
+	namespace locale { using namespace boost::locale; }
 	namespace impl {
 		class service;
 	}
 
 	class applications_pool;
 	class thread_pool;
-	namespace locale {
-		class pool;
-	}
 	namespace json {
 		class value;
 	}
@@ -35,7 +34,10 @@ namespace cppcms {
 		cppcms::applications_pool &applications_pool();
 		cppcms::thread_pool &thread_pool();
 		json::value const &settings();
-		cppcms::locale::pool const &locale_pool();
+
+		locale::generator const &generator();
+		std::locale locale();
+		std::locale locale(std::string const &name);
 
 		cppcms::impl::service &impl();
 

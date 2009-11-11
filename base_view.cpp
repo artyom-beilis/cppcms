@@ -1,9 +1,6 @@
 #define CPPCMS_SOURCE
 #include "base_view.h"
 #include "util.h"
-#include "locale_gettext.h"
-#include "locale_environment.h"
-#include "locale_convert.h"
 #include "cppcms_error.h"
 
 #include <vector>
@@ -13,7 +10,6 @@ namespace cppcms {
 
 struct base_view::data {
 	std::ostream *out;
-	locale::gettext::tr const *tr;
 };
 
 base_view::base_view(std::ostream &out) :

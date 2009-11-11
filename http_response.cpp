@@ -9,8 +9,7 @@
 #include "cppcms_error.h"
 #include "service.h"
 #include "config.h"
-#include "locale_environment.h"
-#include "locale_info.h"
+#include "localization.h"
 #include "util.h"
 
 #include <iostream>
@@ -94,7 +93,7 @@ void response::set_content_header(std::string const &content_type)
 		set_header("Content-Type",content_type);
 	}
 	else {
-		std::string charset=std::use_facet<locale::info>(context_.locale().get()).encoding();
+		std::string charset=std::use_facet<locale::info>(context_.locale()).encoding();
 		set_header("Content-Type",content_type+"; charset="+charset);
 	}
 }
@@ -249,7 +248,7 @@ std::ostream &response::out()
 	else
 		stream_=real_sink;
 
-	stream_->imbue(context_.locale().get());
+	stream_->imbue(context_.locale());
 	return *stream_;
 }
 
