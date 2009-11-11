@@ -28,17 +28,25 @@ endif(NOT ICU_UC OR NOT ICU_DATA OR NOT ICU_I18N)
 
 set(HAVE_ICU 1)
 
+if(NOT DISABLE_ICONV) 
 
-check_cxx_source_compiles(
-	"#include <iconv.h>
-	 int main() { iconv_t v=iconv_open((char *)0,(char *)); "
-	 HAVE_ICONV)
-if(NOT HAVE_ICONV)
-	find_library(ICONV_LIB iconv)
-	if(NOT ICONV_LIB)
-		message(FATAL " Can't find iconv")
-	endif(NOT ICONV_LIB)
-endif(NOT HAVE_ICONV)
+	check_cxx_source_compiles(
+		"#include <iconv.h>
+		 int main() { iconv_t v=iconv_open((char *)0,(char *)); "
+		 LIBC_ICONV)
+	if(NOT LIBC_ICONV)
+		find_library(ICONV_LIB iconv)
+		if(ICONV_LIB)
+			set(HAVE_ICONV 1)
+		endif(ICONV_LIB)
+	else(NOT LIBC_ICONV)
+		set(HAVE_ICONV 1)
+	endif(NOT LIBC_ICONV)
+
+	if(NOT HAVE_ICONV)
+		message(STATUS " iconv not found, falling back to ICU")
+	endif(NOT HAVE_ICONV)
+endif(NOT DISABLE_ICONV)
 
 include_directories(${CMAKE_BINARY_DIR})
 include_directories(boost_locale)
@@ -137,9 +145,6 @@ set(CPPCMS_SOURCES
 	filters.cpp)
 
 
-add_definitions(-DDLL_EXPORT)
-
-
 add_library(cppcms SHARED ${CPPCMS_SOURCES})
 
 target_link_libraries(cppcms ${ICU_UC})
@@ -152,6 +157,7 @@ target_link_libraries(cppcms ${BOOST_THREAD})
 target_link_libraries(cppcms ${BOOST_FILESYSTEM})
 target_link_libraries(cppcms ${BOOST_SYSTEM})
 target_link_libraries(cppcms boost_locale)
+
 
 if(ICONV_LIB)
 	target_link_libraries(cppcms ${ICONV_LIB})
@@ -173,4 +179,12 @@ endif(LIB_SOCKET)
 add_executable(hello_world hello_world.cpp)
 target_link_libraries(hello_world cppcms)
 
+
+add_executable(cppcms_config_find_param cppcms_config_find_param.cpp json.cpp)
+
+# These are use export
+if(WIN32)
+	set_target_properties(hello_world cppcms PROPERTIES
+				COMPILE_DEFINITIONS DLL_EXPORT)
+endif(WIN32)
 

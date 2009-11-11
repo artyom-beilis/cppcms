@@ -15,6 +15,9 @@
 /* "Enable ICU support" */
 #cmakedefine HAVE_ICU
 
+/* "Enable ICONV support" */
+#cmakedefine HAVE_ICONV
+
 /* "Have std::wstring" */
 #cmakedefine HAVE_STD_WSTRING
 
