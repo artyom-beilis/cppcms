@@ -1,6 +1,7 @@
 #define CPPCMS_SOURCE
 #include "thread_pool.h"
 #include <list>
+#include <vector>
 #include <boost/thread.hpp>
 #include <boost/shared_ptr.hpp>
 #include <boost/bind.hpp>
