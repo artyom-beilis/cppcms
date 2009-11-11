@@ -36,9 +36,6 @@
 /* Define to the version of this package. */
 #cmakedefine PACKAGE_VERSION "${PACKAGE_VERSION}"
 
-/* The size of `wchar_t', as computed by sizeof. */
-#cmakedefine SIZEOF_WCHAR_T ${SIZEOF_WCHAR_T}
-
 /* Version number of package */
 #define VERSION PACKAGE_VERSION
 

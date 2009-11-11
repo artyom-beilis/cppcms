@@ -364,7 +364,8 @@ namespace impl {
 		iconv_t d=iconv_open(to,from);
 		if(d==(iconv_t)(-1)) 
 			throw cppcms_error("Unsupported encoding "+std::string(to));
-		std::basic_string<CharOut> result;
+		
+		std::string result;
 		try {
 			char buffer[256];
 			size_t input=end-begin;
@@ -404,7 +405,7 @@ std::string CPPCMS_API to_utf8(char const *c_encoding,char const *begin,char con
 		return result;
 	}
 #ifdef HAVE_ICONV
-	return impl::convert_to("UTF-8",c_encoding,begin,end);
+	return impl::iconv_convert_to("UTF-8",c_encoding,begin,end);
 #else // USE ICU
 	locale::details::converter cvt(c_encoding);
 	result.reserve(end-begin);
@@ -466,7 +467,7 @@ std::string CPPCMS_API from_utf8(char const *c_encoding,char const *begin,char c
 		return result;
 	}
 #ifdef HAVE_ICONV
-	return impl::convert_to(c_encoding,"UTF-8",begin,end);
+	return impl::iconv_convert_to(c_encoding,"UTF-8",begin,end);
 #else // USE ICU
 	locale::details::converter cvt(c_encoding);
 	result.reserve(end-begin);

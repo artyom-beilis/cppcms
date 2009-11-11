@@ -2,7 +2,6 @@ cmake_minimum_required(VERSION 2.4)
 project(cppcms)
 add_subdirectory(boost_locale/libs/locale)
 
-include(CheckTypeSize)
 include(CheckFunctionExists)
 include(CheckCXXSourceCompiles)
 
@@ -31,8 +30,8 @@ set(HAVE_ICU 1)
 if(NOT DISABLE_ICONV) 
 
 	check_cxx_source_compiles(
-		"#include <iconv.h>
-		 int main() { iconv_t v=iconv_open((char *)0,(char *)); "
+		"#include <iconv.h> 
+		 int main() { iconv_t v=iconv_open((char *)0,(char *)0); }"
 		 LIBC_ICONV)
 	if(NOT LIBC_ICONV)
 		find_library(ICONV_LIB iconv)
@@ -51,10 +50,6 @@ endif(NOT DISABLE_ICONV)
 include_directories(${CMAKE_BINARY_DIR})
 include_directories(boost_locale)
 
-
-		
-
-check_type_size(wchar_t SIZEOF_WCHAR_T) 
 
 check_cxx_source_compiles(
 	"int main() { volatile long v;__sync_add_and_fetch(&v,1); }"
