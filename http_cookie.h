@@ -6,7 +6,7 @@
 
 #include <string>
 #include <iostream>
-
+#include "cstdint.h"
 namespace cppcms { namespace http {
 
 class cookie;

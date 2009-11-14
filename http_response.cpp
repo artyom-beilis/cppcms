@@ -23,6 +23,9 @@
 #include <boost/iostreams/filter/gzip.hpp>
 #include <boost/iostreams/tee.hpp>
 
+#ifndef HAVE_GMTIME_R
+#include <boost/date_time/posix_time/posix_time.hpp>
+#endif
 
 namespace cppcms { namespace http {
 
@@ -373,7 +376,12 @@ std::string response::make_http_time(time_t t)
 	// RFC 2616
 	// "Sun, 06 Nov 1994 08:49:37 GMT"
 	std::tm tv;
+	#ifdef HAVE_GMTIME_R
 	gmtime_r(&t,&tv);
+	#else
+	using namespace boost::posix_time;
+	tv=to_tm(from_time_t(t));
+	#endif
 	std::ostringstream ss;
 	std::locale C("C");
 	ss.imbue(C);

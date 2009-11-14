@@ -16,10 +16,20 @@ find_library(BOOST_REGEX	boost_regex-${BOOST_SUFFIX} 	NAMES boost_regex 	boost_r
 find_library(BOOST_IOSTREAMS	boost_iostreams-${BOOST_SUFFIX} NAMES boost_iostreams 	boost_iostreams-mt)
 find_library(BOOST_THREAD	boost_thread-${BOOST_SUFFIX} 	NAMES boost_thread 	boost_thread-mt)
 find_library(BOOST_DATE_TIME	boost_date_time-${BOOST_SUFFIX} NAMES boost_date_time 	boost_date_time-mt)
+find_library(BOOST_ZLIB		boost_zlib-${BOOST_SUFFIX} 	NAMES boost_zlib 	boost_zlib)
 
 find_library(ICU_UC icuuc)
 find_library(ICU_DATA icudata NAMES icudt)
 find_library(ICU_I18N icui18n NAMES icuin)
+
+find_file(HAVE_STDINT_H stdint.h)
+find_file(HAVE_INTTYPES_H inttypes.h)
+
+check_function_exists(atoll HAVE_ATOLL)
+check_function_exists(_atoi64 HAVE_ATOI64)
+check_function_exists(gmtime_r HAVE_GMTIME_R)
+check_function_exists(strerror_r HAVE_STRERROR_R)
+check_function_exists(snprintf HAVE_SNPRINTF)
 
 if(NOT ICU_UC OR NOT ICU_DATA OR NOT ICU_I18N)
 	message(FATAL " Failed to find icu")
@@ -110,7 +120,10 @@ endif(${CMAKE_HOST_WIN32})
 
 
 configure_file(config.cmake.h config.h)
-
+if(WIN32)
+	add_definitions(-DBOOST_ALL_NO_LIB)
+	add_definitions(-DBOOST_ALL_DYN_LINK)
+endif(WIN32)
 
 set(CPPCMS_SOURCES 
 	service.cpp 
@@ -151,6 +164,10 @@ target_link_libraries(cppcms ${BOOST_DATE_TIME})
 target_link_libraries(cppcms ${BOOST_THREAD})
 target_link_libraries(cppcms ${BOOST_FILESYSTEM})
 target_link_libraries(cppcms ${BOOST_SYSTEM})
+if(BOOST_ZLIB)
+	target_link_libraries(cppcms ${BOOST_ZLIB})
+endif(BOOST_ZLIB)
+
 target_link_libraries(cppcms boost_locale)
 
 

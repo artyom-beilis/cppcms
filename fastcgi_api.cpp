@@ -6,6 +6,7 @@
 #include "service_impl.h"
 #include "cppcms_error_category.h"
 #include "json.h"
+#include "cstdint.h"
 #include <iostream>
 #include <boost/array.hpp>
 

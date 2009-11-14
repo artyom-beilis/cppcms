@@ -7,6 +7,7 @@
 
 #include <string>
 #include <iostream>
+#include "cstdint.h"
 
 namespace cppcms {
 namespace impl { namespace cgi { class connection;  }}

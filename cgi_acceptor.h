@@ -50,9 +50,9 @@ namespace impl {
 			{
 				if(!e) {
 					set_options(asio_socket_);
-					intrusive_ptr<http::context> context(new http::context(api_));
+					intrusive_ptr<::cppcms::http::context> cnt(new ::cppcms::http::context(api_));
 					api_=0;
-					context->run();	
+					cnt->run();	
 				}
 				async_accept();
 			}

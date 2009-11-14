@@ -32,7 +32,9 @@ namespace json {
 	typedef std::map<std::string,value> object;
 
 	template<typename T>
-	struct traits;
+	struct traits {
+		static void set(value &v,T const &in);
+	};
 
 
 	typedef enum {

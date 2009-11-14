@@ -1,6 +1,6 @@
 #ifndef CPPCMS_UTF_ITERATOR_H
 #define CPPCMS_UTF_ITERATOR_H
-#include <stdint.h>
+#include "cstdint.h"
 #include <string.h>
 
 namespace cppcms {

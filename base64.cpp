@@ -78,7 +78,7 @@ namespace cppcms {
 
 namespace b64url {
 
-ssize_t encoded_size(size_t s)
+int encoded_size(size_t s)
 {
 	switch(s % 3) {
 	case 1: return s/3*4+2;
@@ -88,7 +88,7 @@ ssize_t encoded_size(size_t s)
 	}
 }
 
-ssize_t decoded_size(size_t s)
+int decoded_size(size_t s)
 {
 	switch(s % 4) {
 	case 1: return -1; // invalid

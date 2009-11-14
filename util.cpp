@@ -48,8 +48,14 @@ std::string urlencode(std::string const &s)
 				default:
 				{
 					char buf[4];
+#ifdef HAVE_SNPRINTF	
 					snprintf(buf,sizeof(buf),"%%%02x",(unsigned)(c));
+#else
+					sprintf(buf,"%%%02x",(unsigned)(c));
+					// Should be OK for this range
+#endif					
 					content.append(buf,3);
+					
 				}
 			};
 		}

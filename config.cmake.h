@@ -1,5 +1,32 @@
 #ifndef CPPCMS_CONFIG_H
 #define CPPCMS_CONFIG_H
+
+/* Have stdint.h */
+#cmakedefine HAVE_STDINT_H
+
+/* Have _atol64 */
+#cmakedefine HAVE_ATOI64
+
+/* Have atoll */
+#cmakedefine HAVE_ATOLL
+
+#if !defined(HAVE_ATOLL) && defined(HAVE_ATOI64)
+#define atoll _atoi64
+#endif
+
+/* Have gmtime_r */
+#cmakedefine HAVE_GMTIME_R
+
+/* Have strerror_r */
+#cmakedefine HAVE_STRERROR_R
+
+/* Have snprintf */
+#cmakedefine HAVE_SNPRINTF
+
+
+/* Have inttypes.h */
+#cmakedefine HAVE_INTTYPES_H
+
 /* "Have C++0x std::uXXstring" */
 #cmakedefine HAVE_CPP0X_UXSTRING
 
