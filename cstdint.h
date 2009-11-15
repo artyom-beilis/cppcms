@@ -16,3 +16,4 @@ typedef __int64 int64_t;
 #endif
 
 #endif // CPPCMS_CSTDINT_H
+

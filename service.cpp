@@ -242,6 +242,7 @@ void service::shutdown()
 
 void service::run()
 {
+	generator();
 	start_acceptor();
 
 	if(settings().get("file_server.enable",false))
@@ -440,7 +441,7 @@ locale::generator const &service::generator()
 	if(!enc.empty())
 		gen.octet_encoding(enc);
 
-	vstr_type paths= settings().get("localization.messages.path",vstr_type());
+	vstr_type paths= settings().get("localization.messages.paths",vstr_type());
 	vstr_type domains = settings().get("localization.messages.domains",vstr_type());
 
 	if(!paths.empty() && !domains.empty()) {
