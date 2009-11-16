@@ -34,8 +34,8 @@ namespace {
 
 std::string cppcms_error::strerror(int err)
 {
-	char buf[256] = {0};
 	#ifdef HAVE_STRERROR_R
+	char buf[256] = {0};
 	return strerror_wrapper(strerror_r(err,buf,sizeof(buf)),buf);
 	#else
 	return boost::system::error_code(err,boost::system::errno_ecat).message();
