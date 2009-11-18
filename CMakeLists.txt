@@ -149,6 +149,7 @@ set(CPPCMS_SOURCES
 	aio_timer.cpp 
 	json.cpp 
 	encoding.cpp 
+	regex.cpp
 	form.cpp 
 	filters.cpp)
 

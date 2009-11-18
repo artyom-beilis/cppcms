@@ -161,23 +161,23 @@ class my_form : public cppcms::form
 {
 public:
 	cppcms::widgets::text name;
-	cppcms::widgets::number<double> age;
+	cppcms::widgets::numeric<double> age;
 	cppcms::widgets::password p1;
 	cppcms::widgets::password p2;
 	cppcms::widgets::textarea description;
 	
-	my_form() :
-		name("name","Your Name"),
-		age("age","Your Age"),
-		//p1("p1","Password"),
-		//p2("p2","Confirm"),
-		description("descr","Describe")
+	my_form()
 	{
+		name.message("Your Name");
 		name.limits(2,30);
+		age.message("Your Age");
 		age.range(0,120);
-		//p1.check_equal(p2);
-		//p1.non_empty();
-		*this + name + age + /*p1 + p2 + */ description;
+		description.message("Describe Yourself");
+		p1.message("Password");
+		p2.message("Confirm");
+		p1.check_equal(p2);
+		p1.non_empty();
+		*this + name + age + p1 + p2 + description;
 	}
 };
 
@@ -264,7 +264,8 @@ public:
 			<<  "' method='post'>\n"
 			"<table>\n";
 
-		f.render(response().out(),cppcms::form::as_table);
+		cppcms::form_context context(response().out());
+		f.render(context);
 
 		response().out()<<"</table><input type='submit' value='Send' ></form>\n";
 		response().out()<<"</form></body></html>"<<std::endl;

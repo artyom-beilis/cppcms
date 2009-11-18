@@ -3,8 +3,75 @@
 #include <iostream>
 #include <stack>
 #include <boost/format.hpp>
+#include "encoding.h"
+#include "regex.h"
+#include "filters.h"
 
 namespace cppcms {
+
+struct form_context::data {};
+
+form_context::form_context() :
+	html_type_(as_html),
+	html_list_type_(as_p),
+	widget_part_type_(first_part),
+	output_(0)
+{
+}
+
+form_context::form_context(std::ostream &out,form_context::html_type t,form_context::html_list_type hlt) :
+	html_type_(t),
+	html_list_type_(hlt),
+	widget_part_type_(first_part),
+	output_(&out)
+{
+}
+
+void form_context::html(html_type t)
+{
+	html_type_=t;
+}
+
+void form_context::html_list(html_list_type t)
+{
+	html_list_type_ = t;
+}
+
+void form_context::widget_part(widget_part_type t)
+{
+	widget_part_type_ = t;
+}
+
+void form_context::out(std::ostream &out)
+{
+	output_ = &out;
+}
+std::ostream &form_context::out() const
+{
+	if(!output_)
+		throw cppcms_error("Can't use form context without assigned output");
+	return *output_;
+}
+
+form_flags::html_type form_context::html() const
+{
+	return static_cast<html_type>(html_type_);
+}
+
+form_flags::html_list_type form_context::html_list() const
+{
+	return static_cast<html_list_type>(html_list_type_);
+}
+
+form_flags::widget_part_type form_context::widget_part() const
+{
+	return static_cast<widget_part_type>(widget_part_type_);
+}
+
+
+form_context::~form_context()
+{
+}
 
 base_form::base_form()
 {
@@ -13,7 +80,12 @@ base_form::~base_form()
 {
 }
 
-form::form()
+// Meanwhile -- empty
+struct form::data {
+// TOADD
+};
+
+form::form() : parent_(0)
 {
 }
 form::~form()
@@ -24,16 +96,21 @@ form::~form()
 	}
 }
 
+void form::parent(base_form *parent)
+{
+	parent_=&dynamic_cast<form &>(*parent);
+}
 
-// Meanwhile -- empty
-struct form::data {
-// TOADD
-};
+form *form::parent()
+{
+	return parent_;
+}
 
-void form::render(std::ostream &output,unsigned int flags)
+
+void form::render(form_context &context)
 {
 	for(unsigned int i=0;i<elements_.size();i++) {
-		elements_[i].first->render(output,flags);
+		elements_[i].first->render(context);
 	}
 }
 
@@ -63,89 +140,108 @@ void form::clear()
 void form::add(widgets::base_widget &form)
 {
 	elements_.push_back(widget_type(&form,false));
+	form.parent(this);
 }
 void form::add(form &subform)
 {
 	elements_.push_back(widget_type(&subform,false));
+	subform.parent(this);
 }
 
 void form::attach(form *subform)
 {
 	elements_.push_back(widget_type(subform,true));
+	subform->parent(this);
 }
 
 void form::attach(widgets::base_widget *subform)
 {
 	elements_.push_back(widget_type(subform,true));
+	subform->parent(this);
 }
 
-struct form::iterator::data {
-	std::stack<std::pair<form *,size_t> > stack;
-	int pos;
-	data() : pos(-1) {}	
-};
+struct form::iterator::data {};
 
-form::iterator::iterator() : d(new form::iterator::data)
+form::iterator::iterator() : current_(0), offset_(0)
 {
+}
+
+form::iterator::iterator(form &f) : current_(&f), offset_(0)
+{
+	next();
 }
 
 form::iterator::~iterator()
 {
 }
 
-form::iterator::iterator(form::iterator const &other)  : d(other.d)
+form::iterator::iterator(form::iterator const &other) : 
+	return_positions_(other.return_positions_),
+	current_(other.current_),
+	offset_(other.offset_),
+	d(other.d)
 {
 }
 
 form::iterator const &form::iterator::operator=(form::iterator const &other)
 {
-	d=other.d;
+	if(this != &other) {
+		return_positions_ = other.return_positions_;
+		current_ = other.current_;
+		offset_=other.offset_;
+		d=other.d;
+	}
 	return *this;
 }
 
 bool form::iterator::equal(form::iterator const &other) const
 {
-	return (d->stack == other.d->stack) && (d->pos == other.d->pos);
+	return 	current_ == other.current_ 
+		&& offset_ == other.offset_
+		&& return_positions_ == other.return_positions_;
+}
+
+void form::iterator::zero()
+{
+	current_ = 0;
+	offset_ = 0;
 }
 
 void form::iterator::next()
 {
 	for(;;) {
-		if(d->stack.empty()) {
-			d->pos=-1;
+		if(!current_)
+			return;
+		if(offset_ >=current_->elements_.size()) {
+			if(return_positions_.empty()) {
+				zero();
+				return;
+			}
+			offset_ = return_positions_.top();
+			return_positions_.pop();
+			current_ = current_->parent();
+		}
+		else if(dynamic_cast<widgets::base_widget *>(current_->elements_[offset_].first)!=0) {
+			offset_++;
 			return;
 		}
-
-		form *top=d->stack.top().first;
-		d->pos++;
-
-		if((size_t)d->pos >= top->elements_.size() ) {
-			d->pos=d->stack.top().second;
-			d->stack.pop();
-			continue;
+		else {
+			return_positions_.push(offset_+1);
+			offset_=0;
+			// Elements can be only base_widget or form... so it should be safe
+			current_ = static_cast<form *>(current_->elements_[offset_].first);
 		}
-
-		if(dynamic_cast<widgets::base_widget *>(top->elements_[d->pos].first)!=0)
-			return;
-
-		form &f=dynamic_cast<form &>(*top->elements_[d->pos].first);
-		
-		d->stack.push(std::make_pair(&f,d->pos));
-		d->pos=-1;
 	}
 }
 
 widgets::base_widget *form::iterator::get() const
 {
-	return static_cast<widgets::base_widget *>(d->stack.top().first->elements_[d->pos].first);
+	return static_cast<widgets::base_widget *>(current_->elements_[offset_ - 1].first);
 }
 
 form::iterator form::begin()
 {
-	form::iterator p;
-	p.d->stack.push(std::make_pair(this,-1));
-	++p;
-	return p;
+	return form::iterator(*this);
 }
 
 form::iterator form::end()
@@ -164,32 +260,47 @@ namespace widgets {
 struct base_widget::data {};
 
 base_widget::base_widget() : 
+	parent_(0),
 	is_valid_(1),
 	is_set_(0),
-	is_disabled_(0)
-{
-}
-
-base_widget::base_widget(std::string name) :
-	name_(name), 
-	is_valid_(1),
-	is_set_(0),
-	is_disabled_(0)
-{
-}
-
-base_widget::base_widget(std::string name,std::string msg) :
-	name_(name),
-	message_(msg),
-	is_valid_(1),
-	is_set_(0),
-	is_disabled_(0)
+	is_disabled_(0),
+	is_generation_done_(0),
+	has_message_(0),
+	has_error_(0),
+	has_help_(0)
 {
 }
 
 base_widget::~base_widget()
 {
 }
+
+bool base_widget::has_message()
+{
+	return has_message_;
+}
+
+bool base_widget::has_help()
+{
+	return has_help_;
+}
+
+bool base_widget::has_error_message()
+{
+	return has_error_;
+}
+
+
+void base_widget::parent(base_form *parent)
+{
+	parent_=&dynamic_cast<form &>(*parent);
+}
+
+form *base_widget::parent()
+{
+	return parent_;
+}
+
 
 bool base_widget::set()
 {
@@ -207,15 +318,15 @@ std::string base_widget::name()
 {
 	return name_;
 }
-std::string base_widget::message()
+locale::message base_widget::message()
 {
 	return message_;
 }
-std::string base_widget::error_message()
+locale::message base_widget::error_message()
 {
 	return error_message_;
 }
-std::string base_widget::help()
+locale::message base_widget::help()
 {
 	return help_;
 }
@@ -236,17 +347,37 @@ void base_widget::name(std::string v)
 {
 	name_=v;
 }
+
+void base_widget::message(locale::message const &v)
+{
+	has_message_ = 1;
+	message_=v;
+}
+void base_widget::error_message(locale::message const &v)
+{
+	has_error_ = 1;
+	error_message_=v;
+}
+void base_widget::help(locale::message const &v)
+{
+	has_help_ = 1;
+	help_=v;
+}
+
 void base_widget::message(std::string v)
 {
-	message_=v;
+	has_message_ = 1;
+	message_=locale::message("#NOTRANS#" + v);
 }
 void base_widget::error_message(std::string v)
 {
-	error_message_=v;
+	has_error_ = 1;
+	error_message_=locale::message("#NOTRANS#" + v);
 }
 void base_widget::help(std::string v)
 {
-	help_=v;
+	has_help_ = 1;
+	help_=locale::message("#NOTRANS#" + v);
 }
 
 void base_widget::attributes_string(std::string v)
@@ -269,60 +400,117 @@ std::string base_widget::attributes_string()
 	return attr_;
 }
 
-void base_widget::render(std::ostream &output,unsigned int flags)
+void base_widget::generate(int position,form_context *context)
 {
-	int how = flags & (~3);
-	bool no_error = flags & error_without;
-	std::string err = error_message();
-	if(err.empty()) err="*";
+	if(is_generation_done_)
+		return;
+	if(name_.empty()) {
+	#ifdef HAVE_SNPRINTF
+		char buf[32];
+		snprintf(buf,sizeof(buf),"_%d",position);
+		name_=buf;
+	#else
+		name_ = boost::format("_%1$d",std::locale::classic()) % position;
+	#endif
+	}
+	is_generation_done_ = 1;
+}
 
-	switch(how) {
+void base_widget::auto_generate(form_context *context)
+{
+	if(is_generation_done_)
+		return;
+	if(parent() == 0) {
+		generate(1,context);
+		return;
+	}
+	form *top;
+	for(top = parent();top->parent();top=top->parent())
+		;
+	int i=1;
+	form::iterator p=top->begin(),e=top->end();
+	while(p!=e) {
+		p->generate(i,context);
+		++p;
+		++i;
+	}
+}
+
+void base_widget::render(form_context &context)
+{
+	auto_generate(&context);
+	std::ostream &output = context.out();
+	switch(context.html_list()) {
 	case as_p: output<<"<p>"; break;
 	case as_table: output<<"<tr><th>"; break;
 	case as_ul: output<<"<li>"; break;
 	case as_dl: output<<"<dt>"; break;
 	default: ;
 	}
-	if(!id().empty() && !message().empty()) {
-		output<<"<label for=\"" << id() << "\">" << util::escape(message()) <<":</label> ";
+	
+	if(has_message()) {
+		if(id_.empty())
+			output << filters::escape(message());
+		else
+			output<<"<label for=\"" << id() << "\">" << filters::escape(message()) <<":</label> ";
 	}
 	else {
 		output<<"&nbsp;";
 	}
-	switch(how) {
+	switch(context.html_list()) {
 	case as_table: output<<"</th><td>"; break;
 	case as_dl: output<<"</dt><dd>"; break;
 	default: ;
 	}
 
-	if(!valid() && !no_error) {
-		output<<"<span class=\"cppcms_form_error\">"<<util::escape(err)<<"</span> ";
+	if(!valid()) {
+		output<<"<span class=\"cppcms_form_error\">";
+		if(has_error_message())
+			output<<filters::escape(error_message());
+		else
+			output<<"*";
+		output<<"</span> ";
 	}
 	else {
 		output<<"&nbsp;";
 	}
 	output<<"<span class=\"cppcms_form_input\">";
-	render_input_start(output,flags);
+	context.widget_part(first_part);
+	render_input(context);
 	output<<attr_;
-	render_input_end(output,flags);
+	context.widget_part(second_part);
+	render_input(context);
 	output<<"</span>";
 
-	if(!help().empty()) {
-		output<<"<span class=\"cppcms_form_help\">"<<util::escape(help())<<"</span>";
+	if(has_help()) {
+		output<<"<span class=\"cppcms_form_help\">"<<filters::escape(help())<<"</span>";
 	}
 		
-	switch(how) {
+	switch(context.html_list()) {
 	case as_p: output<<"</p>\n"; break;
 	case as_table: output<<"</td><tr>\n"; break;
 	case as_ul: output<<"</li>\n"; break;
 	case as_dl: output<<"</dd>\n"; break;
 	case as_space: 
-		if(flags & as_xhtml) 
+		if(context.html() == as_xhtml) 
 			output<<"<br />\n";
 		else
 			output<<"<br>\n";
 		break;
 	default: ;
+	}
+}
+
+void base_widget::render_attributes(form_context &context)
+{
+	std::ostream &output = context.out();
+	if(!id_.empty()) output << "id=\"" << id_ << "\" ";
+	if(!name_.empty()) output << "name=\"" << name_ << "\" ";
+	if(disabled()) {
+		if(context.html() == as_xhtml)
+			output << "disabled=\"disabled\" ";
+		else
+			output << "disabled ";
 	}
 }
 
@@ -349,16 +537,6 @@ base_text::base_text() : low_(0),high_(-1),validate_charset_(true)
 {
 }
 
-base_text::base_text(std::string name) : base_widget(name), low_(0),high_(-1),validate_charset_(true)
-
-{
-}
-
-base_text::base_text(std::string name,std::string msg) : base_widget(name,msg), low_(0),high_(-1),validate_charset_(true)
-
-{
-}
-
 base_text::~base_text()
 {
 }
@@ -376,17 +554,6 @@ void base_text::value(std::string v)
 	value_=v;
 }
 
-std::string base_text::value(std::locale const &v)
-{
-	//return std::use_facet<locale::charset>(v).to_utf8(value_);
-	return value_;
-}
-
-void base_text::value(std::string v,std::locale const &l)
-{
-	//value(std::use_facet<locale::charset>(l).from_utf8(v));
-	value(v);
-}
 
 void base_text::non_empty()
 {
@@ -416,6 +583,7 @@ bool base_text::validate_charset()
 
 void base_text::load(http::context &context)
 {
+	auto_generate();
 	value_.clear();
 	code_points_ = 0;
 	set(false);
@@ -432,9 +600,8 @@ void base_text::load(http::context &context)
 	set(true);
 	if(validate_charset_) {
 		code_points_ = 0;
-	/*	locale::charset const &charset=std::use_facet<locale::charset>(context.locale().get());
-		if(!charset.validate(value_,code_points_))
-			valid(false);*/
+		if(!encoding::valid(context.locale(),value_.data(),value_.data()+value_.size(),code_points_))
+			valid(false);
 	}
 	else {
 		code_points_=value_.size();
@@ -463,53 +630,47 @@ bool base_text::validate()
 
 struct text::data {};
 
-text::text() : size_(-1),type_("text") {}
 text::~text() {}
-
-text::text(std::string n) : base_text(n) , size_(-1),type_("text") {}
-text::text(std::string n,std::string m) : base_text(n,m),size_(-1),type_("text") {}
-
-void text::type(std::string t)
+text::text(): base_html_input("text"), size_(-1) {}
+text::text(std::string const &type): base_html_input(type), size_(-1) {}
+void text::render_value(form_context &context)
 {
-	type_=t;
+	context.out() << " value=\"" << util::escape(value()) << "\"";
 }
 
-void text::render_input_start(std::ostream &output,unsigned flags)
+void text::render_attributes(form_context &context)
 {
-	output<<"<input type=\""<<type_<<"\" ";
+	base_widget::render_attributes(context);
 
-	std::string v;
-	v=id();
-	if(!v.empty()) output << "id=\"" << v << "\" ";
-	v=name();
-	if(!v.empty()) output << "name=\"" << v << "\" ";
-	if(disabled()) {
-		if(flags & as_xhtml)
-			output << "disabled=\"disabled\" ";
-		else
-			output << "disabled ";
-	}
+	std::ostream &output = context.out();
 	if(size_ >= 0)
 		output << boost::format("size=\"%1%\" ",std::locale::classic()) % size_;
-	
 	std::pair<int,int> lm=limits();
-	
 	if(lm.second >= 0 && validate_charset()) {
 		output << boost::format("maxlength=\"%1%\" ",std::locale::classic()) % lm.second;
 	}
-	
-	if(set()) {
-		output << "value=\""<<util::escape(value())<<"\"";
+}
+
+struct base_html_input::data{};
+
+base_html_input::base_html_input(std::string const &type) : type_(type) {}
+base_html_input::~base_html_input() {}
+
+void base_html_input::render_input(form_context &context)
+{
+	std::ostream &output=context.out();
+	if(context.widget_part() == first_part) {
+		output<<"<input type=\""<<type_<<"\" ";
+		render_attributes(context);
+	}
+	else {
+		if(context.html() ==  as_xhtml)
+			output<<" />";
+		else
+			output<<" >";
 	}
 }
 
-void text::render_input_end(std::ostream &output,unsigned flags)
-{
-	if(flags & as_xhtml)
-		output<<" />";
-	else
-		output<<" >";
-}
 //////////////////////////////////////////////
 /// widgets::textarea
 /////////////////////////////////////////////
@@ -520,67 +681,46 @@ struct textarea::data {};
 textarea::textarea() : rows_(-1), cols_(-1) {}
 textarea::~textarea() {}
 
-textarea::textarea(std::string n) : base_text(n), rows_(-1), cols_(-1) {}
-textarea::textarea(std::string n,std::string m) : base_text(n,m), rows_(-1), cols_(-1)  {}
-
 int textarea::rows() { return rows_; }
 int textarea::cols() { return cols_; }
 
 void textarea::rows(int n) { rows_ = n; }
 void textarea::cols(int n) { cols_ = n; }
 
-void textarea::render_input_start(std::ostream &output,unsigned flags)
+void textarea::render_input(form_context &context)
 {
-	output<<"<textarea ";
+	std::ostream &output = context.out();
 
-	std::string v;
-	v=id();
-	if(!v.empty()) output << "id=\"" << v << "\" ";
-	v=name();
-	if(!v.empty()) output << "name=\"" << v << "\" ";
-	if(disabled()) {
-		if(flags & as_xhtml)
-			output << "disabled=\"disabled\" ";
-		else
-			output << "disabled ";
-	}
+	if(context.widget_part() == first_part)
+	{
+		output<<"<textarea ";
+		render_attributes(context);
 
-	if(rows_ >= 0) {
-		output<<boost::format("rows=\"%1%\"",std::locale::classic()) % rows_;
-	}
-	if(cols_ >= 0) {
-		output<<boost::format("cols=\"%1%\"",std::locale::classic()) % cols_;
-	}
-}
+		if(rows_ >= 0) {
+			output<<boost::format("rows=\"%1%\"",std::locale::classic()) % rows_;
+		}
 
-void textarea::render_input_end(std::ostream &output,unsigned flags)
-{
-	if(set()) {
-		output << ">"<<util::escape(value())<<"</textarea>";
+		if(cols_ >= 0) {
+			output<<boost::format("cols=\"%1%\"",std::locale::classic()) % cols_;
+		}
 	}
 	else {
-		output << "></textarea>";
+		if(set()) {
+			output << ">"<<util::escape(value())<<"</textarea>";
+		}
+		else {
+			output << "></textarea>";
+		}
 	}
 }
-
 
 ////////////////////////
 /// Password widget  ///
 ////////////////////////
 struct password::data {};
 
-password::password() : password_to_check_(0)
+password::password() : text("password"), password_to_check_(0)
 {
-	type("password");
-}
-password::password(std::string name) : text(name), password_to_check_(0) 
-{
-	type("password");
-}
-
-password::password(std::string name,std::string msg) : text(name,msg), password_to_check_(0) 
-{
-	type("password");
 }
 password::~password() 
 {
@@ -609,6 +749,31 @@ bool password::validate()
 
 }
 
+
+struct regex_field::data {};
+regex_field::regex_field() : expression_(0) {}
+regex_field::regex_field(util::regex const &e) : expression_(&e) {}
+regex_field::~regex_field() {}
+
+void regex_field::regex(util::regex const &e) 
+{
+	expression_ = &e;
+}
+bool regex_field::validate()
+{
+	if(!text::validate())
+		return false;
+	valid(expression_->match(value()));
+	return valid();
+}
+
+struct email::data {};
+namespace {
+	util::regex email_regex("^[^@]+@[^@]+$");
+}
+
+email::email() : regex_field(email_regex) {}
+email::~email() {}
 
 } // widgets 
 
