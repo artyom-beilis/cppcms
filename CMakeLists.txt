@@ -9,6 +9,20 @@ set(PACKAGE_NAME "CppCMS")
 set(PACKAGE_STRING "CppCMS/0.99.1")
 set(PACKAGE_VERSION "0.99.1")
 
+if(WIN32 AND CMAKE_COMPILER_IS_GNUCXX AND NOT DISABLE_SHARED)
+	include(CheckCXXSourceCompiles)
+	check_cxx_source_compiles(
+		"#if __GNUC__ < 4
+		#error
+		#endif
+		int main() {return 0;}"
+		GCC_IS_GCC4)
+	if(NOT GCC_IS_GCC4)
+		message("GCC version is below gcc4 under Win32, thus disabling shared library")
+		set(DISABLE_SHARED 1)
+	endif(NOT GCC_IS_GCC4)
+endif(WIN32 AND CMAKE_COMPILER_IS_GNUCXX AND NOT DISABLE_SHARED)
+
 
 find_library(BOOST_SYSTEM	boost_system-${BOOST_SUFFIX} 	NAMES boost_system 	boost_system-mt)
 find_library(BOOST_FILESYSTEM 	boost_filesystem-${BOOST_SUFFIX} NAMES boost_filesystem boost_filesystem-mt)
@@ -122,7 +136,13 @@ endif(${CMAKE_HOST_WIN32})
 configure_file(config.cmake.h config.h)
 if(WIN32)
 	add_definitions(-DBOOST_ALL_NO_LIB)
-	add_definitions(-DBOOST_ALL_DYN_LINK)
+	add_definitions(-DBOOST_REGEX_DYN_LINK)
+	add_definitions(-DBOOST_FILESYSTEM_DYN_LINK)
+	add_definitions(-DBOOST_SYSTEM_DYN_LINK)
+	add_definitions(-DBOOST_IOSTREAMS_DYN_LINK)
+	add_definitions(-DBOOST_THREAD_DYN_LINK)
+	add_definitions(-DBOOST_DATE_TIME_DYN_LINK)
+	add_definitions(-DBOOST_ZLIB_DYN_LINK)
 endif(WIN32)
 
 set(CPPCMS_SOURCES 
@@ -154,50 +174,77 @@ set(CPPCMS_SOURCES
 	filters.cpp)
 
 
-add_library(cppcms SHARED ${CPPCMS_SOURCES})
 
-target_link_libraries(cppcms ${ICU_UC})
-target_link_libraries(cppcms ${ICU_DATA})
-target_link_libraries(cppcms ${ICU_I18N})
-target_link_libraries(cppcms ${BOOST_REGEX})
-target_link_libraries(cppcms ${BOOST_IOSTREAMS})
-target_link_libraries(cppcms ${BOOST_DATE_TIME})
-target_link_libraries(cppcms ${BOOST_THREAD})
-target_link_libraries(cppcms ${BOOST_FILESYSTEM})
-target_link_libraries(cppcms ${BOOST_SYSTEM})
-if(BOOST_ZLIB)
-	target_link_libraries(cppcms ${BOOST_ZLIB})
-endif(BOOST_ZLIB)
+if(NOT DISABLE_SHARED)
+	add_library(cppcms SHARED ${CPPCMS_SOURCES})
+	set(CPPCMS_LIB cppcms)
+else(NOT DISABLE_SHARED)
+	set(CPPCMS_LIB cppcms-static)
+endif(NOT DISABLE_SHARED)
 
-target_link_libraries(cppcms boost_locale)
+if(NOT DISABLE_STATIC)
+	add_library(cppcms-static STATIC ${CPPCMS_SOURCES})
+endif(NOT DISABLE_STATIC)
+
+if(DISABLE_SHARED OR DISABLE_STATIC)
+	set(CPPCMS_LIBS ${CPPCMS_LIB})
+else(DISABLE_SHARED OR DISABLE_STATIC)
+	set(CPPCMS_LIBS cppcms; cppcms-static)
+endif(DISABLE_SHARED OR DISABLE_STATIC)
+
+foreach(ALIB ${CPPCMS_LIBS})
+	target_link_libraries(${ALIB} ${ICU_UC})
+	target_link_libraries(${ALIB} ${ICU_DATA})
+	target_link_libraries(${ALIB} ${ICU_I18N})
+	target_link_libraries(${ALIB} ${BOOST_REGEX})
+	target_link_libraries(${ALIB} ${BOOST_IOSTREAMS})
+	target_link_libraries(${ALIB} ${BOOST_DATE_TIME})
+	target_link_libraries(${ALIB} ${BOOST_THREAD})
+	target_link_libraries(${ALIB} ${BOOST_FILESYSTEM})
+	target_link_libraries(${ALIB} ${BOOST_SYSTEM})
+	if(BOOST_ZLIB)
+		target_link_libraries(${ALIB} ${BOOST_ZLIB})
+	endif(BOOST_ZLIB)
+	if(ICONV_LIB)
+		target_link_libraries(${ALIB} ${ICONV_LIB})
+	endif(ICONV_LIB)
+
+	if(WS2_32 AND WSOCK32)
+		target_link_libraries(${ALIB} ${WS2_32})
+		target_link_libraries(${ALIB} ${WSOCK32})
+	endif(WS2_32 AND WSOCK32) 
+
+	if(LIB_GETHOSTBYNAME)
+		target_link_libraries(${ALIB} LIB_GETHOSTBYNAME)
+	endif(LIB_GETHOSTBYNAME)
+
+	if(LIB_SOCKET)
+		target_link_libraries(${ALIB} LIB_SOCKET)
+	endif(LIB_SOCKET)
+endforeach(ALIB)
 
 
-if(ICONV_LIB)
-	target_link_libraries(cppcms ${ICONV_LIB})
-endif(ICONV_LIB)
+if(NOT DISABLE_STATIC)
+	target_link_libraries(cppcms-static boost_locale-static)
+endif(NOT DISABLE_STATIC)
 
-if(WS2_32 AND WSOCK32)
-	target_link_libraries(cppcms ${WS2_32})
-	target_link_libraries(cppcms ${WSOCK32})
-endif(WS2_32 AND WSOCK32) 
+if(NOT DISABLE_SHARED)
+	target_link_libraries(cppcms boost_locale)
+endif(NOT DISABLE_SHARED)
 
-if(LIB_GETHOSTBYNAME)
-	target_link_libraries(cppcms LIB_GETHOSTBYNAME)
-endif(LIB_GETHOSTBYNAME)
-
-if(LIB_SOCKET)
-	target_link_libraries(cppcms LIB_SOCKET)
-endif(LIB_SOCKET)
 
 add_executable(hello_world hello_world.cpp)
-target_link_libraries(hello_world cppcms)
-
+target_link_libraries(hello_world ${CPPCMS_LIB})
 
 add_executable(cppcms_config_find_param cppcms_config_find_param.cpp json.cpp)
 
 # These are use export
-if(WIN32)
+if(WIN32 AND NOT DISABLE_SHARED)
 	set_target_properties(hello_world cppcms PROPERTIES
-				COMPILE_DEFINITIONS DLL_EXPORT)
-endif(WIN32)
+				COMPILE_DEFINITIONS DLL_EXPORT
+				COMPILE_DEFINITIONS BOOST_LOCALE_DYN_LINK )
+endif(WIN32 AND NOT DISABLE_SHARED)
+
+set_target_properties(${CPPCMS_LIBS} PROPERTIES CLEAN_DIRECT_OUTPUT 1)
+set_target_properties(${CPPCMS_LIBS} PROPERTIES OUTPUT_NAME "cppcms")
 
