@@ -1,11 +1,12 @@
 #define CPPCMS_SOURCE
 #include "form.h"
-#include <iostream>
-#include <stack>
-#include <boost/format.hpp>
+#include "config.h"
 #include "encoding.h"
 #include "regex.h"
 #include "filters.h"
+#include <iostream>
+#include <stack>
+#include <boost/format.hpp>
 
 namespace cppcms {
 
@@ -410,7 +411,7 @@ void base_widget::generate(int position,form_context *context)
 		snprintf(buf,sizeof(buf),"_%d",position);
 		name_=buf;
 	#else
-		name_ = boost::format("_%1$d",std::locale::classic()) % position;
+		name_ = (boost::format("_%1$d",std::locale::classic()) % position).str();
 	#endif
 	}
 	is_generation_done_ = 1;
