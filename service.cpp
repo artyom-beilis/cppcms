@@ -19,6 +19,16 @@
 #include <sys/wait.h>
 #endif
 
+#ifndef CPPCMS_WIN32
+#if defined(SOLARIS) || defined(_SOLARIS)
+#define _POSIX_PTHREAD_SEMANTICS
+#endif
+#include <signal.h>
+#endif
+
+#include <stdio.h>
+#include <string.h>
+#include <stdlib.h>
 #include <iostream>
 #include <fstream>
 #include <boost/lexical_cast.hpp>
