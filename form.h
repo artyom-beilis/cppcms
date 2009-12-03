@@ -1003,42 +1003,132 @@ namespace cppcms {
 
 		class checkbox: public base_html_input {
 		public:
-			
+			// Can specify other type like "radio"
+			checkbox(std::string const &type);
+			// Default - checkbox
 			checkbox();
 			~checkbox();
 			
-
 			bool value();
 			void value(bool is_set);
 
+			std::string identification();
+			void identification(std::string const &);
+
 			virtual void render_value(form_context &context);
 			virtual void load(http::context &context);
+		private:
+			struct data;
+			util::hold_ptr<data> d;
+			std::string identification_;
+			bool value_;
 		};
-/*
+		
 		class select_multiple : public base_widget {
-			int min;
 		public:
-			int size;
-			select_multiple(string name="",int s=0,string msg="") : base_widget(name,msg),min(-1),size(s) {};
-			set<string> chosen;
-			map<string,string> available;
-			void add(string val,string opt,bool selected=false);
-			void add(int val,string opt,bool selected=false);
-			void add(string v,bool s=false) { add(v,v,s); }
-			void add(int v,bool s=false) {
-				ostringstream ss;
-				ss<<v;
-				add(v,ss.str(),s);
-			}
-			set<string> &get() { return chosen; };
-			set<int> geti();
-			void set_min(int n) { min=n; };
-			virtual string render_input(int how);
+			select_multiple();
+			~select_multiple();
+
+			void add(std::string const &string,bool selected=false);
+			void add(std::string const &string,std::string const &id,bool selected=false);
+			void add(locale::message const &msg,bool selected=false);
+			void add(locale::message const &msg,std::string const &id,bool selected=false);
+
+			std::vector<bool> selected_map();
+			std::set<std::string> selected_ids();
+
+			unsigned at_least();
+			void at_least(unsigned v);
+
+			unsigned at_most();
+			void at_most(unsigned v);
+
+			unsigned rows();
+			void rows(unsigned n);
+			
+			virtual void render_input(form_context &context);
 			virtual bool validate();
-			virtual void load(cgicc::Cgicc const &cgi);
+			virtual void load(http::context &context);
 			virtual void clear();
+		private:
+			struct data;
+			util::hold_ptr<data> d;
+
+			struct element {
+				element();
+				element(std::string const &v,locale::message const &msg,bool sel);
+				element(std::string const &v,std::string const &msg,bool sel);
+				uint32_t selected : 1;
+				uint32_t need_translation : 1;
+				uint32_t original_select : 1;
+				uint32_t reserved : 29;
+				std::string id;
+				std::string str_option;
+				locale::message tr_option;
+				friend std::ostream &operator<<(std::ostream &out,element const &el);
+			};
+
+			std::vector<element> elements_;
+			
+			unsigned low_;
+			unsigned high_;
+			unsigned rows_;
+			
 		};
 
+		
+	/*	class select_multiple : public base_widget {
+		public:
+			select_multiple();
+			~select_multiple();
+
+			void add(std::string const &string,bool selected=false);
+			void add(std::string const &string,std::string const &id,bool selected=false);
+			void add(locale::message const &msg,bool selected=false);
+			void add(locale::message const &msg,std::string const &id,bool selected=false);
+
+			std::vector<bool> selected_map();
+			std::set<std::string> selected_ids();
+
+			unsigned at_least();
+			void at_least(unsigned v);
+
+			unsigned at_most();
+			void at_most(unsigned v);
+
+			unsigned rows();
+			void rows(unsigned n);
+			
+			virtual void render_input(form_context &context);
+			virtual bool validate();
+			virtual void load(http::context &context);
+			virtual void clear();
+		private:
+			struct data;
+			util::hold_ptr<data> d;
+
+			struct element {
+				element();
+				element(std::string const &v,locale::message const &msg,bool sel);
+				element(std::string const &v,std::string const &msg,bool sel);
+				uint32_t selected : 1;
+				uint32_t need_translation : 1;
+				uint32_t original_select : 1;
+				uint32_t reserved : 29;
+				std::string id;
+				std::string str_option;
+				locale::message tr_option;
+				friend std::ostream &operator<<(std::ostream &out,element const &el);
+			};
+
+			std::vector<element> elements_;
+			
+			unsigned low_;
+			unsigned high_;
+			unsigned rows_;
+			
+		};*/
+/*
 		class select_base : public base_widget {
 		public:
 			string value;

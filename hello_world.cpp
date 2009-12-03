@@ -165,6 +165,7 @@ public:
 	cppcms::widgets::password p1;
 	cppcms::widgets::password p2;
 	cppcms::widgets::textarea description;
+	cppcms::widgets::select_multiple sel;
 	
 	my_form()
 	{
@@ -177,7 +178,13 @@ public:
 		p2.message("Confirm");
 		p1.check_equal(p2);
 		p1.non_empty();
-		*this + name + age + p1 + p2 + description;
+		sel.message(cppcms::locale::translate("Files:"));
+		sel.add("Foo");
+		sel.add("Bar");
+		sel.add("Bee");
+		sel.add("Car");
+		sel.at_least(2);
+		*this + name + age + p1 + p2 + description + sel;
 	}
 };
 

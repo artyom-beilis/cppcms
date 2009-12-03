@@ -4,7 +4,6 @@
 #include "encoding.h"
 #include "regex.h"
 #include "filters.h"
-#include <iostream>
 #include <stack>
 #include <boost/format.hpp>
 
@@ -406,13 +405,7 @@ void base_widget::generate(int position,form_context *context)
 	if(is_generation_done_)
 		return;
 	if(name_.empty()) {
-	#ifdef HAVE_SNPRINTF
-		char buf[32];
-		snprintf(buf,sizeof(buf),"_%d",position);
-		name_=buf;
-	#else
-		name_ = (boost::format("_%1$d",std::locale::classic()) % position).str();
-	#endif
+		name_ = (boost::format("_%1%",std::locale::classic()) % position).str();
 	}
 	is_generation_done_ = 1;
 }
@@ -504,6 +497,7 @@ void base_widget::render(form_context &context)
 
 void base_widget::render_attributes(form_context &context)
 {
+	auto_generate(&context);
 	std::ostream &output = context.out();
 	if(!id_.empty()) output << "id=\"" << id_ << "\" ";
 	if(!name_.empty()) output << "name=\"" << name_ << "\" ";
@@ -636,7 +630,9 @@ text::text(): base_html_input("text"), size_(-1) {}
 text::text(std::string const &type): base_html_input(type), size_(-1) {}
 void text::render_value(form_context &context)
 {
-	context.out() << " value=\"" << util::escape(value()) << "\"";
+	if(set()) {
+		context.out() << " value=\"" << util::escape(value()) << "\"";
+	}
 }
 
 void text::render_attributes(form_context &context)
@@ -659,10 +655,13 @@ base_html_input::~base_html_input() {}
 
 void base_html_input::render_input(form_context &context)
 {
+	auto_generate(&context);
+
 	std::ostream &output=context.out();
 	if(context.widget_part() == first_part) {
 		output<<"<input type=\""<<type_<<"\" ";
 		render_attributes(context);
+		render_value(context);
 	}
 	else {
 		if(context.html() ==  as_xhtml)
@@ -775,6 +774,252 @@ namespace {
 
 email::email() : regex_field(email_regex) {}
 email::~email() {}
+
+
+struct checkbox::data {};
+
+checkbox::checkbox(std::string const &type) : 
+	base_html_input(type),
+	identification_("y"),
+	value_(false)
+{
+	set(true);	
+}
+checkbox::checkbox() : 
+	base_html_input("checkbox"),
+	identification_("y"),
+	value_(false)
+{
+	set(true);	
+}
+checkbox::~checkbox()
+{
+}
+
+
+bool checkbox::value()
+{
+	return value_;
+}
+void checkbox::value(bool v)
+{
+	value_=v;
+}
+
+void checkbox::identification(std::string const &id)
+{
+	identification_=id;
+}
+
+std::string checkbox::identification()
+{
+	return identification_;
+}
+
+void checkbox::render_value(form_context &context)
+{
+	if(value()) {
+		if(context.html() == as_xhtml)
+			context.out() << " checked=\"checked\" ";
+		else
+			context.out() << " checked ";
+	}
+	context.out() << "value=\""<<util::escape(identification_)<<"\" ";
+}
+
+void checkbox::load(http::context &context)
+{
+	std::pair<http::request::form_type::const_iterator,http::request::form_type::const_iterator> 
+		range=context.request().post_or_get().equal_range(name());
+	value(false);
+	while(range.first != range.second) {
+		if(range.first->second == identification_) {
+			value(true);
+			break;
+		}
+		++range.first;
+	}
+}
+
+struct select_multiple::data{};
+
+
+select_multiple::element::element():
+	selected(0),
+	need_translation(0),
+	original_select(0)
+{
+}
+
+select_multiple::element::element(std::string const &val,locale::message const &msg,bool sel) :
+	selected(sel),
+	need_translation(1),
+	original_select(sel),
+	id(val),
+	tr_option(msg)
+{
+}
+
+select_multiple::element::element(std::string const &val,std::string const &msg,bool sel) :
+	selected(sel),
+	need_translation(0),
+	id(val),
+	original_select(sel),
+	str_option(msg)
+{
+}
+
+
+select_multiple::select_multiple() :
+	low_(0),
+	high_(std::numeric_limits<unsigned>::max()),
+	rows_(0)
+{
+}
+
+select_multiple::~select_multiple()
+{
+}
+void select_multiple::add(std::string const &opt,std::string const &id,bool selected)
+{
+	elements_.push_back(element(id,opt,selected));
+}
+
+void select_multiple::add(locale::message const &opt,std::string const &id,bool selected)
+{
+	elements_.push_back(element(id,opt,selected));
+}
+
+void select_multiple::add(std::string const &opt,bool selected)
+{
+	std::string id=(boost::format("%1%",std::locale::classic()) % elements_.size()).str();
+	elements_.push_back(element(id,opt,selected));
+}
+
+void select_multiple::add(locale::message const &opt,bool selected)
+{
+	std::string id=(boost::format("%1%",std::locale::classic()) % elements_.size()).str();
+	elements_.push_back(element(id,opt,selected));
+}
+
+std::vector<bool> select_multiple::selected_map()
+{
+	std::vector<bool> flags(elements_.size(),false);
+	for(unsigned i=0;i<elements_.size();i++)
+		flags[i]=elements_[i].selected;
+	return flags;
+}
+
+std::set<std::string> select_multiple::selected_ids()
+{
+	std::set<std::string> ids;
+	for(unsigned i=0;i<elements_.size();i++)
+		if(elements_[i].selected)
+			ids.insert(elements_[i].id);
+	return ids;
+}
+
+void select_multiple::clear()
+{
+	for(unsigned i=0;i<elements_.size();i++){
+		elements_[i].selected=elements_[i].original_select;
+	}
+}
+
+void select_multiple::load(http::context &context)
+{
+	auto_generate();
+	std::pair<http::request::form_type::const_iterator,http::request::form_type::const_iterator> 
+		range=context.request().post_or_get().equal_range(name());
+	std::set<std::string> keys;
+	for(http::request::form_type::const_iterator p=range.first;p!=range.second;++p)
+		keys.insert(p->second);
+	for(unsigned i=0;i<elements_.size();i++) {
+		elements_[i].selected= keys.find(elements_[i].id) != keys.end();
+	}
+}
+
+bool select_multiple::validate()
+{
+	unsigned count=0;
+	for(unsigned i=0;i<elements_.size();i++)
+		count += elements_[i].selected;
+	if(low_ <= count && count <= high_) {
+		valid(true);
+		return true;
+	}
+	else {
+		valid(false);
+		return false;
+	}
+}
+
+void select_multiple::render_input(form_context &context)
+{
+	auto_generate(&context);
+	std::ostream &out=context.out();
+	if(context.widget_part() == first_part) {
+		if(context.html() == as_xhtml)
+			out<<"<select multiple=\"multiple\" ";
+		else
+			out<<"<select multiple ";
+		if(rows_ > 0)
+			out << boost::format(" size=\"%1%\" ",std::locale::classic()) % rows_;
+		render_attributes(context);
+	}
+	else {
+		out<<" >\n";
+		for(unsigned i=0;i<elements_.size();i++) {
+			element &el=elements_[i];
+			out << "<option value=\"" << util::escape(el.id) <<"\" ";
+			if(el.selected) {
+				if(context.html() == as_xhtml)
+					out << "selected=\"selected\" ";
+				else
+					out << "selected ";
+			}
+			out << ">";
+			if(el.need_translation)
+				out << filters::escape(el.tr_option);
+			else
+				out << util::escape(el.str_option);
+			out << "</option>\n";
+		}
+		out << "</select>";
+	}
+}
+
+
+void select_multiple::at_least(unsigned l)
+{
+	low_ = l;
+}
+
+void select_multiple::at_most(unsigned h)
+{
+	high_ = h;
+}
+
+unsigned select_multiple::at_least()
+{
+	return low_;
+}
+
+unsigned select_multiple::at_most()
+{
+	return high_;
+}
+
+unsigned select_multiple::rows()
+{
+	return rows_;
+}
+
+void select_multiple::rows(unsigned v)
+{
+	rows_=v;
+}
+
 
 } // widgets 
 
