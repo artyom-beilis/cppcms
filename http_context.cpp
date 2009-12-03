@@ -176,6 +176,16 @@ std::locale context::locale()
 {
 	return d->locale;
 }
+void context::locale(std::locale const &new_locale)
+{
+	d->locale=new_locale;
+	if(response().some_output_was_written())
+		response().out().imbue(d->locale);
+}
+void context::locale(std::string const &name)
+{
+	locale(service().locale(name));
+}
 
 
 } // http

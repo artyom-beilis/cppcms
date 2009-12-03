@@ -32,26 +32,10 @@
 	"localization" : {
 		"encoding" : "UTF-8",
 		"messages" : {
-			"paths" : [ "../transtext/locale" ],
-			"domains" : [ "app", "test" ],
-			"default_domain" : ["test"]
+			"paths" : [ "./transtext/locale" ],
+			"domains" : [ "test", "app" ]
 		},
-		"locales" : [ "en_US", "he_IL", "he_IL@calendar=hebrew" ]
-	},
-	"locale" : {
-		"locales" : 
-			[ 
-				"he_IL.UTF-8",
-				"en_US.UTF-8",
-				"he_IL.cp1255",
-				"tr_TR.UTF-8" ],	
-		//"default" : "tr_TR.UTF-8",
-				// list of supported languages
-		//"default" :  "he_IL.cp1255",			// default language (default first one)
-		"default" :  "he_IL.UTF-8",			// default language (default first one)
-		"gettext_domains" : [ "app", "test" ],		// list of supported domains
-		"default_gettext_domain" :  "test",		// default domain (default first one)
-		"gettext_path" : "./transtext/locale",		// path to locale directory
+		"locales" : [ "he_IL", "en_US", "he_IL@calendar=hebrew" ],
 		"disable_charset_in_content_type" : false	// Disable 
 	},
 	"session" : {
@@ -62,7 +46,11 @@
 		"cookies_path" : "/",
 		"cookies_secure" : false
 	},
-
+	"views" : {
+		"paths" : [ "./teplates" ],
+		"skins" : [ "skin1", "skin2" ],
+		"auto_reload" : true
+	},
 	"file_server" : {
 		"enable" : true,
 		"doument_root" : "."

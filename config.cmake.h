@@ -14,6 +14,14 @@
 #define atoll _atoi64
 #endif
 
+/* Have stat */
+
+#cmakedefine HAVE_STAT
+
+/* Have _stat */
+
+#cmakedefine HAVE__STAT
+
 /* Have gmtime_r */
 #cmakedefine HAVE_GMTIME_R
 
@@ -62,6 +70,9 @@
 
 /* Define to the version of this package. */
 #cmakedefine PACKAGE_VERSION "${PACKAGE_VERSION}"
+
+/* Define to module suffix. */
+#cmakedefine CPPCMS_LIBRARY_SUFFIX "${CPPCMS_LIBRARY_SUFFIX}"
 
 /* Version number of package */
 #define VERSION PACKAGE_VERSION

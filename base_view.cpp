@@ -32,44 +32,4 @@ void base_view::render()
 }
 
 
-namespace details {
-
-struct views_storage::data {};
-
-views_storage &views_storage::instance() {
-	static views_storage this_instance;
-	return this_instance;
-};
-
-void views_storage::add_view(std::string t,std::string v,view_factory_type f)
-{
-	storage[t][v]=f;
-}
-
-void views_storage::remove_views(std::string t)
-{
-	storage.erase(t);
-}
-
-std::auto_ptr<base_view> views_storage::fetch_view(std::string t,std::string v,std::ostream &s,base_content *c)
-{
-	templates_type::iterator p=storage.find(t);
-	if(p==storage.end())
-		throw cppcms_error("Can't find skin "+t);
-	template_views_type::iterator p2=p->second.find(v);
-	if(p2==p->second.end())
-		throw cppcms_error("Can't find template "+v);
-	view_factory_type &f=p2->second;
-	return f(s,c);
-}
-views_storage::views_storage()
-{
-}
-
-views_storage::~views_storage()
-{
-}
-
-
-} // details
 }// cppcms

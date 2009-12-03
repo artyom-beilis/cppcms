@@ -462,7 +462,7 @@ locale::generator const &service::generator()
 			gen.add_messages_domain(domains[i]);
 	}
 
-	vstr_type locales = settings().get("localization.messages.locales",vstr_type());
+	vstr_type locales = settings().get("localization.locales",vstr_type());
 
 	if(locales.empty()) {
 		gen.preload("");

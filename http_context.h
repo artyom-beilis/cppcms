@@ -32,6 +32,8 @@ namespace cppcms {
 			http::response &response();
 			json::value const &settings();
 			std::locale locale();
+			void locale(std::locale const &new_locale);
+			void locale(std::string const &name);
 			cppcms::service &service();
 
 			void run();

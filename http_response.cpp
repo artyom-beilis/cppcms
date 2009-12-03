@@ -92,7 +92,7 @@ response::~response()
 
 void response::set_content_header(std::string const &content_type)
 {
-	if(context_.settings().get("locale.disable_charset_in_content_type",false)) {
+	if(context_.settings().get("localization.disable_charset_in_content_type",false)) {
 		set_header("Content-Type",content_type);
 	}
 	else {

@@ -210,11 +210,13 @@ public:
 	void devide(cppcms::locale::boundary::boundary_type type,std::string const &str,char const *name)
 	{
 		response().out()<<name<<":";
-		using namespace cppcms::locale;
-		boundary::index_type indx = boundary::map(type,str,context().locale());
+		using namespace cppcms::locale::boundary;
+		mapping<token_iterator<std::string::const_iterator> > ind(type,str.begin(),str.end(),context().locale());
 
-		for(unsigned i=0;i<indx.size()-1;i++) {
-			response().out()<<"|"<<str.substr(indx[i].offset,indx[i+1].offset-indx[i].offset);
+		token_iterator<std::string::const_iterator> p;
+
+		for(p=ind.begin();p!=ind.end();++p) {
+			response().out()<<"|"<<*p;
 		}
 		response().out()<<"|<br>\n";
 	}
@@ -296,6 +298,8 @@ public:
 		response().out() <<
 			"<html><body>\n"
 			"<h1>Hello World!</h1>\n";
+		response().out()<<locale::format("{1,datetime=f}") % time(0) << "<br>\n";
+		response().out()<<std::use_facet<locale::info>(response().out().getloc()).language()<<"<br>\n";
 		cppcms::http::request::cookies_type::const_iterator p;
 		for(p=request().cookies().begin();p!=request().cookies().end();++p) {
 			response().out()<<p->second<<"<br/>\n";
@@ -306,8 +310,6 @@ public:
 		response().out() << filters::escape(locale::translate("hello\n")) << "<br>";
 		
 		for(int i=0;i<30;i++) {
-			response().out() << locale::format("To be or not to be {1}\n<br>") % 10;
-
 			response().out() << locale::format(locale::translate("passed one day","passed {1} days",i)) % i << "<br>\n";
 		}
 		response().out()

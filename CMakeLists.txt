@@ -45,6 +45,8 @@ check_function_exists(_atoi64 HAVE_ATOI64)
 check_function_exists(gmtime_r HAVE_GMTIME_R)
 check_function_exists(strerror_r HAVE_STRERROR_R)
 check_function_exists(snprintf HAVE_SNPRINTF)
+check_function_exists(stat HAVE_STAT)
+check_function_exists(_stat HAVE__STAT)
 
 if(NOT ICU_UC OR NOT ICU_DATA OR NOT ICU_I18N)
 	message(FATAL " Failed to find icu")
@@ -75,7 +77,7 @@ endif(NOT DISABLE_ICONV)
 include_directories(${CMAKE_BINARY_DIR})
 include_directories(boost_locale)
 
-
+set(CPPCMS_LIBRARY_SUFFIX ${CMAKE_SHARED_LIBRARY_SUFFIX})
 check_cxx_source_compiles(
 	"int main() { volatile long v;__sync_add_and_fetch(&v,1); }"
 	HAVE_SYNC_FETCH_AND_ADD)
@@ -162,6 +164,7 @@ set(CPPCMS_SOURCES
 	util.cpp 
 	base64.cpp 
 	base_view.cpp 
+	views_pool.cpp
 	internal_file_server.cpp 
 	scgi_api.cpp 
 	fastcgi_api.cpp 
