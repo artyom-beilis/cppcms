@@ -1,15 +1,22 @@
 #define CPPCMS_SOURCE
 #include "views_pool.h"
+#include "json.h"
+#include "config.h"
+#include "cppcms_error.h"
 #include <boost/thread.hpp>
 #include <boost/format.hpp>
 
 #ifdef CPPCMS_WIN32
 #include <windows.h>
 #include <process.h>
+#else
+#include <dlfcn.h>
 #endif
 
 #include <sys/types.h>
 #include <sys/stat.h>
+
+
 
 namespace cppcms {
 namespace impl {
@@ -76,13 +83,13 @@ namespace impl {
 		{
 			handler_ = dlopen(file_name.c_str(),RTLD_LAZY);
 			if(!handler_) {
-				throw cppcms_error("Failed to load library "+file);
+				throw cppcms_error("Failed to load library "+file_name);
 			}
 		}
 
 		~shared_object()
 		{
-			dlclose(handler_)
+			dlclose(handler_);
 		}
 
 		void *symbol(std::string const &name) const
@@ -101,8 +108,11 @@ namespace impl {
 
 struct views_pool::skin {
 public:
+	skin()
+	{
+	}
 
-	skin(std::string const &name,std::vector<std::string> search_path,bool reloadable) :
+	skin(std::string const &name,std::vector<std::string> const &search_path,bool reloadable) :
 		reloadable_(true),
 		skin_name_(name)
 	{
@@ -114,13 +124,13 @@ public:
 			file_name_ = file_name;
 			time_stamp_ = st.st_mtime;
 
-			shared_object_.reset(new impl::shared_object(file_name,reloadable))
+			shared_object_.reset(new impl::shared_object(file_name,reloadable));
 			typedef void (*loader_type)(mapping_type *);
-			loader_type loader=reinterpret_cast<loader_type>(shared_object_->get_symbol("cppcms_"+name+"_get_skins"));
+			loader_type loader=reinterpret_cast<loader_type>(shared_object_->symbol("cppcms_"+name+"_get_skins"));
 			if(!loader) {
-				throw cppcms_error(path + " is not CppCMS loadable skin");
+				throw cppcms_error(file_name + " is not CppCMS loadable skin");
 			}
-			loader(mapping_);
+			loader(&mapping_);
 			return;
 		}
 		throw cppcms_error("Can't load skin " + name); 
@@ -128,7 +138,7 @@ public:
 
 	skin(std::string skin_name,std::map<std::string,view_factory_type> const &views) :
 		reloadable_(false),
-		name_(skin_name)
+		skin_name_(skin_name)
 	{
 		mapping_=views;
 	}
@@ -137,6 +147,7 @@ public:
 	{
 		if(!reloadable_)
 			return true;
+		struct stat st;
 		if(::stat(file_name_.c_str(),&st) < 0)
 			return true;
 		return time_stamp_ >= st.st_mtime;
@@ -154,24 +165,31 @@ public:
 private:
 	bool reloadable_;
 	std::string skin_name_;
+	std::string file_name_;
+	time_t time_stamp_;
 	mapping_type mapping_;
 	boost::shared_ptr<impl::shared_object> shared_object_;	
 
 };
 
 struct views_pool::data {
-	bool dyanmic_reload;
+	bool dynamic_reload;
+	typedef std::map<std::string,skin> skins_type;
+	skins_type skins;
 	boost::shared_mutex lock_;
+	std::string default_skin;
+	std::vector<std::string> search_path;
 };
 
 views_pool::views_pool()
 {
 }
 
-views_pool::views_pool(json::valuie const &settings)
+views_pool::views_pool(json::value const &settings)
 {
-	d->skins=instance().d->skins;
+	d->skins=static_instance().d->skins;
 	std::vector<std::string> paths=settings.get("views.paths",std::vector<std::string>());
+	d->search_path=paths;
 	std::vector<std::string> skins=settings.get("views.skins",std::vector<std::string>());
 	d->dynamic_reload= settings.get("views.auto_reload",false);
 	if(paths.empty() || skins.empty())
@@ -182,18 +200,18 @@ views_pool::views_pool(json::valuie const &settings)
 			throw cppcms_error("Two skins with same name provided:" + name);
 		d->skins[name]=skin(name,paths,d->dynamic_reload);
 	}
-	d->default_skin = settings.get<std::string>("views.default_skin","")
+	d->default_skin = settings.get<std::string>("views.default_skin","");
 }
 
-void views_pool::render(std::string skin,std::string template_name,std::ostream &out,base_content &content)
+void views_pool::render(std::string skin_name,std::string template_name,std::ostream &out,base_content &content)
 {
-	if(d->dyanmic_reload) {
+	if(d->dynamic_reload) {
 		for(;;){
 			{	// Check if update
 				boost::shared_lock<boost::shared_mutex> lock(d->lock_);
-				data::skins_type::const_iterator p=d->skins.find(skin);
+				data::skins_type::const_iterator p=d->skins.find(skin_name);
 				if(p==d->skins.end())
-					throw cppcms_error("There is no such skin:" + skin);
+					throw cppcms_error("There is no such skin:" + skin_name);
 				if(p->second.is_updated()) {
 					p->second.render(template_name,out,content);
 					return;
@@ -201,21 +219,21 @@ void views_pool::render(std::string skin,std::string template_name,std::ostream 
 			}
 			{	// Reload
 				boost::unique_lock<boost::shared_mutex> lock(d->lock_);
-				data::skins_type::iterator p=d->skins.find(skin);
+				data::skins_type::iterator p=d->skins.find(skin_name);
 				if(p==d->skins.end())
-					throw cppcms_error("There is no such skin:" + skin);
+					throw cppcms_error("There is no such skin:" + skin_name);
 				if(!p->second.is_updated()) {
 					d->skins.erase(p);
-					d->skins.insert(skins(skin,d->search_path,true));
+					d->skins[skin_name]=skin(skin_name,d->search_path,true);
 				}
 			}
 		}
 	}
 	else {	// No need to reload
-		data::skins_type::const_iterator p=d->skins.find(skin);
+		data::skins_type::const_iterator p=d->skins.find(skin_name);
 		if(p==d->skins.end())
-			throw cppcms_error("There is no such skin:" + skin);
-		d->second.render(template_name,out,content);
+			throw cppcms_error("There is no such skin:" + skin_name);
+		p->second.render(template_name,out,content);
 	}
 }
 

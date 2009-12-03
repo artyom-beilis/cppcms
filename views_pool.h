@@ -11,6 +11,8 @@
 
 namespace cppcms {
 
+	namespace json { class value; }
+
 	class CPPCMS_API views_pool : public util::noncopyable {
 	public:
 		typedef std::auto_ptr<base_view> (*view_factory_type)(std::ostream &,base_content *c);
@@ -19,7 +21,7 @@ namespace cppcms {
 		template<typename View,typename Content>
 		std::auto_ptr<base_view> view_builder(std::ostream &stream,base_content *c) 
 		{
-			std::auto_ptr<base_view> p(new T(stream,dynamic_cast<Content &>(*c)));
+			std::auto_ptr<base_view> p(new View(stream,dynamic_cast<Content &>(*c)));
 			return p;
 		};
 
