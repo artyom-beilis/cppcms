@@ -47,10 +47,10 @@
 		"cookies_secure" : false
 	},
 	"views" : {
-		"default_skin" : "skin1"
-		// "paths" : [ "./teplates" ],
-		// "skins" : [ "skin1", "skin2" ],
-		// "auto_reload" : true
+		"default_skin" : "skin1",
+		 "paths" : [ "./" ],
+		 "skins" : [ "skin3" ],
+		 "auto_reload" : true
 	},
 	"file_server" : {
 		"enable" : true,

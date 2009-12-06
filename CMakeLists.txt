@@ -79,6 +79,7 @@ include_directories(${CMAKE_SOURCE_DIR})
 include_directories(boost_locale)
 
 set(CPPCMS_LIBRARY_SUFFIX ${CMAKE_SHARED_LIBRARY_SUFFIX})
+set(CPPCMS_LIBRARY_PREFIX ${CMAKE_SHARED_LIBRARY_PREFIX})
 check_cxx_source_compiles(
 	"int main() { volatile long v;__sync_add_and_fetch(&v,1); }"
 	HAVE_SYNC_FETCH_AND_ADD)
@@ -289,6 +290,24 @@ add_custom_command(
 		${CMAKE_CURRENT_SOURCE_DIR}/cppcms_tmpl_cc 
 		${CMAKE_CURRENT_SOURCE_DIR}/hello_world_skin2.tmpl 
 		${CMAKE_CURRENT_SOURCE_DIR}/hello_world_view1.tmpl)
+
+if(NOT DISABLE_SHARED)
+	add_custom_command(
+		OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/skin3.cpp
+		COMMAND ${PYTHON} ${CMAKE_CURRENT_SOURCE_DIR}/cppcms_tmpl_cc 
+			-n skin3 
+			-o ${CMAKE_CURRENT_BINARY_DIR}/skin3.cpp 
+				${CMAKE_CURRENT_SOURCE_DIR}/hello_world_skin2.tmpl 
+				${CMAKE_CURRENT_SOURCE_DIR}/hello_world_view1.tmpl
+		DEPENDS 
+			${CMAKE_CURRENT_SOURCE_DIR}/cppcms_tmpl_cc 
+			${CMAKE_CURRENT_SOURCE_DIR}/hello_world_skin2.tmpl 
+			${CMAKE_CURRENT_SOURCE_DIR}/hello_world_view1.tmpl)
+	add_library(skin3 MODULE skin3.cpp)
+	set_target_properties(skin3 PROPERTIES
+				COMPILE_DEFINITIONS CPPCMS_SKIN_MODULE)
+	target_link_libraries(skin3 ${CPPCMS_LIB})
+endif(NOT DISABLE_SHARED)
 
 add_executable(hello_world hello_world.cpp skin1.cpp skin2.cpp)
 target_link_libraries(hello_world ${CPPCMS_LIB})

@@ -74,6 +74,9 @@
 /* Define to module suffix. */
 #cmakedefine CPPCMS_LIBRARY_SUFFIX "${CPPCMS_LIBRARY_SUFFIX}"
 
+/* Define to module suffix. */
+#cmakedefine CPPCMS_LIBRARY_PREFIX "${CPPCMS_LIBRARY_PREFIX}"
+
 /* Version number of package */
 #define VERSION PACKAGE_VERSION
 

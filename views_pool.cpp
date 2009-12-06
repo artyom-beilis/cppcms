@@ -23,10 +23,7 @@ namespace impl {
 #ifdef CPPCMS_WIN32
 	class shared_object : public util::noncopyable {
 	public:
-		static std::string name(std::string file,std::string path)
-		{
-			return path+"/"+file+".dll";
-		}
+		static std::string name(std::string file,std::string path);
 
 		shared_object(std::string file_name,bool reloadable)
 		{
@@ -74,10 +71,7 @@ namespace impl {
 #else
 	class shared_object : public util::noncopyable {
 	public:
-		static std::string name(std::string file,std::string path)
-		{
-			return path+"/"+file+CPPCMS_LIBRARY_SUFFIX;
-		}
+		static std::string name(std::string file,std::string path);
 
 		shared_object(std::string file_name,bool unused)
 		{
@@ -100,6 +94,13 @@ namespace impl {
 		void *handler_;
 	};
 #endif
+
+	std::string shared_object::name(std::string file,std::string path)
+	{
+		return path+"/"+CPPCMS_LIBRARY_PREFIX+file+CPPCMS_LIBRARY_SUFFIX;
+	}
+
+
 } // impl
 
 #if !defined(HAVE_STAT) && defined(HAVE__STAT)
@@ -126,7 +127,7 @@ public:
 
 			shared_object_.reset(new impl::shared_object(file_name,reloadable));
 			typedef void (*loader_type)(mapping_type &);
-			loader_type loader=reinterpret_cast<loader_type>(shared_object_->symbol("cppcms_"+name+"_get_skins"));
+			loader_type loader=reinterpret_cast<loader_type>(shared_object_->symbol("cppcms_"+name+"_get_skin"));
 			if(!loader) {
 				throw cppcms_error(file_name + " is not CppCMS loadable skin");
 			}
