@@ -34,7 +34,7 @@ namespace impl {
 				#ifdef CPPCMS_WIN_NATIVE
 				int pid=_getpid();
 				#else
-				int pid=getpid()
+				int pid=getpid();
 				#endif
 				file_name_ = (boost::format("%1%.tmp-%2%.dll",std::locale::classic()) % file_name % pid).str();
 				if(!CopyFile(file_name.c_str(),file_name_.c_str(),1)) {
@@ -50,7 +50,7 @@ namespace impl {
 			if(!handler_) {
 				if(remove_)
 					DeleteFile(file_name_.c_str());
-				throw cppcms_error("Failed to load library "+file);
+				throw cppcms_error("Failed to load library "+file_name);
 			}
 		}
 
@@ -58,11 +58,11 @@ namespace impl {
 		{
 			FreeLibrary(handler_);
 			if(remove_) {
-				DeleteFile(file_name_.c_str())
+				DeleteFile(file_name_.c_str());
 			}
 		}
 
-		void *symbol(std::string const &name) const
+		FARPROC symbol(std::string const &name) const
 		{
 			return GetProcAddress(handler_,name.c_str());
 		}
