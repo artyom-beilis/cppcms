@@ -10,7 +10,7 @@
 	</form>
 	<form action="" method="post">
 	<p>
-		<% foreach w in form %>
+		<% foreach w as cppcms::form::iterator in form %>
 			<% separator %><br/><% item %>
 				<% if w.has_message() %><% w.message() %>:<% end %>
 				<% form input w %>
@@ -27,7 +27,7 @@
 		<p> The form was: nik=<% username %>, name=<% realname %>, Ok is <% if not ok%>not<% end %> checked,
 			password=<% password %></p>
 		<% end %>
-		<% foreach x in numbers %>
+		<% foreach x as view::hello::numbers_type::iterator in numbers %>
 			<ul>
 			<% item %>
 			<li><% ngt "passed one day","passed {1} days",x using x %></li>

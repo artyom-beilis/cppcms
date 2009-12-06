@@ -2,7 +2,7 @@
 <% namespace vary %>
 	<% class master uses view::master %>
 	<% template test(std::string &v,int p) %>
-	<% foreach c in v %>
+	<% foreach c as std::string::iterator in v %>
 		<% item %><% c %><% end %>
 	<% end %>
 	<% end %>
@@ -10,6 +10,7 @@
 		<html>
 		<title>Skin1 :: <% title %></title>
 		<body>
+		<h1>That is cool</h1>
 		<% include body() %>
 		</body>
 		</html>

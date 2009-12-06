@@ -62,7 +62,9 @@ struct hello : public master {
 	std::string username,realname,password;
 	bool ok;
 	std::string msg;
-	std::list<int> numbers;
+	typedef std::list<int> numbers_type;
+	numbers_type numbers;
+	
 	std::list<data> lst;
 	a_form form;
 };
