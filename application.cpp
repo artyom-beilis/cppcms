@@ -8,6 +8,7 @@
 #include "intrusive_ptr.h"
 #include "applications_pool.h"
 #include "http_response.h"
+#include "views_pool.h"
 
 #include <set>
 #include <vector>
@@ -157,6 +158,27 @@ void application::assign(application *app,std::string regex,int part)
 	d->managed_children.push_back(app);
 	add(*app,regex,part);
 }
+
+void application::render(std::string template_name,base_content &content)
+{
+	service().views_pool().render(context().skin(),template_name,response().out(),content);
+}
+
+void application::render(std::string skin,std::string template_name,base_content &content)
+{
+	service().views_pool().render(skin,template_name,response().out(),content);
+}
+
+void application::render(std::string template_name,std::ostream &out,base_content &content)
+{
+	service().views_pool().render(context().skin(),template_name,out,content);
+}
+
+void application::render(std::string skin,std::string template_name,std::ostream &out,base_content &content)
+{
+	service().views_pool().render(skin,template_name,out,content);
+}
+
 
 void application::recycle()
 {

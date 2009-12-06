@@ -19,7 +19,7 @@ namespace cppcms {
 		typedef std::map<std::string,view_factory_type> mapping_type;
 
 		template<typename View,typename Content>
-		std::auto_ptr<base_view> view_builder(std::ostream &stream,base_content *c) 
+		static std::auto_ptr<base_view> view_builder(std::ostream &stream,base_content *c) 
 		{
 			std::auto_ptr<base_view> p(new View(stream,dynamic_cast<Content &>(*c)));
 			return p;
@@ -29,8 +29,15 @@ namespace cppcms {
 		views_pool(json::value const &settings);
 		~views_pool();
 	
-		void render(std::string template_name,std::ostream &out,base_content &content);
+		///
+		/// Thread safe member function
+		///
 		void render(std::string skin,std::string template_name,std::ostream &out,base_content &content);
+
+		///
+		/// Get default skin name
+		///
+		std::string default_skin() const;
 		
 		void add_view(std::string skin,mapping_type const &mapping);
 

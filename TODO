@@ -1,3 +1,9 @@
-- Implement full util::format
-- Add macros for variadic templates support
-- Implement to_(w)string
+- form.*
+	Implement, Select, Radio, Date-Time
+- http_request.*, cgi_api.*
+	Implement File Upload
+- Implement Asynchronous API
+- Implement JSON-RPC
+- Reintegrate Sessions Support
+- Reintegrate Cache Support
+- Update cppcms_tmpl_cc according to new code

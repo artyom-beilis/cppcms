@@ -1,8 +1,5 @@
-#include "base_view.h"
-#include "application.h"
+#include "view.h"
 #include <list>
-#include "form.h"
-using namespace cppcms;
 class my_hello_world;
 namespace view {
 
@@ -17,60 +14,57 @@ struct data {
 	data(char const *n="",int v=0) : name(n),val(v){}
 };
 
-struct my_form : public form {
-	widgets::text username;
-	widgets::textarea name;
-	widgets::email mail;
-	widgets::password p1;
-	widgets::password p2;
-	widgets::number<int> integer;
-	widgets::number<double> real;
-	widgets::checkbox ok;
-	widgets::select fruit;
+struct a_form : public cppcms::form {
+	cppcms::widgets::text username;
+	cppcms::widgets::textarea name;
+	cppcms::widgets::email mail;
+	cppcms::widgets::password p1;
+	cppcms::widgets::password p2;
+	cppcms::widgets::numeric<int> integer;
+	cppcms::widgets::numeric<double> real;
+	cppcms::widgets::checkbox ok;
+	//widgets::select fruit;
 	//widgets::radio fruit;
-	widgets::select_multiple meat;
-	widgetset my_set;
-	my_form(application *w) :
-		username("user",w->gettext("Username")),
-		name("name",w->gettext("Real Name")),
-		mail("mail",w->gettext("Mail")),
-		p1("pass",w->gettext("Password")),
-		p2("passcopy",w->gettext("Confirm")),
-		integer("int",w->gettext("Integer")),
-		real("real",w->gettext("Real")),
-		ok("ok",w->gettext("Never save")),
-		fruit("fr",w->gettext("Fruit")),
-		meat("mt",2,w->gettext("Meat"))
+	//widgets::select_multiple meat;
+	//widgetset my_set;
+	a_form() 
 	{
-		*this & username & mail & name & p1 & p2 &
-			integer & real & ok & fruit & meat ;
-		my_set<< username<<mail<<name<<p1<<p2<<integer<<real<<ok<<fruit<<meat;
-		username.set_nonempty();
-		name.set_nonempty();
-		p2.set_equal(p1);
-		p2.help=w->gettext("(Same as above)");
-		p1.set_nonempty();
-		p2.set_nonempty();
-		real.set_range(-1.0,1.5);
-		fruit.add("Orange");
+		using cppcms::locale::translate;
+		username.message(translate("Username"));
+		name.message(translate("Real Name"));
+		mail.message(translate("E-Mail"));
+		p1.message(translate("Password"));
+		p2.message(translate("Confirm"));
+		integer.message(translate("Integer"));
+		real.message(translate("Real"));
+		ok.message(translate("Never Save"));
+		*this + username + mail + name + p1 + p2 +
+			integer + real + ok;
+		username.non_empty();
+		name.non_empty();
+		p2.check_equal(p1);
+		p2.help(translate("(Same as above)"));
+		p1.non_empty();
+		p2.non_empty();
+		real.range(-1.0,1.5);
+/*		fruit.add("Orange");
 		fruit.add("Palm");
 		meat.add("Beef");
 		meat.add("<<Chicken>>");
 		meat.add("Duck");
 		meat.set_min(2);
-		meat.help=w->gettext("At least two choises");
+		meat.help=w->gettext("At least two choises");*/
 	}
 };
 
 
 struct hello : public master {
-	string username,realname,password;
+	std::string username,realname,password;
 	bool ok;
 	std::string msg;
 	std::list<int> numbers;
 	std::list<data> lst;
-	my_form form;
-	hello(application *w) : form(w) {}
+	a_form form;
 };
 
 };

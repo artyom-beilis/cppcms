@@ -9,6 +9,7 @@
 #include "applications_pool.h"
 #include "thread_pool.h"
 #include "url_dispatcher.h"
+#include "views_pool.h"
 #include "cppcms_error.h"
 
 #include <boost/bind.hpp>
@@ -19,6 +20,7 @@ namespace http {
 
 	struct context::data {
 		std::locale locale;
+		std::string skin;
 		http::request request;
 		std::auto_ptr<http::response> response;
 		data(context &cntx) :
@@ -33,6 +35,17 @@ context::context(intrusive_ptr<impl::cgi::connection> conn) :
 {
 	d.reset(new data(*this));
 	d->response.reset(new http::response(*this));
+	skin(service().views_pool().default_skin());
+}
+
+std::string context::skin()
+{
+	return d->skin;
+}
+
+void context::skin(std::string const &skin)
+{
+	d->skin=skin;
 }
 
 

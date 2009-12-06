@@ -14,6 +14,7 @@ namespace cppcms {
 	class url_dispatcher;
 	class applications_pool;
 	class application;
+	class base_content;
 
 	namespace locale {
 		class environment;
@@ -41,6 +42,11 @@ namespace cppcms {
 		http::request &request();
 		http::response &response();
 		url_dispatcher &dispatcher();
+
+		void render(std::string template_name,base_content &content);
+		void render(std::string skin,std::string template_name,base_content &content);
+		void render(std::string template_name,std::ostream &out,base_content &content);
+		void render(std::string skin,std::string template_name,std::ostream &out,base_content &content);
 
 		void add(application &app);
 		void add(application &app,std::string regex,int part);

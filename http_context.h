@@ -36,6 +36,9 @@ namespace cppcms {
 			void locale(std::string const &name);
 			cppcms::service &service();
 
+			std::string skin();
+			void skin(std::string const &name);
+
 			void run();
 
 			typedef enum {

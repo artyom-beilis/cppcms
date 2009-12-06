@@ -35,6 +35,7 @@ namespace impl {
 		std::auto_ptr<applications_pool> applications_pool_;
 		std::auto_ptr<thread_pool> thread_pool_;
 		std::auto_ptr<locale::generator> locale_generator_;
+		std::auto_ptr<views_pool> views_pool_;
 		std::locale default_locale_;
 
 #ifdef CPPCMS_WIN32

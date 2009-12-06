@@ -10,11 +10,11 @@
 	</form>
 	<form action="" method="post">
 	<p>
-		<% foreach widget w in form.my_set %>
+		<% foreach w in form %>
 			<% separator %><br/><% item %>
-				<% if not empty w.msg %><% w.msg %>:<% end %>
+				<% if w.has_message() %><% w.message() %>:<% end %>
 				<% form input w %>
-				<% if not w.is_valid %>:<% form error w %><% end %>
+				<% if not w.valid() %>:<% w.error_message() %><% end %>
 			<% end %>
 		<% end %>
 		<input type="submit" value="Submit" />
@@ -30,10 +30,11 @@
 		<% foreach x in numbers %>
 			<ul>
 			<% item %>
-			<li><% ngt "passed one day","passed %1% days",x using x %></li>
+			<li><% ngt "passed one day","passed {1} days",x using x %></li>
 			<% end %>
 			</ul>
 		<% end %>
 	<% end template %>
 	<% end class %>
 <% end namespace %>
+

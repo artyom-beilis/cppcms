@@ -1,7 +1,7 @@
 <% c++ #include "hello_world_view.h" %>
 <% namespace vary %>
 	<% class master uses view::master %>
-	<% template test(string &v,int p) %>
+	<% template test(std::string &v,int p) %>
 	<% foreach c in v %>
 		<% item %><% c %><% end %>
 	<% end %>

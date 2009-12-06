@@ -13,6 +13,7 @@
 #include "internal_file_server.h"
 #include "json.h"
 #include "localization.h"
+#include "views_pool.h"
 
 
 #ifdef CPPCMS_POSIX
@@ -140,6 +141,12 @@ void service::setup()
 {
 	int apps=settings().get("service.applications_pool_size",threads_no()*2);
 	impl_->applications_pool_.reset(new cppcms::applications_pool(*this,apps));
+	impl_->views_pool_.reset(new cppcms::views_pool(settings()));
+}
+
+cppcms::views_pool &service::views_pool()
+{
+	return *impl_->views_pool_;
 }
 
 

@@ -125,12 +125,12 @@ public:
 			time_stamp_ = st.st_mtime;
 
 			shared_object_.reset(new impl::shared_object(file_name,reloadable));
-			typedef void (*loader_type)(mapping_type *);
+			typedef void (*loader_type)(mapping_type &);
 			loader_type loader=reinterpret_cast<loader_type>(shared_object_->symbol("cppcms_"+name+"_get_skins"));
 			if(!loader) {
 				throw cppcms_error(file_name + " is not CppCMS loadable skin");
 			}
-			loader(&mapping_);
+			loader(mapping_);
 			return;
 		}
 		throw cppcms_error("Can't load skin " + name); 
@@ -181,26 +181,38 @@ struct views_pool::data {
 	std::vector<std::string> search_path;
 };
 
-views_pool::views_pool()
+views_pool::views_pool() :
+	d(new data())
 {
 }
 
-views_pool::views_pool(json::value const &settings)
+std::string views_pool::default_skin() const
+{
+	return d->default_skin;
+}
+
+views_pool::views_pool(json::value const &settings) :
+	d(new data())
 {
 	d->skins=static_instance().d->skins;
 	std::vector<std::string> paths=settings.get("views.paths",std::vector<std::string>());
 	d->search_path=paths;
 	std::vector<std::string> skins=settings.get("views.skins",std::vector<std::string>());
 	d->dynamic_reload= settings.get("views.auto_reload",false);
-	if(paths.empty() || skins.empty())
+	d->default_skin = settings.get<std::string>("views.default_skin","");
+	if(d->default_skin.empty() && d->skins.size()==1)
+		d->default_skin=d->skins.begin()->first;
+	if(paths.empty() || skins.empty()) {
 		return;
+	}
 	for(unsigned i=0;i<skins.size();i++) {
 		std::string name=skins[i];
 		if(d->skins.find(name)!=d->skins.end())
 			throw cppcms_error("Two skins with same name provided:" + name);
 		d->skins[name]=skin(name,paths,d->dynamic_reload);
 	}
-	d->default_skin = settings.get<std::string>("views.default_skin","");
+	if(d->default_skin.empty())
+		d->default_skin=skins[0];
 }
 
 void views_pool::render(std::string skin_name,std::string template_name,std::ostream &out,base_content &content)
@@ -240,6 +252,15 @@ void views_pool::render(std::string skin_name,std::string template_name,std::ost
 views_pool::~views_pool()
 {
 }
+
+void views_pool::add_view(std::string name,mapping_type const &mapping)
+{
+	data::skins_type::iterator p=d->skins.find(name);
+	if(p!=d->skins.end())
+		throw cppcms_error("Skin " + name + "can't be loaded twice");
+	d->skins[name]=skin(name,mapping);
+}
+
 
 namespace { // Make sure that static views pool is loaded
 	struct loader {

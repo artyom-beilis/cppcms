@@ -75,6 +75,7 @@ if(NOT DISABLE_ICONV)
 endif(NOT DISABLE_ICONV)
 
 include_directories(${CMAKE_BINARY_DIR})
+include_directories(${CMAKE_SOURCE_DIR})
 include_directories(boost_locale)
 
 set(CPPCMS_LIBRARY_SUFFIX ${CMAKE_SHARED_LIBRARY_SUFFIX})
@@ -91,7 +92,7 @@ check_cxx_source_compiles(
 	int main() { std::u16string s16; std::u32string s32; }"
 	HAVE_CPP0X_UXSTRING)
 
-Check_cxx_source_compiles(
+check_cxx_source_compiles(
 	"#include <list> 
 	int main(){std::list<int> l; auto p=l.begin();}"
 	HAVE_CPP_0X_AUTO)
@@ -257,8 +258,39 @@ if(NOT DISABLE_SHARED)
 	target_link_libraries(cppcms boost_locale)
 endif(NOT DISABLE_SHARED)
 
+find_program(PYTHON python)
+if(NOT PYTHON)
+	message(FATAL "Can't build without Python interpreter")
+endif(NOT PYTHON)
 
-add_executable(hello_world hello_world.cpp)
+
+# Templates builds
+
+add_custom_command(
+	OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/skin1.cpp
+	COMMAND ${PYTHON} ${CMAKE_CURRENT_SOURCE_DIR}/cppcms_tmpl_cc 
+		-n skin1 
+		-o ${CMAKE_CURRENT_BINARY_DIR}/skin1.cpp 
+			${CMAKE_CURRENT_SOURCE_DIR}/hello_world_skin1.tmpl 
+			${CMAKE_CURRENT_SOURCE_DIR}/hello_world_view1.tmpl
+	DEPENDS 
+		${CMAKE_CURRENT_SOURCE_DIR}/cppcms_tmpl_cc 
+		${CMAKE_CURRENT_SOURCE_DIR}/hello_world_skin1.tmpl 
+		${CMAKE_CURRENT_SOURCE_DIR}/hello_world_view1.tmpl)
+
+add_custom_command(
+	OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/skin2.cpp
+	COMMAND ${PYTHON} ${CMAKE_CURRENT_SOURCE_DIR}/cppcms_tmpl_cc 
+		-n skin2 
+		-o ${CMAKE_CURRENT_BINARY_DIR}/skin2.cpp 
+			${CMAKE_CURRENT_SOURCE_DIR}/hello_world_skin2.tmpl 
+			${CMAKE_CURRENT_SOURCE_DIR}/hello_world_view1.tmpl
+	DEPENDS 
+		${CMAKE_CURRENT_SOURCE_DIR}/cppcms_tmpl_cc 
+		${CMAKE_CURRENT_SOURCE_DIR}/hello_world_skin2.tmpl 
+		${CMAKE_CURRENT_SOURCE_DIR}/hello_world_view1.tmpl)
+
+add_executable(hello_world hello_world.cpp skin1.cpp skin2.cpp)
 target_link_libraries(hello_world ${CPPCMS_LIB})
 
 add_executable(cppcms_config_find_param cppcms_config_find_param.cpp json.cpp)

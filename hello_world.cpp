@@ -18,6 +18,8 @@
 #include <boost/bind.hpp>
 #include <fstream>
 
+#include "hello_world_view.h"
+
 
 class chat : public cppcms::application {
 public:
@@ -189,13 +191,13 @@ public:
 };
 
 
-
 class hello : public cppcms::application {
 public:
 	hello(cppcms::service &srv) : 
 		cppcms::application(srv)
 	{
 		dispatcher().assign("^/(\\d+)$",&hello::num,this,1);
+		dispatcher().assign("^/view(/(\\w+))?$",&hello::view_test,this,2);
 		dispatcher().assign("^/get$",&hello::gform,this);
 		dispatcher().assign("^/post$",&hello::pform,this);
 		dispatcher().assign("^/err$",&hello::err,this);
@@ -205,6 +207,14 @@ public:
 	}
 	~hello()
 	{
+	}
+
+	void view_test(std::string skin)
+	{
+		view::hello c;
+		if(!skin.empty())
+			context().skin(skin);
+		render("hello",c);
 	}
 
 	void devide(cppcms::locale::boundary::boundary_type type,std::string const &str,char const *name)

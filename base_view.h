@@ -13,6 +13,7 @@
 #include "hold_ptr.h"
 #include "base_content.h"
 #include "noncopyable.h"
+#include "config.h"
 
 namespace cppcms {
 
