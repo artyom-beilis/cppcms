@@ -97,7 +97,11 @@ namespace impl {
 
 	std::string shared_object::name(std::string file,std::string path)
 	{
+	#ifdef CPPCMS_LIBRARY_PREFIX
 		return path+"/"+CPPCMS_LIBRARY_PREFIX+file+CPPCMS_LIBRARY_SUFFIX;
+	#else
+		return path+"/"+file+CPPCMS_LIBRARY_SUFFIX;
+	#endif
 	}
 
 
