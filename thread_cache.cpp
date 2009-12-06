@@ -18,7 +18,7 @@ thread_cache::~thread_cache()
 	pthread_rwlock_destroy(&access_lock);
 }
 
-string *thread_cache::get(string const &key,set<string> *triggers)
+std::string const *thread_cache::get(string const &key,set<string> *triggers)
 {
 	pointer p;
 	time_t now;
@@ -65,46 +65,13 @@ string *thread_cache::get(string const &key,set<string> *triggers)
 	return &(p->second.data);
 }
 
-namespace {
-	template<typename T>
-	T unaligned(T const *p)
-	{
-		T tmp;
-		memcpy(&tmp,p,sizeof(T));
-		return tmp;
-	}
-}
 
-
-bool thread_cache::fetch_page(string const &key,string &out,bool gzip)
+bool thread_cache::fetch(string const  &key,std::string &a,set<string> &tags)
 {
 	rwlock_rdlock lock(access_lock);
-	string *r=get(key,NULL);
+	string const *r=get(key,&tags);
 	if(!r) return false;
-	size_t size=r->size();
-	size_t s;
-	char const *ptr=r->c_str();
-	if(size<sizeof(size_t) || (s=unaligned((size_t const *)ptr))>size-sizeof(size_t))
-		return false;
-	if(!gzip){
-		out.assign(ptr+sizeof(size_t),s);
-	}
-	else {
-		ptr+=s+sizeof(size_t);
-		size-=s+sizeof(size_t);
-		if(size<sizeof(size_t) || (s=unaligned((size_t const *)ptr))!=size-sizeof(size_t))
-			return false;
-		out.assign(ptr+sizeof(size_t),s);
-	}
-	return true;
-}
-
-bool thread_cache::fetch(string const  &key,archive &a,set<string> &tags)
-{
-	rwlock_rdlock lock(access_lock);
-	string *r=get(key,&tags);
-	if(!r) return false;
-	a.set(*r);
+	a = *r;
 	return true;
 }
 
@@ -150,7 +117,7 @@ void thread_cache::rise(string const &trigger)
 		write(fd,"\n",1);
 }
 
-void thread_cache::store(string const &key,set<string> const &triggers_in,time_t timeout_in,archive const &a)
+void thread_cache::store(string const &key,set<string> const &triggers_in,time_t timeout_in,std::string const &a)
 {
 	rwlock_wrlock lock(access_lock);
 	if(debug_mode)	print_all();
@@ -197,7 +164,7 @@ void thread_cache::store(string const &key,set<string> const &triggers_in,time_t
 	pair<pointer,bool> res=primary.insert(pair<string,container>(key,container()));
 	main=res.first;
 	container &cont=main->second;
-	cont.data=a.get();
+	cont.data=a;
 	lru.push_front(main);
 	cont.lru=lru.begin();
 	cont.timeout=timeout.insert(pair<time_t,pointer>(timeout_in,main));

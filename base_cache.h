@@ -3,22 +3,20 @@
 
 #include <string>
 #include <set>
-#include "archive.h"
+#include "defs.h"
+#include "refcounted.h"
 
 namespace cppcms {
 
-using namespace std;
-
-class base_cache {
-public:
-	virtual bool fetch_page(string const &key,string &output,bool gzip);
-	virtual bool fetch(string const &key,archive &a,set<string> &tags);
-	virtual void rise(string const &trigger);
-	virtual void clear();
-	virtual void store(string const &key,set<string> const &triggers,time_t timeout,archive const &a);
-	virtual void stats(unsigned &keys,unsigned &triggers);
-	virtual ~base_cache();
-};
+	class base_cache : public refcounted {
+	public:
+		virtual bool fetch(std::string const &key,std::string &a,std::set<std::string> &tags); 
+		virtual void store(std::string const &key,std::set<std::string> const &triggers,time_t timeout,std::string const &value);
+		virtual void rise(std::string const &trigger);
+		virtual void clear();
+		virtual void stats(unsigned &keys,unsigned &triggers);
+		virtual ~base_cache();
+	};
 
 }
 

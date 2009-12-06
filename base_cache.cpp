@@ -3,11 +3,8 @@ namespace cppcms {
 
 using namespace std;
 
-bool base_cache::fetch_page(string const &key,string &output,bool gzip)
-{
-	return false;
-}
-bool base_cache::fetch(string const &key,archive &a,set<string> &tags)
+
+bool base_cache::fetch(string const &key,string &a,set<string> &tags)
 {
 	return false;
 };
@@ -21,7 +18,7 @@ void base_cache::rise(string const &trigger)
 	// Nothing
 }
 
-void base_cache::store(string const &key,set<string> const &triggers,time_t timeout,archive const &a)
+void base_cache::store(string const &key,set<string> const &triggers,time_t timeout,string const &a)
 {
 	// Nothing
 }
