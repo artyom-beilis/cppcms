@@ -1,6 +1,6 @@
 #!/bin/bash 
 
-#svn export https://cppcms.svn.sourceforge.net/svnroot/cppcms/boost_locale/trunk boost_locale
+svn export https://cppcms.svn.sourceforge.net/svnroot/cppcms/boost_locale/trunk boost_locale
 
 rm -fr root
 mkdir root

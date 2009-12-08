@@ -28,7 +28,7 @@ for line in sys.stdin:
 		print '#include "localization.h"'
 	else:
 		line = line.replace('boost::locale','cppcms::locale')
-		line = line.replace('BOOST_VERSION >= 103600','0')
+		line = line.replace('BOOST_VERSION >= 103600','1')
 		line = line.replace('BOOST_LOCALE_DECL','CPPCMS_API')
 		line = line.replace('BOOST','CPPCMS')
 		print line,
