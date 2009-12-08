@@ -1,9 +1,17 @@
 #ifndef CPPCMS_SESSION_INTERFACE_H
 #define CPPCMS_SESSION_INTERFACE_H
 
-#include <boost/noncopyable.hpp>
-#include <boost/lexical_cast.hpp>
-#include <boost/shared_ptr.hpp>
+#include "config.h"
+#ifdef CPPCMS_USE_EXTERNAL_BOOST
+#   include <boost/noncopyable.hpp>
+#   include <boost/lexical_cast.hpp>
+#   include <boost/shared_ptr.hpp>
+#else // Internal Boost
+#   include <cppcms_boost/noncopyable.hpp>
+#   include <cppcms_boost/lexical_cast.hpp>
+#   include <cppcms_boost/shared_ptr.hpp>
+    namespace boost = cppcms_boost;
+#endif
 #include <string>
 #include <map>
 

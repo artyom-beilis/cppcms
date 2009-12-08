@@ -5,14 +5,26 @@
 #include "session_storage.h"
 #include "archive.h"
 #include "thread_cache.h"
-#include <boost/bind.hpp>
-#include <boost/shared_ptr.hpp>
-#include <boost/enable_shared_from_this.hpp>
+#include "config.h"
+#ifdef CPPCMS_USE_EXTERNAL_BOOST
+#   include <boost/bind.hpp>
+#   include <boost/shared_ptr.hpp>
+#   include <boost/enable_shared_from_this.hpp>
+#else // Internal Boost
+#   include <cppcms_boost/bind.hpp>
+#   include <cppcms_boost/shared_ptr.hpp>
+#   include <cppcms_boost/enable_shared_from_this.hpp>
+    namespace boost = cppcms_boost;
+#endif
 #include <ctime>
 #include <cstdlib>
 #include <pthread.h>
 #include <signal.h>
-#include <boost/date_time/posix_time/posix_time.hpp>
+#ifdef CPPCMS_USE_EXTERNAL_BOOST
+#   include <boost/date_time/posix_time/posix_time.hpp>
+#else // Internal Boost
+#   include <cppcms_boost/date_time/posix_time/posix_time.hpp>
+#endif
 
 #include "session_file_storage.h"
 #ifdef EN_SQLITE_SESSIONS

@@ -1,8 +1,15 @@
 #include "cache_interface.h"
 #include "worker_thread.h"
 #include "global_config.h"
-#include <boost/iostreams/filtering_stream.hpp>
-#include <boost/iostreams/filter/gzip.hpp>
+#include "config.h"
+#ifdef CPPCMS_USE_EXTERNAL_BOOST
+#   include <boost/iostreams/filtering_stream.hpp>
+#   include <boost/iostreams/filter/gzip.hpp>
+#else // Internal Boost
+#   include <cppcms_boost/iostreams/filtering_stream.hpp>
+#   include <cppcms_boost/iostreams/filter/gzip.hpp>
+    namespace boost = cppcms_boost;
+#endif
 #include <sstream>
 #include <iostream>
 #include "manager.h"

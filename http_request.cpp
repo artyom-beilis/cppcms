@@ -7,7 +7,13 @@
 #include "util.h"
 
 #include <stdio.h>
-#include <boost/shared_ptr.hpp>
+#include "config.h"
+#ifdef CPPCMS_USE_EXTERNAL_BOOST
+#   include <boost/shared_ptr.hpp>
+#else // Internal Boost
+#   include <cppcms_boost/shared_ptr.hpp>
+    namespace boost = cppcms_boost;
+#endif
 
 namespace cppcms { namespace http {
 

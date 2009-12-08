@@ -2,9 +2,17 @@
 #include "thread_pool.h"
 #include <list>
 #include <vector>
-#include <boost/thread.hpp>
-#include <boost/shared_ptr.hpp>
-#include <boost/bind.hpp>
+#include "config.h"
+#ifdef CPPCMS_USE_EXTERNAL_BOOST
+#   include <boost/thread.hpp>
+#   include <boost/shared_ptr.hpp>
+#   include <boost/bind.hpp>
+#else // Internal Boost
+#   include <cppcms_boost/thread.hpp>
+#   include <cppcms_boost/shared_ptr.hpp>
+#   include <cppcms_boost/bind.hpp>
+    namespace boost = cppcms_boost;
+#endif
 
 #if defined(CPPCMS_POSIX)
 #include <signal.h>

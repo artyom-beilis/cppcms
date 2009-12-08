@@ -11,7 +11,13 @@
 #include "cgi_api.h"
 #include "util.h"
 
-#include <boost/bind.hpp>
+#include "config.h"
+#ifdef CPPCMS_USE_EXTERNAL_BOOST
+#   include <boost/bind.hpp>
+#else // Internal Boost
+#   include <cppcms_boost/bind.hpp>
+    namespace boost = cppcms_boost;
+#endif
 
 
 namespace cppcms { namespace impl { namespace cgi {

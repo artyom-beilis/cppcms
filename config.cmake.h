@@ -38,6 +38,11 @@
 /* "Have C++0x std::uXXstring" */
 #cmakedefine HAVE_CPP0X_UXSTRING
 
+#ifdef HAVE_CPP0X_UXSTRING
+# define CPPCMS_HAS_CHAR16_T
+# define CPPCMS_HAS_CHAR32_T
+#endif
+
 /* "Have C++0x auto" */
 #cmakedefine HAVE_CPP_0X_AUTO
 
@@ -55,6 +60,10 @@
 
 /* "Have std::wstring" */
 #cmakedefine HAVE_STD_WSTRING
+
+#ifndef HAVE_STD_WSTRING
+# define CPPCMS_NO_STD_WSTRING
+#endif 
 
 /* "Have __sync_fetch_and_add" */
 #cmakedefine HAVE_SYNC_FETCH_AND_ADD
@@ -77,7 +86,10 @@
 /* Define to module suffix. */
 #cmakedefine CPPCMS_LIBRARY_PREFIX "${CPPCMS_LIBRARY_PREFIX}"
 
+#cmakedefine CPPCMS_USE_EXTERNAL_BOOST
+
 /* Version number of package */
 #define VERSION PACKAGE_VERSION
+
 
 #endif

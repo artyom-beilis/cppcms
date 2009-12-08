@@ -15,7 +15,13 @@
 #include <stdexcept>
 #include <stdlib.h>
 #include <set>
-#include <boost/bind.hpp>
+#include "config.h"
+#ifdef CPPCMS_USE_EXTERNAL_BOOST
+#   include <boost/bind.hpp>
+#else // Internal Boost
+#   include <cppcms_boost/bind.hpp>
+    namespace boost = cppcms_boost;
+#endif
 #include <fstream>
 
 #include "hello_world_view.h"

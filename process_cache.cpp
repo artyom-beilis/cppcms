@@ -1,5 +1,11 @@
 #include "process_cache.h"
-#include <boost/format.hpp>
+#include "config.h"
+#ifdef CPPCMS_USE_EXTERNAL_BOOST
+#   include <boost/format.hpp>
+#else // Internal Boost
+#   include <cppcms_boost/format.hpp>
+    namespace boost = cppcms_boost;
+#endif
 #include <unistd.h>
 
 #ifdef HAVE_PTHREADS_PSHARED

@@ -6,9 +6,17 @@
 #include "json.h"
 #include <set>
 #include <vector>
-#include <boost/regex.hpp>
-#include <boost/shared_ptr.hpp>
-#include <boost/thread.hpp>
+#include "config.h"
+#ifdef CPPCMS_USE_EXTERNAL_BOOST
+#   include <boost/regex.hpp>
+#   include <boost/shared_ptr.hpp>
+#   include <boost/thread.hpp>
+#else // Internal Boost
+#   include <cppcms_boost/regex.hpp>
+#   include <cppcms_boost/shared_ptr.hpp>
+#   include <cppcms_boost/thread.hpp>
+    namespace boost = cppcms_boost;
+#endif
 
 namespace cppcms {
 

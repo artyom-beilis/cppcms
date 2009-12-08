@@ -7,7 +7,13 @@
 #include "service_impl.h"
 #include "cppcms_error_category.h"
 #include <iostream>
-#include <boost/bind.hpp>
+#include "config.h"
+#ifdef CPPCMS_USE_EXTERNAL_BOOST
+#   include <boost/bind.hpp>
+#else // Internal Boost
+#   include <cppcms_boost/bind.hpp>
+    namespace boost = cppcms_boost;
+#endif
 
 namespace cppcms {
 namespace impl {

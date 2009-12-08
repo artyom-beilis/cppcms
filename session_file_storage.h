@@ -3,8 +3,15 @@
 
 #include <string>
 #include <vector>
-#include <boost/noncopyable.hpp>
-#include <boost/shared_ptr.hpp>
+#include "config.h"
+#ifdef CPPCMS_USE_EXTERNAL_BOOST
+#   include <boost/noncopyable.hpp>
+#   include <boost/shared_ptr.hpp>
+#else // Internal Boost
+#   include <cppcms_boost/noncopyable.hpp>
+#   include <cppcms_boost/shared_ptr.hpp>
+    namespace boost = cppcms_boost;
+#endif
 #include <pthread.h>
 #include "session_storage.h"
 #include "session_backend_factory.h"

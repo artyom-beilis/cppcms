@@ -2,8 +2,15 @@
 #define CPPCMS_SESSION_BACKEND_FACTORY_H
 
 #include <string>
-#include <boost/function.hpp>
-#include <boost/shared_ptr.hpp>
+#include "config.h"
+#ifdef CPPCMS_USE_EXTERNAL_BOOST
+#   include <boost/function.hpp>
+#   include <boost/shared_ptr.hpp>
+#else // Internal Boost
+#   include <cppcms_boost/function.hpp>
+#   include <cppcms_boost/shared_ptr.hpp>
+    namespace boost = cppcms_boost;
+#endif
 namespace cppcms {
 
 class session_api;

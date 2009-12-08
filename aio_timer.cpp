@@ -4,8 +4,15 @@
 #include "service.h"
 #include "service_impl.h"
 
-#include <boost/bind.hpp>
-#include <boost/date_time/posix_time/posix_time.hpp>
+#include "config.h"
+#ifdef CPPCMS_USE_EXTERNAL_BOOST
+#   include <boost/bind.hpp>
+#   include <boost/date_time/posix_time/posix_time.hpp>
+#else // Internal Boost
+#   include <cppcms_boost/bind.hpp>
+#   include <cppcms_boost/date_time/posix_time/posix_time.hpp>
+    namespace boost = cppcms_boost;
+#endif
 
 namespace cppcms { namespace aio {
 

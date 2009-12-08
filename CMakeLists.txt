@@ -1,6 +1,5 @@
 cmake_minimum_required(VERSION 2.4)
 project(cppcms)
-add_subdirectory(boost_locale/libs/locale)
 
 include(CheckFunctionExists)
 include(CheckCXXSourceCompiles)
@@ -24,14 +23,18 @@ if(WIN32 AND CMAKE_COMPILER_IS_GNUCXX AND NOT DISABLE_SHARED)
 	endif(NOT GCC_IS_GCC4)
 endif(WIN32 AND CMAKE_COMPILER_IS_GNUCXX AND NOT DISABLE_SHARED)
 
-
-find_library(BOOST_SYSTEM	boost_system-${BOOST_SUFFIX} 	NAMES boost_system 	boost_system-mt)
-find_library(BOOST_FILESYSTEM 	boost_filesystem-${BOOST_SUFFIX} NAMES boost_filesystem boost_filesystem-mt)
-find_library(BOOST_REGEX	boost_regex-${BOOST_SUFFIX} 	NAMES boost_regex 	boost_regex-mt)
-find_library(BOOST_IOSTREAMS	boost_iostreams-${BOOST_SUFFIX} NAMES boost_iostreams 	boost_iostreams-mt)
-find_library(BOOST_THREAD	boost_thread-${BOOST_SUFFIX} 	NAMES boost_thread 	boost_thread-mt)
-find_library(BOOST_DATE_TIME	boost_date_time-${BOOST_SUFFIX} NAMES boost_date_time 	boost_date_time-mt)
-find_library(BOOST_ZLIB		boost_zlib-${BOOST_SUFFIX} 	NAMES boost_zlib 	boost_zlib)
+if(NOT CPPCMS_USE_EXTERNAL_BOOST)
+	add_subdirectory(cppcms_boost)
+	include_directories(cppcms_boost)
+else(NOT CPPCMS_USE_EXTERNAL_BOOST)
+	find_library(BOOST_SYSTEM	boost_system-${BOOST_SUFFIX} 	NAMES boost_system 	boost_system-mt)
+	find_library(BOOST_FILESYSTEM 	boost_filesystem-${BOOST_SUFFIX} NAMES boost_filesystem boost_filesystem-mt)
+	find_library(BOOST_REGEX	boost_regex-${BOOST_SUFFIX} 	NAMES boost_regex 	boost_regex-mt)
+	find_library(BOOST_IOSTREAMS	boost_iostreams-${BOOST_SUFFIX} NAMES boost_iostreams 	boost_iostreams-mt)
+	find_library(BOOST_THREAD	boost_thread-${BOOST_SUFFIX} 	NAMES boost_thread 	boost_thread-mt)
+	find_library(BOOST_DATE_TIME	boost_date_time-${BOOST_SUFFIX} NAMES boost_date_time 	boost_date_time-mt)
+	find_library(BOOST_ZLIB		boost_zlib-${BOOST_SUFFIX} 	NAMES boost_zlib 	boost_zlib)
+endif(NOT CPPCMS_USE_EXTERNAL_BOOST)
 
 find_library(ICU_UC icuuc)
 find_library(ICU_DATA icudata NAMES icudt)
@@ -76,7 +79,8 @@ endif(NOT DISABLE_ICONV)
 
 include_directories(${CMAKE_BINARY_DIR})
 include_directories(${CMAKE_SOURCE_DIR})
-include_directories(boost_locale)
+include_directories(localization)
+
 
 set(CPPCMS_LIBRARY_SUFFIX ${CMAKE_SHARED_LIBRARY_SUFFIX})
 set(CPPCMS_LIBRARY_PREFIX ${CMAKE_SHARED_LIBRARY_PREFIX})
@@ -153,18 +157,37 @@ endif(${CMAKE_HOST_WIN32})
 
 
 configure_file(config.cmake.h config.h)
-if(WIN32)
-	add_definitions(-DBOOST_ALL_NO_LIB)
-	add_definitions(-DBOOST_REGEX_DYN_LINK)
-	add_definitions(-DBOOST_FILESYSTEM_DYN_LINK)
-	add_definitions(-DBOOST_SYSTEM_DYN_LINK)
-	add_definitions(-DBOOST_IOSTREAMS_DYN_LINK)
-	add_definitions(-DBOOST_THREAD_DYN_LINK)
-	add_definitions(-DBOOST_DATE_TIME_DYN_LINK)
-	add_definitions(-DBOOST_ZLIB_DYN_LINK)
-endif(WIN32)
+if(CPPCMS_USE_EXTERNAL_BOOST)
+	if(WIN32)
+		add_definitions(-DBOOST_ALL_NO_LIB)
+		add_definitions(-DBOOST_REGEX_DYN_LINK)
+		add_definitions(-DBOOST_FILESYSTEM_DYN_LINK)
+		add_definitions(-DBOOST_SYSTEM_DYN_LINK)
+		add_definitions(-DBOOST_IOSTREAMS_DYN_LINK)
+		add_definitions(-DBOOST_THREAD_DYN_LINK)
+		add_definitions(-DBOOST_DATE_TIME_DYN_LINK)
+		add_definitions(-DBOOST_ZLIB_DYN_LINK)
+	endif(WIN32)
+else(CPPCMS_USE_EXTERNAL_BOOST)
+	if(NOT DISABLE_STATIC)
+		add_definitions(-DCPPCMS_BOOST_ALL_NO_LIB)
+		add_definitions(-DCPPCMS_BOOST_ALL_DYN_LINK)
+	endif(NOT DISABLE_STATIC)
+endif(CPPCMS_USE_EXTERNAL_BOOST)
 
 set(CPPCMS_SOURCES 
+	localization/locale_src_boundary.cpp
+	localization/locale_src_codepage.cpp
+	localization/locale_src_collator.cpp
+	localization/locale_src_conversion.cpp
+	localization/locale_src_format.cpp
+	localization/locale_src_formatter.cpp
+	localization/locale_src_formatting.cpp
+	localization/locale_src_generator.cpp
+	localization/locale_src_info.cpp
+	localization/locale_src_message.cpp
+	localization/locale_src_mo_lambda.cpp
+	localization/locale_src_timezone.cpp
 	service.cpp 
 	cgi_api.cpp 
 	http_request.cpp 
@@ -216,15 +239,27 @@ foreach(ALIB ${CPPCMS_LIBS})
 	target_link_libraries(${ALIB} ${ICU_UC})
 	target_link_libraries(${ALIB} ${ICU_DATA})
 	target_link_libraries(${ALIB} ${ICU_I18N})
-	target_link_libraries(${ALIB} ${BOOST_REGEX})
-	target_link_libraries(${ALIB} ${BOOST_IOSTREAMS})
-	target_link_libraries(${ALIB} ${BOOST_DATE_TIME})
-	target_link_libraries(${ALIB} ${BOOST_THREAD})
-	target_link_libraries(${ALIB} ${BOOST_FILESYSTEM})
-	target_link_libraries(${ALIB} ${BOOST_SYSTEM})
-	if(BOOST_ZLIB)
-		target_link_libraries(${ALIB} ${BOOST_ZLIB})
-	endif(BOOST_ZLIB)
+	if(NOT CPPCMS_USE_EXTERNAL_BOOST)
+		if(DISABLE_SHARED)
+			target_link_libraries(${ALIB} boost-static)
+		else(DISABLE_SHARED)
+			target_link_libraries(${ALIB} boost)
+		endif(DISABLE_SHARED)
+	else(NOT CPPCMS_USE_EXTERNAL_BOOST)
+		target_link_libraries(${ALIB} ${ICU_UC})
+		target_link_libraries(${ALIB} ${ICU_DATA})
+		target_link_libraries(${ALIB} ${ICU_I18N})
+		target_link_libraries(${ALIB} ${BOOST_REGEX})
+		target_link_libraries(${ALIB} ${BOOST_IOSTREAMS})
+		target_link_libraries(${ALIB} ${BOOST_DATE_TIME})
+		target_link_libraries(${ALIB} ${BOOST_THREAD})
+		target_link_libraries(${ALIB} ${BOOST_FILESYSTEM})
+		target_link_libraries(${ALIB} ${BOOST_SYSTEM})
+		if(BOOST_ZLIB)
+			target_link_libraries(${ALIB} ${BOOST_ZLIB})
+		endif(BOOST_ZLIB)
+	endif(NOT CPPCMS_USE_EXTERNAL_BOOST)
+
 	if(ICONV_LIB)
 		target_link_libraries(${ALIB} ${ICONV_LIB})
 	endif(ICONV_LIB)
@@ -250,14 +285,6 @@ foreach(ALIB ${CPPCMS_LIBS})
 	endif(LIB_DL)
 endforeach(ALIB)
 
-
-if(NOT DISABLE_STATIC)
-	target_link_libraries(cppcms-static boost_locale-static)
-endif(NOT DISABLE_STATIC)
-
-if(NOT DISABLE_SHARED)
-	target_link_libraries(cppcms boost_locale)
-endif(NOT DISABLE_SHARED)
 
 find_program(PYTHON python)
 if(NOT PYTHON)
@@ -323,4 +350,5 @@ endif(WIN32 AND NOT DISABLE_SHARED)
 
 set_target_properties(${CPPCMS_LIBS} PROPERTIES CLEAN_DIRECT_OUTPUT 1)
 set_target_properties(${CPPCMS_LIBS} PROPERTIES OUTPUT_NAME "cppcms")
+
 

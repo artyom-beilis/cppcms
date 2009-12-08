@@ -10,7 +10,13 @@
 #include <stack>
 #include "utf_iterator.h"
 
-#include <boost/variant.hpp>
+#include "config.h"
+#ifdef CPPCMS_USE_EXTERNAL_BOOST
+#   include <boost/variant.hpp>
+#else // Internal Boost
+#   include <cppcms_boost/variant.hpp>
+    namespace boost = cppcms_boost;
+#endif
 
 namespace cppcms {
 namespace json {

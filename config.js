@@ -49,7 +49,7 @@
 	"views" : {
 		"default_skin" : "skin1",
 		 "paths" : [ "./" ],
-		 "skins" : [ "skin3" ],
+		 // "skins" : [ "skin3" ],
 		 "auto_reload" : true
 	},
 	"file_server" : {

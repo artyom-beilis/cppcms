@@ -1,8 +1,15 @@
 #ifndef SESSION_STORAGE_H
 #define SESSION_STORAGE_H
 
-#include <boost/noncopyable.hpp>
-#include <boost/function.hpp>
+#include "config.h"
+#ifdef CPPCMS_USE_EXTERNAL_BOOST
+#   include <boost/noncopyable.hpp>
+#   include <boost/function.hpp>
+#else // Internal Boost
+#   include <cppcms_boost/noncopyable.hpp>
+#   include <cppcms_boost/function.hpp>
+    namespace boost = cppcms_boost;
+#endif
 #include <string>
 
 namespace cppcms {

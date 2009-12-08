@@ -7,10 +7,9 @@
 #include "callback0.h"
 #include <locale>
 
-namespace boost { namespace locale { class generator; }}
 
 namespace cppcms {
-	namespace locale { using namespace boost::locale; }
+	namespace locale { class generator; }
 	namespace impl {
 		class service;
 	}

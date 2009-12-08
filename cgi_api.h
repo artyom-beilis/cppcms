@@ -5,10 +5,18 @@
 #include "refcounted.h"
 #include "intrusive_ptr.h"
 #include <vector>
-#include <boost/function.hpp>
-#include <boost/system/error_code.hpp>
+#include "config.h"
+#ifdef CPPCMS_USE_EXTERNAL_BOOST
+#   include <boost/function.hpp>
+#   include <boost/system/error_code.hpp>
+    namespace boost { namespace asio { class io_service; } }
+#else // Internal Boost
+#   include <cppcms_boost/function.hpp>
+#   include <cppcms_boost/system/error_code.hpp>
+    namespace cppcms_boost { namespace asio { class io_service; } }
+    namespace boost = cppcms_boost;
+#endif
 
-namespace boost { namespace asio { class io_service; } }
 
 
 namespace cppcms {

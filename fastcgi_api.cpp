@@ -8,7 +8,13 @@
 #include "json.h"
 #include "cstdint.h"
 #include <iostream>
-#include <boost/array.hpp>
+#include "config.h"
+#ifdef CPPCMS_USE_EXTERNAL_BOOST
+#   include <boost/array.hpp>
+#else // Internal Boost
+#   include <cppcms_boost/array.hpp>
+    namespace boost = cppcms_boost;
+#endif
 
 #if defined(CPPCMS_WIN32) && _WIN32_WINNT <= 0x0501 && !defined(BOOST_ASIO_DISABLE_IOCP)
 #define NO_CANCELIO

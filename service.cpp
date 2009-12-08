@@ -32,8 +32,15 @@
 #include <stdlib.h>
 #include <iostream>
 #include <fstream>
-#include <boost/lexical_cast.hpp>
-#include <boost/regex.hpp>
+#include "config.h"
+#ifdef CPPCMS_USE_EXTERNAL_BOOST
+#   include <boost/lexical_cast.hpp>
+#   include <boost/regex.hpp>
+#else // Internal Boost
+#   include <cppcms_boost/lexical_cast.hpp>
+#   include <cppcms_boost/regex.hpp>
+    namespace boost = cppcms_boost;
+#endif
 
 
 namespace cppcms {

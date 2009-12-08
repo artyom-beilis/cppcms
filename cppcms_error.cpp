@@ -5,7 +5,12 @@
 #include <string.h>
 
 #ifndef HAVE_STRERROR_R
-#include <boost/system/error_code.hpp>
+#ifdef CPPCMS_USE_EXTERNAL_BOOST
+#   include <boost/system/error_code.hpp>
+#else // Internal Boost
+#   include <cppcms_boost/system/error_code.hpp>
+    namespace boost = cppcms_boost;
+#endif
 #endif
 
 using namespace std;

@@ -12,7 +12,13 @@
 #  define __USE_W32_SOCKETS 1
 #endif
 
-#include <boost/asio.hpp>
+#include "config.h"
+#ifdef CPPCMS_USE_EXTERNAL_BOOST
+#   include <boost/asio.hpp>
+#else // Internal Boost
+#   include <cppcms_boost/asio.hpp>
+    namespace boost = cppcms_boost;
+#endif
 
 
 #endif

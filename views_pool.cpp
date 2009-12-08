@@ -3,8 +3,14 @@
 #include "json.h"
 #include "config.h"
 #include "cppcms_error.h"
-#include <boost/thread.hpp>
-#include <boost/format.hpp>
+#ifdef CPPCMS_USE_EXTERNAL_BOOST
+#   include <boost/thread.hpp>
+#   include <boost/format.hpp>
+#else // Internal Boost
+#   include <cppcms_boost/thread.hpp>
+#   include <cppcms_boost/format.hpp>
+    namespace boost = cppcms_boost;
+#endif
 
 #ifdef CPPCMS_WIN32
 #include <windows.h>

@@ -6,7 +6,13 @@
 #include <sqlite3.h>
 #include <pthread.h>
 #include <poll.h>
-#include <boost/lexical_cast.hpp>
+#include "config.h"
+#ifdef CPPCMS_USE_EXTERNAL_BOOST
+#   include <boost/lexical_cast.hpp>
+#else // Internal Boost
+#   include <cppcms_boost/lexical_cast.hpp>
+    namespace boost = cppcms_boost;
+#endif
 
 namespace cppcms {
 namespace storage {

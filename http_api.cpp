@@ -10,7 +10,12 @@
 #include "config.h"
 #include <iostream>
 #include <algorithm>
-#include <boost/lexical_cast.hpp>
+#ifdef CPPCMS_USE_EXTERNAL_BOOST
+#   include <boost/lexical_cast.hpp>
+#else // Internal Boost
+#   include <cppcms_boost/lexical_cast.hpp>
+    namespace boost = cppcms_boost;
+#endif
 
 //#define DEBUG_HTTP_PARSER
 

@@ -2,7 +2,13 @@
 #include "url_dispatcher.h"
 #include "application.h"
 
-#include <boost/regex.hpp>
+#include "config.h"
+#ifdef CPPCMS_USE_EXTERNAL_BOOST
+#   include <boost/regex.hpp>
+#else // Internal Boost
+#   include <cppcms_boost/regex.hpp>
+    namespace boost = cppcms_boost;
+#endif
 
 
 namespace cppcms {

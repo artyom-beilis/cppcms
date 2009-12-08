@@ -17,14 +17,27 @@
 #include <iterator>
 #include <map>
 
-#include <boost/lexical_cast.hpp>
-#include <boost/iostreams/stream.hpp>
-#include <boost/iostreams/filtering_stream.hpp>
-#include <boost/iostreams/filter/gzip.hpp>
-#include <boost/iostreams/tee.hpp>
+#ifdef CPPCMS_USE_EXTERNAL_BOOST
+#   include <boost/lexical_cast.hpp>
+#   include <boost/iostreams/stream.hpp>
+#   include <boost/iostreams/filtering_stream.hpp>
+#   include <boost/iostreams/filter/gzip.hpp>
+#   include <boost/iostreams/tee.hpp>
+#else // Internal Boost
+#   include <cppcms_boost/lexical_cast.hpp>
+#   include <cppcms_boost/iostreams/stream.hpp>
+#   include <cppcms_boost/iostreams/filtering_stream.hpp>
+#   include <cppcms_boost/iostreams/filter/gzip.hpp>
+#   include <cppcms_boost/iostreams/tee.hpp>
+    namespace boost = cppcms_boost;
+#endif
 
 #ifndef HAVE_GMTIME_R
-#include <boost/date_time/posix_time/posix_time.hpp>
+#ifdef CPPCMS_USE_EXTERNAL_BOOST
+#   include <boost/date_time/posix_time/posix_time.hpp>
+#else // Internal Boost
+#   include <cppcms_boost/date_time/posix_time/posix_time.hpp>
+#endif
 #endif
 
 namespace cppcms { namespace http {

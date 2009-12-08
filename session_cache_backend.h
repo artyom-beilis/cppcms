@@ -1,7 +1,13 @@
 #ifndef CPPCMS_SESSIONS_CACHE_BACKEND_H
 #define CPPCMS_SESSIONS_CACHE_BACKEND_H
 
-#include <boost/shared_ptr.hpp>
+#include "config.h"
+#ifdef CPPCMS_USE_EXTERNAL_BOOST
+#   include <boost/shared_ptr.hpp>
+#else // Internal Boost
+#   include <cppcms_boost/shared_ptr.hpp>
+    namespace boost = cppcms_boost;
+#endif
 #include "session_api.h"
 #include "session_backend_factory.h"
 #include "session_storage.h"

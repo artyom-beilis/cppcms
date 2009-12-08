@@ -10,7 +10,12 @@
 #include "aes_encryptor.h"
 #endif
 
-#include <boost/shared_ptr.hpp>
+#ifdef CPPCMS_USE_EXTERNAL_BOOST
+#   include <boost/shared_ptr.hpp>
+#else // Internal Boost
+#   include <cppcms_boost/shared_ptr.hpp>
+    namespace boost = cppcms_boost;
+#endif
 
 using namespace std;
 

@@ -4,7 +4,13 @@
 #include <signal.h>
 #include <stdio.h>
 #include <sys/socket.h>
-#include <boost/scoped_array.hpp>
+#include "config.h"
+#ifdef CPPCMS_USE_EXTERNAL_BOOST
+#   include <boost/scoped_array.hpp>
+#else // Internal Boost
+#   include <cppcms_boost/scoped_array.hpp>
+    namespace boost = cppcms_boost;
+#endif
 #include <sys/types.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>

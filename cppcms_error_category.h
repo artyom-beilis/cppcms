@@ -1,7 +1,13 @@
 #ifndef CPPCMS_ERROR_CATEGORY_H
 #define CPPCMS_ERROR_CATEGORY_H
 
-#include <boost/system/system_error.hpp>
+#include "config.h"
+#ifdef CPPCMS_USE_EXTERNAL_BOOST
+#   include <boost/system/system_error.hpp>
+#else // Internal Boost
+#   include <cppcms_boost/system/system_error.hpp>
+    namespace boost = cppcms_boost;
+#endif
 
 namespace cppcms {
 	namespace impl {
