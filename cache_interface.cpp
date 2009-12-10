@@ -1,18 +1,8 @@
+#define CPPCMS_SOURCE
 #include "cache_interface.h"
-#include "worker_thread.h"
-#include "global_config.h"
 #include "config.h"
-#ifdef CPPCMS_USE_EXTERNAL_BOOST
-#   include <boost/iostreams/filtering_stream.hpp>
-#   include <boost/iostreams/filter/gzip.hpp>
-#else // Internal Boost
-#   include <cppcms_boost/iostreams/filtering_stream.hpp>
-#   include <cppcms_boost/iostreams/filter/gzip.hpp>
-    namespace boost = cppcms_boost;
-#endif
 #include <sstream>
 #include <iostream>
-#include "manager.h"
 
 namespace cppcms {
 using namespace std;
@@ -36,220 +26,120 @@ namespace {
 	}
 }
 
-#ifdef CPPCMS_EMBEDDED
+struct cache_interface::data {};
 
-void deflate(string const &text,ostream &stream,long level,long length)
-{
-	throw cppcms_error("gzip compression is not supported for embedded system");
-}
-
-string deflate(string const &text,long level,long length)
-{
-	throw cppcms_error("gzip compression is not supported for embedded system");
-}
-
-
-
-bool cache_iface::fetch_page(string const &key)
-{
-	return false;
-}
-
-void cache_iface::store_page(string const &key,int timeout)
+cache_interface::cache_interface(http::context &context) :
+	context_(context)
 {
 }
 
-void cache_iface::add_trigger(string const &t)
+
+bool cache_interface::fetch_page(string const &key)
 {
-}
+	if(nocache()) return false;
 
-void cache_iface::rise(string const &t)
-{
-}
+	bool zip = context_->response().need_gzip();
 
-bool cache_iface::fetch_data(string const &key,serializable &data,bool notriggers)
-{
-	return false;
-}
-
-void cache_iface::store_data(string const &key,serializable const &data,
-			set<string> const &triggers,
-			int timeout,
-			bool notriggers)
-{
-}
-
-bool cache_iface::fetch_frame(string const &key,string &result,bool notriggers)
-{
-	return false;
-}
-
-void cache_iface::store_frame(string const &key,string const &data,
-			set<string> const &triggers,
-			int timeout,
-			bool notriggers)
-{
-}
-
-void cache_iface::clear()
-{
-}
-
-bool cache_iface::stats(unsigned &k,unsigned &t)
-{
-	return false;
-}
-
-
-#else // Normal System
-
-
-void deflate(string const &text,ostream &stream,long level,long length)
-{
-	using namespace boost::iostreams;
-	gzip_params params;
-	if(level!=-1){
-		params.level=level;
-	}
-
-	filtering_ostream zstream;
-
-	if(length!=-1){
-		zstream.push(gzip_compressor(params,length));
+	std::string tmp;
+	
+	if(caching_module->fetch_page(key,tmp,zip)) {
+		if(gzip)
+			context_->response().context_encoding("gzip");
+		context_->out().write(tmp.c_str(),tmp.size());
+		return true;
 	}
 	else {
-		zstream.push(gzip_compressor(params));
-	}
-
-	zstream.push(stream);
-	zstream<<text;
-}
-
-string deflate(string const &text,long level,long length)
-{
-	ostringstream sstream;
-	deflate(text,sstream,level,length);
-	return sstream.str();
-}
-
-
-
-bool cache_iface::fetch_page(string const &key)
-{
-	if(!cms->caching_module) return false;
-	string tmp;
-	if(cms->caching_module->fetch_page(key,tmp,cms->gzip)) {
-		cms->cout<<tmp;
-		cms->gzip_done=true;
-		return true;
-	}
-	return false;
-}
-
-void cache_iface::store_page(string const &key,int timeout)
-{
-	if(!cms->caching_module) return;
-	archive a;
-	int level=cms->app.config.get<int>("gzip.level",-1);
-	int length=cms->app.config.get<int>("gzip.buffer",-1);
-	string tmp=cms->out_buf.str();
-
-	string compr=deflate(tmp,level,length);
-	a<<tmp<<compr;
-	if(cms->gzip){
-		cms->out_buf.str("");
-		cms->cout<<compr;
-		cms->gzip_done=true;
-	}
-	cms->caching_module->store(key,triggers,deadtime(timeout),a);
-}
-
-void cache_iface::add_trigger(string const &t)
-{
-	if(!cms->caching_module) return;
-	triggers.insert(t);
-}
-
-void cache_iface::rise(string const &t)
-{
-	if(!cms->caching_module) return;
-	cms->caching_module->rise(t);
-}
-
-bool cache_iface::fetch_data(string const &key,serializable &data,bool notriggers)
-{
-	if(!cms->caching_module) return false;
-	archive a;
-	set<string> new_trig;
-	if(cms->caching_module->fetch(key,a,new_trig)) {
-		data.load(a);
-		if(!notriggers){
-			triggers.insert(new_trig.begin(),new_trig.end());
-		}
-		return true;
-	}
-	return false;
-}
-
-void cache_iface::store_data(string const &key,serializable const &data,
-			set<string> const &triggers,
-			int timeout,
-			bool notriggers)
-{
-	if(!cms->caching_module) return;
-	archive a;
-	data.save(a);
-	if(!notriggers) {
-		this->triggers.insert(triggers.begin(),triggers.end());
-		this->triggers.insert(key);
-	}
-	cms->caching_module->store(key,triggers,deadtime(timeout),a);
-}
-
-bool cache_iface::fetch_frame(string const &key,string &result,bool notriggers)
-{
-	if(!cms->caching_module) return false;
-	archive a;
-	set<string> new_trig;
-	if(cms->caching_module->fetch(key,a,new_trig)) {
-		a>>result;
-		if(!notriggers)
-			triggers.insert(new_trig.begin(),new_trig.end());
-		return true;
-	}
-	return false;
-}
-
-void cache_iface::store_frame(string const &key,string const &data,
-			set<string> const &triggers,
-			int timeout,
-			bool notriggers)
-{
-	if(!cms->caching_module) return;
-	archive a;
-	a<<data;
-
-	if(!notriggers) {
-		this->triggers.insert(triggers.begin(),triggers.end());
-		this->triggers.insert(key);
-	}
-	cms->caching_module->store(key,triggers,deadtime(timeout),a);
-}
-
-void cache_iface::clear()
-{
-	if(cms->caching_module)
-		cms->caching_module->clear();
-}
-
-bool cache_iface::stats(unsigned &k,unsigned &t)
-{
-	if(!cms->caching_module)
+		context_->response().copy_to_cache();	
 		return false;
-	cms->caching_module->stats(k,t);
+	}
+}
+
+void cache_interface::store_page(string const &key,int timeout)
+{
+	if(nocache()) return;
+
+	context_->response().finalize();
+	bool zip = context_->response().need_gzip();
+	cms->caching_module->store_page(key,context->response().copied_data(),triggers_,deadtime(timeout),zip)
+}
+
+void cache_interface::store_frame(std::string const &key,
+				 std::string const &frame,
+				 int timeout,
+				 bool notriggers=false)
+{
+	store_frame(key,frame,set<std::string>(),timeout,notriggers);
+}
+
+void cache_interface::nocache()
+{
+	return caching_module_.get()!=0;
+}
+
+void cache_interface::has_cache()
+{
+	return !nocache();
+}
+
+void cache_interface::add_trigger(string const &t)
+{
+	if(nocache()) return false;
+	triggers_.insert(t);
+}
+
+void cache_interface::rise(string const &t)
+{
+	if(nocache()) return;
+	caching_module_->rise(t);
+}
+
+bool cache_interface::fetch_frame(string const &key,string &result,bool notriggers)
+{
+	return fetch(key,result,notriggers);
+}
+
+bool cache_interface::fetch(string const &key,string &result,bool notriggers)
+{
+	if(nocache()) return false;
+	set<string> new_trig;
+	if(caching_module_->fetch(key,result,new_trig)) {
+		if(!notriggers)
+			triggers_.insert(new_trig.begin(),new_trig.end());
+		return true;
+	}
+	return false;
+}
+
+void cache_interface::store(string const &key,string const &data,
+			set<string> const &triggers,
+			int timeout,
+			bool notriggers)
+{
+	if(nocache()) return;
+	if(!notriggers) {
+		this->triggers_.insert(triggers.begin(),triggers.end());
+		this->triggers_.insert(key);
+	}
+	cache_module_->store(key,triggers,deadtime(timeout),data);
+}
+
+void cache_interface::clear()
+{
+	if(nocache()) return;
+	caching_module_->clear();
+}
+
+bool cache_interface::stats(unsigned &k,unsigned &t)
+{
+	if(nocache()) return false;
+	caching_module_->stats(k,t);
 	return true;
 }
 
-#endif
+void cache_interface::reset()
+{
+	triggers_.clear();
+}
+
 
 } // End of namespace cppcms
