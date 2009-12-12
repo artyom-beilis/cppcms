@@ -1,26 +1,63 @@
+#define CPPCMS_SOURCE
 #include "config.h"
-
-#if !defined(CPPCMS_EMBEDDED) || defined(CPPCMS_EMBEDDED_THREAD)
-
 #include "thread_cache.h"
 #ifdef CPPCMS_USE_EXTERNAL_BOOST
+#   include <boost/thread.hpp>
 #   include <boost/format.hpp>
 #else // Internal Boost
+#   include <cppcms_boost/thread.hpp>
 #   include <cppcms_boost/format.hpp>
     namespace boost = cppcms_boost;
 #endif
-#include <unistd.h>
-#include "posix_mutex.h"
 
-using boost::format;
-using boost::str;
+using namespace std;
 
 namespace cppcms {
+namespace impl {
+
+class thread_cache : public base_cache {
+	boost::mutex lru_mutex;
+	boost::shared_mutex access_lock;
+	struct container {
+		string data;
+		typedef std::map<string,container>::iterator pointer;
+		list<pointer>::iterator lru;
+		list<multimap<string,pointer>::iterator> triggers;
+		multimap<time_t,pointer>::iterator timeout;
+	};
+	typedef container::pointer pointer;
+	std::map<string,container> primary;
+	multimap<string,pointer> triggers;
+	typedef multimap<string,pointer>::iterator triggers_ptr;
+	multimap<time_t,pointer> timeout;
+	typedef multimap<time_t,pointer>::iterator timeout_ptr;
+	list<pointer> lru;
+	typedef list<pointer>::iterator lru_ptr;
+	unsigned limit;
+
+	string const *get(string const &key,set<string> *triggers);
+	void delete_node(pointer p);
+	void print_all();
+	bool debug_mode;
+	int fd;
+
+public:
+	void set_debug_mode(int fd) { debug_mode=true; this->fd=fd; };
+	thread_cache(unsigned pages=0) : limit(pages) {
+		debug_mode=false;
+	};
+	void set_size(unsigned l) { limit=l; };
+	virtual bool fetch(string const &key,string &a,std::set<std::string> *tags);
+	virtual void rise(string const &trigger);
+	virtual void clear();
+	virtual void stats(unsigned &keys,unsigned &triggers);
+	virtual void store(string const &key,std::string const &a,set<string> const &triggers,time_t timeout);
+	virtual ~thread_cache();
+}; // thread cache
+
 
 thread_cache::~thread_cache()
 {
-	pthread_mutex_destroy(&lru_mutex);
-	pthread_rwlock_destroy(&access_lock);
 }
 
 std::string const *thread_cache::get(string const &key,set<string> *triggers)
@@ -50,13 +87,13 @@ std::string const *thread_cache::get(string const &key,set<string> *triggers)
 		}
 	}
 	{
-		mutex_lock lock(lru_mutex);
+		boost::unique_lock<boost::mutex> lock(lru_mutex);
 		lru.erase(p->second.lru);
 		lru.push_front(p);
 		p->second.lru=lru.begin();
 	}
 	if(debug_mode){
-		string res=str(boost::format("Fetched [%1%] triggers:") % key);
+		string res=(boost::format("Fetched [%1%] triggers:") % key).str();
 		list<triggers_ptr>::iterator tp;
 		for(tp=p->second.triggers.begin();
 			tp!=p->second.triggers.end();tp++)
@@ -71,10 +108,10 @@ std::string const *thread_cache::get(string const &key,set<string> *triggers)
 }
 
 
-bool thread_cache::fetch(string const  &key,std::string &a,set<string> &tags)
+bool thread_cache::fetch(string const &key,std::string &a,set<string> *tags)
 {
-	rwlock_rdlock lock(access_lock);
-	string const *r=get(key,&tags);
+	boost::shared_lock<boost::shared_mutex> lock(access_lock);
+	string const *r=get(key,tags);
 	if(!r) return false;
 	a = *r;
 	return true;
@@ -82,7 +119,7 @@ bool thread_cache::fetch(string const  &key,std::string &a,set<string> &tags)
 
 void thread_cache::clear()
 {
-	rwlock_wrlock lock(access_lock);
+	boost::unique_lock<boost::shared_mutex> lock(access_lock);
 	timeout.clear();
 	lru.clear();
 	primary.clear();
@@ -90,14 +127,14 @@ void thread_cache::clear()
 }
 void thread_cache::stats(unsigned &keys,unsigned &triggers)
 {
-	rwlock_rdlock lock(access_lock);
+	boost::shared_lock<boost::shared_mutex> lock(access_lock);
 	keys=primary.size();
 	triggers=this->triggers.size();
 }
 
 void thread_cache::rise(string const &trigger)
 {
-	rwlock_wrlock lock(access_lock);
+	boost::unique_lock<boost::shared_mutex> lock(access_lock);
 	if(debug_mode)	print_all();
 	pair<triggers_ptr,triggers_ptr> range=triggers.equal_range(trigger);
 	triggers_ptr p;
@@ -122,9 +159,9 @@ void thread_cache::rise(string const &trigger)
 		write(fd,"\n",1);
 }
 
-void thread_cache::store(string const &key,set<string> const &triggers_in,time_t timeout_in,std::string const &a)
+void thread_cache::store(string const &key,std::string const &a,set<string> const &triggers_in,time_t timeout_in)
 {
-	rwlock_wrlock lock(access_lock);
+	boost::unique_lock<boost::shared_mutex> lock(access_lock);
 	if(debug_mode)	print_all();
 	pointer main;
 	if(debug_mode) {
@@ -232,8 +269,14 @@ void thread_cache::print_all()
 	write(fd,res.c_str(),res.size());
 }
 
-};
+intrusive_ptr<base_cache> thread_cache_factory(unsigned items)
+{
+	return new thread_cache(items);
+}
 
-#endif 
+
+} // impl 
+} // cppcms
+
 
 

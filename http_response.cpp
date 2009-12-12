@@ -91,7 +91,8 @@ response::response(context &context) :
 	io_mode_(normal),
 	disable_compression_(0),
 	ostream_requested_(0),
-	copy_to_cache_(0)
+	copy_to_cache_(0),
+	finalized_(0)
 {
 	set_content_header("text/html");
 	if(context_.settings().get("server.disable_xpowered_by",false)==0) {
@@ -145,8 +146,11 @@ void response::set_header(std::string const &name,std::string const &value)
 
 void response::finalize()
 {
-	d->filter.reset();
-	d->output<<std::flush;
+	if(!finalized_) {
+		out()<<std::flush;
+		d->filter.reset();
+		finalized_=1;
+	}
 }
 
 std::string response::get_header(std::string const &name)
@@ -207,10 +211,16 @@ void response::write_http_headers(std::ostream &out)
 }
 
 
-void response::copy_to_cache(std::string const &key)
+void response::copy_to_cache()
 {
 	copy_to_cache_=1;
-	cache_key_=key;
+}
+
+std::string response::copied_data()
+{
+	if(!copy_to_cache_ || !ostream_requested_)
+		return std::string();
+	return d->cached.str();	
 }
 
 std::ostream &response::out()
@@ -219,6 +229,8 @@ std::ostream &response::out()
 
 	if(ostream_requested_)
 		return *stream_;
+	if(finalized_)
+		throw cppcms_error("Request for output stream for finalized request is illegal");
 	
 	ostream_requested_=1;
 

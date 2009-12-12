@@ -16,6 +16,7 @@ namespace cppcms {
 
 	class applications_pool;
 	class thread_pool;
+	class cache_pool;
 	class views_pool;
 	namespace json {
 		class value;
@@ -31,10 +32,12 @@ namespace cppcms {
 		void run();
 		void shutdown();
 
+		json::value const &settings();
+		
 		cppcms::applications_pool &applications_pool();
 		cppcms::thread_pool &thread_pool();
-		json::value const &settings();
 		cppcms::views_pool &views_pool();
+		cppcms::cache_pool &cache_pool();
 
 		locale::generator const &generator();
 		std::locale locale();

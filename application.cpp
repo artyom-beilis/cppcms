@@ -185,11 +185,15 @@ void application::render(std::string skin,std::string template_name,std::ostream
 	service().views_pool().render(skin,template_name,out,content);
 }
 
+cache_interface &application::cache()
+{
+	return context().cache();
+}
+
 
 void application::recycle()
 {
 	if(root()->d->conn) {
-		response().out() << std::flush;
 		response().finalize();
 		context().async_complete_response();
 	}

@@ -1,5 +1,4 @@
 #define CPPCMS_SOURCE
-
 #include "cgi_api.h"
 #include "service.h"
 #include "http_context.h"
@@ -10,6 +9,7 @@
 #include "thread_pool.h"
 #include "url_dispatcher.h"
 #include "views_pool.h"
+#include "cache_interface.h"
 #include "cppcms_error.h"
 
 #include "config.h"
@@ -29,6 +29,7 @@ namespace http {
 		std::string skin;
 		http::request request;
 		std::auto_ptr<http::response> response;
+		std::auto_ptr<cache_interface> cache;
 		data(context &cntx) :
 			locale(cntx.connection().service().locale()),
 			request(cntx.connection())
@@ -42,11 +43,17 @@ context::context(intrusive_ptr<impl::cgi::connection> conn) :
 	d.reset(new data(*this));
 	d->response.reset(new http::response(*this));
 	skin(service().views_pool().default_skin());
+	d->cache.reset(new cache_interface(*this));
 }
 
 std::string context::skin()
 {
 	return d->skin;
+}
+
+cache_interface &context::cache()
+{
+	return *d->cache;
 }
 
 void context::skin(std::string const &skin)

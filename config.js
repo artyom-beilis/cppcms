@@ -26,6 +26,7 @@
 	},
 	"gzip" : {
 		"enable" : true, // Default true
+		//"enable" : false, // Default true
 		// "level" : 1,
 		// "buffer" : 4096
 	},
@@ -51,6 +52,11 @@
 		 "paths" : [ "./" ],
 		 // "skins" : [ "skin3" ],
 		 "auto_reload" : true
+	},
+	"cache" : {
+		"backend" : "threaded",
+		"limit" : 100, // items
+		"memsize" : 64,  // KBs
 	},
 	"file_server" : {
 		"enable" : true,

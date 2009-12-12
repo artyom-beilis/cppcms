@@ -7,10 +7,19 @@
 #include "defs.h"
 #include "noncopyable.h"
 #include "intrusive_ptr.h"
+#include "hold_ptr.h"
 
 namespace cppcms {
 
-	class base_cache;
+	namespace impl {
+		class base_cache;
+	}
+	namespace http {
+		class context;
+	};
+
+	template<typename Object>
+	struct serialization_traits;
 
 	class CPPCMS_API cache_interface : public util::noncopyable {
 	public:
@@ -21,8 +30,11 @@ namespace cppcms {
 		void rise(std::string const &trigger);
 		void add_trigger(std::string const &trigger);
 		void clear();
+		void reset();
 		bool stats(unsigned &keys,unsigned &triggers);
+		
 		bool has_cache();
+		bool nocache();
 
 
 		bool fetch_page(std::string const &key);
@@ -37,7 +49,7 @@ namespace cppcms {
 				 bool notriggers=false);
 
 		void store_frame(std::string const &key,
-				 string const &frame,
+				 std::string const &frame,
 				 int timeout,
 				 bool notriggers=false);
 
@@ -64,26 +76,30 @@ namespace cppcms {
 		template<typename Serializable>
 		void store_data(std::string const &key,Serializable const &data,int timeout,bool notriggers=false)
 		{
-			store_data<Serializable>(key,data,set<std::string>(),timeout,notriggers);
+			store_data<Serializable>(key,data,std::set<std::string>(),timeout,notriggers);
 		}
 
 	private:
 
+
 		void store(	std::string const &key,
-				char const *buffer,
-				size_t size,
+				std::string const &data,
 				std::set<std::string> const &triggers,
 				int timeout,
 				bool notriggers);
 
 		bool fetch(	std::string const &key,
 				std::string &buffer,
-				bool notriggers)
+				bool notriggers);
 
 		struct data;
 		util::hold_ptr<data> d;
+		http::context *context_;
 		std::set<std::string> triggers_;
-		intrusive_ptr<base_cache> cache_module_;
+		intrusive_ptr<impl::base_cache> cache_module_;
+
+		uint32_t page_compression_used_ : 1;
+		uint32_t reserved : 31;
 	};
 
 

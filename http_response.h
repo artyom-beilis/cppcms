@@ -10,11 +10,13 @@
 #include "cstdint.h"
 
 namespace cppcms {
+class cache_interface;
 namespace impl { namespace cgi { class connection;  }}
 namespace http {
 
 	class context;
 	class cookie;
+
 	class CPPCMS_API response : public util::noncopyable {
 	public:
 		// RFC 2616 sec. 6.1.1
@@ -120,7 +122,6 @@ namespace http {
 		io_mode_type io_mode();
 		void io_mode(io_mode_type);
 		std::ostream &out();
-		void copy_to_cache(std::string const &key);
 
 		static std::string make_http_time(time_t);
 		static char const *status_to_string(int status);
@@ -132,10 +133,14 @@ namespace http {
 		~response();
 	private:
 		friend class impl::cgi::connection;
+		friend class ::cppcms::cache_interface;
+
+		void copy_to_cache();
+		std::string copied_data();
+		bool need_gzip();
 
 		std::pair<char const *,size_t> output();
 
-		bool need_gzip();
 		void write_http_headers(std::ostream &);
 		std::string get_async_chunk();
 
@@ -145,12 +150,12 @@ namespace http {
 		context &context_;
 		std::ostream *stream_;
 		io_mode_type io_mode_;
-		std::string cache_key_;
 
 		uint32_t disable_compression_ : 1;
 		uint32_t ostream_requested_ : 1;
 		uint32_t copy_to_cache_ : 1;
-		uint32_t reserved_ : 29;
+		uint32_t finalized_ : 1;
+		uint32_t reserved_ : 28;
 	};
 
 } /* http */

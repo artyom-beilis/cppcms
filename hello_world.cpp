@@ -11,6 +11,7 @@
 #include "aio_timer.h"
 #include "intrusive_ptr.h"
 #include "form.h"
+#include "cache_interface.h"
 #include <sstream>
 #include <stdexcept>
 #include <stdlib.h>
@@ -209,10 +210,22 @@ public:
 		dispatcher().assign("^/err$",&hello::err,this);
 		dispatcher().assign("^/forward$",&hello::forward,this);
 		dispatcher().assign("^/form$",&hello::form,this);
+		dispatcher().assign("^/cache/?$",&hello::cached,this);
 		dispatcher().assign(".*",&hello::hello_world,this);
 	}
 	~hello()
 	{
+	}
+
+	void cached()
+	{
+		if(cache().fetch_page("test"))
+			return;
+
+		response().out() <<
+			"<html><body>Time :" << cppcms::locale::format("{1,time=f}") % time(0) << "</body></html>\n";
+
+		cache().store_page("test",10);
 	}
 
 	void view_test(std::string skin)

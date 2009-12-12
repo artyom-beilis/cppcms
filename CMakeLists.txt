@@ -214,7 +214,11 @@ set(CPPCMS_SOURCES
 	encoding.cpp 
 	regex.cpp
 	form.cpp 
-	filters.cpp)
+	filters.cpp
+	cache_pool.cpp
+	cache_interface.cpp
+	thread_cache.cpp
+)
 
 
 
