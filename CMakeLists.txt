@@ -218,6 +218,7 @@ set(CPPCMS_SOURCES
 	cache_pool.cpp
 	cache_interface.cpp
 	thread_cache.cpp
+	connection_forwarder.cpp
 )
 
 

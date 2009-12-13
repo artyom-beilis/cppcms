@@ -2,6 +2,7 @@
 // Extended JSON format, "//" like comments are allowed
 
 {
+	"id" : 1,
 	// Service description
 	"service" : {
 		"procs" : 0,
@@ -9,8 +10,20 @@
 		"api" : "http",
 		"port" : 8080,
 	//	"ip" : "0.0.0.0"
-		"ip" : "127.0.0.1"
+		"ip" : "127.0.0.1",
 		// "socket" : "/tmp/scgi.socket"
+		"nodes" : [
+			{
+				"id" : 1,
+				"ip" : "127.0.0.1",
+				"control_ports" : [ 8031 ] // one per forked process
+			},
+			{
+				"id" : 2,
+				"ip" : "127.0.0.1",
+				"control_ports" : [ 8032 ]  //
+			}
+		]
 	},
 	"http" : {
 		"proxy" : {

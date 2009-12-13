@@ -236,7 +236,7 @@ std::ostream &response::out()
 
 	std::ostream *real_sink = 0;
 
-	if(io_mode_ == asynchronous) 
+	if(io_mode_ == asynchronous || io_mode_ == asynchronous_raw) 
 		real_sink = &d->buffered;
 	else 
 		real_sink = &d->output;
@@ -249,7 +249,8 @@ std::ostream &response::out()
 	}
 
 	// Now we shoulde write headers -- before comrpession
-	write_http_headers(*real_sink);
+	if(io_mode_ != raw && io_mode_ != asynchronous_raw)
+		write_http_headers(*real_sink);
 	
 	if(gzip) {
 		gzip_params params;

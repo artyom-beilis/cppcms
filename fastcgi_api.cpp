@@ -11,13 +11,15 @@
 #include "config.h"
 #ifdef CPPCMS_USE_EXTERNAL_BOOST
 #   include <boost/array.hpp>
+#   if defined(CPPCMS_WIN32) && _WIN32_WINNT <= 0x0501 && !defined(BOOST_ASIO_DISABLE_IOCP)
+#   define NO_CANCELIO
+#   endif
 #else // Internal Boost
 #   include <cppcms_boost/array.hpp>
     namespace boost = cppcms_boost;
-#endif
-
-#if defined(CPPCMS_WIN32) && _WIN32_WINNT <= 0x0501 && !defined(BOOST_ASIO_DISABLE_IOCP)
-#define NO_CANCELIO
+#   if defined(CPPCMS_WIN32) && _WIN32_WINNT <= 0x0501 && !defined(CPPCMS_BOOST_ASIO_DISABLE_IOCP)
+#   define NO_CANCELIO
+#   endif
 #endif
 
 
@@ -60,6 +62,10 @@ namespace cgi {
 			if(p==env_.end())
 				return std::string();
 			return p->second;
+		}
+		virtual std::map<std::string,std::string> const &getenv()
+		{
+			return env_;
 		}
 		virtual void async_read_some(void *p,size_t s,io_handler const &h)
 		{

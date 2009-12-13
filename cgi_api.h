@@ -5,6 +5,7 @@
 #include "refcounted.h"
 #include "intrusive_ptr.h"
 #include <vector>
+#include <map>
 #include "config.h"
 #ifdef CPPCMS_USE_EXTERNAL_BOOST
 #   include <boost/function.hpp>
@@ -62,6 +63,7 @@ namespace cgi {
 		void aync_wait_for_close_by_peer(callback const &on_eof);
 
 		virtual std::string getenv(std::string const &key) = 0;
+		virtual std::map<std::string,std::string> const &getenv() = 0;
 		size_t write(void const *data,size_t n);
 		bool is_reuseable();
 	

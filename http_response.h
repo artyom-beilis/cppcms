@@ -65,9 +65,13 @@ namespace http {
 		// synchronous io
 			normal, // write request, use buffering, possible compression,
 			nogzip, // as normal but disable gzip
+			raw,    // user writes its own headers to stream directly
 			asynchronous,
 				// the data is buffered and never transferred
 				// untill it is requested explicitly
+			asynchronous_raw
+				// the data is buffered and nevet transferred
+				// untill it is requested explicitly, headers are not written
 
 		} io_mode_type;
 

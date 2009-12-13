@@ -135,6 +135,10 @@ namespace cgi {
 				return std::string();
 			return p->second;
 		}
+		virtual std::map<std::string,std::string> const &getenv()
+		{
+			return env_;
+		}
 		virtual void async_read_some(void *p,size_t s,io_handler const &h)
 		{
 			if(input_body_ptr_==input_body_.size()) {
