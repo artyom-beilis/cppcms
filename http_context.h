@@ -15,6 +15,7 @@ namespace cppcms {
 	class service;
 	class application;
 	class cache_interface;
+	class session_interface;
 	namespace json { class value; }
 	namespace impl { namespace cgi { class connection; } }
 
@@ -33,6 +34,7 @@ namespace cppcms {
 			http::response &response();
 			json::value const &settings();
 			cache_interface &cache();
+			session_interface &session();
 			std::locale locale();
 			void locale(std::locale const &new_locale);
 			void locale(std::string const &name);

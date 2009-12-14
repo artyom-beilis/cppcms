@@ -24,6 +24,7 @@ class CPPCMS_API session_interface : private util::noncopyable {
 public:
 
 	session_interface(http::context &);
+	~session_interface();
 
 	bool is_set(std::string const &key);
 	void erase(std::string const &key);

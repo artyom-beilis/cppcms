@@ -5,6 +5,7 @@
 #include "defs.h"
 #include "hold_ptr.h"
 #include "intrusive_ptr.h"
+#include <memory>
 
 namespace cppcms {
 namespace sessions {
@@ -16,7 +17,6 @@ class encryptor;
 
 class CPPCMS_API session_dual : public session_api {
 public:
-	
 	session_dual(	std::auto_ptr<encryptor> enc,
 			intrusive_ptr<session_server_storage> storage,
 			size_t data_size_limit);

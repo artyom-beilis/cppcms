@@ -1,5 +1,6 @@
 #define CPPCMS_SOURCE
 #include "session_interface.h"
+#include "session_pool.h"
 #include "session_api.h"
 #include "util.h"
 #include "http_context.h"
@@ -11,6 +12,7 @@
 #include "json.h"
 
 #include <sstream>
+#include "string.h"
 
 using namespace std;
 
@@ -50,7 +52,11 @@ session_interface::session_interface(http::context &context) :
 		throw cppcms_error("Unsupported `session.expire' type `"+s_how+"'");
 	}
 
-	storage_=context_->service().session_storage_pool().get();
+	storage_=context_->service().session_pool().get();
+}
+
+session_interface::~session_interface()
+{
 }
 
 bool session_interface::load()
@@ -64,7 +70,7 @@ bool session_interface::load()
 	string ar;
 	saved_=false;
 	on_server_=false;
-	if(!storage_->load(this,ar,timeout_in_)) {
+	if(!storage_->load(*this,ar,timeout_in_)) {
 		return false;
 	}
 	load_data(data_,ar);
@@ -188,7 +194,7 @@ void session_interface::save()
 	new_session_  = data_copy_.empty() && !data_.empty();
 	if(data_.empty()) {
 		if(get_session_cookie()!="")
-			storage_->clear(this);
+			storage_->clear(*this);
 		update_exposed();
 		return;
 	}
@@ -211,7 +217,7 @@ void session_interface::save()
 	save_data(data_,ar);
 	
 	temp_cookie_.clear();
-	storage_->save(this,ar,session_age(),new_session_,on_server_);
+	storage_->save(*this,ar,session_age(),new_session_,on_server_);
 	set_session_cookie(cookie_age(),temp_cookie_);
 	temp_cookie_.clear();
 

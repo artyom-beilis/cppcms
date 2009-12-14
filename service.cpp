@@ -15,6 +15,7 @@
 #include "json.h"
 #include "localization.h"
 #include "views_pool.h"
+#include "session_pool.h"
 
 
 #ifdef CPPCMS_POSIX
@@ -151,6 +152,12 @@ void service::setup()
 	impl_->applications_pool_.reset(new cppcms::applications_pool(*this,apps));
 	impl_->views_pool_.reset(new cppcms::views_pool(settings()));
 	impl_->cache_pool_.reset(new cppcms::cache_pool(settings()));
+	impl_->session_pool_.reset(new cppcms::session_pool(*this));
+}
+
+cppcms::session_pool &service::session_pool()
+{
+	return *impl_->session_pool_;
 }
 
 cppcms::cache_pool &service::cache_pool()

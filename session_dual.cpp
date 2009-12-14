@@ -18,6 +18,10 @@ session_dual::session_dual(std::auto_ptr<encryptor> enc,intrusive_ptr<session_se
 {
 }
 
+session_dual::~session_dual()
+{
+}
+
 void session_dual::save(session_interface &session,string const &data,time_t timeout,bool isnew,bool on_server)
 {
 	if(on_server || data.size() > data_size_limit_) {

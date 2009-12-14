@@ -10,6 +10,7 @@ namespace cppcms {
 class service;
 class applications_pool;
 class thread_pool;
+class session_pool;
 
 namespace impl {
 	namespace cgi {
@@ -37,6 +38,7 @@ namespace impl {
 		std::auto_ptr<locale::generator> locale_generator_;
 		std::auto_ptr<views_pool> views_pool_;
 		std::auto_ptr<cache_pool> cache_pool_;
+		std::auto_ptr<session_pool> session_pool_;
 		std::locale default_locale_;
 
 #ifdef CPPCMS_WIN32

@@ -58,6 +58,9 @@
 /* "Enable ICONV support" */
 #cmakedefine HAVE_ICONV
 
+/* "Enable GNU GCrypt library */
+#cmakedefine HAVE_GCRYPT
+
 /* "Have std::wstring" */
 #cmakedefine HAVE_STD_WSTRING
 

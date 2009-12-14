@@ -219,9 +219,24 @@ set(CPPCMS_SOURCES
 	cache_interface.cpp
 	thread_cache.cpp
 	connection_forwarder.cpp
+	session_pool.cpp
+	base_encryptor.cpp
+	hmac_encryptor.cpp
+	md5.cpp
+	session_cookies.cpp
+	session_dual.cpp
+	session_sid.cpp
+	session_interface.cpp
 )
 
+find_library(LIB_GCRYPT gcrypt)
 
+if(LIB_GCRYPT)
+	set(CPPCMS_SOURCES ${CPPCMS_SOURCES} aes_encryptor.cpp)
+	set(HAVE_GCRYPT)
+Else(LIB_GCRYPT)
+	message("GNU Gcrypt library not found, disabling aes_encryptor")
+endif(LIB_GCRYPT)
 
 if(NOT DISABLE_SHARED)
 	add_library(cppcms SHARED ${CPPCMS_SOURCES})
@@ -265,6 +280,10 @@ foreach(ALIB ${CPPCMS_LIBS})
 		endif(BOOST_ZLIB)
 	endif(NOT CPPCMS_USE_EXTERNAL_BOOST)
 
+	if(LIB_GCRYPT)
+		target_link_libraries(${ALIB} ${LIB_GCRYPT})
+	endif(LIB_GCRYPT)
+	
 	if(ICONV_LIB)
 		target_link_libraries(${ALIB} ${ICONV_LIB})
 	endif(ICONV_LIB)

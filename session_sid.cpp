@@ -73,6 +73,19 @@ namespace impl {
 	};
 } // namespace impl
 
+struct session_sid::data {};
+
+session_sid::session_sid(intrusive_ptr<session_server_storage> st) :
+	sid_(new impl::sid_generator()),
+	storage_(st)
+{
+}
+
+session_sid::~session_sid()
+{
+}
+
+
 bool session_sid::valid_sid(std::string const &cookie,std::string &id)
 {
 	if(cookie.size()!=33 || cookie[0]!='I')

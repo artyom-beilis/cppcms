@@ -10,6 +10,7 @@
 #include "url_dispatcher.h"
 #include "views_pool.h"
 #include "cache_interface.h"
+#include "session_interface.h"
 #include "cppcms_error.h"
 
 #include "config.h"
@@ -30,6 +31,7 @@ namespace http {
 		http::request request;
 		std::auto_ptr<http::response> response;
 		std::auto_ptr<cache_interface> cache;
+		std::auto_ptr<session_interface> session;
 		data(context &cntx) :
 			locale(cntx.connection().service().locale()),
 			request(cntx.connection())
@@ -44,6 +46,7 @@ context::context(intrusive_ptr<impl::cgi::connection> conn) :
 	d->response.reset(new http::response(*this));
 	skin(service().views_pool().default_skin());
 	d->cache.reset(new cache_interface(*this));
+	d->session.reset(new session_interface(*this));
 }
 
 std::string context::skin()
