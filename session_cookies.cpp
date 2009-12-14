@@ -1,96 +1,55 @@
-#include "config.h"
-
-#include "session_interface.h"
+#define CPPCMS_SOURCE
 #include "session_cookies.h"
-#include "hmac_encryptor.h"
-#include "worker_thread.h"
-#include "manager.h"
-#include "session_backend_factory.h"
-#ifdef EN_ENCR_SESSIONS
-#include "aes_encryptor.h"
-#endif
+#include "cppcms_error.h"
+#include "session_interface.h"
 
-#ifdef CPPCMS_USE_EXTERNAL_BOOST
-#   include <boost/shared_ptr.hpp>
-#else // Internal Boost
-#   include <cppcms_boost/shared_ptr.hpp>
-    namespace boost = cppcms_boost;
-#endif
+namespace cppcms {
+namespace sessions {
 
 using namespace std;
 
-namespace cppcms {
+struct session_cookies::data {};
 
-namespace {
-struct builder {
-	boost::shared_ptr<session_api> operator()(worker_thread &w)
-	{
-		return boost::shared_ptr<session_api>(new session_cookies(w));
-	}
-};
-}
-
-session_backend_factory session_cookies::factory()
+session_cookies::session_cookies(std::auto_ptr<encryptor> enc) :
+	encryptor_(enc)
 {
-	return builder();
 }
-
-session_cookies::session_cookies(worker_thread &w,auto_ptr<encryptor> enc) :
-	worker(w),
-	encr(enc)
+session_cookies::~session_cookies()
 {
 }
 
-session_cookies::session_cookies(worker_thread &w) :
-	worker(w)
+void session_cookies::save(session_interface &session,string const &data,time_t timeout,bool not_used,bool on_server)
 {
-#ifdef EN_ENCR_SESSIONS
-	string default_type="aes";
-#else
-	string default_type="hmac";
-#endif
-	string type=w.app.config.sval("session.cookies_encryptor",default_type);
-	string key=w.app.config.sval("session.cookies_key");
-	if(type=="hmac") {
-		encr.reset(new hmac::cipher(key));
-		return;
-	}
-#ifdef EN_ENCR_SESSIONS
-	if(type=="aes") {
-		encr.reset(new aes::cipher(key));
-		return;
-	}
-#endif
-	throw cppcms_error("Unknown encryptor "+type);
+	if(on_server)
+		throw cppcms_error("Can't use cookies backend when data should be stored on server");
+	string cdata="C" + encryptor_->encrypt(data,timeout);
+	session.set_session_cookie(cdata);
 }
 
-void session_cookies::save(session_interface *session,string const &data,time_t timeout,bool not_used)
+bool session_cookies::load(session_interface &session,string &data,time_t &timeout_out)
 {
-	string cdata=encr->encrypt(data,timeout);
-	session->set_session_cookie(cdata);
-}
-
-bool session_cookies::load(session_interface *session,string &data,time_t &timeout_out)
-{
-	string cdata=session->get_session_cookie();
+	string cdata=session.get_session_cookie();
 	if(cdata.empty()) return false;
+	if(cdata[0]!='C') {
+		session.clear_session_cookie();
+		return false;
+	}
 	time_t timeout;
 	string tmp;
-	if(!encr->decrypt(cdata,tmp,&timeout))
+	if(!encryptor_->decrypt(cdata.substr(1),tmp,&timeout))
 		return false;
-	time_t now;
-	time(&now);
-	if(timeout < now)
+	if(timeout < time(0))
 		return false;
 	data.swap(tmp);
 	timeout_out=timeout;
 	return true;
 }
 
-void session_cookies::clear(session_interface *session)
+void session_cookies::clear(session_interface &session)
 {
-	session->clear_session_cookie();
+	session.clear_session_cookie();
 }
 
 
-};
+} // sessions
+} // cppcms

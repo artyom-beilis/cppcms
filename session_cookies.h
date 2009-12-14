@@ -1,29 +1,34 @@
 #ifndef CPPCMS_SESSION_COOKIES_H
 #define CPPCMS_SESSION_COOKIES_H
 #include "session_api.h"
+#include "hold_ptr.h"
 #include <memory>
 #include <string>
-#include "session_backend_factory.h"
-
 namespace cppcms {
-
-class encryptor;
-class worker_thread;
 class session_interface;
+namespace sessions {
 
-class session_cookies : public session_api {
-	worker_thread &worker;
-	std::auto_ptr<encryptor> encr;
-public:
-	static session_backend_factory factory();
-	session_cookies(worker_thread &w);
-	session_cookies(worker_thread &w,std::auto_ptr<encryptor>);
-	virtual void save(session_interface *,std::string const &data,time_t timeout,bool );
-	virtual bool load(session_interface *,std::string &data,time_t &timeout);
-	virtual void clear(session_interface *);
-};
+	class encryptor {
+	public:
+		virtual std::string encrypt(std::string const &plain,time_t timeout) = 0;	
+		virtual bool decrypt(std::string const &cipher,std::string &plain,time_t *timeout = 0) = 0;
+		virtual ~encryptor() {}
+	};
 
+	class CPPCMS_API session_cookies : public session_api {
+	public:
+		session_cookies(std::auto_ptr<encryptor> encryptor);
+		~session_cookies();
+		virtual void save(session_interface &,std::string const &data,time_t timeout,bool newone ,bool on_server);
+		virtual bool load(session_interface &,std::string &data,time_t &timeout);
+		virtual void clear(session_interface &);
+	private:
+		struct data;
+		util::hold_ptr<data> d;
+		std::auto_ptr<encryptor> encryptor_;
+	};
 
+} // sessions
 } // cppcms
 
 #endif

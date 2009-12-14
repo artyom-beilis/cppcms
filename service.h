@@ -16,8 +16,10 @@ namespace cppcms {
 
 	class applications_pool;
 	class thread_pool;
+	class session_storage_pool;
 	class cache_pool;
 	class views_pool;
+	
 	namespace json {
 		class value;
 	}
@@ -36,6 +38,7 @@ namespace cppcms {
 		
 		cppcms::applications_pool &applications_pool();
 		cppcms::thread_pool &thread_pool();
+		cppcms::session_storage_pool &session_storage_pool();
 		cppcms::views_pool &views_pool();
 		cppcms::cache_pool &cache_pool();
 

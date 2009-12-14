@@ -1,45 +1,52 @@
-#ifndef SESSION_STORAGE_H
-#define SESSION_STORAGE_H
+#ifndef CPPCMS_SESSION_STORAGE_H
+#define CPPCMS_SESSION_STORAGE_H
 
-#include "config.h"
-#ifdef CPPCMS_USE_EXTERNAL_BOOST
-#   include <boost/noncopyable.hpp>
-#   include <boost/function.hpp>
-#else // Internal Boost
-#   include <cppcms_boost/noncopyable.hpp>
-#   include <cppcms_boost/function.hpp>
-    namespace boost = cppcms_boost;
-#endif
-#include <string>
+#include "defs.h"
+#include "refcounted.h"
+#include "noncopyable.h"
 
 namespace cppcms {
+namespace sessions {
 
-class session_server_storage : private boost::noncopyable {
-public:
-	virtual void save(std::string const &sid,time_t timeout,std::string const &in) = 0;
-	virtual bool load(std::string const &sid,time_t *timeout,std::string &out) = 0;
-	virtual void remove(std::string const &sid) = 0;
-	virtual ~session_server_storage()
+	///
+	/// \a session_server_storage is an abstract class that allows user to implements
+	/// custom session storage device like, database storage device
+	///
+	/// Note: if the member functions save/load/remove are thread safe -- can be called
+	/// from different threads, than you may create a single session and return \a intrusive_ptr
+	/// to a single intstance, otherwise you have to create multiple instances of object
+	///
+	
+	class session_server_storage : 
+		public util::noncopyable,
+		public refcounted
 	{
-	}
-};
+	public:
+		///
+		/// Save session with end of life time at \a timeout using session id \a sid and content \a in
+		///
+	
+		virtual void save(std::string const &sid,time_t timeout,std::string const &in) = 0;
+
+		///
+		/// Load session with \a sid, put its end of life time to \a timeout and return its
+		/// value to \a out
+		///
+		virtual bool load(std::string const &sid,time_t &timeout,std::string &out) = 0;
+		
+		///
+		/// Remove a session with id \a sid  from the storage
+		///
+		
+		virtual void remove(std::string const &sid) = 0;
+		
+		virtual ~session_server_storage()
+		{
+		}
+	};
 
 
-class empty_session_server_storage :public session_server_storage
-{
-public:
-	void save(std::string const &sid,time_t timeout,std::string const &in)
-	{
-	}
-	bool load(std::string const &sid,time_t *timeout,std::string &out)
-	{
-		return false;
-	}
-	void remove(std::string const &sid)
-	{
-	}
-};
-
+} // sessions
 } // cppcms
 
 

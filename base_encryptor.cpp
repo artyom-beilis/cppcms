@@ -1,4 +1,5 @@
-#include "encryptor.h"
+#define CPPCMS_SOURCE
+#include "base_encryptor.h"
 #include "base64.h"
 #include "cppcms_error.h"
 #include <sys/time.h>
@@ -9,12 +10,14 @@
 using namespace std;
 
 namespace cppcms {
+namespace sessions {
+namespace impl {
 
-encryptor::~encryptor()
+base_encryptor::~base_encryptor()
 {
 }
 
-encryptor::encryptor(string key_):
+base_encryptor::base_encryptor(string key_):
 	key(16,0)
 
 {
@@ -38,12 +41,12 @@ encryptor::encryptor(string key_):
 	seed=(unsigned)(intptr_t)this+tv.tv_sec+tv.tv_usec+getpid();
 }
 
-unsigned encryptor::rand(unsigned max)
+unsigned base_encryptor::rand(unsigned max)
 {
 	return (unsigned)(rand_r(&seed)/(RAND_MAX+1.0)*max);
 }
 
-string encryptor::base64_enc(vector<unsigned char> const &data)
+string base_encryptor::base64_enc(vector<unsigned char> const &data)
 {
 	size_t size=b64url::encoded_size(data.size());
 	vector<unsigned char> result(size,0);
@@ -51,7 +54,7 @@ string encryptor::base64_enc(vector<unsigned char> const &data)
 	return string(result.begin(),result.end());
 }
 
-void encryptor::base64_dec(std::string const &in,std::vector<unsigned char> &data)
+void base_encryptor::base64_dec(std::string const &in,std::vector<unsigned char> &data)
 {
 	ssize_t size=b64url::decoded_size(in.size());
 	if(size<0) return;
@@ -60,11 +63,13 @@ void encryptor::base64_dec(std::string const &in,std::vector<unsigned char> &dat
 	b64url::decode((unsigned char const *)ptr,ptr+in.size(),&data.front());
 }
 
-void encryptor::salt(char *salt)
+void base_encryptor::salt(char *salt)
 {
 	info dummy;
 	for(unsigned i=0;i<sizeof(dummy.salt);i++)
 		salt[i]=rand(256);
 }
 
-}
+} // impl
+} // sessions
+} // cppcms

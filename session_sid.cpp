@@ -1,154 +1,130 @@
+#define CPPCMS_SOURCE
 #include "session_sid.h"
 #include "md5.h"
 #include "session_storage.h"
 #include "session_interface.h"
 #include <fstream>
 #include "cppcms_error.h"
-#include "archive.h"
-#include "worker_thread.h"
+
+#ifndef CPPCMS_WIN_NATIVE
+#include <sys/time.h>
+#include <time.h>
+#else
+#include <windows.h>
+#endif
 
 using namespace std;
 
 namespace cppcms {
-namespace details {
+namespace sessions {
+namespace impl {
+	using namespace cppcms::impl;
 
-sid_generator::sid_generator()
-{
-	hashed.session_counter=0;
-	ifstream urandom("/dev/urandom");
-	if(!urandom.good() || urandom.get(hashed.uid,16).fail()) {
-		throw cppcms_error("Failed to read /dev/urandom");
-	}
-}
-
-std::string sid_generator::operator()()
-{
-	hashed.session_counter++;
-	gettimeofday(&hashed.tv,NULL);
-	
-	md5_byte_t md5[16];
-	char res[33];
-	md5_state_t st;
-	md5_init(&st);
-	md5_append(&st,(md5_byte_t*)&hashed,sizeof(hashed));
-	md5_finish(&st,md5);
-	for(int i=0;i<16;i++) {
-		snprintf(res+i*2,3,"%02x",md5[i]);
-	}
-	return std::string(res);
-}
-
-
-} // namespace details
-
-namespace {
-	struct cached_data : public serializable {
-		time_t timeout;
-		std::string data;
-		virtual void load(archive &a)
+	class sid_generator : public util::noncopyable {
+		struct for_hash {
+			char uid[16];
+			uint64_t session_counter;
+			#ifndef CPPCMS_WIN_NATIVE
+			struct timeval tv;
+			#else
+			uint64_t tv;
+			#endif
+		} hashed;
+	public:
+		sid_generator()
 		{
-			a>>timeout>>data;
+			hashed.session_counter=0;
+			#ifndef CPPCMS_WIN_NATIVE
+			ifstream urandom("/dev/urandom");
+			if(!urandom.good() || urandom.get(hashed.uid,16).fail()) {
+				throw cppcms_error("Failed to read /dev/urandom");
+			}
+			#else 
+			// FIXME: Write something better for "random generator"
+			unsigned val= GetTickCount();
+			memcpy(uid,val,sizeof(val));
+			#endif 
 		}
-		virtual void save(archive &a) const 
+		std::string get()
 		{
-			a<<timeout<<data;
-		}
+			hashed.session_counter++;
+			#ifndef CPPCMS_WIN_NATIVE
+			gettimeofday(&hashed.tv,NULL);
+			#else
+			hashed.tv = GetTickCount();
+			#endif
+			
+			md5_byte_t md5[16];
+			char res[33];
+			md5_state_t st;
+			md5_init(&st);
+			md5_append(&st,(md5_byte_t*)&hashed,sizeof(hashed));
+			md5_finish(&st,md5);
 
+			for(int i=0;i<16;i++) {
+			#ifdef HAVE_SNPRINTF
+				snprintf(res+i*2,3,"%02x",md5[i]);
+			#else
+				sprintf(res+i*2,"%02x",md5[i]);
+			#endif
+			}
+			return std::string(res);
+		}
 	};
-}
+} // namespace impl
 
-
-bool session_sid::valid_sid(std::string const &id)
+bool session_sid::valid_sid(std::string const &cookie,std::string &id)
 {
-	if(id.size()!=32)
+	if(cookie.size()!=33 || cookie[0]!='I')
 		return false;
-	for(int i=0;i<32;i++) {
-		char c=id[i];
+	for(int i=1;i<33;i++) {
+		char c=cookie[i];
 		bool is_low_x_digit=('0'<=c && c<='9') || ('a'<=c && c<='f');
 		if(!is_low_x_digit)
 			return false;
 	}
+	id=cookie.substr(1,32);
 	return true;
 }
 
-string session_sid::key(std::string sid)
-{
-	return "_cppcms_session_"+sid;
-}
-
-void session_sid::save(session_interface *session,std::string const &data,time_t timeout,bool new_data)
+void session_sid::save(session_interface &session,std::string const &data,time_t timeout,bool new_data,bool unused)
 {
 	string id;
 	if(!new_data) {
-		id=session->get_session_cookie();
-		if(!valid_sid(id)) {
-			id=sid(); // if id not valid create new one
+		if(!valid_sid(session.get_session_cookie(),id)) {
+			id=sid_->get(); // if id not valid create new one
 		}
 	}
 	else {
-		id=sid();
+		id=sid_->get();
 	}
 
-	if(cache){
-		session->get_worker().cache.rise(key(id));
-	}
-	storage->save(id,timeout,data);
-	session->set_session_cookie(id); // Renew cookie or set new one
-	if(cache) {
-		cached_data cdata;
-		cdata.timeout=timeout;
-		cdata.data=data;
-		session->get_worker().cache.store_data(
-			key(id),
-			cdata,
-			timeout - time(NULL),
-			true);
-			// Store entry without triggers
-	}
+	storage_->save(id,timeout,data);
+	session.set_session_cookie("I"+id); // Renew cookie or set new one
 }
 
-bool session_sid::load(session_interface *session,std::string &data,time_t &timeout)
+bool session_sid::load(session_interface &session,std::string &data,time_t &timeout)
 {
-	string id=session->get_session_cookie();
-	if(!valid_sid(id))
+	string id;
+	if(!valid_sid(session.get_session_cookie(),id))
 		return false;
-	if(cache){
-		cached_data cdata;
-		if(session->get_worker().cache.fetch_data(key(id),cdata,true)) {
-			// fetch data without triggers
-			data.swap(cdata.data);
-			timeout=cdata.timeout;
-			return true;
-		}
-	}
-	if(!storage->load(id,&timeout,data)) {
+	std::string tmp_data;
+	time_t tmp_timeout;
+	if(!storage_->load(id,timeout,data))
+		return false;
+	if(time(0) > tmp_timeout) {
+		storage_->remove(id);
 		return false;
 	}
-	if(!cache)
-		return true;
-	
-	cached_data cdata;
-	cdata.timeout=timeout;
-	cdata.data=data;
-	
-	session->get_worker().cache.store_data(
-			key(id),
-			cdata,
-			timeout-time(NULL),
-			true
-		); // store entry without triggers
 	return true;
 }
 
-void session_sid::clear(session_interface *session)
+void session_sid::clear(session_interface &session)
 {
-	string id=session->get_session_cookie();
-	if(valid_sid(id)) {
-		storage->remove(id);
-		if(cache)
-			session->get_worker().cache.rise(key(id));
-	}
+	string id;
+	if(valid_sid(session.get_session_cookie(),id))
+		storage_->remove(id);
 }
 
-
+} // sessions
 } // namespace cppcms

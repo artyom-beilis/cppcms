@@ -1,3 +1,4 @@
+#define CPPCMS_SOURCE
 #include <assert.h>
 #include <stdio.h>
 
@@ -12,8 +13,8 @@
 using namespace std;
 
 namespace cppcms {
-
-namespace aes {
+namespace sessions {
+namespace impl {
 
 namespace {
 class load {
@@ -25,8 +26,8 @@ class load {
 
 } // anon namespace
 
-cipher::cipher(string k) :
-	encryptor(k)
+aes_cipher::aes_cipher(string k) :
+	base_encryptor(k)
 {
 	bool in=false,out=false;
 	in=gcry_cipher_open(&hd_in,GCRY_CIPHER_AES,GCRY_CIPHER_MODE_CBC,0) == 0;
@@ -50,13 +51,13 @@ error_exit:
 	throw cppcms_error("AES cipher initialization failed");
 }
 
-cipher::~cipher()
+aes_cipher::~aes_cipher()
 {
 	gcry_cipher_close(hd_in);
 	gcry_cipher_close(hd_out);
 }
 
-string cipher::encrypt(string const &plain,time_t timeout)
+string aes_cipher::encrypt(string const &plain,time_t timeout)
 {
 	size_t block_size=(plain.size() + 15) / 16 * 16;
 
@@ -74,7 +75,7 @@ string cipher::encrypt(string const &plain,time_t timeout)
 	return base64_enc(data);
 }
 
-bool cipher::decrypt(string const &cipher,string &plain,time_t *timeout)
+bool aes_cipher::decrypt(string const &cipher,string &plain,time_t *timeout)
 {
 	vector<unsigned char> data;
 	base64_dec(cipher,data);
@@ -103,8 +104,9 @@ bool cipher::decrypt(string const &cipher,string &plain,time_t *timeout)
 }
 
 
-} // namespace aes
+} // impl
+} // sessions
 
-} // namespace cppcms
+} // cppcms
 
 

@@ -2,36 +2,38 @@
 #define CPPCMS_SESSION_DUAL_H
 
 #include "session_api.h"
-#include "session_backend_factory.h"
-#include "config.h"
-#ifdef CPPCMS_USE_EXTERNAL_BOOST
-#   include <boost/shared_ptr.hpp>
-#else // Internal Boost
-#   include <cppcms_boost/shared_ptr.hpp>
-    namespace boost = cppcms_boost;
-#endif
+#include "defs.h"
+#include "hold_ptr.h"
+#include "intrusive_ptr.h"
 
 namespace cppcms {
+namespace sessions {
 
-class session_dual : public session_api {
-	boost::shared_ptr<session_api> 	client;
-	boost::shared_ptr<session_api>  server;
-	size_t limit;
+class session_server_storage;
+class session_sid;
+class session_cookies;
+class encryptor;
+
+class CPPCMS_API session_dual : public session_api {
 public:
-	static session_backend_factory factory(session_backend_factory c,session_backend_factory s,size_t l);
-	session_dual(boost::shared_ptr<session_api> c,boost::shared_ptr<session_api> s,size_t l) :
-		client(c),
-		server(s),
-		limit(l)
-	{
-	}
-	virtual void save(session_interface *,std::string const &data,time_t timeout,bool new_session);
-	virtual bool load(session_interface *,std::string &data,time_t &timeout);
-	virtual void clear(session_interface *);
-
+	
+	session_dual(	std::auto_ptr<encryptor> enc,
+			intrusive_ptr<session_server_storage> storage,
+			size_t data_size_limit);
+	virtual ~session_dual();
+	virtual void save(session_interface &,std::string const &data,time_t timeout,bool new_session,bool on_server);
+	virtual bool load(session_interface &,std::string &data,time_t &timeout);
+	virtual void clear(session_interface &);
+private:
+	struct data;
+	util::hold_ptr<data> d;
+	intrusive_ptr<session_cookies>	client_;
+	intrusive_ptr<session_sid>	server_;
+	size_t data_size_limit_;
 };
 
-}
+} // sessions
+} // cppcms
 
 
 #endif

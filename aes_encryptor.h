@@ -3,13 +3,13 @@
 
 #include <string>
 #include <gcrypt.h>
-#include "encryptor.h"
+#include "base_encryptor.h"
 
 namespace cppcms {
+namespace sessions {
+namespace impl {
 
-namespace aes {
-
-class cipher : public encryptor {
+class aes_cipher : public base_encryptor {
 	gcry_cipher_hd_t hd_out;
 	gcry_cipher_hd_t hd_in;
 	struct aes_hdr {
@@ -19,12 +19,12 @@ class cipher : public encryptor {
 public:
 	virtual std::string encrypt(std::string const &plain,time_t timeout);
 	virtual bool decrypt(std::string const &cipher,std::string &plain,time_t *timeout=NULL) ;
-	cipher(std::string key);
-	~cipher();
+	aes_cipher(std::string key);
+	~aes_cipher();
 };
 
-} // aes
-
+} // impl
+} // sessions
 } // cppcms
 
 

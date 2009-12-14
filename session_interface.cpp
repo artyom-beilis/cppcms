@@ -1,133 +1,104 @@
-#include "worker_thread.h"
+#define CPPCMS_SOURCE
 #include "session_interface.h"
 #include "session_api.h"
-#include "manager.h"
 #include "util.h"
+#include "http_context.h"
+#include "http_request.h"
+#include "http_response.h"
+#include "http_cookie.h"
+#include "cppcms_error.h"
+#include "service.h"
+#include "json.h"
+
 #include <sstream>
+
+using namespace std;
 
 namespace cppcms {
 
-class cookie : public cgicc::HTTPCookie {
-	bool del;
-public:
-	cookie() :
-	 del(false)
-	{
-	}
-	cookie(string const &name,string const &val) :
-		cgicc::HTTPCookie(name,val),
-		del(false)
+	struct session_interface::data {};
 
-	{
-	}
-	cookie(	const std::string& name,
-		const std::string& value,
-		const std::string& comment,
-		const std::string& domain,
-		unsigned long maxAge,
-		const std::string& path,
-		bool secure) :
-			HTTPCookie(name,value,comment,domain,maxAge,path,secure),
-			del(false)
-	{
-	}
-	void remove() { del=true; }
-	virtual void render(std::ostream& out) const
-	{
-		if(!del) {
-			cgicc::HTTPCookie::render(out);
+	struct session_interface::entry {
+		std::string value;
+		bool exposed;
+		entry(std::string v="",bool exp=false) : value(v) , exposed(exp) {}
+		bool operator==(entry const &other) const 
+		{
+			return value==other.value && exposed==other.exposed;
 		}
-		else {
-			out <<"Set-Cookie:"<<getName()<<"=";
-			string domain=getDomain();
-			if(!domain.empty()) {
-				out<<"; Domain="<<domain;
-			}
-			string path=getPath();
-			if(!path.empty()) {
-				out<<"; Path="<<path;
-			}
-			if(isSecure()) {
-				cout<<"; Secure";
-			}
-			out<<"; Expires=Fri, 01-Jan-1971 01:00:00 GMT; Version=1";
+		bool operator!=(entry const &other) const 
+		{
+			return !(*this==other);
 		}
-	}
-};
+	};
 
-
-session_interface::session_interface(worker_thread &w) :
-	worker(w)
+session_interface::session_interface(http::context &context) :
+	context_(&context)
 {
-	timeout_val_def=w.app.config.ival("session.timeout",24*3600);
-	string s_how=w.app.config.sval("session.expire","browser");
+	timeout_val_def_=context_->settings().get("session.timeout",24*3600);
+	string s_how=context_->settings().get("session.expire","browser");
 	if(s_how=="fixed") {
-		how_def=fixed;
+		how_def_=fixed;
 	}
 	else if(s_how=="renew") {
-		how_def=renew;
+		how_def_=renew;
 	}
 	else if(s_how=="browser") {
-		how_def=browser;
+		how_def_=browser;
 	}
 	else {
 		throw cppcms_error("Unsupported `session.expire' type `"+s_how+"'");
 	}
 
-
-	storage=w.app.sessions(w);
+	storage_=context_->service().session_storage_pool().get();
 }
 
-worker_thread &session_interface::get_worker()
-{
-	return worker;
-}
-
-void session_interface::set_api(boost::shared_ptr<session_api> s)
-{
-	storage=s;
-}
 bool session_interface::load()
 {
-	data.clear();
-	data_copy.clear();
-	timeout_val=timeout_val_def;
-	how=how_def;
+	if(!storage_.get())
+		return false;
+	data_.clear();
+	data_copy_.clear();
+	timeout_val_=timeout_val_def_;
+	how_=how_def_;
 	string ar;
-	saved=false;
-	if(!storage.get() || !storage->load(this,ar,timeout_in)) {
+	saved_=false;
+	on_server_=false;
+	if(!storage_->load(this,ar,timeout_in_)) {
 		return false;
 	}
-	load_data(data,ar);
-	data_copy=data;
+	load_data(data_,ar);
+	data_copy_=data_;
 	if(is_set("_t"))
-		timeout_val=get<int>("_t");
+		timeout_val_=get<int>("_t");
 	if(is_set("_h"))
-		how=get<int>("_h");
+		how_=get<int>("_h");
+	if(is_set("_s"))
+		on_server_=get<int>("_s");
 	return true;
 }
 
 int session_interface::cookie_age()
 {
-	if(how==browser)
+	if(how_==browser)
 		return 0;
-	if(how==renew || ( how==fixed && new_session ))
-		return timeout_val;
-	return timeout_in - time(NULL);
+	if(how_==renew || ( how_==fixed && new_session_ ))
+		return timeout_val_;
+	return timeout_in_ - time(NULL);
 }
 
 time_t session_interface::session_age()
 {
-	if(how==browser || how==renew || (how==fixed && new_session))
-		return timeout_val + time(NULL);
-	return timeout_in;
+	if(how_==browser || how_==renew || (how_==fixed && new_session_))
+		return timeout_val_ + time(NULL);
+	return timeout_in_;
 }
 
 namespace {
 struct packed {
-        unsigned key_size  : 10;
-        unsigned exposed   :  1;
-        unsigned data_size : 21;
+        uint32_t key_size  : 10;
+        uint32_t exposed   :  1;
+        uint32_t data_size : 21;
 	packed() {}
 	packed(unsigned ks,bool exp, unsigned ds)
 	{
@@ -152,10 +123,10 @@ struct packed {
 }
 
 
-void session_interface::save_data(data_t const &data,std::string &s)
+void session_interface::save_data(data_type const &data,std::string &s)
 {
 	s.clear();
-	data_t::const_iterator p;
+	data_type::const_iterator p;
 	for(p=data.begin();p!=data.end();++p) {
 		packed header(p->first.size(),p->second.exposed,p->second.value.size());
 		char *ptr=(char *)&header;
@@ -165,7 +136,7 @@ void session_interface::save_data(data_t const &data,std::string &s)
 	}
 }
 
-void session_interface::load_data(data_t &data,std::string const &s)
+void session_interface::load_data(data_type &data,std::string const &s)
 {
 	data.clear();
 	char const *begin=s.data(),*end=begin+s.size();
@@ -193,17 +164,17 @@ void session_interface::load_data(data_t &data,std::string const &s)
 
 void session_interface::update_exposed()
 {
-	for(data_t::iterator p=data.begin();p!=data.end();++p) {
-		data_t::iterator p2=data_copy.find(p->first);
-		if(p->second.exposed && (p2==data_copy.end() || !p2->second.exposed || p->second.value!=p2->second.value)){
+	for(data_type::iterator p=data_.begin();p!=data_.end();++p) {
+		data_type::iterator p2=data_copy_.find(p->first);
+		if(p->second.exposed && (p2==data_copy_.end() || !p2->second.exposed || p->second.value!=p2->second.value)){
 			set_session_cookie(cookie_age(),p->second.value,p->first);
 		}
-		else if(!p->second.exposed && p2!=data_copy.end() && p2->second.exposed) {
+		else if(!p->second.exposed && p2!=data_copy_.end() && p2->second.exposed) {
 			set_session_cookie(-1,"",p->first);
 		}
 	}
-	for(data_t::iterator p=data_copy.begin();p!=data_copy.end();++p) {
-		if(p->second.exposed && data.find(p->first)==data.end()) {
+	for(data_type::iterator p=data_copy_.begin();p!=data_copy_.end();++p) {
+		if(p->second.exposed && data_.find(p->first)==data_.end()) {
 			set_session_cookie(-1,"",p->first);
 		}
 	}
@@ -211,82 +182,91 @@ void session_interface::update_exposed()
 
 void session_interface::save()
 {
-	if(storage.get()==NULL || saved)
+	if(storage_.get()==NULL || saved_)
 		return;
 	check();
-	new_session  = data_copy.empty() && !data.empty();
-	if(data.empty()) {
+	new_session_  = data_copy_.empty() && !data_.empty();
+	if(data_.empty()) {
 		if(get_session_cookie()!="")
-			storage->clear(this);
+			storage_->clear(this);
 		update_exposed();
 		return;
 	}
 
 	time_t now = time(NULL);
 
-	if(data==data_copy) {
-		if(how==fixed) {
+	if(data_==data_copy_) {
+		if(how_==fixed) {
 			return;
 		}
-		if(how==renew || how==browser) {
-			int64_t delta=now + timeout_val - timeout_in;
-			if(delta < timeout_val * 0.1) {// Less then 10% -- no renew need
+		if(how_==renew || how_==browser) {
+			int64_t delta=now + timeout_val_ - timeout_in_;
+			if(delta < timeout_val_ * 0.1) {// Less then 10% -- no renew need
 				return;
 			}
 		}
 	}
 
 	string ar;
-	save_data(data,ar);
+	save_data(data_,ar);
 	
-	temp_cookie.clear();
-	storage->save(this,ar,session_age(),new_session);
-	set_session_cookie(cookie_age(),temp_cookie);
-	temp_cookie.clear();
+	temp_cookie_.clear();
+	storage_->save(this,ar,session_age(),new_session_,on_server_);
+	set_session_cookie(cookie_age(),temp_cookie_);
+	temp_cookie_.clear();
 
 	update_exposed();	
-	saved=true;
-}
-
-void session_interface::on_start()
-{
-	load();
-}
-
-void session_interface::on_end()
-{
-	if(storage.get()!=NULL)
-		save();
+	saved_=true;
 }
 
 void session_interface::check()
 {
-	if(storage.get()==NULL)
+	if(storage_.get()==NULL)
 		throw cppcms_error("Session storage backend is not loaded\n");
 }
 
 string &session_interface::operator[](string const &key)
 {
-	return data[key].value;
+	check();
+	return data_[key].value;
 }
 
-void session_interface::del(string const &key)
+void session_interface::erase(string const &key)
 {
-	data.erase(key);
+	check();
+	data_.erase(key);
 }
 
 bool session_interface::is_set(string const &key)
 {
-	return data.find(key)!=data.end();
+	check();
+	return data_.find(key)!=data_.end();
 }
 
 void session_interface::clear()
 {
-	data.clear();
+	check();
+	data_.clear();
+}
+
+std::string session_interface::get(std::string const &key)
+{
+	check();
+	data_type::const_iterator p=data_.find(key);
+	if(p==data_.end()) 
+		throw cppcms_error("Undefined session key "+key);
+	return p->second.value;
+}
+
+void session_interface::set(std::string const &key,std::string const &v)
+{
+	check();
+	data_[key]=v;
 }
 
 void session_interface::clear_session_cookie()
 {
+	check();
 	if(get_session_cookie()!="")
 		set_session_cookie(-1,"");
 }
@@ -294,104 +274,118 @@ void session_interface::set_session_cookie(int64_t age,string const &data,string
 {
 	if(data.empty())
 		age=-1;
-	string cookie_name=worker.app.config.sval("session.cookies_prefix","cppcms_session");
+	std::string cookie_name=context_->settings().get("session.cookies_prefix","cppcms_session");
 	if(!key.empty()) {
 		cookie_name+="_";
 		cookie_name+=key;
 	}
-	if(age < 0) {
-		cookie cook(cookie_name,"","",
-			worker.app.config.sval("session.cookies_domain",""),
-			0,
-			worker.app.config.sval("session.cookies_path","/"),
-			worker.app.config.ival("session.cookies_secure",0));
-		cook.remove();
-		ostringstream out;
-		out<<cook;
-		worker.add_header(out.str());
-	}
-	else {
-		cgicc::HTTPCookie cook(
-			cookie_name, // name
-			(age >= 0 ? urlencode(data) : ""), // value
-			"",   // comment
-			worker.app.config.sval("session.cookies_domain",""), // domain
-			( age < 0 ? 0 : age ),
-			worker.app.config.sval("session.cookies_path","/"),
-			worker.app.config.ival("session.cookies_secure",0));
-		worker.set_cookie(cook);
-	}
+	std::string domain = context_->settings().get("session.cookies_domain","");
+	std::string path   = context_->settings().get("session.cookies_path","/");
+	bool secure = context_->settings().get("session.cookies_secure",0);
 
+	http::cookie the_cookie(cookie_name,util::urlencode(data),path,domain);
+
+	if(age < 0) {
+		the_cookie.max_age(0);
+	}
+	else if(age == 0)
+		the_cookie.browser_age();
+	else
+		the_cookie.max_age(age);
+	the_cookie.secure(secure);
+	context_->response().set_cookie(the_cookie);
 }
+
 void session_interface::set_session_cookie(string const &data)
 {
-	temp_cookie=data;
+	check();
+	temp_cookie_=data;
 }
 
 string session_interface::get_session_cookie()
 {
-	string name=worker.app.config.sval("session.cookies_prefix","cppcms_session");
-	vector<cgicc::HTTPCookie> const &cookies=worker.env->getCookieList();
-	for(unsigned i=0;i<cookies.size();i++) {
-		if(cookies[i].getName()==name)
-			return cookies[i].getValue();
-	}
-	return string("");
+	check();
+	string name=context_->settings().get("session.cookies_prefix","cppcms_session");
+	http::request::cookies_type const &cookies = context_->request().cookies();
+	http::request::cookies_type::const_iterator p=cookies.find(name);
+	if(p==cookies.end())
+		return "";
+	return p->second.value();
 }
 	
-void session_interface::get(std::string const &key,serializable &s)
-{
-	s=(*this)[key];
-}
-void session_interface::set(std::string const &key,serializable const &s)
-{
-	(*this)[key]=s;
-}
-
 bool session_interface::is_exposed(std::string const &key)
 {
-	data_t::iterator p=data.find(key);
-	if(p!=data.end()) 
+	data_type::iterator p=data_.find(key);
+	if(p!=data_.end()) 
 		return p->second.exposed;
 	return false;
 }
 
 void session_interface::expose(string const &key,bool exp)
 {
-	data[key].exposed=exp;
+	data_[key].exposed=exp;
 }
 
 void session_interface::hide(string const &key)
 {
+	check();
 	expose(key,false);
 }
 
-void session_interface::set_age(int t)
+void session_interface::age(int t)
 {
-	timeout_val=t;
+	check();
+	timeout_val_=t;
 	set("_t",t);
 }
 
-void session_interface::set_age()
+int session_interface::age()
 {
-	del("_t");
-	timeout_val=timeout_val_def;
+	check();
+	return timeout_val_;
 }
 
-void session_interface::set_expiration(int h)
+void session_interface::default_age()
 {
-	how=h;
+	check();
+	erase("_t");
+	timeout_val_=timeout_val_def_;
+}
+
+int session_interface::expiration()
+{
+	check();
+	return how_;
+}
+
+void session_interface::expiration(int h)
+{
+	check();
+	how_=h;
 	set("_h",h);
 }
-void session_interface::set_expiration()
+void session_interface::default_expiration()
 {
-	del("_h");
-	how=how_def;
+	check();
+	erase("_h");
+	how_=how_def_;
+}
+
+void session_interface::on_server(bool srv)
+{
+	check();
+	on_server_=srv;
+	set("_s",int(srv));
+}
+
+bool session_interface::on_server()
+{
+	check();
+	return on_server_;
 }
 
 
 
 
-
-};
+} // cppcms
 
