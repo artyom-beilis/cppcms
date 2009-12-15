@@ -16,7 +16,7 @@ sid_generator::sid_generator()
 {
 	hashed.session_counter=0;
 	ifstream urandom("/dev/urandom");
-	if(!urandom.good() || urandom.get(hashed.uid,16).fail()) {
+	if(!urandom.good() || urandom.read(hashed.uid,16).fail()) {
 		throw cppcms_error("Failed to read /dev/urandom");
 	}
 }
