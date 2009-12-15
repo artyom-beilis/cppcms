@@ -868,8 +868,8 @@ select_multiple::element::element(std::string const &val,locale::message const &
 select_multiple::element::element(std::string const &val,std::string const &msg,bool sel) :
 	selected(sel),
 	need_translation(0),
-	id(val),
 	original_select(sel),
+	id(val),
 	str_option(msg)
 {
 }

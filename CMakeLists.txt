@@ -223,6 +223,7 @@ set(CPPCMS_SOURCES
 	base_encryptor.cpp
 	hmac_encryptor.cpp
 	md5.cpp
+	urandom.cpp
 	session_cookies.cpp
 	session_dual.cpp
 	session_sid.cpp

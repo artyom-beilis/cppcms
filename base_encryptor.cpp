@@ -2,10 +2,8 @@
 #include "base_encryptor.h"
 #include "base64.h"
 #include "cppcms_error.h"
-#include <sys/time.h>
-#include <time.h>
-#include <unistd.h>
 #include <cstdlib>
+#include "urandom.h"
 
 using namespace std;
 
@@ -36,9 +34,8 @@ base_encryptor::base_encryptor(string key_):
 		sscanf(buf,"%x",&v);
 		key[i/2]=v;
 	}
-	struct timeval tv;
-	gettimeofday(&tv,NULL);
-	seed=(unsigned)(intptr_t)this+tv.tv_sec+tv.tv_usec+getpid();
+	urandom_device dev;
+	dev.generate(&seed,sizeof(seed));
 }
 
 unsigned base_encryptor::rand(unsigned max)

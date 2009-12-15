@@ -5,6 +5,7 @@
 #include "session_interface.h"
 #include <fstream>
 #include "cppcms_error.h"
+#include "urandom.h"
 
 #ifndef CPPCMS_WIN_NATIVE
 #include <sys/time.h>
@@ -29,21 +30,15 @@ namespace impl {
 			#else
 			uint64_t tv;
 			#endif
+			char uid2[16];
 		} hashed;
 	public:
 		sid_generator()
 		{
 			hashed.session_counter=0;
-			#ifndef CPPCMS_WIN_NATIVE
-			ifstream urandom("/dev/urandom");
-			if(!urandom.good() || urandom.get(hashed.uid,16).fail()) {
-				throw cppcms_error("Failed to read /dev/urandom");
-			}
-			#else 
-			// FIXME: Write something better for "random generator"
-			unsigned val= GetTickCount();
-			memcpy(uid,val,sizeof(val));
-			#endif 
+			urandom_device urand;
+			urand.generate(hashed.uid,16);
+			urand.generate(hashed.uid2,16);
 		}
 		std::string get()
 		{
