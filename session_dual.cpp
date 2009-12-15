@@ -11,7 +11,7 @@ namespace sessions {
 
 struct session_dual::data {};
 
-session_dual::session_dual(std::auto_ptr<encryptor> enc,intrusive_ptr<session_server_storage> storage,size_t limit) :
+session_dual::session_dual(std::auto_ptr<encryptor> enc,intrusive_ptr<session_storage> storage,size_t limit) :
 	client_(new session_cookies(enc)),
 	server_(new session_sid(storage)),
 	data_size_limit_(limit)

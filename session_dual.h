@@ -10,7 +10,7 @@
 namespace cppcms {
 namespace sessions {
 
-class session_server_storage;
+class session_storage;
 class session_sid;
 class session_cookies;
 class encryptor;
@@ -18,7 +18,7 @@ class encryptor;
 class CPPCMS_API session_dual : public session_api {
 public:
 	session_dual(	std::auto_ptr<encryptor> enc,
-			intrusive_ptr<session_server_storage> storage,
+			intrusive_ptr<session_storage> storage,
 			size_t data_size_limit);
 	virtual ~session_dual();
 	virtual void save(session_interface &,std::string const &data,time_t timeout,bool new_session,bool on_server);

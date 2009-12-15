@@ -6,6 +6,8 @@
 #include "hold_ptr.h"
 #include "session_api.h"
 
+#include <memory>
+
 namespace cppcms {
 	class service;
 
