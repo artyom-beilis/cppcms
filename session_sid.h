@@ -14,7 +14,7 @@ namespace sessions {
 	
 	class CPPCMS_API session_sid : public session_api {
 	public:
-		session_sid(intrusive_ptr<session_server_storage> s);
+		session_sid(intrusive_ptr<session_storage> s);
 		~session_sid();
 		virtual void save(session_interface &,std::string const &data,time_t timeout,bool,bool);
 		virtual bool load(session_interface &,std::string &data,time_t &timeout);
@@ -27,7 +27,7 @@ namespace sessions {
 		struct data;
 		util::hold_ptr<data> d;
 		util::hold_ptr<impl::sid_generator> sid_;
-		intrusive_ptr<session_server_storage> storage_;
+		intrusive_ptr<session_storage> storage_;
 	};
 
 } // sessions

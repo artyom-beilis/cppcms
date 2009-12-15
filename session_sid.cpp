@@ -70,7 +70,7 @@ namespace impl {
 
 struct session_sid::data {};
 
-session_sid::session_sid(intrusive_ptr<session_server_storage> st) :
+session_sid::session_sid(intrusive_ptr<session_storage> st) :
 	sid_(new impl::sid_generator()),
 	storage_(st)
 {

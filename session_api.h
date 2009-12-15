@@ -22,6 +22,12 @@ public:
 	virtual ~session_api() {}
 };
 
+class session_api_factory {
+public:
+	virtual intrusive_ptr<session_api> get() = 0;
+	virtual ~session_api_factory() {}
+};
+
 
 } // cppcms
 
