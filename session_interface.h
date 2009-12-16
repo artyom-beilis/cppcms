@@ -122,7 +122,7 @@ private:
 	time_t   session_age();
 
 	void check();
-	void update_exposed(); 
+	void update_exposed(bool); 
 
 
 	void set_session_cookie(int64_t age,std::string const &data,std::string const &key=std::string());
