@@ -241,9 +241,9 @@ endif(LIB_GCRYPT)
 
 
 if(WIN32 AND NOT CYGWIN)
-	set(CPPCMS_SOURCES ${CPPCMS_SOURCES} session_posix_file_storage.cpp)
-else(WIN32 AND NOT CYGWIN)
 	set(CPPCMS_SOURCES ${CPPCMS_SOURCES} session_win32_file_storage.cpp)
+else(WIN32 AND NOT CYGWIN)
+	set(CPPCMS_SOURCES ${CPPCMS_SOURCES} session_posix_file_storage.cpp)
 endif(WIN32 AND NOT CYGWIN)
 
 if(NOT DISABLE_SHARED)
