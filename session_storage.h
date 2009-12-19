@@ -4,6 +4,8 @@
 #include "defs.h"
 #include "refcounted.h"
 #include "noncopyable.h"
+#include "intrusive_ptr.h"
+#include <string>
 
 namespace cppcms {
 namespace sessions {

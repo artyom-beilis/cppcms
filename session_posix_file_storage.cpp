@@ -12,6 +12,7 @@
 
 #include <sys/types.h>
 #include <sys/stat.h>
+#include <sys/mman.h>
 #include <fcntl.h>
 #include <stddef.h>
 #include <unistd.h>
@@ -19,11 +20,12 @@
 #include <errno.h>
 #include <stdio.h>
 #include <limits.h>
-
-
+#include <stdlib.h>
 
 namespace cppcms {
 namespace sessions {
+
+struct session_file_storage::data {};
 
 bool session_file_storage::test_pshared()
 {
@@ -39,7 +41,7 @@ bool session_file_storage::test_pshared()
 	if(memory==MAP_FAILED)
 		return false;
 	try {
-		create_mutex(reinterpret_cast<pthread_mutex_t *>(memory));
+		create_mutex(reinterpret_cast<pthread_mutex_t *>(memory),true);
 		destroy_mutex(reinterpret_cast<pthread_mutex_t *>(memory));
 	}
 	catch(cppcms_error const &e) {
@@ -66,7 +68,7 @@ void session_file_storage::create_mutex(pthread_mutex_t *m,bool pshared)
 			if(res==0)
 				res = pthread_mutex_init(m,&attr);
 			if(res < 0)
-				throw cppcm_error(errno,"Failed to create process shared mutex");
+				throw cppcms_error(errno,"Failed to create process shared mutex");
 			pthread_mutexattr_destroy(&attr);
 		}
 		catch(...) {
@@ -78,17 +80,90 @@ void session_file_storage::create_mutex(pthread_mutex_t *m,bool pshared)
 
 void session_file_storage::destroy_mutex(pthread_mutex_t *m)
 {
-	pthread_mutex_destroy(mutex_);
+	pthread_mutex_destroy(m);
 }
 
-session_file_storage::session_file_storage(std::string path,int concurrency_hint,int procs_no,bool force_flock)
+session_file_storage::session_file_storage(std::string path,int concurrency_hint,int procs_no,bool force_flock) :
+	memory_(MAP_FAILED)
 {
-	path_=path;
-	lock_size_ = concurrency_hint * 2;
-	if(force_flock || procs_no > 1 && !test_pshared())
+	if(path.empty()){
+		if(::getenv("TEMP"))
+			path_=std::string(::getenv("TEMP")) + "/cppcms_sessions";
+		else if(::getenv("TMP"))
+			path_=std::string(::getenv("TMP")) + "/cppcms_sessions";
+		else
+			path_ = "/tmp/cppcms_sessions";
+	}
+	else
+		path_=path;
+
+	if(::mkdir(path_.c_str(),0777) < 0) {
+		if(errno!=EEXIST) {
+			int err=errno;
+			throw cppcms_error(err,"Failed to create a directory for session storage " + path_);
+		}
+	}
+		
+	lock_size_ = concurrency_hint;
+	if(force_flock || (procs_no > 1 && !test_pshared()))
 		file_lock_=true;
 	else
 		file_lock_=false;
+	if(!file_lock_) {
+		#ifdef MAP_ANONYMOUS
+		int flags = MAP_ANONYMOUS | MAP_SHARED;
+		#else // defined(MAP_ANON)
+		int flags = MAP_ANON | MAP_SHARED;
+		#endif
+		memory_ = ::mmap(0,sizeof(pthread_mutex_t) * lock_size_,PROT_READ | PROT_WRITE,flags,-1,0);
+		if(memory_ == MAP_FAILED)
+			throw cppcms_error(errno,"Memory map failed:");
+		locks_ = reinterpret_cast<pthread_mutex_t *>(memory_);
+		for(unsigned i=0;i<lock_size_;i++)
+			create_mutex(locks_+i,true);
+	}
+	else {
+		mutexes_.resize(lock_size_);
+		locks_ = &mutexes_.front();
+		for(unsigned i=0;i<lock_size_;i++)
+			create_mutex(locks_+i,false);
+	}
+}
+
+session_file_storage::~session_file_storage()
+{
+	if(memory_ !=MAP_FAILED) {
+		for(unsigned i=0;i<lock_size_;i++)
+			destroy_mutex(reinterpret_cast<pthread_mutex_t *>(memory_) + i);
+		munmap(memory_,sizeof(pthread_mutex_t) * lock_size_);
+	}
+	else {
+		for(unsigned i=0;i<lock_size_;i++)
+			destroy_mutex(&mutexes_[i]);
+	}
+}
+
+pthread_mutex_t *session_file_storage::sid_to_pos(std::string const &sid)
+{
+	char buf[5] = { sid[0],sid[1],sid[2],sid[3],0};
+	unsigned pos;
+	sscanf(buf,"%x",&pos);
+	return locks_ + (pos % lock_size_); 
+}
+
+void session_file_storage::lock(std::string const &sid)
+{
+	pthread_mutex_lock(sid_to_pos(sid));
+}
+
+void session_file_storage::unlock(std::string const &sid)
+{
+	pthread_mutex_unlock(sid_to_pos(sid));
+}
+
+std::string session_file_storage::file_name(std::string const &sid)
+{
+	return path_ + "/" + sid;
 }
 
 class session_file_storage::locked_file {
@@ -100,15 +175,15 @@ public:
 	{
 		name_=object_->file_name(sid);
 		object_->lock(sid_);
-		if(!object_->file_locking())
+		if(!object_->file_lock_)
 			return;
 		for(;;) {
 			if(create)
-				fd_=::open(name.c_str(),O_CREAT | O_RDWR,0666);
+				fd_=::open(name_.c_str(),O_CREAT | O_RDWR,0666);
 			else
-				fd_=::open(name.c_str(),O_RDWR);
+				fd_=::open(name_.c_str(),O_RDWR);
 
-			if(fd < 0) return;
+			if(fd_ < 0) return;
 
 			struct flock lock;
 			memset(&lock,0,sizeof(lock));
@@ -118,17 +193,17 @@ public:
 			while((res=fcntl(fd_,F_SETLKW,&lock)!=0) && errno==EINTR)
 				;
 			if(res < 0) {
-				::close(fd_)
+				::close(fd_);
 				fd_=-1;
 			}
 			struct stat s_id,s_name;
-			if(::stat(file_name.c_str(),&s_name) < 0) {
+			if(::stat(name_.c_str(),&s_name) < 0) {
 				// looks like file was deleted
 				::close(fd_);
 				fd_=-1;
 				continue;
 			}
-			if(::fstat(fd_&s_id) < 0) {
+			if(::fstat(fd_,&s_id) < 0) {
 				::close(fd_);
 				fd_=-1;
 				return;
@@ -145,7 +220,7 @@ public:
 	~locked_file()
 	{
 		if(fd_>=0) {
-			if(object_->file_locking()) {
+			if(object_->file_lock_) {
 				struct flock lock;
 				memset(&lock,0,sizeof(lock));
 				lock.l_type=F_UNLCK;
@@ -177,7 +252,7 @@ void session_file_storage::save(std::string const &sid,time_t timeout,std::strin
 	save_to_file(fd,timeout,in);
 }
 
-void session_file_storage::load(std::string const &sid,time_t &timeout,std::string &out)
+bool session_file_storage::load(std::string const &sid,time_t &timeout,std::string &out)
 {
 	locked_file file(this,sid,false);
 	int fd=file.fd();
@@ -189,7 +264,7 @@ void session_file_storage::load(std::string const &sid,time_t &timeout,std::stri
 	return false;
 }
 
-void session_file_storage::remove(std:string const &sid)
+void session_file_storage::remove(std::string const &sid)
 {
 	locked_file file(this,sid,false);
 	if(file.fd() >= 0)
@@ -202,6 +277,7 @@ bool session_file_storage::read_timestamp(int fd)
 	int64_t stamp;
 	if(!read_all(fd,&stamp,sizeof(stamp)) || stamp < ::time(0))
 		return false;
+	return true;
 }
 
 bool session_file_storage::read_from_file(int fd,time_t &timeout,std::string &data)
@@ -233,7 +309,7 @@ void session_file_storage::save_to_file(int fd,time_t timeout,std::string const 
 {
 	struct {
 		int64_t timeout;
-		uint32_t ctc;
+		uint32_t crc;
 		uint32_t size;
 	} tmp = { timeout, 0, in.size() };
 	boost::crc_32_type crc_calc;
@@ -275,7 +351,7 @@ void session_file_storage::gc()
 {
 	DIR *d=0;
 	struct dirent *entry_st=0,*entry_p;
-	int path_len=pathconf(directory_.c_str(),_PC_NAME_MAX);
+	int path_len=pathconf(path_.c_str(),_PC_NAME_MAX);
 	if(path_len < 0 ) { 
 		// Only "sessions" should be in this directory
 		// also this directory has high level of trust
@@ -291,9 +367,9 @@ void session_file_storage::gc()
 	// this is for Solaris... 
 	entry_st=(struct dirent *)new char[sizeof(struct dirent)+path_len+1];
 	try{
-		if((d=::opendir(directory_.c_str()))==NULL) {
+		if((d=::opendir(path_.c_str()))==NULL) {
 			int err=errno;
-			throw cppcms_error(err,"Failed to open directory :"+dir);
+			throw cppcms_error(err,"Failed to open directory :"+path_);
 		}
 		while(::readdir_r(d,entry_st,&entry_p)==0 && entry_p!=NULL) {
 			int i;
@@ -305,8 +381,8 @@ void session_file_storage::gc()
 				continue;
 			std::string sid=entry_st->d_name;
 			{
-				locked_file file(this,sid);
-				if(file.fd() >=0 && !read_timestamp(fd))
+				locked_file file(this,sid,false);
+				if(file.fd() >=0 && !read_timestamp(file.fd()))
 					::unlink(file.name().c_str());
 			}
 		}
@@ -317,6 +393,32 @@ void session_file_storage::gc()
 		delete [] entry_st;
 		throw;
 	}
+}
+
+struct session_file_storage_factory::data {};
+
+session_file_storage_factory::session_file_storage_factory(std::string path,int conc,int proc_no,bool force_lock) :
+	storage_(new session_file_storage(path,conc,proc_no,force_lock))
+{
+}
+
+session_file_storage_factory::~session_file_storage_factory()
+{
+}
+
+intrusive_ptr<session_storage> session_file_storage_factory::get()
+{
+	return storage_;
+}
+
+bool session_file_storage_factory::requires_gc()
+{
+	return true;
+}
+
+void session_file_storage_factory::gc_job()
+{
+	storage_->gc();
 }
 
 
