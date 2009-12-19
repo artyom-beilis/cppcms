@@ -261,7 +261,7 @@ bool session_file_storage::load(std::string const &sid,time_t &timeout,std::stri
 		::unlink(file.name().c_str());
 		return false;
 	}
-	return false;
+	return true;
 }
 
 void session_file_storage::remove(std::string const &sid)
