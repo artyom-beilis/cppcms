@@ -17,8 +17,7 @@ namespace sessions {
 
 struct session_file_storage::data {};
 
-session_file_storage::session_file_storage(std::string path) :
-	memory_(MAP_FAILED)
+session_file_storage::session_file_storage(std::string path)
 {
 	if(path.empty()){
 		if(::getenv("TEMP"))
@@ -31,7 +30,7 @@ session_file_storage::session_file_storage(std::string path) :
 	else
 		path_=path;
 
-	if(!CreateDirectory(path_.c_str(),NULL)) {
+	if(!::CreateDirectory(path_.c_str(),NULL)) {
 		if(GetLastError()!=ERROR_ALREADY_EXISTS) {
 			throw cppcms_error("Failed to create a directory for session storage " + path_);
 		}
@@ -89,7 +88,7 @@ public:
 		::UnlockFileEx(h_,0,0,16,&ov);
 		::CloseHandle(h_);
 	}
-	int handle() { return h_; }
+	HANDLE handle() { return h_; }
 	std::string name() { return name_; }
 private:
 	HANDLE h_;
@@ -119,29 +118,27 @@ void session_file_storage::remove(std::string const &sid)
 	::DeleteFile(file.name().c_str());
 }
 
-bool session_file_storage::read_timestamp(int fd)
+bool session_file_storage::read_timestamp(HANDLE h)
 {
-	::lseek(fd,0,SEEK_SET);
 	int64_t stamp;
-	if(!read_all(fd,&stamp,sizeof(stamp)) || stamp < ::time(0))
+	if(!read_all(h,&stamp,sizeof(stamp)) || stamp < ::time(0))
 		return false;
 	return true;
 }
 
-bool session_file_storage::read_from_file(int fd,time_t &timeout,std::string &data)
+bool session_file_storage::read_from_file(HANDLE h,time_t &timeout,std::string &data)
 {
 	int64_t f_timeout;
 	uint32_t crc;
 	uint32_t size;
-	::lseek(fd,0,SEEK_SET);
-	if(!read_all(fd,&f_timeout,sizeof(f_timeout)))
+	if(!read_all(h,&f_timeout,sizeof(f_timeout)))
 		return false;
 	if(f_timeout < time(0))
 		return false;
-	if(!read_all(fd,&crc,sizeof(crc)) || !read_all(fd,&size,sizeof(size)))
+	if(!read_all(h,&crc,sizeof(crc)) || !read_all(h,&size,sizeof(size)))
 		return false;
 	std::vector<char> buffer(size,0);
-	if(!read_all(fd,&buffer.front(),size))
+	if(!read_all(h,&buffer.front(),size))
 		return false;
 	boost::crc_32_type crc_calc;
 	crc_calc.process_bytes(&buffer.front(),size);
@@ -153,7 +150,7 @@ bool session_file_storage::read_from_file(int fd,time_t &timeout,std::string &da
 	return true;
 }
 
-void session_file_storage::save_to_file(int fd,time_t timeout,std::string const &in)
+void session_file_storage::save_to_file(HANDLE h,time_t timeout,std::string const &in)
 {
 	struct {
 		int64_t timeout;
@@ -163,90 +160,64 @@ void session_file_storage::save_to_file(int fd,time_t timeout,std::string const 
 	boost::crc_32_type crc_calc;
 	crc_calc.process_bytes(in.data(),in.size());
 	tmp.crc=crc_calc.checksum();
-	if(!write_all(fd,&tmp,sizeof(tmp)) || !write_all(fd,in.data(),in.size()))
+	if(!write_all(h,&tmp,sizeof(tmp)) || !write_all(h,in.data(),in.size()))
 		throw cppcms_error(errno,"Failed to write to file");
 }
 
-bool session_file_storage::write_all(int fd,void const *vbuf,int n)
+bool session_file_storage::write_all(HANDLE h,void const *vbuf,int n)
 {
-	char const *buf=reinterpret_cast<char const *>(vbuf);
-	while(n > 0) {
-		int res = ::write(fd,buf,n);
-		if(res < 0 && errno==EINTR)
-			continue;
-		if(res <= 0)
-			return false;
-		n-=res;
-	}
+	DWORD written;
+	if(!::WriteFile(h,vbuf,n,&written,NULL) || written!=unsigned(n))
+		return false;
 	return true;
 }
 
-bool session_file_storage::read_all(int fd,void *vbuf,int n)
+bool session_file_storage::read_all(HANDLE h,void *vbuf,int n)
 {
-	char *buf=reinterpret_cast<char *>(vbuf);
-	while(n > 0) {
-		int res = ::read(fd,buf,n);
-		if(res < 0 && errno==EINTR)
-			continue;
-		if(res <= 0)
-			return false;
-		n-=res;
-	}
+	DWORD read;
+	if(!::ReadFile(h,vbuf,n,&read,NULL) || read!=unsigned(n))
+		return false;
 	return true;
 }
 
 void session_file_storage::gc()
 {
-	DIR *d=0;
-	struct dirent *entry_st=0,*entry_p;
-	int path_len=pathconf(path_.c_str(),_PC_NAME_MAX);
-	if(path_len < 0 ) { 
-		// Only "sessions" should be in this directory
-		// also this directory has high level of trust
-		// thus... Don't care about symlink exploits
-		#ifdef NAME_MAX
-		path_len=NAME_MAX;
-		#elif defined(PATH_MAX)
-		path_len=PATH_MAX;
-		#else
-		path_len=4096; // guess
-		#endif
-	}
-	// this is for Solaris... 
-	entry_st=(struct dirent *)new char[sizeof(struct dirent)+path_len+1];
+	std::auto_ptr<WIN32_FIND_DATA> entry(new WIN32_FIND_DATA);
+	HANDLE d=INVALID_HANDLE_VALUE;
+	std::string search_path = path_ + "/*";
 	try{
-		if((d=::opendir(path_.c_str()))==NULL) {
-			int err=errno;
-			throw cppcms_error(err,"Failed to open directory :"+path_);
+		if((d=::FindFirstFile(search_path.c_str(),entry.get()))==INVALID_HANDLE_VALUE) {
+			if(GetLastError() == ERROR_FILE_NOT_FOUND)
+				return;
+			throw cppcms_error("Failed to open directory :"+path_);
 		}
-		while(::readdir_r(d,entry_st,&entry_p)==0 && entry_p!=NULL) {
+		do {
 			int i;
 			for(i=0;i<32;i++) {
-				if(!isxdigit(entry_st->d_name[i]))
+				if(!isxdigit(entry->cFileName[i]))
 					break;
 			}
-			if(i!=32 || entry_st->d_name[i]!=0) 
+			if(i!=32 || entry->cFileName[i]!=0) 
 				continue;
-			std::string sid=entry_st->d_name;
+			std::string sid=entry->cFileName;
 			{
-				locked_file file(this,sid,false);
-				if(file.fd() >=0 && !read_timestamp(file.fd()))
-					::unlink(file.name().c_str());
+				locked_file file(this,sid);
+				if(!read_timestamp(file.handle()))
+					::DeleteFile(file.name().c_str());
 			}
-		}
-		::closedir(d);
+		} while(::FindNextFile(d,entry.get()));
+		::FindClose(d);
 	}
 	catch(...) {
-		if(d) ::closedir(d);
-		delete [] entry_st;
+		if(d!=INVALID_HANDLE_VALUE) ::FindClose(d);
 		throw;
 	}
 }
 
 struct session_file_storage_factory::data {};
 
-session_file_storage_factory::session_file_storage_factory(std::string path,int conc,int proc_no,bool force_lock) :
-	storage_(new session_file_storage(path,conc,proc_no,force_lock))
+session_file_storage_factory::session_file_storage_factory(std::string path) :
+	storage_(new session_file_storage(path))
 {
 }
 

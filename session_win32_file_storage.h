@@ -4,7 +4,6 @@
 #include "defs.h"
 #include "session_storage.h"
 #include "hold_ptr.h"
-#include <pthread.h>
 #include <vector>
 
 
@@ -23,9 +22,11 @@ namespace sessions {
 	private:
 		struct locked_file;
 		struct data;
-		bool read_timestamp(HANDLE h);
-		bool read_from_file(HANDLE h,time_t &timeout,std::string &data);
-		void save_to_file(HANDLE h,time_t timeout,std::string const &in);
+		bool read_timestamp(void *h);
+		bool read_from_file(void *h,time_t &timeout,std::string &data);
+		void save_to_file(void *h,time_t timeout,std::string const &in);
+		bool read_all(void *,void *vbuf,int n);
+		bool write_all(void *,void const *vbuf,int n);
 		void gc();
 		std::string file_name(std::string const &sid);
 
