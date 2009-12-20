@@ -24,6 +24,8 @@ public:
 
 class session_api_factory {
 public:
+	virtual bool requires_gc() = 0; 
+	virtual void gc() = 0;
 	virtual intrusive_ptr<session_api> get() = 0;
 	virtual ~session_api_factory() {}
 };

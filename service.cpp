@@ -148,6 +148,7 @@ void service::load_settings(int argc,char *argv[])
 
 void service::setup()
 {
+	impl_->id_=0;
 	int apps=settings().get("service.applications_pool_size",threads_no()*2);
 	impl_->applications_pool_.reset(new cppcms::applications_pool(*this,apps));
 	impl_->views_pool_.reset(new cppcms::views_pool(settings()));
@@ -278,6 +279,11 @@ void service::shutdown()
 #endif
 }
 
+void service::after_fork(util::callback0 const &cb)
+{
+	impl_->on_fork_.push_back(cb);
+}
+
 void service::run()
 {
 	generator();
@@ -290,6 +296,12 @@ void service::run()
 		return;
 	}
 	thread_pool(); // make sure we start it
+	
+	for(unsigned i=0;i<impl_->on_fork_.size();i++)
+		impl_->on_fork_[i]();
+
+	impl_->on_fork_.clear();
+	
 	impl_->acceptor_->async_accept();
 
 	setup_exit_handling();
@@ -313,14 +325,17 @@ int service::procs_no()
 bool service::prefork()
 {
 	procs_no();
+	impl_->id_ = 1;
 	return false;
 }
 #else // UNIX
 bool service::prefork()
 {
 	int procs=settings().get("service.procs",0);
-	if(procs<=0)
+	if(procs<=0) {
+		impl_->id_ = 1;
 		return false;
+	}
 	std::vector<int> pids(procs,0);
 	
 	for(int i=0;i<procs;i++) {
@@ -335,6 +350,7 @@ bool service::prefork()
 			throw cppcms_error(err,"fork failed");
 		}
 		else if(pid==0) {
+			impl_->id_ = i+1;
 			return false; // chaild
 		}
 		else {
@@ -367,6 +383,11 @@ bool service::prefork()
 }
 
 #endif
+
+int service::process_id()
+{
+	return impl_->id_;
+}
 
 void service::start_acceptor()
 {

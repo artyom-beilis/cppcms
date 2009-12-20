@@ -41,6 +41,10 @@ namespace impl {
 		std::auto_ptr<session_pool> session_pool_;
 		std::locale default_locale_;
 
+		std::vector<util::callback0> on_fork_;
+
+		int id_;
+
 #ifdef CPPCMS_WIN32
 		typedef SOCKET native_socket_type;
 		typedef boost::asio::ip::tcp::socket loopback_socket_type;

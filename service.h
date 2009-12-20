@@ -49,9 +49,11 @@ namespace cppcms {
 		cppcms::impl::service &impl();
 
 		void post(util::callback0 const &handler);
+		void after_fork(util::callback0 const &handler);
 		
 		int threads_no();
 		int procs_no();
+		int process_id();
 	private:
 		void setup();
 		void load_settings(int argc,char *argv[]);
