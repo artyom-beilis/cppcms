@@ -217,6 +217,10 @@ void context::locale(std::string const &name)
 {
 	locale(service().locale(name));
 }
+session_interface &context::session()
+{
+	return *d->session;
+}
 
 
 } // http
