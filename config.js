@@ -54,11 +54,28 @@
 	},
 	"session" : {
 		"expire" : "browser",
-		"timeout" : 10,
-		"cookies_prefix" : "cppcms_session",
-		"cookies_domain" : "",
-		"cookies_path" : "/",
-		"cookies_secure" : false
+		"timeout" : 10, // seconds
+		"cookies" : {
+			"prefix" : "cppcms_session",
+			"domain" : "",
+			"path" : "/",
+			"secure" : false
+		},
+		"location" : "server",
+		"client_size_limit" : 64,
+		"gc" : 10,
+		"client" : { 
+			"encryptor" : "aes", 
+			// aes or hmac -- hmac -- signature only, aes -- encryption and signature
+			"key" : "261965ba80a79c034c9ae366a19a2627"
+			// 32 digit hexadecimal secret number
+		},
+		"server" : {
+			"storage" : "files",
+			"dir" : "./cppcms_sessions",
+			"shared" : true
+		}
+		
 	},
 	"views" : {
 		"default_skin" : "skin1",

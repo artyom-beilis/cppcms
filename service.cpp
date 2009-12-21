@@ -287,6 +287,7 @@ void service::after_fork(util::callback0 const &cb)
 void service::run()
 {
 	generator();
+	session_pool().init();
 	start_acceptor();
 
 	if(settings().get("file_server.enable",false))

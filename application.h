@@ -16,6 +16,7 @@ namespace cppcms {
 	class application;
 	class base_content;
 	class cache_interface;
+	class session_interface;
 
 	namespace locale {
 		class environment;
@@ -44,6 +45,7 @@ namespace cppcms {
 		http::response &response();
 		url_dispatcher &dispatcher();
 		cache_interface &cache();
+		session_interface &session();
 
 		void render(std::string template_name,base_content &content);
 		void render(std::string skin,std::string template_name,base_content &content);

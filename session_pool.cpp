@@ -22,7 +22,7 @@
     namespace boost = cppcms_boost;
 #endif
 
-#ifndef HAVE_GCRYPT
+#ifdef HAVE_GCRYPT
 #include "aes_encryptor.h"
 #endif
 
@@ -150,49 +150,49 @@ private:
 };
 
 
-session_pool::session_pool(service &srv) :
-	service_(&srv)
+void session_pool::init()
 {
+	service &srv=*service_;
+	if(backend_.get())
+		return;
+
 	std::string location=srv.settings().get("session.location","none");
 
-	if(location == "client" || location=="both") {
-		std::string enc=srv.settings().get("session.cookies_encryptor","");
+	if(location == "client" || location=="both" && !encryptor_.get()) {
+		std::string enc=srv.settings().get<std::string>("session.client.encryptor");
 		std::auto_ptr<cppcms::sessions::encryptor_factory> factory;
 		if(enc=="hmac") {
-			std::string key = srv.settings().get<std::string>("session.cookies_key");
+			std::string key = srv.settings().get<std::string>("session.client.key");
 			factory.reset(new enc_factory<cppcms::sessions::impl::hmac_cipher>(key));
 		}
 		#ifdef HAVE_GCRYPT
 		else if(enc=="aes") {
-			std::string key = srv.settings().get<std::string>("session.cookies_key");
+			std::string key = srv.settings().get<std::string>("session.client.key");
 			factory.reset(new enc_factory<cppcms::sessions::impl::aes_cipher>(key));
 		}
 		#endif
-		else if(enc.empty())
-			; // Nothing to do
 		else
 			throw cppcms_error("Unknown encryptor: "+enc);
 		encryptor(factory);
 	}
-	if(location == "server" || location == "both" ) {
-		std::string storage=srv.settings().get("session.backend","");
-		if(storage == "files") {
-			std::auto_ptr<sessions::session_storage_factory> tmp;
-			std::string dir = srv.settings().get("session.files.dir","");
+	if(location == "server" || location == "both" && !storage_.get()) {
+		std::string stor=srv.settings().get<std::string>("session.server.storage");
+		std::auto_ptr<sessions::session_storage_factory> factory;
+		if(stor == "files") {
+			std::string dir = srv.settings().get("session.server.dir","");
 			#ifdef CPPCMS_WIN_NATIVE
-			tmp.reset(new session_file_storage_factory(dir));
+			factory.reset(new session_file_storage_factory(dir));
 			#else
-			bool sharing = srv.settings().get("session.files.shared",true);
+			bool sharing = srv.settings().get("session.server.shared",true);
 			int threads = srv.threads_no();
 			int procs = srv.procs_no();
 			if(procs == 0) procs=1;
-			tmp.reset(new session_file_storage_factory(dir,threads*procs,procs,sharing));
-			#endif			
+			factory.reset(new session_file_storage_factory(dir,threads*procs,procs,sharing));
+			#endif
 		}
-		else if(storage.empty())
-			; /// Nothing to do
 		else 
-			throw cppcms_error("Unknown server side storage:"+storage);
+			throw cppcms_error("Unknown server side storage:"+stor);
+		storage(factory);
 	}
 	if(location == "server") {
 		std::auto_ptr<session_api_factory> f(new sid_factory(this));
@@ -213,6 +213,11 @@ session_pool::session_pool(service &srv) :
 		throw cppcms_error("Unknown location");
 
 	service_->after_fork(boost::bind(&session_pool::after_fork,this));
+}
+
+session_pool::session_pool(service &srv) :
+	service_(&srv)
+{
 }
 
 void session_pool::after_fork()

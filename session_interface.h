@@ -35,9 +35,9 @@ public:
 	void hide(std::string const &key);
 
 	std::string &operator[](std::string const &);
+	void set(std::string const &key,std::string const &v);
 
 	std::string get(std::string const &key);
-	void set(std::string const &key,std::string const &v);
 	
 	template<typename T>
 	T get(std::string const &key)
@@ -57,7 +57,7 @@ public:
 		std::ostringstream ss;
 		ss.imbue(std::locale::classic());
 		ss<<value;
-		set(key,value);
+		set(key,ss.str());
 	}
 	
 
@@ -134,7 +134,6 @@ private:
 	void save_data(std::map<std::string,entry> const &data,std::string &s);
 	void load_data(std::map<std::string,entry> &data,std::string const &s);
 };
-
 
 } // cppcms
 

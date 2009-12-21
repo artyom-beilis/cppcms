@@ -12,6 +12,7 @@
 #include "intrusive_ptr.h"
 #include "form.h"
 #include "cache_interface.h"
+#include "session_interface.h"
 #include <sstream>
 #include <stdexcept>
 #include <stdlib.h>
@@ -211,10 +212,19 @@ public:
 		dispatcher().assign("^/forward$",&hello::forward,this);
 		dispatcher().assign("^/form$",&hello::form,this);
 		dispatcher().assign("^/cache/?$",&hello::cached,this);
+		dispatcher().assign("^/session/?$",&hello::session_test,this);
 		dispatcher().assign(".*",&hello::hello_world,this);
 	}
 	~hello()
 	{
+	}
+
+	void session_test()
+	{
+		if(!session().is_set("first_visit"))
+			session().set("first_visit",::time(0));
+		response().out() << cppcms::locale::format("<html><body> Your first visit was at {1,datetime=l} </body></html>") 
+			% session().get<time_t>("first_visit");
 	}
 
 	void cached()

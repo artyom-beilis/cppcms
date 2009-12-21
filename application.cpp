@@ -190,6 +190,11 @@ cache_interface &application::cache()
 	return context().cache();
 }
 
+session_interface &application::session()
+{
+	return context().session();
+}
+
 
 void application::recycle()
 {

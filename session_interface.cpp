@@ -286,14 +286,14 @@ void session_interface::set_session_cookie(int64_t age,string const &data,string
 {
 	if(data.empty())
 		age=-1;
-	std::string cookie_name=context_->settings().get("session.cookies_prefix","cppcms_session");
+	std::string cookie_name=context_->settings().get("session.cookies.prefix","cppcms_session");
 	if(!key.empty()) {
 		cookie_name+="_";
 		cookie_name+=key;
 	}
-	std::string domain = context_->settings().get("session.cookies_domain","");
-	std::string path   = context_->settings().get("session.cookies_path","/");
-	bool secure = context_->settings().get("session.cookies_secure",0);
+	std::string domain = context_->settings().get("session.cookies.domain","");
+	std::string path   = context_->settings().get("session.cookies.path","/");
+	bool secure = context_->settings().get("session.cookies.secure",0);
 
 	http::cookie the_cookie(cookie_name,util::urlencode(data),path,domain);
 
@@ -317,7 +317,7 @@ void session_interface::set_session_cookie(string const &data)
 string session_interface::get_session_cookie()
 {
 	check();
-	string name=context_->settings().get("session.cookies_prefix","cppcms_session");
+	string name=context_->settings().get("session.cookies.prefix","cppcms_session");
 	http::request::cookies_type const &cookies = context_->request().cookies();
 	http::request::cookies_type::const_iterator p=cookies.find(name);
 	if(p==cookies.end())

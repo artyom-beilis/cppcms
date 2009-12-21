@@ -156,7 +156,6 @@ else(${CMAKE_HOST_WIN32})
 endif(${CMAKE_HOST_WIN32}) 
 
 
-configure_file(config.cmake.h config.h)
 if(CPPCMS_USE_EXTERNAL_BOOST)
 	if(WIN32)
 		add_definitions(-DBOOST_ALL_NO_LIB)
@@ -234,7 +233,7 @@ find_library(LIB_GCRYPT gcrypt)
 
 if(LIB_GCRYPT)
 	set(CPPCMS_SOURCES ${CPPCMS_SOURCES} aes_encryptor.cpp)
-	set(HAVE_GCRYPT)
+	set(HAVE_GCRYPT 1)
 else(LIB_GCRYPT)
 	message("GNU Gcrypt library not found, disabling aes_encryptor")
 endif(LIB_GCRYPT)
@@ -383,4 +382,5 @@ endif(WIN32 AND NOT DISABLE_SHARED)
 set_target_properties(${CPPCMS_LIBS} PROPERTIES CLEAN_DIRECT_OUTPUT 1)
 set_target_properties(${CPPCMS_LIBS} PROPERTIES OUTPUT_NAME "cppcms")
 
+configure_file(config.cmake.h config.h)
 

@@ -21,6 +21,8 @@ namespace cppcms {
 		session_pool(service &srv);
 		~session_pool();
 
+		void init();
+
 		intrusive_ptr<session_api> get();
 
 		void backend(std::auto_ptr<session_api_factory> b);
