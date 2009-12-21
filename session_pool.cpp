@@ -35,8 +35,6 @@
 
 
 
-
-
 namespace cppcms {
 struct session_pool::data 
 {
@@ -225,7 +223,7 @@ void session_pool::after_fork()
 	if(backend_.get() && backend_->requires_gc()) {
 		if(service_->process_id()!=1)
 			return;
-		int frequency = service_->settings().get("sessions.gc",0);
+		int frequency = service_->settings().get("session.gc",0);
 		if(frequency > 0) {
 			boost::shared_ptr<gc_job> job(new gc_job(service_,frequency,this));
 			job->async_run();

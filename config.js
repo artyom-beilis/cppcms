@@ -61,8 +61,8 @@
 			"path" : "/",
 			"secure" : false
 		},
-		"location" : "server",
-		"client_size_limit" : 64,
+		"location" : "both",
+		"client_size_limit" : 100,
 		"gc" : 10,
 		"client" : { 
 			"encryptor" : "aes", 

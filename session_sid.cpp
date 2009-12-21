@@ -117,10 +117,9 @@ bool session_sid::load(session_interface &session,std::string &data,time_t &time
 	if(!valid_sid(session.get_session_cookie(),id))
 		return false;
 	std::string tmp_data;
-	time_t tmp_timeout;
 	if(!storage_->load(id,timeout,data))
 		return false;
-	if(time(0) > tmp_timeout) {
+	if(time(0) > timeout) {
 		storage_->remove(id);
 		return false;
 	}

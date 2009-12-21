@@ -223,6 +223,8 @@ public:
 	{
 		if(!session().is_set("first_visit"))
 			session().set("first_visit",::time(0));
+		std::string tmp(rand() % 100,'x');
+		session().set("foo",tmp);
 		response().out() << cppcms::locale::format("<html><body> Your first visit was at {1,datetime=l} </body></html>") 
 			% session().get<time_t>("first_visit");
 	}
