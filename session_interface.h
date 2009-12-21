@@ -82,12 +82,13 @@ public:
 	void clear_session_cookie();
 	std::string get_session_cookie();
 
+	bool load();
+	void save();
+
 private:
 	friend class http::response;
 	friend class http::request;
 
-	bool load();
-	void save();
 
 
 	struct entry;
@@ -106,9 +107,12 @@ private:
 
 	// Information from session data
 	time_t timeout_in_;
-	bool new_session_;
-	bool saved_;
-	bool on_server_;
+
+	uint32_t new_session_ : 1;
+	uint32_t saved_ : 1;
+	uint32_t on_server_ : 1;
+	uint32_t loaded_ : 1;
+	uint32_t reserved_ : 28;
 
 	std::string temp_cookie_;
 

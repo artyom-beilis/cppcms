@@ -106,6 +106,8 @@ void context::on_request_ready(bool error)
 void context::dispatch(intrusive_ptr<application> app,bool syncronous)
 {
 	try {
+		if(syncronous)
+			app->context().session().load();
 		app->dispatcher().dispatch();
 	}
 	catch(std::exception const &e){

@@ -11,6 +11,7 @@
 #include "config.h"
 #include "localization.h"
 #include "util.h"
+#include "session_interface.h"
 
 #include <iostream>
 #include <sstream>
@@ -200,6 +201,8 @@ void response::io_mode(response::io_mode_type mode)
 
 void response::write_http_headers(std::ostream &out)
 {
+	context_.session().save();
+
 	for(data::headers_type::const_iterator h=d->headers.begin();h!=d->headers.end();++h) {
 		out<<h->first<<": "<<h->second<<"\r\n";
 	}
