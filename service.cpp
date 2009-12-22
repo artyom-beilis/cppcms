@@ -312,7 +312,7 @@ void service::run()
 
 int service::procs_no()
 {
-	int procs=settings().get("service.procs",0);
+	int procs=settings().get("service.worker_processes",0);
 	if(procs < 0)
 		procs = 0;
 	#ifdef CPPCMS_WIN32
@@ -330,10 +330,11 @@ bool service::prefork()
 	return false;
 }
 #else // UNIX
+static void  dummy(int n) {}
 bool service::prefork()
 {
-	int procs=settings().get("service.procs",0);
-	if(procs<=0) {
+	int procs=procs_no();
+	if(procs==0) {
 		impl_->id_ = 1;
 		return false;
 	}
@@ -359,23 +360,74 @@ bool service::prefork()
 		}
 	}
 
-	sigset_t set;
+	sigset_t set,prev;
 	sigemptyset(&set);
 	sigaddset(&set,SIGTERM);
 	sigaddset(&set,SIGINT);
+	sigaddset(&set,SIGCHLD);
 	sigaddset(&set,SIGQUIT);
 
-	sigprocmask(SIG_BLOCK,&set,NULL);
+	sigprocmask(SIG_BLOCK,&set,&prev);
+
+	// Enable delivery of SIGCHLD
+	struct sigaction sa_new,sa_old;
+	memset(&sa_new,0,sizeof(sa_new));
+	sa_new.sa_handler=dummy;
+	::sigaction(SIGCHLD,&sa_new,&sa_old);
 
 	int sig;
 	do {
 		sig=0;
 		sigwait(&set,&sig);
+		if(sig==SIGCHLD) {
+			int status;
+			int pid = ::waitpid(0,&status,WNOHANG);
+			if(pid > 0)  {
+				std::vector<int>::iterator p;
+				p = std::find(pids.begin(),pids.end(),pid);
+				// Ingnore all processes that are not my own childrens
+				if(p!=pids.end()) {
+					// TODO: Make better error handling
+					if(!WIFEXITED(stat) || WEXITSTATUS(stat)!=0){
+						if(WIFEXITED(stat)) {
+							std::cerr<<"Chaild exited with "<<WEXITSTATUS(stat)<<std::endl;
+						}
+						else if(WIFSIGNALED(stat)) {
+							std::cerr<<"Chaild killed by "<<WTERMSIG(stat)<<std::endl;
+						}
+						else {
+							std::cerr<<"Chaild exited for unknown reason"<<std::endl;
+						}
+						impl_->id_ = p - pids.begin() + 1;
+						*p=-1;
+						pid = ::fork();
+						if(pid < 0) {
+							int err=errno;
+							std::cerr<<"Failed to create process: " <<strerror(err)<<std::endl;
+						}
+						else if(pid == 0) {
+							::sigaction(SIGCHLD,&sa_old,NULL);
+							sigprocmask(SIG_SETMASK,&prev,NULL);
+							return false;
+						}
+						else {
+							*p=pid;
+							impl_->id_ = 0;
+						}
+					}
+					else {
+						*p=-1;
+					}
+				}
+			}
+		}
 	}while(sig!=SIGINT && sig!=SIGTERM && sig!=SIGQUIT);
 
-	sigprocmask(SIG_UNBLOCK,&set,NULL);
+	sigprocmask(SIG_SETMASK,&prev,NULL);
 
 	for(int i=0;i<procs;i++) {
+		if(pids[i]<0)
+			continue;
 		::kill(pids[i],SIGTERM);
 		int stat;
 		::waitpid(pids[i],&stat,0);

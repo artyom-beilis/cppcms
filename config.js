@@ -5,8 +5,8 @@
 	"id" : 1,
 	// Service description
 	"service" : {
-		"procs" : 0,
-		"worker_threads": 5,
+//		"worker_processes" : 5,
+		"worker_threads" : 5,
 		"api" : "http",
 		"port" : 8080,
 	//	"ip" : "0.0.0.0"
@@ -84,7 +84,7 @@
 		 "auto_reload" : true
 	},
 	"cache" : {
-		"backend" : "threaded",
+		"backend" : "thread_shared",
 		"limit" : 100, // items
 		"memsize" : 64,  // KBs
 	},

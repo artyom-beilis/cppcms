@@ -17,9 +17,11 @@ cache_pool::cache_pool(json::value const &settings) :
 	std::string type = settings.get("cache.backend","none");
 	if(type == "none" )
 		return;
-	if(type=="threaded") {
-		if(settings.get("service.procs",0)>1)
-			throw cppcms_error("Can't use `threaded' backend with more then one process");
+	if(type=="thread_shared") {
+		if(settings.get("service.worker_processes",0)>1)
+			throw cppcms_error(
+				"Can't use `thread_shared' backend with more then one process ether set "
+				"service.worker_processes to 0 or 1 or use cache.backend=\"process_shared\"");
 		unsigned items = settings.get("cache.limit",64);
 		d->module=impl::thread_cache_factory(items);
 	}
