@@ -2,8 +2,8 @@
 #include "base_encryptor.h"
 #include "base64.h"
 #include "cppcms_error.h"
-#include <cstdlib>
-#include "urandom.h"
+#include <stdio.h>
+#include <stdlib.h>
 
 using namespace std;
 
@@ -40,7 +40,13 @@ base_encryptor::base_encryptor(string key_):
 
 unsigned base_encryptor::rand(unsigned max)
 {
+	#ifdef CPPCMS_WIN_NATIVE
+	unsigned res;
+	rnd.generate(&res,sizeof(res));
+	return (unsigned)(res/(RAND_MAX+1.0)*max);
+	#else
 	return (unsigned)(rand_r(&seed)/(RAND_MAX+1.0)*max);
+	#endif
 }
 
 string base_encryptor::base64_enc(vector<unsigned char> const &data)
@@ -63,8 +69,13 @@ void base_encryptor::base64_dec(std::string const &in,std::vector<unsigned char>
 void base_encryptor::salt(char *salt)
 {
 	info dummy;
+	#ifdef CPPCMS_WIN_NATIVE
+	unsigned res;
+	rnd.generate(salt,sizeof(dummy.salt));
+	#else
 	for(unsigned i=0;i<sizeof(dummy.salt);i++)
 		salt[i]=rand(256);
+	#endif
 }
 
 } // impl

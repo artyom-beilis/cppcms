@@ -62,10 +62,10 @@
 			"secure" : false
 		},
 		"location" : "both",
-		"client_size_limit" : 100,
+		"client_size_limit" : 64,
 		"gc" : 10,
 		"client" : { 
-			"encryptor" : "aes", 
+			"encryptor" : "hmac", 
 			// aes or hmac -- hmac -- signature only, aes -- encryption and signature
 			"key" : "261965ba80a79c034c9ae366a19a2627"
 			// 32 digit hexadecimal secret number

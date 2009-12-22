@@ -7,9 +7,10 @@
 #include "cppcms_error.h"
 #include "urandom.h"
 
+#include <time.h>
+
 #ifndef CPPCMS_WIN_NATIVE
 #include <sys/time.h>
-#include <time.h>
 #else
 #include <windows.h>
 #endif

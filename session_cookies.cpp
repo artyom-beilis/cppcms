@@ -3,6 +3,8 @@
 #include "cppcms_error.h"
 #include "session_interface.h"
 
+#include <time.h>
+
 namespace cppcms {
 namespace sessions {
 

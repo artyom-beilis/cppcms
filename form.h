@@ -49,7 +49,7 @@ namespace cppcms {
 		} widget_part_type;
 	};
 
-	class form_context : public form_flags
+	class CPPCMS_API form_context : public form_flags
 	{
 	public:
 		form_context();
@@ -687,7 +687,7 @@ namespace cppcms {
 			util::hold_ptr<data> d;
 		};
 
-		class base_html_input : virtual public base_widget {
+		class CPPCMS_API base_html_input : virtual public base_widget {
 		public:
 			base_html_input(std::string const &type);
 			virtual ~base_html_input();
@@ -1001,7 +1001,7 @@ namespace cppcms {
 			util::hold_ptr<data> d;
 		};
 
-		class checkbox: public base_html_input {
+		class CPPCMS_API checkbox: public base_html_input {
 		public:
 			// Can specify other type like "radio"
 			checkbox(std::string const &type);
@@ -1024,7 +1024,7 @@ namespace cppcms {
 			bool value_;
 		};
 		
-		class select_multiple : public base_widget {
+		class CPPCMS_API select_multiple : public base_widget {
 		public:
 			select_multiple();
 			~select_multiple();

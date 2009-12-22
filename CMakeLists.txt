@@ -375,8 +375,7 @@ add_executable(cppcms_config_find_param cppcms_config_find_param.cpp json.cpp)
 # These are use export
 if(WIN32 AND NOT DISABLE_SHARED)
 	set_target_properties(hello_world cppcms PROPERTIES
-				COMPILE_DEFINITIONS DLL_EXPORT
-				COMPILE_DEFINITIONS BOOST_LOCALE_DYN_LINK )
+				COMPILE_DEFINITIONS DLL_EXPORT)
 endif(WIN32 AND NOT DISABLE_SHARED)
 
 set_target_properties(${CPPCMS_LIBS} PROPERTIES CLEAN_DIRECT_OUTPUT 1)

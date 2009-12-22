@@ -5,6 +5,7 @@
 #include <string>
 
 #include "session_cookies.h"
+#include "urandom.h"
 
 namespace cppcms {
 namespace sessions {
@@ -28,6 +29,9 @@ protected:
 	};
 	void salt(char *s);
 private:
+	#ifdef CPPCMS_WIN_NATIVE
+	urandom_device rnd;
+	#endif
 	unsigned seed;
 };
 

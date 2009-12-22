@@ -10,7 +10,12 @@
     namespace boost = cppcms_boost;
 #endif
 
+#include <memory>
+#include <time.h>
+
 #include <windows.h>
+
+#include <sstream>
 
 namespace cppcms {
 namespace sessions {
@@ -62,13 +67,20 @@ public:
 					OPEN_ALWAYS,
 					FILE_ATTRIBUTE_NORMAL,
 					NULL);
-			if(h_==INVALID_HANDLE_VALUE && GetLastError()==ERROR_ACCESS_DENIED && sleep_time<1000 ) {
-				::Sleep(sleep_time);
-				sleep_time = sleep_time == 0 ? 1 : sleep_time * 2;				
-				continue;
+			if(h_==INVALID_HANDLE_VALUE) {
+				if(GetLastError()==ERROR_ACCESS_DENIED && sleep_time<1000 ) {
+					::Sleep(sleep_time);
+					sleep_time = sleep_time == 0 ? 1 : sleep_time * 2;				
+					continue;
+				}
+				else {
+					std::ostringstream tmp;
+					tmp << "Failed to open file:" + name_ + "error code " <<std::hex << ::GetLastError();
+					throw cppcms_error(tmp.str());
+				}
 			}
 			else
-				throw cppcms_error("Failed to open file:" + name_);
+				break;
 		}
 		
 		OVERLAPPED ov = {0};
