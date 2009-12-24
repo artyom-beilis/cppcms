@@ -1,6 +1,6 @@
 #define CPPCMS_SOURCE
 #include "config.h"
-# ifdef HAVE_CANONICALIZE_FILE_NAME
+# if defined(HAVE_CANONICALIZE_FILE_NAME) && !defined(_GNU_SOURCE)
 # define _GNU_SOURCE
 #endif
 
@@ -15,7 +15,7 @@
 #include "json.h"
 #include <sstream>
 #include <fstream>
-#include "config.h"
+#include <string.h>
 
 #include <sys/types.h>
 #include <sys/stat.h>
