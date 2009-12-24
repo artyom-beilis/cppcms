@@ -156,6 +156,8 @@ else(${CMAKE_HOST_WIN32})
 endif(${CMAKE_HOST_WIN32}) 
 
 
+check_function_exists(canonicalize_file_name HAVE_CANONICALIZE_FILE_NAME)
+
 if(CPPCMS_USE_EXTERNAL_BOOST)
 	if(WIN32)
 		add_definitions(-DBOOST_ALL_NO_LIB)

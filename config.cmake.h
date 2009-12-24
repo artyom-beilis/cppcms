@@ -68,6 +68,10 @@
 # define CPPCMS_NO_STD_WSTRING
 #endif 
 
+/* Have canonicalize_file_name */
+
+#cmakedefine HAVE_CANONICALIZE_FILE_NAME
+
 /* "Have __sync_fetch_and_add" */
 #cmakedefine HAVE_SYNC_FETCH_AND_ADD
 

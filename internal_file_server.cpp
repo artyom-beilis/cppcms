@@ -1,31 +1,40 @@
 #define CPPCMS_SOURCE
+#include "config.h"
+# ifdef HAVE_CANONICALIZE_FILE_NAME
+# define _GNU_SOURCE
+#endif
+
+#include <stdlib.h>
+
 #include "application.h"
 #include "url_dispatcher.h"
 #include "service.h"
 #include "http_response.h"
 #include "internal_file_server.h"
+#include "cppcms_error.h"
 #include "json.h"
 #include <sstream>
 #include <fstream>
 #include "config.h"
-#ifdef CPPCMS_USE_EXTERNAL_BOOST
-#   include <boost/filesystem/operations.hpp>
-#   include <boost/system/error_code.hpp>
-#else // Internal Boost
-#   include <cppcms_boost/filesystem/operations.hpp>
-#   include <cppcms_boost/system/error_code.hpp>
-    namespace boost = cppcms_boost;
+
+#include <sys/types.h>
+#include <sys/stat.h>
+
+#ifdef CPPCMS_WIN_NATIVE
+#include <windows.h>
+#else
+#include <unistd.h>
+#include <limits.h>
 #endif
 
-
-namespace fs = boost::filesystem;
 
 namespace cppcms {
 namespace impl {
 
 file_server::file_server(cppcms::service &srv) : application(srv)
 {
-	document_root_ = settings().get("file_server.document_root",".");
+	if(!canonical(settings().get("file_server.document_root","."),document_root_))
+		throw cppcms_error("Invalid document root");
 
 	dispatcher().assign("^(.*)$",&file_server::serve_file,this,1);
 
@@ -113,50 +122,124 @@ file_server::~file_server()
 {
 }
 
+bool file_server::canonical(std::string normal,std::string &real)
+{
+#ifndef CPPCMS_WIN_NATIVE
+
+
+	#ifdef HAVE_CANONICALIZE_FILE_NAME
+
+		char *canon=::canonicalize_file_name(normal.c_str());
+		if(!canon) return false;
+		real=canon;
+		free(canon);
+		canon=0;
+
+	#else
+		#if defined(PATH_MAX)
+			int len = PATH_MAX;
+		#else
+			int len = pathconf(normal.c_str(),_PC_PATH_MAX);
+			if(len <= 0)
+				len = 32768; // Hope it is enough
+		#endif
+
+		std::vector<char> buffer;
+		try { 
+			// Size may be not feasible for allocation according to POSIX
+			buffer.resize(len,0);
+		}
+		catch(std::bad_alloc const &e) {
+			buffer.resize(32768); 
+		}
+
+		char *canon = ::realpath(normal.c_str(),&buffer.front());
+		if(!canon)
+			return false;
+		real = canon;
+	#endif
+
+#else
+		int size=4096;
+		std::vector<char> buffer(size,0);
+		for(;;) {
+			DWORD res = ::GetFullPathName(normal.c_str(),buffer.size(),&buffer.front(),0);
+			if(res == 0)
+				return false;
+			if(res >= buffer.size()) {
+				buffer.resize(buffer.size()*2,0);
+			}
+			else {
+				real=&buffer.front();
+				break;
+			}
+		}
+#endif
+	return true;
+}
+
+bool file_server::check_in_document_root(std::string normal,std::string &real) 
+{
+	normal=document_root_ + "/" + normal;
+	if(!canonical(normal,real))
+		return false;
+	if(real.size() < document_root_.size() || memcmp(real.c_str(),document_root_.c_str(),document_root_.size()) !=0)
+		return false;
+	return true;
+}
+
+int file_server::file_mode(std::string const &file_name)
+{
+	struct stat st;
+	if(::stat(file_name.c_str(),&st) < 0)
+		return 0;
+	return st.st_mode;
+}
+
 void file_server::serve_file(std::string file_name)
 {
-	if(file_name.find("..")!=std::string::npos || file_name.empty() || file_name[0]!='/') {
+	if(file_name.empty() || file_name[file_name.size()-1]=='/')
+		file_name+="/index.html";
+
+	std::string path;
+
+	if(!check_in_document_root(file_name,path)) {
 		show404();
 		return;
 	}
-
-	if(file_name[file_name.size()-1]=='/')
-		file_name+="index.html";
 	
-	fs::path full = fs::path(document_root_,fs::native) / fs::path(file_name);
+	int s=file_mode(path);
 	
-	boost::system::error_code e;
-	fs::file_status status = fs::status(full,e);
+	if((s & S_IFDIR) && (file_mode(path+"/index.html") & S_IFREG)) {
+		response().set_redirect_header(file_name + "/");
+		response().out()<<std::flush;
+		return;
+	}
 
-	if(e) {
+	if(!(s & S_IFREG)) {
 		show404();
 		return;
 	}
+		
+	std::string ext;
+	size_t pos = path.rfind('.');
+	if(pos != std::string::npos)
+		ext=path.substr(pos);
 
-	if(fs::is_directory(status)) {
-		if(fs::is_regular_file(fs::status(full / "index.html",e))) 
-			response().set_redirect_header(file_name + "/");
-		else
-			show404();
-		return;
-	}
-
-	if(!fs::is_regular_file(status)) {
-		show404();
-		return;
-	}
-	std::string ext=full.extension();
 	mime_type::const_iterator p=mime_.find(ext);
 	if(p!=mime_.end()) 
 		response().content_type(p->second);
 	else
 		response().content_type("application/octet-stream");
+
 	if(!settings().get("http.allow_deflate",false)) {
 		response().io_mode(http::response::nogzip);
 	}
-	std::ifstream file(full.file_string().c_str(),std::ifstream::binary | std::ifstream::in);
+
+	std::ifstream file(path.c_str(),std::ifstream::binary | std::ifstream::in);
 	if(!file) {
 		show404();
+		return;
 	}
 	std::vector<char> buffer(4096);
 	while(!file.eof()) {
