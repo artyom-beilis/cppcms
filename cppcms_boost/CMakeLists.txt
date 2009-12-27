@@ -66,7 +66,7 @@ if(NOT DISABLE_SHARED)
 	if(LIB_PTHREAD)
 		target_link_libraries(boost ${LIB_PTHREAD})
 	endif(LIB_PTHREAD)
-	install(TAEGETS boost 
+	install(TARGETS boost 
 		RUNTIME DESTINATION bin
 		LIBRARY DESTINATION lib
 		ARCHIVE DESTINATION lib)
