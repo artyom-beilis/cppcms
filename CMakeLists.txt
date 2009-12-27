@@ -229,6 +229,7 @@ set(CPPCMS_SOURCES
 	session_dual.cpp
 	session_sid.cpp
 	session_interface.cpp
+	session_memory_storage.cpp
 )
 
 find_library(LIB_GCRYPT gcrypt)

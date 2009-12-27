@@ -31,7 +31,7 @@
 #else
 #include "session_posix_file_storage.h"
 #endif
-
+#include "session_memory_storage.h"
 
 
 
@@ -187,6 +187,11 @@ void session_pool::init()
 			if(procs == 0) procs=1;
 			factory.reset(new session_file_storage_factory(dir,threads*procs,procs,sharing));
 			#endif
+		}
+		else if(stor == "memory") {
+			if(srv.procs_no() > 1)
+				throw cppcms_error("Can't use memory storage with more then 1 worker process");
+			factory.reset(new session_memory_storage_factory());
 		}
 		else 
 			throw cppcms_error("Unknown server side storage:"+stor);
