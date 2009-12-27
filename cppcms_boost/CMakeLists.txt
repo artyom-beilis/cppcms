@@ -66,6 +66,10 @@ if(NOT DISABLE_SHARED)
 	if(LIB_PTHREAD)
 		target_link_libraries(boost ${LIB_PTHREAD})
 	endif(LIB_PTHREAD)
+	install(TAEGETS boost 
+		RUNTIME DESTINATION bin
+		LIBRARY DESTINATION lib
+		ARCHIVE DESTINATION lib)
 endif(NOT DISABLE_SHARED)	
 
 if(NOT DISABLE_STATIC)
@@ -78,6 +82,10 @@ if(NOT DISABLE_STATIC)
 	if(LIB_PTHREAD)
 		target_link_libraries(boost-static ${LIB_PTHREAD})
 	endif(LIB_PTHREAD)
+	install(TARGETS boost-static
+		RUNTIME DESTINATION bin
+		LIBRARY DESTINATION lib
+		ARCHIVE DESTINATION lib)
 endif(NOT DISABLE_STATIC)	
 
 

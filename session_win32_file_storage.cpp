@@ -173,7 +173,7 @@ void session_file_storage::save_to_file(HANDLE h,time_t timeout,std::string cons
 	crc_calc.process_bytes(in.data(),in.size());
 	tmp.crc=crc_calc.checksum();
 	if(!write_all(h,&tmp,sizeof(tmp)) || !write_all(h,in.data(),in.size()))
-		throw cppcms_error(errno,"Failed to write to file");
+		throw cppcms_error("Failed to write to file");
 }
 
 bool session_file_storage::write_all(HANDLE h,void const *vbuf,int n)

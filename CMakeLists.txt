@@ -1,13 +1,14 @@
 cmake_minimum_required(VERSION 2.4)
 project(cppcms)
+set(PACKAGE_NAME "CppCMS")
+set(PACKAGE_STRING "CppCMS/0.99.1")
+set(PACKAGE_VERSION "0.99.1")
 
 include(CheckFunctionExists)
 include(CheckCXXSourceCompiles)
 include(CheckLibraryExists)
+include(CPack)
 
-set(PACKAGE_NAME "CppCMS")
-set(PACKAGE_STRING "CppCMS/0.99.1")
-set(PACKAGE_VERSION "0.99.1")
 
 if(WIN32 AND CMAKE_COMPILER_IS_GNUCXX AND NOT DISABLE_SHARED)
 	include(CheckCXXSourceCompiles)
@@ -175,6 +176,77 @@ else(CPPCMS_USE_EXTERNAL_BOOST)
 		add_definitions(-DCPPCMS_BOOST_ALL_DYN_LINK)
 	endif(NOT DISABLE_STATIC)
 endif(CPPCMS_USE_EXTERNAL_BOOST)
+
+set(CPPCMS_PUBLIC_HEADERS
+	aio_timer.h
+	application.h
+	applications_pool.h
+	atomic_counter.h
+	base64.h
+	base_content.h
+	base_view.h
+	cache_interface.h
+	cache_pool.h
+	callback.h
+	callback0.h
+	callback1.h
+	callback2.h
+	callback3.h
+	callback4.h
+	clone_ptr.h
+	connection_forwarder.h
+	copy_ptr.h
+	cppcms_error.h
+	cstdint.h
+	defs.h
+	encoding.h
+	filters.h
+	form.h
+	hold_ptr.h
+	http_connection.h
+	http_context.h
+	http_cookie.h
+	http_file.h
+	http_request.h
+	http_response.h
+	intrusive_ptr.h
+	json.h
+	mem_bind.h
+	noncopyable.h
+	refcounted.h
+	regex.h
+	rpc_json.h
+	service.h
+	session_api.h
+	session_cookies.h
+	session_dual.h
+	session_interface.h
+	session_pool.h
+	session_sid.h
+	session_storage.h
+	signal0.h
+	thread_pool.h
+	urandom.h
+	url_dispatcher.h
+	util.h
+	view.h
+	views_pool.h
+	localization/locale_boundary.h
+	localization/locale_codepage.h
+	localization/locale_collator.h
+	localization/locale_config.h
+	localization/locale_conversion.h
+	localization/locale_format.h
+	localization/locale_formatter.h
+	localization/locale_formatting.h
+	localization/locale_generator.h
+	localization/locale_info.h
+	localization/locale_message.h
+	localization/locale_numeric.h
+	localization/locale_timezone.h
+	localization/localization.h
+)
+
 
 set(CPPCMS_SOURCES 
 	localization/locale_src_boundary.cpp
@@ -384,5 +456,19 @@ endif(WIN32 AND NOT DISABLE_SHARED)
 set_target_properties(${CPPCMS_LIBS} PROPERTIES CLEAN_DIRECT_OUTPUT 1)
 set_target_properties(${CPPCMS_LIBS} PROPERTIES OUTPUT_NAME "cppcms")
 
+set_target_properties(${CPPCMS_LIBS} PROPERTIES 
+			FRAMEWORK TRUE
+			PUBLIC_HEADER "${CPPCMS_PUBLIC_HEADERS}")
+
 configure_file(config.cmake.h config.h)
+
+
+install(TARGETS ${CPPCMS_LIBS} cppcms_config_find_param
+	RUNTIME DESTINATION bin
+	LIBRARY DESTINATION lib
+	ARCHIVE DESTINATION lib
+	PUBLIC_HEADER DESTINATION include/cppcms)
+
+install(PROGRAMS cppcms_tmpl_cc cppcms_run
+	DESTINATION bin)
 
