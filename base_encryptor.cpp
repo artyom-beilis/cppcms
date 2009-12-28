@@ -59,7 +59,7 @@ string base_encryptor::base64_enc(vector<unsigned char> const &data)
 
 void base_encryptor::base64_dec(std::string const &in,std::vector<unsigned char> &data)
 {
-	ssize_t size=b64url::decoded_size(in.size());
+	int size=b64url::decoded_size(in.size());
 	if(size<0) return;
 	data.resize(size);
 	unsigned char const *ptr=(unsigned char const *)in.data();

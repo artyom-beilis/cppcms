@@ -6,6 +6,7 @@
 
 #include "session_cookies.h"
 #include "urandom.h"
+#include "cstdint.h"
 
 namespace cppcms {
 namespace sessions {

@@ -8,6 +8,7 @@
 #include "noncopyable.h"
 #include "intrusive_ptr.h"
 #include "hold_ptr.h"
+#include "cstdint.h"
 
 namespace cppcms {
 

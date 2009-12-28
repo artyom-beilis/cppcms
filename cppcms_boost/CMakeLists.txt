@@ -29,6 +29,11 @@ set(BOOST_SRC
 	libs/filesystem/src/portability.cpp
 	libs/filesystem/src/path.cpp
 	libs/filesystem/src/operations.cpp
+	libs/date_time/src/gregorian/date_generators.cpp
+	libs/date_time/src/gregorian/greg_month.cpp
+	libs/date_time/src/gregorian/greg_weekday.cpp
+	libs/date_time/src/gregorian/gregorian_types.cpp
+	libs/date_time/src/posix_time/posix_time_types.cpp
 )
 
 

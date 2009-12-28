@@ -17,6 +17,8 @@
 
 #include <sstream>
 
+#include "cstdint.h"
+
 namespace cppcms {
 namespace sessions {
 
