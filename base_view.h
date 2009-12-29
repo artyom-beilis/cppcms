@@ -17,8 +17,19 @@
 
 namespace cppcms {
 
+///
+/// \brief This class is base class for all views (skins) rendered by CppCMS template engine.
+/// 
+/// Users are not expected to derive from this class or use it directly. CppCMS template compiler
+/// create skins that are useable with template engine and each template is derived from the \a base_view
+/// class.
+///
+
 class CPPCMS_API base_view : util::noncopyable {
 public:
+	///
+	/// The main randering function -- render the main HTML page. It is usually overriden in template engine.
+	///
 	virtual void render();
 	virtual ~base_view();
 	

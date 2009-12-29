@@ -3,8 +3,11 @@
 
 namespace cppcms { namespace util {
 
-	// Similar to auto_ptr, but actually creates
-	// copy of target instead moving it
+	
+	///
+	/// \brief a smart pointer similar to std::auto_ptr but it clones (by calling T::clone())
+	///   underlying object on copy instead of moving its ownership.
+	///
 	template<typename T>
 	class clone_ptr {
 		T *ptr_;

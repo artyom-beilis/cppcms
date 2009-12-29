@@ -4,6 +4,13 @@
 
 namespace cppcms { namespace util {
 
+///
+/// \brief Function object, similar to C++0x std::function<void(P1,P2,P3)>, or boost::function<void(P1,P2,P3)> 
+///
+/// Callback object, it can be created with any "function like object" -- a class with operator()(P1,P2,P3) or C function
+/// with appropriate signature.
+///
+
 template<typename P1,typename P2,typename P3>
 class callback3 {
 
@@ -26,6 +33,9 @@ class callback3 {
 public:
 	typedef void result_type;
 
+	///
+	/// Call the assigned function, does nothing if function was not assigned
+	///
 	void operator()(P1 p1,P2 p2,P3 p3) const
 	{
 		if(call_ptr.get()) {
@@ -33,13 +43,22 @@ public:
 		}
 	}
 
+	///
+	/// Create an empty callback
+	///
 	callback3(){}
 
+	///
+	/// Create a callback and copy callable object T to it.
+	///
 	template<typename T>
 	callback3(T c) : call_ptr(new callable_functor<T>(c)) 
 	{
 	}
 	
+	///
+	/// Assign a callable object to it
+	///
 	template<typename T>
 	callback3 const &operator=(T c)
 	{
@@ -47,6 +66,9 @@ public:
 		return *this;
 	}
 
+	///
+	/// Swap two callbacks
+	///
 	void swap(callback3 &other)
 	{
 		call_ptr.swap(other.call_ptr);

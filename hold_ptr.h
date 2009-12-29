@@ -3,7 +3,10 @@
 
 namespace cppcms { namespace util {
 
-	// Just non-copyable auto_ptr
+	///
+	/// \brief a smart pointer similar to std::auto_ptr but it is non-copyable and
+	/// underlying object has same constness as the pointer itself (not like in ordinary pointer).
+	///
 	template<typename T>
 	class hold_ptr {
 		T *ptr_;
