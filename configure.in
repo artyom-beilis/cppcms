@@ -272,7 +272,7 @@ else
 	CPPCMS_LIBS="-lboost_regex-$bsts -lboost_iostreams-$bsts -lboost_signals-$bsts $CPPCMS_LIBS"
 	if test "x$cms_bld" = "xnormal"
 	then
-		CPPCMS_LIBS="-lboost_iostreams-$bsts CPPCMS_LIBS"
+		CPPCMS_LIBS="-lboost_iostreams-$bsts $CPPCMS_LIBS"
 	fi
 fi
 
