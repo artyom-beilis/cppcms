@@ -70,8 +70,9 @@ class fcgi_api : public cgi_api {
 	static pthread_once_t init_fcgi;
 	static void init(void);
 	int fd;
+	long long content_length_limit;
 public:
-	fcgi_api(char const *socket,int backlog);
+	fcgi_api(char const *socket,int backlog,long long limit);
 	virtual int get_socket() { return fd; };
 	virtual cgi_session *accept_session();
 	virtual ~fcgi_api();

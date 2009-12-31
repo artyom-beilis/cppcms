@@ -10,6 +10,7 @@
 #include <arpa/inet.h>
 #include <sys/un.h>
 #include <string.h>
+#include <stdlib.h>
 
 namespace cppcms {
 using namespace std;
@@ -102,6 +103,14 @@ bool scgi_session::prepare()
 		n=p2-data_buffer;
 	}
 
+	std::string content_length=getenv("CONTENT_LENGTH");
+	if(!content_length.empty()) {
+		long long len = ::atoll(content_length.c_str());
+		if(len < 0 || len > content_lenght_limit) {
+			return false;
+		}
+	}
+
 	cgi_ptr=new cgicc::Cgicc(this);
 	return true;
 }
@@ -141,10 +150,11 @@ cgicc_connection &scgi_session::get_connection()
 	throw cppcms_error("SCGI session not prepared");
 }
 
-scgi_api::scgi_api(string socket,int backlog)
+scgi_api::scgi_api(string socket,int backlog,long long l)
 {
 	fd=-1;
 	size_t p;
+	limit = l;
 	if(socket=="") {
 		fd=0; // STDIN
 	}
@@ -212,7 +222,7 @@ cgi_session *scgi_api::accept_session()
 		}
 		return NULL;
 	}
-	return new scgi_session(socket);
+	return new scgi_session(socket,limit);
 }
 
 string scgi_session::getenv( char const  *var)

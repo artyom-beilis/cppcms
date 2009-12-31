@@ -36,10 +36,16 @@ class scgi_session : public cgicc::CgiInput,
 	map<string,string> envmap;
 	cgicc::Cgicc *cgi_ptr;
 	std::ostream out_stream;
+	long long content_lenght_limit;
 public:
-	scgi_session(int s) :
-		 socket(s), buf(s), cgi_ptr(NULL), out_stream(&buf)
-		{};
+	scgi_session(int s,long long limit) :
+		 socket(s),
+		 buf(s),
+		 cgi_ptr(NULL),
+		 out_stream(&buf),
+		 content_lenght_limit(limit)
+	{
+	}
 	virtual size_t read(char *data, size_t length);
 	virtual std::string getenv(const char *var);
 	virtual cgicc_connection &get_connection();
@@ -53,8 +59,9 @@ public:
 
 class scgi_api : public cgi_api {
 	int fd;
+	long long limit;
 public:
-	scgi_api(string socket,int backlog=1);
+	scgi_api(string socket,int backlog,long long limit);
 	virtual int get_socket();
 	virtual cgi_session *accept_session();
 	virtual ~scgi_api();

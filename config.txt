@@ -31,6 +31,10 @@ server.socket = "/tmp/hello-fastcgi.socket"     # Default is "" -- use default s
 						# Default is 16,000 -- set to cover most of page
 						# sizes that are used by your CMS
 
+# server.content_length_limit = 4194304		# Maximal content length size, default 4MB.
+						# Security: cgicc library allocates all memory required for the content.
+						# So using very big value can cause DOS
+
 # ZLib Compression: 
 
 # gzip.enable = 1				# Default 0 -- Enable gzip compression recomended to turn on

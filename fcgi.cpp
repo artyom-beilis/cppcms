@@ -3,6 +3,8 @@
 #include <errno.h>
 #include <pthread.h>
 #include <unistd.h>
+#include <stdlib.h>
+#include <memory>
 
 namespace cppcms {
 
@@ -45,7 +47,7 @@ void fcgi_api::init()
 	FCGX_Init();
 }
 
-fcgi_api::fcgi_api(char const *socket,int backlog)
+fcgi_api::fcgi_api(char const *socket,int backlog,long long limit)
 {
 	pthread_once(&init_fcgi,fcgi_api::init);
 	if(socket && socket[0]!='\0') {
@@ -57,15 +59,25 @@ fcgi_api::fcgi_api(char const *socket,int backlog)
 	if(fd<0) {
 		throw cppcms_error(errno,"FCGX_OpenSocket");
 	}
+	content_length_limit = limit;
 }
 
 cgi_session *fcgi_api::accept_session()
 {
-	FCGX_Request *request=new FCGX_Request();
+	FCGX_Request *request = new FCGX_Request();
 	FCGX_InitRequest(request,fd,FCGI_FAIL_ACCEPT_ON_INTR);
 	if(FCGX_Accept_r(request)<0) {
 		delete request;
-		return NULL;
+		return 0;
+	}
+	char const *p = FCGX_GetParam("CONTENT_LENGTH",request->envp);
+	if(p && *p!=0) {
+		long long len = ::atoll(p);
+		if(len < 0 || len > content_length_limit) {
+			FCGX_Finish_r(request);
+			delete request;
+			return 0;
+		}
 	}
 	return new fcgi_session(request,NULL);
 }

@@ -483,6 +483,8 @@ cgi_api *manager::get_api()
 	return new cgi_cgi_api();
 #else
 	string api=config.sval("server.api");
+	long long limit = config.lval("server.content_length_limit",1024*1024*4);
+
 
 	if(api=="cgi") {
 		return new cgi_cgi_api();
@@ -492,12 +494,12 @@ cgi_api *manager::get_api()
 	int backlog=config.lval("server.buffer",1);
 
 	if(api=="scgi" ) {
-		return new scgi_api(socket.c_str(),backlog);
+		return new scgi_api(socket.c_str(),backlog,limit);
 	}
 
 #ifdef EN_FCGI_BACKEND
 	if(api=="fastcgi"){
-		return new fcgi_api(socket.c_str(),backlog);
+		return new fcgi_api(socket.c_str(),backlog,limit);
 	}
 #endif
 	throw cppcms_error("Unknown api:"+api);
