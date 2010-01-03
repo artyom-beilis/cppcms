@@ -152,14 +152,14 @@ void application::add(application &app,std::string regex,int part)
 	add(app);
 	url_dispatcher().mount(regex,app,part);
 }
-void application::assign(application *app)
+void application::attach(application *app)
 {
 	d->managed_children.push_back(app);
 	add(*app);
 }
 
 
-void application::assign(application *app,std::string regex,int part)
+void application::attach(application *app,std::string regex,int part)
 {
 	d->managed_children.push_back(app);
 	add(*app,regex,part);
