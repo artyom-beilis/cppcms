@@ -1,8 +1,34 @@
+Version 0.0.5
+=============
+
+Security Bug:
+
+- Workaround of CgiCC bug that may cause process shutdown in case of
+  huge POST requests - DoS.
+- Fixed generation of session ids that could create session ids
+  with very low entropy -- guessable SID.
+
+Bugs:
+
+- Fixed: incorrect update of "exposed" session values, when
+  renewing session life time.
+- Fixed: bug that prevent using FastCGI/SCGI over TCP.
+- Fixed: build fault when using --boost-suffix configure option
+- Fixed: incorrect generation of status headers in case of errors.
+- Fixed: build issues with gcc-4.4.1
+- Fixed: various issues with for Intel Compiler support.
+
+Improvements:
+
+------------
+- Removed all unnecessary classes from views -- compilation
+  time speedup up to 3.2 times (of views)
+
 Version 0.0.4
 =============
 
 - Embedded system configuration support
-- Identifiers like "$1" are depricated
+- Identifiers like "$1" are deprecated
 
 Version 0.0.3
 =============
