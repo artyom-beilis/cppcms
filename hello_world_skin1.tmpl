@@ -1,6 +1,6 @@
 <% c++ #include "hello_world_view.h" %>
-<% namespace vary %>
-	<% class master uses view::master %>
+<% skin %>
+	<% view master uses view::master %>
 	<% template test(std::string &v,int p) %>
 	<% foreach c as std::string::iterator in v %>
 		<% item %><% c %><% end %>
@@ -17,6 +17,6 @@
 	<% end template %>
 	<% template body() %>
 	<% end template %>
-	<% end class %>
-<% end namespace %>
+	<% end view %>
+<% end skin %>
 

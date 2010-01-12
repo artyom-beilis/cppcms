@@ -136,16 +136,16 @@ public:
 			time_stamp_ = st.st_mtime;
 
 			shared_object_.reset(new impl::shared_object(file_name,reloadable));
-			typedef void (*loader_type)(mapping_type &);
-			loader_type loader=reinterpret_cast<loader_type>(shared_object_->symbol("cppcms_"+name+"_get_skin"));
-			if(!loader) {
-				throw cppcms_error(file_name + " is not CppCMS loadable skin");
-			}
-			loader(mapping_);
 			return;
 		}
 		throw cppcms_error("Can't load skin " + name); 
 	}
+	
+	void copy_mapping(skin const &other)
+	{
+		mapping_ = other.mapping_;
+	}
+
 
 	skin(std::string skin_name,std::map<std::string,view_factory_type> const &views) :
 		reloadable_(false),
@@ -247,7 +247,9 @@ void views_pool::render(std::string skin_name,std::string template_name,std::ost
 					throw cppcms_error("There is no such skin:" + skin_name);
 				if(!p->second.is_updated()) {
 					d->skins.erase(p);
-					d->skins[skin_name]=skin(skin_name,d->search_path,true);
+					skin new_skin = skin(skin_name,d->search_path,true);
+					new_skin.copy_mapping(d->skins[skin_name]);
+					d->skins[skin_name] = new_skin;
 				}
 			}
 		}
@@ -270,6 +272,11 @@ void views_pool::add_view(std::string name,mapping_type const &mapping)
 	if(p!=d->skins.end())
 		throw cppcms_error("Skin " + name + "can't be loaded twice");
 	d->skins[name]=skin(name,mapping);
+}
+
+void views_pool::remove_view(std::string name)
+{
+	d->skins.erase(name);
 }
 
 

@@ -1,6 +1,6 @@
 <% c++ #include "hello_world_view.h" %>
-<% namespace vary %>
-	<% class master uses view::master %>
+<% skin %>
+	<% view master uses view::master %>
 	<% template render() %>
 		<html>
 		<title>Skin2:: <% title %></title>
@@ -12,6 +12,6 @@
 	<% end template %>
 	<% template body() %>
 	<% end template %>
-	<% end class %>
-<% end namespace %>
+	<% end view %>
+<% end skin %>
 

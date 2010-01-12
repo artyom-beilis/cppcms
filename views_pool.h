@@ -40,6 +40,7 @@ namespace cppcms {
 		std::string default_skin() const;
 		
 		void add_view(std::string skin,mapping_type const &mapping);
+		void remove_view(std::string skin);
 
 		static views_pool &static_instance();
 	private:

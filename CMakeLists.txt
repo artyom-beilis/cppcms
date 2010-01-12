@@ -245,6 +245,7 @@ set(CPPCMS_PUBLIC_HEADERS
 	localization/locale_numeric.h
 	localization/locale_timezone.h
 	localization/localization.h
+	${CMAKE_CURRENT_BINARY_DIR}/config.h
 )
 
 
@@ -403,7 +404,7 @@ endif(NOT PYTHON)
 add_custom_command(
 	OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/skin1.cpp
 	COMMAND ${PYTHON} ${CMAKE_CURRENT_SOURCE_DIR}/cppcms_tmpl_cc 
-		-n skin1 
+		-s skin1 
 		-o ${CMAKE_CURRENT_BINARY_DIR}/skin1.cpp 
 			${CMAKE_CURRENT_SOURCE_DIR}/hello_world_skin1.tmpl 
 			${CMAKE_CURRENT_SOURCE_DIR}/hello_world_view1.tmpl
@@ -415,7 +416,7 @@ add_custom_command(
 add_custom_command(
 	OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/skin2.cpp
 	COMMAND ${PYTHON} ${CMAKE_CURRENT_SOURCE_DIR}/cppcms_tmpl_cc 
-		-n skin2 
+		-s skin2 
 		-o ${CMAKE_CURRENT_BINARY_DIR}/skin2.cpp 
 			${CMAKE_CURRENT_SOURCE_DIR}/hello_world_skin2.tmpl 
 			${CMAKE_CURRENT_SOURCE_DIR}/hello_world_view1.tmpl
@@ -428,7 +429,7 @@ if(NOT DISABLE_SHARED)
 	add_custom_command(
 		OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/skin3.cpp
 		COMMAND ${PYTHON} ${CMAKE_CURRENT_SOURCE_DIR}/cppcms_tmpl_cc 
-			-n skin3 
+			-s skin3 
 			-o ${CMAKE_CURRENT_BINARY_DIR}/skin3.cpp 
 				${CMAKE_CURRENT_SOURCE_DIR}/hello_world_skin2.tmpl 
 				${CMAKE_CURRENT_SOURCE_DIR}/hello_world_view1.tmpl
@@ -456,6 +457,7 @@ endif(WIN32 AND NOT DISABLE_SHARED)
 
 set_target_properties(${CPPCMS_LIBS} PROPERTIES CLEAN_DIRECT_OUTPUT 1)
 set_target_properties(${CPPCMS_LIBS} PROPERTIES OUTPUT_NAME "cppcms")
+set_target_properties(${CPPCMS_LIBS} PROPERTIES VERSION 1.0.0 SOVERSION 1)
 
 set_target_properties(${CPPCMS_LIBS} PROPERTIES 
 			FRAMEWORK TRUE

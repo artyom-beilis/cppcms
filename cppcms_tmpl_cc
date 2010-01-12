@@ -28,73 +28,44 @@ class tmpl_descr:
         self.start_id=start
         self.param_num=size
 
-class namespace_block:
-    pattern=r'^<%\s*namespace\s+(\w+)\s*(at\s*(\w+)\s*)?%>$'
-    type='namespace'
+class skin_block:
+    pattern=r'^<%\s*skin\s+(\w+)?\s*%>$'
+    type='skin'
     def use(self,m):
-        self.internal_namespace=0
         global namespace_name
-        if m.group(1)=='vary':
-            if namespace_name!='':
-                self.internal_namespace=0
-            else:
-                error_exit("Can't use `vary' namespace without external one")
-        else: # m.group(1)!='vary'
-            if namespace_name=='':
-                namespace_name=m.group(1)
-                self.internal_namespace=1
-            else:
-                error_exit("Can't define both external and non-vary namespace")
+        name = m.group(1)
 
+        if namespace_name == '':
+            if name == '':
+                error_ext("Skin name is not defined implicitly or explicitly")
+            else:
+                namespace_name = name
+        elif namespace_name != name and name:
+            error_exit("Can't use more then one skin name for same skin: %s, %s" % ( namespace_name,name))
         output( "namespace %s {" % namespace_name)
-        self.reset_gettext=0
-        if m.group(2):
-            global spec_gettext
-            if not spec_gettext:
-                spec_gettext=m.group(3)
-                self.reset_gettext=1
         global stack
         stack.append(self)
     def on_end(self):
         global namespace_name
         output( "} // end of namespace %s" % namespace_name)
-        if self.internal_namespace:
-            namespace_name=''
-        if self.reset_gettext:
-            global spec_gettext
-            spec_gettext=''
 
 
 def write_class_loader():
     global class_list
     global namespace_name
-    output("#if defined(CPPCMS_WIN32) && defined(CPPCMS_SKIN_MODULE)")
-    output("#  define CPPCMS_SKIN_EXPORT __declspec(dllexport)")
-    output("#else")
-    output("#  define CPPCMS_SKIN_EXPORT")
-    output("#endif")
-    output('extern "C" CPPCMS_SKIN_EXPORT void cppcms_%s_get_skin(cppcms::views_pool::mapping_type &mapping) {' % namespace_name)
-    list_of_views={}
+    output("namespace {")
+    output(" struct loader { ")
+    output("  loader() { ")
+    output("    cppcms::views_pool::mapping_type mapping;" )
     for class_def in class_list:
-        list_of_views[class_def.namespace]=""
         output( '   mapping["%s"]=&cppcms::views_pool::view_builder<%s::%s,%s>;' \
                 % (class_def.name,class_def.namespace,class_def.name,class_def.content_name))
-    output("}")
-    output("#ifndef CPPCMS_SKIN_MODULE")
-    output("namespace {")
-    output(" struct loader { loader() { ")
-    output("    cppcms::views_pool::mapping_type mapping; cppcms_%s_get_skin(mapping); " % namespace_name)
     output('    cppcms::views_pool::static_instance().add_view("%s",mapping); ' % namespace_name)
-    output(' }} a_loader;')
+    output(' }')
+    output(' ~loader() {  cppcms::views_pool::static_instance().remove_view("%s"); }' % namespace_name)
+    output('} a_loader;')
     output('} // anon ')
-    output('#endif')
 
-def gettext_domain():
-    global spec_gettext
-    if spec_gettext:
-        return spec_gettext
-    global namespace_name
-    return namespace_name
 
 class html_type:
     pattern=r'^<%\s*(x)?html\s*%>$'
@@ -108,13 +79,15 @@ class html_type:
     
 
 
-class class_block:
-    pattern=r'^<%\s*class\s+(\w+)\s+(uses\s+(\w+(::\w+)?))?\s+(extends\s+(\w+(::\w+)?))?\s*%>$'
-    type='class'
+class view_block:
+    pattern=r'^<%\s*view\s+(\w+)\s+(uses\s+(\w+(::\w+)?))?\s+(extends\s+(\w+(::\w+)?))?\s*%>$'
+    type='view'
+    topmost = 0
     def declare(self):
         if self.extends=='' :
             constructor='cppcms::base_view(_s)'
             self.extends='cppcms::base_view'
+            self.top_most = 1
         else:
             constructor='%s(_s,_content)' % self.extends;
         output( "struct %s :public %s" % (self.class_name , self.extends ))
@@ -125,8 +98,10 @@ class class_block:
         else:
             output( "\t%s(std::ostream &_s): %s" % ( self.class_name,constructor ))
         output("\t{")
-        output('\t\tout() << cppcms::locale::as::domain("%s");' % gettext_domain() )
-        output("\t};")
+        global spec_gettext
+        if self.topmost and spec_gettext:
+            output('\t\tout() << cppcms::locale::as::domain("%s");' % spec_gettext )
+        output("\t}")
 
     def use(self,m):
         self.class_name=m.group(1)
@@ -140,8 +115,8 @@ class class_block:
             self.extends=''
         self.declare();
         global stack
-        if len(stack)!=1 or stack[-1].type!='namespace':
-            error_exit("You must define class inside namespace block only")
+        if len(stack)!=1 or stack[-1].type!='skin':
+            error_exit("You must define view inside skin block only")
         stack.append(self)
         global class_list
         global namespace_name
@@ -190,8 +165,8 @@ class template_block:
             params=self.create_parameters(m.group(2))
         output( "virtual void %s(%s) {" % (self.name,params) )
         global stack
-        if len(stack)==0 or stack[-1].type!='class':
-            error_exit("You must define template inside class block only")
+        if len(stack)==0 or stack[-1].type!='view':
+            error_exit("You must define template inside view block only")
         stack.append(self)
         global current_template
         current_template=self.name
@@ -594,9 +569,9 @@ def fetch_content(content):
     yield tmp
 
 def help():
-    print    "Usage cppcms_tmpl_cc [-o filename.cpp] [-n namespace] [-d domain] file1.tmpl ... \n" \
+    print    "Usage cppcms_tmpl_cc [-o filename.cpp] [-s skin] [-d domain] file1.tmpl ... \n" \
         "      -o filename.cpp     file name that implements this template\n" \
-        "      -n namespace        setup namespace for template\n" \
+        "      -s skin             define skin name\n" \
         "      -d domain           setup gettext domain for this template\n" \
         "      -h/--help           show this help message\n"
 
@@ -611,9 +586,9 @@ def main():
     global output_file
     global exit_flag
     while indx < len(os.sys.argv):
-        if os.sys.argv[indx]=='-n':
+        if os.sys.argv[indx]=='-s':
             if indx+1>=len(os.sys.argv):
-                sys.stderr.write("-n should be followed by namespace name\n")
+                sys.stderr.write("-s should be followed by skin name\n")
                 help()
                 exit_flag=1
                 return
@@ -673,7 +648,7 @@ def main():
                     continue
             matched=0
             for c in [\
-                    namespace_block(), class_block(), if_block(), template_block(), end_block(), else_block(), \
+                    skin_block(), view_block(), if_block(), template_block(), end_block(), else_block(), \
                     cpp_include_block(), \
                     gettext_block(),ngettext_block(), \
                     foreach_block(), item_block(), empty_block(),separator_block(), \
