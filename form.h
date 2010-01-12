@@ -1076,6 +1076,24 @@ namespace cppcms {
 			
 		};
 
+		class CPPCMS_API submit : public base_html_input {
+		public:
+			submit();
+			~submit();
+			
+			///
+			/// Returns true if this specific button was pressed
+			///
+			bool value();
+
+			virtual void render_value(form_context &context);
+			virtual void load(http::context &context);
+		private:
+			struct data;
+			util::hold_ptr<data> d;
+			bool value_;
+		};
+
 		
 	/*	class select_multiple : public base_widget {
 		public:

@@ -73,7 +73,7 @@ namespace cppcms {
 		///
 		/// Create a new application running on service \a srv, with a parent \a parent
 		///
-		application(cppcms::service &srv,application *parent = 0);
+		application(cppcms::service &srv);
 
 		///
 		/// Destroys an application and all assigned application children.

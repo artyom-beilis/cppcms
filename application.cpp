@@ -37,14 +37,11 @@ struct application::data {
 	std::vector<application *> managed_children;
 };
 
-application::application(cppcms::service &srv,application *p) :
+application::application(cppcms::service &srv) :
 	d(new data(&srv)),
 	refs_(0)
 {
-	if(p==0)
-		parent_=root_=this;
-	else
-		parent(p);	
+	parent_=root_=this;
 }
 
 application::~application()
