@@ -1031,26 +1031,37 @@ void select_multiple::rows(unsigned v)
 struct submit::data {};
 submit::submit() : 
 	base_html_input("submit"),
-	value_(false)
+	pressed_(false)
 {
 	set(true);
+	value("");
 }
 submit::~submit() 
 {
 }
+
+void submit::value(std::string val)
+{
+	value_=locale::message("#NOTRANS#" + val);
+}
+void submit::value(locale::message const &msg)
+{
+	value_=msg;
+}
+
 void submit::render_value(form_context &context)
 {
-	context.out() << "value=\"1\" ";
+	context.out() << "value=\"" << filters::escape(value_) << "\" ";
 }
 
 void submit::load(http::context &context)
 {
-	value_ = context.request().post_or_get().find(name()) != context.request().post_or_get().end();
+	pressed_ = context.request().post_or_get().find(name()) != context.request().post_or_get().end();
 }
 
 bool submit::value()
 {
-	return value_;
+	return pressed_;
 }
 
 

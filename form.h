@@ -1086,12 +1086,22 @@ namespace cppcms {
 			///
 			bool value();
 
+			///
+			/// Sets the text on button
+			///
+			void value(std::string val);
+			///
+			/// Sets the text on button
+			///
+			void value(locale::message const &msg);
+
 			virtual void render_value(form_context &context);
 			virtual void load(http::context &context);
 		private:
 			struct data;
 			util::hold_ptr<data> d;
-			bool value_;
+			bool pressed_;
+			locale::message value_;
 		};
 
 		

@@ -80,7 +80,7 @@ class html_type:
 
 
 class view_block:
-    pattern=r'^<%\s*view\s+(\w+)\s+(uses\s+(\w+(::\w+)?))?\s+(extends\s+(\w+(::\w+)?))?\s*%>$'
+    pattern=r'^<%\s*view\s+(\w+)\s+(uses\s+(:?:?\w+(::\w+)?))?\s+(extends\s+(:?:?\w+(::\w+)?))?\s*%>$'
     type='view'
     topmost = 0
     def declare(self):
@@ -135,7 +135,7 @@ class template_block:
     type='template'
     plist=[]
     def create_parameters(self,lst):
-        pattern=r'^\s*((\w+(::\w+)*)\s*(const)?\s*(\&)?\s*(\w+))\s*(,(.*))?$'
+        pattern=r'^\s*((:?:?\w+(::\w+)*)\s*(const)?\s*(\&)?\s*(\w+))\s*(,(.*))?$'
         m=re.match(pattern,lst)
         res=[]
         while m:
@@ -236,7 +236,7 @@ def make_ident(val):
         return "content." + val
 
 class foreach_block:
-    pattern=r'^<%\s*foreach\s+([a-zA-Z]\w*)(\s+as\s+((\w+)(::\w+)*))?\s+in\s+(' + variable_match +')\s*%>$'
+    pattern=r'^<%\s*foreach\s+([a-zA-Z]\w*)(\s+as\s+((:?:?\w+)(::\w+)*))?\s+in\s+(' + variable_match +')\s*%>$'
     type='foreach'
     has_item=0
     has_separator=0
@@ -540,7 +540,7 @@ class gettext_block:
         if not params:
             output( "out()<<cppcms::locale::translate(%s);" % s)
         else:
-            output( "out()<<cppcms::locale::format(translate(%s)) % (%s);" % (s , ') % ('.join(params)))
+            output( "out()<<cppcms::locale::format(cppcms::locale::translate(%s)) %% (%s);" % (s , ') % ('.join(params)))
 
 
 class include_block:
@@ -675,7 +675,7 @@ def main():
 #######################
 
 
-html_type_code='cppcms::base_form::as_html'
+html_type_code='as_html'
 output_file=''
 output_fd=sys.stdout
 namespace_name=''
