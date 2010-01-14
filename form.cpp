@@ -1034,7 +1034,6 @@ submit::submit() :
 	pressed_(false)
 {
 	set(true);
-	value("");
 }
 submit::~submit() 
 {

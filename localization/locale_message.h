@@ -226,9 +226,13 @@ namespace cppcms {
             CharType const *write(std::locale const &loc,int domain_id,std::basic_string<CharType> &buffer) const
             {
                 CharType const *translated = 0;
+                static const CharType empty_string[1] = {0};
 
                 char const *id = c_id_ ? c_id_ : id_.c_str();
                 char const *plural = c_plural_ ? c_plural_ : (plural_.empty() ? 0 : plural_.c_str());
+                
+                if(*id == 0)
+                    return empty_string;
                 
                 if(std::has_facet<message_format<CharType> >(loc)) {
                     message_format<CharType> const &msg = std::use_facet<message_format<CharType> >(loc);
