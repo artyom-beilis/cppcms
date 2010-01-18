@@ -28,11 +28,7 @@ namespace cppcms {
 				return boost::regex_match(path.c_str(),match_,expr_);
 			}
 
-			virtual void dispatch() = 0;
-			virtual url_dispatcher::dispatch_type dispatchable() = 0;
-
-
-
+			virtual bool dispatch(std::string url) = 0;
 		protected:
 			boost::regex expr_;
 			boost::cmatch match_;
@@ -46,13 +42,11 @@ namespace cppcms {
 			{
 			}
 
-			virtual url_dispatcher::dispatch_type dispatchable()
+			virtual bool dispatch(std::string url)
 			{
-				return app_->dispatcher().dispatchable(match_[select_]);
-			}
-			virtual void dispatch()
-			{
-				app_->dispatcher().dispatch();
+				if(matches(url))
+					return app_->dispatcher().dispatch(match_[select_]);
+				return false;
 			}
 		private:
 			application *app_;
@@ -61,21 +55,21 @@ namespace cppcms {
 
 		template<typename H>
 		struct base_handler : public option {
-			base_handler(std::string expr,H handle,bool async,int a=0,int b=0,int c=0,int d=0)
-				: option(expr),async_(async),handle_(handle)
+			base_handler(std::string expr,H handle,int a=0,int b=0,int c=0,int d=0)
+				: option(expr),handle_(handle)
 			{
 				select_[0]=a;
 				select_[1]=b;
 				select_[2]=c;
 				select_[3]=d;
 			}
-			virtual url_dispatcher::dispatch_type dispatchable()
+			virtual bool dispatch(std::string url)
 			{
-				return async_ ? url_dispatcher::asynchronous : url_dispatcher::synchronous;
-			}
-			virtual void dispatch()
-			{
-				execute_handler(handle_);
+				if(matches(url)) {
+					execute_handler(handle_);
+					return true;
+				}
+				return false;
 			}
 		private:
 			void execute_handler(url_dispatcher::handler const &h)
@@ -101,16 +95,15 @@ namespace cppcms {
 				h(match_[select_[0]],match_[select_[1]],match_[select_[2]],match_[select_[3]]);
 			}
 
-			bool async_;
 			int select_[4];
 			H handle_;
 		};
 
 
 		template<typename H>
-		boost::shared_ptr<option> make_handler(std::string expr,H const &handler,bool async,int a=0,int b=0,int c=0,int d=0)
+		boost::shared_ptr<option> make_handler(std::string expr,H const &handler,int a=0,int b=0,int c=0,int d=0)
 		{
-			return boost::shared_ptr<option>(new base_handler<H>(expr,handler,async,a,b,c,d));
+			return boost::shared_ptr<option>(new base_handler<H>(expr,handler,a,b,c,d));
 		}
 
 	} // anonynoys
@@ -130,23 +123,14 @@ namespace cppcms {
 	{
 	}
 
-	url_dispatcher::dispatch_type url_dispatcher::dispatchable(std::string path)
+	bool url_dispatcher::dispatch(std::string url)
 	{
 		unsigned i;
 		for(i=0;i<d->options.size();i++) {
-			if(d->options[i]->matches(path)) {
-				d->last_option=d->options[i];
-				return d->last_option->dispatchable();
-			}
+			if(d->options[i]->dispatch(url))
+				return true;
 		}
-		return none;
-	}
-
-	void url_dispatcher::dispatch()
-	{
-		if(d->last_option)
-			d->last_option->dispatch();
-		d->last_option.reset();
+		return false;
 	}
 
 	void url_dispatcher::mount(std::string match,application &app,int select)
@@ -158,27 +142,27 @@ namespace cppcms {
 
 	void url_dispatcher::assign(std::string expr,handler h)
 	{
-		d->options.push_back(make_handler(expr,h,false));
+		d->options.push_back(make_handler(expr,h));
 	}
 
 	void url_dispatcher::assign(std::string expr,handler1 h,int p1)
 	{
-		d->options.push_back(make_handler(expr,h,false,p1));
+		d->options.push_back(make_handler(expr,h,p1));
 	}
 
 	void url_dispatcher::assign(std::string expr,handler2 h,int p1,int p2)
 	{
-		d->options.push_back(make_handler(expr,h,false,p1,p2));
+		d->options.push_back(make_handler(expr,h,p1,p2));
 	}
 
 	void url_dispatcher::assign(std::string expr,handler3 h,int p1,int p2,int p3)
 	{
-		d->options.push_back(make_handler(expr,h,false,p1,p2,p3));
+		d->options.push_back(make_handler(expr,h,p1,p2,p3));
 	}
 
 	void url_dispatcher::assign(std::string expr,handler4 h,int p1,int p2,int p3,int p4)
 	{
-		d->options.push_back(make_handler(expr,h,false,p1,p2,p3,p4));
+		d->options.push_back(make_handler(expr,h,p1,p2,p3,p4));
 	}
 
 } // namespace cppcms

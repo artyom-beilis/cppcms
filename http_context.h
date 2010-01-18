@@ -82,7 +82,7 @@ namespace cppcms {
 			void async_on_peer_reset(util::callback0 const &h);
 		private:
 			void on_request_ready(bool error);
-			static void dispatch(intrusive_ptr<application> app,bool syncronous);
+			static void dispatch(intrusive_ptr<application> app,std::string url,bool syncronous);
 			void try_restart(bool e);
 			intrusive_ptr<context> self();
 

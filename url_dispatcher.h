@@ -42,10 +42,6 @@ namespace cppcms {
 		typedef util::callback3<std::string,std::string,std::string> handler3;
 		typedef util::callback4<std::string,std::string,std::string,std::string> handler4;
 
-		typedef enum { none , synchronous, asynchronous } dispatch_type;
-
-
-
 		///
 		/// Assign \a handler to pattern \a regex thus if URL that matches
 		/// this pattern requested, \a handler is called
@@ -88,14 +84,7 @@ namespace cppcms {
 		/// or in the main non-blocking loop
 		///
 
-		dispatch_type dispatchable(std::string url);
-
-
-		///
-		/// Dispatch the handler that was previously prepared with \a dispatchable
-		///
-
-		void dispatch();
+		bool dispatch(std::string url);
 
 		url_dispatcher();
 		~url_dispatcher();

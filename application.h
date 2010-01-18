@@ -235,6 +235,8 @@ namespace cppcms {
 		bool is_asynchronous();
 		long refs();
 
+		virtual void main(std::string url);
+
 	private:
 
 		void recycle();

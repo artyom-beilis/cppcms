@@ -11,9 +11,9 @@ namespace impl {
 	public:
 		file_server(cppcms::service &srv);
 		~file_server();
+		virtual void main(std::string file_name);
 
 	private:
-		void serve_file(std::string file_name);
 		void show404();
 		void load_mime_types(std::string);
 		bool canonical(std::string normal,std::string &real);

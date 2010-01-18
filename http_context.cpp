@@ -7,7 +7,6 @@
 #include "application.h"
 #include "applications_pool.h"
 #include "thread_pool.h"
-#include "url_dispatcher.h"
 #include "views_pool.h"
 #include "cache_interface.h"
 #include "session_interface.h"
@@ -80,11 +79,7 @@ void context::on_request_ready(bool error)
 
 	intrusive_ptr<application> app = service().applications_pool().get(script_name,path_info,matched);
 
-	url_dispatcher::dispatch_type how;
-	bool make_404 = !app || ((how=app->dispatcher().dispatchable(matched))==url_dispatcher::none);
-
-	if(make_404) {
-		app=0;
+	if(!app) {
 		response().io_mode(http::response::asynchronous);
 		response().make_error_response(http::response::not_found);
 		async_complete_response();
@@ -92,23 +87,23 @@ void context::on_request_ready(bool error)
 	}
 
 	app->assign_context(self());
-	bool sync = !app->is_asynchronous() && (how != url_dispatcher::asynchronous);
-	if(sync) {
-		app->service().thread_pool().post(boost::bind(&context::dispatch,app,true));
+	
+	if(app->is_asynchronous()) {
+		response().io_mode(http::response::asynchronous);
+		app->service().post(boost::bind(&context::dispatch,app,matched,false));
 	}
 	else {
-		response().io_mode(http::response::asynchronous);
-		app->service().post(boost::bind(&context::dispatch,app,false));
+		app->service().thread_pool().post(boost::bind(&context::dispatch,app,matched,true));
 	}
 }
 
 /* static */
-void context::dispatch(intrusive_ptr<application> app,bool syncronous)
+void context::dispatch(intrusive_ptr<application> app,std::string url,bool syncronous)
 {
 	try {
 		if(syncronous)
 			app->context().session().load();
-		app->dispatcher().dispatch();
+		app->main(url);
 	}
 	catch(std::exception const &e){
 		if(app->get_context() && !app->response().some_output_was_written()) {

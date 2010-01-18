@@ -155,6 +155,12 @@ void application::attach(application *app)
 	add(*app);
 }
 
+void application::main(std::string url)
+{
+	if(!dispatcher().dispatch(url)) {
+		response().make_error_response(http::response::not_found);
+	}
+}
 
 void application::attach(application *app,std::string regex,int part)
 {

@@ -7,12 +7,12 @@
 #include <stdlib.h>
 
 #include "application.h"
-#include "url_dispatcher.h"
 #include "service.h"
 #include "http_response.h"
 #include "internal_file_server.h"
 #include "cppcms_error.h"
 #include "json.h"
+#include "util.h"
 #include <sstream>
 #include <fstream>
 #include <string.h>
@@ -35,8 +35,6 @@ file_server::file_server(cppcms::service &srv) : application(srv)
 {
 	if(!canonical(settings().get("file_server.document_root","."),document_root_))
 		throw cppcms_error("Invalid document root");
-
-	dispatcher().assign("^(.*)$",&file_server::serve_file,this,1);
 
 	std::string mime_file=settings().get("file_server.mime_types","");
 
@@ -196,8 +194,9 @@ int file_server::file_mode(std::string const &file_name)
 	return st.st_mode;
 }
 
-void file_server::serve_file(std::string file_name)
+void file_server::main(std::string file_name)
 {
+	file_name = util::urldecode(file_name);
 	if(file_name.empty() || file_name[file_name.size()-1]=='/')
 		file_name+="/index.html";
 
