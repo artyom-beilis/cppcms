@@ -1,27 +1,60 @@
+#define CPPCMS_SOURCE
 #include "process_cache.h"
 #include "config.h"
-#ifdef CPPCMS_USE_EXTERNAL_BOOST
-#   include <boost/format.hpp>
-#else // Internal Boost
-#   include <cppcms_boost/format.hpp>
-    namespace boost = cppcms_boost;
-#endif
-#include <unistd.h>
-
-#ifdef HAVE_PTHREADS_PSHARED
-# include "posix_mutex.h"
-#else
-# include "fcntl_mutex.h"
-using namespace cppcms::fcntl;
-#endif
 
 #include <errno.h>
 #include <iostream>
 
-using boost::format;
-using boost::str;
-
 namespace cppcms {
+namespace impl {
+
+
+class process_cache_impl : public base_cache {
+	mutex &lru_mutex;
+	shared_mutex &access_lock;
+
+	typedef std::basic_string<char,std::char_traits<char>,shmem_allocator<char,process_cache_factory::mem> > shr_string;
+	struct container {
+		shr_string data;
+		typedef map<shr_string,container,std::less<shr_string>,
+			shmem_allocator<std::pair<shr_string,container>,process_cache_factory::mem > > primary_map;
+		typedef primary_map::iterator pointer;
+		typedef list<pointer,shmem_allocator<pointer,process_cache_factory::mem> > pointer_list;
+		pointer_list::iterator lru;
+		typedef multimap<shr_string,pointer,std::less<shr_string>,
+				shmem_allocator<std::pair<shr_string,pointer>,process_cache_factory::mem > > secondary_map;
+
+		list<secondary_map::iterator,shmem_allocator<secondary_map::iterator,process_cache_factory::mem> > triggers;
+		typedef multimap<time_t,pointer,std::less<time_t>,
+				shmem_allocator<std::pair<time_t,pointer>,process_cache_factory::mem > > timeout_map;
+		timeout_map::iterator timeout;
+	};
+	typedef container::pointer pointer;
+	container::primary_map primary;
+	container::secondary_map triggers;
+	typedef container::secondary_map::iterator triggers_ptr;
+	container::timeout_map timeout;
+	typedef container::timeout_map::iterator timeout_ptr;
+	container::pointer_list lru;
+	typedef  container::pointer_list::iterator lru_ptr;
+	unsigned memsize;
+
+	shr_string *get(string const &key,set<string> *triggers);
+	void delete_node(pointer p);
+	int fd;
+
+public:
+	process_cache(size_t memsize,mutex &m,shared_mutex &a);
+	virtual bool fetch(string const &key,string &a,set<string> *tags);
+	virtual void rise(string const &trigger);
+	virtual void clear();
+	virtual void stats(unsigned &keys,unsigned &triggers);
+	virtual void store(string const &key,set<string> const &triggers,time_t timeout,archive const &a);
+	virtual ~process_cache();
+	void *operator new(size_t n);
+	void operator delete (void *p);
+};
+
 
 shmem_control *process_cache_factory::mem(NULL);
 ::pid_t process_cache_factory::owner_pid(0);
@@ -62,43 +95,16 @@ void process_cache_factory::del(base_cache *p) const
 {
 };
 
-process_cache::process_cache(size_t m) :
-			memsize(m)
+process_cache::process_cache(size_t s,mutex &m,shared_mutex &a) :
+	memsize(s),
+	lru_mutex(m),
+	access_lock(a)
 {
-#ifdef HAVE_PTHREADS_PSHARED
-	pthread_mutexattr_t a;
-	pthread_rwlockattr_t al;
-
-	if(
-		pthread_mutexattr_init(&a)
-		|| pthread_mutexattr_setpshared(&a,PTHREAD_PROCESS_SHARED)
-		|| pthread_mutex_init(&lru_mutex,&a)
-		|| pthread_mutexattr_destroy(&a)
-		|| pthread_rwlockattr_init(&al)
-		|| pthread_rwlockattr_setpshared(&al,PTHREAD_PROCESS_SHARED)
-		|| pthread_rwlock_init(&access_lock,&al)
-		|| pthread_rwlockattr_destroy(&al))
-	{
-		throw cppcms_error(errno,"Failed setup mutexes --- is this system "
-					 "supports process shared mutex/rwlock?");
-	}
-#else
-	if((lru_mutex=tmpfile())==NULL || (access_lock=tmpfile())==NULL) {
-		throw cppcms_error(errno,"Failed to create temporary file");
-	}
-#endif
 };
 
 
 process_cache::~process_cache()
 {
-#ifdef HAVE_PTHREADS_PSHARED
-	pthread_mutex_destroy(&lru_mutex);
-	pthread_rwlock_destroy(&access_lock);
-#else
-	fclose(lru_mutex);
-	fclose(access_lock);
-#endif
 }
 
 process_cache::shr_string *process_cache::get(string const &key,set<string> *triggers)
@@ -116,7 +122,7 @@ process_cache::shr_string *process_cache::get(string const &key,set<string> *tri
 		}
 	}
 	{
-		mutex_lock lock(lru_mutex);
+		mutex::guard lock(lru_mutex);
 		lru.erase(p->second.lru);
 		lru.push_front(p);
 		p->second.lru=lru.begin();
@@ -124,43 +130,9 @@ process_cache::shr_string *process_cache::get(string const &key,set<string> *tri
 	return &(p->second.data);
 }
 
-namespace {
-	template<typename T>
-	T unaligned(T const *p)
-	{
-		T tmp;
-		memcpy(&tmp,p,sizeof(T));
-		return tmp;
-	}
-}
-
-
-bool process_cache::fetch_page(string const &key,string &out,bool gzip)
-{
-	rwlock_rdlock lock(access_lock);
-	shr_string *r=get(key,NULL);
-	if(!r) return false;
-	size_t size=r->size();
-	size_t s;
-	char const *ptr=r->c_str();
-	if(size<sizeof(size_t) || (s=unaligned((size_t const *)ptr))>size-sizeof(size_t))
-		return false;
-	if(!gzip){
-		out.assign(ptr+sizeof(size_t),s);
-	}
-	else {
-		ptr+=s+sizeof(size_t);
-		size-=s+sizeof(size_t);
-		if(size<sizeof(size_t) || (s=unaligned((size_t const *)ptr))!=size-sizeof(size_t))
-			return false;
-		out.assign(ptr+sizeof(size_t),s);
-	}
-	return true;
-}
-
 bool process_cache::fetch(string const &key,archive &a,set<string> &tags)
 {
-	rwlock_rdlock lock(access_lock);
+	shared_mutex::shared_guard lock(access_lock);
 	shr_string *r=get(key,&tags);
 	if(!r) return false;
 	a.set(r->c_str(),r->size());
@@ -169,7 +141,7 @@ bool process_cache::fetch(string const &key,archive &a,set<string> &tags)
 
 void process_cache::clear()
 {
-	rwlock_wrlock lock(access_lock);
+	shared_mutex::unique_guard lock(access_lock);
 	timeout.clear();
 	lru.clear();
 	primary.clear();
@@ -177,14 +149,14 @@ void process_cache::clear()
 }
 void process_cache::stats(unsigned &keys,unsigned &triggers)
 {
-	rwlock_rdlock lock(access_lock);
+	shared_mutex::shared_guard lock(access_lock);
 	keys=primary.size();
 	triggers=this->triggers.size();
 }
 
 void process_cache::rise(string const &trigger)
 {
-	rwlock_wrlock lock(access_lock);
+	shared_mutex::unique_guard lock(access_lock);
 	pair<triggers_ptr,triggers_ptr> range=triggers.equal_range(trigger.c_str());
 	triggers_ptr p;
 	list<pointer> kill_list;
@@ -200,7 +172,7 @@ void process_cache::rise(string const &trigger)
 
 void process_cache::store(string const &key,set<string> const &triggers_in,time_t timeout_in,archive const &a)
 {
-	rwlock_wrlock lock(access_lock);
+	shared_mutex::unique_guard lock(access_lock);
 	pointer main;
 	main=primary.find(key.c_str());
 
@@ -217,10 +189,13 @@ void process_cache::store(string const &key,set<string> const &triggers_in,time_
 	// And there is a block that is big enough to allocate 5% of memory
 	for(;;) {
 		if(process_cache_factory::mem->available() > memsize / 10) {
-			void *p=process_cache_factory::mem->malloc(memsize/20);
-			if(p) {
+			try {
+				void *p=process_cache_factory::mem->malloc(memsize/20);
 				process_cache_factory::mem->free(p);
 				break;
+			}
+			catch(std::bad_alloc const &e)
+			{
 			}
 		}
 		if(timeout.begin()->first<now) {
@@ -279,6 +254,49 @@ void process_cache::operator delete (void *p) {
 	process_cache_factory::mem->free(p);
 }
 
+class process_cache_holder : public base_cache {
+public:
+	process_cache_holder(size_t memory_size) 
+	{
+		lru_ = new mutex(true);
+		access_ = new shared_mutex(true);
+		impl_ = new process_cache(memory_size,*lru_,*access_);
+		pid_ = ::getpid();
+	}
+	~process_cache_holder()
+	{
+		if(pid_ == ::getpid())
+	}
+	virtual bool fetch(std::string const &key,std::string &a,std::set<std::string> *tags)
+	{
+		return impl_->fetch(ket,a,tags);
+	}
+	virtual void store(std::string const &key,std::string const &b,std::set<std::string> const &triggers,time_t timeout)
+	{
+		return impl_->store(key,b,triggers,timeout);
+	}
+	virtual void rise(std::string const &trigger) 
+	{
+		return impl_->rise(trigger);
+	}
+	virtual void clear() 
+	{
+		return impl_->clear();
+	}
 
+	virtual void stats(unsigned &keys,unsigned &triggers)
+	{
+		return impl_->stats;
+	}
+	virtual ~base_cache()
+	{
+	}
 
+	static mem-
 };
+
+
+
+
+} // impl
+} // cppcms

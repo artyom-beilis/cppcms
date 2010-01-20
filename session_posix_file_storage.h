@@ -29,9 +29,6 @@ namespace sessions {
 		bool read_all(int fd,void *vbuf,int n);
 		bool write_all(int fd,void const *vbuf,int n);
 		void gc();
-		bool test_pshared();
-		void create_mutex(pthread_mutex_t *,bool pshared);
-		void destroy_mutex(pthread_mutex_t *);
 		std::string file_name(std::string const &sid);
 		pthread_mutex_t *sid_to_pos(std::string const &sid);
 		void lock(std::string const &sid);

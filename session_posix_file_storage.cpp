@@ -22,67 +22,14 @@
 #include <limits.h>
 #include <stdlib.h>
 #include <string.h>
+#include "posix_util.h"
 
 namespace cppcms {
 namespace sessions {
 
 struct session_file_storage::data {};
 
-bool session_file_storage::test_pshared()
-{
-#if !defined(MAP_ANONYMOUS) && !defined(MAP_ANON)
-	return false;
-#else
-	#ifdef MAP_ANONYMOUS
-		int flags = MAP_ANONYMOUS | MAP_SHARED;
-	#else // defined(MAP_ANON)
-		int flags = MAP_ANON | MAP_SHARED;
-	#endif
-	void *memory=mmap(0,sizeof(pthread_mutex_t),PROT_READ | PROT_WRITE, flags, -1, 0);
-	if(memory==MAP_FAILED)
-		return false;
-	try {
-		create_mutex(reinterpret_cast<pthread_mutex_t *>(memory),true);
-		destroy_mutex(reinterpret_cast<pthread_mutex_t *>(memory));
-	}
-	catch(cppcms_error const &e) {
-		munmap(memory,sizeof(pthread_mutex_t));
-		return false;
-	}
-	munmap(memory,sizeof(pthread_mutex_t));
-	return true;
-#endif
-}
-
-
-void session_file_storage::create_mutex(pthread_mutex_t *m,bool pshared)
-{
-	if(!pshared) {
-		pthread_mutex_init(m,0);
-	}
-	else {
-		pthread_mutexattr_t attr;
-		pthread_mutexattr_init(&attr);
-		try {
-			int res;
-			res = pthread_mutexattr_setpshared(&attr,PTHREAD_PROCESS_SHARED);
-			if(res==0)
-				res = pthread_mutex_init(m,&attr);
-			if(res < 0)
-				throw cppcms_error(errno,"Failed to create process shared mutex");
-			pthread_mutexattr_destroy(&attr);
-		}
-		catch(...) {
-			pthread_mutexattr_destroy(&attr);
-			throw;
-		}
-	}
-}
-
-void session_file_storage::destroy_mutex(pthread_mutex_t *m)
-{
-	pthread_mutex_destroy(m);
-}
+using namespace cppcms::impl;
 
 session_file_storage::session_file_storage(std::string path,int concurrency_hint,int procs_no,bool force_flock) :
 	memory_(MAP_FAILED)
@@ -106,7 +53,7 @@ session_file_storage::session_file_storage(std::string path,int concurrency_hint
 	}
 		
 	lock_size_ = concurrency_hint;
-	if(force_flock || (procs_no > 1 && !test_pshared()))
+	if(force_flock || (procs_no > 1 && !test_pthread_mutex_pshared()))
 		file_lock_=true;
 	else
 		file_lock_=false;

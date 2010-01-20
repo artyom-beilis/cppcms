@@ -1,27 +1,54 @@
 #ifndef CPPCMS_ALLOCATORS
 #define CPPCMS_ALLOCATORS
+#include "config.h"
+
+#ifdef CPPCMS_USE_EXTERNAL_BOOST
+#   include <boost/interprocess/managed_external_buffer.hpp>
+#else
+#   include <cppcms_boost/interprocess/managed_external_buffer.hpp>
+    namespace boost = cppcms_boost;
+#endif
+
+#include "posix_util.h"
 #include "cppcms_error.h"
-#include <mm.h>
 #include <string>
+
 namespace cppcms {
+namespace impl {
 
-class shmem_control {
-	MM *memory;
+class shmem_control : public util::noncopyable{
 public:
-	shmem_control(size_t size,char const *file) {
-		if((memory=mm_create(size,file))==NULL) {
-			std::string e(mm_error());
-			throw cppcms_error("Failed to create shared memory "+e);
-		}
-	};
+	shmem_control(size_t size) :
+		size_(size),
+		region_(mmap_anonymous(size)),
+		memory_(boost::interprocess::create_only,region_,size_)
+	{
+	}
+	~shmem_control()
+	{
+		::munmap(region_,size_);
+	}
+	inline size_t available() 
+	{ 
+		mutex::guard g(lock_);
+		return memory_.get_free_memory();
 
-	~shmem_control() {
-		mm_destroy(memory);
-	};
-	inline MM *get() const { return memory; };
-	inline size_t available() const { return mm_available(memory); };
-	inline void *malloc(size_t s) const{ return mm_malloc(memory,s); };
-	inline void free(void *p) const {  mm_free(memory,p); };
+	}
+	inline void *malloc(size_t s)
+	{
+		mutex::guard g(lock_);
+		return memory_.allocate(s);
+	}
+	inline void free(void *p) 
+	{
+		mutex::guard g(lock_);
+		return memory_.deallocate(p);
+	}
+private:
+	process_shared_mutex lock_;	
+	size_t size_;
+	void *region_;
+	boost::interprocess::managed_external_buffer memory_;
 };
 
 template<typename T,shmem_control *&mm>
@@ -47,7 +74,7 @@ public :
 
 	inline pointer allocate(size_type cnt, std::allocator<void>::const_pointer = 0) const
 	{
-		void *memory=mm->malloc(cnt*sizeof(T));
+		return void *memory=mm->malloc(cnt*sizeof(T));
 		if(!memory) {
 			throw std::bad_alloc();
 		}

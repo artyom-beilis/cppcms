@@ -2,7 +2,7 @@ dnl Process this file with autoconf to produce a configure script.
 
 AC_PREREQ(2.59)
 
-AC_INIT([cppcms], [0.0.4], [artyomtnk@yahoo.com])
+AC_INIT([cppcms], [0.95.0], [artyomtnk@yahoo.com])
 AC_CONFIG_HEADER(config.h)
 AM_INIT_AUTOMAKE([1.9 foreign])
 
@@ -11,52 +11,7 @@ AC_PROG_LIBTOOL
 AC_SUBST(LIBTOOL_DEPS)
 
 AC_LANG_CPLUSPLUS
-AC_CONFIG_FILES([	\
-	Makefile	\
-	transtext/Makefile\
-	tests/Makefile])
-
-AC_ARG_ENABLE(embedded,[AS_HELP_STRING([--enable-embedded],[Create embedded version of cppcms])])
-AC_ARG_ENABLE(cgi,[AS_HELP_STRING([--enable-cgi],[Embedded version of cppcms with CGI api only])])
-AC_ARG_ENABLE(forkcache,[AS_HELP_STRING([--disable-forkcache],[Disable shared memory cache])])
-AC_ARG_ENABLE(fastcgi,[AS_HELP_STRING([--disable-fastcgi],[Disable fastcgi interface])])
-AC_ARG_ENABLE(tcpcache,[AS_HELP_STRING([--disable-tcpcache],[Disable distributed cache system])])
-AC_ARG_ENABLE(crypt,[AS_HELP_STRING([--disable-crypt],[Disable encrypted sessions backend])])
-AC_ARG_ENABLE(icu,[AS_HELP_STRING([--disable-icu],[Disable ICU support])])
-AC_ARG_ENABLE(sqlite,[AS_HELP_STRING([--disable-sqlite],[Disable sqlite sessions backend])])
-AC_ARG_ENABLE(boostsuffix,[AS_HELP_STRING([--enable-boostsuffix],[Specify custom suffix for boost libraries])])
-
-
-
-if test "x$enable_boostsuffix" != "xyes"  && test "x$enable_boostsuffix" != "xno"
-then
-	bsts="$enable_boostsuffix"
-fi
-
-
-cms_bld=normal
-if test "x$enable_embedded" = "xyes" 
-then
-	enable_tcpcache=no
-	enable_forkcache=no
-	AC_DEFINE([CPPCMS_EMBEDDED],[],["Make embedded version of cppcms library"])
-	if test "x$enable_cgi" != "xyes"
-	then
-		AC_DEFINE([CPPCMS_EMBEDDED_THREAD],[],["Embedded with threads"])
-		cms_bld=embed
-	else
-		enable_fastcgi=no
-		cms_bld=cgi
-	fi
-fi
-
-CPPCMS_LIBS=""
-
-
-
-
-
-MY_SAVE_LIBS="$LIBS"
+AC_CONFIG_FILES([Makefile])
 
 case $host in
 	*solaris*)
@@ -65,80 +20,30 @@ case $host in
 		LDFLAGS="-pthreads $LDFLAGS" 
 esac
 
-if test "x$enable_icu" != "xno" ; then
-	AC_CHECK_LIB(icuuc,main,[
-		have_icu=yes
-		CPPCMS_LIBS="-licui18n -licuuc -licudata $CPPCMS_LIBS"
-		AC_DEFINE([HAVE_ICU],[],["Enable ICU support"])
-		],
-		[	echo "====================================================================="
-			echo "ICU not found, ICU support is disabled"
-			echo "=====================================================================" ])
-fi
+AC_SEARCH_LIBS(pthread_sigmask,thr kse pthread,[],[echo "Posix threads library not found" ; exit 1])
 
+SAVE_LIBS=$LIBS
 
-if test "x$cms_bld" != "xcgi" 
-then
-	AC_SEARCH_LIBS(pthread_sigmask,thr kse pthread,[],[echo "Posix threads library not found" ; exit -1])
-	AC_SEARCH_LIBS(clock_gettime,rt,[],[])
-fi
+AC_SEARCH_LIBS(deflate,z zlib zdll,[],[echo "ZLib not found, exititing" ; exit 1])
 
-AC_TRY_RUN([	#include <pthread.h>
-		int main()
-		{
-			pthread_rwlockattr_t attr;
-			pthread_rwlock_t lock;
-			return 
-			(	pthread_rwlockattr_init(&attr)==0
-				&& pthread_rwlockattr_setpshared(&attr,PTHREAD_PROCESS_SHARED)==0
-				&& pthread_rwlock_init(&lock,&attr)==0 )
-			? 0 : 1;
-		}
-		],
-		[AC_DEFINE([HAVE_PTHREADS_PSHARED],[],["Have Pshared"])
-			have_pthreads_pshared=yes
-			echo "Check: process shared mutex... ok"],[echo "Check: process shared mutex not supported"],[echo "Cross compile, assume no"])
+BOOST_LIBS=$LIBS
+LIBS=$SAVE_LIBS
 
+AC_CHECK_LIB(icuuc,main,[],[ echo "icuuc Not found, aborting" ; exit 1 ])
+AC_CHECK_LIB(icui18n,main,[],[ echo "icui18m Not found, aborting" ; exit 1 ])
+AC_CHECK_LIB(icudt,main,[],[
+	AC_CHECK_LIB(icudata,main,[],[ cho "icudata/icudt Not found, aborting" ; exit 1 ])
+	])
 
-if test "x$enable_crypt" != "xno" ; then
-	AC_CHECK_LIB(gcrypt,main,[
-		have_gcrypt=yes
-		CPPCMS_LIBS="-lgcrypt $CPPCMS_LIBS"
-		AC_DEFINE([EN_ENCR_SESSIONS],[],["Enable encrypted sessions"])
-		],
-		[	echo "====================================================================="
-			echo "libgcrypt not found, Encrypted Sessions backend is disabled"
-			echo "=====================================================================" ])
-fi
-AM_CONDITIONAL(EN_ENCR_SESSIONS,[test "x$have_gcrypt" = "xyes" ])
+AC_SEARCH_LIBS(clock_gettime,rt,[],[])
 
-have_auto_type_detection=no
+AC_CHECK_LIB(gcrypt,main,[],[])
+AM_CONDITIONAL(ENABLE_GCRYPT,[test "x$ac_cv_lib_grcrypt_main" = "xyes" ])
 
-AC_CHECK_SIZEOF([wchar_t])
 
 AC_TRY_COMPILE([],[volatile long v;__sync_add_and_fetch(&v,1);],
 		[AC_DEFINE([HAVE_SYNC_FETCH_AND_ADD],[],["Have __sync_fetch_and_add"])
 			echo "__sync_add_and_fetch... ok"],[echo "__sync_add_and_fetch ... not supported"])
-
-AC_TRY_COMPILE([#include <string>
-		],
-		[std::wstring s;],
-		[AC_DEFINE([HAVE_STD_WSTRING],[],["Have std::wstring"])
-			have_auto_type_detection=yes
-			echo "std::wstring... ok"],[echo "std::wstring... not supported"])
-
-AC_TRY_COMPILE([#include <string>
-		],
-		[std::u16string s16; std::u32string s32;],
-		[AC_DEFINE([HAVE_CPP0X_UXSTRING],[],["Have C++0x std::uXXstring"])
-			have_auto_type_detection=yes
-			echo "std::uXXstring... ok"],[echo "std::uXXstring... not supported"])
-
-AC_TRY_COMPILE([],[int \$1=10;],[
-	AC_DEFINE([HAVE_DOLLAR_SIGN],[],["Can use $ in indentifiers"])
-	echo "Check: $ is supported in identifiers"
-	],
-	[echo "Check: $ is not supported in identifiers"])
 
 AC_TRY_COMPILE([#include <list>
 		],
@@ -164,127 +69,28 @@ AC_TRY_COMPILE([#include <list>
 		[AC_DEFINE([HAVE_UNDERSCORE_TYPEOF],[],["Have g++ typeof"])
 			have_auto_type_detection=yes
 			echo "__typeof__... ok"],[echo "__typeof__... not supported"])
-AC_TRY_COMPILE([#include <list>
-		#include <vector>
-		#include <boost/typeof/typeof.hpp>
-		],
-		[	{std::list<int> l; BOOST_TYPEOF(l.begin()) p=l.begin(); BOOST_TYPEOF(*p) &refp=*p;}
-			{std::vector<int> l; BOOST_TYPEOF(l.begin()) p=l.begin(); BOOST_TYPEOF(*p) &refp=*p;}],
-		[AC_DEFINE([HAVE_WORKING_BOOST_TYPEOF],[],["Have working BOOST_TYPEOF"])
-			have_auto_type_detection=yes
-			echo "Useful BOOST_TYPEOF... ok"],[echo "Useful BOOST_TYPEOF... not supported"])
-
-if test x$have_auto_type_detection != xyes ; then
-	echo "No useful type detection method for this compiler found"
-	echo "Supported methods: C++0x auto, C++0x decltype, Boost.Typeof, GCC typeof"
-	exit -1
-fi
 
 
-
-
-
-if test "x$enable_tcpcache" != "xno" ; then
-
-	store_flags="$CXXFLAGS"
-
-	case $host in
-		*cygwin*) CXXFLAGS="-D_WIN32_WINNT -D__USE_W32_SOCKETS $CXXFLAGS"
-	esac
-
-	AC_CHECK_HEADER([asio.hpp],[have_asio=yes
-			need_system=no],[AC_CHECK_HEADER([boost/asio.hpp],[
-					have_asio=yes
-					AC_DEFINE([USE_BOOST_ASIO],[],["Use boost::asio"])
-					need_system=yes],[
-					have_asio=no
-					need_system=no
-					echo "===================================================="
-					echo "ASIO library not found... TCP cache will be disabled"
-					echo "===================================================="  ])])
-
-	CXXFLAGS="$store_flags"
-fi
-
-if test "x$need_system" = "xyes" 
-then
-	if test "x$bsts" = "x"
-	then
-	AC_CHECK_LIB(boost_system,main,
-		[ LIBS="-lboost_system $LIBS" ],
-		[	AC_CHECK_LIB(boost_system-gcc-mt,main,
-				[LIBS="-lboost_system-gcc-mt $LIBS"],
-				[	have_asio=no 
-				echo "boost::asio found however boost::system not found"
-				echo "     TCP cache disabled"])])
-	else
-		LIBS="-lboost_system-$bsts $LIBS"
-	fi
-fi
-
-case $host in 
-	*cygwin*) CPPCMS_LIBS="-lws2_32 -lwsock32 $CPPCMS_LIBS"
+case $host in
+	*win*) 
+		CXXFLAGS="-D_WIN32_WINNT -D__USE_W32_SOCKETS $CXXFLAGS"
+		LIBS="-lws2_32 -lwsock32 $LIBS"
+		windows=yes 
 esac
 
-if test "x$have_asio" = "xyes" 
-then
-	AC_DEFINE([EN_TCP_CACHE],[],["Enable tcp cache"])
-fi
+case $host in 
+	*cygwin*)
+		cygwin=yes 
+esac
 
 
-AM_CONDITIONAL(EN_TCP_CACHE,[test "x$have_asio" = "xyes" ])
+AC_SEARCH_LIBS(dlopen,dl)
 
-if test "x$cms_bld" = "xnormal"
-then
-	AC_CHECK_LIB(dl,dlopen,[CPPCMS_LIBS="-ldl $CPPCMS_LIBS"],[])
-fi
+CPPCMS_LIBS=$LIBS
+LIBS=$SAVE_LIBS
 
-if test "x$cms_bld" != "xcgi"
-then
-	AC_SEARCH_LIBS(socket,socket)
-	AC_SEARCH_LIBS(gethostbyname,nsl socket)
-fi
-
-	AC_CHECK_LIB(boost_regex,main,[
-		CPPCMS_LIBS="-lboost_regex $CPPCMS_LIBS"
-		],[AC_CHECK_LIB(boost_regex-gcc-mt,main,[
-			CPPCMS_LIBS="-lboost_regex-gcc-mt $CPPCMS_LIBS"
-			],[ echo "boost::regex not found" ; exit -1])])
-
-	AC_CHECK_LIB(boost_iostreams,main,[
-		CPPCMS_LIBS="-lboost_iostreams $CPPCMS_LIBS"
-		],[AC_CHECK_LIB(boost_iostreams-gcc-mt,main,[
-			CPPCMS_LIBS="-lboost_iostreams-gcc-mt $CPPCMS_LIBS"
-			],[ echo "boost::iostreams not found" ; exit -1])])
-
-	AC_CHECK_LIB(boost_system,main,[
-		CPPCMS_LIBS="-lboost_system $CPPCMS_LIBS"
-		],[AC_CHECK_LIB(boost_system-gcc-mt,main,[
-			CPPCMS_LIBS="-lboost_system-gcc-mt $CPPCMS_LIBS"
-			],[ echo "boost::system not found" ; exit -1])])
-
-	AC_CHECK_LIB(boost_thread,main,[
-		CPPCMS_LIBS="-lboost_thread $CPPCMS_LIBS"
-		],[AC_CHECK_LIB(boost_thread-gcc-mt,main,[
-			CPPCMS_LIBS="-lboost_thread-gcc-mt $CPPCMS_LIBS"
-			],[ echo "boost::thread not found" ; exit -1])])
-
-	AC_CHECK_LIB(boost_filesystem,main,[
-		CPPCMS_LIBS="-lboost_filesystem $CPPCMS_LIBS"
-		],[AC_CHECK_LIB(boost_filesystem-gcc-mt,main,[
-			CPPCMS_LIBS="-lboost_filesystem-gcc-mt $CPPCMS_LIBS"
-			],[ echo "boost::date_time not found" ; exit -1])])
-
-	AC_CHECK_LIB(boost_date_time,main,[
-		CPPCMS_LIBS="-lboost_date_time $CPPCMS_LIBS"
-		],[AC_CHECK_LIB(boost_date_time-gcc-mt,main,[
-			CPPCMS_LIBS="-lboost_date_time-gcc-mt $CPPCMS_LIBS"
-			],[ echo "boost::date_time not found" ; exit -1])])
-
-
-CPPCMS_LIBS="$CPPCMS_LIBS $LIBS"
-TCPSCALE_LIBS="$LIBS"
-LIBS="$SAVE_LIBS"
-AC_SUBST(TCPSCALE_LIBS)
+AM_CONDITIONAL(WIN32,[ test "x$windows" = "xyes" ])
+AM_CONDITIONAL(WIN_NOT_CYGWIN,[ test "x$windows" = "xyes" && test "x$cygwin" != "xyes" ])
 AC_SUBST(CPPCMS_LIBS)
+AC_SUBST(BOOST_LIBS)
 AC_OUTPUT
