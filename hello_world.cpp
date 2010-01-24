@@ -176,6 +176,8 @@ public:
 	cppcms::widgets::password p2;
 	cppcms::widgets::textarea description;
 	cppcms::widgets::select_multiple sel;
+	cppcms::widgets::radio sel1;
+	cppcms::widgets::select sel2;
 	
 	my_form()
 	{
@@ -193,8 +195,16 @@ public:
 		sel.add("Bar");
 		sel.add("Bee");
 		sel.add("Car");
+		sel1.message(cppcms::locale::translate("Fruit"));
+		sel1.add("Apple");
+		sel1.add("Orange");
+		sel2.message(cppcms::locale::translate("Sex"));
+		sel2.add("Male");
+		sel2.add("Femail");
+		sel2.add("You are sexist");
 		sel.at_least(2);
-		*this + name + age + p1 + p2 + description + sel;
+		sel1.non_empty();
+		*this + name + age + p1 + p2 + description + sel + sel1 + sel2;
 	}
 };
 

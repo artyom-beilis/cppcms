@@ -1076,6 +1076,85 @@ namespace cppcms {
 			
 		};
 
+		class CPPCMS_API select_base : public base_widget {
+		public:
+			select_base();
+			virtual ~select_base();
+
+			void add(std::string const &string);
+			void add(std::string const &string,std::string const &id);
+			void add(locale::message const &msg);
+			void add(locale::message const &msg,std::string const &id);
+
+			int selected();
+			std::string selected_id();
+
+			void selected(int no);
+			void selected_id(std::string id);
+
+			void non_empty();
+			
+			virtual void render_input(form_context &context) = 0;
+			virtual bool validate();
+			virtual void load(http::context &context);
+			virtual void clear();
+		protected:
+			struct element {
+				element();
+				element(std::string const &v,locale::message const &msg);
+				element(std::string const &v,std::string const &msg);
+				uint32_t need_translation : 1;
+				uint32_t reserved : 31;
+				std::string id;
+				std::string str_option;
+				locale::message tr_option;
+
+			private:
+				struct data;
+				util::copy_ptr<data> d;
+
+			};
+
+			std::vector<element> elements_;
+		private:
+			struct data;
+			util::hold_ptr<data> d;
+
+			int selected_;
+			int default_selected_;
+
+			uint32_t non_empty_ : 1;
+			uint32_t reserverd  : 32;
+		};
+
+		class CPPCMS_API select : public select_base {
+		public:
+			select();
+			virtual ~select();
+			virtual void render_input(form_context &context);
+		private:
+			struct data;
+			util::hold_ptr<data> d;
+		};
+
+		class CPPCMS_API radio : public select_base {
+		public:
+			radio();
+			virtual ~radio();
+			virtual void render_input(form_context &context);
+			bool vertical();
+			void vertical(bool);
+
+		private:
+			uint32_t vertical_ : 1;
+			uint32_t reserved_ : 31;
+
+			struct data;
+			util::hold_ptr<data> d;
+		};
+
+
+
 		class CPPCMS_API submit : public base_html_input {
 		public:
 			submit();
@@ -1103,115 +1182,7 @@ namespace cppcms {
 			bool pressed_;
 			locale::message value_;
 		};
-
 		
-	/*	class select_multiple : public base_widget {
-		public:
-			select_multiple();
-			~select_multiple();
-
-			void add(std::string const &string,bool selected=false);
-			void add(std::string const &string,std::string const &id,bool selected=false);
-			void add(locale::message const &msg,bool selected=false);
-			void add(locale::message const &msg,std::string const &id,bool selected=false);
-
-			std::vector<bool> selected_map();
-			std::set<std::string> selected_ids();
-
-			unsigned at_least();
-			void at_least(unsigned v);
-
-			unsigned at_most();
-			void at_most(unsigned v);
-
-			unsigned rows();
-			void rows(unsigned n);
-			
-			virtual void render_input(form_context &context);
-			virtual bool validate();
-			virtual void load(http::context &context);
-			virtual void clear();
-		private:
-			struct data;
-			util::hold_ptr<data> d;
-
-			struct element {
-				element();
-				element(std::string const &v,locale::message const &msg,bool sel);
-				element(std::string const &v,std::string const &msg,bool sel);
-				uint32_t selected : 1;
-				uint32_t need_translation : 1;
-				uint32_t original_select : 1;
-				uint32_t reserved : 29;
-				std::string id;
-				std::string str_option;
-				locale::message tr_option;
-				friend std::ostream &operator<<(std::ostream &out,element const &el);
-			};
-
-			std::vector<element> elements_;
-			
-			unsigned low_;
-			unsigned high_;
-			unsigned rows_;
-			
-		};*/
-/*
-		class select_base : public base_widget {
-		public:
-			string value;
-			struct option {
-				string value;
-				string option;
-			};
-			list<option> select_list;
-			select_base(string name="",string msg="") : base_widget(name,msg){};
-			void add(string value,string option);
-			void add(string v) { add(v,v); }
-			void add(int value,string option);
-			void add(int v) {
-				ostringstream ss;
-				ss<<v;
-				add(v,ss.str());
-			}
-			void set(string value);
-			void set(int value);
-			string get();
-			int geti();
-			virtual bool validate();
-			virtual void load(cgicc::Cgicc const &cgi);
-		};
-
-		class select : public select_base {
-			int size;
-		public:
-			select(string n="",string m="") : select_base(n,m),size(-1) {};
-			void set_size(int n) { size=n;}
-			virtual string render_input(int how);
-		};
-
-		class radio : public select_base {
-			bool add_br;
-		public:
-			radio(string name="",string msg="") : select_base(name,msg),add_br(false) {}
-			void set_vertical() { add_br=true; }
-			virtual string render_input(int how);
-		};
-
-		class hidden : public text {
-		public:
-			hidden(string n="",string msg="") : text(n,msg) { set_nonempty(); };
-			virtual string render(int how);
-		};
-
-		class submit : public base_widget {
-		public:
-			string value;
-			bool pressed;
-			submit(string name="",string button="",string msg="") : base_widget(name,msg), value(button),pressed(false) {};
-			virtual string render_input(int);
-			virtual void load(cgicc::Cgicc const &cgi);
-		};  */
 
 	} // widgets
 
