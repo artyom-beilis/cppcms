@@ -1,4 +1,7 @@
 #define CPPCMS_SOURCE
+#if defined(__sun)
+#define _POSIX_PTHREAD_SEMANTICS
+#endif
 #include "session_posix_file_storage.h"
 #include "cppcms_error.h"
 #include "config.h"
@@ -83,7 +86,7 @@ session_file_storage::~session_file_storage()
 	if(memory_ !=MAP_FAILED) {
 		for(unsigned i=0;i<lock_size_;i++)
 			destroy_mutex(reinterpret_cast<pthread_mutex_t *>(memory_) + i);
-		munmap(memory_,sizeof(pthread_mutex_t) * lock_size_);
+		munmap((char*)memory_,sizeof(pthread_mutex_t) * lock_size_);
 	}
 	else {
 		for(unsigned i=0;i<lock_size_;i++)

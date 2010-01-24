@@ -1,4 +1,10 @@
 #define CPPCMS_SOURCE
+#ifndef CPPCMS_WIN32
+#if defined(__sun)
+#define _POSIX_PTHREAD_SEMANTICS
+#endif
+#include <signal.h>
+#endif
 #include "asio_config.h"
 #include "service.h"
 #include "service_impl.h"
@@ -20,13 +26,6 @@
 
 #ifdef CPPCMS_POSIX
 #include <sys/wait.h>
-#endif
-
-#ifndef CPPCMS_WIN32
-#if defined(SOLARIS) || defined(_SOLARIS)
-#define _POSIX_PTHREAD_SEMANTICS
-#endif
-#include <signal.h>
 #endif
 
 #include <stdio.h>
@@ -388,12 +387,12 @@ bool service::prefork()
 				// Ingnore all processes that are not my own childrens
 				if(p!=pids.end()) {
 					// TODO: Make better error handling
-					if(!WIFEXITED(stat) || WEXITSTATUS(stat)!=0){
-						if(WIFEXITED(stat)) {
-							std::cerr<<"Chaild exited with "<<WEXITSTATUS(stat)<<std::endl;
+					if(!WIFEXITED(status) || WEXITSTATUS(status)!=0){
+						if(WIFEXITED(status)) {
+							std::cerr<<"Chaild exited with "<<WEXITSTATUS(status)<<std::endl;
 						}
-						else if(WIFSIGNALED(stat)) {
-							std::cerr<<"Chaild killed by "<<WTERMSIG(stat)<<std::endl;
+						else if(WIFSIGNALED(status)) {
+							std::cerr<<"Chaild killed by "<<WTERMSIG(status)<<std::endl;
 						}
 						else {
 							std::cerr<<"Chaild exited for unknown reason"<<std::endl;

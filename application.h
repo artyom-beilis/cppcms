@@ -6,7 +6,7 @@
 #include "atomic_counter.h"
 #include "hold_ptr.h"
 #include "intrusive_ptr.h"
-
+#include <string>
 
 namespace cppcms {
 

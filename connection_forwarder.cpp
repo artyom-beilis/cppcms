@@ -42,12 +42,11 @@ namespace cppcms {
 			{
 				data_.swap(data);
 				boost::asio::ip::tcp::endpoint ep(boost::asio::ip::address::from_string(ip_),port_);
-				boost::system::error_code err;
-				socket_.async_connect(ep,boost::bind(&tcp_pipe::on_connected,shared_from_this(),_1));
+				socket_.async_connect(ep,boost::bind(&tcp_pipe::on_connected,shared_from_this(),boost::asio::placeholders::error));
 			}
 		private:
 
-			void on_connected(boost::system::error_code const &e) 
+			void on_connected(boost::system::error_code e) 
 			{
 				if(e) {
 					connection_->response().make_error_response(500);

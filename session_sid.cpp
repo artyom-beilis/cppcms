@@ -6,7 +6,7 @@
 #include <fstream>
 #include "cppcms_error.h"
 #include "urandom.h"
-
+#include <stdio.h>
 #include <time.h>
 
 #ifndef CPPCMS_WIN_NATIVE

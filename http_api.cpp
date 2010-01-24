@@ -8,6 +8,7 @@
 #include "json.h"
 #include "http_protocol.h"
 #include "config.h"
+#include <string.h>
 #include <iostream>
 #include <algorithm>
 #ifdef CPPCMS_USE_EXTERNAL_BOOST
@@ -49,17 +50,26 @@ namespace cgi {
 			boost::system::error_code e;
 			socket_.shutdown(boost::asio::ip::tcp::socket::shutdown_both,e);
 		}
+		struct binder {
+			void operator()(boost::system::error_code const &e,size_t n) const
+			{
+				self_->some_headers_data_read(e,n,h_);
+			}
+			binder(intrusive_ptr<http> self,handler const &h) :
+				self_(self),
+				h_(h)
+			{
+			}
+		private:
+			intrusive_ptr<http> self_;
+			handler h_;
+		};
 		virtual void async_read_headers(handler const &h)
 		{
 			input_body_.reserve(8192);
 			input_body_.resize(8192,0);
 			input_body_ptr_=0;
-			socket_.async_read_some(boost::asio::buffer(input_body_),
-				boost::bind(	&http::some_headers_data_read,
-						self(),
-						boost::asio::placeholders::error,
-						boost::asio::placeholders::bytes_transferred,
-						h));
+			socket_.async_read_some(boost::asio::buffer(input_body_),binder(self(),h));
 		}
 
 		void some_headers_data_read(boost::system::error_code const &e,size_t n,handler const &h)

@@ -4,9 +4,10 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <sys/fcntl.h>
-#include <sys/file.h>
+#include <sys/types.h>
 #include <errno.h>
 #include <stdio.h>
+#include <string.h>
 #include <pthread.h>
 #include "cppcms_error.h"
 
@@ -106,7 +107,7 @@ namespace impl {
 		catch(cppcms_error const &e) {
 			res= false;
 		}
-		::munmap(memory,sizeof(pthread_mutex_t));
+		::munmap((char*)memory,sizeof(pthread_mutex_t));
 		return res;
 	}
 
@@ -147,7 +148,11 @@ namespace impl {
 		{
 			pthread_mutex_lock(plock_);
 			if(flock_) {
-				while(::flock(fileno(flock_),LOCK_EX)<0 && errno==EINTR)
+				struct flock lock;
+				memset(&lock,0,sizeof(lock));
+				lock.l_type=F_WRLCK;
+				lock.l_whence=SEEK_SET;
+				while(::fcntl(fileno(flock_),F_SETLKW,&lock)!=0 && errno==EINTR)
 					;
 			}
 		}
@@ -155,7 +160,11 @@ namespace impl {
 		void unlock()
 		{
 			if(flock_) {
-				while(::flock(fileno(flock_),LOCK_UN)<0 && errno==EINTR)
+				struct flock lock;
+				memset(&lock,0,sizeof(lock));
+				lock.l_type=F_UNLCK;
+				lock.l_whence=SEEK_SET;
+				while(::fcntl(fileno(flock_),F_SETLKW,&lock)!=0 && errno==EINTR)
 					;
 			}
 			pthread_mutex_unlock(plock_);
@@ -166,7 +175,7 @@ namespace impl {
 			if(flock_) ::fclose(flock_);
 			destroy_mutex(plock_);
 			if(plock_ != &normal_)
-				::munmap(plock_,sizeof(pthread_mutex_t));
+				::munmap((char*)plock_,sizeof(pthread_mutex_t));
 		}
 	private:
 		pthread_mutex_t *plock_;
@@ -219,7 +228,11 @@ namespace impl {
 		{
 			pthread_rwlock_wrlock(plock_);
 			if(flock_) {
-				while(::flock(fileno(flock_),LOCK_EX)<0 && errno==EINTR)
+				struct flock lock;
+				memset(&lock,0,sizeof(lock));
+				lock.l_type=F_WRLCK;
+				lock.l_whence=SEEK_SET;
+				while(::fcntl(fileno(flock_),F_SETLKW,&lock)!=0 && errno==EINTR)
 					;
 			}
 		}
@@ -228,7 +241,11 @@ namespace impl {
 		{
 			pthread_rwlock_rdlock(plock_);
 			if(flock_) {
-				while(::flock(fileno(flock_),LOCK_SH)<0 && errno==EINTR)
+				struct flock lock;
+				memset(&lock,0,sizeof(lock));
+				lock.l_type=F_RDLCK;
+				lock.l_whence=SEEK_SET;
+				while(::fcntl(fileno(flock_),F_SETLKW,&lock)!=0 && errno==EINTR)
 					;
 			}
 		}
@@ -236,7 +253,11 @@ namespace impl {
 		void unlock()
 		{
 			if(flock_) {
-				while(::flock(fileno(flock_),LOCK_UN)<0 && errno==EINTR)
+				struct flock lock;
+				memset(&lock,0,sizeof(lock));
+				lock.l_type=F_UNLCK;
+				lock.l_whence=SEEK_SET;
+				while(::fcntl(fileno(flock_),F_SETLKW,&lock)!=0 && errno==EINTR)
 					;
 			}
 			pthread_rwlock_unlock(plock_);
@@ -247,7 +268,7 @@ namespace impl {
 			if(flock_) ::fclose(flock_);
 			destroy_rwlock(plock_);
 			if(plock_ != &normal_)
-				::munmap(plock_,sizeof(pthread_rwlock_t));
+				::munmap((char*)plock_,sizeof(pthread_rwlock_t));
 		}
 	private:
 		pthread_rwlock_t *plock_;

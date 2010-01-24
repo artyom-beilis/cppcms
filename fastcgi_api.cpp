@@ -7,6 +7,8 @@
 #include "cppcms_error_category.h"
 #include "json.h"
 #include "cstdint.h"
+#include <stdlib.h>
+#include <string.h>
 #include <iostream>
 #include "config.h"
 #ifdef CPPCMS_USE_EXTERNAL_BOOST

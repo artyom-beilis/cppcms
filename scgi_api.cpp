@@ -7,6 +7,7 @@
 #include "service_impl.h"
 #include "cppcms_error_category.h"
 #include <iostream>
+#include <stdlib.h>
 #include "config.h"
 #ifdef CPPCMS_USE_EXTERNAL_BOOST
 #   include <boost/bind.hpp>

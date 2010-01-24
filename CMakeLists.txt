@@ -194,7 +194,7 @@ set(CPPCMS_PUBLIC_HEADERS
 	callback3.h
 	callback4.h
 	clone_ptr.h
-	connection_forwarder.h
+	# connection_forwarder.h
 	copy_ptr.h
 	cppcms_error.h
 	cstdint.h
@@ -292,7 +292,7 @@ set(CPPCMS_SOURCES
 	cache_pool.cpp
 	cache_interface.cpp
 	thread_cache.cpp
-	connection_forwarder.cpp
+	# connection_forwarder.cpp
 	session_pool.cpp
 	base_encryptor.cpp
 	hmac_encryptor.cpp

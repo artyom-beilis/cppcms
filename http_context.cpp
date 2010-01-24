@@ -96,8 +96,7 @@ void context::on_request_ready(bool error)
 		app->service().thread_pool().post(boost::bind(&context::dispatch,app,matched,true));
 	}
 }
-
-/* static */
+// static 
 void context::dispatch(intrusive_ptr<application> app,std::string url,bool syncronous)
 {
 	try {
@@ -170,7 +169,8 @@ context::~context()
 
 void context::async_on_peer_reset(util::callback0 const &h)
 {
-	conn_->aync_wait_for_close_by_peer(h);
+	// For some wired can't go without bind on SunCC
+	conn_->aync_wait_for_close_by_peer(boost::bind(h));
 }
 
 impl::cgi::connection &context::connection()
@@ -217,6 +217,7 @@ session_interface &context::session()
 	return *d->session;
 }
 
-
 } // http
 } // cppcms
+
+
