@@ -49,6 +49,24 @@ public:
 	/// Create an empty callback
 	///
 	callback2(){}
+	///
+	/// Copy constructor
+	///
+	
+	callback2(callback2 const &other) : call_ptr(other.call_ptr)
+	{
+	}
+
+	///
+	/// Assignment operator
+	///
+
+	callback2 const &operator=(callback2 const &other)
+	{
+		if(this!=&other)
+			call_ptr = other.call_ptr;
+		return *this;
+	}
 
 	///
 	/// Create a callback and copy callable object T to it.
