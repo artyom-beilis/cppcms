@@ -448,7 +448,7 @@ class base_show:
             if m.group(1):
                 func="content."+m.group(2)
             else:
-                func=m.group(2)
+                func="cppcms::filters::" + m.group(2)
             if m.group(3):
                 params=','.join([var]+self.get_params(m.group(4)))
             else:
