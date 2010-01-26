@@ -1,4 +1,5 @@
 #define CPPCMS_SOURCE
+#include "defs.h"
 #ifndef CPPCMS_WIN32
 #if defined(__sun)
 #define _POSIX_PTHREAD_SEMANTICS

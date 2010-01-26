@@ -4,6 +4,22 @@ set(PACKAGE_NAME "CppCMS")
 set(PACKAGE_STRING "CppCMS/0.99.1")
 set(PACKAGE_VERSION "0.99.1")
 
+
+option(DISABLE_SHARED	"Disable shared libraries build" OFF)
+option(DISABLE_STATIC	"Disable static libraries build" OFF)
+option(DISABLE_ICONV	"Disable usage iconv library - use ICU for conversion" OFF)
+option(DISABLE_GCRYPT	"Disable usage of gcrypt library, no AES cookies encryption would be available" OFF)
+option(USE_EXTERNAL_BOOST "Use external Boost library and not internal one, boost version provided by BOOST_SUFFIX variable" OFF)
+
+
+if(NOT CMAKE_BUILD_TYPE)
+  set(CMAKE_BUILD_TYPE RelWithDebInfo CACHE STRING
+        "Choose the type of build, options are: None Debug Release RelWithDebInfo MinSizeRel."
+	      FORCE)
+endif(NOT CMAKE_BUILD_TYPE)
+
+
+
 include(CheckFunctionExists)
 include(CheckCXXSourceCompiles)
 include(CheckLibraryExists)
@@ -20,14 +36,22 @@ if(WIN32 AND CMAKE_COMPILER_IS_GNUCXX AND NOT DISABLE_SHARED)
 		GCC_IS_GCC4)
 	if(NOT GCC_IS_GCC4)
 		message("GCC version is below gcc4 under Win32, thus disabling shared library")
-		set(DISABLE_SHARED 1)
+		set(DISABLE_SHARED ON)
 	endif(NOT GCC_IS_GCC4)
 endif(WIN32 AND CMAKE_COMPILER_IS_GNUCXX AND NOT DISABLE_SHARED)
 
-if(NOT CPPCMS_USE_EXTERNAL_BOOST)
+
+
+
+if(USE_EXTERNAL_BOOST)
+	set(CPPCMS_USE_EXTERNAL_BOOST 1)
+endif(USE_EXTERNAL_BOOST)
+
+
+if(NOT USE_EXTERNAL_BOOST)
 	add_subdirectory(cppcms_boost)
 	include_directories(cppcms_boost)
-else(NOT CPPCMS_USE_EXTERNAL_BOOST)
+else(NOT USE_EXTERNAL_BOOST)
 	find_library(BOOST_SYSTEM	boost_system-${BOOST_SUFFIX} 	NAMES boost_system 	boost_system-mt)
 	find_library(BOOST_FILESYSTEM 	boost_filesystem-${BOOST_SUFFIX} NAMES boost_filesystem boost_filesystem-mt)
 	find_library(BOOST_REGEX	boost_regex-${BOOST_SUFFIX} 	NAMES boost_regex 	boost_regex-mt)
@@ -35,7 +59,7 @@ else(NOT CPPCMS_USE_EXTERNAL_BOOST)
 	find_library(BOOST_THREAD	boost_thread-${BOOST_SUFFIX} 	NAMES boost_thread 	boost_thread-mt)
 	find_library(BOOST_DATE_TIME	boost_date_time-${BOOST_SUFFIX} NAMES boost_date_time 	boost_date_time-mt)
 	find_library(BOOST_ZLIB		boost_zlib-${BOOST_SUFFIX} 	NAMES boost_zlib 	boost_zlib)
-endif(NOT CPPCMS_USE_EXTERNAL_BOOST)
+endif(NOT USE_EXTERNAL_BOOST)
 
 find_library(ICU_UC icuuc)
 find_library(ICU_DATA icudata NAMES icudt)
@@ -159,7 +183,7 @@ endif(${CMAKE_HOST_WIN32})
 
 check_function_exists(canonicalize_file_name HAVE_CANONICALIZE_FILE_NAME)
 
-if(CPPCMS_USE_EXTERNAL_BOOST)
+if(USE_EXTERNAL_BOOST)
 	if(WIN32)
 		add_definitions(-DBOOST_ALL_NO_LIB)
 		add_definitions(-DBOOST_REGEX_DYN_LINK)
@@ -170,12 +194,12 @@ if(CPPCMS_USE_EXTERNAL_BOOST)
 		add_definitions(-DBOOST_DATE_TIME_DYN_LINK)
 		add_definitions(-DBOOST_ZLIB_DYN_LINK)
 	endif(WIN32)
-else(CPPCMS_USE_EXTERNAL_BOOST)
+else(USE_EXTERNAL_BOOST)
 	add_definitions(-DCPPCMS_BOOST_ALL_NO_LIB)
 	if(NOT DISABLE_SHARED)
 		add_definitions(-DCPPCMS_BOOST_ALL_DYN_LINK)
 	endif(NOT DISABLE_SHARED)
-endif(CPPCMS_USE_EXTERNAL_BOOST)
+endif(USE_EXTERNAL_BOOST)
 
 set(CPPCMS_PUBLIC_HEADERS
 	aio_timer.h
@@ -305,7 +329,9 @@ set(CPPCMS_SOURCES
 	session_memory_storage.cpp
 )
 
-find_library(LIB_GCRYPT gcrypt)
+if(NOT DISABLE_GCRYPT)
+	find_library(LIB_GCRYPT gcrypt)
+endif(NOT DISABLE_GCRYPT)
 
 if(LIB_GCRYPT)
 	set(CPPCMS_SOURCES ${CPPCMS_SOURCES} aes_encryptor.cpp)
@@ -342,13 +368,13 @@ foreach(ALIB ${CPPCMS_LIBS})
 	target_link_libraries(${ALIB} ${ICU_UC})
 	target_link_libraries(${ALIB} ${ICU_DATA})
 	target_link_libraries(${ALIB} ${ICU_I18N})
-	if(NOT CPPCMS_USE_EXTERNAL_BOOST)
+	if(NOT USE_EXTERNAL_BOOST)
 		if(DISABLE_SHARED)
 			target_link_libraries(${ALIB} boost-static)
 		else(DISABLE_SHARED)
 			target_link_libraries(${ALIB} boost)
 		endif(DISABLE_SHARED)
-	else(NOT CPPCMS_USE_EXTERNAL_BOOST)
+	else(NOT USE_EXTERNAL_BOOST)
 		target_link_libraries(${ALIB} ${ICU_UC})
 		target_link_libraries(${ALIB} ${ICU_DATA})
 		target_link_libraries(${ALIB} ${ICU_I18N})
@@ -361,7 +387,7 @@ foreach(ALIB ${CPPCMS_LIBS})
 		if(BOOST_ZLIB)
 			target_link_libraries(${ALIB} ${BOOST_ZLIB})
 		endif(BOOST_ZLIB)
-	endif(NOT CPPCMS_USE_EXTERNAL_BOOST)
+	endif(NOT USE_EXTERNAL_BOOST)
 
 	if(LIB_GCRYPT)
 		target_link_libraries(${ALIB} ${LIB_GCRYPT})
