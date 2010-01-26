@@ -488,6 +488,10 @@ set_target_properties(${CPPCMS_LIBS} PROPERTIES VERSION 1.0.0 SOVERSION 1)
 set_target_properties(${CPPCMS_LIBS} PROPERTIES 
 			FRAMEWORK TRUE
 			PUBLIC_HEADER "${CPPCMS_PUBLIC_HEADERS}")
+			
+if(MSVC AND NOT DISABLE_SHARED)
+	set_target_properties(cppcms PROPERTIES IMPORT_SUFFIX "_imp.lib")
+endif(MSVC AND NOT DISABLE_SHARED)
 
 configure_file(config.cmake.h config.h)
 
