@@ -17,6 +17,7 @@
 #include <vector>
 #include <iterator>
 #include <algorithm>
+#include <typeinfo>
 
 namespace cppcms {
     namespace locale {
