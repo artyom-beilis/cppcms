@@ -162,8 +162,27 @@ namespace cppcms {
                     static impl::index_type map(boundary_type t,IteratorType b,IteratorType e,std::locale const &l)
                     {
                         impl::index_type result;
-                        if(&*e - &*b == e - b) {
-                            impl::index_type tmp=impl::map(t,&*b,&*e,l);
+                        //
+                        // Optimize for most common cases
+                        //
+                        // C++0x requires that string is continious in memory and all string implementations
+                        // do this because of c_str() support. 
+                        //
+
+                        if( 
+                            (
+                                typeid(IteratorType) == typeid(typename std::basic_string<char_type>::iterator)
+                                || typeid(IteratorType) == typeid(typename std::basic_string<char_type>::const_iterator)
+                                || typeid(IteratorType) == typeid(typename std::vector<char_type>::iterator)
+                                || typeid(IteratorType) == typeid(typename std::vector<char_type>::const_iterator)
+                            )
+                            &&
+                                b!=e
+                          )
+                        {
+                            char const *begin = &*b;
+                            char const *end = begin + (e-b);
+                            impl::index_type tmp=impl::map(t,begin,end,l);
                             result.swap(tmp);
                         }
                         else{
