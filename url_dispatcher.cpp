@@ -23,7 +23,7 @@ namespace cppcms {
 			{
 			}
 
-			bool matches(std::string path)
+			bool matches(std::string const &path)
 			{
 				return boost::regex_match(path.c_str(),match_,expr_);
 			}

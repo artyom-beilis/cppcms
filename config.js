@@ -81,7 +81,7 @@
 		"default_skin" : "skin1",
 		 "paths" : [ "./" ],
 		 //"skins" : [ "skin3" ],
-		 "auto_reload" : true
+		 //"auto_reload" : true
 	},
 	"cache" : {
 		"backend" : "thread_shared",
