@@ -4,12 +4,17 @@ set(PACKAGE_NAME "CppCMS")
 set(PACKAGE_STRING "CppCMS/0.99.1")
 set(PACKAGE_VERSION "0.99.1")
 
+include(CheckFunctionExists)
+include(CheckCXXSourceCompiles)
+include(CheckLibraryExists)
+include(CPack)
 
-###############
+
+#############################################################################
 #
 # Setup default build options
 #
-##############
+#############################################################################
 
 option(DISABLE_SHARED	"Disable shared libraries build" OFF)
 option(DISABLE_STATIC	"Disable static libraries build" OFF)
@@ -17,33 +22,52 @@ option(DISABLE_ICONV	"Disable usage iconv library - use ICU for conversion" OFF)
 option(DISABLE_GCRYPT	"Disable usage of gcrypt library, no AES cookies encryption would be available" OFF)
 option(USE_EXTERNAL_BOOST "Use external Boost library and not internal one, boost version provided by BOOST_SUFFIX variable" OFF)
 
-######
+#############################################################################
+#
 # Setup various build flags for different supported compilers and systems
-######
+#
+#############################################################################
 
 if(CMAKE_COMPILER_IS_GNUCXX)
+	check_cxx_source_compiles(
+		"#if __GNUC__ < 4
+		#error
+		#endif
+		int main() {}"
+		GCC_IS_GCC4)
+
+	set(CXX_FLAGS "-Wall")
+
 	if(CMAKE_SYSTEM_NAME STREQUAL "SunOS")
-		set(CXX_FLAGS "-Wall -pthreads")
-	else()
-		set(CXX_FLAGS "-Wall")
+		set(CXX_FLAGS "${CXX_FLAGS} -pthreads")
+	endif()
+
+	if(NOT GCC_IS_GCC4)
+		# Uninitalized checks are bogous under gcc-3.4
+		set(CXX_FLAGS "${CXX_FLAGS} -Wno-uninitialized")
 	endif()
 elseif(CMAKE_CXX_COMPILER_ID STREQUAL "Intel")
 	set(CXX_FLAGS "-Wall")
 elseif(MSVC)
 	set(CXX_FLAGS "/EHsc /W4")
 elseif(CMAKE_CXX_COMPILER_ID STREQUAL "SunPro")
+	#
+	# We use STL port under Sun Studio, standard library is broken
+	#
+	set(CXX_FLAGS "-library=stlport4")
+
 	if(CMAKE_SYSTEM_NAME STREQUAL "SunOS")
-		set(CXX_FLAGS "-mt -library=stlport4")
-	else()
-		set(CXX_FLAGS "-library=stlport4")
+		set(CXX_FLAGS "${CXX_FLAGS} -mt")
 	endif()
 endif()
 
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${CXX_FLAGS}")
 
-##############
+#############################################################################
+#
 # Set default RelWithDebInfo build
-##############
+#
+#############################################################################
 
 if(NOT CMAKE_BUILD_TYPE)
   set(CMAKE_BUILD_TYPE RelWithDebInfo CACHE STRING
@@ -53,30 +77,18 @@ endif(NOT CMAKE_BUILD_TYPE)
 
 
 
-include(CheckFunctionExists)
-include(CheckCXXSourceCompiles)
-include(CheckLibraryExists)
-include(CPack)
 
-###
+#############################################################################
+#
 # Win32 Builds of old versions of GCC do not have libstd++ and dll, can't use locale
 # So disable dll at all
-####
+#
+#############################################################################
 
-
-if(WIN32 AND CMAKE_COMPILER_IS_GNUCXX AND NOT DISABLE_SHARED)
-	include(CheckCXXSourceCompiles)
-	check_cxx_source_compiles(
-		"#if __GNUC__ < 4
-		#error
-		#endif
-		int main() {return 0;}"
-		GCC_IS_GCC4)
-	if(NOT GCC_IS_GCC4)
-		message("GCC version is below gcc4 under Win32, thus disabling shared library")
-		set(DISABLE_SHARED ON)
-	endif(NOT GCC_IS_GCC4)
-endif(WIN32 AND CMAKE_COMPILER_IS_GNUCXX AND NOT DISABLE_SHARED)
+if(WIN32 AND CMAKE_COMPILER_IS_GNUCXX AND NOT DISABLE_SHARED AND NOT GCC_IS_GCC4)
+	message("GCC version is below gcc4 under Win32, thus disabling shared library")
+	set(DISABLE_SHARED ON)
+endif()
 
 
 if(USE_EXTERNAL_BOOST)
