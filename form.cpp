@@ -1148,14 +1148,16 @@ void select_base::load(http::context &context)
 	std::pair<http::request::form_type::const_iterator,http::request::form_type::const_iterator> 
 		range=context.request().post_or_get().equal_range(name());
 	selected_ = -1;
-	http::request::form_type::const_iterator p=range.first++;
-	if(p!=range.second && range.first==range.second) {
-		std::string key = p->second;
-		for(unsigned i=0;i<elements_.size();i++) {
-			if(elements_[i].id == key) {
-				selected_ = i;
-				break;
-			}
+
+	http::request::form_type::const_iterator p=range.first;
+	// If empty or more then one
+	if(range.first == range.second || (++range.first)!=range.second )
+		return;
+	std::string key = p->second;
+	for(unsigned i=0;i<elements_.size();i++) {
+		if(elements_[i].id == key) {
+			selected_ = i;
+			break;
 		}
 	}
 }

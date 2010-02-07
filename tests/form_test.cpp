@@ -82,10 +82,10 @@ public:
 			radio.non_empty();
 		}
 
-		std::ostream &out = response().out();
 
 		if(request().request_method()=="POST" || !request().query_string().empty()) {
 			response().set_plain_text_header();
+			std::ostream &out = response().out();
 			X.load(context());
 			if(X.validate()) {
 				out << "valid" << std::endl;
@@ -122,8 +122,8 @@ public:
 				out << "Submit pressed: " << submit.value() << std::endl;
 
 		} 
-
 		else {
+			std::ostream &out = response().out();
 			out << "non loaded<br>\n";
 			cppcms::form_context context(out);
 			out << "<form action=\"" << request().script_name() + request().path_info() <<  "\" method=\"post\" >\n";
