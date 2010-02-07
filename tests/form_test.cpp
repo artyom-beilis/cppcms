@@ -68,7 +68,7 @@ public:
 
 		if(a_case == "" )
 			;// Nothing checked
-		else if(a_case == "non_empty") {
+		else if(a_case == "/non_empty") {
 			text.non_empty();
 			textarea.non_empty();
 			integer.non_empty();
