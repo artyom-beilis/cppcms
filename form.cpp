@@ -744,7 +744,7 @@ bool password::validate()
 		return false;
 	}
 	if(password_to_check_) {
-		if(!password_to_check_->set() || password_to_check_->value()!=value()) {
+		if(!password_to_check_->set() || !set() || password_to_check_->value()!=value()) {
 			valid(false);
 			value("");
 			password_to_check_->value("");
@@ -769,7 +769,7 @@ bool regex_field::validate()
 {
 	if(!text::validate())
 		return false;
-	valid(expression_->match(value()));
+	valid(set() && expression_->match(value()));
 	return valid();
 }
 
