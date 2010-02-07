@@ -1,0 +1,28 @@
+- Protocols testing POST/GET:
+    http
+    fastcgi
+    scgi
+
+- Sessions normal:
+  - Cookies backends: hmac, aes
+  - Files backend:
+  - Memort backend
+- Session cookies - try to hajack
+- Session dual - test storage
+- Asynchronous IO:
+  - timer
+  - timeout
+  - peer-close
+- Cache:
+  backends: threaded
+- Cookies: test
+- File Server Test
+- JSON test
+- Forms:
+  text: encoding-validation
+  various tests 
+- Views:
+  commands
+  filters
+  auto-reloading
+

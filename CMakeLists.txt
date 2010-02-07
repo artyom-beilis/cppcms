@@ -9,7 +9,6 @@ include(CheckCXXSourceCompiles)
 include(CheckLibraryExists)
 include(CPack)
 
-
 #############################################################################
 #
 # Setup default build options
@@ -518,14 +517,32 @@ if(NOT DISABLE_SHARED)
 	target_link_libraries(skin3 ${CPPCMS_LIB})
 endif(NOT DISABLE_SHARED)
 
+
+
 add_executable(hello_world hello_world.cpp skin1.cpp skin2.cpp)
 target_link_libraries(hello_world ${CPPCMS_LIB})
 
 add_executable(cppcms_config_find_param cppcms_config_find_param.cpp json.cpp)
 
+#########################################
+# Tests
+#########################################
+
+
+add_executable(forms_test tests/form_test.cpp)
+target_link_libraries(forms_test ${CPPCMS_LIB})
+set(ALL_TESTS "forms_test ${ALL_TESTS}")
+
+
+
+
+#####################################
+# End of tests
+#####################################
+
 # These are use export
 if(WIN32 AND NOT DISABLE_SHARED)
-	set_target_properties(hello_world cppcms PROPERTIES
+	set_target_properties(${ALL_TESTS} hello_world cppcms PROPERTIES
 				COMPILE_DEFINITIONS DLL_EXPORT)
 endif(WIN32 AND NOT DISABLE_SHARED)
 
