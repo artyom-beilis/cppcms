@@ -1043,6 +1043,8 @@ namespace cppcms {
 			unsigned at_most();
 			void at_most(unsigned v);
 
+			void non_empty();
+
 			unsigned rows();
 			void rows(unsigned n);
 			

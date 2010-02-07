@@ -232,10 +232,10 @@ void form::iterator::next()
 			return;
 		}
 		else {
-			return_positions_.push(offset_+1);
-			offset_=0;
 			// Elements can be only base_widget or form... so it should be safe
 			current_ = static_cast<form *>(current_->elements_[offset_].first);
+			return_positions_.push(offset_+1);
+			offset_=0;
 		}
 	}
 }
@@ -993,6 +993,11 @@ void select_multiple::render_input(form_context &context)
 		}
 		out << "</select>";
 	}
+}
+
+void select_multiple::non_empty()
+{
+	at_least(1);
 }
 
 
