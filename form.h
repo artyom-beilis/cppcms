@@ -1001,18 +1001,39 @@ namespace cppcms {
 			util::hold_ptr<data> d;
 		};
 
+		///
+		/// This class represent an html checkbox input widget
+		///
 		class CPPCMS_API checkbox: public base_html_input {
 		public:
-			// Can specify other type like "radio"
+			///
+			/// The constructor that allows you to specify other type like "radio"
+			///
 			checkbox(std::string const &type);
-			// Default - checkbox
+			///
+			/// Default constructor, type checkbox
+			///
 			checkbox();
-			~checkbox();
+			virtual ~checkbox();
 			
+			///
+			/// Returns true of box was checked (selected)
+			///
 			bool value();
+			///
+			/// Set checked state
+			///
 			void value(bool is_set);
 
+			///
+			/// Get unique identification of the checkbox
+			///
 			std::string identification();
+
+			///
+			/// Set unique identification to the checkbox, useful when you want to
+			/// have many options with same name
+			///
 			void identification(std::string const &);
 
 			virtual void render_value(form_context &context);
@@ -1023,29 +1044,77 @@ namespace cppcms {
 			std::string identification_;
 			bool value_;
 		};
-		
+	
+		///
+		/// Select multiple elements widget
+		///	
 		class CPPCMS_API select_multiple : public base_widget {
 		public:
 			select_multiple();
 			~select_multiple();
 
-			void add(std::string const &string,bool selected=false);
-			void add(std::string const &string,std::string const &id,bool selected=false);
+			///
+			/// Add a new option to list with display name \a msg, and specify if it is initially
+			/// selected, default false
+			///
+			void add(std::string const &msg,bool selected=false);
+			///
+			/// Add a new option to list with display name \a msg, and specify if it is initially
+			/// selected, default false, providing unique identification for the element \a id
+			///
+			void add(std::string const &msg,std::string const &id,bool selected=false);
+			///
+			/// Add a new option to list with localized display name \a msg, and specify if it is initially
+			/// selected, default false
+			///
 			void add(locale::message const &msg,bool selected=false);
+			///
+			/// Add a new option to list with localized display name \a msg, and specify if it is initially
+			/// selected, default false, providing unique identification for the element \a id
+			///
 			void add(locale::message const &msg,std::string const &id,bool selected=false);
 
+			///
+			/// Get the mapping of all selected items according to the order they where added to the list
+			///
 			std::vector<bool> selected_map();
+			///
+			/// Get all selected items ids according to the order they where added to the list, if no
+			/// specific id was given, strings "0", "1"... would be used
+			///
 			std::set<std::string> selected_ids();
 
+			///
+			/// Get minimal amount of options that should be chosen, default = 0
+			///
 			unsigned at_least();
+
+			///
+			/// Set minimal amount of options that should be chosen, default = 0
+			///
 			void at_least(unsigned v);
 
+			///
+			/// Get maximal amount of options that should be chosen, default unlimited
+			///
 			unsigned at_most();
+			///
+			/// Set maximal amount of options that should be chosen, default unlimited
+			///
 			void at_most(unsigned v);
 
+			///
+			/// Same as at_least(1)
+			///
 			void non_empty();
 
+			///
+			/// Get the number of rows used for widget, default 0 -- undefined
+			///
 			unsigned rows();
+			///
+			/// Set the number of rows used for widget, default 0 -- undefined
+			///
 			void rows(unsigned n);
 			
 			virtual void render_input(form_context &context);

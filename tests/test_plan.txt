@@ -18,11 +18,17 @@
 - Cookies: test
 - File Server Test
 - JSON test
-- Forms:
-  text: encoding-validation
-  various tests 
 - Views:
   commands
   filters
   auto-reloading
+
+Done
+======
+- Forms:
+    text: encoding-validation
+    various tests 
+
+
+
 

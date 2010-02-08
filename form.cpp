@@ -835,6 +835,7 @@ void checkbox::render_value(form_context &context)
 
 void checkbox::load(http::context &context)
 {
+	auto_generate();
 	std::pair<http::request::form_type::const_iterator,http::request::form_type::const_iterator> 
 		range=context.request().post_or_get().equal_range(name());
 	value(false);
@@ -1308,6 +1309,7 @@ void submit::render_value(form_context &context)
 
 void submit::load(http::context &context)
 {
+	auto_generate();
 	pressed_ = context.request().post_or_get().find(name()) != context.request().post_or_get().end();
 }
 
