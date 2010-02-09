@@ -531,7 +531,7 @@ add_executable(cppcms_config_find_param cppcms_config_find_param.cpp json.cpp)
 
 add_executable(forms_test tests/form_test.cpp)
 target_link_libraries(forms_test ${CPPCMS_LIB})
-set(ALL_TESTS "forms_test ${ALL_TESTS}")
+set(ALL_TESTS forms_test ${ALL_TESTS})
 
 
 
