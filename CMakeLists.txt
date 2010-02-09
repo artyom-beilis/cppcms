@@ -528,10 +528,14 @@ add_executable(cppcms_config_find_param cppcms_config_find_param.cpp json.cpp)
 # Tests
 #########################################
 
-
-add_executable(forms_test tests/form_test.cpp)
-target_link_libraries(forms_test ${CPPCMS_LIB})
-set(ALL_TESTS forms_test ${ALL_TESTS})
+set(ALL_TESTS 
+	form_test
+	proto_test
+	)
+foreach(TEST ${ALL_TESTS})
+	add_executable(${TEST} tests/${TEST}.cpp)
+	target_link_libraries(${TEST} ${CPPCMS_LIB})
+endforeach()
 
 
 

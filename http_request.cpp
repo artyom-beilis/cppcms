@@ -204,6 +204,11 @@ std::string request::http_user_agent() { return conn_->getenv("HTTP_USER_AGENT")
 std::string request::http_via() { return conn_->getenv("HTTP_VIA"); }
 std::string request::http_warn() { return conn_->getenv("HTTP_WARN"); }
 
+
+std::map<std::string,std::string> request::getenv()
+{
+	return conn_->getenv();
+}
 std::string request::getenv(std::string const &s)
 {
 	return conn_->getenv(s.c_str());

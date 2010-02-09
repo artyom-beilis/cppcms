@@ -70,6 +70,7 @@ namespace http {
 
 		// Other
 		std::string getenv(std::string const &);
+		std::map<std::string,std::string> getenv();
 		
 		typedef std::multimap<std::string,std::string> form_type;
 		typedef std::map<std::string,cookie> cookies_type;
