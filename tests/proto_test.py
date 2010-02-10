@@ -110,6 +110,7 @@ else:
     target='/tmp/cppcms_test_socket'
 
 if test=='http':
+    test_all('http_5')
     test_all('http_1')
     test_all('http_2')
     test_all('http_3')
