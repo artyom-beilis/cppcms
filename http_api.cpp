@@ -125,11 +125,10 @@ namespace cgi {
 					break;
 				case parser::end_of_headers:
 					process_request(h);				
-					break;
+					return;
 				case parser::error_observerd:
 					h(boost::system::error_code(errc::protocol_violation,cppcms_category));
 					return;
-					break;
 				}
 			}
 

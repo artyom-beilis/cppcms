@@ -110,11 +110,11 @@ else:
     target='/tmp/cppcms_test_socket'
 
 if test=='http':
-    test_all('http_5')
     test_all('http_1')
     test_all('http_2')
     test_all('http_3')
     test_all('http_4')
+    test_all('http_5')
 elif test=='fastcgi_tcp' or test=='fastcgi_unix':
     test_all('fastcgi_1')
 elif test=='scgi_tcp' or test=='scgi_unix':
