@@ -166,20 +166,20 @@ namespace utf8 {
 		}
 		else if(value <=0x7FF) {
 			out.c[0]=(value >> 6) | 0xC0;
-			out.c[1]=value & 0x3F | 0x80;
+			out.c[1]=(value & 0x3F) | 0x80;
 			out.len=2;
 		}
 		else if(value <=0xFFFF) {
 			out.c[0]=(value >> 12) | 0xE0;
-			out.c[1]=(value >> 6) & 0x3F | 0x80;
-			out.c[2]=value & 0x3F | 0x80;
+			out.c[1]=((value >> 6) & 0x3F) | 0x80;
+			out.c[2]=(value & 0x3F) | 0x80;
 			out.len=3;
 		}
 		else {
 			out.c[0]=(value >> 18) | 0xF0;
-			out.c[1]=(value >> 12) & 0x3F | 0x80;
-			out.c[2]=(value >> 6) & 0x3F | 0x80;
-			out.c[3]=value & 0x3F | 0x80;
+			out.c[1]=((value >> 12) & 0x3F) | 0x80;
+			out.c[2]=((value >> 6) & 0x3F) | 0x80;
+			out.c[3]=(value & 0x3F) | 0x80;
 			out.len=4;
 		}
 		return out;

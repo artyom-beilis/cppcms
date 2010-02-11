@@ -156,7 +156,7 @@ void session_pool::init()
 
 	std::string location=srv.settings().get("session.location","none");
 
-	if(location == "client" || location=="both" && !encryptor_.get()) {
+	if(location == "client" || (location=="both" && !encryptor_.get())) {
 		std::string enc=srv.settings().get<std::string>("session.client.encryptor");
 		std::auto_ptr<cppcms::sessions::encryptor_factory> factory;
 		if(enc=="hmac") {
@@ -173,7 +173,7 @@ void session_pool::init()
 			throw cppcms_error("Unknown encryptor: "+enc);
 		encryptor(factory);
 	}
-	if(location == "server" || location == "both" && !storage_.get()) {
+	if(location == "server" || (location == "both" && !storage_.get())) {
 		std::string stor=srv.settings().get<std::string>("session.server.storage");
 		std::auto_ptr<sessions::session_storage_factory> factory;
 		if(stor == "files") {
