@@ -23,32 +23,102 @@ namespace cppcms {
 		class request;
 		class response;
 
+		///
+		/// \brief context is a central class that holds all specific connection related information.
+		/// It encapsulates CGI request and response, cache, session and locale information
+		///
+		/// Instance of this class is created upon client requests, it provides access to all
+		/// connection related interfaces. This class is unique per each applications hierarchy 
+		/// and destroyed when HTTP request/response is completed
+		///
+		
 		class CPPCMS_API context : public refcounted
 		{
 		public:
+			///
+			/// Internal API, don't use it
+			///
 			context(intrusive_ptr<impl::cgi::connection> conn);
+			///
+			/// Destructor.
 			~context();
-
+			///
+			/// Internal API, don't use it
+			///
 			impl::cgi::connection &connection();
+
+			///
+			/// Get an interface to HTTP request
+			///
 			http::request &request();
+
+			///
+			/// Get an interface to HTTP response
+			///
 			http::response &response();
+
+			///
+			/// Get global settings. Same as cppcms::service::settings
+			///
 			json::value const &settings();
+
+			///
+			/// Get an interface to CppCMS Cache
+			///
 			cache_interface &cache();
+
+			///
+			/// Get an interface to current session
+			///
+			/// Note, when using asynchronous CppCMS applications, session data is not fetched
+			/// and is not updated, because session access may be not cheap, So when using
+			/// session_interface in asynchronous application make sure you call session_inerface::load
+			/// member function
+			///
 			session_interface &session();
+
+			///
+			/// Get current context locale
+			///
 			std::locale locale();
+
+			///
+			/// Set locale explicitly. Note, it changes the locale of the response().out() stream as
+			/// well
+			///
 			void locale(std::locale const &new_locale);
+
+			///
+			/// Set locale by name. Similar to locale(service().generator(name)).
+			///
+			/// Note: it changes the locale of the response().out() stream as well
+			///
 			void locale(std::string const &name);
+			
+			///
+			/// Get the central service instance
+			///
 			cppcms::service &service();
 
+			///
+			/// Get current views skin name
+			///
 			std::string skin();
+
+			///
+			/// Set current views skin name
+			///
 			void skin(std::string const &name);
 
+			///
+			/// Internal API, Don't use it
+			///
 			void run();
 
 			typedef enum {
-				operation_completed,
-				operation_aborted
-			} complition_type;
+				operation_completed, ///< Asynchronous operation completed successfully 
+				operation_aborted    ///< Asynchronous operation was canceled
+			} complition_type; 
 
 			typedef util::callback1<complition_type> handler;
 

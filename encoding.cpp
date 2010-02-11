@@ -298,14 +298,32 @@ namespace impl{
 			predefined_["iso-8859-8"]=&iso_8859_8_valid<char const *>;
 			predefined_["iso-8859-11"]=&iso_8859_11_valid<char const *>;
 
-			predefined_["cp1250"]=predefined_["windows-1250"]=&windows_1250_valid<char const *>;
-			predefined_["cp1251"]=predefined_["windows-1251"]=&windows_1251_valid<char const *>;
-			predefined_["cp1252"]=predefined_["windows-1252"]=&windows_1252_valid<char const *>;
-			predefined_["cp1253"]=predefined_["windows-1253"]=&windows_1253_valid<char const *>;
-			predefined_["cp1255"]=predefined_["windows-1255"]=&windows_1255_valid<char const *>;
-			predefined_["cp1256"]=predefined_["windows-1256"]=&windows_1256_valid<char const *>;
-			predefined_["cp1257"]=predefined_["windows-1257"]=&windows_1257_valid<char const *>;
-			predefined_["cp1258"]=predefined_["windows-1258"]=&windows_1258_valid<char const *>;
+			predefined_["windows-1250"]=&windows_1250_valid<char const *>;
+			predefined_["windows-1251"]=&windows_1251_valid<char const *>;
+			predefined_["windows-1252"]=&windows_1252_valid<char const *>;
+			predefined_["windows-1253"]=&windows_1253_valid<char const *>;
+			predefined_["windows-1255"]=&windows_1255_valid<char const *>;
+			predefined_["windows-1256"]=&windows_1256_valid<char const *>;
+			predefined_["windows-1257"]=&windows_1257_valid<char const *>;
+			predefined_["windows-1258"]=&windows_1258_valid<char const *>;
+
+			predefined_["cp1250"]=&windows_1250_valid<char const *>;
+			predefined_["cp1251"]=&windows_1251_valid<char const *>;
+			predefined_["cp1252"]=&windows_1252_valid<char const *>;
+			predefined_["cp1253"]=&windows_1253_valid<char const *>;
+			predefined_["cp1255"]=&windows_1255_valid<char const *>;
+			predefined_["cp1256"]=&windows_1256_valid<char const *>;
+			predefined_["cp1257"]=&windows_1257_valid<char const *>;
+			predefined_["cp1258"]=&windows_1258_valid<char const *>;
+
+			predefined_["1250"]=&windows_1250_valid<char const *>;
+			predefined_["1251"]=&windows_1251_valid<char const *>;
+			predefined_["1252"]=&windows_1252_valid<char const *>;
+			predefined_["1253"]=&windows_1253_valid<char const *>;
+			predefined_["1255"]=&windows_1255_valid<char const *>;
+			predefined_["1256"]=&windows_1256_valid<char const *>;
+			predefined_["1257"]=&windows_1257_valid<char const *>;
+			predefined_["1258"]=&windows_1258_valid<char const *>;
 
 			predefined_["koi8r"]=predefined_["koi8-r"]=&koi8_valid<char const *>;
 			predefined_["koi8u"]=predefined_["koi8-u"]=&koi8_valid<char const *>;

@@ -1,27 +1,18 @@
 #ifndef CPPCMS_LOGGER_H
 #define CPPCMS_LOGGER_H
 
-namespace cppcms {
-	class CPPCMS_API logger {
-	public:
-		class CPPCMS_API ostream_proxy {
-		public:
-			ostream_proxy(level_type level,char const *module);
-			~ostream_proxy()
-			ostream_proxy(ostream_proxy const &other);
-			ostream_proxy const &operator=(ostream_proxy const &other);
+#include "defs.h"
+#include <iosfwd>
+#include <memory>
 
-			template<typename T>
-			ostream_proxy &operator<<(T const &v) const
-			{
-				output() << v;
-			}
-		private:
-			struct data; 
-			intrusive_ptr<data> d;
-		};
+#include "copy_ptr.h"
+#include "hold_ptr.h"
+#include "noncopyable.h"
+
+namespace cppcms {
+	class CPPCMS_API logger : public util::noncopyable {
+	public:
 		typedef enum {
-			none 	= 0,
 			fatal	= 10,
 			critical= 20,
 			error	= 30,
@@ -32,14 +23,57 @@ namespace cppcms {
 			all	= 100
 		} level_type;
 
+		class CPPCMS_API ostream_proxy {
+		public:	
+			ostream_proxy();
+			ostream_proxy(level_type level,char const *module,char const *file,int line,logger *log);
+			~ostream_proxy();
+			ostream_proxy(ostream_proxy &other);
+			ostream_proxy &operator=(ostream_proxy &other);
+			std::ostream &out();
+		private:
+			level_type level_;
+			int line_;
+			char const *file_;
+			char const *module_;
+			logger *log_;
+			struct data;
+			util::copy_ptr<data> d;
+			std::auto_ptr<std::ostringstream> output_; 
+		};
+		
+
+		void write_to_log(level_type l,char const *module,char const *file,int line,std::string const &message);
+
 		bool level(level_type l,char const *module);
-		ostream_proxy proxy(level_type l,char const *module);
+		ostream_proxy proxy(level_type l,char const *module,char const *file,int line);
+
+		void default_level(level_type l);
+		level_type default_level();
+		
+		void module_level(char const *module,level_type l);
+		level_type module_level(char const *module);
+		void reset_module_level(char const *module);
+		
+		typedef enum {
+			overwrite = 0,
+			append = 1
+		} open_mode_type;
+	
+		void log_to_file(std::string const &file_name,open_mode_type mode = append);
+		void log_to_stdout();
+		void log_to_stderr();
+		static logger &instance();
+	private:
+		static void init(std::auto_ptr<logger> &logger_ref);
+		struct data;
+		util::hold_ptr<data> d;
 	};
 
 	
-	#define CPPCMS_LOG(_l,_m)						\
-	::cppcms::logger::instance().level(::cppcms::logger::_l,_m) 		\
-		&& ::cppcms::logger::instance().proxy(::cppcms::logger::_l,_m)
+	#define CPPCMS_LOG(_l,_m)								\
+		::cppcms::logger::instance().level(::cppcms::logger::_l,_m) 				\
+		&& ::cppcms::logger::instance().proxy(::cppcms::logger::_l,_m,__FILE__,__LINE__).out()
 
 	#define CPPCMS_FATAL(_m)	CPPCMS_LOG(fatal,_m)
 	#define CPPCMS_CRITICAL(_m)	CPPCMS_LOG(critical,_m)
@@ -49,6 +83,7 @@ namespace cppcms {
 	#define CPPCMS_INFO(_m)		CPPCMS_LOG(info,_m)
 	#define CPPCMS_DEBUG(_m)	CPPCMS_LOG(debug,_m)
 
-}
+
+} // CppCMS
 
 #endif

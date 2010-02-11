@@ -107,6 +107,8 @@ namespace protocol {
 		}
 		if(lsize<rsize)
 			return -1;
+		if(lsize>rsize)
+			return 1;
 		return 0;
 	}
 

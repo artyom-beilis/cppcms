@@ -20,6 +20,9 @@ option(DISABLE_STATIC	"Disable static libraries build" OFF)
 option(DISABLE_ICONV	"Disable usage iconv library - use ICU for conversion" OFF)
 option(DISABLE_GCRYPT	"Disable usage of gcrypt library, no AES cookies encryption would be available" OFF)
 option(USE_EXTERNAL_BOOST "Use external Boost library and not internal one, boost version provided by BOOST_SUFFIX variable" OFF)
+option(DISABLE_FCGI	"Disable fastcgi web server api" OFF)
+option(DISABLE_SCGI	"Disable scgi web server api" OFF)
+option(DISABLE_HTTP	"Disable http web server" OFF)
 
 #############################################################################
 #
@@ -154,6 +157,8 @@ include_directories(${CMAKE_SOURCE_DIR})
 include_directories(localization)
 
 
+
+
 set(CPPCMS_LIBRARY_SUFFIX ${CMAKE_SHARED_LIBRARY_SUFFIX})
 set(CPPCMS_LIBRARY_PREFIX ${CMAKE_SHARED_LIBRARY_PREFIX})
 check_cxx_source_compiles(
@@ -274,7 +279,6 @@ set(CPPCMS_PUBLIC_HEADERS
 	filters.h
 	form.h
 	hold_ptr.h
-	http_connection.h
 	http_context.h
 	http_cookie.h
 	http_file.h
@@ -350,9 +354,6 @@ set(CPPCMS_SOURCES
 	base_view.cpp 
 	views_pool.cpp
 	internal_file_server.cpp 
-	scgi_api.cpp 
-	fastcgi_api.cpp 
-	http_api.cpp 
 	atomic_counter.cpp 
 	aio_timer.cpp 
 	json.cpp 
@@ -379,6 +380,23 @@ set(CPPCMS_SOURCES
 if(NOT DISABLE_GCRYPT)
 	find_library(LIB_GCRYPT gcrypt)
 endif(NOT DISABLE_GCRYPT)
+
+if(NOT DISABLE_FCGI)
+	set(CPPCMS_SOURCES ${CPPCMS_SOURCES} fastcgi_api.cpp)
+	set(CPPCMS_HAS_FCGI 1)
+endif()
+
+if(NOT DISABLE_SCGI)
+	set(CPPCMS_SOURCES ${CPPCMS_SOURCES} scgi_api.cpp)
+	set(CPPCMS_HAS_SCGI 1)
+endif()
+
+if(NOT DISABLE_HTTP)
+	set(CPPCMS_SOURCES ${CPPCMS_SOURCES} http_api.cpp)
+	set(CPPCMS_HAS_HTTP 1)
+endif()
+	
+
 
 if(LIB_GCRYPT)
 	set(CPPCMS_SOURCES ${CPPCMS_SOURCES} aes_encryptor.cpp)

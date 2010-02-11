@@ -95,6 +95,10 @@
 
 #cmakedefine CPPCMS_USE_EXTERNAL_BOOST
 
+#cmakedefine CPPCMS_HAS_FCGI
+#cmakedefine CPPCMS_HAS_SCGI
+#cmakedefine CPPCMS_HAS_HTTP
+
 /* Version number of package */
 #define VERSION PACKAGE_VERSION
 

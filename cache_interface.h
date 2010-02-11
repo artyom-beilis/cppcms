@@ -66,6 +66,10 @@ namespace cppcms {
 	
 	class CPPCMS_API cache_interface : public util::noncopyable {
 	public:
+
+		///
+		/// Internal API, don't use it
+		///
 		cache_interface(http::context &context);
 		~cache_interface();
 

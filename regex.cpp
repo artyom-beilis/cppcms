@@ -11,6 +11,7 @@
 namespace cppcms { namespace util {
 
 	struct regex_result::data {
+		std::string str;
 		boost::cmatch match;
 	};
 	regex_result::regex_result() : d(new data)
@@ -37,7 +38,11 @@ namespace cppcms { namespace util {
 	}
 	bool regex::match(std::string const &str,regex_result &res) const
 	{
-		return boost::regex_match(str.c_str(),res.d->match,d->r);
+		//
+		// Make sure that cmatch is valid, even if original string already is not
+		// 
+		res.d->str = str;
+		return boost::regex_match(res.d->str.c_str(),res.d->match,d->r);
 	}
 	bool regex::match(std::string const &str) const
 	{

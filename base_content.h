@@ -5,7 +5,7 @@
 
 namespace cppcms {
 	///
-	/// \brief This is a simple polymorphic class that every content for templates rendering should be dervided from it.
+	/// \brief This is a simple polymorphic class that every content for templates rendering should be derided from it.
 	/// It does not carry much information with exception of RTTI that allows type-safe casting of user provided
 	/// content instances to target content class that is used by specific template.
 	///

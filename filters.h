@@ -279,6 +279,9 @@ namespace cppcms {
 			streamable obj_;			
 			struct data;					
 			util::copy_ptr<data> d;				
+		
+		
+		
 		};
 
 		inline std::ostream &operator<<(std::ostream &out,raw const &obj)
@@ -286,7 +289,12 @@ namespace cppcms {
 			obj(out);
 			return out;
 		}
-	
+		
+		///
+		/// \brief Format date to ouput stream
+		///
+		/// Formats date to the stream, date is represented as time_t
+		///
 
 
 		class CPPCMS_API date {
@@ -310,6 +318,11 @@ namespace cppcms {
 			return out;
 		}
 		
+		///
+		/// \brief Format time to ouput stream
+		///
+		/// Formats time to the stream, time is represented as time_t
+		///
 		class CPPCMS_API time {
 		public:
 			time();
@@ -330,6 +343,11 @@ namespace cppcms {
 			obj(out);
 			return out;
 		}
+		///
+		/// \brief Format date and time to ouput stream
+		///
+		/// Formats date and time to the stream, date and time is represented as time_t
+		///
 		class CPPCMS_API datetime {
 		public:
 			datetime();

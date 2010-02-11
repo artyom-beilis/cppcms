@@ -48,6 +48,8 @@ namespace cppcms {
 		/// Mount an application factory \a aps for processing of any incoming requests. Application
 		/// would receive PATH_INFO CGI variable for URL matching.
 		///
+		/// This member function is thread safe.
+		///
 		void mount(std::auto_ptr<factory> aps);
 		
 		///
@@ -55,11 +57,15 @@ namespace cppcms {
 		/// matches the regular expression \a path_info. The marched part of an regular expression \a select would 
 		/// be passed for URL matching.
 		///
+		/// This member function is thread safe.
+		///
 		void mount(std::auto_ptr<factory> aps,std::string path_info,int select);
 
 		///
 		/// Mount an application factory \a aps for processing of requests for which CGI SCRIPT_NAME exactly
 		/// matches \a script_name parameter. CGI PATH_INFO is passed to application for URL matching.
+		///
+		/// This member function is thread safe.
 		///
 		void mount(std::auto_ptr<factory> aps,std::string script_name);
 		///
@@ -67,11 +73,15 @@ namespace cppcms {
 		/// matches \a script_name parameter. And PATH_INFO patches regular expression \a path_info.
 		/// The matched part \a select is passed to application for URL matching.
 		///
+		/// This member function is thread safe.
+		///
 		void mount(std::auto_ptr<factory> aps,std::string script_name,std::string path_info, int select);
 
 		///
 		/// Mount an asynchronous application \a app for processing of any incoming requests. Application
 		/// would receive PATH_INFO CGI variable for URL matching.
+		///
+		/// This member function is thread safe.
 		///
 		void mount(intrusive_ptr<application> app);
 		///
@@ -79,17 +89,23 @@ namespace cppcms {
 		/// matches the regular expression \a path_info. The marched part of an regular expression \a select would 
 		/// be passed for URL matching.
 		///
+		/// This member function is thread safe.
+		///
 		void mount(intrusive_ptr<application> app,std::string path_info,int select);
 		///
 		/// Mount an asynchronous application \a app  for processing of requests for which CGI SCRIPT_NAME exactly
 		/// matches \a script_name parameter. And PATH_INFO patches regular expression \a path_info.
 		/// The matched part \a select is passed to application for URL matching.
 		///
+		/// This member function is thread safe.
+		///
 		void mount(intrusive_ptr<application> app,std::string script_name);
 		///
 		/// Mount an asynchronous application \a app  for processing of requests for which CGI SCRIPT_NAME exactly
 		/// matches \a script_name parameter. And PATH_INFO patches regular expression \a path_info.
 		/// The matched part \a select is passed to application for URL matching.
+		///
+		/// This member function is thread safe.
 		///
 		void mount(intrusive_ptr<application> app,std::string script_name,std::string path_info, int select);
 

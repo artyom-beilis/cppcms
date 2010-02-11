@@ -14,10 +14,17 @@
 #include "cppcms_error.h"
 #include "cgi_acceptor.h"
 #include "cgi_api.h"
-#include "scgi_api.h"
-#include "http_api.h"
+#ifdef CPPCMS_HAS_SCGI
+# include "scgi_api.h"
+#endif
+#ifdef CPPCMS_HAS_HTTP
+# include "http_api.h"
+#endif
+#ifdef CPPCMS_HAS_FCGI
+# include "fastcgi_api.h"
+#endif
+
 #include "cache_pool.h"
-#include "fastcgi_api.h"
 #include "internal_file_server.h"
 #include "json.h"
 #include "localization.h"
@@ -468,16 +475,21 @@ void service::start_acceptor()
 		tcp=false;
 	}
 
+	impl_->acceptor_.reset();
 
 	if(tcp) {
+		#ifdef CPPCMS_HAS_SCGI
 		if(api=="scgi")
 			impl_->acceptor_ = scgi_api_tcp_socket_factory(*this,ip,port,backlog);
-		else if(api=="fastcgi")
+		#endif		
+		#ifdef CPPCMS_HAS_FCGI
+		if(api=="fastcgi")
 			impl_->acceptor_ = fastcgi_api_tcp_socket_factory(*this,ip,port,backlog);
-		else if(api=="http")
+		#endif
+		#ifdef CPPCMS_HAS_HTTP
+		if(api=="http")
 			impl_->acceptor_ = http_api_factory(*this,ip,port,backlog);
-		else
-			throw cppcms_error("Unknown service.api: " + api);
+		#endif
 	}
 	else {
 #ifdef CPPCMS_WIN_NATIVE 
@@ -485,22 +497,32 @@ void service::start_acceptor()
 #elif defined CPPCMS_CYGWIN
 		throw cppcms_error("CppCMS uses native Win32 sockets under cygwin, so Unix sockets are not supported");
 #else
-		if(api=="scgi")
+		#ifdef CPPCMS_HAS_SCGI
+		if(api=="scgi") {
 			if(socket=="stdin")
 				impl_->acceptor_ = scgi_api_unix_socket_factory(*this,backlog);
 			else
 				impl_->acceptor_ = scgi_api_unix_socket_factory(*this,socket,backlog);
-		else if(api=="fastcgi")
+		}
+		#endif
+		
+		#ifdef CPPCMS_HAS_FCGI
+		if(api=="fastcgi") {
 			if(socket=="stdin")
 				impl_->acceptor_ = fastcgi_api_unix_socket_factory(*this,backlog);
 			else
 				impl_->acceptor_ = fastcgi_api_unix_socket_factory(*this,socket,backlog);
-		else if(api=="http")
+		}
+		#endif
+
+		#ifdef CPPCMS_HAS_HTTP
+		if(api=="http")
 			throw cppcms_error("HTTP API is not supported over Unix Domain sockets");
-		else
-			throw cppcms_error("Unknown service.api: " + api);
+		#endif
 #endif
 	}
+	if(!impl_->acceptor_.get())
+		throw cppcms_error("Unknown service.api: " + api);
 
 }
 

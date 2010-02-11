@@ -1,9 +1,8 @@
 - form.*
-	Implement, Select, Radio, Date-Time
+	Date-Time
 - http_request.*, cgi_api.*
 	Implement File Upload
 - Implement Asynchronous API
 - Implement JSON-RPC
 - Reintergrate Sessions over TCP/IP
 - Reintegrate Cache Support over TCP/IP and shared_memory
-- Update cppcms_tmpl_cc according to new code

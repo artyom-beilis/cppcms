@@ -52,12 +52,6 @@ application::~application()
 	}
 }
 
-long application::refs()
-{
-	return refs_;
-}
-
-
 cppcms::service &application::service()
 {
 	return *d->service;

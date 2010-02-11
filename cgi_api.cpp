@@ -22,6 +22,202 @@
 
 
 namespace cppcms { namespace impl { namespace cgi {
+/*
+class multipart_separator {
+public:
+	multipart_separator(std::vector<char> &body,unsigned &body_ptr,std::string boundary) :
+		body_(body),
+		body_ptr_(body_ptr)
+	{
+		boundary_ = "--" + boundary;
+		pos_ = 0;
+		last_ = false;
+	}
+	
+	int getc()
+	{
+		if(body_ptr_ < body_.size()) {
+			return body_[body_ptr_++];
+		}
+		else {
+			body_.clear();
+			body_ptr_=0;
+			return -1;
+		}
+	}
+
+	enum { incomplete, last_chunk, chunk };
+	int next()
+	{
+		for(;;){
+			int c=getc();
+			if(c < 0)
+				return incomplete;
+			if(pos_ < bodundary_.size()) {
+				if(c == boundary_[pos_]) {
+					pos_++;
+				}
+				else {
+					if(pos_ != 0)
+						output_.append(boundary_.substr(0,pos_));
+					output_.append(char(c));
+					pos_ = 0;
+				}
+			}
+			else if(pos_ == boundary_.size()) {
+				c == '-';
+				last_ = true;
+				pos_ = 0x10001;
+			}
+			else {
+				unsigned diff = pos_ & 0xFFFF;
+				if(last_){
+					if(last_ending[diff]==c) {
+						pos_ ++;
+						diff ++ ;
+					}
+					else {
+						output_.append(last_ending,diff);
+						output_.append(char(c));
+						pos_ = 0;
+						last_ = false;
+					}
+					if(diff == 4)
+						return last_chunk;
+				}
+				else {
+					if(ending[diff] == c) {
+						pos_ ++;
+						diff ++;
+					}
+					else {
+						output_.append(ending,diff);
+						output_.append(char(c));
+						pos_ = 0;
+					}
+					if(diff == 2) {
+						pos_ = 0;
+						return chunk;
+					}
+				}
+			}
+		}
+	}
+
+private:
+	static char const last_ending[]="--\r\n"
+	static char const ending[]="\r\n"
+	
+};
+
+
+class multipart_parser : public util::noncopyable {
+public:
+	multipart_parser(std::vector<char> &body, unsigned &ptr) :
+		separator_(body,ptr),
+		parser_(body,ptr)
+	{
+	}
+
+	struct none{};
+	struct eof{};
+	typedef std::pair<std::string,std::string> pair_type;
+	typedef boost::shared_ptr<http::file> file_type;
+	typedef enum { none, eof, error } result_type;
+	typedef boost::variant<result_type,pair_type,file_type,eof> variant_type;
+
+	void append(bool final = false)
+	{
+		if(result_.which() == 1) {
+			std::string &last=boost::get<pair_type>(result_).second;
+			last.append(separator_.output());
+		}
+		else if(result_.which() == 2) {
+			file_type &file == boost::get<file_type>(result_);
+			file.write(separator_.output());
+			if(final)
+				file.close();
+		}
+	}
+
+	variant_type next()
+	{
+		switch(state:) {
+		case done:
+			return eof;
+		case reading_data:
+			switch(separator_.next()) {
+			case multipart_separator::incomplete:
+				append();
+				return none;
+			case multipart_separator::chunk;
+				{
+					append(final);
+					variant_type tmp = result_;
+					result_=none;
+					state_ = reading_headers;
+					return tmp;
+				}
+			case multipart_separator::last_chunk;
+				{
+					append(final);
+					variant_type tmp = result_;
+					result_=none;
+					state_ = done;
+					return tmp;
+				}
+			default:
+				throw cppcms_error(
+					(boost::format("Internal error at " __FILE__ "line %d") % __LINE__).str());
+			}
+			break;
+		case reading_headers:
+			switch(parser_.step())
+			case parset::mode_data:
+				return none;
+			case parser::error_observerd:
+				return error;
+			case parser::end_of_headers:
+				if(result_.which() == 0)
+					return error;
+				state_ = reading_data;
+				return none;
+			case parser::got_header:
+				{
+					std::string const header = parser.header_;
+					parser.header_.clean();
+					std::string::const_iterator m,p=header.begin();
+					std::string::const_iterator e=header.end();
+					p=http::protocol::skip_ws(p,e);
+					m=p;
+					p=http::protocol::tocken(p,e);
+					std::string type(m,p); 
+					if(http::protocol::compare("Content-Disposition",type)==0) 
+					{
+						while(p!=e) {
+							if(http::protocol::separator(*p)) {
+								++p;
+								continue;
+							}
+							m=p;
+							if((p=http::protocol::tocken(p,e))!=m) {
+								if(http::protocol::compare(std::string(m,p),"name"))
+							}
+						}
+									
+					}
+					
+				}
+		}
+	}
+
+
+private:
+	multipart_separator separator_;
+	cppcms::http::impl::parser parser_;
+};
+*/
+
 
 connection::connection(cppcms::service &srv) :
 	service_(&srv),

@@ -233,8 +233,17 @@ namespace cppcms {
 		/// Returns true if current application was created as asynchronous application.
 		///
 		bool is_asynchronous();
-		long refs();
 
+
+		///
+		/// This is main function of the application that is called when it is matched
+		/// according to the regular expression in the applications_pool class.
+		///
+		/// By default, main calls dispatcher().dispatch(url). And if the last fails, it
+		/// creates 404 Error page. This allows developers to create its own hooks for 
+		/// reaction on incoming URL as, initialization and cleanup of general resources, 
+		/// Custom 404 and error handlers etc.
+		/// 
 		virtual void main(std::string url);
 
 	private:

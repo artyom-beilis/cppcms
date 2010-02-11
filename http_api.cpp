@@ -1,4 +1,5 @@
 #define CPPCMS_SOURCE
+//#define DEBUG_HTTP_PARSER
 #include "asio_config.h"
 #include "cgi_api.h"
 #include "cgi_acceptor.h"
@@ -6,7 +7,7 @@
 #include "service_impl.h"
 #include "cppcms_error_category.h"
 #include "json.h"
-#include "http_protocol.h"
+#include "http_parser.h"
 #include "config.h"
 #include <string.h>
 #include <iostream>
@@ -18,7 +19,6 @@
     namespace boost = cppcms_boost;
 #endif
 
-//#define DEBUG_HTTP_PARSER
 
 
 namespace cppcms {
@@ -85,7 +85,7 @@ namespace cgi {
 			input_body_.resize(n);
 
 			for(;;) {
-
+				using ::cppcms::http::impl::parser;
 				switch(input_parser_.step()) {
 				case parser::more_data:
 					// Assuming body_ptr == body.size()
@@ -214,6 +214,8 @@ namespace cgi {
 		{
 			char const *ptr=reinterpret_cast<char const *>(p);
 			output_body_.insert(output_body_.end(),ptr,ptr+s);
+
+			using cppcms::http::impl::parser;
 
 			for(;;) {
 				switch(output_parser_.step()) {
@@ -388,187 +390,6 @@ namespace cgi {
 			return true;
 		}
 
-		class parser {
-			enum {
-				idle,
-				input_observed,
-				last_lf_exptected,
-				lf_exptected,
-				space_or_other_exptected,
-				quote_expected,
-				pass_quote_exptected,
-				closing_bracket_expected,
-				pass_closing_bracket_expected
-			} state_;
-			
-			unsigned bracket_counter_;
-
-			std::vector<char> &body_;
-			unsigned &body_ptr_;
-
-			inline int getc()
-			{
-				if(body_ptr_ < body_.size()) {
-					return body_[body_ptr_++];
-				}
-				else {
-					body_.clear();
-					body_ptr_=0;
-					return -1;
-				}
-			}
-			inline void ungetc(int c)
-			{
-				if(body_ptr_ > 0) {
-					body_ptr_--;
-					body_[body_ptr_]=c;
-				}
-				else {
-					body_.insert(body_.begin(),c);
-				}
-			}
-
-			// Non copyable
-
-			parser(parser const &);
-			parser const &operator=(parser const &);
-
-		public:
-			std::string header_;
-
-			parser(std::vector<char> &body,unsigned &body_ptr) :
-				state_(idle),
-				bracket_counter_(0),
-				body_(body),
-				body_ptr_(body_ptr)
-			{
-			}
-			enum { more_data, got_header, end_of_headers , error_observerd };
-			int step()
-			{
-#ifdef DEBUG_HTTP_PARSER
-				static char const *states[]= {
-					"idle",
-					"input_observed",
-					"last_lf_exptected",
-					"lf_exptected",
-					"space_or_other_exptected",
-					"quote_expected",
-					"pass_quote_exptected",
-					"closing_bracket_expected",
-					"pass_closing_bracket_expected"
-				};
-#endif
-				for(;;) {
-					int c=getc();
-#if defined DEBUG_HTTP_PARSER
-					std::cerr<<"Step("<<body_ptr_<<":"<<body_.size()<<": "<<std::flush;
-					if(c>=32)
-						std::cerr<<"["<<char(c)<<"] "<<states[state_]<<std::endl;
-					else
-						std::cerr<<c<<" "<<states[state_]<<std::endl;
-#endif
-
-					if(c<0)
-						return more_data;
-
-
-					switch(state_)  {
-					case idle:
-						header_.clear();
-						switch(c) {
-						case '\r':
-							state_=last_lf_exptected;
-							break;
-						case '"':
-							state_=quote_expected;
-							break;
-						case '(':
-							state_=closing_bracket_expected;
-							bracket_counter_++;
-							break;
-						default:
-							state_=input_observed;
-						}
-						break;
-					case last_lf_exptected:
-						if(c!='\n') return error_observerd;
-						header_.clear();
-						return end_of_headers;
-					case lf_exptected:
-						if(c!='\n') return error_observerd;
-						state_=space_or_other_exptected;
-						break;
-					case space_or_other_exptected:
-						if(c==' ' || c=='\t') {
-							// Convert LWS to space as required by
-							// RFC, so remove last CRLF
-							header_.resize(header_.size() - 2);
-							state_=input_observed;
-							break;
-						}
-						ungetc(c);
-						header_.resize(header_.size()-2);
-						state_=idle;
-#ifdef DEBUG_HTTP_PARSER
-						std::cerr<<"["<<header_<<"]"<<std::endl;
-#endif
-						return got_header;					
-					case input_observed:
-						switch(c) {
-						case '\r':
-							state_=lf_exptected;
-							break;
-						case '"':
-							state_=quote_expected;
-							break;
-						case '(':
-							state_=closing_bracket_expected;
-							bracket_counter_++;
-							break;
-						default:
-							state_=input_observed;
-						}
-						break;
-					case quote_expected:
-						switch(c) {
-						case '"':
-							state_=input_observed;
-							break;
-						case '\\':
-							state_=pass_quote_exptected;
-							break;
-						}
-						break;
-					case pass_quote_exptected:
-						if(c < 0 || c >=127)
-							return error_observerd;
-						state_=quote_expected;
-						break;
-					case closing_bracket_expected:
-						switch(c) {
-						case ')':
-							bracket_counter_--;
-							if(bracket_counter_==0)
-								state_=input_observed;
-							break;
-						case '\\':
-							state_=pass_closing_bracket_expected;
-							break;
-						}
-						break;
-					case pass_closing_bracket_expected:
-						if(c < 0 || c >=127)
-							return error_observerd;
-						state_=closing_bracket_expected;
-						break;
-					}
-
-					header_+=char(c);
-				}
-			}
-
-		};
 
 		intrusive_ptr<http> self()
 		{
@@ -581,10 +402,10 @@ namespace cgi {
 
 		std::vector<char> input_body_;
 		unsigned input_body_ptr_;
-		parser input_parser_;
+		::cppcms::http::impl::parser input_parser_;
 		std::vector<char> output_body_;
 		unsigned output_body_ptr_;
-		parser output_parser_;
+		::cppcms::http::impl::parser output_parser_;
 
 
 		std::map<std::string,std::string> env_;
