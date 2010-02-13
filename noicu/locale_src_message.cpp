@@ -20,18 +20,8 @@
 #else // Internal Boost
 #   include <cppcms_boost/shared_ptr.hpp>
 #endif
-#if 1
-#ifdef CPPCMS_USE_EXTERNAL_BOOST
-#   include <boost/unordered_map.hpp>
-#else // Internal Boost
-#   include <cppcms_boost/unordered_map.hpp>
-#endif
-#else
-#include <map>
-#endif
 
 
-#include "locale_src_uconv.hpp"
 #include "locale_src_mo_hash.hpp"
 #include "locale_src_mo_lambda.hpp"
 
@@ -190,11 +180,7 @@ namespace cppcms {
             class mo_message : public message_format<CharType> {
 
                 typedef std::basic_string<CharType> string_type;
-                #if 1
                 typedef boost::unordered_map<std::string,string_type> catalog_type;
-                #else
-                typedef std::map<std::string,string_type> catalog_type;
-                #endif
                 typedef std::vector<catalog_type> catalogs_set_type;
                 typedef std::map<std::string,int> domains_map_type;
             public:

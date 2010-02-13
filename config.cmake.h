@@ -25,6 +25,9 @@
 /* Have gmtime_r */
 #cmakedefine HAVE_GMTIME_R
 
+/* Have localtime_r */
+#cmakedefine HAVE_LOCALTIME_R
+
 /* Have strerror_r */
 #cmakedefine HAVE_STRERROR_R
 

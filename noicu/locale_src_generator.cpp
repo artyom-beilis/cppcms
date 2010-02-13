@@ -15,11 +15,6 @@
 namespace cppcms {
     namespace locale {
         struct generator::data {
-            data() {
-                cats = all_categories;
-                chars = all_characters;
-            }
-
             typedef std::pair<std::string,std::string> locale_id_type;
 
             struct keycomp { 
@@ -35,8 +30,6 @@ namespace cppcms {
             cached_type cached;
 
             std::string encoding;
-            unsigned cats;
-            unsigned chars;
 
             std::vector<std::string> paths;
             std::set<std::string> domains;
@@ -51,15 +44,6 @@ namespace cppcms {
         {
         }
 
-        unsigned generator::categories() const
-        {
-            return d->cats;
-        }
-        void generator::categories(unsigned t)
-        {
-            d->cats=t;
-        }
-
         void generator::octet_encoding(std::string const &enc)
         {
             d->encoding=enc;
@@ -69,16 +53,6 @@ namespace cppcms {
             return d->encoding;
         }
         
-        void generator::characters(unsigned t)
-        {
-            d->chars=t;
-        }
-        
-        unsigned generator::characters() const
-        {
-            return d->chars;
-        }
-
         void generator::add_messages_domain(std::string const &domain)
         {
             if(d->default_domain.empty())
@@ -108,9 +82,25 @@ namespace cppcms {
             d->cached.empty();
         }
 
+
+        std::locale generator::generate(std::string const &id,std::string encoding) const
+        {
+        }
+
+        std::locale generator::get_base(std::string id,std::string encoding)
+        {
+        }
+
+        info *generator::get_info(std::locale const &loc,std::string id,std::string encoding)
+        {
+            std::string const name = loc.name();
+            size_t pos = name.find('.');
+            if(pos==std::string::npos)
+        }
+
         std::locale generator::generate(std::string const &id) const
         {
-            std::locale base;
+            std::locale base(d->encoding.empty() ? id.c_str() : (id + "," + d->encoding).c_str());
             info *tmp = d->encoding.empty() ? new info(id) : new info(id,d->encoding);
             std::locale result=std::locale(base,tmp);
             return complete_generation(result);
@@ -185,19 +175,6 @@ namespace cppcms {
             std::locale result=source;
             if(d->chars & char_facet)
                 result=generate_for<char>(result);
-            #ifndef CPPCMS_NO_STD_WSTRING
-            if(d->chars & wchar_t_facet)
-                result=generate_for<wchar_t>(result);
-            #endif
-            #ifdef CPPCMS_HAS_CHAR16_T
-            if(d->chars & char16_t_facet)
-                result=generate_for<char16_t>(result);
-            #endif
-            #ifdef CPPCMS_HAS_CHAR32_T
-            if(d->chars & char32_t_facet)
-                result=generate_for<char32_t>(result);
-            #endif
-            
             return result;
         }
         std::locale generator::get(std::string const &id) const

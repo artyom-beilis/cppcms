@@ -70,8 +70,6 @@ namespace cppcms {
                 }
 
                 if(key=="num" || key=="number") {
-                    as::number(ios_);
-
                     if(value=="hex")
                         ios_.setf(std::ios_base::hex,std::ios_base::basefield);
                     else if(value=="oct")
@@ -86,55 +84,14 @@ namespace cppcms {
                     else if(value=="nat" || value=="national")
                         as::currency_national(ios_);
                 }
-                else if(key=="per" || key=="percent") {
-                    as::percent(ios_);
-                }
                 else if(key=="date") {
                     as::date(ios_);
-                    if(value=="s" || value=="short")
-                        as::date_short(ios_);
-                    else if(value=="m" || value=="medium")
-                        as::date_medium(ios_);
-                    else if(value=="l" || value=="long")
-                        as::date_long(ios_);
-                    else if(value=="f" || value=="full")
-                        as::date_full(ios_);
                 }
                 else if(key=="time") {
                     as::time(ios_);
-                    if(value=="s" || value=="short")
-                        as::time_short(ios_);
-                    else if(value=="m" || value=="medium")
-                        as::time_medium(ios_);
-                    else if(value=="l" || value=="long")
-                        as::time_long(ios_);
-                    else if(value=="f" || value=="full")
-                        as::time_full(ios_);
                 }
                 else if(key=="dt" || key=="datetime") {
                     as::datetime(ios_);
-                    if(value=="s" || value=="short") {
-                        as::date_short(ios_);
-                        as::time_short(ios_);
-                    }
-                    else if(value=="m" || value=="medium") {
-                        as::date_medium(ios_);
-                        as::time_medium(ios_);
-                    }
-                    else if(value=="l" || value=="long") {
-                        as::date_long(ios_);
-                        as::time_long(ios_);
-                    }
-                    else if(value=="f" || value=="full") {
-                        as::date_full(ios_);
-                        as::time_full(ios_);
-                    }
-                }
-                else if(key=="spell" || key=="spellout") {
-                    as::spellout(ios_);
-                }
-                else if(key=="ord" || key=="ordinal") {
-                    as::ordinal(ios_);
                 }
                 else if(key=="left" || key=="<")
                     ios_.setf(std::ios_base::left,std::ios_base::adjustfield);
@@ -144,8 +101,6 @@ namespace cppcms {
                     as::gmt(ios_);
                 else if(key=="local")
                     as::local_time(ios_);
-                else if(key=="timezone" || key=="tz")
-                    ext_pattern(ios_,flags::time_zone_id,value);
                 else if(key=="w" || key=="width")
                     ios_.width(atoi(value.c_str()));
                 else if(key=="p" || key=="precision")

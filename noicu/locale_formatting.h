@@ -10,7 +10,6 @@
 
 #include "defs.h"
 #include "config.h"
-#include "locale_timezone.h"
 #include "cstdint.h"
 #include <ostream>
 #include <istream>
@@ -81,7 +80,6 @@ namespace cppcms {
             }
 
             CPPCMS_LOCALE_AS_MANIPULATOR(posix,display_flags_mask)
-            CPPCMS_LOCALE_AS_MANIPULATOR(number,display_flags_mask)
             CPPCMS_LOCALE_AS_MANIPULATOR(currency,display_flags_mask)
             CPPCMS_LOCALE_AS_MANIPULATOR(date,display_flags_mask)
             CPPCMS_LOCALE_AS_MANIPULATOR(time,display_flags_mask)
