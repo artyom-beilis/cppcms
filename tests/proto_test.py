@@ -29,7 +29,7 @@ class Nothing:
     pass
 
 def load_file(file_name):
-    os.path.dirname(sys.argv[0]) + "/" + file_name
+    file_name = os.path.dirname(sys.argv[0]) + "/" + file_name
     f=open(file_name,'rb')
     input=f.read()
     f.close()
@@ -40,10 +40,12 @@ def test_io(name,method,input_f,output_f,seed=12,load=load_file):
     try:
         input=load(input_f)
         output=load_file(output_f)
-        s=socket.socket(socket.AF_INET,socket.SOCK_STREAM);
+        global socket_type
+        s=socket.socket(socket_type,socket.SOCK_STREAM);
         global target
         s.connect(target)
-        s.setsockopt(socket.IPPROTO_TCP,socket.TCP_NODELAY,1)
+        if socket_type==socket.AF_INET:
+            s.setsockopt(socket.IPPROTO_TCP,socket.TCP_NODELAY,1)
         if method=='normal':
             s.sendall(input)
             while 1:
@@ -102,6 +104,7 @@ def test_scgi(name):
 
 
 global target
+global socket_type
 
 def usege():
     print 'Usage proto_test.py (http|fastcgi_tcp|fastcgi_unix|scgi_tcp|scgi_unix)'
@@ -114,8 +117,10 @@ test=sys.argv[1]
 
 if test=='http' or test=='fastcgi_tcp' or test=='scgi_tcp':
     target=('localhost',8080)
+    socket_type=socket.AF_INET
 else:
-    target='/tmp/cppcms_test_socket'
+    target=('/tmp/cppcms_test_socket')
+    socket_type=socket.AF_UNIX
 
 if test=='http':
     test_all('http_1')
@@ -127,5 +132,7 @@ elif test=='fastcgi_tcp' or test=='fastcgi_unix':
     test_all('fastcgi_1')
 elif test=='scgi_tcp' or test=='scgi_unix':
     test_scgi('scgi_1')
+    test_scgi('scgi_2')
+    test_scgi('scgi_3')
 else:
     usege()
