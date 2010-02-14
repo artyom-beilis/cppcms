@@ -91,39 +91,64 @@ namespace cppcms {
         {
         }
 
-        info *generator::get_info(std::locale const &loc,std::string id,std::string encoding)
+        static std::string extract_encoding_from_id(std::string posix_id)
         {
-            std::string const name = loc.name();
-            size_t pos = name.find('.');
-            if(pos==std::string::npos)
+            size_t n = posix_id.find('.');
+            if(n!=std::string::npos) {
+                size_t e = posix_id.find('@',n);
+                if(e == std::string::npos)
+                    return posix_id.substr(n+1);
+                else
+                    return posix_id.substr(n+1,e-n-1);
+            }
+            else
+                return std::string();
+        }
+
+        static std::locale::get_locale(std::string id, std::string encoding)
+        {
+            if(id.empty()) {
+                std::locale tmp=std::locale("");
+                id=tmp.name();
+            }
+
+            std::string tmp = extract_encoding_from_id(id);
+            if(!tmp.empty()) {
+                return std::locale(id);
+            }
+            try {
+                return std::locale(id+"."+encoding);
+            }
+            catch(std::exception const &e)
+            {
+            }
+            return std::locale(id);
+        }
+
+        static std::locale::get_encoding(std::string id,std::string encoding)
+        {
+            if(id.empty()) {
+                std::locale tmp=std::locale("");
+                id=tmp.name();
+            }
+            std::string tmp = extract_encoding_from_id(id);
+            if(!tmp.empty())
+                return tmp;
+            if(!encoding.empty())
+                return encoding;
+            return "UTF-8"; 
         }
 
         std::locale generator::generate(std::string const &id) const
         {
-            std::locale base(d->encoding.empty() ? id.c_str() : (id + "," + d->encoding).c_str());
-            info *tmp = d->encoding.empty() ? new info(id) : new info(id,d->encoding);
-            std::locale result=std::locale(base,tmp);
-            return complete_generation(result);
-        }
-
-        std::locale generator::generate(std::locale const &base,std::string const &id) const
-        {
-            info *tmp = d->encoding.empty() ? new info(id) : new info(id,d->encoding);
-            std::locale result=std::locale(base,tmp);
             return complete_generation(result);
         }
 
         std::locale generator::generate(std::string const &id,std::string const &encoding) const
         {
-            std::locale base;
-            std::locale result=std::locale(base,new info(id,encoding));
             return complete_generation(result);
         }
-        std::locale generator::generate(std::locale const &base,std::string const &id,std::string const &encoding) const
-        {
-            std::locale result=std::locale(base,new info(id,encoding));
-            return complete_generation(result);
-        }
+
         void generator::preload(std::string const &id) 
         {
             d->cached[data::locale_id_type(id,"")]=generate(id);

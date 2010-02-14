@@ -7,7 +7,6 @@
 //
 #define CPPCMS_LOCALE_SOURCE
 #include "locale_formatting.h"
-#include "locale_formatter.h"
 #include <typeinfo>
 #include "locale_src_formatting_info.hpp"
 #include "locale_src_ios_prop.hpp"

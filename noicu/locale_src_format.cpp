@@ -113,7 +113,6 @@ namespace cppcms {
 
                     std::string encoding=std::use_facet<info>(d->saved_locale).encoding();
                     generator gen;
-                    gen.categories(formatting_facet);
                     gen.octet_encoding(encoding);
                     ios_.imbue(gen.get(value));
                 }

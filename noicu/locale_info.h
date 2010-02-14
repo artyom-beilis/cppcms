@@ -69,11 +69,6 @@ namespace cppcms {
                 return utf8_;
             }
 
-            info_impl const *impl() const
-            {
-                return impl_.get();
-            }
-
 #if defined (__SUNPRO_CC) && defined (_RWSTD_VER)
             std::locale::id& __get_id (void) const { return id; }
 #endif

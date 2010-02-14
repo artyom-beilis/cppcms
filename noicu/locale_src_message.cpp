@@ -17,8 +17,10 @@
 #include "locale_message.h"
 #ifdef CPPCMS_USE_EXTERNAL_BOOST
 #   include <boost/shared_ptr.hpp>
+#   include <boost/unordered_map.hpp>
 #else // Internal Boost
 #   include <cppcms_boost/shared_ptr.hpp>
+#   include <cppcms_boost/unordered_map.hpp>
 #endif
 
 
@@ -27,7 +29,7 @@
 
 #include <fstream>
 #include <iostream>
-
+#include <stdexcept>
 #include <string.h>
 
 namespace cppcms {
@@ -265,35 +267,19 @@ namespace cppcms {
 
                 bool load_file(std::string file_name,std::string encoding,int id)
                 {
-                    try {
-                        std::auto_ptr<mo_file> mo(new mo_file(file_name));
+                    std::auto_ptr<mo_file> mo(new mo_file(file_name));
 
-                        std::string plural = extract(mo->value(0).first,"plural=","\r\n;");
-                        std::string mo_encoding = extract(mo->value(0).first,"charset="," \r\n;");
-                        if(mo_encoding.empty())
-                            throw std::runtime_error("Invalid mo-format, encoding is not specified");
-                        if(!plural.empty()) {
-                            std::auto_ptr<lambda::plural> ptr=lambda::compile(plural.c_str());
-                            plural_forms_[id] = ptr;
-                        }
-                        if( sizeof(CharType) == 1
-                            && ucnv_compareNames(mo_encoding.c_str(),encoding.c_str()) == 0
-                            && mo->has_hash())
-                        {
-                            mo_catalogs_[id]=mo;
-                        }
-                        else {
-                            converter cvt(encoding,mo_encoding);
-                            for(unsigned i=0;i<mo->size();i++) {
-                                mo_file::pair_type tmp = mo->value(i);
-                                catalogs_[id][mo->key(i)]=cvt(tmp.first,tmp.second);
-                            }
-                        }
-                        return true;
-
+                    std::string plural = extract(mo->value(0).first,"plural=","\r\n;");
+                    if(!plural.empty()) {
+                        std::auto_ptr<lambda::plural> ptr=lambda::compile(plural.c_str());
+                        plural_forms_[id] = ptr;
                     }
-                    catch(std::exception const &err)
-                    {
+
+                    if(mo->has_hash()) {
+                        mo_catalogs_[id]=mo;
+                        return true;
+                    }
+                    else {
                         plural_forms_[id].reset();
                         catalogs_[id].clear();
                         return false;
@@ -310,25 +296,6 @@ namespace cppcms {
                     size_t end_pos = meta.find_first_of(separator,pos);
                     return meta.substr(pos,end_pos - pos);
                 }
-
-
-                class converter {
-                public:
-                    converter(std::string out_enc,std::string in_enc) :
-                        out_(out_enc),
-                        in_(in_enc)
-                    {
-                    }
-
-                    std::basic_string<CharType> operator()(char const *begin,char const *end)
-                    {
-                        return out_.std(in_.icu(begin,end));
-                    }
-
-                private:
-                    icu_std_converter<CharType> out_;
-                    icu_std_converter<char> in_;
-                };
 
 
                 pair_type get_string(int domain_id,char const *id) const
@@ -374,41 +341,6 @@ namespace cppcms {
             return new impl::mo_message<char>(inf,domains,paths);
         }
 
-        #ifndef CPPCMS_NO_STD_WSTRING
-        std::locale::id base_message_format<wchar_t>::id;
-        
-        template<>
-        message_format<wchar_t> *message_format<wchar_t>::create(   info const &inf,
-                                                                    std::vector<std::string> const &domains,
-                                                                    std::vector<std::string> const &paths)
-        {
-            return new impl::mo_message<wchar_t>(inf,domains,paths);
-        }
-        #endif
-        
-        #ifdef CPPCMS_HAS_CHAR16_T
-        std::locale::id base_message_format<char16_t>::id;
-
-        template<>
-        message_format<char16_t> *message_format<char16_t>::create( info const &inf,
-                                                                    std::vector<std::string> const &domains,
-                                                                    std::vector<std::string> const &paths)
-        {
-            return new impl::mo_message<char16_t>(inf,domains,paths);
-        }
-        #endif
-        
-        #ifdef CPPCMS_HAS_CHAR32_T
-        std::locale::id base_message_format<char32_t>::id;
-
-        template<>
-        message_format<char32_t> *message_format<char32_t>::create( info const &inf,
-                                                                    std::vector<std::string> const &domains,
-                                                                    std::vector<std::string> const &paths)
-        {
-            return new impl::mo_message<char32_t>(inf,domains,paths);
-        }
-        #endif
 
     }
 }

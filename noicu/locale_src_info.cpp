@@ -7,9 +7,6 @@
 //
 #define CPPCMS_LOCALE_SOURCE
 #include "locale_info.h"
-#include <unicode/locid.h>
-#include <unicode/ucnv.h>
-
 #include "locale_src_info_impl.hpp"
 
 namespace cppcms {
@@ -21,32 +18,13 @@ namespace cppcms {
         {
         }
 
-        info::info(std::string posix_id,size_t refs) : 
+        info::info(std::string posix_id,std::string encoding,size_t refs) : 
             std::locale::facet(refs)
         {
             impl_.reset(new info_impl());
 
-            if(posix_id.empty()) {
-                impl_->encoding = ucnv_getDefaultName();
-            }
-            else {
-                impl_->locale = icu::Locale::createCanonical(posix_id.c_str());
-                size_t n = posix_id.find('.');
-                if(n!=std::string::npos) {
-                    size_t e = posix_id.find('@',n);
-                    if(e == std::string::npos)
-                        impl_->encoding = posix_id.substr(n+1);
-                    else
-                        impl_->encoding = posix_id.substr(n+1,e-n-1);
-                }
-                else
-                    impl_->encoding = ucnv_getDefaultName();
-            }
+            static boost::regex locm("^([a-zA-Z]+)([\-_ ]([a-zA-Z]+))?(\.([a-zA-Z_-0-9]+))?(@([a-zA-Z_-0-9]))?$");
 
-            if(ucnv_compareNames(impl_->encoding.c_str(),"UTF8")==0)
-                utf8_=true;
-            else
-                utf8_=false;
         }
 
         info::info(std::string posix_id,std::string encoding,size_t refs) : 

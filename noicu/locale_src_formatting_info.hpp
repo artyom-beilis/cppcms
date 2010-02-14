@@ -17,7 +17,6 @@
     namespace boost = cppcms_boost;
 #endif
 #include "locale_formatting.h"
-#include "locale_formatter.h"
 #include "cstdint.h"
 #include <string>
 #include <ios>
@@ -155,25 +154,9 @@ namespace cppcms {
                         || ios_flags_ != ios.flags()
                         || precision_ != ios.precision())
                     {
-                        formatter_.reset();
                         return false;
                     }
                     return true;
-                }
-
-                template<typename CharType>
-                cppcms::locale::formatter<CharType> const *formatter(std::ios_base &ios)
-                {
-                    if(!valid(ios)) {
-
-                        formatter_  = cppcms::locale::formatter<CharType>::create(ios);
-
-                        precision_  = ios.precision();
-                        ios_flags_  = ios.flags();
-                        valid_      = true;
-                    }
-
-                    return dynamic_cast<cppcms::locale::formatter<CharType> const *>(formatter_.get());
                 }
 
                 void on_imbue()
@@ -192,8 +175,6 @@ namespace cppcms {
                 string_set separator_; 
                 std::string timezone_; 
                 bool valid_;
-
-                std::auto_ptr<base_formatter> formatter_;
 
             };
 
