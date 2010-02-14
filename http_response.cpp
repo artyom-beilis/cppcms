@@ -33,14 +33,6 @@
     namespace boost = cppcms_boost;
 #endif
 
-#ifndef HAVE_GMTIME_R
-#ifdef CPPCMS_USE_EXTERNAL_BOOST
-#   include <boost/date_time/posix_time/posix_time.hpp>
-#else // Internal Boost
-#   include <cppcms_boost/date_time/posix_time/posix_time.hpp>
-#endif
-#endif
-
 namespace cppcms { namespace http {
 
 namespace {
@@ -407,9 +399,8 @@ std::string response::make_http_time(time_t t)
 	std::tm tv;
 	#ifdef HAVE_GMTIME_R
 	gmtime_r(&t,&tv);
-	#else
-	using namespace boost::posix_time;
-	tv=to_tm(from_time_t(t));
+	#elif defined(CPPCMS_WIN_NATIVE)
+	tv=*gmtime(&t); // Win32 uses TLS
 	#endif
 	std::ostringstream ss;
 	std::locale C("C");
