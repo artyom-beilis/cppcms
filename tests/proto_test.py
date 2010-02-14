@@ -7,6 +7,7 @@ import time
 import os.path
 import traceback
 import random
+import toscgi
 
 def check(name,A,B):
     if A != B:
@@ -27,21 +28,22 @@ def check(name,A,B):
 class Nothing:
     pass
 
-def test_io(name,method,input_f,output_f,seed=12):
+def load_file(file_name):
+    os.path.dirname(sys.argv[0]) + "/" + file_name
+    f=open(file_name,'rb')
+    input=f.read()
+    f.close()
+    return input
+
+def test_io(name,method,input_f,output_f,seed=12,load=load_file):
+    result=''
     try:
-        input_f=os.path.dirname(sys.argv[0]) + "/" + input_f;
-        output_f=os.path.dirname(sys.argv[0]) + "/" + output_f;
-        f=open(input_f,'rb')
-        input=f.read()
-        f.close()
-        f=open(output_f,'rb')
-        output=f.read();
-        f.close()
+        input=load(input_f)
+        output=load_file(output_f)
         s=socket.socket(socket.AF_INET,socket.SOCK_STREAM);
         global target
         s.connect(target)
         s.setsockopt(socket.IPPROTO_TCP,socket.TCP_NODELAY,1)
-        result=''
         if method=='normal':
             s.sendall(input)
             while 1:
@@ -83,14 +85,20 @@ def test_io(name,method,input_f,output_f,seed=12):
     check(name,result,output)
 
 
-def test_all(name):
+def test_all(name,load=load_file):
     input_f = 'proto_test_' + name + '.in'
     output_f = 'proto_test_' + name + '.out'
-    test_io(name+' normal','normal',input_f,output_f)
-    test_io(name+' random 1','random',input_f,output_f,1)
-    test_io(name+' random 2','random',input_f,output_f,15)
-    test_io(name+' random 3','random',input_f,output_f,215)
-    test_io(name+' shortest','shortest',input_f,output_f)
+    test_io(name+' normal','normal',input_f,output_f,0,load)
+    test_io(name+' random 1','random',input_f,output_f,1,load)
+    test_io(name+' random 2','random',input_f,output_f,15,load)
+    test_io(name+' random 3','random',input_f,output_f,215,load)
+    test_io(name+' shortest','shortest',input_f,output_f,0,load)
+
+def test_scgi(name):
+    def load(name):
+        file=load_file(name)
+        return toscgi.toscgi(file)
+    test_all(name,load)
 
 
 global target
@@ -118,6 +126,6 @@ if test=='http':
 elif test=='fastcgi_tcp' or test=='fastcgi_unix':
     test_all('fastcgi_1')
 elif test=='scgi_tcp' or test=='scgi_unix':
-    test_all('scgi_1')
+    test_scgi('scgi_1')
 else:
     usege()
