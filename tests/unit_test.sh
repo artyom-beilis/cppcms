@@ -2,9 +2,11 @@
 BIN="$1"
 
 if [ "$BIN" == "" ]; then
-	echo "Usege unit_test.sh /path/to/build/directory"
+	echo "Usege unit_test.sh /path/to/build/directory [fast-only]"
 	exit 1;
 fi
+
+FAST="$2"
 
 
 WIN32=0
@@ -44,12 +46,14 @@ run()
 
 run form_test "" ""
 
-for ASYNC in true false 
-do
-	run proto_test "--test-async=$ASYNC --service-api=http --service-port=8080 --service-ip=127.0.0.1" http
-	run proto_test "--test-async=$ASYNC --service-api=scgi --service-port=8080 --service-ip=127.0.0.1" scgi_tcp
-	if [ $WIN32 == 0 ]; then
-		run proto_test "--test-async=$ASYNC --service-api=scgi --service-socket=/tmp/cppcms_test_socket" scgi_unix
-	fi
-done
+if [ "$FAST" != "fast-only" ]; then
+	for ASYNC in true false 
+	do
+		run proto_test "--test-async=$ASYNC --service-api=http --service-port=8080 --service-ip=127.0.0.1" http
+		run proto_test "--test-async=$ASYNC --service-api=scgi --service-port=8080 --service-ip=127.0.0.1" scgi_tcp
+		if [ $WIN32 == 0 ]; then
+			run proto_test "--test-async=$ASYNC --service-api=scgi --service-socket=/tmp/cppcms_test_socket" scgi_unix
+		fi
+	done
+fi
 
