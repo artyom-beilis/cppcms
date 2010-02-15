@@ -66,7 +66,7 @@ if(NOT DISABLE_SHARED)
 	endif(WIN32 AND NOT CYGWIN)
 	set_target_properties(boost PROPERTIES COMPILE_DEFINITIONS "${BOOST_SHARED_DEFS}")
 	set_target_properties(boost PROPERTIES CLEAN_DIRECT_OUTPUT 1)
-	set_target_properties(boost PROPERTIES OUTPUT_NAME "cppcms_boost")
+	set_target_properties(boost PROPERTIES OUTPUT_NAME "cppcms_boost${CPPCMS_SUFFIX}")
 	target_link_libraries(boost ${ZLIB})
 	if(LIB_PTHREAD)
 		target_link_libraries(boost ${LIB_PTHREAD})
@@ -76,11 +76,6 @@ if(NOT DISABLE_SHARED)
 		LIBRARY DESTINATION lib
 		ARCHIVE DESTINATION lib)
 endif(NOT DISABLE_SHARED)	
-
-if(MSVC AND NOT DISABLE_SHARED)
-	set_target_properties(boost PROPERTIES IMPORT_SUFFIX "_imp.lib")
-endif(MSVC AND NOT DISABLE_SHARED)
-
 
 if(NOT DISABLE_STATIC)
 	add_library(boost-static STATIC ${BOOST_SRC})
@@ -101,4 +96,7 @@ if(NOT DISABLE_STATIC)
 		ARCHIVE DESTINATION lib)
 endif(NOT DISABLE_STATIC)	
 
+if(MSVC AND NOT DISABLE_STATIC)
+	set_target_properties(boost-static PROPERTIES PREFIX "lib")
+endif(MSVC AND NOT DISABLE_STATIC)
 

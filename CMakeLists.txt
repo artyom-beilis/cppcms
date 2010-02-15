@@ -80,7 +80,6 @@ endif(NOT CMAKE_BUILD_TYPE)
 
 if("${CMAKE_BUILD_TYPE}" STREQUAL "Debug")
 	if(MSVC)
-		message("There ${CMAKE_BUILD_TYPE}")
 		set(ICU_SUFFIX "d")
 		set(CPPCMS_SUFFIX "-d")
 	endif()
@@ -588,9 +587,9 @@ set_target_properties(${CPPCMS_LIBS} PROPERTIES
 			FRAMEWORK TRUE
 			PUBLIC_HEADER "${CPPCMS_PUBLIC_HEADERS}")
 			
-if(MSVC AND NOT DISABLE_SHARED)
-	set_target_properties(cppcms PROPERTIES IMPORT_SUFFIX "_imp.lib")
-endif(MSVC AND NOT DISABLE_SHARED)
+if(MSVC AND NOT DISABLE_STATIC)
+	set_target_properties(cppcms-static PROPERTIES PREFIX "lib")
+endif(MSVC AND NOT DISABLE_STATIC)
 
 configure_file(config.cmake.h config.h)
 
