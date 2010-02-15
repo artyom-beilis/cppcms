@@ -20,7 +20,7 @@ namespace impl {
 		void *p=::mmap(0,size,PROT_READ | PROT_WRITE, MAP_ANONYMOUS | MAP_SHARED, -1, 0);
 		int err=errno;
 		#elif defined(MAP_ANON)
-		void *p=::mmap(0,size,PROT_READ | PROT_WRITE, MAP_ANONYMOUS | MAP_SHARED, -1, 0);
+		void *p=::mmap(0,size,PROT_READ | PROT_WRITE, MAP_ANON | MAP_SHARED, -1, 0);
 		int err=errno;
 		#else
 		int fd=::open("/dev/null",O_RDWR);

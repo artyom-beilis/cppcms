@@ -169,7 +169,7 @@ include_directories(localization)
 set(CPPCMS_LIBRARY_SUFFIX ${CMAKE_SHARED_LIBRARY_SUFFIX})
 set(CPPCMS_LIBRARY_PREFIX ${CMAKE_SHARED_LIBRARY_PREFIX})
 check_cxx_source_compiles(
-	"int main() { volatile long v;__sync_add_and_fetch(&v,1); }"
+	"int main() { volatile long v=0; return __sync_add_and_fetch(&v,1); }"
 	HAVE_SYNC_FETCH_AND_ADD)
 check_cxx_source_compiles(
 	"#include <string> 
