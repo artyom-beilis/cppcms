@@ -116,14 +116,16 @@ bool request::parse_form_urlencoded(char const *begin,char const *end,form_type 
 bool request::prepare()
 {
 	std::string query=query_string();
-	if(!parse_form_urlencoded(query.data(),query.data()+query.size(),get_))  {
+	if(!parse_form_urlencoded(query.c_str(),query.c_str()+query.size(),get_))  {
 		get_.clear();
 	}
 	
 	if(http::protocol::is_prefix_of("application/x-www-form-urlencoded",content_type())) {
-		char const *pdata=&d->post_data.front();
-		if(!parse_form_urlencoded(pdata,pdata+d->post_data.size(),post_)) 
-			return false;
+		if(!d->post_data.empty()) {
+			char const *pdata=&d->post_data.front();
+			if(!parse_form_urlencoded(pdata,pdata+d->post_data.size(),post_)) 
+				return false;
+		}
 	}
 	if(!parse_cookies())
 		return false;

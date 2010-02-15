@@ -9,11 +9,13 @@ fi
 
 WIN32=0
 case "`uname`" in
-	*win*)	
-		WIN32=1 
+	*CYGWIN*)
+		WIN32=1 ;;
+	*MINGW*)	
+		WIN32=1 ;;
+	*Windows*)
+		WIN32=1
 esac
-
-
 
 run()
 {

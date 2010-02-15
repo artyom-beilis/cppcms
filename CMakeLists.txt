@@ -51,11 +51,12 @@ if(CMAKE_COMPILER_IS_GNUCXX)
 elseif(CMAKE_CXX_COMPILER_ID STREQUAL "Intel")
 	set(CXX_FLAGS "-Wall")
 elseif(MSVC)
-	set(CXX_FLAGS "/EHsc /W4")
+	set(CXX_FLAGS "/EHsc /W3")
 elseif(CMAKE_CXX_COMPILER_ID STREQUAL "SunPro")
 	#
 	# We use STL port under Sun Studio, standard library is broken
 	#
+	
 	set(CXX_FLAGS "-library=stlport4")
 
 	if(CMAKE_SYSTEM_NAME STREQUAL "SunOS")
@@ -77,7 +78,13 @@ if(NOT CMAKE_BUILD_TYPE)
 	      FORCE)
 endif(NOT CMAKE_BUILD_TYPE)
 
-
+if("${CMAKE_BUILD_TYPE}" STREQUAL "Debug")
+	if(MSVC)
+		message("There ${CMAKE_BUILD_TYPE}")
+		set(ICU_SUFFIX "d")
+		set(CPPCMS_SUFFIX "-d")
+	endif()
+endif()
 
 
 #############################################################################
@@ -111,9 +118,9 @@ else(NOT USE_EXTERNAL_BOOST)
 	find_library(BOOST_ZLIB		boost_zlib-${BOOST_SUFFIX} 	NAMES boost_zlib 	boost_zlib)
 endif(NOT USE_EXTERNAL_BOOST)
 
-find_library(ICU_UC icuuc)
+find_library(ICU_UC icuuc${ICU_SUFFIX})
 find_library(ICU_DATA icudata NAMES icudt)
-find_library(ICU_I18N icui18n NAMES icuin)
+find_library(ICU_I18N icui18n${ICU_SUFFIX} NAMES icuin${ICU_SUFFIX})
 
 find_file(HAVE_STDINT_H stdint.h)
 find_file(HAVE_INTTYPES_H inttypes.h)
@@ -570,8 +577,12 @@ if(WIN32 AND NOT DISABLE_SHARED)
 endif(WIN32 AND NOT DISABLE_SHARED)
 
 set_target_properties(${CPPCMS_LIBS} PROPERTIES CLEAN_DIRECT_OUTPUT 1)
-set_target_properties(${CPPCMS_LIBS} PROPERTIES OUTPUT_NAME "cppcms")
-set_target_properties(${CPPCMS_LIBS} PROPERTIES VERSION 1.0.0 SOVERSION 1)
+set_target_properties(${CPPCMS_LIBS} PROPERTIES OUTPUT_NAME "cppcms${CPPCMS_SUFFIX}")
+if(WIN32)
+	set_target_properties(${CPPCMS_LIBS} PROPERTIES VERSION 1 SOVERSION 1)
+else()
+	set_target_properties(${CPPCMS_LIBS} PROPERTIES VERSION 1.0.0 SOVERSION 1)
+endif()
 
 set_target_properties(${CPPCMS_LIBS} PROPERTIES 
 			FRAMEWORK TRUE
