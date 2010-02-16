@@ -14,6 +14,75 @@
 #include "locale_codepage.h"
 namespace cppcms {
     namespace locale {
+
+
+        class numpunct_utf8 : public std::numpunct_byname<char> {
+        public:
+            numpunct_utf8(char const *name) :
+                std::numpunct_byname<char>(name)
+            {
+            }
+        protected:
+            virtual char do_thousands_sep() const
+            {
+                char res = std::numpunct_byname<char>::do_thousands_sep();
+                if(res < 0 || res > 0x7F)
+                    return 0;
+                return res;
+            }
+            virtual char do_decimal_point() const
+            {
+                char res = std::numpunct_byname<char>::do_decimal_point();
+                if(res < 0 || res > 0x7F)
+                    return 0;
+                return res;
+            }
+        };
+
+        template<bool intl>
+        class moneypunct_utf8 : public std::moneypunct_byname<char,intl> {
+        public:
+            numpunct_utf8(char const *name) :
+                std::numpunct_byname<char,intl>(name)
+            {
+            }
+        protected:
+            virtual char do_thousands_sep() const
+            {
+                char res = std::numpunct_byname<char,intl>::do_thousands_sep();
+                if(res < 0 || res > 0x7F)
+                    return 0;
+                return res;
+            }
+            virtual char do_decimal_point() const
+            {
+                char res = std::numpunct_byname<char,intl>::do_decimal_point();
+                if(res < 0 || res > 0x7F)
+                    return 0;
+                return res;
+            }
+        };
+
+        std::locale workaround_gcc_utf8_bug(std::locale const &l)
+        {
+            if(    (unsigned char)(std::use_facet<std::numpunct_byname<char> >(l).thousands_sep()) > 0x7F
+                || (unsigned char)(std::use_facet<std::numpunct_byname<char> >(l).decimal_point()) > 0x7F)
+            {
+                l=std::locale(l,new numpunct_utf8(l.name()));
+            }
+            if(    (unsigned char)(std::use_facet<std::numpunct_byname<char,true> >(l).thousands_sep()) > 0x7F
+                || (unsigned char)(std::use_facet<std::numpunct_byname<char,true> >(l).decimal_point()) > 0x7F)
+            {
+                l=std::locale(l,new moneypunct_utf8<true>(l.name()));
+            }
+            if(    (unsigned char)(std::use_facet<std::numpunct_byname<char,false> >(l).thousands_sep()) > 0x7F
+                || (unsigned char)(std::use_facet<std::numpunct_byname<char,false> >(l).decimal_point()) > 0x7F)
+            {
+                l=std::locale(l,new moneypunct_utf8<false>(l.name()));
+            }
+            return l;
+        }
+
         struct generator::data {
             typedef std::pair<std::string,std::string> locale_id_type;
 

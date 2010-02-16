@@ -168,6 +168,20 @@ namespace cppcms {
                 return ios;
             }
 
+            inline details::set_timezone time_zone(char const *id) 
+            {
+                details::set_timezone tz;
+                tz.id=id;
+                return tz;
+            }
+
+            inline details::set_timezone time_zone(std::string const &id) 
+            {
+                details::set_timezone tz;
+                tz.id=id;
+                return tz;
+            }
+
 
         } // as manipulators
         

@@ -1,4 +1,12 @@
 #include "locale_numeric.h"
+#include "config.h"
+#ifdef CPPCMS_USE_EXTERNAL_BOOST
+#   include <boost/regex.hpp>
+#else // Internal Boost
+#   include <cppcms_boost/regex.hpp>
+    namespace boost = cppcms_boost;
+#endif
+
 
 namespace cppcms {
 namespace locale {
@@ -23,11 +31,17 @@ num_format::iter_type num_format::put_value(num_format::iter_type out,std::ios_b
 
 		std::tm tm;
 		time_t time=static_cast<time_t>(value);
-		if(timezone=="GMT" || timezone=="gmt") {
+		if(!timezone.empty()) {
+			boost::cmatch m;
+			static boost::regex r("^([Gg][Mm][Tt]|[Uu][Tt][Cc])([\\+\\-]?(\\d+))(:(\\d+))?$");
+			if(boost::regex_match(timezone.c_str(),m,r)) {
+				time += 3600 * atoi(std::string(m[2]).c_str()) 
+					+ 60 * atoi(std::string(m[5]).c_str());
+			}
 			#ifdef HAVE_GMTIME_R
 				gmtime_r(&time,&tm);
-			#elif defined(CPPCMS_WIN32)
-				tm=*gmtime(&time);
+			#elif defined(CPPCMS_WIN_NATIVE)
+				tm=*gmtime(&time); // TLS
 			#else
 			#	error "No gmtime_r and no thread safe gmtime is given"
 			#endif
@@ -35,8 +49,8 @@ num_format::iter_type num_format::put_value(num_format::iter_type out,std::ios_b
 		else {
 			#ifdef HAVE_LOCALTIME_R
 				localtime_r(&time,&tm);
-			#elif defined(CPPCMS_WIN32)
-				tm=*localtime(&time);
+			#elif defined(CPPCMS_WIN_NATIVE)
+				tm=*localtime(&time); // TLS
 			#else
 			#	error "No localtime_r and no thread safe localtime is given"
 			#endif

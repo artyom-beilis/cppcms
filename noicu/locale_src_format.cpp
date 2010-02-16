@@ -101,6 +101,8 @@ namespace cppcms {
                     as::gmt(ios_);
                 else if(key=="local")
                     as::local_time(ios_);
+                else if(key=="timezone" || key=="tz")
+                    ext_pattern(ios_,flags::time_zone_id,value);
                 else if(key=="w" || key=="width")
                     ios_.width(atoi(value.c_str()));
                 else if(key=="p" || key=="precision")
