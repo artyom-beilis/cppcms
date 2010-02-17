@@ -57,6 +57,8 @@ endif(WIN32 AND NOT CYGWIN)
 
 include_directories(.)
 find_library(ZLIB z NAMES zdll zlib)
+find_path(ZLIB_INCLUDE_DIR zlib.h)
+include_directories(${ZLIB_INCLUDE_DIR})
 
 if(NOT DISABLE_SHARED)
 	add_library(boost SHARED ${BOOST_SRC})

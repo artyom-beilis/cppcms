@@ -108,6 +108,7 @@ if(NOT USE_EXTERNAL_BOOST)
 	add_subdirectory(cppcms_boost)
 	include_directories(cppcms_boost)
 else(NOT USE_EXTERNAL_BOOST)
+	find_path(BOOST_INCLUDE_DIR boost/shared_ptr.hpp)
 	find_library(BOOST_SYSTEM	boost_system-${BOOST_SUFFIX} 	NAMES boost_system 	boost_system-mt)
 	find_library(BOOST_FILESYSTEM 	boost_filesystem-${BOOST_SUFFIX} NAMES boost_filesystem boost_filesystem-mt)
 	find_library(BOOST_REGEX	boost_regex-${BOOST_SUFFIX} 	NAMES boost_regex 	boost_regex-mt)
@@ -115,14 +116,21 @@ else(NOT USE_EXTERNAL_BOOST)
 	find_library(BOOST_THREAD	boost_thread-${BOOST_SUFFIX} 	NAMES boost_thread 	boost_thread-mt)
 	find_library(BOOST_DATE_TIME	boost_date_time-${BOOST_SUFFIX} NAMES boost_date_time 	boost_date_time-mt)
 	find_library(BOOST_ZLIB		boost_zlib-${BOOST_SUFFIX} 	NAMES boost_zlib 	boost_zlib)
+	include_directories(${BOOST_INCLUDE_DIR})
 endif(NOT USE_EXTERNAL_BOOST)
 
 find_library(ICU_UC icuuc${ICU_SUFFIX})
 find_library(ICU_DATA icudata NAMES icudt)
 find_library(ICU_I18N icui18n${ICU_SUFFIX} NAMES icuin${ICU_SUFFIX})
+find_path(ICU_INCLUDE_DIR unicode/unistr.h)
 
-find_file(HAVE_STDINT_H stdint.h)
-find_file(HAVE_INTTYPES_H inttypes.h)
+if(NOT ICU_UC OR NOT ICU_DATA OR NOT ICU_I18N OR NOT ICU_INCLUDE_DIR)
+	message(FATAL " Failed to find icu")
+endif()
+
+
+find_path(HAVE_STDINT_H stdint.h)
+find_path(HAVE_INTTYPES_H inttypes.h)
 
 check_function_exists(atoll HAVE_ATOLL)
 check_function_exists(_atoi64 HAVE_ATOI64)
@@ -132,10 +140,8 @@ check_function_exists(strerror_r HAVE_STRERROR_R)
 check_function_exists(snprintf HAVE_SNPRINTF)
 check_function_exists(stat HAVE_STAT)
 check_function_exists(_stat HAVE__STAT)
+include_directories(${ICU_INCLUDE_DIR})
 
-if(NOT ICU_UC OR NOT ICU_DATA OR NOT ICU_I18N)
-	message(FATAL " Failed to find icu")
-endif(NOT ICU_UC OR NOT ICU_DATA OR NOT ICU_I18N)
 
 set(HAVE_ICU 1)
 
@@ -146,10 +152,12 @@ if(NOT DISABLE_ICONV)
 		 int main() { iconv_t v=iconv_open((char *)0,(char *)0); }"
 		 LIBC_ICONV)
 	if(NOT LIBC_ICONV)
+		find_path(ICONV_INCLUDE_DIR iconv.h)
 		find_library(ICONV_LIB iconv)
-		if(ICONV_LIB)
+		if(ICONV_LIB AND ICONV_INCLUDE_DIR)
 			set(HAVE_ICONV 1)
-		endif(ICONV_LIB)
+			include_directories(${ICONV_INCLUDE_DIR})
+		endif()
 	else(NOT LIBC_ICONV)
 		set(HAVE_ICONV 1)
 	endif(NOT LIBC_ICONV)
@@ -162,7 +170,6 @@ endif(NOT DISABLE_ICONV)
 include_directories(${CMAKE_BINARY_DIR})
 include_directories(${CMAKE_SOURCE_DIR})
 include_directories(localization)
-
 
 
 
@@ -385,7 +392,11 @@ set(CPPCMS_SOURCES
 )
 
 if(NOT DISABLE_GCRYPT)
+	find_path(GCRYPT_INCLUDE_DIR gcrypt.h)
 	find_library(LIB_GCRYPT gcrypt)
+	if(LIB_GCRYPT AND GCRYPT_INCLUDE_DIR)
+		include_directories(${GCRYPT_INCLUDE_DIR})
+	endif()
 endif(NOT DISABLE_GCRYPT)
 
 if(NOT DISABLE_FCGI)
