@@ -31,6 +31,10 @@
 /* Have strerror_r */
 #cmakedefine HAVE_STRERROR_R
 
+/* Have tm.tm_zone */
+
+#cmakedefine HAVE_BSD_TM
+
 /* Have snprintf */
 #cmakedefine HAVE_SNPRINTF
 

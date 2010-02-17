@@ -184,6 +184,11 @@ check_cxx_source_compiles(
 	HAVE_STD_WSTRING)
 
 check_cxx_source_compiles(
+	"#include <time.h> 
+	int main() { struct tm t; char const *p=t.tm_zone; long o=t.tm_gmtoff; }"
+	HAVE_BSD_TM)
+
+check_cxx_source_compiles(
 	"#include <string> 
 	int main() { std::u16string s16; std::u32string s32; }"
 	HAVE_CPP0X_UXSTRING)

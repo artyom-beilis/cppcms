@@ -34,16 +34,25 @@ num_format::iter_type num_format::put_value(num_format::iter_type out,std::ios_b
 		if(!timezone.empty()) {
 			boost::cmatch m;
 			static boost::regex r("^([Gg][Mm][Tt]|[Uu][Tt][Cc])([\\+\\-]?(\\d+))(:(\\d+))?$");
+			int gmtoff = 0;
 			if(boost::regex_match(timezone.c_str(),m,r)) {
-				time += 3600 * atoi(std::string(m[2]).c_str()) 
+				gmtoff= 3600 * atoi(std::string(m[2]).c_str()) 
 					+ 60 * atoi(std::string(m[5]).c_str());
 			}
+			time+=gmtoff;
 			#ifdef HAVE_GMTIME_R
 				gmtime_r(&time,&tm);
 			#elif defined(CPPCMS_WIN_NATIVE)
 				tm=*gmtime(&time); // TLS
 			#else
 			#	error "No gmtime_r and no thread safe gmtime is given"
+			#endif
+
+			#ifdef HAVE_BSD_TM 
+			// Set correct timezone name and offset where possible
+			// Available under Linux, BSD, Mac OS X, 
+			tm.tm_zone=timezone.c_str();
+			tm.tm_gmtoff = gmtoff;
 			#endif
 		}
 		else {
