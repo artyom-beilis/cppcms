@@ -179,6 +179,19 @@ check_cxx_source_compiles(
 	"int main() { volatile long v=0; return __sync_add_and_fetch(&v,1); }"
 	HAVE_SYNC_FETCH_AND_ADD)
 check_cxx_source_compiles(
+	"#include <sys/types.h>
+	#include <machine/atomic.h>
+	int main() { volatile unsigned v=0; return atomic_fetchadd_int(&v,1); }"
+	HAVE_FREEBSD_ATOMIC)
+check_cxx_source_compiles(
+	"#include <atomic.h>
+	int main() { volatile unsigned v=0; return atomic_add_int_nv(&v,1); }"
+	HAVE_SOLARIS_ATOMIC)
+check_cxx_source_compiles(
+	"#include <libkern/OSAtomic.h>
+	int main() { volatile int v=0; return OSAtomicAdd32(1,&v); }"
+	HAVE_MAC_OS_X_ATOMIC)
+check_cxx_source_compiles(
 	"#include <string> 
 	int main() { std::wstring s; }"
 	HAVE_STD_WSTRING)

@@ -79,8 +79,11 @@
 
 #cmakedefine HAVE_CANONICALIZE_FILE_NAME
 
-/* "Have __sync_fetch_and_add" */
+/* "Have Atomic operations:" */
 #cmakedefine HAVE_SYNC_FETCH_AND_ADD
+#cmakedefine HAVE_FREEBSD_ATOMIC
+#cmakedefine HAVE_SOLARIS_ATOMIC
+#cmakedefine HAVE_MAC_OS_X_ATOMIC
 
 /* "Have g++ typeof" */
 #cmakedefine HAVE_UNDERSCORE_TYPEOF

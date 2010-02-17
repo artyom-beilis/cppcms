@@ -2,10 +2,6 @@
 #define CPPCMS_ATOMIC_COUNT_H
 
 #include "defs.h"
-#if !defined(CPPCMS_WIN32)
-#	include <pthread.h>
-#endif
-
 
 namespace cppcms {
 
@@ -59,13 +55,18 @@ namespace cppcms {
 		atomic_counter(atomic_counter const &);
 		atomic_counter & operator=(atomic_counter const &);
 
-		mutable long value_;
-		#if !defined(CPPCMS_WIN32)
+		mutable union {
+			int i;
+			unsigned ui;
+			long l;
+			unsigned long ul;
+			long long ll;
+			unsigned long long ull;
+		} value_;
 		// Is actually used for platforms without lock
 		// it would not be used when atomic operations
 		// available
-		mutable pthread_mutex_t mutex_;
-		#endif
+		void *mutex_;
 	};
 
 } // cppcms
