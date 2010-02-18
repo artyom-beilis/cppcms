@@ -257,6 +257,7 @@ public:
 			context().skin(skin);
 		render("hello",c);
 	}
+	#ifndef CPPCMS_USE_STD_LOCALES
 
 	void devide(cppcms::locale::boundary::boundary_type type,std::string const &str,char const *name)
 	{
@@ -271,6 +272,8 @@ public:
 		}
 		response().out()<<"|<br>\n";
 	}
+
+	#endif
 
 	void form()
 	{
@@ -292,8 +295,10 @@ public:
 			std::string name = f.name.value();
 			response().out() <<"Upper: "<<to_upper(name,loc)<<"<br>"<<std::endl;
 			response().out() <<"Lower: "<<to_lower(name,loc)<<"<br>"<<std::endl;
+			#ifndef CPPCMS_USE_STD_LOCALES
 			response().out() <<"Title: "<<to_title(name,loc)<<"<br>"<<std::endl;
 			response().out() <<"Fold Case: "<<fold_case(name,loc)<<"<br>"<<std::endl;
+			#endif
 
 		}
 		if(f.description.set()) {
@@ -302,11 +307,13 @@ public:
 				std::ofstream tmp("test.txt");
 				tmp<<descr;
 			}
+			#ifndef CPPCMS_USE_STD_LOCALES
 			using namespace cppcms::locale;
 			devide(boundary::character,descr,"code");
 			devide(boundary::word,descr,"word");
 			devide(boundary::sentence,descr,"sentence");
 			devide(boundary::line,descr,"line");
+			#endif
 		}
 
 		if(ok) {

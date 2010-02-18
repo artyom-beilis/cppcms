@@ -10,9 +10,9 @@
 #include <stdexcept>
 #include <iostream>
 
-#ifdef HAVE_ICONV
+#if defined HAVE_ICONV
 #include <iconv.h>
-#else
+#elif defined(HAVE_ICU)
 #include <unicode/ucnv.h> // For Win32
 #endif
 
@@ -123,7 +123,7 @@ namespace impl{
 
 
 	typedef iconv_validator validator;
-#else // NO HAVE_ICONV
+#elif defined(HAVE_ICU)
 	class uconv_validator {
 	public:
 		uconv_validator(std::string const &charset) :
@@ -356,6 +356,7 @@ bool CPPCMS_API valid(char const *encoding,char const *begin,char const *end,siz
 	impl::validators_set::encoding_tester_type tester = impl::all_validators.get(encoding);
 	if(tester)
 		return tester(begin,end,count);
+	#if defined(HAVE_ICU) || defined(HAVE_ICONV)
 	try {
 		impl::validator vtester(encoding);
 		return vtester.valid(begin,end,count);
@@ -363,8 +364,12 @@ bool CPPCMS_API valid(char const *encoding,char const *begin,char const *end,siz
 	catch(std::runtime_error const &e) {
 		return false;
 	}
+	#else
+	return false;
+	#endif
 }
 
+#if defined(HAVE_ICONV) || defined(HAVE_ICU)
 
 inline bool is_utf8(char const *c_encoding)
 {
@@ -529,6 +534,7 @@ std::string CPPCMS_API from_utf8(std::locale const &loc,std::string const &str)
 		return from_utf8(inf.encoding().c_str(),str);
 }
 
+#endif // HAVE_ICONV || HAVE_ICU
 	
 	
 } } // cppcms::encoding

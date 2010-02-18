@@ -9,7 +9,6 @@
 #define CPPCMS_LOCALE_HPP_INCLUDED
 
 #include "locale_format.h"
-#include "locale_formatter.h"
 #include "locale_formatting.h"
 #include "locale_generator.h"
 #include "locale_info.h"

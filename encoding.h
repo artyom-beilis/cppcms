@@ -5,6 +5,7 @@
 #include <map>
 #include <locale>
 #include "defs.h"
+#include "config.h"
 
 namespace cppcms {
 	///
@@ -37,6 +38,8 @@ namespace cppcms {
 		/// HTML illegal characters. Number of codepoints is stored in \a count
 		///
 		bool CPPCMS_API valid(std::string const &encoding,char const *begin,char const *end,size_t &count);
+
+		#if defined(HAVE_ICU) || defined(HAVE_ICONV)
 
 		///
 		/// Convert string in range [begin,end) from local 8 bit encoding according to locale \a loc to UTF-8
@@ -79,6 +82,8 @@ namespace cppcms {
 		/// If non-convertable characters found, the conversion is aborted and only sucessefully converted part is returned.
 		///
 		std::string CPPCMS_API from_utf8(char const *encoding,std::string const &str);
+
+		#endif
 
 	}  // encoding
 } // cppcms

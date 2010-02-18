@@ -15,6 +15,7 @@ include(CPack)
 #
 #############################################################################
 
+option(USE_STD_LOCALES	"Use standard std::locales instead of ICU" OFF)
 option(DISABLE_SHARED	"Disable shared libraries build" OFF)
 option(DISABLE_STATIC	"Disable static libraries build" OFF)
 option(DISABLE_ICONV	"Disable usage iconv library - use ICU for conversion" OFF)
@@ -23,6 +24,11 @@ option(USE_EXTERNAL_BOOST "Use external Boost library and not internal one, boos
 option(DISABLE_FCGI	"Disable fastcgi web server api" OFF)
 option(DISABLE_SCGI	"Disable scgi web server api" OFF)
 option(DISABLE_HTTP	"Disable http web server" OFF)
+
+
+if(USE_STD_LOCALES OR USE_EXTERNAL_BOOST)
+	set(CPPCMS_SUFFIX "-c")
+endif()
 
 #############################################################################
 #
@@ -81,7 +87,11 @@ endif(NOT CMAKE_BUILD_TYPE)
 if("${CMAKE_BUILD_TYPE}" STREQUAL "Debug")
 	if(MSVC)
 		set(ICU_SUFFIX "d")
-		set(CPPCMS_SUFFIX "-d")
+		if(NOT CPPCMS_SUFFIX)
+			set(CPPCMS_SUFFIX "-d")
+		else()
+			set(CPPCMS_SUFFIX "${CPPCMS_SUFFIX}d")
+		endif()
 	endif()
 endif()
 
@@ -119,13 +129,19 @@ else(NOT USE_EXTERNAL_BOOST)
 	include_directories(${BOOST_INCLUDE_DIR})
 endif(NOT USE_EXTERNAL_BOOST)
 
-find_library(ICU_UC icuuc${ICU_SUFFIX})
-find_library(ICU_DATA icudata NAMES icudt)
-find_library(ICU_I18N icui18n${ICU_SUFFIX} NAMES icuin${ICU_SUFFIX})
-find_path(ICU_INCLUDE_DIR unicode/unistr.h)
 
-if(NOT ICU_UC OR NOT ICU_DATA OR NOT ICU_I18N OR NOT ICU_INCLUDE_DIR)
-	message(FATAL " Failed to find icu")
+if(NOT USE_STD_LOCALES)
+	find_library(ICU_UC icuuc${ICU_SUFFIX})
+	find_library(ICU_DATA icudata NAMES icudt)
+	find_library(ICU_I18N icui18n${ICU_SUFFIX} NAMES icuin${ICU_SUFFIX})
+	find_path(ICU_INCLUDE_DIR unicode/unistr.h)
+
+	if(NOT ICU_UC OR NOT ICU_DATA OR NOT ICU_I18N OR NOT ICU_INCLUDE_DIR)
+		message(FATAL " Failed to find ICU library, can't continue")
+	endif()
+	set(HAVE_ICU 1)
+else()
+	set(CPPCMS_USE_STD_LOCALES 1)
 endif()
 
 
@@ -142,8 +158,6 @@ check_function_exists(stat HAVE_STAT)
 check_function_exists(_stat HAVE__STAT)
 include_directories(${ICU_INCLUDE_DIR})
 
-
-set(HAVE_ICU 1)
 
 if(NOT DISABLE_ICONV) 
 
@@ -169,7 +183,12 @@ endif(NOT DISABLE_ICONV)
 
 include_directories(${CMAKE_BINARY_DIR})
 include_directories(${CMAKE_SOURCE_DIR})
-include_directories(localization)
+
+if(USE_STD_LOCALES)
+	include_directories(noicu)
+else()
+	include_directories(localization)
+endif()
 
 
 
@@ -364,37 +383,11 @@ set(CPPCMS_PUBLIC_HEADERS
 	util.h
 	view.h
 	views_pool.h
-	localization/locale_boundary.h
-	localization/locale_codepage.h
-	localization/locale_collator.h
-	localization/locale_config.h
-	localization/locale_conversion.h
-	localization/locale_format.h
-	localization/locale_formatter.h
-	localization/locale_formatting.h
-	localization/locale_generator.h
-	localization/locale_info.h
-	localization/locale_message.h
-	localization/locale_numeric.h
-	localization/locale_timezone.h
-	localization/localization.h
 	${CMAKE_CURRENT_BINARY_DIR}/config.h
 )
 
 
 set(CPPCMS_SOURCES 
-	localization/locale_src_boundary.cpp
-	localization/locale_src_codepage.cpp
-	localization/locale_src_collator.cpp
-	localization/locale_src_conversion.cpp
-	localization/locale_src_format.cpp
-	localization/locale_src_formatter.cpp
-	localization/locale_src_formatting.cpp
-	localization/locale_src_generator.cpp
-	localization/locale_src_info.cpp
-	localization/locale_src_message.cpp
-	localization/locale_src_mo_lambda.cpp
-	localization/locale_src_timezone.cpp
 	service.cpp 
 	cgi_api.cpp 
 	http_request.cpp 
@@ -434,6 +427,63 @@ set(CPPCMS_SOURCES
 	session_interface.cpp
 	session_memory_storage.cpp
 )
+
+if(NOT USE_STD_LOCALES)
+
+	set(CPPCMS_SOURCES ${CPPCMS_SOURCES}
+		localization/locale_src_boundary.cpp
+		localization/locale_src_codepage.cpp
+		localization/locale_src_collator.cpp
+		localization/locale_src_conversion.cpp
+		localization/locale_src_format.cpp
+		localization/locale_src_formatter.cpp
+		localization/locale_src_formatting.cpp
+		localization/locale_src_generator.cpp
+		localization/locale_src_info.cpp
+		localization/locale_src_message.cpp
+		localization/locale_src_mo_lambda.cpp
+		localization/locale_src_timezone.cpp)
+
+	set(CPPCMS_PUBLIC_HEADERS ${CPPCMS_PUBLIC_HEADERS}
+		localization/locale_boundary.h
+		localization/locale_codepage.h
+		localization/locale_collator.h
+		localization/locale_conversion.h
+		localization/locale_format.h
+		localization/locale_formatter.h
+		localization/locale_formatting.h
+		localization/locale_generator.h
+		localization/locale_info.h
+		localization/locale_message.h
+		localization/locale_numeric.h
+		localization/locale_timezone.h
+		localization/localization.h)
+
+
+else(NOT USE_STD_LOCALES)
+
+	set(CPPCMS_SOURCES ${CPPCMS_SOURCES}
+		noicu/locale_src_conversion.cpp
+		noicu/locale_src_format.cpp
+		noicu/locale_src_formatting.cpp
+		noicu/locale_src_generator.cpp
+		noicu/locale_src_info.cpp
+		noicu/locale_src_message.cpp
+		noicu/locale_src_mo_lambda.cpp
+		noicu/locale_src_numeric.cpp)
+
+	set(CPPCMS_PUBLIC_HEADERS ${CPPCMS_PUBLIC_HEADERS}
+		noicu/locale_config.h
+		noicu/locale_conversion.h
+		noicu/locale_format.h
+		noicu/locale_formatting.h
+		noicu/locale_generator.h
+		noicu/locale_info.h
+		noicu/locale_message.h
+		noicu/locale_numeric.h
+		noicu/localization.h)
+
+endif(NOT USE_STD_LOCALES)
 
 if(NOT DISABLE_GCRYPT)
 	find_path(GCRYPT_INCLUDE_DIR gcrypt.h)

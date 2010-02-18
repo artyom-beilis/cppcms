@@ -151,6 +151,8 @@ namespace cppcms {
 			return out;
 		}
 		
+		#ifndef CPPCMS_USE_STD_LOCALES
+
 		///
 		/// \brief Output filter to_title
 		///
@@ -177,6 +179,8 @@ namespace cppcms {
 			obj(out);
 			return out;
 		}
+
+		#endif
 	
 		///
 		/// \brief Output filter escape

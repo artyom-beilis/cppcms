@@ -569,7 +569,9 @@ locale::generator const &service::generator()
 	typedef std::vector<std::string> vstr_type;
 	impl_->locale_generator_.reset(new locale::generator());
 	locale::generator &gen= *impl_->locale_generator_;
+	#ifndef CPPCMS_USE_STD_LOCALES
 	gen.characters(locale::char_facet);
+	#endif
 	std::string enc = settings().get("localization.encoding","");
 
 	if(!enc.empty())

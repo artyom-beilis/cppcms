@@ -267,21 +267,26 @@ namespace cppcms {
 
                 bool load_file(std::string file_name,std::string encoding,int id)
                 {
-                    std::auto_ptr<mo_file> mo(new mo_file(file_name));
+                    try {
+                        std::auto_ptr<mo_file> mo(new mo_file(file_name));
 
-                    std::string plural = extract(mo->value(0).first,"plural=","\r\n;");
-                    if(!plural.empty()) {
-                        std::auto_ptr<lambda::plural> ptr=lambda::compile(plural.c_str());
-                        plural_forms_[id] = ptr;
-                    }
+                        std::string plural = extract(mo->value(0).first,"plural=","\r\n;");
+                        if(!plural.empty()) {
+                            std::auto_ptr<lambda::plural> ptr=lambda::compile(plural.c_str());
+                            plural_forms_[id] = ptr;
+                        }
 
-                    if(mo->has_hash()) {
-                        mo_catalogs_[id]=mo;
-                        return true;
+                        if(mo->has_hash()) {
+                            mo_catalogs_[id]=mo;
+                            return true;
+                        }
+                        else {
+                            plural_forms_[id].reset();
+                            catalogs_[id].clear();
+                            return false;
+                        }
                     }
-                    else {
-                        plural_forms_[id].reset();
-                        catalogs_[id].clear();
+                    catch(std::exception const &err) {
                         return false;
                     }
 
