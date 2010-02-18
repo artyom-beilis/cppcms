@@ -8,6 +8,7 @@
 #define CPPCMS_LOCALE_SOURCE
 #include "locale_conversion.h"
 #include "locale_info.h"
+#include "utf_iterator.h"
 #include "config.h"
 #ifdef CPPCMS_USE_EXTERNAL_BOOST
 #   include <boost/noncopyable.hpp>
@@ -23,17 +24,18 @@ namespace impl{
     
     std::wstring to_wide(char const *begin,char const *end)
     {
-        std::wstring res.reserve(end-begin);
+        std::wstring res;
+        res.reserve(end-begin);
         while(begin < end) {
             uint32_t point=utf8::next(begin,end,false,true);
             if(point==utf::illegal)
                 break;
             if(sizeof(wchar_t)==4) {
-                res.append(wchar_t(point));
+                res+=(wchar_t(point));
             }
             else  {
                 utf16::seq s=utf16::encode(point);
-                res.append(reinterpret_cast<wchar_t *>(seq.c),seq.len);
+                res.append(reinterpret_cast<wchar_t *>(s.c),s.len);
             }
         }
         return res;
@@ -41,7 +43,8 @@ namespace impl{
 
     std::string from_wide(std::wstring const &w)
     {
-        std::string res.reserve(w.size());
+        std::string res;
+        res.reserve(w.size());
         wchar_t const *begin=w.c_str(),*end=w.c_str()+w.size();
         while(begin < end) {
             uint32_t point;
@@ -52,7 +55,7 @@ namespace impl{
             if(point==utf::illegal)
                 break;
             utf8::seq s=utf8::encode(point);
-            res.append(seq.c,seq.len);
+            res.append(s.c,s.len);
         }
         return res;
     }
@@ -73,7 +76,7 @@ namespace impl{
                 facet.tolower(&s[0],&s[0]+s.size());
             else
                 facet.toupper(&s[0],&s[0]+s.size());
-            return from_wide(w); 
+            return from_wide(s); 
         }
         #endif
         std::string s(begin,end-begin);

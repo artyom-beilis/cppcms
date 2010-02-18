@@ -14,7 +14,7 @@
 			"paths" : [ "./tests/locale" ],
 			"domains" : [ "test" ]
 		},
-		"locales" : [ "he_IL" ],
+		"locales" : [ "C" ],
 	},
 	
 }

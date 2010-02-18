@@ -9,7 +9,6 @@
 #define CPPCMS_LOCALE_SRC_ICU_IMPL_HPP_INCLUDED
 
 #include <string>
-#include <unicode/locid.h>
 namespace cppcms {
     namespace locale {
         struct info_impl {

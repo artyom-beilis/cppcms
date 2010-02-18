@@ -52,15 +52,15 @@ namespace cppcms {
 
             std::locale workaround_utf8_bug(std::locale l)
             {
-                if((unsigned char)(std::use_facet<std::numpunct_byname<char> >(l).thousands_sep()) > 0x7F)
+                if((unsigned char)(std::use_facet<std::numpunct<char> >(l).thousands_sep()) > 0x7F)
                 {
                     l=std::locale(l,new numpunct_utf8(l.name().c_str()));
                 }
-                if((unsigned char)(std::use_facet<std::moneypunct_byname<char,true> >(l).thousands_sep()) > 0x7F)
+                if((unsigned char)(std::use_facet<std::moneypunct<char,true> >(l).thousands_sep()) > 0x7F)
                 {
                     l=std::locale(l,new moneypunct_utf8<true>(l.name().c_str()));
                 }
-                if((unsigned char)(std::use_facet<std::moneypunct_byname<char,false> >(l).thousands_sep()) > 0x7F)
+                if((unsigned char)(std::use_facet<std::moneypunct<char,false> >(l).thousands_sep()) > 0x7F)
                 {
                     l=std::locale(l,new moneypunct_utf8<false>(l.name().c_str()));
                 }
