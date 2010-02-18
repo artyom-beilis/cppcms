@@ -31,7 +31,7 @@ namespace cppcms {
         template<typename CharType>
         std::basic_string<CharType> to_upper(std::basic_string<CharType> const &str,std::locale const &loc=std::locale())
         {
-            return impl::convert(impl::upper_case,str.data(),str.data()+str.size(),0,&loc);
+            return impl::convert(impl::upper_case,str.data(),str.data()+str.size(),loc);
         }
         
         ///
@@ -43,7 +43,7 @@ namespace cppcms {
             CharType const *end=str;
             while(*end)
                 end++;
-            return impl::convert(impl::upper_case,str,end,0,&loc);
+            return impl::convert(impl::upper_case,str,end,loc);
         }
         
         ///
@@ -52,7 +52,7 @@ namespace cppcms {
         template<typename CharType>
         std::basic_string<CharType> to_upper(CharType const *begin,CharType const *end,std::locale const &loc=std::locale())
         {
-            return impl::convert(impl::upper_case,begin,end,0,&loc);
+            return impl::convert(impl::upper_case,begin,end,loc);
         }
 
         ///////////////////////////////////////////////////
@@ -64,7 +64,7 @@ namespace cppcms {
         template<typename CharType>
         std::basic_string<CharType> to_lower(std::basic_string<CharType> const &str,std::locale const &loc=std::locale())
         {
-            return impl::convert(impl::lower_case,str.data(),str.data()+str.size(),0,&loc);
+            return impl::convert(impl::lower_case,str.data(),str.data()+str.size(),loc);
         }
         
         ///
@@ -76,7 +76,7 @@ namespace cppcms {
             CharType const *end=str;
             while(*end)
                 end++;
-            return impl::convert(impl::lower_case,str,end,0,&loc);
+            return impl::convert(impl::lower_case,str,end,loc);
         }
         
         ///
@@ -85,7 +85,7 @@ namespace cppcms {
         template<typename CharType>
         std::basic_string<CharType> to_lower(CharType const *begin,CharType const *end,std::locale const &loc=std::locale())
         {
-            return impl::convert(impl::lower_case,begin,end,0,&loc);
+            return impl::convert(impl::lower_case,begin,end,loc);
         }
         ///////////////////////////////////////////////////
         

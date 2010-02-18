@@ -70,9 +70,9 @@ namespace impl{
                 return std::string();
             wctype const &facet=std::use_facet<wctype>(l);
             if(how == lower_case)
-                facet.tolower(&s[0],&s[0]+s.size(),&s[0]);
+                facet.tolower(&s[0],&s[0]+s.size());
             else
-                facet.toupper(&s[0],&s[0]+s.size(),&s[0]);
+                facet.toupper(&s[0],&s[0]+s.size());
             return from_wide(w); 
         }
         #endif
@@ -81,9 +81,9 @@ namespace impl{
             return s;
         std::ctype<char> const &facet=std::use_facet<std::ctype<char> >(l);
         if(how == lower_case)
-            facet.tolower(&s[0],&s[0]+s.size(),&s[0]);
+            facet.tolower(&s[0],&s[0]+s.size());
         else
-            facet.toupper(&s[0],&s[0]+s.size(),&s[0]);
+            facet.toupper(&s[0],&s[0]+s.size());
         return s;
     }
 

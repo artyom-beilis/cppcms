@@ -8,80 +8,66 @@
 #define CPPCMS_LOCALE_SOURCE
 #include "locale_generator.h"
 #include "locale_numeric.h"
-#include "locale_collator.h"
 #include "locale_info.h"
 #include "locale_message.h"
-#include "locale_codepage.h"
+#include "config.h"
+#ifdef CPPCMS_USE_EXTERNAL_BOOST
+#   include <boost/regex.hpp>
+#else // Internal Boost
+#   include <cppcms_boost/regex.hpp>
+    namespace boost = cppcms_boost;
+#endif
+
 namespace cppcms {
     namespace locale {
 
+        namespace impl {
 
-        class numpunct_utf8 : public std::numpunct_byname<char> {
-        public:
-            numpunct_utf8(char const *name) :
-                std::numpunct_byname<char>(name)
-            {
-            }
-        protected:
-            virtual char do_thousands_sep() const
-            {
-                char res = std::numpunct_byname<char>::do_thousands_sep();
-                if(res < 0 || res > 0x7F)
-                    return 0;
-                return res;
-            }
-            virtual char do_decimal_point() const
-            {
-                char res = std::numpunct_byname<char>::do_decimal_point();
-                if(res < 0 || res > 0x7F)
-                    return 0;
-                return res;
-            }
-        };
+            class numpunct_utf8 : public std::numpunct_byname<char> {
+            public:
+                numpunct_utf8(char const *name) :
+                    std::numpunct_byname<char>(name)
+                {
+                }
+            protected:
+                virtual std::string do_grouping() const
+                {
+                    return std::string();
+                }
+            };
 
-        template<bool intl>
-        class moneypunct_utf8 : public std::moneypunct_byname<char,intl> {
-        public:
-            numpunct_utf8(char const *name) :
-                std::numpunct_byname<char,intl>(name)
-            {
-            }
-        protected:
-            virtual char do_thousands_sep() const
-            {
-                char res = std::numpunct_byname<char,intl>::do_thousands_sep();
-                if(res < 0 || res > 0x7F)
-                    return 0;
-                return res;
-            }
-            virtual char do_decimal_point() const
-            {
-                char res = std::numpunct_byname<char,intl>::do_decimal_point();
-                if(res < 0 || res > 0x7F)
-                    return 0;
-                return res;
-            }
-        };
+            template<bool intl>
+            class moneypunct_utf8 : public std::moneypunct_byname<char,intl> {
+            public:
+                moneypunct_utf8(char const *name) :
+                    std::moneypunct_byname<char,intl>(name)
+                {
+                }
+            protected:
+                virtual std::string do_grouping() const
+                {
+                    return std::string();
+                }
+            };
 
-        std::locale workaround_gcc_utf8_bug(std::locale const &l)
-        {
-            if(    (unsigned char)(std::use_facet<std::numpunct_byname<char> >(l).thousands_sep()) > 0x7F
-                || (unsigned char)(std::use_facet<std::numpunct_byname<char> >(l).decimal_point()) > 0x7F)
+            std::locale workaround_utf8_bug(std::locale l)
             {
-                l=std::locale(l,new numpunct_utf8(l.name()));
+                if((unsigned char)(std::use_facet<std::numpunct_byname<char> >(l).thousands_sep()) > 0x7F)
+                {
+                    l=std::locale(l,new numpunct_utf8(l.name().c_str()));
+                }
+                if((unsigned char)(std::use_facet<std::moneypunct_byname<char,true> >(l).thousands_sep()) > 0x7F)
+                {
+                    l=std::locale(l,new moneypunct_utf8<true>(l.name().c_str()));
+                }
+                if((unsigned char)(std::use_facet<std::moneypunct_byname<char,false> >(l).thousands_sep()) > 0x7F)
+                {
+                    l=std::locale(l,new moneypunct_utf8<false>(l.name().c_str()));
+                }
+                return l;
             }
-            if(    (unsigned char)(std::use_facet<std::numpunct_byname<char,true> >(l).thousands_sep()) > 0x7F
-                || (unsigned char)(std::use_facet<std::numpunct_byname<char,true> >(l).decimal_point()) > 0x7F)
-            {
-                l=std::locale(l,new moneypunct_utf8<true>(l.name()));
-            }
-            if(    (unsigned char)(std::use_facet<std::numpunct_byname<char,false> >(l).thousands_sep()) > 0x7F
-                || (unsigned char)(std::use_facet<std::numpunct_byname<char,false> >(l).decimal_point()) > 0x7F)
-            {
-                l=std::locale(l,new moneypunct_utf8<false>(l.name()));
-            }
-            return l;
-        }
+
+        } // impl
 
         struct generator::data {
             typedef std::pair<std::string,std::string> locale_id_type;
@@ -151,71 +137,52 @@ namespace cppcms {
             d->cached.empty();
         }
 
-
-        std::locale generator::generate(std::string const &id,std::string encoding) const
-        {
-        }
-
-        std::locale generator::get_base(std::string id,std::string encoding)
-        {
-        }
-
-        static std::string extract_encoding_from_id(std::string posix_id)
-        {
-            size_t n = posix_id.find('.');
-            if(n!=std::string::npos) {
-                size_t e = posix_id.find('@',n);
-                if(e == std::string::npos)
-                    return posix_id.substr(n+1);
-                else
-                    return posix_id.substr(n+1,e-n-1);
-            }
-            else
-                return std::string();
-        }
-
-        static std::locale::get_locale(std::string id, std::string encoding)
-        {
-            if(id.empty()) {
-                std::locale tmp=std::locale("");
-                id=tmp.name();
-            }
-
-            std::string tmp = extract_encoding_from_id(id);
-            if(!tmp.empty()) {
-                return std::locale(id);
-            }
-            try {
-                return std::locale(id+"."+encoding);
-            }
-            catch(std::exception const &e)
-            {
-            }
-            return std::locale(id);
-        }
-
-        static std::locale::get_encoding(std::string id,std::string encoding)
-        {
-            if(id.empty()) {
-                std::locale tmp=std::locale("");
-                id=tmp.name();
-            }
-            std::string tmp = extract_encoding_from_id(id);
-            if(!tmp.empty())
-                return tmp;
-            if(!encoding.empty())
-                return encoding;
-            return "UTF-8"; 
-        }
-
         std::locale generator::generate(std::string const &id) const
         {
-            return complete_generation(result);
+            return generate(id,d->encoding);
         }
 
-        std::locale generator::generate(std::string const &id,std::string const &encoding) const
+        std::locale generator::generate(std::string const &id,std::string const &input_encoding) const
         {
-            return complete_generation(result);
+            static const boost::regex reg("^([a-zA-Z]+)(([\\-_])([a-zA-Z]+))?(\\.(\\w+))?(@(\\w+))?$");
+
+            boost::cmatch m;
+            std::string language="C",country,variant,encoding,sep;
+
+            if(boost::regex_match(id.c_str(),m,reg)) {
+                language=m[1];
+                sep=m[3];
+                country=m[4];
+                encoding=m[6];
+                variant=m[8];
+            }
+
+            if(encoding.empty())
+                encoding = input_encoding;
+            if(encoding.empty())
+                encoding = "UTF-8";
+            
+            std::string trys[] = {
+                language+sep+country+"."+encoding+"@" + variant,
+                language+"."+encoding+"@" + variant,
+                language+sep+country+"."+encoding,
+                std::string("C")
+            };
+
+            std::locale the_locale=std::locale::classic();
+
+            for(unsigned i=0;i<sizeof(trys)/sizeof(std::string);i++) {
+                try {
+                    the_locale=std::locale(trys[i].c_str());
+                    break;
+                }
+                catch(std::exception const &e) {}
+            }
+
+            the_locale=std::locale(the_locale,new info(language,country,variant,encoding));
+            
+            return add_facets(the_locale);
+
         }
 
         void generator::preload(std::string const &id) 
@@ -226,51 +193,31 @@ namespace cppcms {
         {
             d->cached[data::locale_id_type(id,encoding)]=generate(id,encoding);
         }
-        void generator::preload(std::locale const &base,std::string const &id)
-        {
-            d->cached[data::locale_id_type(id,"")]=generate(base,id);
-        }
-        void generator::preload(std::locale const &base,std::string const &id,std::string const &encoding)
-        {
-            d->cached[data::locale_id_type(id,encoding)]=generate(base,id,encoding);
-        }
         
-        template<typename CharType>
-        std::locale generator::generate_for(std::locale const &source) const
+        std::locale generator::add_facets(std::locale const &source) const
         {
             std::locale result=source;
             info const &inf=std::use_facet<info>(source);
-            if(d->cats & collation_facet)
-                result=std::locale(result,collator<CharType>::create(inf));
-            if(d->cats & formatting_facet) {
-                result=std::locale(result,new num_format<CharType>());
-                result=std::locale(result,new num_parse<CharType>());
-            }
-            if(d->cats & message_facet) {
-                if(!d->default_domain.empty() && !d->paths.empty()) {
-                    std::vector<std::string> domains;
-                    domains.push_back(d->default_domain);
-                    for(std::set<std::string>::const_iterator p=d->domains.begin(),e=d->domains.end();p!=e;++p) {
-                        if(*p!=d->default_domain) {
-                            domains.push_back(*p);
-                        }
+
+            result=std::locale(result,new num_format());
+
+            if(!d->default_domain.empty() && !d->paths.empty()) {
+                std::vector<std::string> domains;
+                domains.push_back(d->default_domain);
+                for(std::set<std::string>::const_iterator p=d->domains.begin(),e=d->domains.end();p!=e;++p) {
+                    if(*p!=d->default_domain) {
+                        domains.push_back(*p);
                     }
-                    result=std::locale(result,message_format<CharType>::create(inf,domains,d->paths));
                 }
+                result=std::locale(result,message_format<char>::create(inf,domains,d->paths));
             }
-            if(d->cats & codepage_facet) {
-                result=std::locale(result,code_converter<CharType>::create(inf));
-            }
+
+            if(inf.utf8())
+                result=impl::workaround_utf8_bug(result);
+
             return result;
         }
         
-        std::locale generator::complete_generation(std::locale const &source) const
-        {
-            std::locale result=source;
-            if(d->chars & char_facet)
-                result=generate_for<char>(result);
-            return result;
-        }
         std::locale generator::get(std::string const &id) const
         {
             data::cached_type::const_iterator p=d->cached.find(data::locale_id_type(id,""));            

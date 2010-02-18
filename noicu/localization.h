@@ -15,6 +15,7 @@
 #include "locale_info.h"
 #include "locale_message.h"
 #include "locale_numeric.h"
+#include "locale_conversion.h"
 
 #endif
 

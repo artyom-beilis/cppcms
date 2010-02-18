@@ -114,9 +114,7 @@ namespace cppcms {
 
         private:
 
-            template<typename CharType>
-            std::locale generate_for(std::locale const &source) const;
-            std::locale complete_generation(std::locale const &source) const;
+            std::locale add_facets(std::locale const &source) const;
 
             generator(generator const &);
             void operator=(generator const &);

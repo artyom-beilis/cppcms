@@ -7,6 +7,7 @@
 //
 #define CPPCMS_LOCALE_SOURCE
 #include "locale_info.h"
+#include "locale_conversion.h"
 #include "locale_src_info_impl.hpp"
 
 namespace cppcms {
@@ -18,46 +19,37 @@ namespace cppcms {
         {
         }
 
-        info::info(std::string posix_id,std::string encoding,size_t refs) : 
-            std::locale::facet(refs)
+        info::info(std::string lang,std::string country,std::string variant,std::string encoding,size_t refs) : 
+            std::locale::facet(refs),
+            impl_(new info_impl())
         {
-            impl_.reset(new info_impl());
-
-            static boost::regex locm("^([a-zA-Z]+)([\-_ ]([a-zA-Z]+))?(\.([a-zA-Z_-0-9]+))?(@([a-zA-Z_-0-9]))?$");
-
-        }
-
-        info::info(std::string posix_id,std::string encoding,size_t refs) : 
-            std::locale::facet(refs)
-        {
-            impl_.reset(new info_impl());
+            impl_->language = lang;
+            impl_->country = country;
+            impl_->variant = variant;
             impl_->encoding = encoding;
-
-            if(!posix_id.empty()) {
-                impl_->locale = icu::Locale::createCanonical(posix_id.c_str());
-            }
-            
-            if(ucnv_compareNames(impl_->encoding.c_str(),"UTF8")==0)
-                utf8_=true;
+            encoding = to_lower(encoding,std::locale::classic());
+            if(encoding == "utf-8" || encoding=="utf8" || encoding == "cp65001" || encoding=="65001")
+                utf8_ = true;
             else
-                utf8_=false;
+                utf8_ = false;
+
         }
 
         std::string info::encoding() const
         {
-            return impl()->encoding;
+            return impl_->encoding;
         }
         std::string info::language() const
         {
-            return impl()->locale.getLanguage();
+            return impl_->language;
         }
         std::string info::country() const
         {
-            return impl()->locale.getCountry();
+            return impl_->country;
         }
         std::string info::variant() const
         {
-            return impl()->locale.getVariant();
+            return impl_->variant;
         }
     }
 }

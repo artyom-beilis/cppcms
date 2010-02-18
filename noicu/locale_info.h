@@ -30,19 +30,10 @@ namespace cppcms {
             static std::locale::id id;
             
             ///
-            /// Creates locale using general locale id that includes encoding
-            /// If encoding is not found, default system encoding is taken, if the string is empty
-            /// default system locale is used.
-            ///
-            info(std::string posix_id,size_t refs = 0);
-            
-            ///
             /// Creates locale using general locale id and cherset encoding
             /// if posix_id is empty default system locale is used.
             ///
-            info(std::string posix_id,std::string encoding,size_t refs = 0);
-
-
+            info(std::string lang,std::string country,std::string variant,std::string encoding,size_t refs = 0);
             
             ///
             /// Get language name
