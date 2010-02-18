@@ -81,9 +81,12 @@
 
 /* "Have Atomic operations:" */
 #cmakedefine HAVE_SYNC_FETCH_AND_ADD
+#cmakedefine HAVE_GCC_BITS_EXCHANGE_AND_ADD
+#cmakedefine HAVE_GCC_EXT_EXCHANGE_AND_ADD
 #cmakedefine HAVE_FREEBSD_ATOMIC
 #cmakedefine HAVE_SOLARIS_ATOMIC
 #cmakedefine HAVE_MAC_OS_X_ATOMIC
+#cmakedefine HAVE_WIN32_INTERLOCKED
 
 /* "Have g++ typeof" */
 #cmakedefine HAVE_UNDERSCORE_TYPEOF

@@ -43,7 +43,18 @@ run()
 	fi
 }
 
+basic_test()
+{
+	EXE=$1
+	echo /BIN/$EXE
+	if ! $BIN/$EXE ; then
+		echo "Failed!"
+		exit 1
+	fi
+}
 
+
+basic_test atomic_test
 run form_test "" ""
 
 if [ "$FAST" != "fast-only" ]; then

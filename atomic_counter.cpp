@@ -1,28 +1,69 @@
 #define CPPCMS_SOURCE
 #include "atomic_counter.h"
 #include "config.h"
+#include <string.h>
 
-#if defined HAVE_SYNC_FETCH_AND_ADD 
-# define cppcms_atomic_set(p,v) ((p)->l=v)
-# define cppcms_atomic_add_and_fetch(p,d) ( __sync_add_and_fetch(&(p)->i,d) )
-#elif defined(CPPCMS_WIN32)
-# include <windows.h>
-# define cppcms_atomic_set(p,v) ((p)->l=v)
-# define cppcms_atomic_add_and_fetch(p,d) InterlockedIncrement(&(p)->l,d)
+#if defined(HAVE_WIN32_INTERLOCKED)
+
+#   include <windows.h>
+#   define cppcms_atomic_set(p,v) ((p)->l=v)
+    long static cppcms_atomic_add_and_fetch_impl(volatile long *v,long d)
+    {
+	long old,prev;
+	do{
+		old = *v;
+		prev = InterlockedCompareExchange(v,old+d,old);
+	}
+	while(prev != old);
+	return old+d;
+    }
+#   define cppcms_atomic_add_and_fetch(p,d) cppcms_atomic_add_and_fetch_impl(&(p)->l,d)
+
+
 #elif defined(HAVE_FREEBSD_ATOMIC)
-# include <sys/types.h>
-# include <machine/atomic.h>
-# define cppcms_atomic_set(p,v) ((p)->ui=v)
-# define cppcms_atomic_add_and_fetch(p,d) (atomic_fetchadd_int(&(p)->ui,d) + d)
+
+#   include <sys/types.h>
+#   include <machine/atomic.h>
+#   define cppcms_atomic_set(p,v) ((p)->ui=v)
+#   define cppcms_atomic_add_and_fetch(p,d) (atomic_fetchadd_int(&(p)->ui,d) + d)
+
+
 #elif defined(HAVE_SOLARIS_ATOMIC)
-# include <atomic.h>
-# define cppcms_atomic_set(p,v) ((p)->ui=v)
-# define cppcms_atomic_add_and_fetch(p,d) (atomic_add_int_nv(&(p)->ui,d))
+
+#   include <atomic.h>
+#   define cppcms_atomic_set(p,v) ((p)->ui=v)
+#   define cppcms_atomic_add_and_fetch(p,d) (atomic_add_int_nv(&(p)->ui,d))
+
+
 #elif defined(HAVE_MAC_OS_X_ATOMIC)
-# include <libkern/OSAtomic.h>
-# define cppcms_atomic_set(p,v) ((p)->i=v)
-# define cppcms_atomic_add_and_fetch(p,d) (OSAtomicAdd32(d,&(p)->i))
-#else
+
+#   include <libkern/OSAtomic.h>
+#   define cppcms_atomic_set(p,v) ((p)->i=v)
+#   define cppcms_atomic_add_and_fetch(p,d) (OSAtomicAdd32(d,&(p)->i))
+
+#elif defined HAVE_SYNC_FETCH_AND_ADD 
+
+#   define cppcms_atomic_set(p,v) ((p)->l=v)
+#   define cppcms_atomic_add_and_fetch(p,d) ( __sync_add_and_fetch(&(p)->i,d) )
+
+
+#   elif defined(HAVE_GCC_BITS_EXCHANGE_AND_ADD)
+
+#   include <bits/atomicity.h>
+    using __gnu_cxx::__exchange_and_add;
+#   define cppcms_atomic_set(p,v) ((p)->i=v)
+#   define cppcms_atomic_add_and_fetch(p,d) ( __exchange_and_add(&(p)->i,d)+d )
+
+
+#elif defined(HAVE_GCC_EXT_EXCHANGE_AND_ADD)
+
+#   include <ext/atomicity.h>
+    using __gnu_cxx::__exchange_and_add;
+#   define cppcms_atomic_set(p,v) ((p)->i=v)
+#   define cppcms_atomic_add_and_fetch(p,d) ( __exchange_and_add(&(p)->i,d)+d )
+
+
+#else  // Failing back to pthreads
 # include <pthread.h>
 # define CPPCMS_PTHREAD_ATOMIC 
 #endif
@@ -31,8 +72,10 @@
 namespace cppcms {
 
 #if !defined(CPPCMS_PTHREAD_ATOMIC)
-	atomic_counter::atomic_counter(long value) 
+	atomic_counter::atomic_counter(long value)  
 	{
+		memset(&value_,0,sizeof(value_));
+		mutex_ = 0;
 		cppcms_atomic_set(&value_,value);
 	}
 
