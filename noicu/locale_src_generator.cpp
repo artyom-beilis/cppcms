@@ -36,11 +36,11 @@ namespace cppcms {
                 }
             };
 
-            template<bool intl>
-            class moneypunct_utf8 : public std::moneypunct_byname<char,intl> {
+            template<bool Intl>
+            class moneypunct_utf8 : public std::moneypunct_byname<char,Intl> {
             public:
                 moneypunct_utf8(char const *name) :
-                    std::moneypunct_byname<char,intl>(name)
+                    std::moneypunct_byname<char,Intl>(name)
                 {
                 }
             protected:

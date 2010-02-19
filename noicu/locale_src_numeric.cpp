@@ -1,3 +1,4 @@
+#define CPPCMS_LOCALE_SOURCE
 #include "locale_numeric.h"
 #include "config.h"
 #ifdef CPPCMS_USE_EXTERNAL_BOOST
