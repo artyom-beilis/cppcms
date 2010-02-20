@@ -1,7 +1,7 @@
-#!/usr/bin/env bash 
+#!/bin/sh 
 BIN="$1"
 
-if [ "$BIN" == "" ]; then
+if test "x$BIN" = "x" ; then
 	echo "Usege unit_test.sh /path/to/build/directory [fast-only]"
 	exit 1;
 fi
@@ -37,7 +37,7 @@ run()
 	fi
 	kill $PID
 	wait $PID
-	if [ "$ERROR" == "1" ]; then
+	if test "$ERROR" = "1" ; then
 		echo "Failed!"
 		exit 1
 	fi
@@ -60,12 +60,12 @@ basic_test storage_test
 
 run form_test "" ""
 
-if [ "$FAST" != "fast-only" ]; then
+if test "x$FAST" != "xfast-only" ; then
 	for ASYNC in true false 
 	do
 		run proto_test "--test-async=$ASYNC --service-api=http --service-port=8080 --service-ip=127.0.0.1" http
 		run proto_test "--test-async=$ASYNC --service-api=scgi --service-port=8080 --service-ip=127.0.0.1" scgi_tcp
-		if [ $WIN32 == 0 ]; then
+		if test "$WIN32" = 0 ; then
 			run proto_test "--test-async=$ASYNC --service-api=scgi --service-socket=/tmp/cppcms_test_socket" scgi_unix
 		fi
 	done
