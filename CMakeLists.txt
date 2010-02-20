@@ -503,6 +503,7 @@ if(NOT DISABLE_SCGI)
 	set(CPPCMS_HAS_SCGI 1)
 endif()
 
+
 if(NOT DISABLE_HTTP)
 	set(CPPCMS_SOURCES ${CPPCMS_SOURCES} http_api.cpp)
 	set(CPPCMS_HAS_HTTP 1)
@@ -662,6 +663,8 @@ set(ALL_TESTS
 	form_test
 	proto_test
 	atomic_test
+	encryptor_test
+	storage_test
 	)
 foreach(TEST ${ALL_TESTS})
 	add_executable(${TEST} tests/${TEST}.cpp)

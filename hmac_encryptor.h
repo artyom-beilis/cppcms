@@ -6,7 +6,7 @@ namespace cppcms {
 namespace sessions {
 namespace impl {
 
-class hmac_cipher : public base_encryptor {
+class CPPCMS_API hmac_cipher : public base_encryptor {
 	void hash(unsigned char const *,size_t,unsigned char md5[16]);
 public:
 	virtual std::string encrypt(std::string const &plain,time_t timeout);

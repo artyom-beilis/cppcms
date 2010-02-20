@@ -12,7 +12,7 @@ namespace cppcms {
 namespace sessions {
 namespace impl {
 
-class base_encryptor : public cppcms::sessions::encryptor {
+class CPPCMS_API base_encryptor : public cppcms::sessions::encryptor {
 public:
 	virtual std::string encrypt(std::string const &plain,time_t timeout) = 0;
 	virtual bool decrypt(std::string const &cipher,std::string &plain,time_t *timeout=NULL) = 0;

@@ -55,6 +55,9 @@ basic_test()
 
 
 basic_test atomic_test
+basic_test encryptor_test
+basic_test storage_test
+
 run form_test "" ""
 
 if [ "$FAST" != "fast-only" ]; then

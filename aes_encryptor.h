@@ -9,7 +9,7 @@ namespace cppcms {
 namespace sessions {
 namespace impl {
 
-class aes_cipher : public base_encryptor {
+class CPPCMS_API aes_cipher : public base_encryptor {
 	gcry_cipher_hd_t hd_out;
 	gcry_cipher_hd_t hd_in;
 	struct aes_hdr {

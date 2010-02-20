@@ -126,8 +126,6 @@ public:
 	{
 		name_=object_->file_name(sid);
 		object_->lock(sid_);
-		if(!object_->file_lock_)
-			return;
 		for(;;) {
 			if(create)
 				fd_=::open(name_.c_str(),O_CREAT | O_RDWR,0666);
@@ -135,6 +133,9 @@ public:
 				fd_=::open(name_.c_str(),O_RDWR);
 
 			if(fd_ < 0) return;
+
+			if(!object_->file_lock_)
+				return;
 
 			struct flock lock;
 			memset(&lock,0,sizeof(lock));
