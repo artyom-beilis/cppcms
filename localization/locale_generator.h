@@ -1,5 +1,5 @@
 //
-//  Copyright (c) 2009 Artyom Beilis (Tonkikh)
+//  Copyright (c) 2009-2010 Artyom Beilis (Tonkikh)
 //
 //  Distributed under the Boost Software License, Version 1.0. (See
 //  accompanying file LICENSE_1_0.txt or copy at
@@ -14,10 +14,13 @@
 #include <memory>
 
 namespace cppcms {
+    ///
+    /// \brief This is the main namespace that encloses all localization classes 
+    ///
     namespace locale {
 
         ///
-        /// \brief a enum type that specifies the character type that locales can be generated for
+        /// a enum type that specifies the character type that locales can be generated for
         /// 
         typedef enum {
             char_facet      = 1 << 0,   ///< 8-bit character facets
@@ -29,7 +32,7 @@ namespace cppcms {
         } character_facet_type;
 
         ///
-        /// \brief a special enum used for more fine grained generation of facets
+        /// a special enum used for more fine grained generation of facets
         ///
         typedef enum {
             collation_facet = 1 << 0,   ///< Generate collation facets
@@ -157,7 +160,7 @@ namespace cppcms {
             ///
             std::locale get(std::string const &id) const;
             ///
-            /// Get a locale with id \a id and encoding \a encociding from cache, if not found, generate one
+            /// Get a locale with id \a id and encoding \a encoding from cache, if not found, generate one
             ///
             std::locale get(std::string const &id,std::string const &encoding) const;
 

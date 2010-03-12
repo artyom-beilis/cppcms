@@ -1,5 +1,5 @@
 //
-//  Copyright (c) 2009 Artyom Beilis (Tonkikh)
+//  Copyright (c) 2009-2010 Artyom Beilis (Tonkikh)
 //
 //  Distributed under the Boost Software License, Version 1.0. (See
 //  accompanying file LICENSE_1_0.txt or copy at
@@ -8,13 +8,6 @@
 #define CPPCMS_LOCALE_SOURCE
 #include "locale_conversion.h"
 #include "locale_info.h"
-#include "config.h"
-#ifdef CPPCMS_USE_EXTERNAL_BOOST
-#   include <boost/noncopyable.hpp>
-#else // Internal Boost
-#   include <cppcms_boost/noncopyable.hpp>
-    namespace boost = cppcms_boost;
-#endif
 #include <unicode/normlzr.h>
 #include <unicode/ustring.h>
 

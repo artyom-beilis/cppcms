@@ -1,5 +1,5 @@
 //
-//  Copyright (c) 2009 Artyom Beilis (Tonkikh)
+//  Copyright (c) 2009-2010 Artyom Beilis (Tonkikh)
 //
 //  Distributed under the Boost Software License, Version 1.0. (See
 //  accompanying file LICENSE_1_0.txt or copy at
@@ -13,7 +13,7 @@
 namespace cppcms {
 namespace locale {
 namespace impl {
-	
+
     inline void throw_icu_error(UErrorCode err)
     {
         throw std::runtime_error(u_errorName(err));

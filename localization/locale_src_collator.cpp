@@ -1,5 +1,5 @@
 //
-//  Copyright (c) 2009 Artyom Beilis (Tonkikh)
+//  Copyright (c) 2009-2010 Artyom Beilis (Tonkikh)
 //
 //  Distributed under the Boost Software License, Version 1.0. (See
 //  accompanying file LICENSE_1_0.txt or copy at
@@ -8,20 +8,12 @@
 #define CPPCMS_LOCALE_SOURCE
 #include "locale_collator.h"
 #include "locale_info.h"
-#include "config.h"
-#ifdef CPPCMS_USE_EXTERNAL_BOOST
-#   include <boost/shared_ptr.hpp>
-#   include <boost/functional/hash.hpp>
-#else // Internal Boost
-#   include <cppcms_boost/shared_ptr.hpp>
-#   include <cppcms_boost/functional/hash.hpp>
-    namespace boost = cppcms_boost;
-#endif
 #include <vector>
 #include <limits>
 
 #include "locale_src_info_impl.hpp"
 #include "locale_src_uconv.hpp"
+#include "locale_src_mo_hash.hpp"
 
 #include <unicode/coll.h>
 
@@ -58,38 +50,33 @@ namespace cppcms {
                         return 1;
                     return 0;
                 }
-                
-                std::basic_string<CharType> do_transform(level_type level,CharType const *b,CharType const *e) const
+               
+                std::vector<uint8_t> do_basic_transform(level_type level,CharType const *b,CharType const *e) const 
                 {
                     icu::UnicodeString str=cvt_.icu(b,e);
-                    std::vector<char> tmp;
+                    std::vector<uint8_t> tmp;
                     tmp.resize(str.length());
-                    boost::shared_ptr<icu::Collator> collate=collates_[limit(level)];
-                    int len = collate->getSortKey(str,reinterpret_cast<uint8_t *>(&tmp[0]),tmp.size());
+                    icu::Collator const &collate=*collates_[limit(level)];
+                    int len = collate.getSortKey(str,&tmp[0],tmp.size());
                     if(len > int(tmp.size())) {
                         tmp.resize(len);
-                        collate->getSortKey(str,reinterpret_cast<uint8_t *>(&tmp[0]),tmp.size());
+                        collate.getSortKey(str,&tmp[0],tmp.size());
                     }
                     else 
                         tmp.resize(len);
-
-                    if( std::numeric_limits<CharType>::min() == std::numeric_limits<char>::min() // Both unsigned or same
-                        || (std::numeric_limits<CharType>::min() < 0 && std::numeric_limits<char>::min() < 0)) // both signed
-                    {
-                        return std::basic_string<CharType>(tmp.begin(),tmp.end());
-                    }
-                    else {
-                        std::basic_string<CharType> out(tmp.size(),0);
-                        for(unsigned i=0;i<tmp.size();i++)
-                            out[i]=tmp[i]+128;
-                        return out;
-                    }
+                    return tmp;
+                }
+                std::basic_string<CharType> do_transform(level_type level,CharType const *b,CharType const *e) const
+                {
+                    std::vector<uint8_t> tmp = do_basic_transform(level,b,e);
+                    return std::basic_string<CharType>(tmp.begin(),tmp.end());
                 }
                 
                 long do_hash(level_type level,CharType const *b,CharType const *e) const
                 {
-                    boost::hash<std::basic_string<CharType> > hasher;
-                    return hasher(do_transform(level,b,e));
+                    std::vector<uint8_t> tmp = do_basic_transform(level,b,e);
+                    tmp.push_back(0);
+                    return pj_winberger_hash_function(reinterpret_cast<char *>(&tmp.front()));
                 }
 
                 collate_impl(icu::Locale const &locale,std::string encoding) : cvt_(encoding)
@@ -100,7 +87,8 @@ namespace cppcms {
                         icu::Collator::PRIMARY,
                         icu::Collator::SECONDARY,
                         icu::Collator::TERTIARY,
-                        icu::Collator::QUATERNARY
+                        icu::Collator::QUATERNARY,
+                        icu::Collator::IDENTICAL
                     };
                     
                     for(int i=0;i<level_count;i++) {
@@ -117,9 +105,9 @@ namespace cppcms {
                 }
 
             private:
-                static const int level_count = 4;
+                static const int level_count = 5;
                 icu_std_converter<CharType>  cvt_;
-                boost::shared_ptr<icu::Collator> collates_[level_count];
+                std::auto_ptr<icu::Collator> collates_[level_count];
             };
 
         } /// impl

@@ -1,5 +1,5 @@
 //
-//  Copyright (c) 2009 Artyom Beilis (Tonkikh)
+//  Copyright (c) 2009-2010 Artyom Beilis (Tonkikh)
 //
 //  Distributed under the Boost Software License, Version 1.0. (See
 //  accompanying file LICENSE_1_0.txt or copy at
@@ -19,33 +19,65 @@ namespace cppcms {
     namespace locale {
 
         class time_zone_impl;
+        ///
+        /// \addtogroup date_time
+        ///
+        /// @{
 
         ///
-        /// \brief class used for calculation of time zone offsets
+        /// \brief this class represents time zone and time zone related information
         ///
-        class time_zone {
+        /// It allows to readout all supported time zones, set default time zone and receive an information like
+        /// the offset from UTC time.
+        ///
+        class CPPCMS_API time_zone {
         public:
-            
+
             ///
-            /// Create GMT Time Zone
+            /// Get a list of all supported time zone ids
+            ///
+            static std::set<std::string> all_zones();
+
+            ///
+            /// Set default time zone
+            ///
+            /// Please note, this function does not change system time zone but all time zones related to this library/
+            /// This function is not safe to use in multithreaded environment.
+            ///
+            static void global(time_zone const &zone);
+ 
+            ///
+            /// Creates default Time Zone
             ///
             time_zone();
 
+            ///
+            /// Copies time zone
+            /// 
             time_zone(time_zone const &other);
+            ///
+            /// Assigns time zone
+            ///
             time_zone const &operator=(time_zone const &other);
+
             ~time_zone();
             ///
             /// Create time zone with id \a id
             ///
             time_zone(std::string const &id);
 
+            ///
+            /// Compares two time zones by ids
+            ///
             bool operator==(time_zone const &other) const;
 
+            ///
+            /// Opposite of ==
+            ///
             bool operator!=(time_zone const &other) const
             {
                 return !(*this==other);
             }
-
 
             ///
             /// Get time zone id
@@ -57,38 +89,20 @@ namespace cppcms {
             /// should be set to true
             /// 
             double offset_from_gmt(double time,bool is_local_time = false) const;
-
-            ///
-            /// Adjust locale time to GMT time
-            ///
-            template<typename TimeType>
-            TimeType to_gmt(TimeType local_time) const
-            {
-                return local_time - offset_from_gmt(static_cast<double>(local_time),true);
-            }
-
-            ///
-            /// Adjust GMT time to local time
-            ///
-            template<typename TimeType>
-            TimeType to_local(TimeType gmt_time) const
-            {
-                return gmt_time + offset_from_gmt(static_cast<double>(gmt_time),false);
-            }
             
-            ///
-            /// Get a list of all supported time zone ids
-            ///
-            static std::set<std::string> all_zones();
 
-            ///
-            /// For internal Use only -- don't use it
-            ///
+            /// \cond INTERNAL
+
+            //
+            // For internal Use only -- don't use it
+            //
 
             time_zone_impl *impl() const
             {
                 return impl_.get();
             }
+
+            /// \endcond
         private:
             std::auto_ptr<time_zone_impl> impl_;
         };
@@ -100,6 +114,8 @@ namespace cppcms {
         template<typename CharType>
         std::basic_ostream<CharType> &operator<<(std::basic_ostream<CharType> &out,time_zone const &tz);
         
+
+        /// \cond INTERNAL
         template<>
         CPPCMS_API std::basic_ostream<char> &operator<<(std::basic_ostream<char> &out,time_zone const &tz);
     
@@ -107,7 +123,6 @@ namespace cppcms {
         template<>
         CPPCMS_API std::basic_ostream<wchar_t> &operator<<(std::basic_ostream<wchar_t> &out,time_zone const &tz);
         #endif
-    
         
         #ifdef CPPCMS_HAS_CHAR16_T
         template<>
@@ -118,9 +133,14 @@ namespace cppcms {
         template<>
         CPPCMS_API std::basic_ostream<char32_t> &operator<<(std::basic_ostream<char32_t> &out,time_zone const &tz);
         #endif
+        /// \endcond
     
-    }
-}
+        ///
+        /// @}
+        ///
+
+    } // locale
+} // boost
 
 #endif
 // vim: tabstop=4 expandtab shiftwidth=4 softtabstop=4

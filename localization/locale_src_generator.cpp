@@ -1,5 +1,5 @@
 //
-//  Copyright (c) 2009 Artyom Beilis (Tonkikh)
+//  Copyright (c) 2009-2010 Artyom Beilis (Tonkikh)
 //
 //  Distributed under the Boost Software License, Version 1.0. (See
 //  accompanying file LICENSE_1_0.txt or copy at
@@ -7,11 +7,12 @@
 //
 #define CPPCMS_LOCALE_SOURCE
 #include "locale_generator.h"
-#include "locale_numeric.h"
 #include "locale_collator.h"
 #include "locale_info.h"
 #include "locale_message.h"
 #include "locale_codepage.h"
+#include "locale_src_numeric.hpp"
+
 namespace cppcms {
     namespace locale {
         struct generator::data {
@@ -105,7 +106,7 @@ namespace cppcms {
         }
         void generator::clear_cache()
         {
-            d->cached.empty();
+            d->cached.clear();
         }
 
         std::locale generator::generate(std::string const &id) const
@@ -175,7 +176,15 @@ namespace cppcms {
                 }
             }
             if(d->cats & codepage_facet) {
-                result=std::locale(result,code_converter<CharType>::create(inf));
+                #if defined(CPPCMS_HAS_CHAR16_T) && defined(CPPCMS_NO_CHAR16_T_CODECVT)
+                if(typeid(CharType)==typeid(char16_t))
+                    return result;
+                #endif
+                #if defined(CPPCMS_HAS_CHAR32_T) && defined(CPPCMS_NO_CHAR32_T_CODECVT)
+                if(typeid(CharType)==typeid(char32_t))
+                    return result;
+                #endif
+                result=std::locale(result,create_codecvt<CharType>(inf));
             }
             return result;
         }

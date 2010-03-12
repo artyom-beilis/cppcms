@@ -435,6 +435,7 @@ if(NOT USE_STD_LOCALES)
 		localization/locale_src_codepage.cpp
 		localization/locale_src_collator.cpp
 		localization/locale_src_conversion.cpp
+		localization/locale_src_date_time.cpp
 		localization/locale_src_format.cpp
 		localization/locale_src_formatter.cpp
 		localization/locale_src_formatting.cpp
@@ -442,21 +443,21 @@ if(NOT USE_STD_LOCALES)
 		localization/locale_src_info.cpp
 		localization/locale_src_message.cpp
 		localization/locale_src_mo_lambda.cpp
-		localization/locale_src_timezone.cpp)
+		localization/locale_src_time_zone.cpp)
 
 	set(CPPCMS_PUBLIC_HEADERS ${CPPCMS_PUBLIC_HEADERS}
 		localization/locale_boundary.h
 		localization/locale_codepage.h
 		localization/locale_collator.h
+		localization/locale_config.h
 		localization/locale_conversion.h
+		localization/locale_date_time.h
 		localization/locale_format.h
-		localization/locale_formatter.h
 		localization/locale_formatting.h
 		localization/locale_generator.h
 		localization/locale_info.h
 		localization/locale_message.h
-		localization/locale_numeric.h
-		localization/locale_timezone.h
+		localization/locale_time_zone.h
 		localization/localization.h)
 
 

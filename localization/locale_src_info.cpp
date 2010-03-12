@@ -1,5 +1,5 @@
 //
-//  Copyright (c) 2009 Artyom Beilis (Tonkikh)
+//  Copyright (c) 2009-2010 Artyom Beilis (Tonkikh)
 //
 //  Distributed under the Boost Software License, Version 1.0. (See
 //  accompanying file LICENSE_1_0.txt or copy at
@@ -14,7 +14,7 @@
 
 namespace cppcms {
     namespace locale {
-        
+
         std::locale::id info::id;
 
         info::~info()
@@ -53,7 +53,16 @@ namespace cppcms {
             std::locale::facet(refs)
         {
             impl_.reset(new info_impl());
-            impl_->encoding = encoding;
+            size_t n = posix_id.find('.');
+            if(n!=std::string::npos) {
+                size_t e = posix_id.find('@',n);
+                if(e == std::string::npos)
+                    impl_->encoding = posix_id.substr(n+1);
+                else
+                    impl_->encoding = posix_id.substr(n+1,e-n-1);
+            }
+            else
+                impl_->encoding = encoding;
 
             if(!posix_id.empty()) {
                 impl_->locale = icu::Locale::createCanonical(posix_id.c_str());

@@ -1,70 +1,26 @@
 //
-//  Copyright (c) 2009 Artyom Beilis (Tonkikh)
+//  Copyright (c) 2009-2010 Artyom Beilis (Tonkikh)
 //
 //  Distributed under the Boost Software License, Version 1.0. (See
 //  accompanying file LICENSE_1_0.txt or copy at
 //  http://www.boost.org/LICENSE_1_0.txt)
 //
 #define CPPCMS_LOCALE_SOURCE
-#include "locale_timezone.h"
+#include "locale_time_zone.h"
 #include "locale_info.h"
-#include "config.h"
-#ifdef CPPCMS_USE_EXTERNAL_BOOST
-#   include <boost/noncopyable.hpp>
-#else // Internal Boost
-#   include <cppcms_boost/noncopyable.hpp>
-    namespace boost = cppcms_boost;
-#endif
 #include <unicode/timezone.h>
 #include <unicode/strenum.h>
 #include "locale_src_uconv.hpp"
+#include "locale_src_time_zone_impl.hpp"
 #include "locale_src_info_impl.hpp"
 
 namespace cppcms{
     namespace locale {
-        class time_zone_impl : public boost::noncopyable {
-        public:
-            time_zone_impl(icu::TimeZone *ptr) : tz_(ptr) 
-            {
-            }
-            time_zone_impl(std::string const &id) : tz_(icu::TimeZone::createTimeZone(id.c_str()))
-            {
-            }
-            time_zone_impl() : tz_(icu::TimeZone::getGMT()->clone())
-            {
-            }
-            time_zone_impl *clone() const
-            {
-                return new time_zone_impl(tz_->clone());
-            }
-            double offset(double time,bool is_local_time) const
-            {
-                int32_t raw=0;
-                int32_t dst=0;
-                UErrorCode err=U_ZERO_ERROR;
-                tz_->getOffset(time*1000,is_local_time,raw,dst,err);
-                return raw/1e3+dst/1e3;
-            }
-            std::string id() const
-            {
-                icu::UnicodeString tmp;
-                tz_->getID(tmp);
-                return std::string(tmp.getBuffer(),tmp.getBuffer()+tmp.length());
-            }
-            bool operator==(time_zone_impl const &other) const
-            {
-                return *tz_==*other.tz_;
-            }
-            icu::UnicodeString name(std::locale const &loc) const
-            {
-                icu::UnicodeString tmp;
-                info const &inf=std::use_facet<info>(loc);
-                tz_->getDisplayName(inf.impl()->locale,tmp);
-                return tmp;
-            }
-        private:
-            std::auto_ptr<icu::TimeZone> tz_;
-        };
+
+        void time_zone::global(time_zone const &zone)
+        {
+            icu::TimeZone::adoptDefault(zone.impl()->icu_tz()->clone());
+        }
 
         time_zone::time_zone() : impl_(new time_zone_impl())
         {

@@ -1,5 +1,5 @@
 //
-//  Copyright (c) 2009 Artyom Beilis (Tonkikh)
+//  Copyright (c) 2009-2010 Artyom Beilis (Tonkikh)
 //
 //  Distributed under the Boost Software License, Version 1.0. (See
 //  accompanying file LICENSE_1_0.txt or copy at
@@ -12,9 +12,18 @@
 #include "config.h"
 #include <locale>
 
+
 namespace cppcms {
     namespace locale {
+        
+        ///
+        /// \defgroup convert Text Conversions 
+        ///
+        ///  This module provides various function for string manipulation like Unicode normalization, case conversion etc.
+        /// @{
+        ///
 
+        /// \cond INTERNAL
         namespace impl {
             typedef enum {
                 normalization,
@@ -36,6 +45,7 @@ namespace cppcms {
             #endif
 
         } // impl
+        /// \endcond
  
         ///
         /// Type of normalization
@@ -46,7 +56,7 @@ namespace cppcms {
             norm_nfc,   ///< Canonical decomposition followed by canonical composition
             norm_nfkd,  ///< Compatibility decomposition
             norm_nfkc,  ///< Compatibility decomposition followed by canonical composition.
-            norm_default = norm_nfc, /// Default normalization - canonical decomposition followed by canonical composition
+            norm_default = norm_nfc, ///< Default normalization - canonical decomposition followed by canonical composition
         } norm_type;
        
         ///
@@ -222,13 +232,25 @@ namespace cppcms {
             return impl::convert(impl::case_folding,begin,end,0,&loc);
         }
 
-
+        ///
+        ///@}
+        ///
     } // locale
 
 } // boost
 
 
 #endif
+
+///
+/// \example conversions.cpp
+///
+/// Example of using various text conversion functions.
+///
+/// \example wconversions.cpp
+///
+/// Example of using various text conversion functions with wide strings.
+///
 
 // vim: tabstop=4 expandtab shiftwidth=4 softtabstop=4
 

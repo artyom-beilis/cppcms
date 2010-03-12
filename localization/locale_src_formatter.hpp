@@ -1,5 +1,5 @@
 //
-//  Copyright (c) 2009 Artyom Beilis (Tonkikh)
+//  Copyright (c) 2009-2010 Artyom Beilis (Tonkikh)
 //
 //  Distributed under the Boost Software License, Version 1.0. (See
 //  accompanying file LICENSE_1_0.txt or copy at
@@ -126,25 +126,25 @@ namespace cppcms {
         /// Specialization for real implementation
         ///
         template<>
-        CPPCMS_API std::auto_ptr<formatter<char> > formatter<char>::create(std::ios_base &ios);
+        std::auto_ptr<formatter<char> > formatter<char>::create(std::ios_base &ios);
 
         ///
         /// Specialization for real implementation
         ///
         template<>
-        CPPCMS_API formatter<char> const *formatter<char>::get(std::ios_base &ios);
+        formatter<char> const *formatter<char>::get(std::ios_base &ios);
 
         #ifndef CPPCMS_NO_STD_WSTRING
         ///
         /// Specialization for real implementation
         ///
         template<>
-        CPPCMS_API std::auto_ptr<formatter<wchar_t> > formatter<wchar_t>::create(std::ios_base &ios);
+        std::auto_ptr<formatter<wchar_t> > formatter<wchar_t>::create(std::ios_base &ios);
         ///
         /// Specialization for real implementation
         ///
         template<>
-        CPPCMS_API formatter<wchar_t> const *formatter<wchar_t>::get(std::ios_base &ios);
+        formatter<wchar_t> const *formatter<wchar_t>::get(std::ios_base &ios);
         #endif
 
         #ifdef CPPCMS_HAS_CHAR16_T
@@ -152,12 +152,12 @@ namespace cppcms {
         /// Specialization for real implementation
         ///
         template<>
-        CPPCMS_API std::auto_ptr<formatter<char16_t> > formatter<char16_t>::create(std::ios_base &ios);
+        std::auto_ptr<formatter<char16_t> > formatter<char16_t>::create(std::ios_base &ios);
         ///
         /// Specialization for real implementation
         ///
         template<>
-        CPPCMS_API formatter<char16_t> const *formatter<char16_t>::get(std::ios_base &ios);
+        formatter<char16_t> const *formatter<char16_t>::get(std::ios_base &ios);
         #endif
 
         #ifdef CPPCMS_HAS_CHAR32_T
@@ -165,12 +165,12 @@ namespace cppcms {
         /// Specialization for real implementation
         ///
         template<>
-        CPPCMS_API std::auto_ptr<formatter<char32_t> > formatter<char32_t>::create(std::ios_base &ios);
+        std::auto_ptr<formatter<char32_t> > formatter<char32_t>::create(std::ios_base &ios);
         ///
         /// Specialization for real implementation
         ///
         template<>
-        CPPCMS_API formatter<char32_t> const *formatter<char32_t>::get(std::ios_base &ios);
+        formatter<char32_t> const *formatter<char32_t>::get(std::ios_base &ios);
         #endif
 
     } // namespace locale

@@ -1,5 +1,5 @@
 //
-//  Copyright (c) 2009 Artyom Beilis (Tonkikh)
+//  Copyright (c) 2009-2010 Artyom Beilis (Tonkikh)
 //
 //  Distributed under the Boost Software License, Version 1.0. (See
 //  accompanying file LICENSE_1_0.txt or copy at
@@ -17,30 +17,28 @@
 #include <memory>
 #include "locale_formatting.h"
 
+
 namespace cppcms {
     namespace locale {
+        ///
+        /// \defgroup message Message Formatting (translation) 
+        ///
+        ///This module provides message translation functionality, i.e. allow your application to speak native language
+        ///
+        /// @{
+        /// 
 
         class info;
+
         ///
-        /// \brief Hook class for DLL
-        ///
-        /// This class is big ugly hook for DLL in order to make sure that both program and DLL
-        /// refer to same locale::id when it uses some atomic static members.
-        ///
-        /// Further we specialize it for char, wchar_t, char16_t and char32_t in order to make them work.
+        /// \cond INTERNAL
         ///
         template<typename CharType>
         struct base_message_format: public std::locale::facet
         {
         };
-
        
        
-        ///
-        /// \brief A facet used for message formatting
-        ///
-        /// This class is usually used via translate function
-        /// 
         template<typename CharType>
         class message_format : public base_message_format<CharType>
         {
@@ -70,9 +68,14 @@ namespace cppcms {
 
         };
 
+        /// \endcond
 
         ///
-        /// This class represents a message that can be converted to specific locale message
+        /// \brief This class represents a message that can be converted to specific locale message
+        ///
+        /// It holds original ASCII string that is queried in the dictionary when converting to output string.
+        /// The created string may be UTF-8, UTF-16, UTF-32 or other 8-bit encoded string according to target 
+        /// character type and locale encoding.
         ///
         struct message {
         public:
@@ -248,9 +251,8 @@ namespace cppcms {
                 if(!translated) {
                     char const *msg = plural ? ( n_ == 1 ? cut_comment(id) : plural) : cut_comment(id);
 
-                    std::ctype<CharType> const &ct = std::use_facet<std::ctype<CharType> >(loc);
                     while(*msg)
-                        buffer+=ct.widen(*msg++);
+                        buffer+=static_cast<CharType>(*msg++);
 
                     translated = buffer.c_str();
                 }
@@ -322,6 +324,10 @@ namespace cppcms {
         {
             return message(single,plural,n);
         }
+
+        ///
+        /// \cond INTERNAL
+        ///
         
         template<>
         struct CPPCMS_API base_message_format<char> : public std::locale::facet 
@@ -388,7 +394,14 @@ namespace cppcms {
 
         #endif
 
+        /// \endcond
+
+        ///
+        /// @}
+        ///
+
         namespace as {
+            /// \cond INTERNAL
             namespace details {
                 struct set_domain {
                     std::string domain_id;
@@ -401,9 +414,15 @@ namespace cppcms {
                     return out;
                 }
             } // details
+            /// \endcond
 
             ///
-            /// Manipulator for switching domain in ostream,
+            /// \addtogroup manipulators
+            ///
+            /// @{
+            
+            ///
+            /// Manipulator for switching message domain in ostream,
             ///
             inline details::set_domain domain(std::string const &id)
             {
@@ -411,6 +430,7 @@ namespace cppcms {
                 tmp.domain_id = id;
                 return tmp;
             }
+            /// @}
         } // as
     } // locale 
 } // boost

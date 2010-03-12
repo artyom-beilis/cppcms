@@ -1,5 +1,5 @@
 //
-//  Copyright (c) 2009 Artyom Beilis (Tonkikh)
+//  Copyright (c) 2009-2010 Artyom Beilis (Tonkikh)
 //
 //  Distributed under the Boost Software License, Version 1.0. (See
 //  accompanying file LICENSE_1_0.txt or copy at
@@ -12,7 +12,7 @@
 #include <string>
 #include <ios>
 #include <limits>
-#include "locale_formatter.h"
+#include "locale_src_formatter.hpp"
 #include "locale_formatting.h"
 #include <algorithm>
 
@@ -153,7 +153,7 @@ namespace cppcms {
                     // We do not really know internal point, so we assume that it does not
                     // exists. So according to standard field should be right aligned
                     //
-                    if(flags == std::ios_base::internal || flags == std::ios_base::right)
+                    if(flags != std::ios_base::left)
                         on_left = n;
                     on_right = n - on_left;
                 }
@@ -251,11 +251,8 @@ namespace cppcms {
                 string_type tmp;
                 tmp.reserve(64);
 
-                // just a hard limit
-                std::ctype<CharType> const &type=std::use_facet<std::ctype<CharType> >(ios.getloc());
-            
-                // SunCC does not like space | cntrl
-                while(in!=end && (type.is(std::ctype_base::space,*in) || type.is(std::ctype_base::cntrl,*in)) )
+                CharType c;
+                while(in!=end && (((c=*in)<=32 && (c>0)) || c==127)) // Assuming that ASCII is a subset
                     ++in;
 
                 while(tmp.size() < 4096 && in!=end && *in!='\n') {

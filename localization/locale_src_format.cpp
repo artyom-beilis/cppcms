@@ -1,5 +1,5 @@
 //
-//  Copyright (c) 2009 Artyom Beilis (Tonkikh)
+//  Copyright (c) 2009-2010 Artyom Beilis (Tonkikh)
 //
 //  Distributed under the Boost Software License, Version 1.0. (See
 //  accompanying file LICENSE_1_0.txt or copy at
@@ -78,6 +78,8 @@ namespace cppcms {
                         ios_.setf(std::ios_base::oct,std::ios_base::basefield);
                     else if(value=="sci" || value=="scientific")
                         ios_.setf(std::ios_base::scientific,std::ios_base::floatfield);
+                    else if(value=="fix" || value=="fixed")
+                        ios_.setf(std::ios_base::fixed,std::ios_base::floatfield);
                 }
                 else if(key=="cur" || key=="currency") {
                     as::currency(ios_);

@@ -1,5 +1,5 @@
 //
-//  Copyright (c) 2009 Artyom Beilis (Tonkikh)
+//  Copyright (c) 2009-2010 Artyom Beilis (Tonkikh)
 //
 //  Distributed under the Boost Software License, Version 1.0. (See
 //  accompanying file LICENSE_1_0.txt or copy at
@@ -7,7 +7,7 @@
 //
 #define CPPCMS_LOCALE_SOURCE
 #include "locale_formatting.h"
-#include "locale_formatter.h"
+#include "locale_src_formatter.hpp"
 #include "locale_info.h"
 #include "locale_src_ios_prop.hpp"
 #include "locale_src_formatting_info.hpp"
@@ -22,6 +22,8 @@
 #include <unicode/decimfmt.h>
 
 #include <limits>
+
+#include <iostream>
 
 namespace cppcms {
 namespace locale {
@@ -73,7 +75,7 @@ namespace locale {
                 #ifdef __SUNPRO_CC 
                 icu_fmt_->format(static_cast<int>(value),tmp);
                 #else
-                icu_fmt_->format(value,tmp);
+                icu_fmt_->format(::int32_t(value),tmp);
                 #endif
                 code_points=tmp.countChar32();
                 return cvt_.std(tmp);
@@ -97,7 +99,7 @@ namespace locale {
             }
             virtual size_t parse(string_type const &str,uint32_t &value) const
             {
-                int64_t v;
+                int64_t v = 0;
                 size_t cut = do_parse(str,v);
                 if(cut==0)
                     return 0;
@@ -113,7 +115,7 @@ namespace locale {
 
             virtual size_t parse(string_type const &str,uint64_t &value) const
             {
-                double v;
+                double v = 0;
                 size_t cut = do_parse(str,v);
                 if(cut==0)
                     return 0;
@@ -331,7 +333,7 @@ namespace locale {
             case 'p': // am-pm
                 return "a";
             case 'r': // time with AM/PM %I:%M:%S %p
-                return "HH:mm:ss a";
+                return "hh:mm:ss a";
             case 'R': // %H:%M
                 return "HH:mm";
             case 'S': // second [00,61]
@@ -360,7 +362,7 @@ namespace locale {
             case 'Y': // Year 1998
                 return "YYYY";
             case 'Z': // timezone
-                return "VVVV";
+                return "vvvv";
             case '%': // %
                 return "%";
             default:
@@ -372,6 +374,7 @@ namespace locale {
         {
             unsigned len=ftime.length();
             icu::UnicodeString result;
+            bool escaped=false;
             for(unsigned i=0;i<len;i++) {
                 UChar c=ftime[i];
                 if(c=='%') {
@@ -381,23 +384,25 @@ namespace locale {
                         i++;
                         c=ftime[i];
                     }
+                    if(escaped) {
+                        result+="'";
+                        escaped=false;
+                    }
                     result+=strftime_to_icu_symbol(c,locale);
                 }
-                else if(('a'<=c && c<='z') || ('A'<=c && c<='Z')) {
-                    result+="'";
-                    while(('a'<=c && c<='z') || ('A'<=c && c<='Z')) {
-                        result+=c;
-                        i++;
-                        c=ftime[i];
-                    }
-                    result+="'";
-                }
                 else if(c=='\'') {
-                    result+="''";
+                        result+="''";
                 }
-                else
+                else {
+                    if(!escaped) {
+                        result+="'";
+                        escaped=true;
+                    }
                     result+=c;
+                }
             }
+            if(escaped)
+                result+="'";
             return result;
         }
         
@@ -434,8 +439,8 @@ namespace locale {
                     if(U_FAILURE(err)) {
                         return fmt;
                     }
+                    nf->setMaximumFractionDigits(ios.precision());
                     if(how == std::ios_base::scientific || how == std::ios_base::fixed ) {
-                        nf->setMaximumFractionDigits(ios.precision());
                         nf->setMinimumFractionDigits(ios.precision());
                     }
                     fmt.reset(new number_format<CharType>(nf,encoding));
@@ -453,9 +458,9 @@ namespace locale {
                     uint64_t curr = info.flags() & currency_flags_mask;
 
                     if(curr == currency_default || curr == currency_national)
-                        nf.reset(icu::NumberFormat::createInstance(locale,icu::NumberFormat::kIsoCurrencyStyle,err));
-                    else
                         nf.reset(icu::NumberFormat::createInstance(locale,icu::NumberFormat::kCurrencyStyle,err));
+                    else
+                        nf.reset(icu::NumberFormat::createInstance(locale,icu::NumberFormat::kIsoCurrencyStyle,err));
 
                     #else
                     //
@@ -478,7 +483,13 @@ namespace locale {
                     nf.reset(icu::NumberFormat::createPercentInstance(locale,err));
                     if(U_FAILURE(err))
                         return fmt;
+                    nf->setMaximumFractionDigits(ios.precision());
+                    std::ios_base::fmtflags how = (ios.flags() & std::ios_base::floatfield);
+                    if(how == std::ios_base::scientific || how == std::ios_base::fixed ) {
+                        nf->setMinimumFractionDigits(ios.precision());
+                    }
                     fmt.reset(new number_format<CharType>(nf,encoding));
+                    
                 }
                 break;
             case spellout:

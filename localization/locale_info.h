@@ -1,5 +1,5 @@
 //
-//  Copyright (c) 2009 Artyom Beilis (Tonkikh)
+//  Copyright (c) 2009-2010 Artyom Beilis (Tonkikh)
 //
 //  Distributed under the Boost Software License, Version 1.0. (See
 //  accompanying file LICENSE_1_0.txt or copy at
@@ -27,7 +27,7 @@ namespace cppcms {
         class CPPCMS_API info : public std::locale::facet
         {
         public:
-            static std::locale::id id;
+            static std::locale::id id; ///< This member defines uniquely this facet, required by STL 
             
             ///
             /// Creates locale using general locale id that includes encoding
@@ -68,7 +68,13 @@ namespace cppcms {
             {
                 return utf8_;
             }
+            
 
+            /// \cond INTERNAL
+            
+            // 
+            // Internal function, do not use it
+            //
             info_impl const *impl() const
             {
                 return impl_.get();
@@ -77,6 +83,7 @@ namespace cppcms {
 #if defined (__SUNPRO_CC) && defined (_RWSTD_VER)
             std::locale::id& __get_id (void) const { return id; }
 #endif
+            /// \endcond
     protected:
             
             virtual ~info();

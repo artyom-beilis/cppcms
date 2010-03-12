@@ -1,5 +1,5 @@
 //
-//  Copyright (c) 2009 Artyom Beilis (Tonkikh)
+//  Copyright (c) 2009-2010 Artyom Beilis (Tonkikh)
 //
 //  Distributed under the Boost Software License, Version 1.0. (See
 //  accompanying file LICENSE_1_0.txt or copy at
@@ -37,40 +37,63 @@ index_type map_direct(boundary_type t,icu::BreakIterator *it,int reserve)
     int pos=0;
     while((pos=it->next())!=icu::BreakIterator::DONE) {
         indx.push_back(break_info(pos));
-        if(rbbi && (t==word || t==line))
-        {
-			//
-			// There is a collapse for MSVC: int32_t defined by both boost::cstdint and icu...
-			// So need to pick one ;(
-			//
-            ::int32_t buf[16]={0};
+        /// Character does not have any specific break types
+        if(t!=character && rbbi) {
+            //
+            // There is a collapse for MSVC: int32_t defined by both boost::cstdint and icu...
+            // So need to pick one ;(
+            //
+            std::vector< ::int32_t> buffer;
+            ::int32_t membuf[8]={0}; // try not to use memory allocation if possible
+            ::int32_t *buf=membuf;
+
             UErrorCode err=U_ZERO_ERROR;
-            int n = rbbi->getRuleStatusVec(buf,16,err);
-            if(n > 16)
-                n=16;
+            int n = rbbi->getRuleStatusVec(buf,8,err);
+            
+            if(err == U_BUFFER_OVERFLOW_ERROR) {
+                buf=&buffer.front();
+                buffer.resize(n,0);
+                n = rbbi->getRuleStatusVec(buf,buffer.size(),err);
+            }
+
+            impl::check_and_throw_icu_error(err);
+
             for(int i=0;i<n;i++) {
-                if(t==word) {
-                    if(UBRK_WORD_NUMBER<=buf[i] && buf[i]<UBRK_WORD_NUMBER_LIMIT)
-                        indx.back().prev |= number;
+                switch(t) {
+                case word:
+                    if(UBRK_WORD_NONE<=buf[i] && buf[i]<UBRK_WORD_NONE_LIMIT)
+                        indx.back().mark |= word_none;
+                    else if(UBRK_WORD_NUMBER<=buf[i] && buf[i]<UBRK_WORD_NUMBER_LIMIT)
+                        indx.back().mark |= word_number;
                     else if(UBRK_WORD_LETTER<=buf[i] && buf[i]<UBRK_WORD_LETTER_LIMIT)
-                        indx.back().prev |= letter;
+                        indx.back().mark |= word_letter;
                     else if(UBRK_WORD_KANA<=buf[i] && buf[i]<UBRK_WORD_KANA_LIMIT)
-                        indx.back().prev |= kana;
+                        indx.back().mark |= word_kana;
                     else if(UBRK_WORD_IDEO<=buf[i] && buf[i]<UBRK_WORD_IDEO_LIMIT)
-                        indx.back().prev |= ideo;
-                }
-                else {
+                        indx.back().mark |= word_ideo;
+                    break;
+
+                case line:
                     if(UBRK_LINE_SOFT<=buf[i] && buf[i]<UBRK_LINE_SOFT_LIMIT)
-                        indx.back().brk |= soft;
+                        indx.back().mark |= line_soft;
                     else if(UBRK_LINE_HARD<=buf[i] && buf[i]<UBRK_LINE_HARD_LIMIT)
-                        indx.back().brk |= hard;
+                        indx.back().mark |= line_hard;
+                    break;
+
+                case sentence:
+                    if(UBRK_SENTENCE_TERM<=buf[i] && buf[i]<UBRK_SENTENCE_TERM_LIMIT)
+                        indx.back().mark |= sentence_term;
+                    else if(UBRK_SENTENCE_SEP<=buf[i] && buf[i]<UBRK_SENTENCE_SEP_LIMIT)
+                        indx.back().mark |= sentence_sep;
+                    break;
+                default:
+                    ;
                 }
             }
         }
-    }
-    if(rbbi && t==word) {
-        for(unsigned i=0;i<indx.size()-1;i++)
-            indx[i].next=indx[i+1].prev;
+        else {
+            indx.back().mark |=character_any; // Baisc mark... for character
+        }
     }
     return indx;
 }
@@ -110,7 +133,7 @@ index_type do_map(boundary_type t,CharType const *begin,CharType const *end,std:
     info const &inf=std::use_facet<info>(loc);
     std::auto_ptr<icu::BreakIterator> bi(get_iterator(t,loc));
    
-    #if U_ICU_VERSION_MAJOR_NUM*100 + U_ICU_VERSION_MINOR_NUM >= 306
+#if U_ICU_VERSION_MAJOR_NUM*100 + U_ICU_VERSION_MINOR_NUM >= 306
     UErrorCode err=U_ZERO_ERROR;
     if(sizeof(CharType) == 2 || (sizeof(CharType)==1 && inf.utf8()))
     {
