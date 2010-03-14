@@ -6,6 +6,7 @@
 #include <http_context.h>
 #include <json.h>
 #include <iostream>
+#include "client.h"
 
 class unit_test : public cppcms::application {
 public:
@@ -49,11 +50,12 @@ int main(int argc,char **argv)
 			app=new unit_test(srv);
 			srv.applications_pool().mount(app);
 		}
+		srv.after_fork(submitter(srv));
 		srv.run();
 	}
 	catch(std::exception const &e) {
 		std::cerr << e.what() << std::endl;
-		return 1;
+		return EXIT_FAILURE;
 	}
-	return 0;
+	return run_ok ? EXIT_SUCCESS : EXIT_FAILURE;
 }

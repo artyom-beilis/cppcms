@@ -8,6 +8,7 @@ include(CheckFunctionExists)
 include(CheckCXXSourceCompiles)
 include(CheckLibraryExists)
 include(CPack)
+enable_testing()
 
 #############################################################################
 #
@@ -54,6 +55,17 @@ if(CMAKE_COMPILER_IS_GNUCXX)
 		# Uninitalized checks are bogous under gcc-3.4
 		set(CXX_FLAGS "${CXX_FLAGS} -Wno-uninitialized")
 	endif()
+
+	if(WIN32)
+		if(GCC_IS_GCC4) 
+			# Very important, otherwise process would not start under cygwin
+			set(CMAKE_CXX_LINK_FLAGS "${CMAKE_CXX_LINK_FLAGS} -Wl,--enable-auto-import")
+		else()
+			# gcc-3 does not have shared library for libstdc++ -- cause dll faitures with locale
+			set(DISABLE_SHARED ON)
+		endif()
+	endif()
+
 elseif(CMAKE_CXX_COMPILER_ID STREQUAL "Intel")
 	set(CXX_FLAGS "-Wall")
 elseif(MSVC)
@@ -93,19 +105,6 @@ if("${CMAKE_BUILD_TYPE}" STREQUAL "Debug")
 			set(CPPCMS_SUFFIX "${CPPCMS_SUFFIX}d")
 		endif()
 	endif()
-endif()
-
-
-#############################################################################
-#
-# Win32 Builds of old versions of GCC do not have libstd++ and dll, can't use locale
-# So disable dll at all
-#
-#############################################################################
-
-if(WIN32 AND CMAKE_COMPILER_IS_GNUCXX AND NOT DISABLE_SHARED AND NOT GCC_IS_GCC4)
-	message("GCC version is below gcc4 under Win32, thus disabling shared library")
-	set(DISABLE_SHARED ON)
 endif()
 
 
@@ -672,6 +671,19 @@ foreach(TEST ${ALL_TESTS})
 	target_link_libraries(${TEST} ${CPPCMS_LIB})
 endforeach()
 
+if(NOT USE_STD_LOCALES)
+	file(GLOB LOCALE_TEST_SOURCES "localization/locale_src_test_*.cpp")
+else()
+	file(GLOB LOCALE_TEST_SOURCES "noicu/locale_src_test_*.cpp")
+endif()
+
+foreach(LFILE ${LOCALE_TEST_SOURCES})
+	string(REGEX REPLACE ".*(localization|noicu)/(.*)\\.cpp" "\\2" TEST_NAME ${LFILE})
+	add_executable(${TEST_NAME} ${LFILE})
+	target_link_libraries(${TEST_NAME} ${CPPCMS_LIB})
+	set(LOCALE_TESTS "${LOCALE_TESTS} ${TEST_NAME}")
+	add_test(${TEST_NAME} ${TEST_NAME} "${CMAKE_CURRENT_SOURCE_DIR}/tests")
+endforeach()
 
 
 
@@ -712,4 +724,36 @@ install(TARGETS ${CPPCMS_LIBS} cppcms_config_find_param
 
 install(PROGRAMS cppcms_tmpl_cc cppcms_run
 	DESTINATION bin)
+
+#############
+# TESTS
+#############
+		
+
+set(CNF "${CMAKE_CURRENT_SOURCE_DIR}/tests")
+
+add_test(atomic_test atomic_test)
+add_test(encryptor_test encryptor_test)
+add_test(storage_test storage_test)
+
+add_test(form_test
+	form_test "-c" "${CNF}/form_test.js" 
+	"--test-exec=${PYTHON} ${CNF}/form_test.py")
+
+foreach(TYPE async sync)
+	add_test(proto_test_${TYPE}_http 
+		proto_test "-c" "${CNF}/proto_test.js" 
+		"--test-async=${TYPE}" "--service-api=http" "--service-port=8080" "--service-ip=127.0.0.1"
+		"--test-exec=${PYTHON} ${CNF}/proto_test.py http")
+	add_test(proto_test_${TYPE}_scgi 
+		proto_test "-c" "${CNF}/proto_test.js" 
+		"--test-async=${TYPE}" "--service-api=scgi" "--service-port=8080" "--service-ip=127.0.0.1"
+		"--test-exec=${PYTHON} ${CNF}/proto_test.py scgi_tcp")
+	if(NOT WIN32)
+		add_test(proto_test_${TYPE}_scgi_unix
+			proto_test "-c" "${CNF}/proto_test.js" 
+			"--test-async=${TYPE}" "--service-api=scgi" "--service-socket=/tmp/cppcms_test_socket"
+			"--test-exec=${PYTHON} ${CNF}/proto_test.py scgi_unix")
+	endif()
+endforeach()
 

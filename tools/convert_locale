@@ -1,4 +1,4 @@
-#!/bin/bash 
+#!/bin/bash -x
 
 svn export https://cppcms.svn.sourceforge.net/svnroot/cppcms/boost_locale/trunk boost_locale
 
@@ -16,9 +16,14 @@ cd ../../libs/locale/src
 
 for x in *.cpp *.hpp
 do
-	if [ "$x" != "test.cpp" ]; then
-		cp $x ../../../../root/locale_src_$x
-	fi
+	cp $x ../../../../root/locale_src_$x
+done
+
+cd ../test/
+
+for x in *.cpp *.hpp
+do
+	cp $x ../../../../root/locale_src_$x
 done
 
 cd ../../../../root

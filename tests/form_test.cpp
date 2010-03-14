@@ -1,11 +1,14 @@
 #include <service.h>
 #include <application.h>
 #include <applications_pool.h>
+#include <thread_pool.h>
 #include <localization.h>
 #include <url_dispatcher.h>
 #include <form.h>
 #include <http_response.h>
 #include <iostream>
+
+#include "client.h"
 
 class unit_test : public cppcms::application {
 public:
@@ -241,11 +244,12 @@ int main(int argc,char **argv)
 	try {
 		cppcms::service srv(argc,argv);
 		srv.applications_pool().mount( cppcms::applications_factory<unit_test>());
+		srv.after_fork(submitter(srv));
 		srv.run();
 	}
 	catch(std::exception const &e) {
 		std::cerr << e.what() << std::endl;
-		return 1;
+		return EXIT_FAILURE;
 	}
-	return 0;
+	return run_ok ? EXIT_SUCCESS : EXIT_FAILURE;
 }
