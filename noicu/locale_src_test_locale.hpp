@@ -13,7 +13,7 @@
 #include <iostream>
 #include <iomanip>
 #include <cstdlib>
-#include <unicode/utf8.h>
+#include "utf_iterator.h"
 
 
 int error_counter=0;
@@ -62,14 +62,13 @@ template<typename Char>
 std::basic_string<Char> to(std::string const &utf8)
 {
     std::basic_string<Char> out;
-    unsigned i=0;
-    while(i<utf8.size()) {
-        unsigned point;
-        unsigned prev=i;
-        U8_NEXT_UNSAFE(utf8,i,point);
+    std::string::const_iterator i=utf8.begin(),prev;
+    while(i!=utf8.end()) {
+        prev=i;
+        unsigned point = cppcms::utf8::next(i,utf8.end());
         if(sizeof(Char)==1 && point > 255) {
             std::ostringstream ss;
-            ss << "Can't convert codepoint U" << std::hex << point <<"(" <<std::string(utf8.begin()+prev,utf8.begin()+i)<<") to Latin1";
+            ss << "Can't convert codepoint U" << std::hex << point <<"(" <<std::string(prev,i)<<") to Latin1";
             throw std::runtime_error(ss.str());
         }
         else if(sizeof(Char)==2 && point >0xFFFF) { // Deal with surragates

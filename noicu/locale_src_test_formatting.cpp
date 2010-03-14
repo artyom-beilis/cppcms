@@ -15,8 +15,6 @@
 #include <iostream>
 #include <iomanip>
 
-#include <unicode/uversion.h>
-
 using namespace cppcms::locale;
 
 //#define TEST_DEBUG
@@ -134,8 +132,7 @@ void test_manip(std::string e_charset="UTF-8")
 
     TEST_FMT(as::date << as::gmt,a_datetime,"February 5, 1970");
     TEST_FMT(as::time << as::gmt,a_datetime,"3:33:13 PM");
-    TEST_FMT(as::date_time << as::gmt,a_datetime,"February 5, 1970");
-    TEST_FMT(as::time << as::gmt,a_datetime,"3:33:13 PM");
+    TEST_FMT(as::datetime << as::gmt,a_datetime,"February 5, 1970 3:33:13 PM");
     
     time_t now=time(0);
     char local_time_str[256];
@@ -186,28 +183,9 @@ void test_format(std::string charset="UTF-8")
     FORMAT("{percent,1}",0.1,"10%");
     FORMAT("{1,cur}",1234,"$1,234.00");
     FORMAT("{1,currency}",1234,"$1,234.00");
-    if(charset=="UTF-8") {
-        if(U_ICU_VERSION_MAJOR_NUM >=4)
-            FORMAT("{1,cur,locale=de_DE}",10,"10,00\xC2\xA0€");
-        else
-            FORMAT("{1,cur,locale=de_DE}",10,"10,00 €");
-    }
-    #if U_ICU_VERSION_MAJOR_NUM*100 + U_ICU_VERSION_MINOR_NUM >= 402
     FORMAT("{1,cur=nat}",1234,"$1,234.00");
     FORMAT("{1,cur=national}",1234,"$1,234.00");
     FORMAT("{1,cur=iso}",1234,"USD1,234.00");
-    #endif
-    FORMAT("{1,spell}",10,"ten");
-    FORMAT("{1,spellout}",10,"ten");
-    #if U_ICU_VERSION_MAJOR_NUM >= 4
-    if(charset=="UTF-8") {
-        FORMAT("{1,ord}",1,"1\xcb\xa2\xe1\xb5\x97");
-        FORMAT("{1,ordinal}",1,"1\xcb\xa2\xe1\xb5\x97");
-    }
-    #else
-    FORMAT("{1,ord}",1,"1st");
-    FORMAT("{1,ordinal}",1,"1st");
-    #endif
 
     time_t now=time(0);
     char local_time_str[256];
@@ -247,24 +225,6 @@ int main()
         std::cout << "Testing char, ISO-8859-1" << std::endl;
         test_manip<char>("ISO-8859-1");
         test_format<char>("ISO-8859-1");
-
-        #ifndef CPPCMS_NO_STD_WSTRING
-        std::cout << "Testing wchar_t" << std::endl;
-        test_manip<wchar_t>();
-        test_format<wchar_t>();
-        #endif
-
-        #ifdef CPPCMS_HAS_CHAR16_T
-        std::cout << "Testing char16_t" << std::endl;
-        test_manip<char16_t>();
-        test_format<char16_t>();
-        #endif
-
-        #ifdef CPPCMS_HAS_CHAR32_T
-        std::cout << "Testing char32_t" << std::endl;
-        test_manip<char32_t>();
-        test_format<char32_t>();
-        #endif
 
     }
     catch(std::exception const &e) {
