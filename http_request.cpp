@@ -176,7 +176,7 @@ std::string request::http_accept_encoding() { return conn_->getenv("HTTP_ACCEPT_
 std::string request::http_accept_language() { return conn_->getenv("HTTP_ACCEPT_LANGUAGE"); }
 std::string request::http_accept_ranges() { return conn_->getenv("HTTP_ACCEPT_RANGES"); }
 
-std::string request::http_authrization() { return conn_->getenv("HTTP_AUTHRIZATION"); }
+std::string request::http_authorization() { return conn_->getenv("HTTP_AUTHORIZATION"); }
 std::string request::http_cache_control() { return conn_->getenv("HTTP_CACHE_CONTROL"); }
 std::string request::http_connection() { return conn_->getenv("HTTP_CONNECTION"); }
 std::string request::http_cookie() { return conn_->getenv("HTTP_COOKIE"); }

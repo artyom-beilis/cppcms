@@ -25,6 +25,7 @@
 #include <limits.h>
 #include <stdlib.h>
 #include <string.h>
+#include "cstdint.h"
 #include "posix_util.h"
 
 namespace cppcms {

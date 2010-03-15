@@ -45,7 +45,7 @@ namespace http {
 		std::string http_accept_encoding();
 		std::string http_accept_language();
 		std::string http_accept_ranges();
-		std::string http_authrization();
+		std::string http_authorization();
 		std::string http_cache_control();
 		std::string http_connection();
 		std::string http_cookie();
