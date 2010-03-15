@@ -1,5 +1,5 @@
 //
-//  Copyright (c) 2009 Artyom Beilis (Tonkikh)
+//  Copyright (c) 2009-2010 Artyom Beilis (Tonkikh)
 //
 //  Distributed under the Boost Software License, Version 1.0. (See
 //  accompanying file LICENSE_1_0.txt or copy at
@@ -112,17 +112,74 @@ namespace cppcms {
 
         }
 
+        /// \endcond
+
         ///
-        /// \brief a printf line class that allows typesafe and locale aware message formatting
+        /// \brief a printf like class that allows type-safe and locale aware message formatting
         ///
+        /// This class creates formatted message similarly to printf or boost::format and receives
+        /// formatted entries via operator %.
+        ///
+        /// For example
+        /// \code
+        ///  cout << format("Hello {1}, you are {2} years old") % name % age << endl;
+        /// \endcode
+        ///
+        /// Formatting is enclosed between curl brackets \c { \c }  and defined by comma separated list of flags in format key[=value]
+        /// value may also be text included between single quotes \c ' that is used for special purposes where inclusion of non-ASCII
+        /// text is allowed
+        ///
+        /// For example:
+        ///
+        /// \code 
+        ///   cout << format("The hight of water at {1,time} is {2,num=fixed,precision=3}") % time % height;
+        /// \endcode
+        ///
+        /// The special key -- number without value defines a position of input parameter.
+        /// List of keys:
+        /// -   \c [0-9]+ -- digits, the index of formatted parameter -- mandatory key.
+        /// -   \c num or \c number -- format a number. Optional values are:
+        ///     -  \c hex -- display hexadecimal number
+        ///     -  \c oct -- display in octal format
+        ///     -  \c sci or `scientific` -- display in scientific format
+        ///     -  \c fix or `fixed` -- display in fixed format
+        ///     .      
+        ///     For example \c number=sci
+        /// -  \c cur or \c currency -- format currency. Optional values are:
+        /// 
+        ///     -  \c iso -- display using ISO currency symbol.
+        ///     -  \c nat or \c national -- display using national currency symbol.
+        ///     .
+        /// -  \c per or \c percent -- format percent value.
+        /// -  \c date, \c time , \c datetime or \c dt -- format date, time or date and time. Optional values are:
+        ///     -  \c s or \c short -- display in short format
+        ///     -  \c m or \c medium -- display in medium format.
+        ///     -  \c l or \c long -- display in long format.
+        ///     -  \c f or \c full -- display in full format.
+        ///     .
+        /// -  \c ftime with string (quoted) parameter -- display as with \c strftime see, \c as::ftime manipulator
+        /// -  \c spell or \c spellout -- spell the number.
+        /// -  \c ord or \c ordinal -- format ordinal number (1st, 2nd... etc)
+        /// -  \c left or \c < -- align to left.
+        /// -  \c right or \c > -- align to right.
+        /// -  \c width or \c w -- set field width (requires parameter).
+        /// -  \c precision or \c p -- set precision (requires parameter).
+        /// -  \c locale -- with parameter -- switch locale for current operation. This command generates locale
+        ///     with formatting facets giving more fine grained control of formatting. For example:
+        /// 
+        /// 
+        /// 
         template<typename CharType>
         class basic_format {
         public:
-            typedef CharType char_type;
-            typedef details::formattible<CharType> formattible_type;
-            typedef std::basic_string<CharType> string_type;
-            typedef std::basic_ostream<CharType> stream_type;
+            typedef CharType char_type; ///< Underlying character type
+            /// \cond INTERNAL
+            typedef details::formattible<CharType> formattible_type; 
+            /// \endcond 
 
+            typedef std::basic_string<CharType> string_type; ///< string type for this type of character
+            typedef std::basic_ostream<CharType> stream_type; ///< output stream type for this type of character
+ 
 
             ///
             /// Create a format class for \a format_string
@@ -151,7 +208,7 @@ namespace cppcms {
             basic_format &operator % (Formattible const &object)
             {
                 add(formattible_type(object));
-				return *this;
+                return *this;
             }
 
             ///
@@ -183,15 +240,6 @@ namespace cppcms {
             
         private:
             
-            string_type widen(char const *ptr,string_type &out) const
-            {
-                string_type tmp;
-                tmp.reserve(10);
-                while(*ptr)
-                    tmp+=out.widen(*ptr++);
-                return tmp;
-            }
-
             void format_output(stream_type &out,string_type const &sformat) const
             {
                 char_type obrk=out.widen('{');
@@ -205,8 +253,14 @@ namespace cppcms {
                 CharType const *format=sformat.c_str();
                 while(format[pos]!=0) {
                     if(format[pos] != obrk) {
-                        out<<format[pos];
-                        pos++;
+                        if(format[pos]==cbrk && format[pos+1]==cbrk) {
+                            out << cbrk;
+                            pos+=2;
+                        }
+                        else {
+                            out<<format[pos];
+                            pos++;
+                        }
                         continue;
                     }
 
@@ -328,6 +382,11 @@ namespace cppcms {
             std::vector<formattible_type> ext_params_;
         };
 
+        ///
+        /// Write formatted message to stream.
+        ///
+        /// This operator actually causes actual text formatting. It use locale and of \a out stream
+        ///
         template<typename CharType>
         std::basic_ostream<CharType> &operator<<(std::basic_ostream<CharType> &out,basic_format<CharType> const &fmt)
         {
@@ -336,6 +395,9 @@ namespace cppcms {
         }
 
 
+        ///
+        /// Definiton of char based format
+        ///
         typedef basic_format<char> format;
 
     }

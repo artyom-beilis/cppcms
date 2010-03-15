@@ -8,19 +8,18 @@
     namespace boost = cppcms_boost;
 #endif
 
-
 namespace cppcms {
 namespace locale {
 
 bool num_format::use_parent(std::ios_base &ios) const
 {
-	return (ext_flags(ios) & flags::display_flags_mask) == flags::posix;
+	return (ext_flags(ios) & flags::display_flags_mask) == flags::number;
 }
 
 num_format::iter_type num_format::put_value(num_format::iter_type out,std::ios_base &ios,char fill,long double value) const
 {
 	uint64_t flag = ext_flags(ios) & flags::display_flags_mask;
-	if(flag <= flags::date || flag <=flags::strftime) {
+	if(flags::date<=flag && flag <=flags::strftime) {
 		std::string format;
 		switch(flag) {
 		case flags::date: format="%x"; break;
@@ -75,8 +74,10 @@ num_format::iter_type num_format::put_value(num_format::iter_type out,std::ios_b
 			digits=std::use_facet<std::moneypunct<char,true> >(loc).frac_digits();
 		else
 			digits=std::use_facet<std::moneypunct<char,false> >(loc).frac_digits();
-		while(digits > 0)
+		while(digits > 0) {
 			value*=10;
+			digits --;
+		}
 		std::ios_base::fmtflags f=ios.flags();
 		ios.flags(f | std::ios_base::showbase);
 		out = std::use_facet<std::money_put<char> >(loc).put(out,intl,ios,fill,value);

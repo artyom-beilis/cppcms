@@ -14,6 +14,7 @@
 #include <sstream>
 #include <iostream>
 #include <iomanip>
+#include "encoding.h"
 
 using namespace cppcms::locale;
 
@@ -120,19 +121,33 @@ void test_manip(std::string e_charset="UTF-8")
     cppcms::locale::generator g;
     std::locale loc=g("en_US."+e_charset);
     
-    TEST_FP1(as::posix,1200.1,"1200.1",double,1200.1);
-    TEST_FMT(as::currency,10,"$10.00");
-    TEST_FMT(as::currency<< as::currency_national,10,"$10.00");
-    TEST_FMT(as::currency<< as::currency_iso,10,"USD10.34");
+    if(loc.name()=="*")
+        TEST_FP1(as::number,1200.1,"1200.1",double,1200.1);
+    else
+        TEST_FP1(as::number,1200.1,"1,200.1",double,1200.1);
+    if(loc.name()!="*") {
+        TEST_FMT(as::currency,10,"$10.00");
+        TEST_FMT(as::currency << as::currency_national,10,"$10.00");
+        TEST_FMT(as::currency << as::currency_iso,10,"USD  10.00");
+    }
 
     time_t a_date = 3600*24*(31+4); // Feb 5th
     time_t a_time = 3600*15+60*33; // 15:33:05
     time_t a_timesec = 13;
     time_t a_datetime = a_date + a_time + a_timesec;
 
-    TEST_FMT(as::date << as::gmt,a_datetime,"February 5, 1970");
-    TEST_FMT(as::time << as::gmt,a_datetime,"3:33:13 PM");
-    TEST_FMT(as::datetime << as::gmt,a_datetime,"February 5, 1970 3:33:13 PM");
+    std::time_put<char> const &put = std::use_facet<std::time_put<char> >(loc);
+    std::ostringstream tmp;
+    tmp.imbue(loc);
+    put.put(tmp,tmp,' ',gmtime(&a_datetime),'x');
+    TEST_FMT(as::date << as::gmt,a_datetime,tmp.str());
+    tmp.str("");
+    put.put(tmp,tmp,' ',gmtime(&a_datetime),'X');
+    TEST_FMT(as::time << as::gmt,a_datetime,tmp.str());
+    tmp.str("");
+    put.put(tmp,tmp,' ',gmtime(&a_datetime),'c');
+    TEST_FMT(as::datetime << as::gmt,a_datetime,tmp.str());
+    tmp.str("");
     
     time_t now=time(0);
     char local_time_str[256];
@@ -143,13 +158,13 @@ void test_manip(std::string e_charset="UTF-8")
     TEST_FMT(as::ftime(format_string)<<as::gmt<<as::local_time,now,local_time_str);
 
     std::string sample_f[]={
-        "Now is %A, %H o'clo''ck ' or not ' ",
+        "Now is %H o'clo''ck ' or not ' ",
         "'test %H'",
         "%H'",
         "'%H'" 
     };
     std::string expected_f[] = {
-        "Now is Thursday, 15 o'clo''ck ' or not ' ",
+        "Now is 15 o'clo''ck ' or not ' ",
         "'test 15'",
         "15'",
         "'15'"
@@ -162,6 +177,9 @@ void test_manip(std::string e_charset="UTF-8")
 
 }
 
+#define FORMAT2(fstr,params,manips)    \
+do { std::ostringstream tmp; tmp.imbue(loc); tmp << manips; FORMAT(fstr,params,tmp.str()); } while(0)
+
 template<typename CharType>
 void test_format(std::string charset="UTF-8")
 {
@@ -170,22 +188,22 @@ void test_format(std::string charset="UTF-8")
     
     FORMAT("{3} {1} {2}", 1 % 2 % 3,"3 1 2");
     FORMAT("{1} {2}", "hello" % 2,"hello 2");
-    FORMAT("{1}",1200.1,"1200.1");
-    FORMAT("Test {1,num}",1200.1,"Test 1,200.1");
-    FORMAT("{{}} {1,number}",1200.1,"{} 1,200.1");
-    FORMAT("{1,num=sci,p=3}",13.1,"1.310E1");
-    FORMAT("{1,num=scientific,p=3}",13.1,"1.310E1");
-    FORMAT("{1,num=fix,p=3}",13.1,"13.100");
-    FORMAT("{1,num=fixed,p=3}",13.1,"13.100");
-    FORMAT("{1,<,w=3,num}",-1,"-1 ");
-    FORMAT("{1,>,w=3,num}",1,"  1");
-    FORMAT("{per,1}",0.1,"10%");
-    FORMAT("{percent,1}",0.1,"10%");
-    FORMAT("{1,cur}",1234,"$1,234.00");
-    FORMAT("{1,currency}",1234,"$1,234.00");
-    FORMAT("{1,cur=nat}",1234,"$1,234.00");
-    FORMAT("{1,cur=national}",1234,"$1,234.00");
-    FORMAT("{1,cur=iso}",1234,"USD1,234.00");
+    FORMAT2("{1}",120.1, 120.1);
+    FORMAT2("Test {1,num}",120.1,"Test " << 120.1);
+    FORMAT2("{{}} {1,number}",120.1,"{} " << 120.1);
+    FORMAT2("{1,num=sci,p=3}",13.1,std::scientific << std::setprecision(3) << 13.1);
+    FORMAT2("{1,num=scientific,p=3}",13.1,std::scientific << std::setprecision(3) << 13.1);
+    FORMAT2("{1,num=fix,p=3}",13.1,std::fixed << std::setprecision(3) << 13.1);
+    FORMAT2("{1,num=fixed,p=3}",13.1,std::fixed << std::setprecision(3) << 13.1);
+    FORMAT2("{1,<,w=3,num}",-1,"-1 ");
+    FORMAT2("{1,>,w=3,num}",1,"  1");
+    if(loc.name()!="*") {
+        FORMAT("{1,cur}",124,"$124.00");
+        FORMAT("{1,currency}",124,"$124.00");
+        FORMAT("{1,cur=nat}",124,"$124.00");
+        FORMAT("{1,cur=national}",124,"$124.00");
+        FORMAT("{1,cur=iso}",124,"USD  124.00");
+    }
 
     time_t now=time(0);
     char local_time_str[256];
@@ -201,14 +219,22 @@ void test_format(std::string charset="UTF-8")
     time_t a_time = 3600*15+60*33; // 15:33:05
     time_t a_timesec = 13;
     time_t a_datetime = a_date + a_time + a_timesec;
-    FORMAT("{1,date,gmt};{1,time,gmt};{1,datetime,gmt};{1,dt,gmt}",a_datetime,
-            "Feb 5, 1970;3:33:13 PM;Feb 5, 1970 3:33:13 PM;Feb 5, 1970 3:33:13 PM");
-    FORMAT("{1,time=short,gmt};{1,time=medium,gmt};{1,time=long,gmt};{1,date=full,gmt}",a_datetime,
-            "3:33 PM;3:33:13 PM;3:33:13 PM GMT+00:00;Thursday, February 5, 1970");
-    FORMAT("{1,time=s,gmt};{1,time=m,gmt};{1,time=l,gmt};{1,date=f,gmt}",a_datetime,
-            "3:33 PM;3:33:13 PM;3:33:13 PM GMT+00:00;Thursday, February 5, 1970");
-    FORMAT("{1,time=s,tz=GMT+01:00}",a_datetime,"4:33 PM");
-    FORMAT("{1,time=s,timezone=GMT+01:00}",a_datetime,"4:33 PM");
+    std::time_put<char> const &put = std::use_facet<std::time_put<char> >(loc);
+    
+    std::ostringstream tmp;
+    tmp.imbue(loc);
+    put.put(tmp,tmp,' ',gmtime(&a_datetime),'x');
+    tmp << ';';
+    put.put(tmp,tmp,' ',gmtime(&a_datetime),'X');
+    tmp << ';';
+    put.put(tmp,tmp,' ',gmtime(&a_datetime),'c');
+    tmp << ';';
+    put.put(tmp,tmp,' ',gmtime(&a_datetime),'H');
+
+
+    FORMAT("{1,date,gmt};{1,time,gmt};{1,datetime,gmt};{1,ftime='%H',gmt}",a_datetime,tmp.str());
+    FORMAT("{1,ftime='%I',tz=GMT+01:00}",a_datetime,"04");
+    FORMAT("{1,ftime='%I',tz=GMT-01:00}",a_datetime,"02");
 
     FORMAT("{1,gmt,ftime='%H'''}",a_datetime,"15'");
     FORMAT("{1,gmt,ftime='''%H'}",a_datetime,"'15");
@@ -216,16 +242,44 @@ void test_format(std::string charset="UTF-8")
 }
 
 
+void test_workaround()
+{
+    std::cout << "Testing UTF-8 workaround" << std::endl;
+    std::locale ru;
+    try {
+        ru=std::locale("ru_RU.UTF-8");
+    }
+    catch(std::exception const &e)
+    {
+        std::cout << "Do not have ru_RU.UTF-8 locale, nothing to test" << std::cout;
+    }
+    std::ostringstream ss;
+    ss.imbue(ru);
+    ss<<13456.5;
+    std::string tmp=ss.str();
+    TEST(tmp.at(0)=='1');
+    size_t count=0;
+    if(cppcms::encoding::valid_utf8(tmp.c_str(),tmp.c_str()+tmp.size(),count)) {
+        std::cout << "  Not needed" << std::endl;
+    }
+    ss.str("");
+    ss.imbue(generator().get("ru_RU.UTF-8"));
+    ss << 13456.5 << " " << as::currency << 12345.6;
+    tmp=ss.str();
+    TEST(tmp.at(0)=='1');
+    TEST(cppcms::encoding::valid_utf8(tmp.c_str(),tmp.c_str()+tmp.size(),count));
+}
+
 int main()
 {
     try {
-        std::cout << "Testing char, UTF-8" << std::endl;
+        std::cout << "Testing UTF-8" << std::endl;
         test_manip<char>();
         test_format<char>();
-        std::cout << "Testing char, ISO-8859-1" << std::endl;
-        test_manip<char>("ISO-8859-1");
-        test_format<char>("ISO-8859-1");
-
+        std::cout << "Testing ISO-8859-1" << std::endl;
+        test_manip<char>("iso88591");
+        test_format<char>("iso88591");
+        test_workaround();
     }
     catch(std::exception const &e) {
         std::cerr << "Failed " << e.what() << std::endl;

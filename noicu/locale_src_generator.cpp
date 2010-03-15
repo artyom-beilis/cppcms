@@ -18,8 +18,18 @@
     namespace boost = cppcms_boost;
 #endif
 
+#include <iostream>
 namespace cppcms {
     namespace locale {
+
+        namespace {
+            template<typename Facet>
+            std::locale add_facet(std::locale const &source,Facet *f)
+            {
+                std::locale tmp(std::locale::classic(),f);
+                return source.combine<Facet>(tmp);
+            }
+        }
 
         namespace impl {
 
@@ -54,20 +64,21 @@ namespace cppcms {
             {
                 if((unsigned char)(std::use_facet<std::numpunct<char> >(l).thousands_sep()) > 0x7F)
                 {
-                    l=std::locale(l,new numpunct_utf8(l.name().c_str()));
+                    l=add_facet(l,new numpunct_utf8(l.name().c_str()));
                 }
                 if((unsigned char)(std::use_facet<std::moneypunct<char,true> >(l).thousands_sep()) > 0x7F)
                 {
-                    l=std::locale(l,new moneypunct_utf8<true>(l.name().c_str()));
+                    l=add_facet(l,new moneypunct_utf8<true>(l.name().c_str()));
                 }
                 if((unsigned char)(std::use_facet<std::moneypunct<char,false> >(l).thousands_sep()) > 0x7F)
                 {
-                    l=std::locale(l,new moneypunct_utf8<false>(l.name().c_str()));
+                    l=add_facet(l,new moneypunct_utf8<false>(l.name().c_str()));
                 }
                 return l;
             }
 
         } // impl
+
 
         struct generator::data {
             typedef std::pair<std::string,std::string> locale_id_type;
@@ -144,7 +155,7 @@ namespace cppcms {
 
         std::locale generator::generate(std::string const &id,std::string const &input_encoding) const
         {
-            static const boost::regex reg("^([a-zA-Z]+)(([\\-_])([a-zA-Z]+))?(\\.(\\w+))?(@(\\w+))?$");
+            static const boost::regex reg("^([a-zA-Z]+)(([\\-_])([a-zA-Z]+))?(\\.([0-9a-zA-Z_\\-]+))?(@([0-9a-zA-Z_\\-]+))?$");
 
             boost::cmatch m;
             std::string language="C",country,variant,encoding,sep;
@@ -162,24 +173,27 @@ namespace cppcms {
             if(encoding.empty())
                 encoding = "UTF-8";
             
-            std::string trys[] = {
-                language+sep+country+"."+encoding+"@" + variant,
-                language+"."+encoding+"@" + variant,
-                language+sep+country+"."+encoding,
-                std::string("C")
-            };
+            std::vector<std::string> trys;
+
+            if(!variant.empty()) {
+                trys.push_back(language+sep+country+"."+encoding+"@" + variant);
+                trys.push_back(language+"."+encoding+"@" + variant);
+            }
+            trys.push_back(language+sep+country+"."+encoding);
+            trys.push_back(language+"."+encoding);
 
             std::locale the_locale=std::locale::classic();
 
-            for(unsigned i=0;i<sizeof(trys)/sizeof(std::string);i++) {
+            for(unsigned i=0;i<trys.size();i++) {
                 try {
-                    the_locale=std::locale(trys[i].c_str());
+                    the_locale = std::locale(trys[i].c_str());
                     break;
                 }
-                catch(std::exception const &e) {}
+                catch(std::exception const &e) {
+                }
             }
 
-            the_locale=std::locale(the_locale,new info(language,country,variant,encoding));
+            the_locale = add_facet(the_locale,new info(language,country,variant,encoding));
             
             return add_facets(the_locale);
 
@@ -199,7 +213,7 @@ namespace cppcms {
             std::locale result=source;
             info const &inf=std::use_facet<info>(source);
 
-            result=std::locale(result,new num_format());
+            result=add_facet(result,new num_format());
 
             if(!d->default_domain.empty() && !d->paths.empty()) {
                 std::vector<std::string> domains;
@@ -209,7 +223,7 @@ namespace cppcms {
                         domains.push_back(*p);
                     }
                 }
-                result=std::locale(result,message_format<char>::create(inf,domains,d->paths));
+                result=add_facet(result,message_format<char>::create(inf,domains,d->paths));
             }
 
             if(inf.utf8())

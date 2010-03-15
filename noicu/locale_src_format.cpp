@@ -70,12 +70,15 @@ namespace cppcms {
                 }
 
                 if(key=="num" || key=="number") {
+                    as::number(ios_);
                     if(value=="hex")
                         ios_.setf(std::ios_base::hex,std::ios_base::basefield);
                     else if(value=="oct")
                         ios_.setf(std::ios_base::oct,std::ios_base::basefield);
                     else if(value=="sci" || value=="scientific")
                         ios_.setf(std::ios_base::scientific,std::ios_base::floatfield);
+                    else if(value=="fix" || value=="fixed")
+                        ios_.setf(std::ios_base::fixed,std::ios_base::floatfield);
                 }
                 else if(key=="cur" || key=="currency") {
                     as::currency(ios_);
