@@ -232,7 +232,7 @@ namespace lambda {
         int len=*p;
         p++;
         while(len && *p!=v) { p++;len--; }
-        return len;
+        return len!=0;
     }
 
 

@@ -318,7 +318,7 @@ namespace cppcms {
                         return true;
 
                     }
-                    catch(std::exception const &err)
+                    catch(std::exception const &/*err*/)
                     {
                         delete plural_forms_[id];
                         plural_forms_[id]=0;

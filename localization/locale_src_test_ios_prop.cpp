@@ -73,7 +73,7 @@ int main()
         }
         TEST(counter==0);
     }catch(std::exception const &e) {
-        std::cerr << "Fail" << std::endl;
+        std::cerr << "Fail:" << e.what() << std::endl;
         return EXIT_FAILURE;
     }
     FINALIZE();

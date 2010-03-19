@@ -38,7 +38,7 @@ do {                                \
 #define TEST_THROWS(X,E)                                                \
     do {                                                                \
         test_counter++;                                                 \
-        try { X; } catch(E const &e) {break;} catch(...){}              \
+        try { X; } catch(E const &/*e*/ ) {break;} catch(...){}         \
         std::cerr << "Error in line:"<<__LINE__ << " "#X  << std::endl; \
         THROW_IF_TOO_BIG(error_counter++);                              \
     }while(0)    

@@ -143,7 +143,7 @@ calendar const &calendar::operator = (calendar const &other)
 
 bool calendar::is_gregorian() const
 {
-    return dynamic_cast<icu::GregorianCalendar const *>(const_calendar_);
+    return dynamic_cast<icu::GregorianCalendar const *>(const_calendar_)!=FALSE;
 }
 
 cppcms::locale::time_zone calendar::get_time_zone() const
@@ -186,7 +186,7 @@ int calendar::first_day_of_week() const
 
 bool calendar::operator==(calendar const &other) const
 {
-    return calendar_->isEquivalentTo(*const_calendar_of(other));
+    return calendar_->isEquivalentTo(*const_calendar_of(other))!=FALSE;
 }
 
 bool calendar::operator!=(calendar const &other) const
@@ -453,7 +453,7 @@ void date_time::time(double v)
 bool date_time::operator==(date_time const &other) const
 {
     UErrorCode e=U_ZERO_ERROR;
-    bool v=const_calendar_->equals(*CALENDAR(&other),e);
+    bool v=const_calendar_->equals(*CALENDAR(&other),e)!=FALSE;
     check_and_throw(e);
     return v;
 }
@@ -466,7 +466,7 @@ bool date_time::operator!=(date_time const &other) const
 bool date_time::operator<(date_time const &other) const
 {
     UErrorCode e=U_ZERO_ERROR;
-    bool v=const_calendar_->before(*CALENDAR(&other),e);
+    bool v=const_calendar_->before(*CALENDAR(&other),e)!=FALSE;
     check_and_throw(e);
     return v;
 }
@@ -479,7 +479,7 @@ bool date_time::operator>=(date_time const &other) const
 bool date_time::operator>(date_time const &other) const
 {
     UErrorCode e=U_ZERO_ERROR;
-    bool v=const_calendar_->after(*CALENDAR(&other),e);
+    bool v=const_calendar_->after(*CALENDAR(&other),e)!=FALSE;
     check_and_throw(e);
     return v;
 }

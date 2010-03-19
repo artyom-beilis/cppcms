@@ -11,7 +11,10 @@
 #include "defs.h"
 #include "config.h"
 #include "cstdint.h"
-
+#ifdef _MSC_VER
+#  pragma warning(push)
+#  pragma warning(disable : 4275 4251 4231 4660)
+#endif
 #include <string>
 #include <locale>
 #include <vector>
@@ -20,6 +23,8 @@
 #include <typeinfo>
 #include <iterator>
 #include <stdexcept>
+
+
 
 
 namespace cppcms {
@@ -914,6 +919,9 @@ namespace cppcms {
 /// Example of using boundary iterator over wide strings
 ///
 
+#ifdef _MSC_VER
+#pragma warning(pop)
+#endif
 
 #endif
 // vim: tabstop=4 expandtab shiftwidth=4 softtabstop=4

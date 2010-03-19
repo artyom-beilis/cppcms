@@ -8,6 +8,13 @@
 #ifndef CPPCMS_LOCALE_DATE_TIME_HPP_INCLUDED
 #define CPPCMS_LOCALE_DATE_TIME_HPP_INCLUDED
 
+#include "defs.h"
+#include "config.h"
+#ifdef _MSC_VER
+#  pragma warning(push)
+#  pragma warning(disable : 4275 4251 4231 4660)
+#endif
+
 #include "locale_time_zone.h"
 #include <locale>
 #include <vector>
@@ -1013,6 +1020,11 @@ namespace cppcms {
 
     } // locale
 } // boost
+
+#ifdef _MSC_VER
+#pragma warning(pop)
+#endif
+
 
 #endif
 ///

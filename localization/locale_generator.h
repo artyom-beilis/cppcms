@@ -9,6 +9,10 @@
 #define CPPCMS_LOCALE_GENERATOR_HPP
 #include "defs.h"
 #include "config.h"
+#ifdef _MSC_VER
+#  pragma warning(push)
+#  pragma warning(disable : 4275 4251 4231 4660)
+#endif
 #include <string>
 #include <locale>
 #include <memory>
@@ -194,6 +198,9 @@ namespace cppcms {
 
     }
 }
+#ifdef _MSC_VER
+#pragma warning(pop)
+#endif
 
 
 #endif

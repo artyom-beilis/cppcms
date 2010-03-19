@@ -5,6 +5,10 @@
 //  accompanying file LICENSE_1_0.txt or copy at
 //  http://www.boost.org/LICENSE_1_0.txt)
 //
+#ifdef _MSC_VER
+#define _CRT_SECURE_NO_WARNINGS 
+// Disable this "security crap"
+#endif
 
 #include "locale_formatting.h"
 #include "locale_format.h"
@@ -20,6 +24,9 @@
 using namespace cppcms::locale;
 
 //#define TEST_DEBUG
+#ifdef _MSC_VER
+#define _CRT_SECURE_NO_WARNINGS
+#endif
 
 #ifdef TEST_DEBUG
 #define CPPCMS_NO_STD_WSTRING

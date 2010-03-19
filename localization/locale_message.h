@@ -10,12 +10,17 @@
 
 #include "defs.h"
 #include "config.h"
+#ifdef _MSC_VER
+#  pragma warning(push)
+#  pragma warning(disable : 4275 4251 4231 4660)
+#endif
 #include <locale>
 #include <string>
 #include <vector>
 #include <set>
 #include <memory>
 #include "locale_formatting.h"
+
 
 
 namespace cppcms {
@@ -434,6 +439,10 @@ namespace cppcms {
         } // as
     } // locale 
 } // boost
+
+#ifdef _MSC_VER
+#pragma warning(pop)
+#endif
 
 
 #endif

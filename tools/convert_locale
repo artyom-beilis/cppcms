@@ -1,4 +1,4 @@
-#!/bin/bash -x
+#!/bin/bash 
 
 svn export https://cppcms.svn.sourceforge.net/svnroot/cppcms/boost_locale/trunk boost_locale
 
@@ -34,3 +34,5 @@ do
 	cp tmp.txt $x;
 	rm tmp.txt
 done
+
+rm locale_config.h

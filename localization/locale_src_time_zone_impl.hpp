@@ -54,7 +54,7 @@ namespace cppcms{
             }
             bool operator==(time_zone_impl const &other) const
             {
-                return *tz_==*other.tz_;
+                return (*tz_==*other.tz_)!=FALSE; // Prevent MSVC warning
             }
             icu::UnicodeString name(std::locale const &loc) const
             {

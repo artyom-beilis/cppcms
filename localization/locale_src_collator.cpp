@@ -41,7 +41,8 @@ namespace cppcms {
                     icu::UnicodeString left=cvt_.icu(b1,e1);
                     icu::UnicodeString right=cvt_.icu(b2,e2);
                     UErrorCode status=U_ZERO_ERROR;
-                    int res = collates_[limit(level)]->compare(left,right,status);
+                    std::auto_ptr<icu::Collator> collate(collates_[limit(level)]->safeClone());
+                    int res = collate->compare(left,right,status);
                     if(U_FAILURE(status))
                             throw std::runtime_error(std::string("Collation failed:") + u_errorName(status));
                     if(res < 0)
@@ -56,11 +57,11 @@ namespace cppcms {
                     icu::UnicodeString str=cvt_.icu(b,e);
                     std::vector<uint8_t> tmp;
                     tmp.resize(str.length());
-                    icu::Collator const &collate=*collates_[limit(level)];
-                    int len = collate.getSortKey(str,&tmp[0],tmp.size());
+                    std::auto_ptr<icu::Collator> collate(collates_[limit(level)]->safeClone());
+                    int len = collate->getSortKey(str,&tmp[0],tmp.size());
                     if(len > int(tmp.size())) {
                         tmp.resize(len);
-                        collate.getSortKey(str,&tmp[0],tmp.size());
+                        collate->getSortKey(str,&tmp[0],tmp.size());
                     }
                     else 
                         tmp.resize(len);

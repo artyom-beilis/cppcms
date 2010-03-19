@@ -8,9 +8,13 @@
 #ifndef CPPCMS_LOCALE_COLLATOR_HPP_INCLUDED
 #define CPPCMS_LOCALE_COLLATOR_HPP_INCLUDED
 
-#include <locale>
 #include "defs.h"
 #include "config.h"
+#ifdef _MSC_VER
+#  pragma warning(push)
+#  pragma warning(disable : 4275 4251 4231 4660)
+#endif
+#include <locale>
 
 
 namespace cppcms {
@@ -242,6 +246,12 @@ namespace locale {
 
     } // locale
 } // boost
+
+#ifdef _MSC_VER
+#pragma warning(pop)
+#endif
+
+
 #endif
 ///
 /// \example collate.cpp

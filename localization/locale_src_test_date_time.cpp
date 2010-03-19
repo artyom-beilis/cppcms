@@ -12,6 +12,9 @@
 #include <iomanip>
 #include "locale_src_test_locale.hpp"
 
+#ifdef _MSC_VER
+#  pragma warning(disable : 4244) // loose data 
+#endif
 
 #define RESET() do { time_point = base_time_point; ss.str(""); } while(0)
 #define TESTR(X) do { TEST(X); RESET(); } while(0)

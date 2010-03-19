@@ -10,10 +10,16 @@
 
 #include "defs.h"
 #include "config.h"
+#ifdef _MSC_VER
+#  pragma warning(push)
+#  pragma warning(disable : 4275 4251 4231 4660)
+#endif
 #include <string>
 #include <set>
 #include <ostream>
 #include <memory>
+
+
 
 namespace cppcms {
     namespace locale {
@@ -141,6 +147,11 @@ namespace cppcms {
 
     } // locale
 } // boost
+
+#ifdef _MSC_VER
+#pragma warning(pop)
+#endif
+
 
 #endif
 // vim: tabstop=4 expandtab shiftwidth=4 softtabstop=4

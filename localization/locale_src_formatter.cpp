@@ -25,6 +25,11 @@
 
 #include <iostream>
 
+#ifdef _MSC_VER
+#  pragma warning(disable : 4244) // loose data 
+#endif
+
+
 namespace cppcms {
 namespace locale {
     namespace impl {

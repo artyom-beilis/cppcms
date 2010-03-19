@@ -7,17 +7,22 @@
 //
 #ifndef CPPCMS_LOCALE_INFO_HPP_INCLUDED
 #define CPPCMS_LOCALE_INFO_HPP_INCLUDED
+#include "defs.h"
+#include "config.h"
+#ifdef _MSC_VER
+#  pragma warning(push)
+#  pragma warning(disable : 4275 4251 4231 4660)
+#endif
 #include <locale>
 #include <string>
 #include <map>
 #include <memory>
-#include "defs.h"
-#include "config.h"
+
 
 namespace cppcms {
     namespace locale {
 
-        class info_impl;
+        struct info_impl;
 
         ///
         /// \brief a facet that holds general information about locale
@@ -96,6 +101,9 @@ namespace cppcms {
     }
 }
 
+#ifdef _MSC_VER
+#pragma warning(pop)
+#endif
 
 #endif
 

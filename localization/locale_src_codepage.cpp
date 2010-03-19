@@ -11,6 +11,10 @@
 #include <unicode/ucnv.h>
 #include <unicode/ucnv_err.h>
 
+#ifdef _MSC_VER
+#  pragma warning(disable : 4244) // loose data 
+#endif
+
 #include "locale_src_icu_util.hpp"
 #include <vector>
 namespace cppcms {
@@ -613,7 +617,7 @@ namespace locale {
             try {
                 return cvt_to.std(cvt_from.icu(begin,end));
             }
-            catch(std::exception const &e) {
+            catch(std::exception const &/*e*/) {
                 throw conversion_error();
             }
         }
@@ -626,7 +630,7 @@ namespace locale {
             try {
                 return cvt_to.std(cvt_from.icu(begin,end));
             }
-            catch(std::exception const &e) {
+            catch(std::exception const &/*e*/) {
                 throw conversion_error();
             }
         }
