@@ -134,12 +134,17 @@ namespace json {
 			set_value(v);
 		}
 
+		///
+		/// Returns the type of variable in path, if not found returns undefined
+		///
 		json_type type(std::string path) const
 		{
 			return find(path).type();
 		}
 
-
+		///
+		/// Set value at specific path
+		///
 		template<typename T>
 		void set(std::string path,T const &v)
 		{

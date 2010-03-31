@@ -200,7 +200,7 @@ namespace utf16 {
 	}
 	inline uint32_t combine_surrogate(uint16_t w1,uint16_t w2)
 	{
-		return (uint32_t(w1 & 0x3FF) << 10) | (w2 & 0x3FF) | 0x100000;
+		return ((uint32_t(w1 & 0x3FF) << 10) | (w2 & 0x3FF)) + 0x10000;
 	}
 
 	template<typename It>

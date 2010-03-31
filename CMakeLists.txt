@@ -665,6 +665,7 @@ set(ALL_TESTS
 	atomic_test
 	encryptor_test
 	storage_test
+	json_test
 	)
 foreach(TEST ${ALL_TESTS})
 	add_executable(${TEST} tests/${TEST}.cpp)
@@ -735,6 +736,7 @@ set(CNF "${CMAKE_CURRENT_SOURCE_DIR}/tests")
 add_test(atomic_test atomic_test)
 add_test(encryptor_test encryptor_test)
 add_test(storage_test storage_test)
+add_test(json_test json_test)
 
 add_test(form_test
 	form_test "-c" "${CNF}/form_test.js" 

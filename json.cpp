@@ -31,7 +31,7 @@ namespace json {
 		msg_("cppcms::json::bad_cast: ")
 	{
 		std::ostringstream msg;
-		msg<<"errpr converting from "<<actual;
+		msg<<"error converting from "<<actual;
 		msg_ +=msg.str();
 
 	}
@@ -304,6 +304,7 @@ namespace json {
 			throw bad_value_cast("Can't write undefined value to stream");
 		case json::is_null:
 			out<<"null";
+			break;
 		case json::is_number:
 			out<<number();
 			break;
@@ -499,7 +500,7 @@ namespace json {
 			set_value(json::array());
 		json::array &self=array();
 		if(n>=self.size())
-			self.resize(n+1);
+			self.resize(n+1,json::null());
 		return self[n];
 	}
 	
@@ -507,7 +508,9 @@ namespace json {
 	{
 		if(type()!=json::is_array)
 			throw bad_value_cast("",type(),json::is_array);
-		return array().at(n);
+		if(n >= array().size())
+			throw bad_value_cast("Index out of range");
+		return array()[n];
 	}
 
 //#define DEBUG_PARSER
@@ -695,6 +698,7 @@ namespace json {
 									if(!utf16::is_second_surrogate(x))
 										return false;
 									append(utf16::combine_surrogate(first_surragate,x));
+									second_surragate_expected=false;
 								}
 								else if(utf16::is_first_surrogate(x)) {
 									second_surragate_expected=true;
@@ -759,7 +763,7 @@ namespace json {
 
 		typedef enum {
 			st_init = 0,
-			st_object_or_array_expected = 0 ,
+			st_object_or_array_or_value_expected = 0 ,
 			st_object_key_or_close_expected,
 			st_object_colon_expected,
 			st_object_value_expected,
@@ -774,7 +778,7 @@ namespace json {
 		std::ostream &operator<<(std::ostream &out,state_type t)
 		{
 			static char const *names[] = {
-				"st_object_or_array_expected",
+				"st_object_or_array_or_value_expected",
 				"st_object_key_or_close_expected",
 				"st_object_colon_expected",
 				"st_object_value_expected",
@@ -810,7 +814,7 @@ namespace json {
 #endif
 
 				switch(state) {
-				case st_object_or_array_expected:
+				case st_object_or_array_or_value_expected:
 					if(c=='[')  {
 						*stack.top().second=json::array();
 						state=st_array_value_or_close_expected;
@@ -818,6 +822,31 @@ namespace json {
 					else if(c=='{') {
 						*stack.top().second=json::object();
 						state=st_object_key_or_close_expected;
+					}
+					else if(c==tock_str)  {
+						*stack.top().second=tock.str; 
+						state=stack.top().first;
+						stack.pop();
+					}
+					else if(c==tock_true) {
+						*stack.top().second=true;
+						state=stack.top().first;
+						stack.pop();
+					}
+					else if(c==tock_false) {
+						*stack.top().second=false;
+						state=stack.top().first;
+						stack.pop();
+					}
+					else if(c==tock_null) {
+						*stack.top().second=null();
+						state=stack.top().first;
+						stack.pop();
+					}
+					else if(c==tock_number) {
+						*stack.top().second=tock.real;
+						state=stack.top().first;
+						stack.pop();
 					}
 					else
 						state = st_error;
