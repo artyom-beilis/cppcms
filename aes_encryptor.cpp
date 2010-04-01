@@ -10,6 +10,93 @@
 
 #include "base64.h"
 
+#ifdef CPPCMS_WIN_NATIVE
+#define CPPCMS_GCRYPT_USE_BOOST_THREADS
+#endif
+
+#ifdef CPPCMS_GCRYPT_USE_BOOST_THREADS
+#ifdef CPPCMS_USE_EXTERNAL_BOOST
+#   include <boost/thread.hpp>
+#else // Internal Boost
+#   include <cppcms_boost/thread.hpp>
+    namespace boost = cppcms_boost;
+#endif
+static int nt_mutex_init(void **p)
+{
+	try {
+		*p=new boost::mutex();
+		return 0;
+	}
+	catch(...)
+	{
+		return 1;
+	}
+}
+static int nt_mutex_destroy(void **p)
+{
+	boost::mutex **m=reinterpret_cast<boost::mutex **>(p);
+	delete *m;
+	*m=0;
+	return 0;
+}
+
+static int nt_mutex_lock(void **p)
+{
+	boost::mutex *m=reinterpret_cast<boost::mutex *>(*p);
+	try {
+		m->lock();
+		return 0;
+	}
+	catch(...)
+	{
+		return 1;
+	}
+}
+
+static int nt_mutex_unlock(void **p)
+{
+	boost::mutex *m=reinterpret_cast<boost::mutex *>(*p);
+	try {
+		m->unlock();
+		return 0;
+	}
+	catch(...)
+	{
+		return 1;
+	}
+}
+
+static struct gcry_thread_cbs threads_nt = { 
+	GCRY_THREAD_OPTION_USER,
+	0,
+	nt_mutex_init,
+	nt_mutex_destroy,
+	nt_mutex_lock,
+	nt_mutex_unlock,
+	0,0,0,0,
+	0,0,0,0 
+};
+
+static void set_gcrypt_cbs()
+{
+	gcry_control (GCRYCTL_SET_THREAD_CBS, &threads_nt);
+}
+						
+#else
+
+#include <pthread.h>
+#include <errno.h>
+
+GCRY_THREAD_OPTION_PTHREAD_IMPL;
+
+static void set_gcrypt_cbs()
+{
+	gcry_control (GCRYCTL_SET_THREAD_CBS, &gcry_threads_pthread);
+}
+
+#endif
+
+
 using namespace std;
 
 namespace cppcms {
@@ -20,6 +107,7 @@ namespace {
 class load {
 	public:
 	load() {
+		set_gcrypt_cbs();
 		gcry_check_version(NULL);
 	}
 };
