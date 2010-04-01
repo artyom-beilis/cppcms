@@ -9,6 +9,11 @@
 
 #include "base64.h"
 
+#include <pthread.h>
+#include <errno.h>
+
+GCRY_THREAD_OPTION_PTHREAD_IMPL;
+
 using namespace std;
 
 namespace cppcms {
@@ -19,6 +24,7 @@ namespace {
 class load {
 	public:
 	load() {
+		gcry_control (GCRYCTL_SET_THREAD_CBS, &gcry_threads_pthread);
 		gcry_check_version(NULL);
 	}
 };
