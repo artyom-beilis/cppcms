@@ -27,7 +27,7 @@ class load {
 		gcry_control (GCRYCTL_SET_THREAD_CBS, &gcry_threads_pthread);
 		gcry_check_version(NULL);
 	}
-};
+} loader;
 
 } // anon namespace
 
