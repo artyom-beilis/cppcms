@@ -110,7 +110,7 @@ class load {
 		set_gcrypt_cbs();
 		gcry_check_version(NULL);
 	}
-};
+} loader;
 
 } // anon namespace
 
