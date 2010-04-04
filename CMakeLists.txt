@@ -448,7 +448,6 @@ if(NOT USE_STD_LOCALES)
 		localization/locale_boundary.h
 		localization/locale_codepage.h
 		localization/locale_collator.h
-		localization/locale_config.h
 		localization/locale_conversion.h
 		localization/locale_date_time.h
 		localization/locale_format.h
@@ -473,7 +472,6 @@ else(NOT USE_STD_LOCALES)
 		noicu/locale_src_numeric.cpp)
 
 	set(CPPCMS_PUBLIC_HEADERS ${CPPCMS_PUBLIC_HEADERS}
-		noicu/locale_config.h
 		noicu/locale_conversion.h
 		noicu/locale_format.h
 		noicu/locale_formatting.h
@@ -707,7 +705,6 @@ else()
 endif()
 
 set_target_properties(${CPPCMS_LIBS} PROPERTIES 
-			FRAMEWORK TRUE
 			PUBLIC_HEADER "${CPPCMS_PUBLIC_HEADERS}")
 			
 if(MSVC AND NOT DISABLE_STATIC)
