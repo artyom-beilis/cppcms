@@ -10,6 +10,7 @@
 #include <string.h>
 #include <pthread.h>
 #include "cppcms_error.h"
+#include "noncopyable.h"
 
 namespace cppcms {
 namespace impl {

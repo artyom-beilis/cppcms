@@ -28,6 +28,10 @@ public:
 	{
 		::munmap(region_,size_);
 	}
+	inline size_t size()
+	{
+		return size_;
+	}
 	inline size_t available() 
 	{ 
 		mutex::guard g(lock_);
@@ -37,7 +41,13 @@ public:
 	inline void *malloc(size_t s)
 	{
 		mutex::guard g(lock_);
-		return memory_.allocate(s);
+		try {
+			return memory_.allocate(s);
+		}
+		catch(boost::interprocess::bad_alloc const &/*alloc*/)
+		{
+			return 0;
+		}
 	}
 	inline void free(void *p) 
 	{
@@ -45,7 +55,7 @@ public:
 		return memory_.deallocate(p);
 	}
 private:
-	process_shared_mutex lock_;	
+	mutex lock_;	
 	size_t size_;
 	void *region_;
 	boost::interprocess::managed_external_buffer memory_;
@@ -74,7 +84,7 @@ public :
 
 	inline pointer allocate(size_type cnt, std::allocator<void>::const_pointer = 0) const
 	{
-		return void *memory=mm->malloc(cnt*sizeof(T));
+		void *memory=mm->malloc(cnt*sizeof(T));
 		if(!memory) {
 			throw std::bad_alloc();
 		}
@@ -92,6 +102,7 @@ public :
 };
 
 
-};
+} // impl
+} // cppcms
 
 #endif

@@ -5,13 +5,14 @@
 	"id" : 1,
 	// Service description
 	"service" : {
-//		"worker_processes" : 5,
-		"worker_threads" : 5,
+		"worker_processes" : 1,
+		"worker_threads" : 25,
 		"api" : "http",
+		//"api" : "scgi",
 		"port" : 8080,
 	//	"ip" : "0.0.0.0"
 		"ip" : "127.0.0.1",
-		// "socket" : "/tmp/scgi.socket"
+	//	 "socket" : "/tmp/scgi.socket",
 		"nodes" : [
 			{
 				"id" : 1,
@@ -61,17 +62,21 @@
 			"path" : "/",
 			"secure" : false
 		},
-		"location" : "both",
-		"client_size_limit" : 64,
+	//	"location" : "client",
+	//	"location" : "server",
+	//	"location" : "both",
+		"client_size_limit" : 512,
 		"gc" : 10,
 		"client" : { 
 			"encryptor" : "hmac", 
+			//"encryptor" : "aes", 
 			// aes or hmac -- hmac -- signature only, aes -- encryption and signature
 			"key" : "261965ba80a79c034c9ae366a19a2627"
 			// 32 digit hexadecimal secret number
 		},
 		"server" : {
-			"storage" : "files",
+			//"storage" : "files",
+			"storage" : "memory",
 			"dir" : "./cppcms_sessions",
 			"shared" : true
 		}
@@ -85,8 +90,9 @@
 	},
 	"cache" : {
 		"backend" : "thread_shared",
-		"limit" : 100, // items
-		"memsize" : 64,  // KBs
+//		"backend" : "process_shared",
+		"limit" : 100, // items - thread cache
+		"memory" : 1024,  // KBs - process cache
 	},
 	"file_server" : {
 		"enable" : true,

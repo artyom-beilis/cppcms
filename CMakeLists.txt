@@ -413,7 +413,7 @@ set(CPPCMS_SOURCES
 	filters.cpp
 	cache_pool.cpp
 	cache_interface.cpp
-	thread_cache.cpp
+	cache_storage.cpp
 	# connection_forwarder.cpp
 	session_pool.cpp
 	base_encryptor.cpp
@@ -663,6 +663,7 @@ set(ALL_TESTS
 	atomic_test
 	encryptor_test
 	storage_test
+	cache_backend_test
 	json_test
 	)
 foreach(TEST ${ALL_TESTS})
@@ -734,6 +735,7 @@ add_test(atomic_test atomic_test)
 add_test(encryptor_test encryptor_test)
 add_test(storage_test storage_test)
 add_test(json_test json_test)
+add_test(cache_backend_test cache_backend_test)
 
 add_test(form_test
 	form_test "-c" "${CNF}/form_test.js" 
