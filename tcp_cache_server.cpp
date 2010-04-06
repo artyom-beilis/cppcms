@@ -21,14 +21,15 @@
 #endif
 #include <time.h>
 #include <stdlib.h>
-#ifndef CPPCMS_WIN32
-#include <signal.h>
-#endif
+
+#include "tcp_cache_server.h"
+
+namespace cppcms {
+namespace impl {
 
 namespace aio = boost::asio;
-using namespace cppcms::impl;
 
-class session : public boost::enable_shared_from_this<session> {
+class tcp_cache_service::session : public boost::enable_shared_from_this<tcp_cache_service::session> {
 	std::vector<char> data_in;
 	std::string data_out;
 	cppcms::impl::tcp_operation_header hout;
@@ -241,11 +242,11 @@ public:
 
 };
 
-class tcp_cache_server  {
+class tcp_cache_service::server  {
 	aio::ip::tcp::acceptor acceptor_;
 	cppcms::impl::base_cache &cache;
 	//session_server_storage &sessions;
-	void on_accept(boost::system::error_code const &e,boost::shared_ptr<session> s)
+	void on_accept(boost::system::error_code const &e,boost::shared_ptr<tcp_cache_service::session> s)
 	{
 		if(!e) {
 			aio::ip::tcp::no_delay nd(true);
@@ -258,18 +259,16 @@ class tcp_cache_server  {
 	{
 		//boost::shared_ptr<session> s(new session(acceptor_.io_service(),cache,sessions));
 		boost::shared_ptr<session> s(new session(acceptor_.io_service(),cache));
-		acceptor_.async_accept(s->socket_,boost::bind(&tcp_cache_server::on_accept,this,aio::placeholders::error,s));
+		acceptor_.async_accept(s->socket_,boost::bind(&server::on_accept,this,aio::placeholders::error,s));
 	}
 public:
-	tcp_cache_server(	aio::io_service &io,
-				std::string ip,
-				int port,
-				cppcms::impl::base_cache &c
-				//,session_server_storage &s
-				) : 
-		acceptor_(io,
-			  aio::ip::tcp::endpoint(aio::ip::address::from_string(ip),
-			  port)),
+	server(	aio::io_service &io,
+		std::string ip,
+		int port,
+		cppcms::impl::base_cache &c
+		//,session_server_storage &s
+		) : 
+		acceptor_(io,aio::ip::tcp::endpoint(aio::ip::address::from_string(ip), port)),
 		cache(c)
 	//	,sessions(s)
 	{
@@ -277,145 +276,6 @@ public:
 	}
 };
 
-struct params {
-	bool en_cache;
-	enum { none , files , sqlite3 } en_sessions;
-	std::string session_backend;
-	std::string session_file;
-	std::string session_dir;
-	int items_limit;
-	int gc_frequency;
-	int files_no;
-	int port;
-	std::string ip;
-	int threads;
-
-	void help()
-	{
-		std::cerr<<	
-			"Usage cppcms_tcp_scale [parameter]\n"
-			"    --bind IP          ipv4/ipv6 IPto bind (default 0.0.0.0)\n"
-			"    --port N           port to bind -- MANDATORY\n"
-			"    --threads N        number of threads, default 1\n"
-			"    --cache            Enable cache module\n"
-			"    --limit N          maximal Number of items to store\n"
-			"                       mandatory if cache enabled\n"
-			"    --session-files    Enable files bases session backend\n"
-			"    --dir              Directory where files stored\n"
-			"                       mandatory if session-files enabled\n"
-			"    --gc N             gc frequencty seconds (default 600)\n"
-			"                       it is enabled if threads > 1\n"
-#ifdef EN_SQLITE_SESSIONS
-			"    --session-sqlite3  Enable sqlite session backend\n"
-			"    --file             Sqlite3 DB file. Mandatory for sqlite\n"
-			"                       session backend\n"
-			"    --dbfiles          Number of DB files, default 0\n"
-			"                       0->1 file, 1-> 2 files, 2 -> 4 files, etc\n"
-#endif
-			"\n"
-			"    At least one of   --session-files,"
-#ifdef EN_SQLITE_SESSIONS
-			" --session-sqlite3,"
-#endif
-			" --cache\n"
-			"    should be defined\n"
-			"\n";
-	}
-	params(int argc,char **argv) :
-		en_cache(false),
-		en_sessions(none),
-		items_limit(-1),
-		gc_frequency(-1),
-		files_no(0),
-		port(-1),
-		ip("0.0.0.0"),
-		threads(1)
-	{
-		using namespace std;
-		argv++;
-		while(*argv) {
-			string param=*argv;
-			char *next= *(argv+1);
-			if(param=="--bind" && next) {
-				ip=next;
-				argv++;
-			}
-			else if(param=="--port" && next) {
-				port=atoi(next);
-				argv++;
-			}
-			else if(param=="--threads" && next) {
-				threads=atoi(next);
-				argv++;
-			}
-/*			else if(param=="--gc" && next) {
-				gc_frequency=atoi(next);
-				argv++;
-			}*/
-			else if(param=="--limit" && next) {
-				items_limit=atoi(next);
-				argv++;
-			}
-/*			else if(param=="--session-files") {
-				en_sessions=files;
-			}
-			else if(param=="--dir" && next) {
-				session_dir=next;
-				argv++;
-			}
-#ifdef EN_SQLITE_SESSIONS
-			else if(param=="--file" && next) {
-				session_file=next;
-				argv++;
-			}
-			else if(param=="--dbfiles" && next) {
-				files_no=atoi(next);
-				argv++;
-			}
-			else if(param=="--session-sqlite3") {
-				en_sessions=sqlite3;
-			}
-#endif*/
-			else if(param=="--cache") {
-				en_cache=true;
-			}
-			else {
-				help();
-				throw runtime_error("Incorrect parameter:"+param);
-			}
-			argv++;
-		}
-		if(!en_cache && !en_sessions) {
-			help();
-			throw runtime_error("Neither cache nor sessions mods are defined");
-		}
-		if(en_sessions == files && session_dir.empty()) {
-			help();
-			throw runtime_error("parameter --dir undefined");
-		}
-		if(en_sessions == sqlite3 && session_file.empty()) {
-			help();
-			throw runtime_error("patameter --file undefined");
-		}
-		if(files_no == -1) files_no=1;
-		if(port==-1) {
-			help();
-			throw runtime_error("parameter --port undefined");
-		}
-		if(en_cache && items_limit == -1) {
-			help();
-			throw runtime_error("parameter --limit undefined");
-		}
-		if(gc_frequency != -1) {
-			if(threads == 1) {
-				throw runtime_error("You have to use more then one thread to enable gc");
-			}
-		}
-		if(threads > 1 && gc_frequency==-1) {
-			gc_frequency = 600;
-		}
-	}
-};
 /*
 class garbage_collector
 {
@@ -443,7 +303,7 @@ public:
 };
 */
 
-void thread_function(aio::io_service *io)
+static void thread_function(aio::io_service *io)
 {
 	bool stop=false;
 	try{
@@ -456,104 +316,60 @@ void thread_function(aio::io_service *io)
 				// Not much to do...
 				// Object will be destroyed automatically 
 				// Because it does not resubmit itself
-				fprintf(stderr,"CppCMS Error %s\n",e.what());
+				std::cerr <<"CppCMS Error "<<e.what()<<std::endl;
 			}
 		}
 	}
 	catch(std::exception const &e)
 	{
-		fprintf(stderr,"Fatal:%s",e.what());
+		std::cerr << "Fatal" << e.what() << std::endl;
 	}
 	catch(...){
-		fprintf(stderr,"Unknown exception");
+		std::cerr << "Unknown exception" << std::endl;
 	}
 	io->stop();
 }
 
+struct tcp_cache_service::data {
+	aio::io_service io;
+	std::auto_ptr<server> srv_cache;
+	intrusive_ptr<base_cache> cache;
+	std::vector<boost::shared_ptr<boost::thread> > threads;
+};
 
-int main(int argc,char **argv)
+tcp_cache_service::tcp_cache_service(intrusive_ptr<base_cache> cache,int threads,std::string ip,int port) :
+	d(new data)
 {
-	try 
-	{
-		params par(argc,argv);
-
-		aio::io_service io;
-
-		cppcms::intrusive_ptr<cppcms::impl::base_cache> cache;
-		//auto_ptr<session_server_storage> storage;
-		//auto_ptr <garbage_collector> gc;
-
-		if(par.en_cache)
-			cache = cppcms::impl::thread_cache_factory(par.items_limit);
-
-/*		if(par.en_sessions==params::files) {
-			boost::shared_ptr<storage::io> storage_io(new storage::thread_io(par.session_dir));
-			storage.reset(new session_file_storage(storage_io));
-			if(par.threads > 1 && par.gc_frequency > 0) {
-				gc.reset(new garbage_collector(io,par.gc_frequency,storage_io));
-			}
-		}
-#ifdef EN_SQLITE_SESSIONS
-		else if(par.en_sessions==params::sqlite3) {
-			boost::shared_ptr<storage::sqlite_N>
-				sql(new storage::sqlite_N(par.session_file,1<<par.files_no,true,1000,5));
-			storage.reset(new session_sqlite_storage(sql));
-		}
-#endif
-		else {
-			storage.reset(new empty_session_server_storage());
-		}
-		*/
-
-		//tcp_cache_server srv_cache(io,par.ip,par.port,*cache,*storage);
-		tcp_cache_server srv_cache(io,par.ip,par.port,*cache);
-		
+	d->cache=cache;
+	d->srv_cache.reset(new server(d->io,ip,port,*cache));
 #ifndef CPPCMS_WIN32
-		sigset_t new_mask;
-		sigfillset(&new_mask);
-		sigset_t old_mask;
-		pthread_sigmask(SIG_BLOCK, &new_mask, &old_mask);
+	sigset_t new_mask;
+	sigfillset(&new_mask);
+	sigset_t old_mask;
+	pthread_sigmask(SIG_BLOCK, &new_mask, &old_mask);
 #endif
 
-		std::vector<boost::shared_ptr<boost::thread> > threads;
-		
-		int i;
-		for(i=0;i<par.threads;i++){
-			boost::shared_ptr<boost::thread> thread;
-			thread.reset(new boost::thread(boost::bind(thread_function,&io)));
-			threads.push_back(thread);
-		}
+	int i;
+	for(i=0;i<threads;i++){
+		boost::shared_ptr<boost::thread> thread;
+		thread.reset(new boost::thread(boost::bind(thread_function,&d->io)));
+		d->threads.push_back(thread);
+	}
 #ifndef CPPCMS_WIN32
-		// Restore previous mask
-		pthread_sigmask(SIG_SETMASK,&old_mask,0);
-		// Wait for signlas for exit
-		sigset_t wait_mask;
-		sigemptyset(&wait_mask);
-		sigaddset(&wait_mask, SIGINT);
-		sigaddset(&wait_mask, SIGQUIT);
-		sigaddset(&wait_mask, SIGTERM);
-		pthread_sigmask(SIG_BLOCK, &wait_mask, 0);
-		int sig = 0;
-		sigwait(&wait_mask, &sig);
-#else
-		char c;
-		std::cin >> c;
+	// Restore previous mask
+	pthread_sigmask(SIG_SETMASK,&old_mask,0);
 #endif
-		
-		std::cout<<"Catched signal: exiting..."<<std::endl;
-
-		io.stop();
-
-
-		for(i=0;i<par.threads;i++) {
-			threads[i]->join();
-		}
-	}
-	catch(std::exception const &e) {
-		std::cerr<<"Error:"<<e.what()<<std::endl;
-		return 1;
-	}
-	std::cout<<"Done"<<std::endl;
-	return 0;
 }
 
+void tcp_cache_service::stop()
+{
+	d->io.stop();
+}
+
+tcp_cache_service::~tcp_cache_service()
+{
+	d->srv_cache.reset();
+}
+
+} // impl
+} // cppcms

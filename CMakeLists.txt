@@ -418,6 +418,7 @@ set(CPPCMS_SOURCES
 	cache_over_ip.cpp
 	tcp_messenger.cpp
 	tcp_connector.cpp
+	tcp_cache_server.cpp
 	# connection_forwarder.cpp
 	session_pool.cpp
 	base_encryptor.cpp
@@ -655,7 +656,7 @@ endif(NOT DISABLE_SHARED)
 add_executable(hello_world hello_world.cpp skin1.cpp skin2.cpp)
 target_link_libraries(hello_world ${CPPCMS_LIB})
 
-add_executable(cppcms_scale tcp_cache_server.cpp)
+add_executable(cppcms_scale cache_server_main.cpp)
 target_link_libraries(cppcms_scale ${CPPCMS_LIB})
 
 add_executable(cppcms_config_find_param cppcms_config_find_param.cpp json.cpp)

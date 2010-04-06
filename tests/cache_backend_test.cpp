@@ -1,10 +1,12 @@
 #include "test.h"
 #include "cache_storage.h"
+#include "tcp_cache_server.h"
+#include "cache_over_ip.h"
 #include "base_cache.h"
 #include "intrusive_ptr.h"
 #include "test.h"
 #include <iostream>
-
+#include <memory>
 #ifdef CPPCMS_WIN_NATIVE
 #include <windows.h>
 void ssleep(int x) { Sleep(x*1000); }
@@ -16,7 +18,7 @@ void ssleep(int x) { sleep(x); }
 
 
 
-void test_cache(cppcms::intrusive_ptr<cppcms::impl::base_cache> cache)
+void test_cache(cppcms::intrusive_ptr<cppcms::impl::base_cache> cache,bool test_generators=true)
 {
 	std::string tmp;
 	std::set<std::string> tags;
@@ -64,17 +66,37 @@ void test_cache(cppcms::intrusive_ptr<cppcms::impl::base_cache> cache)
 	TEST(cache->fetch("999",tmp,0)==true && tmp=="999");
 	cache->clear();
 	tags.clear();
-	cache->store("test","test",tags,time(0)+5);
-	uint64_t my_gen=2;
-	cache->store("test2","x",tags,time(0)+5,&my_gen);
-	uint64_t g1=0,g2=0,g3=0;
-	TEST(cache->fetch("test",0,0,0,&g1));
-	cache->store("test","test2",tags,time(0)+5);
-	TEST(cache->fetch("test",&tmp,0,0,&g2));
-	TEST(tmp=="test2");
-	TEST(g1!=0 && g2!=0 && g1!=g2);
-	TEST(cache->fetch("test2",0,0,0,&g3));
-	TEST(g3==my_gen);
+	if(test_generators) {
+		cache->store("test","test",tags,time(0)+5);
+		uint64_t my_gen=2;
+		cache->store("test2","x",tags,time(0)+5,&my_gen);
+		uint64_t g1=0,g2=0,g3=0;
+		TEST(cache->fetch("test",0,0,0,&g1));
+		cache->store("test","test2",tags,time(0)+5);
+		TEST(cache->fetch("test",&tmp,0,0,&g2));
+		TEST(tmp=="test2");
+		TEST(g1!=0 && g2!=0 && g1!=g2);
+		TEST(cache->fetch("test2",0,0,0,&g3));
+		TEST(g3==my_gen);
+		cache->clear();
+	}
+}
+
+void test_two_clients(cppcms::intrusive_ptr<cppcms::impl::base_cache> c1,cppcms::intrusive_ptr<cppcms::impl::base_cache> c2)
+{
+	std::string tmp;
+	std::set<std::string> tags;
+	c1->store("foo","test",tags,time(0)+1);
+	TEST(c2->fetch("foo",tmp,0));
+	TEST(tmp=="test");
+	c2->store("foo","test2",tags,time(0)+1);
+	TEST(c1->fetch("foo",tmp,0) && tmp=="test2");
+	c2->rise("foo");
+	TEST(c1->fetch("foo",tmp,0)==false);
+	c2->store("foo","test3",tags,time(0)+1);
+	TEST(c1->fetch("foo",tmp,0) && tmp=="test3");
+	c2->clear();
+	TEST(c1->fetch("foo",tmp,0)==false);
 }
 
 
@@ -89,6 +111,61 @@ int main()
 		test_cache(cppcms::impl::process_cache_factory(16*1024));
 		std::cout << "Ok" << std::endl;
 		#endif
+
+		
+		std::auto_ptr<cppcms::impl::tcp_cache_service> srv1,srv2;
+		{
+			try {
+				std::cout << "Testing cache over ip, single server... "<<std::flush;
+				std::vector<std::string> ips;
+				std::vector<int> ports;
+				ips.push_back("127.0.0.1");
+				ports.push_back(6001);
+				srv1.reset(new cppcms::impl::tcp_cache_service(cppcms::impl::thread_cache_factory(20),1,"127.0.0.1",6001));
+				test_cache(cppcms::impl::tcp_cache_factory(ips,ports,0),false);
+				std::cout << "Ok" << std::endl;
+				std::cout << "Testing cache over ip, single server with L1 cache... "<<std::flush;
+				test_cache(cppcms::impl::tcp_cache_factory(ips,ports,cppcms::impl::thread_cache_factory(5)),false);
+				std::cout << "Ok" << std::endl;
+				srv2.reset(new cppcms::impl::tcp_cache_service(cppcms::impl::thread_cache_factory(20),1,"127.0.0.1",6002));
+				ips.push_back("127.0.0.1");
+				ports.push_back(6002);
+				std::cout << "Testing cache over ip, multiple server... "<<std::flush;
+				test_cache(cppcms::impl::tcp_cache_factory(ips,ports,0),false);
+				std::cout << "Ok" << std::endl;
+				std::cout << "Testing cache over ip, multiple server with L1 cache... "<<std::flush;
+				test_cache(cppcms::impl::tcp_cache_factory(ips,ports,cppcms::impl::thread_cache_factory(5)),false);
+				std::cout << "Ok" <<std::endl;
+				ips.resize(1);
+				ports.resize(1);
+				std::cout << "Testing two clients... "<<std::flush;
+				test_two_clients(
+					cppcms::impl::tcp_cache_factory(ips,ports,cppcms::impl::thread_cache_factory(5)),
+					cppcms::impl::tcp_cache_factory(ips,ports,cppcms::impl::thread_cache_factory(5)));
+				std::cout << "Ok" <<std::endl;
+				std::cout << "Testing two clients with L1 cache... "<<std::flush;
+				test_two_clients(
+					cppcms::impl::tcp_cache_factory(ips,ports,0),
+					cppcms::impl::tcp_cache_factory(ips,ports,0));
+				std::cout << "Ok" <<std::endl;
+					
+			}
+			catch(...) {
+				if(srv1.get()) {
+					srv1->stop();
+					srv1.reset();
+				}
+				if(srv2.get()) {
+					srv2->stop();
+					srv2.reset();
+				}
+				throw;
+			}
+			srv1->stop();	
+			srv2->stop();
+			
+		}
+
 	}
 	catch(std::exception const &e) {
 		std::cerr << "\nFail " << e.what() << std::endl;

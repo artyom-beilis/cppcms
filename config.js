@@ -89,13 +89,10 @@
 		 //"auto_reload" : true
 	},
 	"cache" : {
-		//"backend" : "thread_shared", // "process_shared"
+		"backend" : "thread_shared", // "process_shared"
 		"limit" : 100, // items - thread cache
 		"memory" : 1024,  // KBs - process cache
-		"tcp" : {
-			"ips" : [ "127.0.0.1" ],
-			"ports" : [ 6001 ]
-		}
+		"tcp" : {"ips" : [ "127.0.0.1" ],"ports" : [ 6001 ]}
 	},
 	"file_server" : {
 		"enable" : true,
