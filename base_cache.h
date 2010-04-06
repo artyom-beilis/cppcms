@@ -16,7 +16,7 @@ namespace cppcms {
 				return fetch(key,&a,tags);
 			}
 			virtual bool fetch(std::string const &key,std::string *a=0,std::set<std::string> *tags=0,time_t *timeout_out=0,uint64_t *gen=0) = 0; 
-			virtual void store(std::string const &key,std::string const &b,std::set<std::string> const &triggers,time_t timeout) = 0;
+			virtual void store(std::string const &key,std::string const &b,std::set<std::string> const &triggers,time_t timeout,uint64_t const *gen=0) = 0;
 			virtual void rise(std::string const &trigger) = 0;
 			virtual void remove(std::string const &key) = 0;
 			virtual void clear() = 0;

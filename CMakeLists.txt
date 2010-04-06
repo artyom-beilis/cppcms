@@ -414,6 +414,10 @@ set(CPPCMS_SOURCES
 	cache_pool.cpp
 	cache_interface.cpp
 	cache_storage.cpp
+	tcp_cache_client.cpp
+	cache_over_ip.cpp
+	tcp_messenger.cpp
+	tcp_connector.cpp
 	# connection_forwarder.cpp
 	session_pool.cpp
 	base_encryptor.cpp

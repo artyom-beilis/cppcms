@@ -65,12 +65,16 @@ void test_cache(cppcms::intrusive_ptr<cppcms::impl::base_cache> cache)
 	cache->clear();
 	tags.clear();
 	cache->store("test","test",tags,time(0)+5);
-	uint64_t g1=0,g2=0;
+	uint64_t my_gen=2;
+	cache->store("test2","x",tags,time(0)+5,&my_gen);
+	uint64_t g1=0,g2=0,g3=0;
 	TEST(cache->fetch("test",0,0,0,&g1));
 	cache->store("test","test2",tags,time(0)+5);
 	TEST(cache->fetch("test",&tmp,0,0,&g2));
 	TEST(tmp=="test2");
 	TEST(g1!=0 && g2!=0 && g1!=g2);
+	TEST(cache->fetch("test2",0,0,0,&g3));
+	TEST(g3==my_gen);
 }
 
 

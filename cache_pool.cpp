@@ -3,6 +3,7 @@
 #include "cache_storage.h"
 #include "base_cache.h"
 #include "cppcms_error.h"
+#include "cache_over_ip.h"
 #include "json.h"
 
 namespace cppcms {
@@ -15,8 +16,6 @@ cache_pool::cache_pool(json::value const &settings) :
 	d(new data())
 {
 	std::string type = settings.get("cache.backend","none");
-	if(type == "none" )
-		return;
 	if(type=="thread_shared") {
 		if(settings.get("service.worker_processes",0)>1)
 			throw cppcms_error(
@@ -34,9 +33,22 @@ cache_pool::cache_pool(json::value const &settings) :
 			throw cppcms_error("'process_shared' cache backend requires at least 64 KB of cache memory: cache.memory >= 64");
 		d->module=impl::process_cache_factory(memory);
 #endif
-	}
-	else {
+	}	
+	else if(type != "none" ) {
 		throw cppcms_error("Unsupported cache backend `" + type + "'");
+	}
+	
+	if(settings.find("cache.tcp").type()==json::is_object) {
+
+		std::vector<std::string> ips=settings.get<std::vector<std::string> >("cache.tcp.ips");
+		std::vector<int> ports = settings.get<std::vector<int> >("cache.tcp.ports");
+
+		if(ips.empty() || ports.empty() || ips.size()!=ports.size()) {
+			throw cppcms_error("Invalid settings in cache.tcp.ports or cache.tcp.ips");
+		}
+
+		intrusive_ptr<impl::base_cache> l1=d->module;
+		d->module=impl::tcp_cache_factory(ips,ports,l1);
 	}
 }
 

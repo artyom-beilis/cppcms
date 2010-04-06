@@ -1,27 +1,24 @@
 #ifndef CPPCMS_TCP_MESSENGER_H
 #define CPPCMS_TCP_MESSENGER_H
-
 #include "asio_config.h"
 // MUST BE FIRST
-
+#include "noncopyable.h"
 #include "tcp_cache_protocol.h"
-#include "archive.h"
-
 
 namespace cppcms {
-
-class messenger : boost::noncopyable {
-	aio::io_service srv_;
-	tcp::socket socket_;
-	string ip_;
+namespace impl {
+class messenger : public util::noncopyable {
+	boost::asio::io_service srv_;
+	boost::asio::ip::tcp::socket socket_;
+	std::string ip_;
 	int port_;
 public:
-	void connect(string ip,int port);
-	messenger(string ip,int port);
+	void connect(std::string ip,int port);
+	messenger(std::string ip,int port);
 	messenger();
-	void transmit(tcp_operation_header &h,string &data);	
+	void transmit(tcp_operation_header &h,std::string &data);	
 };
-
+} // impl
 } // cppcms
 
 #endif

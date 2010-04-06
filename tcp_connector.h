@@ -7,6 +7,7 @@
 
 namespace cppcms {
 
+namespace impl {
 class messenger;
 struct tcp_operation_header;
 
@@ -24,8 +25,8 @@ public:
 	virtual ~tcp_connector();
 };
 
-
-}
+} // impl
+} // cppcms
 
 
 #endif

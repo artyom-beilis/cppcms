@@ -121,11 +121,11 @@ void test_manip(std::string e_charset="UTF-8")
     cppcms::locale::generator g;
     std::locale loc=g("en_US."+e_charset);
     
-    if(loc.name()=="*")
+    if(loc.name()=="*" || loc.name()=="C")
         TEST_FP1(as::number,1200.1,"1200.1",double,1200.1);
     else
         TEST_FP1(as::number,1200.1,"1,200.1",double,1200.1);
-    if(loc.name()!="*") {
+    if(loc.name()!="*" && loc.name()!="C") {
         TEST_FMT(as::currency,10,"$10.00");
         TEST_FMT(as::currency << as::currency_national,10,"$10.00");
         TEST_FMT(as::currency << as::currency_iso,10,"USD  10.00");
@@ -185,7 +185,7 @@ void test_format(std::string charset="UTF-8")
 {
     cppcms::locale::generator g;
     std::locale loc=g("en_US."+charset);
-    
+
     FORMAT("{3} {1} {2}", 1 % 2 % 3,"3 1 2");
     FORMAT("{1} {2}", "hello" % 2,"hello 2");
     FORMAT2("{1}",120.1, 120.1);
@@ -197,7 +197,7 @@ void test_format(std::string charset="UTF-8")
     FORMAT2("{1,num=fixed,p=3}",13.1,std::fixed << std::setprecision(3) << 13.1);
     FORMAT2("{1,<,w=3,num}",-1,"-1 ");
     FORMAT2("{1,>,w=3,num}",1,"  1");
-    if(loc.name()!="*") {
+    if(loc.name()!="*" && loc.name()!="C") {
         FORMAT("{1,cur}",124,"$124.00");
         FORMAT("{1,currency}",124,"$124.00");
         FORMAT("{1,cur=nat}",124,"$124.00");
@@ -251,7 +251,7 @@ void test_workaround()
     }
     catch(std::exception const &e)
     {
-        std::cout << "Do not have ru_RU.UTF-8 locale, nothing to test" << std::cout;
+        std::cout << "Do not have ru_RU.UTF-8 locale, nothing to test" << std::endl;
     }
     std::ostringstream ss;
     ss.imbue(ru);

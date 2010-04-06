@@ -310,7 +310,11 @@ public:
 		delete_node(p);
 	}
 
-	virtual void store(std::string const &key,std::string const &a,std::set<std::string> const &triggers_in,time_t timeout_in)
+	virtual void store(	std::string const &key,
+				std::string const &a,
+				std::set<std::string> const &triggers_in,
+				time_t timeout_in,
+				uint64_t const *gen)
 	{
 		wrlock_guard lock(*access_lock);
 		try {
@@ -328,7 +332,10 @@ public:
 			main=res.first;
 			container &cont=main->second;
 			cont.data=to_int(a);
-			cont.generation=generation++;
+			if(gen)
+				cont.generation=*gen;
+			else
+				cont.generation=generation++;
 			lru.push_front(main);
 			cont.lru=lru.begin();
 			cont.timeout=timeout.insert(std::pair<time_t,pointer>(timeout_in,main));

@@ -1,11 +1,14 @@
+#define CPPCMS_SOURCE
 #include "asio_config.h"
 // MUST BE FIRST TO COMPILE CORRECTLY UNDER CYGWIN
 #include "tcp_messenger.h"
 #include "tcp_connector.h"
+#include "cppcms_error.h"
 
 namespace cppcms {
+namespace impl {
 
-tcp_connector::tcp_connector(vector<string> const& ip,vector<int> const &port)
+tcp_connector::tcp_connector(std::vector<std::string> const& ip,std::vector<int> const &port)
 {
 	if(ip.size()<1 || port.size()!=ip.size()) {
 		throw cppcms_error("Incorrect parameters for tcp cache");
@@ -29,17 +32,17 @@ tcp_connector::~tcp_connector()
 	delete [] tcp;
 }
 
-void tcp_connector::broadcast(tcp_operation_header &h,string &data)
+void tcp_connector::broadcast(tcp_operation_header &h,std::string &data)
 {
 	int i;
 	for(i=0;i<conns;i++) {
 		tcp_operation_header ht=h;
-		string dt=data;
+		std::string dt=data;
 		tcp[i].transmit(ht,data);
 	}
 }
 
-unsigned tcp_connector::hash(string const &key)
+unsigned tcp_connector::hash(std::string const &key)
 {
 	if(conns==1) return 0;
 	unsigned val=0,i;
@@ -49,10 +52,11 @@ unsigned tcp_connector::hash(string const &key)
 	return val % conns;;
 }
 
-messenger &tcp_connector::get(string const &key)
+messenger &tcp_connector::get(std::string const &key)
 {
 	return tcp[hash(key)];
 }
 
+} // impl
 } // cppcms
 
