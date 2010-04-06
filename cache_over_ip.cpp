@@ -64,12 +64,14 @@ namespace impl {
 		}
 		virtual void store(std::string const &key,std::string const &b,std::set<std::string> const &triggers,time_t timeout,uint64_t const *gen)
 		{
-			l1_->remove(key);
+			if(l1_.get())
+				l1_->remove(key);
 			tcp()->store(key,b,triggers,timeout);
 		}
 		virtual void rise(std::string const &trigger)
 		{
-			l1_->rise(trigger);
+			if(l1_.get())
+				l1_->rise(trigger);
 			tcp()->rise(trigger);
 		}
 		virtual void remove(std::string const &key)
@@ -78,7 +80,8 @@ namespace impl {
 		}
 		virtual void clear()
 		{
-			l1_->clear();
+			if(l1_.get())
+				l1_->clear();
 			tcp()->clear();
 		}
 		virtual void stats(unsigned &keys,unsigned &triggers)

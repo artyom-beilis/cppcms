@@ -2,53 +2,44 @@
 // MUST BE FIRST TO COMPILE CORRECTLY UNDER CYGWIN
 
 #include "tcp_cache_protocol.h"
-#include "session_storage.h"
-#include "archive.h"
-#include "thread_cache.h"
+#include "cache_storage.h"
+#include "cppcms_error.h"
 #include "config.h"
 #ifdef CPPCMS_USE_EXTERNAL_BOOST
+#   include <boost/thread.hpp>
 #   include <boost/bind.hpp>
 #   include <boost/shared_ptr.hpp>
 #   include <boost/enable_shared_from_this.hpp>
+#   include <boost/date_time/posix_time/posix_time.hpp>
 #else // Internal Boost
+#   include <cppcms_boost/thread.hpp>
 #   include <cppcms_boost/bind.hpp>
 #   include <cppcms_boost/shared_ptr.hpp>
 #   include <cppcms_boost/enable_shared_from_this.hpp>
+#   include <cppcms_boost/date_time/posix_time/posix_time.hpp>
     namespace boost = cppcms_boost;
 #endif
-#include <ctime>
-#include <cstdlib>
-#include <pthread.h>
+#include <time.h>
+#include <stdlib.h>
+#ifndef CPPCMS_WIN32
 #include <signal.h>
-#ifdef CPPCMS_USE_EXTERNAL_BOOST
-#   include <boost/date_time/posix_time/posix_time.hpp>
-#else // Internal Boost
-#   include <cppcms_boost/date_time/posix_time/posix_time.hpp>
 #endif
 
-#include "session_file_storage.h"
-#ifdef EN_SQLITE_SESSIONS
-#include "session_sqlite_storage.h"
-#endif
-
-using namespace std;
-using namespace cppcms;
-using boost::shared_ptr;
-
-
+namespace aio = boost::asio;
+using namespace cppcms::impl;
 
 class session : public boost::enable_shared_from_this<session> {
-	vector<char> data_in;
-	string data_out;
-	cppcms::tcp_operation_header hout;
-	cppcms::tcp_operation_header hin;
+	std::vector<char> data_in;
+	std::string data_out;
+	cppcms::impl::tcp_operation_header hout;
+	cppcms::impl::tcp_operation_header hin;
 
 public:
-	tcp::socket socket_;
-	base_cache &cache;
-	session_server_storage &sessions;
-	session(aio::io_service &srv,base_cache &c,session_server_storage &s) : 
-		socket_(srv), cache(c),sessions(s)
+	aio::ip::tcp::socket socket_;
+	cppcms::impl::base_cache &cache;
+	//cppcms::session_storage &sessions;
+	session(aio::io_service &srv,cppcms::impl::base_cache &c): //,session_server_storage &s) : 
+		socket_(srv), cache(c) //,sessions(s)
 	{
 	}
 	void run()
@@ -57,50 +48,55 @@ public:
 				boost::bind(&session::on_header_in,shared_from_this(),
 						aio::placeholders::error));
 	}
-	void on_header_in(error_code const &e)
+	void on_header_in(boost::system::error_code const &e)
 	{
+		if(e) return;
 		data_in.clear();
 		data_in.resize(hin.size);
 		aio::async_read(socket_,aio::buffer(data_in,hin.size),
 				boost::bind(&session::on_data_in,shared_from_this(),
 						aio::placeholders::error));
 	}
-	void fetch_page()
-	{
-		string key;
-		key.assign(data_in.begin(),data_in.end());
-		if(cache.fetch_page(key,data_out,hin.operations.fetch_page.gzip)) {
-			hout.opcode=opcodes::page_data;
-			hout.size=data_out.size();
-			hout.operations.page_data.strlen=data_out.size();
-		}
-		else {
-			hout.opcode=opcodes::no_data;
-		}
-	}
+	
 	void fetch()
 	{
-		archive a;
-		set<string> tags;
-		string key;
+		std::string a;
+		std::set<std::string> tags,*ptags=0;
+		std::string key;
 		key.assign(data_in.begin(),data_in.end());
-		if(!cache.fetch(key,a,tags)) {
+		if(hin.operations.fetch.transfer_triggers)
+			ptags=&tags;
+		uint64_t generation;
+		time_t timeout;
+		if(!cache.fetch(key,&a,ptags,&timeout,&generation)) {
 			hout.opcode=opcodes::no_data;
+			return;
 		}
-		else {
-			hout.opcode=opcodes::data;
-			data_out=a.get();
-			hout.operations.data.data_len=data_out.size();
-			for(set<string>::iterator p=tags.begin(),e=tags.end();p!=e;++p) {
+		if(hin.operations.fetch.transfer_if_not_uptodate 
+			&& generation==hin.operations.fetch.current_gen)
+		{
+			hout.opcode=opcodes::uptodate;
+			return;
+		}
+		hout.opcode=opcodes::data;
+		data_out.swap(a);
+		hout.operations.data.data_len=data_out.size();
+		if(ptags) {
+			for(std::set<std::string>::iterator p=tags.begin(),e=tags.end();p!=e;++p) {
 				data_out.append(p->c_str(),p->size()+1);
 			}
-			hout.operations.data.triggers_len=data_out.size()-hout.operations.data.data_len;
-			hout.size=data_out.size();
 		}
+		hout.operations.data.triggers_len=data_out.size()-hout.operations.data.data_len;
+		hout.size=data_out.size();
+		
+		hout.operations.data.generation=generation;
+		time_t now=time(0);
+		hout.operations.data.timeout = timeout > now ? timeout - now : 0;
 	}
+
 	void rise()
 	{
-		string key;
+		std::string key;
 		key.assign(data_in.begin(),data_in.end());
 		cache.rise(key);
 		hout.opcode=opcodes::done;
@@ -118,7 +114,7 @@ public:
 		hout.operations.out_stats.keys=k;
 		hout.operations.out_stats.triggers=t;
 	}
-	bool load_triggers(set<string> &triggers,char const *start,unsigned len)
+	bool load_triggers(std::set<std::string> &triggers,char const *start,unsigned len)
 	{
 		int slen=len;
 		while(slen>0) {
@@ -126,7 +122,7 @@ public:
 			if(size==0) {
 				return false;
 			}
-			string tmp;
+			std::string tmp;
 			tmp.assign(start,size);
 			slen-=size+1;
 			start+=size+1;
@@ -136,7 +132,7 @@ public:
 	}
 	void store()
 	{
-		set<string> triggers;
+		std::set<std::string> triggers;
 		if(	hin.operations.store.key_len
 			+hin.operations.store.data_len
 			+hin.operations.store.triggers_len != hin.size
@@ -145,8 +141,8 @@ public:
 			hout.opcode=opcodes::error;
 			return;
 		}
-		string ts;
-		vector<char>::iterator p=data_in.begin()
+		std::string ts;
+		std::vector<char>::iterator p=data_in.begin()
 			+hin.operations.store.key_len
 			+hin.operations.store.data_len;
 		ts.assign(p,p + hin.operations.store.triggers_len);
@@ -156,19 +152,16 @@ public:
 			hout.opcode=opcodes::error;
 			return;
 		}
-		time_t now;
-		std::time(&now);
-		time_t timeout=now+(time_t)hin.operations.store.timeout;
-		string key;
+		time_t timeout=time(0)+(time_t)hin.operations.store.timeout;
+		std::string key;
 		key.assign(data_in.begin(),data_in.begin()+hin.operations.store.key_len);
-		string data;
+		std::string data;
 		data.assign(data_in.begin()+hin.operations.store.key_len,
 				data_in.begin() + hin.operations.store.key_len + hin.operations.store.data_len);
-		archive a(data);
-		cache.store(key,triggers,timeout,a);
+		cache.store(key,data,triggers,timeout);
 		hout.opcode=opcodes::done;
 	}
-	
+/*	
 	void save()
 	{
 		if(hin.size <= 32)
@@ -208,39 +201,39 @@ public:
 		string sid(data_in.begin(),data_in.end());
 		sessions.remove(sid);
 	}
-	void on_data_in(error_code const &e)
+	*/
+	void on_data_in(boost::system::error_code const &e)
 	{
 		if(e) return;
 		memset(&hout,0,sizeof(hout));
 		switch(hin.opcode){
-		case opcodes::fetch_page:	fetch_page(); break;
 		case opcodes::fetch:		fetch(); break;
 		case opcodes::rise:		rise(); break;
 		case opcodes::clear:		clear(); break;
 		case opcodes::store:		store(); break;
 		case opcodes::stats:		stats(); break;
-		case opcodes::session_save:	save(); break;
+		/*case opcodes::session_save:	save(); break;
 		case opcodes::session_load:	load(); break;
-		case opcodes::session_remove:	remove(); break;
+		case opcodes::session_remove:	remove(); break;*/
 		default:
 			hout.opcode=opcodes::error;
 		}
-		async_write(socket_,aio::buffer(&hout,sizeof(hout)),
+		aio::async_write(socket_,aio::buffer(&hout,sizeof(hout)),
 			boost::bind(&session::on_header_out,shared_from_this(),
 				aio::placeholders::error));
 	}
-	void on_header_out(error_code const &e)
+	void on_header_out(boost::system::error_code const &e)
 	{
 		if(e) return;
 		if(hout.size==0) {
 			run();
 			return ;
 		}
-		async_write(socket_,aio::buffer(data_out.c_str(),hout.size),
+		aio::async_write(socket_,aio::buffer(data_out.c_str(),hout.size),
 			boost::bind(&session::on_data_out,shared_from_this(),
 				aio::placeholders::error));
 	}
-	void on_data_out(error_code const &e)
+	void on_data_out(boost::system::error_code const &e)
 	{
 		if(e) return;
 		run();
@@ -249,13 +242,13 @@ public:
 };
 
 class tcp_cache_server  {
-	tcp::acceptor acceptor_;
-	base_cache &cache;
-	session_server_storage &sessions;
-	void on_accept(error_code const &e,boost::shared_ptr<session> s)
+	aio::ip::tcp::acceptor acceptor_;
+	cppcms::impl::base_cache &cache;
+	//session_server_storage &sessions;
+	void on_accept(boost::system::error_code const &e,boost::shared_ptr<session> s)
 	{
 		if(!e) {
-			tcp::no_delay nd(true);
+			aio::ip::tcp::no_delay nd(true);
 			s->socket_.set_option(nd);
 			s->run();
 			start_accept();
@@ -263,20 +256,22 @@ class tcp_cache_server  {
 	}
 	void start_accept()
 	{
-		boost::shared_ptr<session> s(new session(acceptor_.io_service(),cache,sessions));
+		//boost::shared_ptr<session> s(new session(acceptor_.io_service(),cache,sessions));
+		boost::shared_ptr<session> s(new session(acceptor_.io_service(),cache));
 		acceptor_.async_accept(s->socket_,boost::bind(&tcp_cache_server::on_accept,this,aio::placeholders::error,s));
 	}
 public:
 	tcp_cache_server(	aio::io_service &io,
-				string ip,
+				std::string ip,
 				int port,
-				base_cache &c,
-				session_server_storage &s) : 
+				cppcms::impl::base_cache &c
+				//,session_server_storage &s
+				) : 
 		acceptor_(io,
-			  tcp::endpoint(aio::ip::address::from_string(ip),
+			  aio::ip::tcp::endpoint(aio::ip::address::from_string(ip),
 			  port)),
-		cache(c),
-		sessions(s)
+		cache(c)
+	//	,sessions(s)
 	{
 		start_accept();
 	}
@@ -285,19 +280,20 @@ public:
 struct params {
 	bool en_cache;
 	enum { none , files , sqlite3 } en_sessions;
-	string session_backend;
-	string session_file;
-	string session_dir;
+	std::string session_backend;
+	std::string session_file;
+	std::string session_dir;
 	int items_limit;
 	int gc_frequency;
 	int files_no;
 	int port;
-	string ip;
+	std::string ip;
 	int threads;
 
 	void help()
 	{
-		cerr<<	"Usage cppcms_tcp_scale [parameter]\n"
+		std::cerr<<	
+			"Usage cppcms_tcp_scale [parameter]\n"
 			"    --bind IP          ipv4/ipv6 IPto bind (default 0.0.0.0)\n"
 			"    --port N           port to bind -- MANDATORY\n"
 			"    --threads N        number of threads, default 1\n"
@@ -335,6 +331,7 @@ struct params {
 		ip("0.0.0.0"),
 		threads(1)
 	{
+		using namespace std;
 		argv++;
 		while(*argv) {
 			string param=*argv;
@@ -351,15 +348,15 @@ struct params {
 				threads=atoi(next);
 				argv++;
 			}
-			else if(param=="--gc" && next) {
+/*			else if(param=="--gc" && next) {
 				gc_frequency=atoi(next);
 				argv++;
-			}
+			}*/
 			else if(param=="--limit" && next) {
 				items_limit=atoi(next);
 				argv++;
 			}
-			else if(param=="--session-files") {
+/*			else if(param=="--session-files") {
 				en_sessions=files;
 			}
 			else if(param=="--dir" && next) {
@@ -378,7 +375,7 @@ struct params {
 			else if(param=="--session-sqlite3") {
 				en_sessions=sqlite3;
 			}
-#endif
+#endif*/
 			else if(param=="--cache") {
 				en_cache=true;
 			}
@@ -419,7 +416,7 @@ struct params {
 		}
 	}
 };
-
+/*
 class garbage_collector
 {
 	aio::deadline_timer timer;
@@ -444,19 +441,18 @@ public:
 		submit();	
 	}
 };
+*/
 
-
-void *thread_function(void *ptr)
+void thread_function(aio::io_service *io)
 {
-	aio::io_service &io=*(aio::io_service *)(ptr);
 	bool stop=false;
 	try{
 		while(!stop) {
 			try {
-				io.run();
+				io->run();
 				stop=true;
 			}
-			catch(cppcms_error const &e) {
+			catch(cppcms::cppcms_error const &e) {
 				// Not much to do...
 				// Object will be destroyed automatically 
 				// Because it does not resubmit itself
@@ -464,15 +460,14 @@ void *thread_function(void *ptr)
 			}
 		}
 	}
-	catch(exception const &e)
+	catch(std::exception const &e)
 	{
 		fprintf(stderr,"Fatal:%s",e.what());
 	}
 	catch(...){
 		fprintf(stderr,"Unknown exception");
 	}
-	io.stop();
-	return NULL;
+	io->stop();
 }
 
 
@@ -484,16 +479,14 @@ int main(int argc,char **argv)
 
 		aio::io_service io;
 
-		auto_ptr<base_cache> cache;
-		auto_ptr<session_server_storage> storage;
-		auto_ptr <garbage_collector> gc;
+		cppcms::intrusive_ptr<cppcms::impl::base_cache> cache;
+		//auto_ptr<session_server_storage> storage;
+		//auto_ptr <garbage_collector> gc;
 
 		if(par.en_cache)
-			cache.reset(new thread_cache(par.items_limit));
-		else
-			cache.reset(new base_cache());
+			cache = cppcms::impl::thread_cache_factory(par.items_limit);
 
-		if(par.en_sessions==params::files) {
+/*		if(par.en_sessions==params::files) {
 			boost::shared_ptr<storage::io> storage_io(new storage::thread_io(par.session_dir));
 			storage.reset(new session_file_storage(storage_io));
 			if(par.threads > 1 && par.gc_frequency > 0) {
@@ -510,29 +503,27 @@ int main(int argc,char **argv)
 		else {
 			storage.reset(new empty_session_server_storage());
 		}
+		*/
+
+		//tcp_cache_server srv_cache(io,par.ip,par.port,*cache,*storage);
+		tcp_cache_server srv_cache(io,par.ip,par.port,*cache);
 		
-
-		tcp_cache_server srv_cache(io,par.ip,par.port,*cache,*storage);
-
+#ifndef CPPCMS_WIN32
 		sigset_t new_mask;
 		sigfillset(&new_mask);
 		sigset_t old_mask;
 		pthread_sigmask(SIG_BLOCK, &new_mask, &old_mask);
+#endif
 
-		vector<pthread_t> threads;
-		threads.resize(par.threads);
-
+		std::vector<boost::shared_ptr<boost::thread> > threads;
+		
 		int i;
 		for(i=0;i<par.threads;i++){
-			if(pthread_create(&threads[i],NULL,thread_function,&io)!=0) {
-				perror("pthread_create failed:");
-				io.stop();
-				for(i=i-1;i>=0;i--) {
-					pthread_join(threads[i],NULL);
-				}
-			}
+			boost::shared_ptr<boost::thread> thread;
+			thread.reset(new boost::thread(boost::bind(thread_function,&io)));
+			threads.push_back(thread);
 		}
-
+#ifndef CPPCMS_WIN32
 		// Restore previous mask
 		pthread_sigmask(SIG_SETMASK,&old_mask,0);
 		// Wait for signlas for exit
@@ -544,20 +535,25 @@ int main(int argc,char **argv)
 		pthread_sigmask(SIG_BLOCK, &wait_mask, 0);
 		int sig = 0;
 		sigwait(&wait_mask, &sig);
+#else
+		char c;
+		std::cin >> c;
+#endif
 		
-		cout<<"Catched signal:"<<sig<<" exiting..."<<endl;
+		std::cout<<"Catched signal: exiting..."<<std::endl;
 
 		io.stop();
 
+
 		for(i=0;i<par.threads;i++) {
-			pthread_join(threads[i],NULL);
+			threads[i]->join();
 		}
 	}
 	catch(std::exception const &e) {
-		cerr<<"Error:"<<e.what()<<endl;
+		std::cerr<<"Error:"<<e.what()<<std::endl;
 		return 1;
 	}
-	cout<<"Done"<<endl;
+	std::cout<<"Done"<<std::endl;
 	return 0;
 }
 

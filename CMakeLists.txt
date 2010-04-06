@@ -655,6 +655,9 @@ endif(NOT DISABLE_SHARED)
 add_executable(hello_world hello_world.cpp skin1.cpp skin2.cpp)
 target_link_libraries(hello_world ${CPPCMS_LIB})
 
+add_executable(cppcms_scale tcp_cache_server.cpp)
+target_link_libraries(cppcms_scale ${CPPCMS_LIB})
+
 add_executable(cppcms_config_find_param cppcms_config_find_param.cpp json.cpp)
 
 #########################################
@@ -719,7 +722,7 @@ endif(MSVC AND NOT DISABLE_STATIC)
 configure_file(config.cmake.h config.h)
 
 
-install(TARGETS ${CPPCMS_LIBS} cppcms_config_find_param
+install(TARGETS ${CPPCMS_LIBS} cppcms_config_find_param cppcms_scale
 	RUNTIME DESTINATION bin
 	LIBRARY DESTINATION lib
 	ARCHIVE DESTINATION lib
