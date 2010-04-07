@@ -671,8 +671,10 @@ set(ALL_TESTS
 	atomic_test
 	encryptor_test
 	storage_test
+	aio_timer_test
 	cache_backend_test
 	json_test
+	base64_test
 	)
 foreach(TEST ${ALL_TESTS})
 	add_executable(${TEST} tests/${TEST}.cpp)
@@ -740,9 +742,11 @@ install(PROGRAMS cppcms_tmpl_cc cppcms_run
 set(CNF "${CMAKE_CURRENT_SOURCE_DIR}/tests")
 
 add_test(atomic_test atomic_test)
+add_test(base64_test base64_test)
 add_test(encryptor_test encryptor_test)
 add_test(storage_test storage_test)
 add_test(json_test json_test)
+add_test(aio_timer_test aio_timer_test aio_timer_test --service-api=http)
 add_test(cache_backend_test cache_backend_test)
 
 add_test(form_test

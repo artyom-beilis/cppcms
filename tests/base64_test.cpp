@@ -2,6 +2,7 @@
 
 #include <iostream>
 #include <stdio.h>
+#include <stdlib.h>
 #include <algorithm>
 #include <vector>
 #include <string>
@@ -21,7 +22,7 @@ int test1()
 		cerr<<"Faile "<<out<<endl;
 		return 1;
 	}
-	for(unsigned v=0;v<0xFFFFFF;v++) {
+	for(unsigned v=0;v<0xFFFFFF;v+=rand() % 17 + 1) {
 		unsigned char in[3],in2[3];
 		unsigned char out[4];
 		in[0]=v & 0xFF;
@@ -43,7 +44,7 @@ int test1()
 int test2()
 {
 	unsigned i;
-	for(i=0;i<10000;i++) {
+	for(i=0;i<100;i++) {
 		unsigned len=rand() % 1000;
 		vector<unsigned char> in(len,0);
 		for(unsigned j=0;j<len;j++) {
@@ -69,12 +70,18 @@ int test2()
 			return 1;
 		}
 	}
-	cout<<"Ok "<<i<<"\n" ;
 	return 0;
 }
 
 int main()
 {
-	return test1()==0 && test2()==0 ? 0 : 1;
+	if(test1()==0 && test2()==0) {
+		std::cout << "Ok" << std::endl;
+		return EXIT_SUCCESS;
+	}
+	else {
+		std::cout << "Fail " << std::endl;
+		return EXIT_FAILURE;
+	}
 }
 

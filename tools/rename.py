@@ -17,7 +17,7 @@ class SyntaxError(Exception):
     def __init__(self,message):
         self.message=message
 
-class tockenizer():
+class tockenizer:
     def __init__(self,input):
         self.input=input
     def chr_end(self,line,pos,c):
@@ -95,7 +95,7 @@ class tockenizer():
             line=self.input.readline()
 
 
-class renamer():
+class renamer:
     fname=re.compile(r'^(\w+)$')
     ident=re.compile(r'^[a-zA-Z_][a-zA-Z_0-9]*$')
     def __init__(self,input,output,namespace,newdir=''):
