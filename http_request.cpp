@@ -133,7 +133,17 @@ bool request::prepare()
 }
 std::pair<void *,size_t> request::raw_post_data()
 {
-	return std::pair<void *,size_t>(&d->post_data.front(),d->post_data.size());
+	std::pair<void *,size_t> r;
+	static char b;
+	if(d->post_data.empty()) {
+		r.first=&b;
+		r.second=0;
+	}
+	else {
+		r.first=&d->post_data.front();
+		r.second=d->post_data.size();
+	}
+	return r;
 }
 
 request::request(impl::cgi::connection &conn) :

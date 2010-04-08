@@ -1,3 +1,4 @@
+#define CPPCMS_SOURCE
 #include "asio_config.h"
 // MUST BE FIRST TO COMPILE CORRECTLY UNDER CYGWIN
 

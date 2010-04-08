@@ -31,7 +31,7 @@ namespace impl {
 		friend class cppcms::service;
 		std::auto_ptr<boost::asio::io_service> io_service_;
 
-		std::auto_ptr<cgi::acceptor> acceptor_;
+		std::vector<boost::shared_ptr<cgi::acceptor> > acceptors_;
 		std::auto_ptr<json::value> settings_;
 		std::auto_ptr<applications_pool> applications_pool_;
 		std::auto_ptr<thread_pool> thread_pool_;

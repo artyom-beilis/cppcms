@@ -309,8 +309,9 @@ void service::run()
 		impl_->on_fork_[i]();
 
 	impl_->on_fork_.clear();
-	
-	impl_->acceptor_->async_accept();
+
+	for(unsigned i=0;i<impl_->acceptors_.size();i++)
+		impl_->acceptors_[i]->async_accept();
 
 	setup_exit_handling();
 
@@ -449,46 +450,44 @@ int service::process_id()
 	return impl_->id_;
 }
 
-void service::start_acceptor()
+void service::setup_acceptor(json::value const &v,int backlog)
 {
-	using namespace impl::cgi;
-	std::string api=settings().get<std::string>("service.api");
-	std::string socket=settings().get("service.socket","");
-	int backlog=settings().get("service.backlog",threads_no() * 2);
+	using namespace cppcms::impl::cgi;
 
+	std::string api=v.get<std::string>("api");
+	std::string socket=v.get("socket","");
 	std::string ip;
 	int port=0;
 
 	bool tcp;
+	std::auto_ptr<acceptor> a;
 
 	if(socket.empty()) {
-		ip=settings().get("service.ip","127.0.0.1");
-		port=settings().get("service.port",8080);
+		ip=v.get("ip","127.0.0.1");
+		port=v.get("port",8080);
 		tcp=true;
 	}
 	else {
-		if(	!settings().find("service.port").is_undefined()
-			|| !settings().find("service.ip").is_undefined())
+		if(	!v.find("port").is_undefined()
+			|| !v.find("ip").is_undefined())
 		{
 			throw cppcms_error("Can't define both UNIX socket and TCP port/ip");
 		}
 		tcp=false;
 	}
 
-	impl_->acceptor_.reset();
-
 	if(tcp) {
 		#ifdef CPPCMS_HAS_SCGI
 		if(api=="scgi")
-			impl_->acceptor_ = scgi_api_tcp_socket_factory(*this,ip,port,backlog);
+			a = scgi_api_tcp_socket_factory(*this,ip,port,backlog);
 		#endif		
 		#ifdef CPPCMS_HAS_FCGI
 		if(api=="fastcgi")
-			impl_->acceptor_ = fastcgi_api_tcp_socket_factory(*this,ip,port,backlog);
+			a = fastcgi_api_tcp_socket_factory(*this,ip,port,backlog);
 		#endif
 		#ifdef CPPCMS_HAS_HTTP
 		if(api=="http")
-			impl_->acceptor_ = http_api_factory(*this,ip,port,backlog);
+			a = http_api_factory(*this,ip,port,backlog);
 		#endif
 	}
 	else {
@@ -500,18 +499,18 @@ void service::start_acceptor()
 		#ifdef CPPCMS_HAS_SCGI
 		if(api=="scgi") {
 			if(socket=="stdin")
-				impl_->acceptor_ = scgi_api_unix_socket_factory(*this,backlog);
+				a = scgi_api_unix_socket_factory(*this,backlog);
 			else
-				impl_->acceptor_ = scgi_api_unix_socket_factory(*this,socket,backlog);
+				a = scgi_api_unix_socket_factory(*this,socket,backlog);
 		}
 		#endif
 		
 		#ifdef CPPCMS_HAS_FCGI
 		if(api=="fastcgi") {
 			if(socket=="stdin")
-				impl_->acceptor_ = fastcgi_api_unix_socket_factory(*this,backlog);
+				a = fastcgi_api_unix_socket_factory(*this,backlog);
 			else
-				impl_->acceptor_ = fastcgi_api_unix_socket_factory(*this,socket,backlog);
+				a = fastcgi_api_unix_socket_factory(*this,socket,backlog);
 		}
 		#endif
 
@@ -521,9 +520,33 @@ void service::start_acceptor()
 		#endif
 #endif
 	}
-	if(!impl_->acceptor_.get())
-		throw cppcms_error("Unknown service.api: " + api);
+	if(!a.get())
+		throw cppcms_error("Unknown api: " + api);
 
+	impl_->acceptors_.push_back(boost::shared_ptr<acceptor>(a));
+}
+
+void service::start_acceptor()
+{
+	using namespace impl::cgi;
+	int backlog=settings().get("service.backlog",threads_no() * std::max(procs_no(),1) * 2);
+
+	if(	settings().find("service.list").type()!=json::is_undefined 
+		&& settings().find("service.api").type()!=json::is_undefined) 
+	{
+		throw cppcms_error("Can't specify both service.api and service.list");
+	}
+
+	if(settings().find("service.api").type()!=json::is_undefined) {
+		setup_acceptor(settings()["service"],backlog);
+	}
+	if(settings().find("service.list").type()!=json::is_undefined) {
+		json::array list=settings()["service"].array();
+		if(list.empty())
+			throw cppcms_error("At least one service should be provided in service.list");
+		for(unsigned i=0;i<list.size();i++)
+			setup_acceptor(list[i],backlog);
+	}
 }
 
 cppcms::applications_pool &service::applications_pool()
@@ -555,8 +578,10 @@ void service::post(util::callback0 const &handler)
 
 void service::stop()
 {
-	if(impl_->acceptor_.get())
-		impl_->acceptor_->stop();
+	for(unsigned i=0;i<impl_->acceptors_.size();i++) {
+		if(impl_->acceptors_[i])
+			impl_->acceptors_[i]->stop();
+	}
 	thread_pool().stop();
 	impl_->get_io_service().stop();
 }
@@ -624,7 +649,7 @@ namespace impl {
 	}
 	service::~service()
 	{
-		acceptor_.reset();
+		acceptors_.clear();
 		thread_pool_.reset();
 		sig_.reset();
 		breaker_.reset();

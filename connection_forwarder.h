@@ -9,9 +9,9 @@ namespace cppcms {
 	public:
 		connection_forwarder(cppcms::service &srv,std::string const &ip,int port);
 		~connection_forwarder();
+		virtual void main(std::string);
 	private:
 
-		void on_request();
 		struct data;
 		util::hold_ptr<data> d;
 		std::string ip_;

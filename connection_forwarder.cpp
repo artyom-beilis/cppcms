@@ -53,6 +53,7 @@ namespace cppcms {
 					connection_->async_complete_response();
 					return;
 				}
+				std::cout << "Connected " << std::endl;
 				boost::asio::async_write(socket_,
 					boost::asio::buffer(data_),
 					boost::bind(&tcp_pipe::on_written,shared_from_this(),boost::asio::placeholders::error));
@@ -65,6 +66,8 @@ namespace cppcms {
 					connection_->async_complete_response();
 					return;
 				}
+
+				std::cout << "Written " << std::endl;
 				
 				connection_->async_on_peer_reset(boost::bind(&tcp_pipe::on_peer_close,shared_from_this()));
 				connection_->response().io_mode(http::response::asynchronous_raw);
@@ -78,6 +81,7 @@ namespace cppcms {
 
 			void on_peer_close()
 			{
+				std::cout << "Closed" << std::endl;
 				boost::system::error_code ec;
 				#ifndef NO_CANCELIO
 				socket_.cancel(ec);
@@ -89,8 +93,13 @@ namespace cppcms {
 
 			void on_read(boost::system::error_code const &e,size_t n)
 			{
-				connection_->response().out().write(&input_.front(),n);
+				std::cout << "Some read" << n << std::endl;
+				if(n > 0) {
+					std::cout <<std::string(&input_.front(),n) << std::endl;
+					connection_->response().out().write(&input_.front(),n);
+				}
 				if(e) {
+					std::cout << "Finished " << std::endl;
 					connection_->async_complete_response();
 				}
 				else {
@@ -117,26 +126,29 @@ namespace cppcms {
 		ip_(ip),
 		port_(port)
 	{
-		dispatcher().assign("^(.*)$",&connection_forwarder::on_request,this);
 	}
 	connection_forwarder::~connection_forwarder()
 	{
 	}
-	void connection_forwarder::on_request()
+	void connection_forwarder::main(std::string unused)
 	{
 		intrusive_ptr<http::context> con = release_context();
 		std::string env_str;
 		env_str.reserve(1000);
+
 		std::pair<void *,size_t> post = con->request().raw_post_data();
 		std::map<std::string,std::string> const &env = con->connection().getenv();
 		std::map<std::string,std::string>::const_iterator cl,p;
-		cl=env.find("CONTENT_LENGTH");
-		if(cl==env.end())
-			return;
-		p=cl;
 
-		env_str.append(p->first.c_str(),p->first.size()+1);
-		env_str.append(p->second.c_str(),p->second.size()+1);
+		cl=env.find("CONTENT_LENGTH");
+		if(cl!=env.end()) {
+			env_str.append(p->first.c_str(),p->first.size()+1);
+			env_str.append(p->second.c_str(),p->second.size()+1);
+		}
+		else {
+			env_str.append("CONTENT_LENGTH");
+			env_str.append("\0" "0",3);
+		}
 
 		for(std::map<std::string,std::string>::const_iterator p=env.begin();p!=env.end();++p) {
 			if(p==cl)
@@ -144,13 +156,14 @@ namespace cppcms {
 			env_str.append(p->first.c_str(),p->first.size()+1);
 			env_str.append(p->second.c_str(),p->second.size()+1);
 		}
-		env_str+=',';
 		std::string header=(boost::format("%1%:",std::locale::classic()) % env_str.size()).str();
 		header.reserve(header.size()+env_str.size()+post.second);
 		header+=env_str;
+		header+=',';
 		header.append(reinterpret_cast<char *>(post.first),post.second);
 		
 		boost::shared_ptr<impl::tcp_pipe> pipe(new impl::tcp_pipe(con,ip_,port_));
+		std::cerr << "[" << header  << "]" << std::endl;
 		pipe->async_send_receive(header);
 	}
 };

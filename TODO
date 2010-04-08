@@ -5,4 +5,3 @@
 - Implement Asynchronous API
 - Implement JSON-RPC
 - Reintergrate Sessions over TCP/IP
-- Reintegrate Cache Support over TCP/IP and shared_memory

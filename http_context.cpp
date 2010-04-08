@@ -136,7 +136,7 @@ void context::async_flush_output(context::handler const &h)
 
 void context::async_complete_response()
 {
-	if(response().io_mode() == http::response::asynchronous) {
+	if(response().io_mode() == http::response::asynchronous || response().io_mode() == http::response::asynchronous_raw) {
 		conn_->async_write_response(
 			response(),
 			true,

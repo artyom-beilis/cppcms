@@ -419,7 +419,7 @@ set(CPPCMS_SOURCES
 	tcp_messenger.cpp
 	tcp_connector.cpp
 	tcp_cache_server.cpp
-	# connection_forwarder.cpp
+	connection_forwarder.cpp
 	session_pool.cpp
 	base_encryptor.cpp
 	hmac_encryptor.cpp
@@ -675,6 +675,7 @@ set(ALL_TESTS
 	cache_backend_test
 	json_test
 	base64_test
+	forwarder_test
 	)
 foreach(TEST ${ALL_TESTS})
 	add_executable(${TEST} tests/${TEST}.cpp)
