@@ -754,6 +754,10 @@ add_test(form_test
 	form_test "-c" "${CNF}/form_test.js" 
 	"--test-exec=${PYTHON} ${CNF}/form_test.py")
 
+add_test(forwarder_test
+	forwarder_test "-c" "${CNF}/forwarder_test.js" 
+	"--test-exec=${PYTHON} ${CNF}/forwarder_test.py")
+
 foreach(TYPE async sync)
 	add_test(proto_test_${TYPE}_http 
 		proto_test "-c" "${CNF}/proto_test.js" 

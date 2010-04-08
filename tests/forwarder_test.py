@@ -43,6 +43,6 @@ test_valid('test1','','','path=\nmethod=GET\n',200)
 test_valid('test2','/chunks','','path=/chunks\nmethod=GET\n',200)
 test_valid('test3','/chunks','x=1&y=2','path=/chunks\nmethod=POST\nx=1\ny=2\n',200)
 test_valid('status1','/status','','path=/status\nmethod=GET\n',201)
-test_valid('status2','/status','x=1&y=2','path=/status\nmethod=GET\nx=1\ny=2',201)
+test_valid('status2','/status','x=1&y=2','path=/status\nmethod=POST\nx=1\ny=2\n',201)
 
 

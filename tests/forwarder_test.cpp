@@ -27,7 +27,6 @@ public:
 
 	virtual void main(std::string path)
 	{
-		std::cout << "In unit test main" << std::endl;
 		bool flush=false;
 
 		if(path=="/status")
@@ -52,7 +51,7 @@ public:
 	}
 };
 
-bool fw_ok=true;
+bool fw_ok=false;
 
 class forwarder {
 public:
@@ -81,8 +80,10 @@ public:
 		}
 		catch(std::exception const &e) {
 			std::cerr << "Forwarder error:" << e.what() << std::endl;
+			fw_ok=false;
+			return;
 		}
-		fw_ok=false;
+		fw_ok=true;
 	}
 private:
 	boost::shared_ptr<cppcms::service> srv;
@@ -108,7 +109,14 @@ int main(int argc,char **argv) {
 		std::cerr << e.what() << std::endl;
 		return EXIT_FAILURE;
 	}
-	return (run_ok  && fw_ok) ? EXIT_SUCCESS : EXIT_FAILURE;
+	if(run_ok  && fw_ok) {
+		std::cout << "Done Ok" << std::endl;
+		return EXIT_SUCCESS;
+	}
+	else {
+		std::cerr << "Failed run=" << run_ok << " forwarder=" << fw_ok << std::endl;
+		return EXIT_FAILURE;
+	}
 }
 
 

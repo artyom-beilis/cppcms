@@ -53,7 +53,6 @@ namespace cppcms {
 					connection_->async_complete_response();
 					return;
 				}
-				std::cout << "Connected " << std::endl;
 				boost::asio::async_write(socket_,
 					boost::asio::buffer(data_),
 					boost::bind(&tcp_pipe::on_written,shared_from_this(),boost::asio::placeholders::error));
@@ -67,7 +66,6 @@ namespace cppcms {
 					return;
 				}
 
-				std::cout << "Written " << std::endl;
 				
 				connection_->async_on_peer_reset(boost::bind(&tcp_pipe::on_peer_close,shared_from_this()));
 				connection_->response().io_mode(http::response::asynchronous_raw);
@@ -81,7 +79,6 @@ namespace cppcms {
 
 			void on_peer_close()
 			{
-				std::cout << "Closed" << std::endl;
 				boost::system::error_code ec;
 				#ifndef NO_CANCELIO
 				socket_.cancel(ec);
@@ -93,13 +90,10 @@ namespace cppcms {
 
 			void on_read(boost::system::error_code const &e,size_t n)
 			{
-				std::cout << "Some read" << n << std::endl;
 				if(n > 0) {
-					std::cout <<std::string(&input_.front(),n) << std::endl;
 					connection_->response().out().write(&input_.front(),n);
 				}
 				if(e) {
-					std::cout << "Finished " << std::endl;
 					connection_->async_complete_response();
 				}
 				else {
@@ -138,12 +132,12 @@ namespace cppcms {
 
 		std::pair<void *,size_t> post = con->request().raw_post_data();
 		std::map<std::string,std::string> const &env = con->connection().getenv();
-		std::map<std::string,std::string>::const_iterator cl,p;
+		std::map<std::string,std::string>::const_iterator cl;
 
 		cl=env.find("CONTENT_LENGTH");
 		if(cl!=env.end()) {
-			env_str.append(p->first.c_str(),p->first.size()+1);
-			env_str.append(p->second.c_str(),p->second.size()+1);
+			env_str.append(cl->first.c_str(),cl->first.size()+1);
+			env_str.append(cl->second.c_str(),cl->second.size()+1);
 		}
 		else {
 			env_str.append("CONTENT_LENGTH");
@@ -163,7 +157,6 @@ namespace cppcms {
 		header.append(reinterpret_cast<char *>(post.first),post.second);
 		
 		boost::shared_ptr<impl::tcp_pipe> pipe(new impl::tcp_pipe(con,ip_,port_));
-		std::cerr << "[" << header  << "]" << std::endl;
 		pipe->async_send_receive(header);
 	}
 };
