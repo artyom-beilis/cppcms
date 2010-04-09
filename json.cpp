@@ -781,7 +781,7 @@ namespace json {
 
 		typedef enum {
 			st_init = 0,
-			st_object_or_array_expected = 0 ,
+			st_object_or_array_or_value_expected = 0 ,
 			st_object_key_or_close_expected,
 			st_object_colon_expected,
 			st_object_value_expected,
@@ -796,7 +796,7 @@ namespace json {
 		std::ostream &operator<<(std::ostream &out,state_type t)
 		{
 			static char const *names[] = {
-				"st_object_or_array_expected",
+				"st_object_or_array_or_value_expected",
 				"st_object_key_or_close_expected",
 				"st_object_colon_expected",
 				"st_object_value_expected",
@@ -816,8 +816,7 @@ namespace json {
 			tockenizer tock(in);
 			value result;
 		
-			// RFC 4627 JSON is Object or Array, value is not allowed
-			state_type state=st_object_or_array_expected;
+			state_type state=st_init;
 			
 			std::string key;
 
@@ -833,7 +832,7 @@ namespace json {
 #endif
 
 				switch(state) {
-				case st_object_or_array_expected:
+				case st_object_or_array_or_value_expected:
 					if(c=='[')  {
 						*stack.top().second=json::array();
 						state=st_array_value_or_close_expected;
@@ -841,6 +840,31 @@ namespace json {
 					else if(c=='{') {
 						*stack.top().second=json::object();
 						state=st_object_key_or_close_expected;
+					}
+					else if(c==tock_str)  {
+						*stack.top().second=tock.str; 
+						state=stack.top().first;
+						stack.pop();
+					}
+					else if(c==tock_true) {
+						*stack.top().second=true;
+						state=stack.top().first;
+						stack.pop();
+					}
+					else if(c==tock_false) {
+						*stack.top().second=false;
+						state=stack.top().first;
+						stack.pop();
+					}
+					else if(c==tock_null) {
+						*stack.top().second=null();
+						state=stack.top().first;
+						stack.pop();
+					}
+					else if(c==tock_number) {
+						*stack.top().second=tock.real;
+						state=stack.top().first;
+						stack.pop();
 					}
 					else
 						state = st_error;

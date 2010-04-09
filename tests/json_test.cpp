@@ -101,16 +101,11 @@ int main()
 		TEST(v.get<int>("x.y.z")==10);
 		TEST(parse("[]")==json::array());	
 		TEST(parse("{}")==json::object());	
-		THROWS(parse("true"));	
-		THROWS(parse("false"));	
-		THROWS(parse("10"));	
-		THROWS(parse("\"hello\""));	
-		THROWS(parse("null"));
-		TEST(parse("[true]")[0]==json::value(true));	
-		TEST(parse("[false]")[0]==json::value(false));	
-		TEST(parse("[10]")[0]==json::value(10));	
-		TEST(parse("[\"hello\"]")[0]==json::value("hello"));	
-		TEST(parse("[null]")[0]==json::null());
+		TEST(parse("true")==json::value(true));	
+		TEST(parse("false")==json::value(false));	
+		TEST(parse("10")==json::value(10));	
+		TEST(parse("\"hello\"")==json::value("hello"));	
+		TEST(parse("null")==json::null());
 		char const *s=
 			"{ \"t\" : [{},{},{},{ \"x\":1},[]],\"x\" : { \"o\" : { \"test\" : [ 10,20,true ], \"post\" : 13.01 }, \"yes\" : \"\\u05d0א\" }}";
 		v=parse(s);
@@ -124,13 +119,13 @@ int main()
 		TEST(v.type("x")==json::is_object);
 		TEST(v.get<std::string>("x.yes")=="אא");
 		// Test correct handing of surrogates
-		THROWS(parse("[\"\\ud834\"]"));
-		THROWS(parse("[\"\\udd1e\"]"));
-		THROWS(parse("[\"\\ud834 \\udd1e\"]"));
-		TEST(parse("[\"\\u05d0\\ud834\\udd1e x\"]")[0]=="א\xf0\x9d\x84\x9e x");
-		THROWS(parse("[\"\xFF\xFF\"]")); // Invalid UTF-8
-		TEST(parse("[\"\\u05d0 x\"]")[0]=="א x"); // Correct read of 4 bytes
-		THROWS(parse("[\"\\u05dx x\"]")); // Correct read of 4 bytes
+		THROWS(parse("\"\\ud834\""));
+		THROWS(parse("\"\\udd1e\""));
+		THROWS(parse("\"\\ud834 \\udd1e\""));
+		TEST(parse("\"\\u05d0\\ud834\\udd1e x\"")=="א\xf0\x9d\x84\x9e x");
+		THROWS(parse("\"\xFF\xFF\"")); // Invalid UTF-8
+		TEST(parse("\"\\u05d0 x\"")=="א x"); // Correct read of 4 bytes
+		THROWS(parse("\"\\u05dx x\"")); // Correct read of 4 bytes
 		TEST(parse("[//Hello\n]")==json::array());
 		TEST(format("test")=="\"test\"");
 		TEST(format(10)=="10");
