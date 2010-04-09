@@ -44,7 +44,6 @@ namespace sessions {
 		
 		struct data;
 		util::hold_ptr<data> d;
-		util::hold_ptr<impl::sid_generator> sid_;
 		intrusive_ptr<session_storage> storage_;
 	};
 

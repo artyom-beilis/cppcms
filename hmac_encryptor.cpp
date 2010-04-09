@@ -20,12 +20,16 @@
 #include "hmac_encryptor.h"
 #include "md5.h"
 #include <time.h>
+#include <stdlib.h>
 
 using namespace std;
 
 namespace cppcms {
 namespace sessions {
 namespace impl {
+
+
+boost::thread_specific_ptr<hmac_cipher::block> hmac_cipher::seed;
 
 hmac_cipher::hmac_cipher(string key) :
 	base_encryptor(key)
@@ -56,7 +60,7 @@ string hmac_cipher::encrypt(string const &plain,time_t timeout)
 	info &header=*(info *)(&data.front()+16);
 	header.timeout=timeout;
 	header.size=plain.size();
-	salt(header.salt);
+	salt(header.salt,sizeof(header.salt));
 	copy(plain.begin(),plain.end(),data.begin()+16+sizeof(info));
 	hash(&data.front()+16,data.size()-16,&data.front());
 	return base64_enc(data);
@@ -84,6 +88,32 @@ bool hmac_cipher::decrypt(string const &cipher,string &plain,time_t *timeout)
 		*timeout=header.timeout;
 	plain.assign(data.begin()+offset,data.end());
 	return true;
+}
+
+
+void hmac_cipher::salt(char *salt,int n)
+{
+	if(!seed.get()) {
+		block tmp;
+		urandom_device rnd;
+		rnd.generate(&tmp,16);
+		tmp.left=0;
+		seed.reset(new block(tmp));
+	}
+	block &b=*seed;
+	while(n > 0) {
+		if(b.left == 0) {
+			using namespace cppcms::impl;
+			b.seed.counter++;
+			md5_state_t md5;
+			md5_init(&md5);
+			md5_append(&md5,reinterpret_cast<md5_byte_t *>(&b.seed),sizeof(b.seed));
+			md5_finish(&md5,reinterpret_cast<md5_byte_t *>(b.buf));
+			b.left=sizeof(b.buf);
+		}
+		*salt++ = b.buf[--b.left];
+		n--;
+	}
 }
 
 

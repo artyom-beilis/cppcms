@@ -52,20 +52,8 @@ base_encryptor::base_encryptor(string key_):
 		sscanf(buf,"%x",&v);
 		key[i/2]=v;
 	}
-	urandom_device dev;
-	dev.generate(&seed,sizeof(seed));
 }
 
-unsigned base_encryptor::rand(unsigned max)
-{
-	#ifdef CPPCMS_WIN_NATIVE
-	unsigned res;
-	rnd.generate(&res,sizeof(res));
-	return (unsigned)(res/(RAND_MAX+1.0)*max);
-	#else
-	return (unsigned)(rand_r(&seed)/(RAND_MAX+1.0)*max);
-	#endif
-}
 
 string base_encryptor::base64_enc(vector<unsigned char> const &data)
 {
@@ -84,17 +72,7 @@ void base_encryptor::base64_dec(std::string const &in,std::vector<unsigned char>
 	b64url::decode((unsigned char const *)ptr,ptr+in.size(),&data.front());
 }
 
-void base_encryptor::salt(char *salt)
-{
-	info dummy;
-	#ifdef CPPCMS_WIN_NATIVE
-	unsigned res;
-	rnd.generate(salt,sizeof(dummy.salt));
-	#else
-	for(unsigned i=0;i<sizeof(dummy.salt);i++)
-		salt[i]=rand(256);
-	#endif
-}
+
 
 } // impl
 } // sessions

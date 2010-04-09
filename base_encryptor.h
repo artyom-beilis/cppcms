@@ -37,7 +37,6 @@ public:
 	base_encryptor(std::string key);
 	virtual ~base_encryptor();
 protected:
-	unsigned rand(unsigned );
 	std::vector<unsigned char> key;
 	std::string base64_enc(std::vector<unsigned char> const &data);
 	void base64_dec(std::string const &,std::vector<unsigned char> &data);
@@ -46,12 +45,7 @@ protected:
 		uint16_t size;
 		char salt[6];
 	};
-	void salt(char *s);
 private:
-	#ifdef CPPCMS_WIN_NATIVE
-	urandom_device rnd;
-	#endif
-	unsigned seed;
 };
 
 } // impl

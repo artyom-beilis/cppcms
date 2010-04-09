@@ -62,10 +62,10 @@
 			"path" : "/",
 			"secure" : false
 		},
-	//	"location" : "client",
+		"location" : "client",
 	//	"location" : "server",
 	//	"location" : "both",
-		"client_size_limit" : 512,
+		"client_size_limit" : 1000,
 		"gc" : 10,
 		"client" : { 
 			"encryptor" : "hmac", 
@@ -75,8 +75,8 @@
 			// 32 digit hexadecimal secret number
 		},
 		"server" : {
-			//"storage" : "files",
-			"storage" : "memory",
+			"storage" : "files",
+			//"storage" : "memory",
 			"dir" : "./cppcms_sessions",
 			"shared" : true
 		}
@@ -92,7 +92,7 @@
 		"backend" : "thread_shared", // "process_shared"
 		"limit" : 100, // items - thread cache
 		"memory" : 1024,  // KBs - process cache
-		"tcp" : {"ips" : [ "127.0.0.1" ],"ports" : [ 6001 ]}
+//		"tcp" : {"ips" : [ "127.0.0.1" ],"ports" : [ 6001 ]}
 	},
 	"file_server" : {
 		"enable" : true,

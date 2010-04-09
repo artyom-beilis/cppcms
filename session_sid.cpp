@@ -27,6 +27,14 @@
 #include <stdio.h>
 #include <time.h>
 
+#include "config.h"
+#ifdef CPPCMS_USE_EXTERNAL_BOOST
+#   include <boost/thread.hpp>
+#else // Internal Boost
+#   include <cppcms_boost/thread.hpp>
+    namespace boost = cppcms_boost;
+#endif
+
 #ifndef CPPCMS_WIN_NATIVE
 #include <sys/time.h>
 #else
@@ -41,26 +49,27 @@ namespace impl {
 	using namespace cppcms::impl;
 
 	class sid_generator : public util::noncopyable {
-		struct for_hash {
-			char uid[16];
-			uint64_t session_counter;
-			#ifndef CPPCMS_WIN_NATIVE
-			struct timeval tv;
-			#else
-			uint64_t tv;
-			#endif
-			char uid2[16];
-		} hashed;
 	public:
 		sid_generator()
 		{
-			hashed.session_counter=0;
-			urandom_device urand;
-			urand.generate(hashed.uid,16);
-			urand.generate(hashed.uid2,16);
 		}
+		
+		void check_hash_ptr()
+		{
+			if(!hash_ptr.get()) {
+				for_hash hashed;
+				hashed.session_counter=0;
+				urandom_device urand;
+				urand.generate(hashed.uid,16);
+				urand.generate(hashed.uid2,16);
+				hash_ptr.reset(new for_hash(hashed));
+			}
+		}
+
 		std::string get()
 		{
+			check_hash_ptr();
+			for_hash &hashed = *hash_ptr;
 			hashed.session_counter++;
 			#ifndef CPPCMS_WIN_NATIVE
 			gettimeofday(&hashed.tv,NULL);
@@ -84,13 +93,30 @@ namespace impl {
 			}
 			return std::string(res);
 		}
+		struct for_hash {
+			char uid[16];
+			uint64_t session_counter;
+			#ifndef CPPCMS_WIN_NATIVE
+			struct timeval tv;
+			#else
+			uint64_t tv;
+			#endif
+			char uid2[16];
+		};
+	private:
+		static boost::thread_specific_ptr<for_hash> hash_ptr;
 	};
+	
+	boost::thread_specific_ptr<sid_generator::for_hash> sid_generator::hash_ptr;
+
+
 } // namespace impl
+
+
 
 struct session_sid::data {};
 
 session_sid::session_sid(intrusive_ptr<session_storage> st) :
-	sid_(new impl::sid_generator()),
 	storage_(st)
 {
 }
@@ -119,11 +145,13 @@ void session_sid::save(session_interface &session,std::string const &data,time_t
 	string id;
 	if(!new_data) {
 		if(!valid_sid(session.get_session_cookie(),id)) {
-			id=sid_->get(); // if id not valid create new one
+			impl::sid_generator generator;
+			id=generator.get(); // if id not valid create new one
 		}
 	}
 	else {
-		id=sid_->get();
+		impl::sid_generator generator;
+		id=generator.get(); 
 	}
 
 	storage_->save(id,timeout,data);

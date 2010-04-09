@@ -19,6 +19,13 @@
 #ifndef CPPCMS_HMAC_ENCRYPTOR_H
 #define CPPCMS_HMAC_ENCRYPTOR_H
 #include "base_encryptor.h"
+#include "config.h"
+#ifdef CPPCMS_USE_EXTERNAL_BOOST
+#   include <boost/thread.hpp>
+#else // Internal Boost
+#   include <cppcms_boost/thread.hpp>
+    namespace boost = cppcms_boost;
+#endif
 
 namespace cppcms {
 namespace sessions {
@@ -30,6 +37,17 @@ public:
 	virtual std::string encrypt(std::string const &plain,time_t timeout);
 	virtual bool decrypt(std::string const &cipher,std::string &plain,time_t *timeout=NULL);
 	hmac_cipher(std::string key);
+	struct block {
+		union {
+			char data[16];
+			uint64_t counter;
+		} seed;
+		char buf[16];
+		unsigned left;
+	};
+private:
+	static boost::thread_specific_ptr<block> seed;
+	void salt(char *s,int n);
 };
 
 } // impl
