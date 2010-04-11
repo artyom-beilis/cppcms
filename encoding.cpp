@@ -448,24 +448,7 @@ std::string CPPCMS_API to_utf8(char const *c_encoding,char const *begin,char con
 #ifdef HAVE_ICONV
 	return impl::iconv_convert_to("UTF-8",c_encoding,begin,end);
 #else // USE ICU
-	locale::details::converter cvt(c_encoding);
-	result.reserve(end-begin);
-
-	std::vector<char> buf(cvt.max_len() * 64);
-
-	while(begin<end) {
-		uint32_t u=utf8::next(begin,end,false,true);
-		if(u > 0x10FFFF) // error
-			return result;
-		char *tbegin=&buf[0];
-		char *tend=tbegin+buf.size();
-		uint32_t n = cvt.from_unicode(u ,tbegin,tend);
-		if(n != locale::details::converter::illegal && n!= locale::details::converter::incomplete)
-			result.append(tbegin,tbegin+n);
-		else
-			return result;
-	}
-	return result;
+	return locale::conv::to_utf<char>(begin,end,c_encoding);
 #endif
 }
 
@@ -510,17 +493,7 @@ std::string CPPCMS_API from_utf8(char const *c_encoding,char const *begin,char c
 #ifdef HAVE_ICONV
 	return impl::iconv_convert_to(c_encoding,"UTF-8",begin,end);
 #else // USE ICU
-	locale::details::converter cvt(c_encoding);
-	result.reserve(end-begin);
-
-	while(begin<end) {
-		uint32_t u=cvt.to_unicode(begin,end);
-		if(u > 0x10FFFF) // error
-			return result;
-		utf8::seq s=utf8::encode(u);
-		result.append(s.c,s.len);
-	}
-	return result;
+	return locale::conv::from_utf<char>(begin,end,c_encoding);
 #endif
 }
 
