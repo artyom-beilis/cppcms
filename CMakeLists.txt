@@ -382,6 +382,7 @@ set(CPPCMS_PUBLIC_HEADERS
 	util.h
 	view.h
 	views_pool.h
+	function.h
 	${CMAKE_CURRENT_BINARY_DIR}/config.h
 )
 
@@ -675,6 +676,7 @@ set(ALL_TESTS
 	cache_backend_test
 	json_test
 	base64_test
+	function_test
 	forwarder_test
 	)
 foreach(TEST ${ALL_TESTS})
@@ -749,6 +751,7 @@ add_test(storage_test storage_test)
 add_test(json_test json_test)
 add_test(aio_timer_test aio_timer_test aio_timer_test --service-api=http)
 add_test(cache_backend_test cache_backend_test)
+add_test(function_test function_test)
 
 add_test(form_test
 	form_test "-c" "${CNF}/form_test.js" 
