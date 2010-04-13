@@ -339,12 +339,6 @@ set(CPPCMS_PUBLIC_HEADERS
 	base_view.h
 	cache_interface.h
 	cache_pool.h
-	callback.h
-	callback0.h
-	callback1.h
-	callback2.h
-	callback3.h
-	callback4.h
 	clone_ptr.h
 	# connection_forwarder.h
 	copy_ptr.h

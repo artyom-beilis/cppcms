@@ -21,7 +21,7 @@
 
 #include "defs.h"
 #include "noncopyable.h"
-#include "callback0.h"
+#include "function.h"
 #include "hold_ptr.h"
 
 namespace cppcms {
@@ -33,7 +33,7 @@ namespace cppcms {
 	class CPPCMS_API thread_pool : public util::noncopyable {
 	public:
 
-		int post(util::callback0 const &job);	
+		int post(function<void()> const &job);	
 		bool cancel(int id);
 		thread_pool(int threads);
 		void stop();

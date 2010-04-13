@@ -24,13 +24,12 @@
 #include "intrusive_ptr.h"
 #include <vector>
 #include <map>
+#include "function.h"
 #include "config.h"
 #ifdef CPPCMS_USE_EXTERNAL_BOOST
-#   include <boost/function.hpp>
 #   include <boost/system/error_code.hpp>
     namespace boost { namespace asio { class io_service; } }
 #else // Internal Boost
-#   include <cppcms_boost/function.hpp>
 #   include <cppcms_boost/system/error_code.hpp>
     namespace cppcms_boost { namespace asio { class io_service; } }
     namespace boost = cppcms_boost;
@@ -50,10 +49,10 @@ namespace cppcms {
 namespace impl {
 namespace cgi {
 
-	typedef boost::function<void(boost::system::error_code const &e)> handler;
-	typedef boost::function<void(boost::system::error_code const &e,size_t)> io_handler;
-	typedef boost::function<void()> callback;
-	typedef boost::function<void(bool)> ehandler;
+	typedef function<void(boost::system::error_code const &e)> handler;
+	typedef function<void(boost::system::error_code const &e,size_t)> io_handler;
+	typedef function<void()> callback;
+	typedef function<void(bool)> ehandler;
 
 	class acceptor : public util::noncopyable {
 	public:

@@ -21,7 +21,7 @@
 
 #include "noncopyable.h"
 #include "defs.h"
-#include "callback.h"
+#include "function.h"
 #include "hold_ptr.h"
 #include "mem_bind.h"
 #include <string>
@@ -54,11 +54,11 @@ namespace cppcms {
 	class CPPCMS_API url_dispatcher : public util::noncopyable {
 	public:
 		// Handlers
-		typedef util::callback0 handler;
-		typedef util::callback1<std::string> handler1;
-		typedef util::callback2<std::string,std::string> handler2;
-		typedef util::callback3<std::string,std::string,std::string> handler3;
-		typedef util::callback4<std::string,std::string,std::string,std::string> handler4;
+		typedef function<void()> handler;
+		typedef function<void(std::string)> handler1;
+		typedef function<void(std::string,std::string)> handler2;
+		typedef function<void(std::string,std::string,std::string)> handler3;
+		typedef function<void(std::string,std::string,std::string,std::string)> handler4;
 
 		///
 		/// Assign \a handler to pattern \a regex thus if URL that matches

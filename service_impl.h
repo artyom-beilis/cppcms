@@ -59,7 +59,7 @@ namespace impl {
 		std::auto_ptr<session_pool> session_pool_;
 		std::locale default_locale_;
 
-		std::vector<util::callback0> on_fork_;
+		std::vector<function<void()> > on_fork_;
 
 		int id_;
 

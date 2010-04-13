@@ -26,31 +26,31 @@ namespace cppcms { namespace util {
 		struct binder0 {
 			void (C::*member)();
 			P object;
-			void operator()() { ((*object).*member)(); }
+			void operator()() const { ((*object).*member)(); }
 		};
 		template<typename C,typename P,typename P1>
 		struct binder1 {
 			void (C::*member)(P1);
 			P object;
-			void operator()(P1 p1) { ((*object).*member)(p1); }
+			void operator()(P1 p1) const { ((*object).*member)(p1); }
 		};
 		template<typename C,typename P,typename P1,typename P2>
 		struct binder2 {
 			void (C::*member)(P1,P2);
 			P object;
-			void operator()(P1 p1,P2 p2) { ((*object).*member)(p1,p2); }
+			void operator()(P1 p1,P2 p2) const { ((*object).*member)(p1,p2); }
 		};
 		template<typename C,typename P,typename P1,typename P2,typename P3>
 		struct binder3 {
 			void (C::*member)(P1,P2,P3);
 			P object;
-			void operator()(P1 p1,P2 p2,P3 p3) { ((*object).*member)(p1,p2,p3); }
+			void operator()(P1 p1,P2 p2,P3 p3) const { ((*object).*member)(p1,p2,p3); }
 		};
 		template<typename C,typename P,typename P1,typename P2,typename P3,typename P4>
 		struct binder4 {
 			void (C::*member)(P1,P2,P3,P4);
 			P object;
-			void operator()(P1 p1,P2 p2,P3 p3,P4 p4) { ((*object).*member)(p1,p2,p3,p4); }
+			void operator()(P1 p1,P2 p2,P3 p3,P4 p4) const { ((*object).*member)(p1,p2,p3,p4); }
 		};
 	}
 

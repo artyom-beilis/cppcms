@@ -52,7 +52,7 @@ namespace impl {
 			}
 			return false;
 		}
-		int post(util::callback0 const &job)
+		int post(function<void()> const &job)
 		{
 			boost::unique_lock<boost::mutex> lock(mutex_);
 			int id=job_id_++;
@@ -109,7 +109,7 @@ namespace impl {
 		void worker()
 		{
 			for(;;) {
-				util::callback0 job;
+				function<void()> job;
 
 				{
 					boost::unique_lock<boost::mutex> lock(mutex_);
@@ -124,7 +124,8 @@ namespace impl {
 					}
 				}
 
-				job();
+				if(!job.empty())
+					job();
 			} 	
 		}
 
@@ -134,7 +135,7 @@ namespace impl {
 
 		bool shut_down_;	
 		int job_id_;
-		typedef std::list<std::pair<int,util::callback0> > queue_type;
+		typedef std::list<std::pair<int,function<void()> > > queue_type;
 		queue_type queue_;
 		std::vector<boost::shared_ptr<boost::thread> > workers_;
 
@@ -149,7 +150,7 @@ thread_pool::thread_pool(int n) :
 {
 }
 
-int thread_pool::post(util::callback0  const &job)
+int thread_pool::post(function<void()>  const &job)
 {
 	return impl_->post(job);
 }

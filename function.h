@@ -1,3 +1,21 @@
+///////////////////////////////////////////////////////////////////////////////
+//                                                                             
+//  Copyright (C) 2008-2010  Artyom Beilis (Tonkikh) <artyomtnk@yahoo.com>     
+//                                                                             
+//  This program is free software: you can redistribute it and/or modify       
+//  it under the terms of the GNU Lesser General Public License as published by
+//  the Free Software Foundation, either version 3 of the License, or
+//  (at your option) any later version.
+//
+//  This program is distributed in the hope that it will be useful,
+//  but WITHOUT ANY WARRANTY; without even the implied warranty of
+//  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+//  GNU Lesser General Public License for more details.
+//
+//  You should have received a copy of the GNU Lesser General Public License
+//  along with this program.  If not, see <http://www.gnu.org/licenses/>.
+//
+///////////////////////////////////////////////////////////////////////////////
 #ifndef CPPCMS_FUNCTION_H
 #define CPPCMS_FUNCTION_H
 
@@ -23,7 +41,7 @@ namespace cppcms {
 	public:									\
 		typedef Result result_type;					\
 		struct callable {						\
-			virtual Result call(CPPCMS_TYPE_PARAMS) const=0;	\
+			virtual Result call(CPPCMS_TYPE_PARAMS) =0;		\
 			virtual callable *clone() const = 0;			\
 			virtual ~callable(){}					\
 		};								\
@@ -32,7 +50,7 @@ namespace cppcms {
 		struct callable_impl : public callable {			\
 			F func;							\
 			callable_impl(F f) : func(f){}				\
-			virtual R call(CPPCMS_TYPE_PARAMS) const		\
+			virtual R call(CPPCMS_TYPE_PARAMS) 			\
 			{  return func(CPPCMS_CALL_PARAMS); }			\
 			virtual callable *clone() const				\
 			{ return new callable_impl<R,F>(func); }		\
@@ -41,7 +59,7 @@ namespace cppcms {
 		struct callable_impl<void,F> : public callable {		\
 			F func;							\
 			callable_impl(F f) : func(f){}				\
-			virtual void call(CPPCMS_TYPE_PARAMS) const		\
+			virtual void call(CPPCMS_TYPE_PARAMS) 			\
 			{  func(CPPCMS_CALL_PARAMS); }				\
 			virtual callable *clone() const				\
 			{ return new callable_impl<void,F>(func); }		\
@@ -62,6 +80,7 @@ namespace cppcms {
 			return call_ptr->call(CPPCMS_CALL_PARAMS); 		\
 		}								\
 		bool empty() const { return call_ptr.get()==0; }		\
+		void swap(function &other) { call_ptr.swap(other.call_ptr); }	\
 	private:								\
 		util::clone_ptr<callable> call_ptr;				\
 	};									\

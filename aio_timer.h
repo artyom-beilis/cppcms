@@ -21,7 +21,7 @@
 
 #include "defs.h"
 #include "noncopyable.h"
-#include "callback1.h"
+#include "function.h"
 #include "hold_ptr.h"
 
 namespace cppcms {
@@ -40,7 +40,7 @@ namespace cppcms {
 			timer(service &srv);
 			~timer();
 
-			typedef util::callback1<bool> handler;
+			typedef function<void(bool)> handler;
 
 			//
 			// true if was error or cancelation

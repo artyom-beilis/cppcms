@@ -22,7 +22,7 @@
 #include "defs.h"
 #include "noncopyable.h"
 #include "hold_ptr.h"
-#include "callback0.h"
+#include "function.h"
 #include <locale>
 
 
@@ -66,8 +66,8 @@ namespace cppcms {
 
 		cppcms::impl::service &impl();
 
-		void post(util::callback0 const &handler);
-		void after_fork(util::callback0 const &handler);
+		void post(function<void()> const &handler);
+		void after_fork(function<void()> const &handler);
 		
 		int threads_no();
 		int procs_no();

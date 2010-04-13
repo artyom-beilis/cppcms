@@ -304,7 +304,7 @@ void service::shutdown()
 #endif
 }
 
-void service::after_fork(util::callback0 const &cb)
+void service::after_fork(function<void()> const &cb)
 {
 	impl_->on_fork_.push_back(cb);
 }
@@ -589,7 +589,7 @@ cppcms::impl::service &service::impl()
 	return *impl_;
 }
 
-void service::post(util::callback0 const &handler)
+void service::post(function<void()> const &handler)
 {
 	impl_->get_io_service().post(handler);
 }

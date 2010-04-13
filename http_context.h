@@ -23,9 +23,7 @@
 #include "hold_ptr.h"
 #include "intrusive_ptr.h"
 #include "refcounted.h"
-#include "callback0.h"
-#include "callback1.h"
-
+#include "function.h"
 #include <locale>
 
 namespace cppcms {
@@ -138,7 +136,7 @@ namespace cppcms {
 				operation_aborted    ///< Asynchronous operation was canceled
 			} complition_type; 
 
-			typedef util::callback1<complition_type> handler;
+			typedef function<void(complition_type)> handler;
 
 			///
 			/// Send all pending output data to the client and
@@ -167,7 +165,7 @@ namespace cppcms {
 			/// 2. If async_flush_output fails, this does not mean that 
 			///    this handler would be called as well, so you need to check both
 			///
-			void async_on_peer_reset(util::callback0 const &h);
+			void async_on_peer_reset(function<void()> const &h);
 		private:
 			void on_request_ready(bool error);
 			static void dispatch(intrusive_ptr<application> app,std::string url,bool syncronous);
