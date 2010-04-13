@@ -28,6 +28,7 @@ namespace rpc {
 	public:
 
 		json_call(intrusive_ptr<http::context> context);
+		json_call(http::context &context);
 		~json_call();
 
 		std::string method();
@@ -48,125 +49,77 @@ namespace rpc {
 		util::hold_ptr<data> d;
 	};
 
-	namespace json_details {
-		typedef intrusive_ptr<json::call> json_ptr;
+	#define CPPCMS_JSON_RPC_BINDER(N)						\
+	private:									\
+	template<typename Class,typename Result CPPCMS_JSON_TEMPLATE_PARAMS>		\
+	struct binder##N : public call {						\
+		binder##N(Class *o=0,Result (Class::*m=0)(CPPCMS_JSON_TYPE_PARAMS)):	\
+			object(o),							\
+			member(m)							\
+		{									\
+		}									\
+		virtual call *clone() const { return new binder##N(*this); }		\
+		virtual json::value operator()(json::array const &a) const		\
+		{									\
+			if(a.size()!=N) throw call_error("Invalid parameres number");	\
+			return (object->*member)(CPPCMS_JSON_CALL_PARAMS);		\
+		}									\
+		Class *object;								\
+		Result (Class::*member)(CPPCMS_JSON_TYPE_PARAMS);			\
+	};										\
+	public:
 
-		template<typename Class,typename Pointer>
-		struct binder0 {
-		public:
-			typedef Pointer pointer_type;
-			typedef (Class::*member_type)(json_ptr);
 		
-			binder0(member_type m,pointer_type o) : object_(o), member_(m) {}
 
-
-			void operator()(json_ptr p) const
-			{
-				if(p->params.size()!=0) {
-					throw json::bad_value_cast(); 
-				}
-				((*object_).*member_)(p);
-			}
-		private:
-			pointer_type object_;
-			member_type meber_;
+	class json_method {
+	public:
+		json::value operator()(json::array const &a) const
+		{
+		}
+	private:
+		
+		struct call {
+			virtual call *clone() const = 0;
+			virtual json::value operator()(json::array const &) const = 0;
+			virtual ~call(){}
 		};
-		
-		template<typename Class,typename Pointer,typename P1>
-		struct binder1 {
-		public:
-			typedef Pointer pointer_type;
-			typedef (Class::*member_type)(json_ptr,P1 const &);
-		
-			binder1(member_type m,pointer_type o) : object_(o), member_(m) {}
+		#define CPPCMS_JSON_TEMPLATE_PARAMS 
+		#define CPPCMS_JSON_TYPE_PARAMS
+		#define CPPCMS_JSON_CALL_PARAMS
+		CPPCMS_JSON_RPC_BINDER(0)
+		#undef CPPCMS_JSON_TEMPLATE_PARAMS
+		#undef CPPCMS_JSON_TYPE_PARAMS
+		#undef CPPCMS_JSON_CALL_PARAMS
+
+		#define CPPCMS_JSON_TEMPLATE_PARAMS ,typename P1
+		#define CPPCMS_JSON_TYPE_PARAMS  P1
+		#define CPPCMS_JSON_CALL_PARAMS  a[0]
+		CPPCMS_JSON_RPC_BINDER(1)
+		#undef CPPCMS_JSON_TEMPLATE_PARAMS
+		#undef CPPCMS_JSON_TYPE_PARAMS
+		#undef CPPCMS_JSON_CALL_PARAMS
+
+		#define CPPCMS_JSON_TEMPLATE_PARAMS ,typename P1,typename P2
+		#define CPPCMS_JSON_TYPE_PARAMS  P1,P2
+		#define CPPCMS_JSON_CALL_PARAMS  a[0],a[1]
+		CPPCMS_JSON_RPC_BINDER(2)
+		#undef CPPCMS_JSON_TEMPLATE_PARAMS
+		#undef CPPCMS_JSON_TYPE_PARAMS
+		#undef CPPCMS_JSON_CALL_PARAMS
+
+		#define CPPCMS_JSON_TEMPLATE_PARAMS ,typename P1,typename P2,typename P3
+		#define CPPCMS_JSON_TYPE_PARAMS  P1,P2,P3
+		#define CPPCMS_JSON_CALL_PARAMS  a[0],a[1],a[2]
+		CPPCMS_JSON_RPC_BINDER(3)
+		#undef CPPCMS_JSON_TEMPLATE_PARAMS
+		#undef CPPCMS_JSON_TYPE_PARAMS
+		#undef CPPCMS_JSON_CALL_PARAMS
 
 
-			void operator()(json_ptr p) const
-			{
-				if(p->params.size()!=1) {
-					throw json::bad_value_cast(); 
-				}
-				P1 p1=p->params[0].get<P1>();
-				((*object_).*member_)(p,p1);
-			}
-		private:
-			pointer_type object_;
-			member_type meber_;
-		};
-		
-		template<typename Class,typename Pointer,typename P1,typename P2>
-		struct binder2 {
-		public:
-			typedef Pointer pointer_type;
-			typedef (Class::*member_type)(json_ptr,P1 const &,P2 const &);
-		
-			binder2(member_type m,pointer_type o) : object_(o), member_(m) {}
 
-
-			void operator()(json_ptr p) const
-			{
-				if(p->params.size()!=2) {
-					throw json::bad_value_cast(); 
-				}
-				P1 p1=p->params[0].get<P1>();
-				P2 p2=p->params[1].get<P2>();
-				((*object_).*member_)(p,p1,p2);
-			}
-		private:
-			pointer_type object_;
-			member_type meber_;
-		};
-
-		template<typename Class,typename Pointer,typename P1,typename P2,typename P3>
-		struct binder3 {
-		public:
-			typedef Pointer pointer_type;
-			typedef (Class::*member_type)(json_ptr,P1 const &,P2 const &,P3 const &);
-		
-			binder3(member_type m,pointer_type o) : object_(o), member_(m) {}
-
-
-			void operator()(json_ptr p) const
-			{
-				if(p->params.size()!=3) {
-					throw json::bad_value_cast(); 
-				}
-				P1 p1=p->params[0].get<P1>();
-				P2 p2=p->params[1].get<P2>();
-				P3 p3=p->params[2].get<P3>();
-				((*object_).*member_)(p,p1,p2,p3);
-			}
-		private:
-			pointer_type object_;
-			member_type meber_;
-		};
-
-		template<typename Class,typename Pointer,typename P1,typename P2,typename P3,typename P4>
-		struct binder4 {
-		public:
-			typedef Pointer pointer_type;
-			typedef (Class::*member_type)(json_ptr,P1 const &,P2 const &,P3 const &,P4 const &);
-		
-			binder2(member_type m,pointer_type o) : object_(o), member_(m) {}
-
-
-			void operator()(json_ptr p) const
-			{
-				if(p->params.size()!=3) {
-					throw json::bad_value_cast(); 
-				}
-				P1 p1=p->params[0].get<P1>();
-				P2 p2=p->params[1].get<P2>();
-				P3 p3=p->params[2].get<P3>();
-				P4 p4=p->params[3].get<P4>();
-				((*object_).*member_)(p,p1,p2,p3,p4);
-			}
-		private:
-			pointer_type object_;
-			member_type meber_;
-		};
 	
-	} // json details
+		util::clone_ptr<call> callback_;
+	};
 
 	class json_object : public application {
 	public:
