@@ -20,136 +20,160 @@
 #define CPPCMS_RPC_JSON_OBJECT_H
 
 #include "application.h"
+#include "refcounted.h"
+#include "intrusive_ptr.h"
+#include "function.h"
+#include "json.h"
 
 namespace cppcms {
 namespace rpc {
 
+	class CPPCMS_API call_error : public cppcms_error {
+	public:	
+		call_error(std::string const &message);
+	};
+
+	class json_rpc_server;
+
 	class CPPCMS_API json_call : public refcounted {
 	public:
 
-		json_call(intrusive_ptr<http::context> context);
 		json_call(http::context &context);
 		~json_call();
 
 		std::string method();
+		bool notification();
+
 		json::array const &params();
-		bool is_notification();
 
-		json::value &result();
-		json::value &error();
+		http::context &context();
 
-		void on_drop(util::callback0 const &handler)
-
-		void submit();
-
+		void return_result(json::value const &);
+		void return_error(json::value const &);
+	
 	private:
+		friend class json_rpc_server;
+		void return_result(http::context &,json::value const &);
+		void return_error(http::context &,json::value const &);
+		void attach_context(intrusive_ptr<http::context> context);
+
+		void check_not_notification();
 		intrusive_ptr<http::context> context_;
+		json::value  id_;
+		json::array params_;
+		std::string method_;
+		bool notification_;
 
 		struct data;
 		util::hold_ptr<data> d;
 	};
 
-	#define CPPCMS_JSON_RPC_BINDER(N)						\
-	private:									\
-	template<typename Class,typename Result CPPCMS_JSON_TEMPLATE_PARAMS>		\
-	struct binder##N : public call {						\
-		binder##N(Class *o=0,Result (Class::*m=0)(CPPCMS_JSON_TYPE_PARAMS)):	\
-			object(o),							\
-			member(m)							\
-		{									\
-		}									\
-		virtual call *clone() const { return new binder##N(*this); }		\
-		virtual json::value operator()(json::array const &a) const		\
-		{									\
-			if(a.size()!=N) throw call_error("Invalid parameres number");	\
-			return (object->*member)(CPPCMS_JSON_CALL_PARAMS);		\
-		}									\
-		Class *object;								\
-		Result (Class::*member)(CPPCMS_JSON_TYPE_PARAMS);			\
-	};										\
+	class CPPCMS_API json_rpc_server : public application {
 	public:
+		typedef enum {
+			any_role,
+			method_role,
+			notification_role
+		} role_type;
+		typedef function<void(json::array const &)> method_type;
+		void bind(std::string const &name,method_type const &,role_type type = any_role);
+		virtual void main(std::string);
 
+		intrusive_ptr<json_call> release_call();
 		
+		json_rpc_server(cppcms::service &srv);
+		~json_rpc_server();
 
-	class json_method {
-	public:
-		json::value operator()(json::array const &a) const
-		{
-		}
+		std::string method();
+		bool notification();
+		json::array const &params();
+		void return_result(json::value const &);
+		void return_error(json::value const &);
 	private:
-		
-		struct call {
-			virtual call *clone() const = 0;
-			virtual json::value operator()(json::array const &) const = 0;
-			virtual ~call(){}
+		void check_call();
+		struct data;
+		struct method_data {
+			method_type method;
+			role_type role;
 		};
-		#define CPPCMS_JSON_TEMPLATE_PARAMS 
-		#define CPPCMS_JSON_TYPE_PARAMS
-		#define CPPCMS_JSON_CALL_PARAMS
-		CPPCMS_JSON_RPC_BINDER(0)
-		#undef CPPCMS_JSON_TEMPLATE_PARAMS
-		#undef CPPCMS_JSON_TYPE_PARAMS
-		#undef CPPCMS_JSON_CALL_PARAMS
-
-		#define CPPCMS_JSON_TEMPLATE_PARAMS ,typename P1
-		#define CPPCMS_JSON_TYPE_PARAMS  P1
-		#define CPPCMS_JSON_CALL_PARAMS  a[0]
-		CPPCMS_JSON_RPC_BINDER(1)
-		#undef CPPCMS_JSON_TEMPLATE_PARAMS
-		#undef CPPCMS_JSON_TYPE_PARAMS
-		#undef CPPCMS_JSON_CALL_PARAMS
-
-		#define CPPCMS_JSON_TEMPLATE_PARAMS ,typename P1,typename P2
-		#define CPPCMS_JSON_TYPE_PARAMS  P1,P2
-		#define CPPCMS_JSON_CALL_PARAMS  a[0],a[1]
-		CPPCMS_JSON_RPC_BINDER(2)
-		#undef CPPCMS_JSON_TEMPLATE_PARAMS
-		#undef CPPCMS_JSON_TYPE_PARAMS
-		#undef CPPCMS_JSON_CALL_PARAMS
-
-		#define CPPCMS_JSON_TEMPLATE_PARAMS ,typename P1,typename P2,typename P3
-		#define CPPCMS_JSON_TYPE_PARAMS  P1,P2,P3
-		#define CPPCMS_JSON_CALL_PARAMS  a[0],a[1],a[2]
-		CPPCMS_JSON_RPC_BINDER(3)
-		#undef CPPCMS_JSON_TEMPLATE_PARAMS
-		#undef CPPCMS_JSON_TYPE_PARAMS
-		#undef CPPCMS_JSON_CALL_PARAMS
+		typedef std::map<std::string,method_data> methods_map_type;
+		methods_map_type methods_;
+		intrusive_ptr<json_call> current_call_;
+		util::hold_ptr<data> d;
+	};
 
 
+	#define CPPCMS_JSON_RPC_BINDER(N)						\
+	namespace details {								\
+		template<typename Class,typename Ptr CPPCMS_TEMPLATE_PARAMS>		\
+		struct binder##N {							\
+			Ptr object;							\
+			void (Class::*member)(CPPCMS_FUNC_PARAMS);			\
+			void operator()(json::array const &a) const			\
+			{								\
+				if(a.size()!=N) 					\
+					throw call_error("Invalid parametres number");	\
+				((*object).*member)(CPPCMS_CALL_PARAMS);		\
+			}								\
+		};									\
+	}										\
+	template<typename Class,typename Ptr CPPCMS_TEMPLATE_PARAMS>			\
+	details::binder##N<Class,Ptr CPPCMS_BINDER_PARAMS> 				\
+	json_method(void (Class::*m)(CPPCMS_FUNC_PARAMS),Ptr p)				\
+	{ details::binder##N<Class,Ptr CPPCMS_BINDER_PARAMS> tmp={p,m}; return tmp; }	\
 
+	#define CPPCMS_TEMPLATE_PARAMS
+	#define CPPCMS_FUNC_PARAMS
+	#define CPPCMS_CALL_PARAMS
+	#define CPPCMS_BINDER_PARAMS
+	CPPCMS_JSON_RPC_BINDER(0)
+	#undef CPPCMS_TEMPLATE_PARAMS
+	#undef CPPCMS_FUNC_PARAMS
+	#undef CPPCMS_CALL_PARAMS
+	#undef CPPCMS_BINDER_PARAMS
+
+	#define CPPCMS_TEMPLATE_PARAMS ,typename P1
+	#define CPPCMS_FUNC_PARAMS P1
+	#define CPPCMS_CALL_PARAMS  a[0].get_value<P1>()
+	#define CPPCMS_BINDER_PARAMS ,P1
+	CPPCMS_JSON_RPC_BINDER(1)
+	#undef CPPCMS_TEMPLATE_PARAMS
+	#undef CPPCMS_FUNC_PARAMS
+	#undef CPPCMS_CALL_PARAMS
+	#undef CPPCMS_BINDER_PARAMS
 	
-		util::clone_ptr<call> callback_;
-	};
+	#define CPPCMS_TEMPLATE_PARAMS ,typename P1,typename P2
+	#define CPPCMS_FUNC_PARAMS P1,P2
+	#define CPPCMS_CALL_PARAMS  a[0].get_value<P1>(),a[1].get_value<P2>()
+	#define CPPCMS_BINDER_PARAMS ,P1,P2
+	CPPCMS_JSON_RPC_BINDER(2)
+	#undef CPPCMS_TEMPLATE_PARAMS
+	#undef CPPCMS_FUNC_PARAMS
+	#undef CPPCMS_CALL_PARAMS
+	#undef CPPCMS_BINDER_PARAMS
 
-	class json_object : public application {
-	public:
-		typedef intrusive_ptr<json::call> json_ptr;
-		
-		void add_method(std::string name,util::callback1<json_ptr> handler);
-		void add_method_description(std::string name,json::value const &schema);
+	#define CPPCMS_TEMPLATE_PARAMS ,typename P1,typename P2,typename P3
+	#define CPPCMS_FUNC_PARAMS P1,P2,P3
+	#define CPPCMS_CALL_PARAMS  a[0].get_value<P1>(),a[1].get_value<P2>(),a[2].get_value<P3>()
+	#define CPPCMS_BINDER_PARAMS ,P1,P2,P3
+	CPPCMS_JSON_RPC_BINDER(3)
+	#undef CPPCMS_TEMPLATE_PARAMS
+	#undef CPPCMS_FUNC_PARAMS
+	#undef CPPCMS_CALL_PARAMS
+	#undef CPPCMS_BINDER_PARAMS
 
-		template<typename Class,typename Pointer>
-		void add_method(std::string name,void (Class::*member)(json_ptr),Pointer object)
-		{
-			add_method(name,json_details::binder0<Class,Pointer>(member,object));
+	#define CPPCMS_TEMPLATE_PARAMS ,typename P1,typename P2,typename P3,typename P4
+	#define CPPCMS_FUNC_PARAMS P1,P2,P3,P4
+	#define CPPCMS_CALL_PARAMS  a[0].get_value<P1>(),a[1].get_value<P2>(),a[2].get_value<P3>(), \
+				a[3].get_value<P4>()
+	#define CPPCMS_BINDER_PARAMS ,P1,P2,P3,P4
+	CPPCMS_JSON_RPC_BINDER(4)
+	#undef CPPCMS_TEMPLATE_PARAMS
+	#undef CPPCMS_FUNC_PARAMS
+	#undef CPPCMS_CALL_PARAMS
+	#undef CPPCMS_BINDER_PARAMS
 
-			json::value description;
-			description.set("type","method");
-			description.set("params",json::array());
-			add_method_description(name,description);
-		}
-		template<typename Class,typename Pointer,typename P1>
-		void add_method(std::string name,void (Class::*member)(json_ptr,P1 const &),Pointer object)
-		{
-			add_method(name,json_details::binder1<Class,Pointer,P1>(member,object));
-			description.set("type","method");
-			description.set("params",json::array());
-			add_method_description(name,description);
-		}
-
-	};
-
-
+	#undef CPPCMS_JSON_RPC_BINDER
 
 } // rpc
 } // cppcms
