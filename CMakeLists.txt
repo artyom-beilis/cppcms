@@ -425,6 +425,7 @@ set(CPPCMS_SOURCES
 	session_sid.cpp
 	session_interface.cpp
 	session_memory_storage.cpp
+	rpc_json.cpp
 )
 
 if(NOT USE_STD_LOCALES)
@@ -672,6 +673,7 @@ set(ALL_TESTS
 	base64_test
 	function_test
 	forwarder_test
+	jsonrpc_test
 	)
 foreach(TEST ${ALL_TESTS})
 	add_executable(${TEST} tests/${TEST}.cpp)
@@ -754,6 +756,10 @@ add_test(form_test
 add_test(forwarder_test
 	forwarder_test "-c" "${CNF}/forwarder_test.js" 
 	"--test-exec=${PYTHON} ${CNF}/forwarder_test.py")
+
+add_test(jsonrpc_test
+	jsonrpc_test "-c" "${CNF}/jsonrpc_test.js"
+	"--test-exec=${PYTHON} ${CNF}/jsonrpc_test.py")
 
 foreach(TYPE async sync)
 	add_test(proto_test_${TYPE}_http 

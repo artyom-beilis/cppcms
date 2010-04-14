@@ -27,6 +27,7 @@
 namespace cppcms {
 namespace rpc {
 
+    call_error::call_error(std::string const &m) : cppcms_error(m) {} 
 	struct json_call::data {};
 
 	json_call::json_call(http::context &c) 
@@ -65,13 +66,13 @@ namespace rpc {
 	{
 		c.response().set_content_header("application/json");
 		c.response().out() <<
-			"{ \"id\":"<<id_<<",\"error\":null,\"result\":"<<result<<"}";
+			"{\"id\":"<<id_<<",\"error\":null,\"result\":"<<result<<"}";
 	}
 	void json_call::return_error(http::context &c,json::value const &error)
 	{
 		c.response().set_content_header("application/json");
 		c.response().out() <<
-			"{ \"id\":"<<id_<<",\"error\":"<<error<<",\"result\":null}";
+			"{\"id\":"<<id_<<",\"error\":"<<error<<",\"result\":null}";
 	}
 
 	http::context &json_call::context()
@@ -155,6 +156,11 @@ namespace rpc {
 					return_error("Invalid parameters");
 				return;
 			}
+			catch(call_error const &e) {
+				if(current_call_.get() && !notification())
+					return_error(e.what());
+				return;
+			}
 			catch(std::exception const &e) {
 				if(current_call_.get() && !notification())
 					return_error("Internal Service Error");
@@ -208,6 +214,11 @@ namespace rpc {
 		check_call();
 		return current_call_->method();
 	}
+    void json_rpc_server::check_call()
+    {
+        if(current_call_.get()==0)
+            throw cppcms_error("JSON-RPC Request is not assigned to class");
+    }
 
 } // rpc
 } // cppcms
