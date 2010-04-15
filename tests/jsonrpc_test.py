@@ -20,10 +20,10 @@ def test_status(h,stat):
         print "Status mistmatch:",h.status,"!=",stat
         sys.exit(1)
 
-def test_valid(name,params,ans):
+def test_valid(name,params,ans,method='POST'):
     h=httplib.HTTPConnection('localhost:8080');
     headers = {"Content-type": "application/json"}
-    h.request('POST','/test',params,headers)
+    h.request(method,'/test',params,headers)
     r=h.getresponse()
     test(name,r.read(),ans)
 
@@ -41,3 +41,5 @@ test_valid('not notify','{"method" : "notify" , "params" : [ "notcalled" ], "id"
 
 test_valid('both','{"method" : "both" , "params" : [ "notification" ], "id" : null}','')
 test_valid('both','{"method" : "both" , "params" : [ "foo" ], "id" : 1}','{"id":1,"error":null,"result":"call:foo"}')
+
+test_valid('smd','','{}','GET')

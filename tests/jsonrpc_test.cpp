@@ -13,6 +13,7 @@ public:
 		bind("div",cppcms::rpc::json_method(&json_service::div,this),method_role);
 		bind("notify",cppcms::rpc::json_method(&json_service::div,this),notification_role);
 		bind("both",cppcms::rpc::json_method(&json_service::both,this));
+		smd_raw("{}");
 	}
 	void sum(int x,int y)
 	{

@@ -23,6 +23,8 @@
 #include "http_response.h"
 
 #include <sstream>
+#include <fstream>
+#include <streambuf>
 
 namespace cppcms {
 namespace rpc {
@@ -129,9 +131,38 @@ namespace rpc {
 	json_rpc_server::~json_rpc_server()
 	{
 	}
+	void json_rpc_server::smd(json::value const &v)
+	{
+		std::ostringstream ss;
+		ss<<v;
+		smd_=ss.str();
+	}
+	void json_rpc_server::smd_raw(std::string const &v)
+	{
+		smd_=v;
+	}
+	void json_rpc_server::smd_from_file(std::string const &file)
+	{
+		std::ifstream smd(file.c_str());
+		if(!smd)
+			throw cppcms_error("Failed to open:" + file);
+		smd_.reserve(1024);
+		smd_.assign(	std::istreambuf_iterator<char>(smd),
+				std::istreambuf_iterator<char>());
+	}
 
 	void json_rpc_server::main(std::string /*unused*/)
 	{
+		if(!smd_.empty() && request().request_method()=="GET") {
+
+			response().set_content_header("application/json");
+			response().out() << smd_;
+
+			if(is_asynchronous())
+				release_context()->async_complete_response();
+			return;
+		}
+
 		try {
 			current_call_ = new json_call(context());
 			methods_map_type::iterator p=methods_.find(method());
@@ -214,11 +245,12 @@ namespace rpc {
 		check_call();
 		return current_call_->method();
 	}
-    void json_rpc_server::check_call()
-    {
-        if(current_call_.get()==0)
-            throw cppcms_error("JSON-RPC Request is not assigned to class");
-    }
+	void json_rpc_server::check_call()
+	{
+		if(current_call_.get()==0)
+			throw cppcms_error("JSON-RPC Request is not assigned to class");
+	}
+
 
 } // rpc
 } // cppcms

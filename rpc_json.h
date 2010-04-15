@@ -28,30 +28,74 @@
 namespace cppcms {
 namespace rpc {
 
+	///
+	/// The error thrown in case of bad call - parameters mismatch or 
+	/// invalid request.
+	///
+	/// User should may throw it case of a error as invalid request inside the
+	/// method. However return_error() is preferred.
+	///
 	class CPPCMS_API call_error : public cppcms_error {
 	public:	
+		///
+		/// Define error message
+		///
 		call_error(std::string const &message);
 	};
 
 	class json_rpc_server;
 
+	///
+	/// This class represents single call of json-rpc method. It is used
+	/// for handling asynchronous responses only. Similar API is provided
+	/// in json_rpc_server class for synchronous methods.
+	///
 	class CPPCMS_API json_call : public refcounted {
 	public:
 
-		json_call(http::context &context);
+		///
+		/// Destructor. Automatically deletes appropriate context as once it given to user it owns it.
+		///
 		~json_call();
 
+		///
+		/// Get the name of method that was called
+		///
 		std::string method();
+
+		///
+		/// Check if method call is notification only. You should not return a value.
+		///
+		/// Note: if you do not add restriction when binding json-rpc method on the role of the call
+		/// you should always check this value. Otherwise trying to call return_result or return_error
+		/// would throw.
+		///
 		bool notification();
 
+		///
+		/// Get call parameters as json::array (vector of json::value)
+		///
 		json::array const &params();
 
+		///
+		/// Get context associated with the call. This you may wait on events like async_on_peer_reset
+		/// of http::context via this member.
+		///
 		http::context &context();
 
+		///
+		/// Complete method response with a result. Throws call_error if the method was called as notification
+		///
 		void return_result(json::value const &);
+		///
+		/// Complete method response with a error. Throws call_error if the method was called as notification
+		///
 		void return_error(json::value const &);
 	
 	private:
+
+
+		json_call(http::context &context);
 		friend class json_rpc_server;
 		void return_result(http::context &,json::value const &);
 		void return_error(http::context &,json::value const &);
@@ -68,30 +112,85 @@ namespace rpc {
 		util::hold_ptr<data> d;
 	};
 
+	///
+	/// JSON-RPC service provider
+	///
 	class CPPCMS_API json_rpc_server : public application {
 	public:
+		///
+		/// The role of the method - receives notification, returns result or any one of them
+		///
 		typedef enum {
-			any_role,
-			method_role,
-			notification_role
+			any_role,		///< Method may receive notification and return result
+			method_role,		///< Method can't be used with notification calls
+			notification_role	///< Method should be used with notification calls only
 		} role_type;
+
+		///
+		/// Generic type of JSON-RPC method
+		///
 		typedef function<void(json::array const &)> method_type;
+
+		///
+		/// Bind method JSON-RPC method with name \a name
+		///
 		void bind(std::string const &name,method_type const &,role_type type = any_role);
+
+		///
+		/// Specify service SMD
+		///
+		void smd(json::value const &);
+
+		///
+		/// Specify service SMD as raw text rather then JSON value
+		///
+		void smd_raw(std::string const &);
+		///
+		/// Take service SMD as raw text from file
+		///
+		void smd_from_file(std::string const &);
+
+		///
+		/// Main function that dispatches JSON-RPC service calls
+		///
 		virtual void main(std::string);
 
+		///
+		/// Release json_call for asynchronous responses. Calls release_context() and
+		/// assignes it to json_call object.
+		///
 		intrusive_ptr<json_call> release_call();
 		
 		json_rpc_server(cppcms::service &srv);
 		~json_rpc_server();
 
+		
+		///
+		/// Get the name of method that was called
+		///
 		std::string method();
+		///
+		/// Check if method call is notification only. You should not return a value.
+		///
+		/// Note: if you do not add restriction when binding json-rpc method on the role of the call
+		/// you should always check this value. Otherwise trying to call return_result or return_error
+		/// would throw.
+		///
 		bool notification();
+		///
+		/// Get call parameters as json::array (vector of json::value)
+		///
 		json::array const &params();
+		///
+		/// Complete method response with a result. Throws call_error if the method was called as notification
+		///
 		void return_result(json::value const &);
+		///
+		/// Complete method response with a error. Throws call_error if the method was called as notification
+		///
 		void return_error(json::value const &);
 	private:
 		void check_call();
-		struct data;
 		struct method_data {
 			method_type method;
 			role_type role;
@@ -99,6 +198,10 @@ namespace rpc {
 		typedef std::map<std::string,method_data> methods_map_type;
 		methods_map_type methods_;
 		intrusive_ptr<json_call> current_call_;
+
+		std::string smd_;
+		
+		struct data;
 		util::hold_ptr<data> d;
 	};
 
