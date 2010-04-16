@@ -27,6 +27,7 @@
 #include "json.h"
 #include "http_parser.h"
 #include "config.h"
+#include "util.h"
 #include <string.h>
 #include <iostream>
 #include <algorithm>
@@ -355,10 +356,11 @@ namespace cgi {
 				{
 					env_["SCRIPT_NAME"]=name;
 					size_t pos=request_uri_.find('?');
-					if(pos==std::string::npos)
-						env_["PATH_INFO"]=request_uri_.substr(name.size());
+					if(pos==std::string::npos) {
+						env_["PATH_INFO"]=util::urldecode(request_uri_.substr(name.size()));
+					}
 					else {
-						env_["PATH_INFO"]=request_uri_.substr(name.size(),pos-name.size());
+						env_["PATH_INFO"]=util::urldecode(request_uri_.substr(name.size(),pos-name.size()));
 						env_["QUERY_STRING"]=request_uri_.substr(pos+1);
 					}
 					h(boost::system::error_code());

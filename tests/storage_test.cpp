@@ -71,7 +71,7 @@ std::vector<std::string> list_files()
 	fs::directory_iterator end;
 	for(fs::directory_iterator p(dir);p!=end;++p) {
 		if(!is_directory(p->status())) {
-			files.push_back(p->leaf());
+			files.push_back(p->path().filename());
 		}
 	}
 	return files;
