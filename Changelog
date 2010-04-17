@@ -1,5 +1,12 @@
-Version 0.0.5
-=============
+Version 0.0.6, 2010-04-17
+=========================
+
+Bugs:
+
+- Fixed: crashes when using aes cookies encryption on multi-core systems.
+
+Version 0.0.5, 2010-01-11
+=========================
 
 Security Bug:
 
@@ -24,14 +31,14 @@ Improvements:
 - Removed all unnecessary classes from views -- compilation
   time speedup up to 3.2 times (of views)
 
-Version 0.0.4
-=============
+Version 0.0.4, 2009-02-20
+=========================
 
 - Embedded system configuration support
 - Identifiers like "$1" are deprecated
 
-Version 0.0.3
-=============
+Version 0.0.3, 2009-02-09
+=========================
 
 - Forms API cleanup
 - Fixed configuration with latest autoconf/automake
@@ -47,6 +54,4 @@ Version 0.0.3
 - Added "notriggers" to store cache functions as well
 - Fixed incorrect triggers behavior in cache_iface.
 
-Version 0.0.2
-=============
 
