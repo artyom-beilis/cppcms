@@ -369,7 +369,6 @@ set(CPPCMS_PUBLIC_HEADERS
 	session_pool.h
 	session_sid.h
 	session_storage.h
-	signal0.h
 	thread_pool.h
 	urandom.h
 	url_dispatcher.h
