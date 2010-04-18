@@ -1,7 +1,14 @@
-- form.*
-	Date-Time
+- Unit Testing:
+  - Templates
+  - Templates dynamic reloading
+  - Cache **Interface**
+  - Sessions **Interface**  
+  - Encoding Validators
+  - Url Dispatcher
+- Logger!
 - http_request.*, cgi_api.*
 	Implement File Upload
-- Implement Asynchronous API
-- Implement JSON-RPC
 - Reintergrate Sessions over TCP/IP
+- Forwarding management
+- form.*
+	Date-Time
