@@ -62,6 +62,7 @@ public:
 				broadcast();
 			}
 		}
+		response().finalize();
 		release_context()->async_complete_response();
 	}
 	void get(std::string no)
