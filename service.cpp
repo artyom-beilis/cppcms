@@ -344,6 +344,9 @@ int service::procs_no()
 	#ifdef CPPCMS_WIN32
 	if(procs > 0)
 		throw cppcms_error("Prefork is not supported under Windows");
+	#else 
+	if(procs > 1)
+		throw cppcms_error("Prefork support is disabled meanwhile in CppCMS. To Be Fixed");
 	#endif
 	return procs;
 }
