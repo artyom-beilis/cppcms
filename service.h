@@ -25,6 +25,12 @@
 #include "function.h"
 #include <locale>
 
+namespace booster {
+	namespace aio {
+		class io_service;
+	}
+}
+
 
 namespace cppcms {
 	namespace locale { class generator; }
@@ -63,6 +69,9 @@ namespace cppcms {
 		locale::generator const &generator();
 		std::locale locale();
 		std::locale locale(std::string const &name);
+
+
+		booster::aio::io_service &get_io_service();
 
 		cppcms::impl::service &impl();
 

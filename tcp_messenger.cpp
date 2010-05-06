@@ -20,6 +20,11 @@
 #include "tcp_messenger.h"
 #include "cppcms_error.h"
 
+#include <booster/aio/socket.h>
+#include <booster/aio/buffer.h>
+#include <booster/aio/endpoint.h>
+#include <booster/system_error.h>
+
 namespace cppcms {
 namespace impl {
 
@@ -27,20 +32,24 @@ void messenger::connect(std::string ip,int port)
 {
 	ip_=ip;
 	port_=port;
-	boost::system::error_code e;
-	socket_.connect(boost::asio::ip::tcp::endpoint(boost::asio::ip::address::from_string(ip),port),e);
-	if(e) throw cppcms_error("connect:"+e.message());
-	boost::asio::ip::tcp::no_delay nd(true);
-	socket_.set_option(nd);
+	booster::system::error_code e;
+	
+	booster::aio::endpoint ep(ip,port);
+	socket_.open(ep.family(),booster::aio::sock_stream,e);
+	if(!e)
+		socket_.connect(ep,e);
+	if(e) 
+		throw cppcms_error("connect:"+e.message());
+	socket_.set_option(booster::aio::socket::tcp_no_delay,true);
 }
 
 messenger::messenger(std::string ip,int port) :
-		socket_(srv_)
+		socket_()
 {
 	connect(ip,port);
 }
 messenger::messenger() :
-	socket_(srv_)
+	socket_()
 {
 }
 
@@ -51,26 +60,28 @@ void messenger::transmit(tcp_operation_header &h,std::string &data)
 	do {
 		try {
 			// FIXME use buffers
-			boost::asio::write(socket_,boost::asio::buffer(&h,sizeof(h)));
+			socket_.write(booster::aio::buffer(&h,sizeof(h)));
 			if(h.size>0) {
-				boost::asio::write(socket_,boost::asio::buffer(data,h.size));
+				socket_.write(booster::aio::buffer(data.c_str(),h.size));
 			}
-			boost::asio::read(socket_,boost::asio::buffer(&h,sizeof(h)));
+			socket_.read(booster::aio::buffer(&h,sizeof(h)));
 			if(h.size>0) {
 				std::vector<char> d(h.size);
-				boost::asio::read(socket_,boost::asio::buffer(d,h.size));
+				socket_.read(booster::aio::buffer(d));
 				data.assign(d.begin(),d.begin()+h.size);
 			}
 			done=true;
 		}
-		catch(boost::system::system_error const &e) {
+		catch(booster::system::system_error const &e) {
 			if(times) {
 				throw cppcms_error(std::string("tcp_cache:")+e.what());
 			}
 			socket_.close();
-			boost::system::error_code er;
-			socket_.connect(boost::asio::ip::tcp::endpoint(
-						boost::asio::ip::address::from_string(ip_),port_),er);
+			booster::aio::endpoint ep(ip_,port_);
+			booster::system::error_code er;
+			socket_.open(ep.family(),booster::aio::sock_stream,er);
+			if(!er)
+				socket_.connect(ep,er);
 			if(er) throw cppcms_error("reconnect:"+er.message());
 			times++;
 		}

@@ -17,12 +17,7 @@
 //
 ///////////////////////////////////////////////////////////////////////////////
 #include "config.h"
-#ifdef CPPCMS_USE_EXTERNAL_BOOST
-#   include <boost/thread.hpp>
-#else // Internal Boost
-#   include <cppcms_boost/thread.hpp>
-    namespace boost = cppcms_boost;
-#endif
+#include <booster/thread.h>
 #include "atomic_counter.h"
 #include "test.h"
 #include <iostream>
@@ -58,8 +53,8 @@ int main()
 		TEST(--counter == 0);
 		TEST(long(counter) == 0);
 		c=&counter;
-		boost::thread a(inc);
-		boost::thread b(dec);
+		booster::thread a(inc);
+		booster::thread b(dec);
 		a.join();
 		b.join();
 		TEST(long(counter) == 0);

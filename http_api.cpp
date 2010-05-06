@@ -18,7 +18,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 #define CPPCMS_SOURCE
 //#define DEBUG_HTTP_PARSER
-#include "asio_config.h"
 #include "cgi_api.h"
 #include "cgi_acceptor.h"
 #include "service.h"
@@ -33,11 +32,16 @@
 #include <algorithm>
 #ifdef CPPCMS_USE_EXTERNAL_BOOST
 #   include <boost/lexical_cast.hpp>
+#   include <boost/bind.hpp>
 #else // Internal Boost
 #   include <cppcms_boost/lexical_cast.hpp>
+#   include <cppcms_boost/bind.hpp>
     namespace boost = cppcms_boost;
 #endif
 
+#include <booster/aio/buffer.h>
+
+namespace io = booster::aio;
 
 
 namespace cppcms {
@@ -66,11 +70,11 @@ namespace cgi {
 		}
 		~http()
 		{
-			boost::system::error_code e;
-			socket_.shutdown(boost::asio::ip::tcp::socket::shutdown_both,e);
+			booster::system::error_code e;
+			socket_.shutdown(io::socket::shut_rdwr,e);
 		}
 		struct binder {
-			void operator()(boost::system::error_code const &e,size_t n) const
+			void operator()(booster::system::error_code const &e,size_t n) const
 			{
 				self_->some_headers_data_read(e,n,h_);
 			}
@@ -88,16 +92,16 @@ namespace cgi {
 			input_body_.reserve(8192);
 			input_body_.resize(8192,0);
 			input_body_ptr_=0;
-			socket_.async_read_some(boost::asio::buffer(input_body_),binder(self(),h));
+			socket_.async_read_some(io::buffer(input_body_),binder(self(),h));
 		}
 
-		void some_headers_data_read(boost::system::error_code const &e,size_t n,handler const &h)
+		void some_headers_data_read(booster::system::error_code const &e,size_t n,handler const &h)
 		{
 			if(e) { h(e); return; }
 
 			total_read_+=n;
 			if(total_read_ > 16384) {
-				h(boost::system::error_code(errc::protocol_violation,cppcms_category));
+				h(booster::system::error_code(errc::protocol_violation,cppcms_category));
 				return;
 			}
 
@@ -125,7 +129,7 @@ namespace cgi {
 							first_header_observerd_=true;
 						}
 						else {
-							h(boost::system::error_code(errc::protocol_violation,cppcms_category));
+							h(booster::system::error_code(errc::protocol_violation,cppcms_category));
 							return;
 						}
 					}
@@ -133,7 +137,7 @@ namespace cgi {
 						std::string name;
 						std::string value;
 						if(!parse_single_header(input_parser_.header_,name,value))  {
-							h(boost::system::error_code(errc::protocol_violation,cppcms_category));
+							h(booster::system::error_code(errc::protocol_violation,cppcms_category));
 							return;
 						}
 						if(name=="CONTENT_LENGTH" || name=="CONTENT_TYPE")
@@ -146,7 +150,7 @@ namespace cgi {
 					process_request(h);				
 					return;
 				case parser::error_observerd:
-					h(boost::system::error_code(errc::protocol_violation,cppcms_category));
+					h(booster::system::error_code(errc::protocol_violation,cppcms_category));
 					return;
 				}
 			}
@@ -183,31 +187,31 @@ namespace cgi {
 					input_body_.clear();
 					input_body_ptr_=0;
 				}
-				socket_.get_io_service().post(boost::bind(h,boost::system::error_code(),s));
+				socket_.get_io_service().post(boost::bind(h,booster::system::error_code(),s));
 				return;
 			}
-			socket_.async_read_some(boost::asio::buffer(p,s),h);
+			socket_.async_read_some(io::buffer(p,s),h);
 		}
 		virtual void async_write_eof(handler const &h)
 		{
-			boost::system::error_code e;
-			socket_.shutdown(boost::asio::ip::tcp::socket::shutdown_send,e);
-			socket_.get_io_service().post(boost::bind(h,boost::system::error_code()));
+			booster::system::error_code e;
+			socket_.shutdown(io::socket::shut_wr,e);
+			socket_.get_io_service().post(boost::bind(h,booster::system::error_code()));
 		}
 		virtual void async_write_some(void const *p,size_t s,io_handler const &h)
 		{
 			if(headers_done_)
-				socket_.async_write_some(boost::asio::buffer(p,s),h);
+				socket_.async_write_some(io::buffer(p,s),h);
 			else
 				process_output_headers(p,s,h);
 		}
 		virtual size_t write_some(void const *buffer,size_t n)
 		{
 			if(headers_done_)
-				return socket_.write_some(boost::asio::buffer(buffer,n));
+				return socket_.write_some(io::buffer(buffer,n));
 			return process_output_headers(buffer,n);
 		}
-		virtual boost::asio::io_service &get_io_service()
+		virtual booster::aio::io_service &get_io_service()
 		{
 			return socket_.get_io_service();
 		}
@@ -218,14 +222,14 @@ namespace cgi {
 
 		virtual void close()
 		{
-			boost::system::error_code e;
-			socket_.shutdown(boost::asio::ip::tcp::socket::shutdown_receive,e);
+			booster::system::error_code e;
+			socket_.shutdown(io::socket::shut_rd,e);
 			socket_.close(e);
 		}
 		virtual void async_read_eof(callback const &h)
 		{
 			static char a;
-			socket_.async_read_some(boost::asio::buffer(&a,1),boost::bind(h));
+			socket_.async_read_some(io::buffer(&a,1),boost::bind(h));
 		}
 
 	private:
@@ -240,13 +244,13 @@ namespace cgi {
 				switch(output_parser_.step()) {
 				case parser::more_data:
 					if(!h.empty())
-						h(boost::system::error_code(),s);
+						h(booster::system::error_code(),s);
 					return s;
 				case parser::got_header:
 					{
 						std::string name,value;
 						if(!parse_single_header(output_parser_.header_,name,value))  {
-							h(boost::system::error_code(errc::protocol_violation,cppcms_category),s);
+							h(booster::system::error_code(errc::protocol_violation,cppcms_category),s);
 							return s;
 						}
 						if(name=="STATUS") {
@@ -261,7 +265,7 @@ namespace cgi {
 
 					return write_response(h,s);
 				case parser::error_observerd:
-					h(boost::system::error_code(errc::protocol_violation,cppcms_category),0);
+					h(booster::system::error_code(errc::protocol_violation,cppcms_category),0);
 					return 0;
 				}
 			}
@@ -275,32 +279,29 @@ namespace cgi {
 
 			response_line_.append(addon);
 
-			boost::array<boost::asio::const_buffer,2> packet = {
-				{
-					boost::asio::buffer(response_line_),
-					boost::asio::buffer(output_body_)
-				}
-			};
+			booster::aio::const_buffer packet = 
+				io::buffer(response_line_) 
+				+ io::buffer(output_body_);
 #ifdef DEBUG_HTTP_PARSER
 			std::cerr<<"["<<response_line_<<std::string(output_body_.begin(),output_body_.end())
 				<<"]"<<std::endl;
 #endif
 			headers_done_=true;
 			if(h.empty()) {
-				boost::system::error_code e;
-				boost::asio::write(socket_,packet,boost::asio::transfer_all(),e);
+				booster::system::error_code e;
+				socket_.write(packet,e);
 				if(e) return 0;
 				return s;
 			}
-			boost::asio::async_write(socket_,packet,
-				boost::bind(&http::do_write,self(),_1,h,s));
+
+			socket_.async_write(packet,boost::bind(&http::do_write,self(),_1,h,s));
 			return s;
 		}
 
-		void do_write(boost::system::error_code const &e,io_handler const &h,size_t s)
+		void do_write(booster::system::error_code const &e,io_handler const &h,size_t s)
 		{
 			if(e) { h(e,0); return; }
-			h(boost::system::error_code(),s);
+			h(booster::system::error_code(),s);
 		}
 
 		void process_request(handler const &h)
@@ -313,7 +314,7 @@ namespace cgi {
 			env_["REQUEST_METHOD"]=request_method_;
 			std::string remote_addr;
 			if(service().settings().get("http.proxy.behind",false)) {
-				remote_addr=socket_.remote_endpoint().address().to_string();
+				remote_addr=socket_.remote_endpoint().ip();
 			}
 			else {
 				std::vector<std::string> default_headers;
@@ -363,7 +364,7 @@ namespace cgi {
 						env_["PATH_INFO"]=util::urldecode(request_uri_.substr(name.size(),pos-name.size()));
 						env_["QUERY_STRING"]=request_uri_.substr(pos+1);
 					}
-					h(boost::system::error_code());
+					h(booster::system::error_code());
 					return;
 				}
 			}
@@ -376,13 +377,13 @@ namespace cgi {
 				env_["QUERY_STRING"]=request_uri_.substr(pos+1);
 			}
 			
-			h(boost::system::error_code());
+			h(booster::system::error_code());
 
 		}
 		void response(char const *message,handler const &h)
 		{
-			boost::asio::async_write(socket_,boost::asio::buffer(message,strlen(message)),
-					boost::bind(h,boost::system::error_code()));
+			socket_.async_write(io::buffer(message,strlen(message)),
+					boost::bind(h,booster::system::error_code()));
 		}
 
 		bool parse_single_header(std::string const &header,std::string &name,std::string &value)
@@ -416,9 +417,9 @@ namespace cgi {
 			return this;
 		}
 		
-		friend class socket_acceptor<boost::asio::ip::tcp,http>;
+		friend class socket_acceptor<http>;
 		
-		boost::asio::ip::tcp::socket socket_;
+		booster::aio::socket socket_;
 
 		std::vector<char> input_body_;
 		unsigned input_body_ptr_;
@@ -438,11 +439,9 @@ namespace cgi {
 		unsigned total_read_;
 	};
 
-	typedef tcp_socket_acceptor<http>    http_acceptor;
-
 	std::auto_ptr<acceptor> http_api_factory(cppcms::service &srv,std::string ip,int port,int backlog)
 	{
-		std::auto_ptr<acceptor> a(new http_acceptor(srv,ip,port,backlog));
+		std::auto_ptr<acceptor> a(new socket_acceptor<http>(srv,ip,port,backlog));
 		return a;
 	}
 

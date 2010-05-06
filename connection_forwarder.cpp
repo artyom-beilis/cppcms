@@ -17,7 +17,6 @@
 //
 ///////////////////////////////////////////////////////////////////////////////
 #define CPPCMS_SOURCE
-#include "asio_config.h"
 #include "connection_forwarder.h"
 #include "http_context.h"
 #include "http_request.h"
@@ -26,6 +25,10 @@
 #include "service_impl.h"
 #include "url_dispatcher.h"
 #include "cgi_api.h"
+#include <booster/aio/socket.h>
+#include <booster/aio/io_service.h>
+#include <booster/aio/buffer.h>
+#include <booster/aio/endpoint.h>
 
 #ifdef CPPCMS_USE_EXTERNAL_BOOST
 #   include <boost/bind.hpp>
@@ -44,6 +47,7 @@
 #   endif
 #endif
 
+namespace io = booster::aio;
 
 namespace cppcms {
 	namespace impl {
@@ -59,24 +63,28 @@ namespace cppcms {
 			void async_send_receive(std::string &data)
 			{
 				data_.swap(data);
-				boost::asio::ip::tcp::endpoint ep(boost::asio::ip::address::from_string(ip_),port_);
-				socket_.async_connect(ep,boost::bind(&tcp_pipe::on_connected,shared_from_this(),boost::asio::placeholders::error));
+				io::endpoint ep(ip_,port_);
+				socket_.open(ep.family(),io::sock_stream);
+				socket_.async_connect(ep,
+					boost::bind(
+						&tcp_pipe::on_connected,
+						shared_from_this(),_1));
 			}
 		private:
 
-			void on_connected(boost::system::error_code e) 
+			void on_connected(booster::system::error_code e) 
 			{
 				if(e) {
 					connection_->response().make_error_response(500);
 					connection_->async_complete_response();
 					return;
 				}
-				boost::asio::async_write(socket_,
-					boost::asio::buffer(data_),
-					boost::bind(&tcp_pipe::on_written,shared_from_this(),boost::asio::placeholders::error));
+				socket_.async_write(
+					io::buffer(data_),
+					boost::bind(&tcp_pipe::on_written,shared_from_this(),_1));
 			}
 
-			void on_written(boost::system::error_code const &e)
+			void on_written(booster::system::error_code const &e)
 			{
 				if(e) {
 					connection_->response().make_error_response(500);
@@ -88,25 +96,23 @@ namespace cppcms {
 				connection_->async_on_peer_reset(boost::bind(&tcp_pipe::on_peer_close,shared_from_this()));
 				connection_->response().io_mode(http::response::asynchronous_raw);
 				input_.resize(4096);
-				socket_.async_read_some(boost::asio::buffer(input_),
+				socket_.async_read_some(io::buffer(input_),
 					boost::bind(&tcp_pipe::on_read,shared_from_this(),
-						boost::asio::placeholders::error,
-						boost::asio::placeholders::bytes_transferred));
+						_1,
+						_2));
 
 			}
 
 			void on_peer_close()
 			{
-				boost::system::error_code ec;
-				#ifndef NO_CANCELIO
-				socket_.cancel(ec);
-				#endif
-				socket_.shutdown(boost::asio::ip::tcp::socket::shutdown_both,ec);
+				booster::system::error_code ec;
+				socket_.cancel();
+				socket_.shutdown(io::socket::shut_rdwr,ec);
 				socket_.close(ec);
 				return;
 			}
 
-			void on_read(boost::system::error_code const &e,size_t n)
+			void on_read(booster::system::error_code const &e,size_t n)
 			{
 				if(n > 0) {
 					connection_->response().out().write(&input_.front(),n);
@@ -115,10 +121,10 @@ namespace cppcms {
 					connection_->async_complete_response();
 				}
 				else {
-					socket_.async_read_some(boost::asio::buffer(input_),
+					socket_.async_read_some(io::buffer(input_),
 						boost::bind(&tcp_pipe::on_read,shared_from_this(),
-							boost::asio::placeholders::error,
-							boost::asio::placeholders::bytes_transferred));
+							_1,
+							_2));
 				}
 			}
 
@@ -126,7 +132,7 @@ namespace cppcms {
 			std::string ip_;
 			int port_;
 			std::string data_;
-			boost::asio::ip::tcp::socket socket_;
+			io::socket socket_;
 			std::vector<char> input_;
 		};
 	} // impl

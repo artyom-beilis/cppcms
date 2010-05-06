@@ -29,7 +29,7 @@ namespace sessions {
 namespace impl {
 
 
-boost::thread_specific_ptr<hmac_cipher::block> hmac_cipher::seed;
+booster::thread_specific_ptr<hmac_cipher::block> hmac_cipher::seed;
 
 hmac_cipher::hmac_cipher(string key) :
 	base_encryptor(key)

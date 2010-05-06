@@ -22,15 +22,15 @@
 #include <vector>
 #include "config.h"
 #ifdef CPPCMS_USE_EXTERNAL_BOOST
-#   include <boost/thread.hpp>
 #   include <boost/shared_ptr.hpp>
 #   include <boost/bind.hpp>
 #else // Internal Boost
-#   include <cppcms_boost/thread.hpp>
 #   include <cppcms_boost/shared_ptr.hpp>
 #   include <cppcms_boost/bind.hpp>
     namespace boost = cppcms_boost;
 #endif
+
+#include <booster/thread.h>
 
 #if defined(CPPCMS_POSIX)
 #include <signal.h>
@@ -42,7 +42,7 @@ namespace impl {
 	public:
 
 		bool cancel(int id) {
-			boost::unique_lock<boost::mutex> lock(mutex_);
+			booster::unique_lock<booster::mutex> lock(mutex_);
 			queue_type::iterator p;
 			for(p=queue_.begin();p!=queue_.end();++p) {
 				if(p->first==id) {
@@ -54,7 +54,7 @@ namespace impl {
 		}
 		int post(function<void()> const &job)
 		{
-			boost::unique_lock<boost::mutex> lock(mutex_);
+			booster::unique_lock<booster::mutex> lock(mutex_);
 			int id=job_id_++;
 			queue_.push_back(std::make_pair(id,job));
 			cond_.notify_one();
@@ -71,7 +71,7 @@ namespace impl {
 			pthread_sigmask(SIG_BLOCK,&set,&old);
 			#endif
 			for(int i=0;i<threads;i++) {
-				workers_[i].reset(new boost::thread(boost::bind(&thread_pool::worker,this)));
+				workers_[i].reset(new booster::thread(boost::bind(&thread_pool::worker,this)));
 			}
 	
 			#if defined(CPPCMS_POSIX)
@@ -82,13 +82,13 @@ namespace impl {
 		void stop()
 		{
 			{
-				boost::unique_lock<boost::mutex> lock(mutex_);
+				booster::unique_lock<booster::mutex> lock(mutex_);
 				shut_down_=true;
 				cond_.notify_all();
 			}
 
 			for(unsigned i=0;i<workers_.size();i++) {
-				boost::shared_ptr<boost::thread> thread=workers_[i];
+				boost::shared_ptr<booster::thread> thread=workers_[i];
 				workers_[i].reset();
 				if(thread)
 					thread->join();
@@ -112,7 +112,7 @@ namespace impl {
 				function<void()> job;
 
 				{
-					boost::unique_lock<boost::mutex> lock(mutex_);
+					booster::unique_lock<booster::mutex> lock(mutex_);
 					if(shut_down_)
 						return;
 					if(!queue_.empty()) {
@@ -130,14 +130,14 @@ namespace impl {
 		}
 
 	
-		boost::mutex mutex_;
-		boost::condition_variable cond_;
+		booster::mutex mutex_;
+		booster::condition_variable cond_;
 
 		bool shut_down_;	
 		int job_id_;
 		typedef std::list<std::pair<int,function<void()> > > queue_type;
 		queue_type queue_;
-		std::vector<boost::shared_ptr<boost::thread> > workers_;
+		std::vector<boost::shared_ptr<booster::thread> > workers_;
 
 	};
 	

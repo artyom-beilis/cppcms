@@ -1,0 +1,32 @@
+#ifndef BOOSTER_ERROR_CATEGORY_H
+#define BOOSTER_ERROR_CATEGORY_H
+
+
+#include <booster/system_error.h>
+
+namespace booster {
+namespace aio {
+
+	namespace aio_error {
+		enum {
+			ok,
+			canceled,
+			select_failed,
+			eof,
+			invalid_endpoint,
+			no_service_provided
+		};
+
+		class BOOSTER_API category : public system::error_category {
+		public:
+			virtual char const *name() const;
+			virtual std::string message(int cat) const;
+		};
+	}
+
+	extern const aio_error::category aio_error_cat;
+}
+} // booster
+
+
+#endif

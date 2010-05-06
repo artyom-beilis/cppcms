@@ -16,8 +16,6 @@
 //  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 ///////////////////////////////////////////////////////////////////////////////
-#include "asio_config.h"
-// MUST BE FIRST TO COMPILE CORRECTLY UNDER CYGWIN
 #include "tcp_messenger.h"
 #include "session_tcp_storage.h"
 #include "session_sid.h"

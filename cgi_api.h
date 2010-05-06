@@ -26,15 +26,9 @@
 #include <map>
 #include "function.h"
 #include "config.h"
-#ifdef CPPCMS_USE_EXTERNAL_BOOST
-#   include <boost/system/error_code.hpp>
-    namespace boost { namespace asio { class io_service; } }
-#else // Internal Boost
-#   include <cppcms_boost/system/error_code.hpp>
-    namespace cppcms_boost { namespace asio { class io_service; } }
-    namespace boost = cppcms_boost;
-#endif
 
+#include <booster/system_error.h>
+namespace booster { namespace aio { class io_service; }}
 
 
 namespace cppcms {
@@ -49,8 +43,8 @@ namespace cppcms {
 namespace impl {
 namespace cgi {
 
-	typedef function<void(boost::system::error_code const &e)> handler;
-	typedef function<void(boost::system::error_code const &e,size_t)> io_handler;
+	typedef function<void(booster::system::error_code const &e)> handler;
+	typedef function<void(booster::system::error_code const &e,size_t)> io_handler;
 	typedef function<void()> callback;
 	typedef function<void(bool)> ehandler;
 
@@ -104,7 +98,7 @@ namespace cgi {
 		virtual void async_write_some(void const *,size_t,io_handler const &h) = 0;
 		virtual void async_write_eof(handler const &h) = 0;
 		virtual size_t write_some(void const *,size_t) = 0;
-		virtual boost::asio::io_service &get_io_service() = 0;
+		virtual booster::aio::io_service &get_io_service() = 0;
 
 		/****************************************************************************/
 
@@ -120,10 +114,10 @@ namespace cgi {
 		friend struct reader;
 		friend struct writer;
 		void set_error(ehandler const &h,std::string s);
-		void load_content(boost::system::error_code const &e,http::request *request,ehandler const &h);
-		void on_post_data_loaded(boost::system::error_code const &e,http::request *r,ehandler const &h);
-		void on_async_write_written(boost::system::error_code const &e,bool complete_response,ehandler const &h);
-		void on_eof_written(boost::system::error_code const &e,ehandler const &h);
+		void load_content(booster::system::error_code const &e,http::request *request,ehandler const &h);
+		void on_post_data_loaded(booster::system::error_code const &e,http::request *r,ehandler const &h);
+		void on_async_write_written(booster::system::error_code const &e,bool complete_response,ehandler const &h);
+		void on_eof_written(booster::system::error_code const &e,ehandler const &h);
 		void handle_eof(callback const &on_eof);
 
 		std::vector<char> content_;

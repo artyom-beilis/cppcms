@@ -20,13 +20,7 @@
 #include "tcp_cache_client.h"
 #include "atomic_counter.h"
 
-#ifdef CPPCMS_USE_EXTERNAL_BOOST
-#   include <boost/thread.hpp>
-#else // Internal Boost
-#   include <cppcms_boost/thread.hpp>
-    namespace boost = cppcms_boost;
-#endif
-
+#include <booster/thread.h>
 
 namespace cppcms {
 namespace impl {
@@ -129,7 +123,7 @@ namespace impl {
 			return tcp_.get();
 		}
 
-		boost::thread_specific_ptr<tcp_cache> tcp_;
+		booster::thread_specific_ptr<tcp_cache> tcp_;
 		std::vector<std::string> ips_;
 		std::vector<int> ports_;
 		intrusive_ptr<base_cache> l1_;

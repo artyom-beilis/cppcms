@@ -29,20 +29,17 @@
 #include "base64.h"
 
 #ifdef CPPCMS_WIN_NATIVE
-#define CPPCMS_GCRYPT_USE_BOOST_THREADS
+#define CPPCMS_GCRYPT_USE_BOOSTER_THREADS
 #endif
 
-#ifdef CPPCMS_GCRYPT_USE_BOOST_THREADS
-#ifdef CPPCMS_USE_EXTERNAL_BOOST
-#   include <boost/thread.hpp>
-#else // Internal Boost
-#   include <cppcms_boost/thread.hpp>
-    namespace boost = cppcms_boost;
-#endif
+#ifdef CPPCMS_GCRYPT_USE_BOOSTER_THREADS
+
+#include <booster/thread.h>
+
 static int nt_mutex_init(void **p)
 {
 	try {
-		*p=new boost::mutex();
+		*p=new booster::mutex();
 		return 0;
 	}
 	catch(...)
@@ -52,7 +49,7 @@ static int nt_mutex_init(void **p)
 }
 static int nt_mutex_destroy(void **p)
 {
-	boost::mutex **m=reinterpret_cast<boost::mutex **>(p);
+	booster::mutex **m=reinterpret_cast<booster::mutex **>(p);
 	delete *m;
 	*m=0;
 	return 0;
@@ -60,7 +57,7 @@ static int nt_mutex_destroy(void **p)
 
 static int nt_mutex_lock(void **p)
 {
-	boost::mutex *m=reinterpret_cast<boost::mutex *>(*p);
+	booster::mutex *m=reinterpret_cast<booster::mutex *>(*p);
 	try {
 		m->lock();
 		return 0;
@@ -73,7 +70,7 @@ static int nt_mutex_lock(void **p)
 
 static int nt_mutex_unlock(void **p)
 {
-	boost::mutex *m=reinterpret_cast<boost::mutex *>(*p);
+	booster::mutex *m=reinterpret_cast<booster::mutex *>(*p);
 	try {
 		m->unlock();
 		return 0;

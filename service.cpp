@@ -18,13 +18,17 @@
 ///////////////////////////////////////////////////////////////////////////////
 #define CPPCMS_SOURCE
 #include "defs.h"
+#ifdef CPPCMS_WIN32
+#include <windows.h>
+#include <winsock2.h>
+#endif
+
 #ifndef CPPCMS_WIN32
 #if defined(__sun)
 #define _POSIX_PTHREAD_SEMANTICS
 #endif
 #include <signal.h>
 #endif
-#include "asio_config.h"
 #include "service.h"
 #include "service_impl.h"
 #include "applications_pool.h"
@@ -63,12 +67,18 @@
 #ifdef CPPCMS_USE_EXTERNAL_BOOST
 #   include <boost/lexical_cast.hpp>
 #   include <boost/regex.hpp>
+#   include <boost/bind.hpp>
 #else // Internal Boost
 #   include <cppcms_boost/lexical_cast.hpp>
 #   include <cppcms_boost/regex.hpp>
+#   include <cppcms_boost/bind.hpp>
     namespace boost = cppcms_boost;
 #endif
 
+
+#include <booster/aio/io_service.h>
+#include <booster/aio/socket.h>
+#include <booster/aio/buffer.h>
 
 namespace cppcms {
 
@@ -210,15 +220,6 @@ namespace {
 	cppcms::service *the_service;
 
 #if defined(CPPCMS_WIN32)
-	void make_socket_pair(boost::asio::ip::tcp::socket &s1,boost::asio::ip::tcp::socket &s2)
-	{
-		boost::asio::ip::tcp::acceptor acceptor(s1.get_io_service(),
-			boost::asio::ip::tcp::endpoint(boost::asio::ip::tcp::v4(), 0));
-		boost::asio::ip::tcp::endpoint server_endpoint = acceptor.local_endpoint();
-		server_endpoint.address(boost::asio::ip::address_v4::loopback());
-		s1.lowest_layer().connect(server_endpoint);
-		acceptor.accept(s2.lowest_layer());
-	}
 
 	BOOL WINAPI handler(DWORD ctrl_type)
 	{
@@ -236,10 +237,6 @@ namespace {
 	}
 
 #else
-	void make_socket_pair(boost::asio::local::stream_protocol::socket &s1,boost::asio::local::stream_protocol::socket &s2)
-	{
-		boost::asio::local::connect_pair(s1,s2);
-	}
 
 	void handler(int nothing)
 	{
@@ -252,11 +249,11 @@ namespace {
 
 void service::setup_exit_handling()
 {
-	make_socket_pair(*impl_->sig_,*impl_->breaker_);
+	io::socket_pair(io::sock_stream,*impl_->sig_,*impl_->breaker_);
 
 	static char c;
 
-	impl_->breaker_->async_read_some(boost::asio::buffer(&c,1),
+	impl_->breaker_->async_read_some(io::buffer(&c,1),
 					boost::bind(&service::stop,this));
 
 	impl_->notification_socket_=impl_->sig_->native();
@@ -660,12 +657,17 @@ std::locale service::locale(std::string const &name)
 	return generator().get(name);
 }
 
+booster::aio::io_service &service::get_io_service()
+{
+	return impl_->get_io_service();
+}
+
 
 namespace impl {
 	service::service() :
-		io_service_(new boost::asio::io_service()),
-		sig_(new loopback_socket_type(*io_service_)),
-		breaker_(new loopback_socket_type(*io_service_))
+		io_service_(new io::io_service()),
+		sig_(new io::socket(*io_service_)),
+		breaker_(new io::socket(*io_service_))
 	{
 	}
 	service::~service()

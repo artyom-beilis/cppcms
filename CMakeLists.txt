@@ -31,6 +31,11 @@ if(USE_STD_LOCALES OR USE_EXTERNAL_BOOST)
 	set(CPPCMS_SUFFIX "-c")
 endif()
 
+add_subdirectory(booster)
+include_directories(booster)
+
+
+
 #############################################################################
 #
 # Setup various build flags for different supported compilers and systems
@@ -330,7 +335,6 @@ else(USE_EXTERNAL_BOOST)
 endif(USE_EXTERNAL_BOOST)
 
 set(CPPCMS_PUBLIC_HEADERS
-	aio_timer.h
 	application.h
 	applications_pool.h
 	atomic_counter.h
@@ -399,7 +403,6 @@ set(CPPCMS_SOURCES
 	views_pool.cpp
 	internal_file_server.cpp 
 	atomic_counter.cpp 
-	aio_timer.cpp 
 	json.cpp 
 	encoding.cpp 
 	regex.cpp
@@ -540,10 +543,16 @@ else(DISABLE_SHARED OR DISABLE_STATIC)
 	set(CPPCMS_LIBS cppcms; cppcms-static)
 endif(DISABLE_SHARED OR DISABLE_STATIC)
 
+
 foreach(ALIB ${CPPCMS_LIBS})
 	target_link_libraries(${ALIB} ${ICU_UC})
 	target_link_libraries(${ALIB} ${ICU_DATA})
 	target_link_libraries(${ALIB} ${ICU_I18N})
+	if(DISABLE_SHARED)
+		target_link_libraries(${ALIB} booster-static)
+	else(DISABLE_SHARED)
+		target_link_libraries(${ALIB} booster)
+	endif(DISABLE_SHARED)
 	if(NOT USE_EXTERNAL_BOOST)
 		if(DISABLE_SHARED)
 			target_link_libraries(${ALIB} boost-static)
@@ -666,7 +675,6 @@ set(ALL_TESTS
 	atomic_test
 	encryptor_test
 	storage_test
-	aio_timer_test
 	cache_backend_test
 	json_test
 	base64_test
@@ -744,7 +752,6 @@ add_test(base64_test base64_test)
 add_test(encryptor_test encryptor_test)
 add_test(storage_test storage_test)
 add_test(json_test json_test)
-add_test(aio_timer_test aio_timer_test aio_timer_test --service-api=http)
 add_test(cache_backend_test cache_backend_test)
 add_test(function_test function_test)
 

@@ -19,10 +19,19 @@
 #ifndef CPPCMS_SERVICE_IMPL_H
 #define CPPCMS_SERVICE_IMPL_H
 
-#include "asio_config.h"
 #include "json.h"
 #include "localization.h"
+#include <booster/aio/io_service.h>
 #include <memory>
+
+#include "config.h"
+#ifdef CPPCMS_USE_EXTERNAL_BOOST
+#   include <boost/shared_ptr.hpp>
+#else // Internal Boost
+#   include <cppcms_boost/shared_ptr.hpp>
+    namespace boost = cppcms_boost;
+#endif
+
 
 namespace cppcms {
 class service;
@@ -39,7 +48,7 @@ namespace impl {
 	public:
 		service();
 		~service();
-		boost::asio::io_service &get_io_service()
+		booster::aio::io_service &get_io_service()
 		{
 			return *io_service_;
 		}
@@ -47,7 +56,7 @@ namespace impl {
 
 	private:
 		friend class cppcms::service;
-		std::auto_ptr<boost::asio::io_service> io_service_;
+		std::auto_ptr<booster::aio::io_service> io_service_;
 
 		std::vector<boost::shared_ptr<cgi::acceptor> > acceptors_;
 		std::auto_ptr<json::value> settings_;
@@ -63,15 +72,8 @@ namespace impl {
 
 		int id_;
 
-#ifdef CPPCMS_WIN32
-		typedef SOCKET native_socket_type;
-		typedef boost::asio::ip::tcp::socket loopback_socket_type;
-#else
-		typedef int native_socket_type;
-		typedef boost::asio::local::stream_protocol::socket loopback_socket_type;
-#endif
-		native_socket_type notification_socket_;
-		std::auto_ptr<loopback_socket_type> sig_,breaker_;
+		booster::aio::native_type notification_socket_;
+		std::auto_ptr<booster::aio::socket> sig_,breaker_;
 
 
 	};

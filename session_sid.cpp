@@ -28,12 +28,7 @@
 #include <time.h>
 
 #include "config.h"
-#ifdef CPPCMS_USE_EXTERNAL_BOOST
-#   include <boost/thread.hpp>
-#else // Internal Boost
-#   include <cppcms_boost/thread.hpp>
-    namespace boost = cppcms_boost;
-#endif
+#include <booster/thread.h>
 
 #ifndef CPPCMS_WIN_NATIVE
 #include <sys/time.h>
@@ -104,10 +99,10 @@ namespace impl {
 			char uid2[16];
 		};
 	private:
-		static boost::thread_specific_ptr<for_hash> hash_ptr;
+		static booster::thread_specific_ptr<for_hash> hash_ptr;
 	};
 	
-	boost::thread_specific_ptr<sid_generator::for_hash> sid_generator::hash_ptr;
+	booster::thread_specific_ptr<sid_generator::for_hash> sid_generator::hash_ptr;
 
 
 } // namespace impl

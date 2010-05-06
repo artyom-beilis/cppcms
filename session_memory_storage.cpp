@@ -20,13 +20,12 @@
 #include "session_memory_storage.h"
 #include "config.h"
 #ifdef CPPCMS_USE_EXTERNAL_BOOST
-#   include <boost/thread.hpp>
 #   include <boost/unordered_map.hpp>
 #else // Internal Boost
-#   include <cppcms_boost/thread.hpp>
 #   include <cppcms_boost/unordered_map.hpp>
     namespace boost = cppcms_boost;
 #endif
+#include <booster/thread.h>
 
 #include <map>
 
@@ -43,12 +42,12 @@ class session_memory_storage : public session_storage {
 	typedef boost::unordered_map<std::string,data> map_type;
 	map_type map_;
 	timeout_type timeout_;
-	boost::shared_mutex mutex_;
+	booster::shared_mutex mutex_;
 public:
 
 	void save(std::string const &key,time_t to,std::string const &value)
 	{
-		boost::unique_lock<boost::shared_mutex> lock(mutex_);
+		booster::unique_lock<booster::shared_mutex> lock(mutex_);
 		map_type::iterator p=map_.find(key);
 		if(p==map_.end()) {
 			data &d=map_[key];
@@ -80,7 +79,7 @@ public:
 
 	bool load(std::string const &key,time_t &to,std::string &value)
 	{
-		boost::shared_lock<boost::shared_mutex> lock(mutex_);
+		booster::shared_lock<booster::shared_mutex> lock(mutex_);
 
 		map_type::const_iterator p=map_.find(key);
 		if(p==map_.end())
@@ -94,7 +93,7 @@ public:
 
 	void remove(std::string const &key) 
 	{
-		boost::unique_lock<boost::shared_mutex> lock(mutex_);
+		booster::unique_lock<booster::shared_mutex> lock(mutex_);
 
 		map_type::iterator p=map_.find(key);
 		if(p==map_.end())

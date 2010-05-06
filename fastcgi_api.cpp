@@ -17,7 +17,6 @@
 //
 ///////////////////////////////////////////////////////////////////////////////
 #define CPPCMS_SOURCE
-#include "asio_config.h"
 #include "cgi_api.h"
 #include "cgi_acceptor.h"
 #include "service.h"
@@ -29,19 +28,24 @@
 #include <string.h>
 #include <iostream>
 #include "config.h"
+
+#include <booster/aio/buffer.h>
+
 #ifdef CPPCMS_USE_EXTERNAL_BOOST
-#   include <boost/array.hpp>
-#   if defined(CPPCMS_WIN32) && _WIN32_WINNT <= 0x0501 && !defined(BOOST_ASIO_DISABLE_IOCP)
-#   define NO_CANCELIO
-#   endif
+#   include <boost/bind.hpp>
 #else // Internal Boost
-#   include <cppcms_boost/array.hpp>
+#   include <cppcms_boost/bind.hpp>
     namespace boost = cppcms_boost;
-#   if defined(CPPCMS_WIN32) && _WIN32_WINNT <= 0x0501 && !defined(CPPCMS_BOOST_ASIO_DISABLE_IOCP)
-#   define NO_CANCELIO
-#   endif
 #endif
 
+
+#ifdef CPPCMS_WIN_NATIVE
+#include <winsock2.h>
+#else
+#include <arpa/inet.h>
+#endif
+
+namespace io = booster::aio;
 
 
 namespace cppcms {
@@ -49,8 +53,7 @@ namespace impl {
 namespace cgi {
 
 
-	template<typename Proto,typename API> class socket_acceptor;
-	template<typename Proto>
+	template<typename API> class socket_acceptor;
 	class fastcgi : public connection {
 	public:
 		fastcgi(cppcms::service &srv) :
@@ -65,8 +68,8 @@ namespace cgi {
 		}
 		~fastcgi()
 		{
-			boost::system::error_code e;
-			socket_.shutdown(boost::asio::basic_stream_socket<Proto>::shutdown_both,e);
+			booster::system::error_code e;
+			socket_.shutdown(io::socket::shut_rdwr,e);
 		}
 		virtual void async_read_headers(handler const &h)
 		{
@@ -92,7 +95,7 @@ namespace cgi {
 			if(read_length_ == content_length_) {
 				socket_.get_io_service().post(boost::bind(
 						h,
-						boost::system::error_code(errc::protocol_violation,cppcms_category),
+						booster::system::error_code(errc::protocol_violation,cppcms_category),
 						0));
 				return;
 			}
@@ -118,7 +121,7 @@ namespace cgi {
 						s));
 					return;
 				}
-				socket_.get_io_service().post(boost::bind(h,boost::system::error_code(),s));
+				socket_.get_io_service().post(boost::bind(h,booster::system::error_code(),s));
 				return;
 			}
 			else {
@@ -130,29 +133,29 @@ namespace cgi {
 			}
 		}
 	private:
-		void on_some_input_recieved(boost::system::error_code const &e,io_handler const &h,void *p,size_t s)
+		void on_some_input_recieved(booster::system::error_code const &e,io_handler const &h,void *p,size_t s)
 		{
 			if(e) { h(e,0); return; }
 			if(	header_.type!=fcgi_stdin 
 				|| header_.request_id!=request_id_ 
 				|| header_.content_length==0)
 			{
-				h(boost::system::error_code(errc::protocol_violation,cppcms_category),0);
+				h(booster::system::error_code(errc::protocol_violation,cppcms_category),0);
 				return;
 			}
 			async_read_some(p,s,h);
 		}
-		void on_read_stdin_eof_expected(boost::system::error_code const &e,io_handler const &h,size_t s)
+		void on_read_stdin_eof_expected(booster::system::error_code const &e,io_handler const &h,size_t s)
 		{
 			if(e) { h(e,s); return; }
 			if(	header_.type!=fcgi_stdin 
 				|| header_.request_id!=request_id_ 
 				|| header_.content_length!=0)
 			{
-				h(boost::system::error_code(errc::protocol_violation,cppcms_category),s);
+				h(booster::system::error_code(errc::protocol_violation,cppcms_category),s);
 				return;
 			}
-			h(boost::system::error_code(),s);
+			h(booster::system::error_code(),s);
 		}
 	public:	
 		virtual void async_write_some(void const *p,size_t s,io_handler const &h)
@@ -169,7 +172,7 @@ namespace cgi {
 		{
 			if(s==0) {
 				if(async)
-					socket_.get_io_service().post(boost::bind(h,boost::system::error_code(),0));
+					socket_.get_io_service().post(boost::bind(h,booster::system::error_code(),0));
 				return 0;
 			}
 			memset(&header_,0,sizeof(header_));
@@ -183,26 +186,24 @@ namespace cgi {
 			
 			header_.to_net();
 
-			boost::array<boost::asio::const_buffer,3> packet = {
-				{
-					boost::asio::buffer(&header_,sizeof(header_)),
-					boost::asio::buffer(p,s),
-					boost::asio::buffer(pad,header_.padding_length)
-				}
-			};
+			io::const_buffer packet = 
+					io::buffer(&header_,sizeof(header_))
+					+ io::buffer(p,s)
+					+ io::buffer(pad,header_.padding_length);
+
 			if(async) {
-				boost::asio::async_write(socket_,
-						packet,
-						boost::bind(	h,
-								boost::asio::placeholders::error,
-								s));
+				socket_.async_write(
+					packet,
+					boost::bind(	h,
+							_1,
+							s));
 				return s;
 			}
 			
-			boost::asio::write(socket_,packet);
+			socket_.write(packet);
 			return s;
 		}
-		virtual boost::asio::io_service &get_io_service()
+		virtual booster::aio::io_service &get_io_service()
 		{
 			return socket_.get_io_service();
 		}
@@ -214,7 +215,7 @@ namespace cgi {
 
 		virtual void close()
 		{
-			boost::system::error_code e;
+			booster::system::error_code e;
 			socket_.close(e);
 		}
 		
@@ -241,15 +242,15 @@ namespace cgi {
 			#endif
 
 
-			boost::asio::async_write(	socket_,
-							boost::asio::buffer(&eof_,sizeof(eof_)),
-							boost::bind(	&fastcgi::on_written_eof,
-									self(),
-									_1,
-									h));
+			socket_.async_write(
+				io::buffer(&eof_,sizeof(eof_)),
+				boost::bind(	&fastcgi::on_written_eof,
+						self(),
+						_1,
+						h));
 		}
 
-		virtual void on_written_eof(boost::system::error_code const &e,handler const &h)
+		virtual void on_written_eof(booster::system::error_code const &e,handler const &h)
 		{
 			if(e) { h(e); return; }
 
@@ -259,21 +260,21 @@ namespace cgi {
 			// socket, because we can't stop asyncronous EOF reading...
 
 			keep_alive_=false;
-			boost::system::error_code err;
-			socket_.shutdown(boost::asio::basic_stream_socket<Proto>::shutdown_both,err);
+			booster::system::error_code err;
+			socket_.shutdown(io::socket::shut_rdwr,err);
 			socket_.close(err);
 
 			#else
 
 			// Stop reading from socket
 			if(!keep_alive_) {
-				boost::system::error_code err;
-				socket_.shutdown(boost::asio::basic_stream_socket<Proto>::shutdown_both,err);
+				booster::system::error_code err;
+				socket_.shutdown(io::socket::shut_rdwr,err);
 			}
 
 			#endif
 
-			h(boost::system::error_code());
+			h(booster::system::error_code());
 		}
 
 		// This is not really correct because server may try
@@ -281,7 +282,7 @@ namespace cgi {
 		virtual void async_read_eof(callback const &h)
 		{
 			static char a;
-			socket_.async_read_some(boost::asio::buffer(&a,1),boost::bind(h));
+			socket_.async_read_some(io::buffer(&a,1),boost::bind(h));
 		}
 	
 	private:
@@ -383,7 +384,7 @@ namespace cgi {
 
 		struct fcgi_unknown_type_record {
 			fcgi_header header;
-			fcgi_unknown_type_record body;
+			fcgi_unknown_type_body body;
 			void to_host() { header.to_host();}
 			void to_net() {  header.to_net(); }
 		};
@@ -403,19 +404,19 @@ namespace cgi {
 		//
 		//
 	
-		void on_start_request(boost::system::error_code const &e,handler const &h)
+		void on_start_request(booster::system::error_code const &e,handler const &h)
 		{
 
 			if(header_.version!=fcgi_version_1)
 			{
-				h(boost::system::error_code(errc::protocol_violation,cppcms_category));
+				h(booster::system::error_code(errc::protocol_violation,cppcms_category));
 				return;
 			}
 			if(header_.type==fcgi_get_values) {
 				header_.type = fcgi_get_values_result;
 				std::vector<std::pair<std::string,std::string> > pairs;
 				if(!parse_pairs(pairs)) {
-					h(boost::system::error_code(errc::protocol_violation,cppcms_category));
+					h(booster::system::error_code(errc::protocol_violation,cppcms_category));
 					return;
 				}
 				body_.clear();
@@ -441,7 +442,7 @@ namespace cgi {
 			}
 			
 			if(body_.size()!=sizeof(fcgi_request_body)) {
-				h(boost::system::error_code(errc::protocol_violation,cppcms_category));
+				h(booster::system::error_code(errc::protocol_violation,cppcms_category));
 				return;
 			}
 			fcgi_request_body *body=reinterpret_cast<fcgi_request_body*>(&body_.front());
@@ -513,10 +514,10 @@ namespace cgi {
 			return true;
 		}
 
-		void params_record_expected(boost::system::error_code const &e,handler const &h)
+		void params_record_expected(booster::system::error_code const &e,handler const &h)
 		{
 			if(header_.type!=fcgi_params || header_.request_id!=request_id_)
-				h(boost::system::error_code(errc::protocol_violation,cppcms_category));
+				h(booster::system::error_code(errc::protocol_violation,cppcms_category));
 			if(header_.content_length!=0) { // eof
 				if(body_.size() < 16384) {
 					async_read_record(boost::bind(	&fastcgi::params_record_expected,
@@ -525,7 +526,7 @@ namespace cgi {
 									h));
 				}
 				else {
-					h(boost::system::error_code(errc::protocol_violation,cppcms_category));
+					h(booster::system::error_code(errc::protocol_violation,cppcms_category));
 				}
 				return;
 			}
@@ -546,21 +547,21 @@ namespace cgi {
 					h));
 				return;
 			}
-			h(boost::system::error_code());
+			h(booster::system::error_code());
 		}
 
-		void stdin_eof_expected(boost::system::error_code const &e,handler const &h)
+		void stdin_eof_expected(booster::system::error_code const &e,handler const &h)
 		{
 			if(e) { h(e); return; }
 			if(header_.type!=fcgi_stdin || header_.content_length!=0) {
 				std::cerr<<int(header_.type) <<" "<<header_.content_length<<std::endl;
-				h(boost::system::error_code(errc::protocol_violation,cppcms_category));
+				h(booster::system::error_code(errc::protocol_violation,cppcms_category));
 				return;				
 			}
-			h(boost::system::error_code());
+			h(booster::system::error_code());
 		}
 
-		void on_params_response_sent(boost::system::error_code const &e,handler const &h)
+		void on_params_response_sent(booster::system::error_code const &e,handler const &h)
 		{
 			if(e) { h(e); return; }
 			async_read_headers(h);
@@ -572,50 +573,49 @@ namespace cgi {
 			if(body_.size() % 8 != 0) {
 				header_.padding_length=8 - (body_.size() % 8);
 				body_.resize(body_.size() + header_.padding_length);
+			
 			}
-			boost::array<boost::asio::const_buffer,2> packet = {
-				{
-					boost::asio::buffer(&header_,sizeof(header_)),
-					boost::asio::buffer(body_)
-				}
-			};
+			io::const_buffer packet =
+					io::buffer(&header_,sizeof(header_))
+					+ io::buffer(body_);
+			
 			header_.to_net();
-			boost::asio::async_write(socket_,packet,boost::bind(h,boost::asio::placeholders::error));
+			socket_.async_write(packet,boost::bind(h,_1));
 
 		}
 
 		void async_read_record(handler const &h)
 		{
-			boost::asio::async_read(socket_,
-						boost::asio::buffer(&header_,sizeof(header_)),
-						boost::bind(	&fastcgi::on_header_read,
-								self(),
-								boost::asio::placeholders::error,
-								h));
+			socket_.async_read(	
+				io::buffer(&header_,sizeof(header_)),
+					boost::bind(	&fastcgi::on_header_read,
+							self(),
+							_1,
+							h));
 		}
-		void on_header_read(boost::system::error_code const &e,handler const &h)
+		void on_header_read(booster::system::error_code const &e,handler const &h)
 		{
 			if(e) { h(e); return; }
 			header_.to_host();
 			size_t cur_size=body_.size();
 			size_t rec_size=header_.content_length+header_.padding_length;
 			if(rec_size==0) {
-				h(boost::system::error_code());
+				h(booster::system::error_code());
 				return;
 			}
 			body_.resize(cur_size + rec_size);
-			boost::asio::async_read(socket_,
-						boost::asio::buffer(&body_[cur_size],rec_size),
-						boost::bind(	&fastcgi::on_body_read,
-								self(),
-								boost::asio::placeholders::error,
-								h));
+			socket_.async_read(
+				io::buffer(&body_[cur_size],rec_size),
+				boost::bind(	&fastcgi::on_body_read,
+						self(),
+						_1,
+						h));
 		}
-		void on_body_read(boost::system::error_code const &e,handler const &h)
+		void on_body_read(booster::system::error_code const &e,handler const &h)
 		{
 			if(e) { h(e);  return; }
 			body_.resize(body_.size() - header_.padding_length);
-			h(boost::system::error_code());
+			h(booster::system::error_code());
 		}
 
 		void add_value(std::string const &value)
@@ -639,14 +639,14 @@ namespace cgi {
 		}
 
 
-		intrusive_ptr<fastcgi<Proto> > self()
+		intrusive_ptr<fastcgi> self()
 		{
 			return this;
 		}
 		
 		
-		friend class socket_acceptor<Proto,fastcgi<Proto> >;
-		boost::asio::basic_stream_socket<Proto> socket_;
+		friend class socket_acceptor<fastcgi>;
+		io::socket socket_;
 
 		fcgi_header header_;
 		std::vector<char> body_;
@@ -679,26 +679,22 @@ namespace cgi {
 		}
 	};
 
-	typedef fastcgi<boost::asio::ip::tcp> tcp_socket_fastcgi;
-	typedef tcp_socket_acceptor<tcp_socket_fastcgi>    tcp_socket_fastcgi_acceptor;
 	std::auto_ptr<acceptor> fastcgi_api_tcp_socket_factory(cppcms::service &srv,std::string ip,int port,int backlog)
 	{
-		std::auto_ptr<acceptor> a(new tcp_socket_fastcgi_acceptor(srv,ip,port,backlog));
+		std::auto_ptr<acceptor> a(new socket_acceptor<fastcgi>(srv,ip,port,backlog));
 		return a;
 	}
 
 #if !defined(CPPCMS_WIN32)
-	typedef fastcgi<boost::asio::local::stream_protocol> unix_socket_fastcgi;
-	typedef unix_socket_acceptor<unix_socket_fastcgi>    unix_socket_fastcgi_acceptor;
 
 	std::auto_ptr<acceptor> fastcgi_api_unix_socket_factory(cppcms::service &srv,std::string socket,int backlog)
 	{
-		std::auto_ptr<acceptor> a(new unix_socket_fastcgi_acceptor(srv,socket,backlog));
+		std::auto_ptr<acceptor> a(new socket_acceptor<fastcgi>(srv,socket,backlog));
 		return a;
 	}
 	std::auto_ptr<acceptor> fastcgi_api_unix_socket_factory(cppcms::service &srv,int backlog)
 	{
-		std::auto_ptr<acceptor> a(new unix_socket_fastcgi_acceptor(srv,backlog));
+		std::auto_ptr<acceptor> a(new socket_acceptor<fastcgi>(srv,backlog));
 		return a;
 	}
 #endif

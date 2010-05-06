@@ -20,12 +20,7 @@
 #define CPPCMS_ERROR_CATEGORY_H
 
 #include "config.h"
-#ifdef CPPCMS_USE_EXTERNAL_BOOST
-#   include <boost/system/system_error.hpp>
-#else // Internal Boost
-#   include <cppcms_boost/system/system_error.hpp>
-    namespace boost = cppcms_boost;
-#endif
+#include <booster/system_error.h>
 
 namespace cppcms {
 	namespace impl {
@@ -35,7 +30,7 @@ namespace cppcms {
     				protocol_violation
 			};
 		}
-		class error_category : public boost::system::error_category {
+		class error_category : public booster::system::error_category {
 		public:
 			virtual char const *name() const;
 			virtual std::string message(int cat) const;

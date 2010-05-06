@@ -22,13 +22,13 @@
 #include "config.h"
 #include "cppcms_error.h"
 #ifdef CPPCMS_USE_EXTERNAL_BOOST
-#   include <boost/thread.hpp>
 #   include <boost/format.hpp>
 #else // Internal Boost
-#   include <cppcms_boost/thread.hpp>
 #   include <cppcms_boost/format.hpp>
     namespace boost = cppcms_boost;
 #endif
+
+#include <booster/thread.h>
 
 #ifdef CPPCMS_WIN32
 #include <windows.h>
@@ -205,7 +205,7 @@ struct views_pool::data {
 	bool dynamic_reload;
 	typedef std::map<std::string,skin> skins_type;
 	skins_type skins;
-	boost::shared_mutex lock_;
+	booster::shared_mutex lock_;
 	std::string default_skin;
 	std::vector<std::string> search_path;
 };
@@ -249,7 +249,7 @@ void views_pool::render(std::string skin_name,std::string template_name,std::ost
 	if(d->dynamic_reload) {
 		for(;;){
 			{	// Check if update
-				boost::shared_lock<boost::shared_mutex> lock(d->lock_);
+				booster::shared_lock<booster::shared_mutex> lock(d->lock_);
 				data::skins_type::const_iterator p=d->skins.find(skin_name);
 				if(p==d->skins.end())
 					throw cppcms_error("There is no such skin:" + skin_name);
@@ -259,7 +259,7 @@ void views_pool::render(std::string skin_name,std::string template_name,std::ost
 				}
 			}
 			{	// Reload
-				boost::unique_lock<boost::shared_mutex> lock(d->lock_);
+				booster::unique_lock<booster::shared_mutex> lock(d->lock_);
 				data::skins_type::iterator p=d->skins.find(skin_name);
 				if(p==d->skins.end())
 					throw cppcms_error("There is no such skin:" + skin_name);

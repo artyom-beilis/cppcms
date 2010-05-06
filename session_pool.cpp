@@ -20,7 +20,6 @@
 #include "session_pool.h"
 #include "service.h"
 #include "thread_pool.h"
-#include "aio_timer.h"
 #include "session_cookies.h"
 #include "session_sid.h"
 #include "session_dual.h"
@@ -51,6 +50,8 @@
 #endif
 #include "session_memory_storage.h"
 
+#include <booster/aio/deadline_timer.h>
+#include <booster/posix_time.h>
 
 
 namespace cppcms {
@@ -142,7 +143,7 @@ private:
 class session_pool::gc_job : public boost::enable_shared_from_this<gc_job> {
 public:
 	gc_job(service *ser,int freq,session_pool *pool) :
-		timer_(new aio::timer(*ser)),
+		timer_(new booster::aio::deadline_timer(ser->get_io_service())),
 		service_(ser),
 		freq_(freq),
 		pool_(pool)
@@ -156,10 +157,10 @@ private:
 	void gc() const 
 	{
 		pool_->backend_->gc();
-		timer_->expires_from_now(freq_);
+		timer_->expires_from_now(booster::ptime(freq_));
 		timer_->async_wait(boost::bind(&gc_job::async_run,shared_from_this()));
 	}
-	boost::shared_ptr<aio::timer> timer_;
+	boost::shared_ptr<booster::aio::deadline_timer> timer_;
 	service *service_;
 	int freq_;
 	session_pool *pool_;

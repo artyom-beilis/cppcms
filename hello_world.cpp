@@ -26,7 +26,6 @@
 #include "localization.h"
 #include "http_context.h"
 #include "filters.h"
-#include "aio_timer.h"
 #include "intrusive_ptr.h"
 #include "form.h"
 #include "cache_interface.h"
@@ -45,6 +44,11 @@
 #include <fstream>
 
 #include "hello_world_view.h"
+
+#include <booster/aio/deadline_timer.h>
+#include <booster/function.h>
+#include <booster/posix_time.h>
+#include <booster/system_error.h>
 
 
 class chat : public cppcms::application {
@@ -111,7 +115,7 @@ private:
 
 class stock : public cppcms::application {
 public:
-	stock(cppcms::service &srv) : cppcms::application(srv),timer_(srv)
+	stock(cppcms::service &srv) : cppcms::application(srv),timer_(srv.get_io_service())
 	{
 		dispatcher().assign("^/price$",&stock::get,this);
 		dispatcher().assign("^/update$",&stock::update,this);
@@ -124,14 +128,14 @@ public:
 	}
 	void async_run()
 	{
-		on_timeout(false);
+		on_timeout(booster::system::error_code());
 	}
 private:
 
-	void on_timeout(bool x)
+	void on_timeout(booster::system::error_code const &e)
 	{
 		broadcast();
-		timer_.expires_from_now(100);
+		timer_.expires_from_now(booster::ptime(100));
 		timer_.async_wait(cppcms::util::mem_bind(&stock::on_timeout,cppcms::intrusive_ptr<stock>(this)));
 	}
 	void get()
@@ -183,7 +187,7 @@ private:
 	int counter_;
 	double price_;
 	std::vector<cppcms::intrusive_ptr<cppcms::http::context> > all_;
-	cppcms::aio::timer timer_;
+	booster::aio::deadline_timer timer_;
 };
 
 class my_form : public cppcms::form

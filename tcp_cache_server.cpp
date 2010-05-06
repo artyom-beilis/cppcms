@@ -17,7 +17,6 @@
 //
 ///////////////////////////////////////////////////////////////////////////////
 #define CPPCMS_SOURCE
-#include "asio_config.h"
 // MUST BE FIRST TO COMPILE CORRECTLY UNDER CYGWIN
 
 #include "tcp_cache_protocol.h"
@@ -25,28 +24,31 @@
 #include "cppcms_error.h"
 #include "config.h"
 #ifdef CPPCMS_USE_EXTERNAL_BOOST
-#   include <boost/thread.hpp>
 #   include <boost/bind.hpp>
 #   include <boost/shared_ptr.hpp>
 #   include <boost/enable_shared_from_this.hpp>
-#   include <boost/date_time/posix_time/posix_time.hpp>
 #else // Internal Boost
-#   include <cppcms_boost/thread.hpp>
 #   include <cppcms_boost/bind.hpp>
 #   include <cppcms_boost/shared_ptr.hpp>
 #   include <cppcms_boost/enable_shared_from_this.hpp>
-#   include <cppcms_boost/date_time/posix_time/posix_time.hpp>
     namespace boost = cppcms_boost;
 #endif
+#include <booster/thread.h>
+#include <booster/aio/socket.h>
+#include <booster/aio/io_service.h>
+#include <booster/aio/endpoint.h>
+#include <booster/aio/buffer.h>
 #include <time.h>
 #include <stdlib.h>
+
+#include <iostream>
 
 #include "tcp_cache_server.h"
 
 namespace cppcms {
 namespace impl {
 
-namespace aio = boost::asio;
+namespace io = booster::aio;
 
 class tcp_cache_service::session : public boost::enable_shared_from_this<tcp_cache_service::session> {
 	std::vector<char> data_in;
@@ -55,27 +57,27 @@ class tcp_cache_service::session : public boost::enable_shared_from_this<tcp_cac
 	cppcms::impl::tcp_operation_header hin;
 
 public:
-	aio::ip::tcp::socket socket_;
+	io::socket socket_;
 	cppcms::impl::base_cache &cache;
 	//cppcms::session_storage &sessions;
-	session(aio::io_service &srv,cppcms::impl::base_cache &c): //,session_server_storage &s) : 
+	session(io::io_service &srv,cppcms::impl::base_cache &c): //,session_server_storage &s) : 
 		socket_(srv), cache(c) //,sessions(s)
 	{
 	}
 	void run()
 	{
-		aio::async_read(socket_,aio::buffer(&hin,sizeof(hin)),
+		socket_.async_read(io::buffer(&hin,sizeof(hin)),
 				boost::bind(&session::on_header_in,shared_from_this(),
-						aio::placeholders::error));
+						_1));
 	}
-	void on_header_in(boost::system::error_code const &e)
+	void on_header_in(booster::system::error_code const &e)
 	{
 		if(e) return;
 		data_in.clear();
 		data_in.resize(hin.size);
-		aio::async_read(socket_,aio::buffer(data_in,hin.size),
+		socket_.async_read(io::buffer(data_in),
 				boost::bind(&session::on_data_in,shared_from_this(),
-						aio::placeholders::error));
+						_1));
 	}
 	
 	void fetch()
@@ -222,7 +224,7 @@ public:
 		sessions.remove(sid);
 	}
 	*/
-	void on_data_in(boost::system::error_code const &e)
+	void on_data_in(booster::system::error_code const &e)
 	{
 		if(e) return;
 		memset(&hout,0,sizeof(hout));
@@ -238,22 +240,22 @@ public:
 		default:
 			hout.opcode=opcodes::error;
 		}
-		aio::async_write(socket_,aio::buffer(&hout,sizeof(hout)),
+		socket_.async_write(io::buffer(&hout,sizeof(hout)),
 			boost::bind(&session::on_header_out,shared_from_this(),
-				aio::placeholders::error));
+				_1));
 	}
-	void on_header_out(boost::system::error_code const &e)
+	void on_header_out(booster::system::error_code const &e)
 	{
 		if(e) return;
 		if(hout.size==0) {
 			run();
 			return ;
 		}
-		aio::async_write(socket_,aio::buffer(data_out.c_str(),hout.size),
+		socket_.async_write(io::buffer(data_out.c_str(),hout.size),
 			boost::bind(&session::on_data_out,shared_from_this(),
-				aio::placeholders::error));
+				_1));
 	}
-	void on_data_out(boost::system::error_code const &e)
+	void on_data_out(booster::system::error_code const &e)
 	{
 		if(e) return;
 		run();
@@ -262,14 +264,13 @@ public:
 };
 
 class tcp_cache_service::server  {
-	aio::ip::tcp::acceptor acceptor_;
+	io::socket acceptor_;
 	cppcms::impl::base_cache &cache;
 	//session_server_storage &sessions;
-	void on_accept(boost::system::error_code const &e,boost::shared_ptr<tcp_cache_service::session> s)
+	void on_accept(booster::system::error_code const &e,boost::shared_ptr<tcp_cache_service::session> s)
 	{
 		if(!e) {
-			aio::ip::tcp::no_delay nd(true);
-			s->socket_.set_option(nd);
+			s->socket_.set_option(io::socket::tcp_no_delay,true);
 			s->run();
 			start_accept();
 		}
@@ -277,20 +278,25 @@ class tcp_cache_service::server  {
 	void start_accept()
 	{
 		//boost::shared_ptr<session> s(new session(acceptor_.io_service(),cache,sessions));
-		boost::shared_ptr<session> s(new session(acceptor_.io_service(),cache));
-		acceptor_.async_accept(s->socket_,boost::bind(&server::on_accept,this,aio::placeholders::error,s));
+		boost::shared_ptr<session> s(new session(acceptor_.get_io_service(),cache));
+		acceptor_.async_accept(s->socket_,boost::bind(&server::on_accept,this,_1,s));
 	}
 public:
-	server(	aio::io_service &io,
+	server(	io::io_service &io,
 		std::string ip,
 		int port,
 		cppcms::impl::base_cache &c
 		//,session_server_storage &s
 		) : 
-		acceptor_(io,aio::ip::tcp::endpoint(aio::ip::address::from_string(ip), port)),
+		acceptor_(io),
 		cache(c)
 	//	,sessions(s)
 	{
+		io::endpoint ep(ip,port);
+		acceptor_.open(ep.family(),io::sock_stream);
+		acceptor_.set_option(io::socket::reuse_address,true);
+		acceptor_.bind(ep);
+		acceptor_.listen(10);
 		start_accept();
 	}
 };
@@ -312,7 +318,7 @@ class garbage_collector
 		submit();
 	}
 public:
-	garbage_collector(aio::io_service &srv,int sec,boost::shared_ptr<storage::io> io_) :
+	garbage_collector(io::io_service &srv,int sec,boost::shared_ptr<storage::io> io_) :
 		timer(srv),
 		seconds(sec),
 		io(io_)
@@ -322,7 +328,7 @@ public:
 };
 */
 
-static void thread_function(aio::io_service *io)
+static void thread_function(io::io_service *io)
 {
 	bool stop=false;
 	try{
@@ -350,10 +356,10 @@ static void thread_function(aio::io_service *io)
 }
 
 struct tcp_cache_service::data {
-	aio::io_service io;
+	io::io_service io;
 	std::auto_ptr<server> srv_cache;
 	intrusive_ptr<base_cache> cache;
-	std::vector<boost::shared_ptr<boost::thread> > threads;
+	std::vector<boost::shared_ptr<booster::thread> > threads;
 };
 
 tcp_cache_service::tcp_cache_service(intrusive_ptr<base_cache> cache,int threads,std::string ip,int port) :
@@ -370,8 +376,8 @@ tcp_cache_service::tcp_cache_service(intrusive_ptr<base_cache> cache,int threads
 
 	int i;
 	for(i=0;i<threads;i++){
-		boost::shared_ptr<boost::thread> thread;
-		thread.reset(new boost::thread(boost::bind(thread_function,&d->io)));
+		boost::shared_ptr<booster::thread> thread;
+		thread.reset(new booster::thread(boost::bind(thread_function,&d->io)));
 		d->threads.push_back(thread);
 	}
 #ifndef CPPCMS_WIN32

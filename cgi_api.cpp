@@ -17,8 +17,6 @@
 //
 ///////////////////////////////////////////////////////////////////////////////
 #define CPPCMS_SOURCE
-#include "asio_config.h"
-
 #include "url_dispatcher.h"
 #include "http_request.h"
 #include "http_response.h"
@@ -281,7 +279,7 @@ void connection::set_error(ehandler const &h,std::string s)
 	h(true);
 }
 
-void connection::load_content(boost::system::error_code const &e,http::request *request,ehandler const &h)
+void connection::load_content(booster::system::error_code const &e,http::request *request,ehandler const &h)
 {
 	if(e)  {
 		set_error(h,e.message());
@@ -325,11 +323,11 @@ void connection::load_content(boost::system::error_code const &e,http::request *
 				boost::bind(&connection::on_post_data_loaded,self(),_1,request,h));
 	}
 	else  {
-		on_post_data_loaded(boost::system::error_code(),request,h);
+		on_post_data_loaded(booster::system::error_code(),request,h);
 	}
 }
 
-void connection::on_post_data_loaded(boost::system::error_code const &e,http::request *request,ehandler const &h)
+void connection::on_post_data_loaded(booster::system::error_code const &e,http::request *request,ehandler const &h)
 {
 	if(e) { set_error(h,e.message()); return; }
 
@@ -368,13 +366,13 @@ void connection::async_write_response(	http::response &response,
 		return;
 	}
 	if(complete_response) {
-		on_async_write_written(boost::system::error_code(),complete_response,h);
+		on_async_write_written(booster::system::error_code(),complete_response,h);
 		return;
 	}
 	service().impl().get_io_service().post(boost::bind(h,false));
 }
 
-void connection::on_async_write_written(boost::system::error_code const &e,bool complete_response,ehandler const &h)
+void connection::on_async_write_written(booster::system::error_code const &e,bool complete_response,ehandler const &h)
 {
 	if(complete_response) {
 		async_write_eof(boost::bind(&connection::on_eof_written,self(),_1,h));
@@ -389,7 +387,7 @@ void connection::async_complete_response(ehandler const &h)
 	request_in_progress_=false;
 }
 
-void connection::on_eof_written(boost::system::error_code const &e,ehandler const &h)
+void connection::on_eof_written(booster::system::error_code const &e,ehandler const &h)
 {
 	if(e) { set_error(h,e.message()); return; }
 	h(false);
@@ -406,7 +404,7 @@ struct connection::reader {
 	size_t done;
 	char *p;
 	connection *conn;
-	void operator() (boost::system::error_code const &e=boost::system::error_code(),size_t read = 0)
+	void operator() (booster::system::error_code const &e=booster::system::error_code(),size_t read = 0)
 	{
 		if(e) {
 			h(e,done+read);
@@ -415,7 +413,7 @@ struct connection::reader {
 		p+=read;
 		done+=read;
 		if(s==0)
-			h(boost::system::error_code(),done);
+			h(booster::system::error_code(),done);
 		else
 			conn->async_read_some(p,s,*this);
 	}
@@ -430,7 +428,7 @@ struct connection::writer {
 	size_t done;
 	char const *p;
 	connection *conn;
-	void operator() (boost::system::error_code const &e=boost::system::error_code(),size_t wr = 0)
+	void operator() (booster::system::error_code const &e=booster::system::error_code(),size_t wr = 0)
 	{
 		if(e) {
 			h(e,done+wr);
@@ -439,7 +437,7 @@ struct connection::writer {
 		p+=wr;
 		done+=wr;
 		if(s==0)
-			h(boost::system::error_code(),done);
+			h(booster::system::error_code(),done);
 		else
 			conn->async_write_some(p,s,*this);
 	}

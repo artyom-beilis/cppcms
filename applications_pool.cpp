@@ -28,13 +28,13 @@
 #ifdef CPPCMS_USE_EXTERNAL_BOOST
 #   include <boost/regex.hpp>
 #   include <boost/shared_ptr.hpp>
-#   include <boost/thread.hpp>
 #else // Internal Boost
 #   include <cppcms_boost/regex.hpp>
 #   include <cppcms_boost/shared_ptr.hpp>
-#   include <cppcms_boost/thread.hpp>
     namespace boost = cppcms_boost;
 #endif
+
+#include <booster/thread.h>
 
 namespace cppcms {
 
@@ -114,9 +114,9 @@ namespace cppcms {
 		typedef std::map<application *,boost::shared_ptr<long_running_app_data> > long_running_aps_type;
 		long_running_aps_type long_running_aps;
 		int limit;
-		boost::recursive_mutex mutex;
+		booster::recursive_mutex mutex;
 	};
-	typedef boost::unique_lock<boost::recursive_mutex> lock_it;
+	typedef booster::unique_lock<booster::recursive_mutex> lock_it;
 
 
 applications_pool::applications_pool(service &srv,int limit) :

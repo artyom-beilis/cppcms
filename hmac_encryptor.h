@@ -20,12 +20,7 @@
 #define CPPCMS_HMAC_ENCRYPTOR_H
 #include "base_encryptor.h"
 #include "config.h"
-#ifdef CPPCMS_USE_EXTERNAL_BOOST
-#   include <boost/thread.hpp>
-#else // Internal Boost
-#   include <cppcms_boost/thread.hpp>
-    namespace boost = cppcms_boost;
-#endif
+#include <booster/thread.h>
 
 namespace cppcms {
 namespace sessions {
@@ -46,7 +41,7 @@ public:
 		unsigned left;
 	};
 private:
-	static boost::thread_specific_ptr<block> seed;
+	static booster::thread_specific_ptr<block> seed;
 	void salt(char *s,int n);
 };
 

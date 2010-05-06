@@ -19,12 +19,7 @@
 #define CPPCMS_SOURCE
 #include "config.h"
 #include "cache_storage.h"
-#ifdef CPPCMS_USE_EXTERNAL_BOOST
-#   include <boost/thread.hpp>
-#else // Internal Boost
-#   include <cppcms_boost/thread.hpp>
-    namespace boost = cppcms_boost;
-#endif
+#include <booster/thread.h>
 
 #ifndef CPPCMS_WIN32
 # include "posix_util.h"
@@ -102,11 +97,11 @@ shmem_control *process_settings::process_memory=0;
 #endif
 
 struct thread_settings {
-	typedef boost::mutex mutex_type;
-	typedef boost::shared_mutex shared_mutex_type;
-	typedef boost::lock_guard<boost::mutex> lock_guard;
-	typedef boost::shared_lock<boost::shared_mutex> rdlock_guard;
-	typedef boost::unique_lock<boost::shared_mutex> wrlock_guard;
+	typedef booster::mutex mutex_type;
+	typedef booster::shared_mutex shared_mutex_type;
+	typedef booster::unique_lock<booster::mutex> lock_guard;
+	typedef booster::shared_lock<booster::shared_mutex> rdlock_guard;
+	typedef booster::unique_lock<booster::shared_mutex> wrlock_guard;
 	typedef std::allocator<char> allocator;
 	static bool not_enough_memory() { return false; }
 	static size_t size_limit() { return std::numeric_limits<size_t>::max(); }

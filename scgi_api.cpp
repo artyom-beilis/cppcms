@@ -17,10 +17,8 @@
 //
 ///////////////////////////////////////////////////////////////////////////////
 #define CPPCMS_SOURCE
-#include "asio_config.h"
 #include "cgi_api.h"
 #include "cgi_acceptor.h"
-#include "asio_config.h"
 #include "service.h"
 #include "service_impl.h"
 #include "cppcms_error_category.h"
@@ -33,12 +31,14 @@
 #   include <cppcms_boost/bind.hpp>
     namespace boost = cppcms_boost;
 #endif
+#include <booster/aio/buffer.h>
+
+namespace io = booster::aio;
 
 namespace cppcms {
 namespace impl {
 namespace cgi {
-	template<typename Proto,typename API> class socket_acceptor;
-	template<typename Proto>
+	template<typename API> class socket_acceptor;
 	class scgi : public connection {
 	public:
 		scgi(cppcms::service &srv) :
@@ -50,25 +50,23 @@ namespace cgi {
 		}
 		~scgi()
 		{
-			boost::system::error_code e;
-			socket_.shutdown(boost::asio::basic_stream_socket<Proto>::shutdown_both,e);
+			booster::system::error_code e;
+			socket_.shutdown(io::socket::shut_rdwr,e);
 		}
 		virtual void async_read_headers(handler const &h)
 		{
 			buffer_.resize(16);
-			boost::asio::async_read(
-				socket_,
-				boost::asio::buffer(buffer_),
+			socket_.async_read(
+				io::buffer(buffer_),
 				boost::bind(
 					&scgi::on_first_read,
 					self(),
-					boost::asio::placeholders::error,
-					boost::asio::placeholders::bytes_transferred,
+					_1,_2,
 					h));
 
 		}
 
-		void on_first_read(boost::system::error_code const &e,size_t n,handler const &h)
+		void on_first_read(booster::system::error_code const &e,size_t n,handler const &h)
 		{
 			if(e) {
 				h(e);
@@ -76,36 +74,36 @@ namespace cgi {
 			}
 			sep_=std::find(buffer_.begin(),buffer_.begin()+n,':') - buffer_.begin();
 			if(sep_ >= 16) {
-				h(boost::system::error_code(errc::protocol_violation,cppcms_category));
+				h(booster::system::error_code(errc::protocol_violation,cppcms_category));
 				return;
 			}
 			buffer_[sep_]=0;
 			int len=atoi(&buffer_.front());
 			if(len < 0 || 16384 < len) {
-				h(boost::system::error_code(errc::protocol_violation,cppcms_category));
+				h(booster::system::error_code(errc::protocol_violation,cppcms_category));
 				return;
 			}
 			size_t size=n;
 			buffer_.resize(sep_ + 2 + len); // len of number + ':' + content + ','
 			if(buffer_.size() <= size) {
 				// It can't be so short so
-				h(boost::system::error_code(errc::protocol_violation,cppcms_category));
+				h(booster::system::error_code(errc::protocol_violation,cppcms_category));
 				return;
 			}
-			boost::asio::async_read(socket_,
-					boost::asio::buffer(&buffer_[size],buffer_.size() - size),
-					boost::bind(	&scgi::on_headers_chunk_read,
-							self(),
-							boost::asio::placeholders::error,
-							h));
+			socket_.async_read(
+				io::buffer(&buffer_[size],buffer_.size() - size),
+				boost::bind(	&scgi::on_headers_chunk_read,
+						self(),
+						_1,
+						h));
 		}
-		void on_headers_chunk_read(boost::system::error_code const &e,handler const &h)
+		void on_headers_chunk_read(booster::system::error_code const &e,handler const &h)
 		{
 			if(e) { h(e); return; }
 			if(buffer_.back()!=',') {
 				buffer_.back() = 0;
 				// make sure it is NUL terminated
-				h(boost::system::error_code(errc::protocol_violation,cppcms_category));
+				h(booster::system::error_code(errc::protocol_violation,cppcms_category));
 				return;
 			}
 
@@ -121,7 +119,7 @@ namespace cgi {
 			}
 			buffer_.clear();
 
-			h(boost::system::error_code());
+			h(booster::system::error_code());
 		}
 
 		// should be called only after headers are read
@@ -139,17 +137,17 @@ namespace cgi {
 		}
 		virtual void async_read_some(void *p,size_t s,io_handler const &h)
 		{
-			socket_.async_read_some(boost::asio::buffer(p,s),h);
+			socket_.async_read_some(io::buffer(p,s),h);
 		}
 		virtual void async_write_some(void const *p,size_t s,io_handler const &h)
 		{
-			socket_.async_write_some(boost::asio::buffer(p,s),h);
+			socket_.async_write_some(io::buffer(p,s),h);
 		}
 		virtual size_t write_some(void const *buffer,size_t n)
 		{
-			return socket_.write_some(boost::asio::buffer(buffer,n));
+			return socket_.write_some(io::buffer(buffer,n));
 		}
-		virtual boost::asio::io_service &get_io_service()
+		virtual booster::aio::io_service &get_io_service()
 		{
 			return socket_.get_io_service();
 		}
@@ -160,54 +158,52 @@ namespace cgi {
 
 		virtual void async_write_eof(handler const &h)
 		{
-			boost::system::error_code e;
-			socket_.shutdown(boost::asio::basic_stream_socket<Proto>::shutdown_send,e);
-			socket_.get_io_service().post(boost::bind(h,boost::system::error_code()));
+			booster::system::error_code e;
+			socket_.shutdown(io::socket::shut_wr,e);
+			socket_.get_io_service().post(boost::bind(h,booster::system::error_code()));
 		}
 
 		virtual void close()
 		{
-			boost::system::error_code e;
-			socket_.shutdown(boost::asio::basic_stream_socket<Proto>::shutdown_receive,e);
+			booster::system::error_code e;
+			socket_.shutdown(io::socket::shut_rd,e);
 			socket_.close(e);
 		}
 		
 		virtual void async_read_eof(callback const &h)
 		{
 			static char a;
-			socket_.async_read_some(boost::asio::buffer(&a,1),boost::bind(h));
+			socket_.async_read_some(io::buffer(&a,1),boost::bind(h));
 		}
 
 	private:
 		size_t start_,end_,sep_;
-		intrusive_ptr<scgi<Proto> > self()
+		intrusive_ptr<scgi> self()
 		{
 			return this;
 		}
-		friend class socket_acceptor<Proto,scgi<Proto> >;
-		boost::asio::basic_stream_socket<Proto> socket_;
+		friend class socket_acceptor<scgi>;
+		io::socket socket_;
 		std::vector<char> buffer_;
 		std::map<std::string,std::string> env_;
 	};
 
-	typedef scgi<boost::asio::ip::tcp> tcp_socket_scgi;
-	typedef tcp_socket_acceptor<tcp_socket_scgi>    tcp_socket_scgi_acceptor;
+	
+	
 	std::auto_ptr<acceptor> scgi_api_tcp_socket_factory(cppcms::service &srv,std::string ip,int port,int backlog)
 	{
-		std::auto_ptr<acceptor> a(new tcp_socket_scgi_acceptor(srv,ip,port,backlog));
+		std::auto_ptr<acceptor> a(new socket_acceptor<scgi>(srv,ip,port,backlog));
 		return a;
 	}
 #if !defined(CPPCMS_WIN32)
-	typedef scgi<boost::asio::local::stream_protocol> unix_socket_scgi;
-	typedef unix_socket_acceptor<unix_socket_scgi>    unix_socket_scgi_acceptor;
 	std::auto_ptr<acceptor> scgi_api_unix_socket_factory(cppcms::service &srv,std::string socket,int backlog)
 	{
-		std::auto_ptr<acceptor> a(new unix_socket_scgi_acceptor(srv,socket,backlog));
+		std::auto_ptr<acceptor> a(new socket_acceptor<scgi>(srv,socket,backlog));
 		return a;
 	}
 	std::auto_ptr<acceptor> scgi_api_unix_socket_factory(cppcms::service &srv,int backlog)
 	{
-		std::auto_ptr<acceptor> a(new unix_socket_scgi_acceptor(srv,backlog));
+		std::auto_ptr<acceptor> a(new socket_acceptor<scgi>(srv,backlog));
 		return a;
 	}
 #endif

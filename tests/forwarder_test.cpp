@@ -29,13 +29,13 @@
 
 #include "config.h"
 #ifdef CPPCMS_USE_EXTERNAL_BOOST
-#   include <boost/thread.hpp>
 #   include <boost/shared_ptr.hpp>
 #else // Internal Boost
-#   include <cppcms_boost/thread.hpp>
 #   include <cppcms_boost/shared_ptr.hpp>
     namespace boost = cppcms_boost;
 #endif
+
+#include <booster/thread.h>
 
 class unit_test : public cppcms::application 
 {
@@ -117,7 +117,7 @@ int main(int argc,char **argv) {
 			srv.after_fork(submitter(srv));
 		
 		forwarder fw;
-		boost::thread fw_thread(fw);
+		booster::thread fw_thread(fw);
 		
 		srv.run();
 		fw.service()->shutdown();

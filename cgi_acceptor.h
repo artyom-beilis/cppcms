@@ -19,33 +19,72 @@
 #ifndef CPPCMS_CGI_ACCEPTOR_H
 #define CPPCMS_CGI_ACCEPTOR_H
 
-#include "asio_config.h"
 #include "cgi_api.h"
 #include "service.h"
 #include "service_impl.h"
 #include "http_context.h"
 
 #include "config.h"
-#ifdef CPPCMS_USE_EXTERNAL_BOOST
-#   include <boost/bind.hpp>
-#else // Internal Boost
-#   include <cppcms_boost/bind.hpp>
-    namespace boost = cppcms_boost;
-#endif
+
+#include <booster/aio/socket.h>
+#include <booster/aio/endpoint.h>
+
+namespace io = booster::aio;
 
 namespace cppcms {
 namespace impl {
 	namespace cgi {
 
-		template<typename Proto,class ServerAPI>
+		template<class ServerAPI>
 		class socket_acceptor : public acceptor {
 		public:
-			socket_acceptor(cppcms::service &srv) :
+			socket_acceptor(cppcms::service &srv,std::string ip,int port,int backlog) :
 				srv_(srv),
-				acceptor_(srv_.impl().get_io_service()),
-				stopped_(false)
+				acceptor_(srv_.get_io_service()),
+				stopped_(false),
+				tcp_(true)
 			{
+				io::endpoint ep(ip,port);
+				acceptor_.open(ep.family(),io::sock_stream);
+				acceptor_.set_option(io::socket::reuse_address,true);
+				acceptor_.bind(ep);
+				acceptor_.listen(backlog);
 			}
+#if !defined(CPPCMS_WIN32)
+			socket_acceptor(cppcms::service &srv,int backlog) :
+				srv_(srv),
+				acceptor_(srv_.get_io_service()),
+				stopped_(false),
+				tcp_(false)
+			{
+				acceptor_.attach(0);
+				acceptor_.listen(backlog);
+			}
+
+			socket_acceptor(cppcms::service &srv,std::string path,int backlog) :
+				srv_(srv),
+				acceptor_(srv_.get_io_service()),
+				stopped_(false),
+				tcp_(false)
+			{
+				io::endpoint ep(path);
+				acceptor_.open(io::pf_unix,io::sock_stream);
+				acceptor_.set_option(io::socket::reuse_address,true);
+				::unlink(path.c_str());
+				acceptor_.bind(ep);
+				acceptor_.listen(backlog);
+			}
+#endif
+
+			struct accept_binder {
+				socket_acceptor *self;
+				accept_binder(socket_acceptor *s=0) : self(s) {}
+				void operator()(booster::system::error_code const &e)
+				{
+					self->on_accept(e);
+				}
+			};
+
 			virtual void async_accept()
 			{
 				if(stopped_)
@@ -53,97 +92,33 @@ namespace impl {
 				ServerAPI *api=new ServerAPI(srv_);
 				api_=api;
 				asio_socket_ = &api->socket_;
-				acceptor_.async_accept(
-					*asio_socket_,
-					boost::bind(	&socket_acceptor::on_accept,
-							this,
-							boost::asio::placeholders::error));
+				acceptor_.async_accept(*asio_socket_,accept_binder(this));
 			}
+
 			virtual void stop()
 			{
 				stopped_=true;
-				boost::system::error_code e;
-				#ifdef CPPCMS_WIN32
-				acceptor_.close(e);
-				#else
-				acceptor_.cancel(e);
-				#endif	
+				acceptor_.cancel();
 			}
+
 		private:
-			void on_accept(boost::system::error_code const &e)
+			void on_accept(booster::system::error_code const &e)
 			{
 				if(!e) {
-					set_options(asio_socket_);
+					if(tcp_)
+						asio_socket_->set_option(io::socket::tcp_no_delay,true);
 					intrusive_ptr< ::cppcms::http::context> cnt(new ::cppcms::http::context(api_));
 					api_=0;
 					cnt->run();	
 				}
 				async_accept();
 			}
-			void set_options(boost::asio::ip::tcp::socket *socket)
-			{
-				socket->set_option(boost::asio::ip::tcp::no_delay(true));
-			}
-#if !defined(CPPCMS_WIN32)
-			void set_options(boost::asio::local::stream_protocol::socket *socket)
-			{
-				// nothing;
-			}
-#endif
-		protected:
 
 			cppcms::service &srv_;
 			intrusive_ptr<connection> api_;
-			boost::asio::basic_stream_socket<Proto> *asio_socket_;
-			boost::asio::basic_socket_acceptor<Proto> acceptor_;
+			booster::aio::socket *asio_socket_,acceptor_;
 			bool stopped_;
-		};
-
-#if !defined(CPPCMS_WIN32)
-		template<typename API>
-		class unix_socket_acceptor : public socket_acceptor<boost::asio::local::stream_protocol,API>
-		{
-		public:
-			// Listen on fd provided as stdin
-			unix_socket_acceptor(cppcms::service &srv,int backlog)  :
-				socket_acceptor<boost::asio::local::stream_protocol,API>(srv)
-			{
-				boost::asio::local::stream_protocol::acceptor 
-					&acceptor=socket_acceptor<boost::asio::local::stream_protocol,API>::acceptor_;
-				acceptor.assign(boost::asio::local::stream_protocol(),0);
-				acceptor.listen(backlog);
-			}
-			unix_socket_acceptor(cppcms::service &srv,std::string const &path,int backlog) :
-				socket_acceptor<boost::asio::local::stream_protocol,API>(srv)
-			{
-				boost::asio::local::stream_protocol::endpoint ep(path);
-				boost::asio::local::stream_protocol::acceptor 
-					&acceptor=socket_acceptor<boost::asio::local::stream_protocol,API>::acceptor_;
-
-				acceptor.open(ep.protocol());
-				acceptor.set_option(boost::asio::local::stream_protocol::acceptor::reuse_address(true));
-				::unlink(path.c_str());
-				acceptor.bind(boost::asio::local::stream_protocol::endpoint(path));
-				acceptor.listen(backlog);
-			}
-		};
-#endif
-		template<typename API>
-		class tcp_socket_acceptor : public socket_acceptor<boost::asio::ip::tcp,API>
-		{
-		public:
-			tcp_socket_acceptor(cppcms::service &srv,std::string const &ip,int port,int backlog) :
-				socket_acceptor<boost::asio::ip::tcp,API>(srv)
-			{
-				boost::asio::ip::tcp::endpoint ep(boost::asio::ip::address::from_string(ip),port);
-				boost::asio::ip::tcp::acceptor 
-					&acceptor=socket_acceptor<boost::asio::ip::tcp,API>::acceptor_;
-
-				acceptor.open(ep.protocol());
-				acceptor.set_option(boost::asio::ip::tcp::acceptor::reuse_address(true));
-				acceptor.bind(ep);
-				acceptor.listen(backlog);
-			}
+			bool tcp_;
 		};
 
 

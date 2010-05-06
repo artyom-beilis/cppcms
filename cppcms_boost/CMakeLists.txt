@@ -37,24 +37,6 @@ set(BOOST_SRC
 )
 
 
-
-
-if(WIN32 AND NOT CYGWIN)
-	set(BOOST_SRC ${BOOST_SRC}
-		libs/thread/src/win32/tss_pe.cpp
-		libs/thread/src/win32/tss_dll.cpp
-		libs/thread/src/win32/thread.cpp)
-else(WIN32 AND NOT CYGWIN)
-	set(BOOST_SRC ${BOOST_SRC}
-		libs/thread/src/pthread/thread.cpp
-		libs/thread/src/pthread/once.cpp)
-	include(CheckFunctionExists)
-	check_function_exists(pthread_create HAVE_PTHREAD)
-	if(NOT HAVE_PTHREAD)
-		find_library(LIB_PTHREAD pthread NAMES thr kse)
-	endif(NOT HAVE_PTHREAD)
-endif(WIN32 AND NOT CYGWIN)
-
 include_directories(.)
 find_library(ZLIB z NAMES zdll zlib)
 find_path(ZLIB_INCLUDE_DIR zlib.h)
