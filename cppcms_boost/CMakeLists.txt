@@ -4,7 +4,6 @@ cmake_minimum_required(VERSION 2.6)
 set(BOOST_SRC 
 	libs/system/src/error_code.cpp
 	libs/regex/src/winstances.cpp
-	# libs/regex/src/wide_posix_api.cpp
 	libs/regex/src/wc_regex_traits.cpp
 	libs/regex/src/w32_regex_traits.cpp
 	libs/regex/src/usinstances.cpp
@@ -13,7 +12,6 @@ set(BOOST_SRC
 	libs/regex/src/regex_raw_buffer.cpp
 	libs/regex/src/regex_debug.cpp
 	libs/regex/src/regex.cpp
-	# libs/regex/src/posix_api.cpp
 	libs/regex/src/instances.cpp
 	libs/regex/src/icu.cpp
 	libs/regex/src/fileiter.cpp
@@ -29,11 +27,6 @@ set(BOOST_SRC
 	libs/filesystem/src/portability.cpp
 	libs/filesystem/src/path.cpp
 	libs/filesystem/src/operations.cpp
-	libs/date_time/src/gregorian/date_generators.cpp
-	libs/date_time/src/gregorian/greg_month.cpp
-	libs/date_time/src/gregorian/greg_weekday.cpp
-	libs/date_time/src/gregorian/gregorian_types.cpp
-	libs/date_time/src/posix_time/posix_time_types.cpp
 )
 
 

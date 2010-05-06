@@ -22,14 +22,7 @@
 #include <iostream>
 #include <string.h>
 
-#ifndef HAVE_STRERROR_R
-#ifdef CPPCMS_USE_EXTERNAL_BOOST
-#   include <boost/system/error_code.hpp>
-#else // Internal Boost
-#   include <cppcms_boost/system/error_code.hpp>
-    namespace boost = cppcms_boost;
-#endif
-#endif
+#include <booster/system_error.h>
 
 using namespace std;
 
@@ -61,7 +54,7 @@ std::string cppcms_error::strerror(int err)
 	char buf[256] = {0};
 	return strerror_wrapper(strerror_r(err,buf,sizeof(buf)),buf);
 	#else
-	return boost::system::error_code(err,boost::system::errno_ecat).message();
+	return booster::system::error_code(err,booster::system::system_category).message();
 	#endif
 }
 
