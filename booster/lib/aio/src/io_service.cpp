@@ -482,7 +482,7 @@ private:
 				new_events &= ~reactor::out;
 			
 			error_code select_error;
-			reactor_->select(evs[i].fd,cont.current_event,select_error);
+			reactor_->select(evs[i].fd,new_events,select_error);
 			if(select_error) {
 				new_events = 0;
 				if(!dispatch_error)

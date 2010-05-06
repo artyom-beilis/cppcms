@@ -129,7 +129,6 @@ int main()
 		test_cache(cppcms::impl::process_cache_factory(16*1024));
 		std::cout << "Ok" << std::endl;
 		#endif
-
 		
 		std::auto_ptr<cppcms::impl::tcp_cache_service> srv1,srv2;
 		{
@@ -140,6 +139,7 @@ int main()
 				ips.push_back("127.0.0.1");
 				ports.push_back(6001);
 				srv1.reset(new cppcms::impl::tcp_cache_service(cppcms::impl::thread_cache_factory(20),1,"127.0.0.1",6001));
+
 				test_cache(cppcms::impl::tcp_cache_factory(ips,ports,0),false);
 				std::cout << "Ok" << std::endl;
 				std::cout << "Testing cache over ip, single server with L1 cache... "<<std::flush;

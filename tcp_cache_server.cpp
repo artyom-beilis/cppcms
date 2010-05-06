@@ -18,6 +18,13 @@
 ///////////////////////////////////////////////////////////////////////////////
 #define CPPCMS_SOURCE
 // MUST BE FIRST TO COMPILE CORRECTLY UNDER CYGWIN
+#include "defs.h"
+#ifndef CPPCMS_WIN32
+#if defined(__sun)
+#define _POSIX_PTHREAD_SEMANTICS
+#endif
+#include <signal.h>
+#endif
 
 #include "tcp_cache_protocol.h"
 #include "cache_storage.h"
@@ -75,9 +82,14 @@ public:
 		if(e) return;
 		data_in.clear();
 		data_in.resize(hin.size);
-		socket_.async_read(io::buffer(data_in),
+		if(hin.size > 0) {
+			socket_.async_read(io::buffer(data_in),
 				boost::bind(&session::on_data_in,shared_from_this(),
 						_1));
+		}
+		else {
+			on_data_in(e);
+		}
 	}
 	
 	void fetch()

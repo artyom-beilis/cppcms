@@ -217,6 +217,7 @@ macro(add_booster_test MODULE TEST)
 	target_link_libraries(${TEST_NAME} ${BOOSTER_LIB})
 	set_target_properties(${TEST_NAME} PROPERTIES COMPILE_DEFINITIONS "${EXE_COM_DEFS}")
 	add_test(${TEST_NAME} ${TEST_NAME})
+	set_tests_properties(${TEST_NAME} PROPERTIES TIMEOUT 10)
 endmacro()
 
 add_booster_test(function function)

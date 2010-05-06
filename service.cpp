@@ -21,6 +21,8 @@
 #ifdef CPPCMS_WIN32
 #include <windows.h>
 #include <winsock2.h>
+#else
+#include <errno.h>
 #endif
 
 #ifndef CPPCMS_WIN32
@@ -359,6 +361,11 @@ bool service::prefork()
 static void  dummy(int n) {}
 bool service::prefork()
 {
+	sigset_t pipemask;
+	sigemptyset(&pipemask);
+	sigaddset(&pipemask,SIGPIPE);
+	sigprocmask(SIG_BLOCK,&pipemask,0);
+
 	int procs=procs_no();
 	if(procs==0) {
 		impl_->id_ = 1;

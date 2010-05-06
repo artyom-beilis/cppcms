@@ -745,6 +745,7 @@ install(PROGRAMS cppcms_tmpl_cc cppcms_run
 #############
 		
 
+
 set(CNF "${CMAKE_CURRENT_SOURCE_DIR}/tests")
 
 add_test(atomic_test atomic_test)
@@ -783,4 +784,22 @@ foreach(TYPE async sync)
 			"--test-exec=${PYTHON} ${CNF}/proto_test.py scgi_unix")
 	endif()
 endforeach()
+
+set_tests_properties( 
+	cache_backend_test 
+	forwarder_test 
+	jsonrpc_test 
+	proto_test_sync_http
+	proto_test_async_http
+	proto_test_sync_scgi
+	proto_test_async_scgi
+	PROPERTIES TIMEOUT 30)
+
+if(NOT WIN32)
+	set_tests_properties(
+		proto_test_sync_scgi_unix
+		proto_test_async_scgi_unix
+		PROPERTIES TIMEOUT 30)
+
+endif()
 

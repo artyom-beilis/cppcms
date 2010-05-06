@@ -131,7 +131,8 @@ namespace aio {
 			struct pollfd *pfd = pollfds_.size() > 0 ? &pollfds_.front() : 0;
 			int size = pollfds_.size();
 
-			int count = ::poll(pfd,size,timeout);
+			int count;
+			do {} while((count = ::poll(pfd,size,timeout)) < 0 && errno==EINTR);
 			if(count < 0)
 				error = errno;
 			int read=0;
@@ -239,7 +240,8 @@ namespace aio {
 			dvp.dp_nfds = n > 128 ? 128 : n;
 			dvp.dp_fds=fds;
 
-			int size = ::ioctl(pollfd_,DP_POLL,&dvp);
+			int size;
+			do {} while((size = ::ioctl(pollfd_,DP_POLL,&dvp)) < 0 && errno==EINTR);
 			
 			if(size < 0) {
 				error = errno;
@@ -294,7 +296,8 @@ namespace aio {
 			struct epoll_event fds[128] = {{0}};
 			if (n >128) n=128;
 
-			int size = ::epoll_wait(pollfd_,fds,n,timeout);
+			int size = 0;
+			do {} while((size = ::epoll_wait(pollfd_,fds,n,timeout)) < 0 && errno==EINTR);
 			
 			if(size < 0) {
 				error = errno;
@@ -399,7 +402,8 @@ namespace aio {
 				tv.tv_usec = (timeout % 1000)*1000;
 				ptv=&tv;
 			}
-			int read=::select(max_fd,&rd,&wr,&er,ptv);
+			int read=0;
+			do {} while((read = ::select(max_fd,&rd,&wr,&er,ptv)) < 0 && errno==EINTR);
 			if(read < 0) {
 				error=errno;
 				return -1;
@@ -533,7 +537,8 @@ namespace aio {
 				tv.tv_nsec = (timeout % 1000)*1000000L;
 				ptv=&tv;
 			}
-			int read=::kevent(kev_,0,0,evs,128,ptv);
+			int read=0;
+			do {} while ((read=::kevent(kev_,0,0,evs,128,ptv)) < 0 && errno==EINTR);
 			if(read < 0) {
 				error=errno;
 				return -1;
