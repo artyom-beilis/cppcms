@@ -65,7 +65,7 @@ namespace cppcms {
 
 		struct data;
 		struct skin;
-		util::hold_ptr<data> d;
+		booster::hold_ptr<data> d;
 	};
 
 }

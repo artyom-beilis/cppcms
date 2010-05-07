@@ -341,16 +341,13 @@ set(CPPCMS_PUBLIC_HEADERS
 	base_view.h
 	cache_interface.h
 	cache_pool.h
-	clone_ptr.h
 	# connection_forwarder.h
-	copy_ptr.h
 	cppcms_error.h
 	cstdint.h
 	defs.h
 	encoding.h
 	filters.h
 	form.h
-	hold_ptr.h
 	http_context.h
 	http_cookie.h
 	http_file.h
@@ -377,7 +374,6 @@ set(CPPCMS_PUBLIC_HEADERS
 	util.h
 	view.h
 	views_pool.h
-	function.h
 	${CMAKE_CURRENT_BINARY_DIR}/config.h
 )
 
@@ -676,7 +672,6 @@ set(ALL_TESTS
 	cache_backend_test
 	json_test
 	base64_test
-	function_test
 	forwarder_test
 	jsonrpc_test
 	)
@@ -752,7 +747,6 @@ add_test(encryptor_test encryptor_test)
 add_test(storage_test storage_test)
 add_test(json_test json_test)
 add_test(cache_backend_test cache_backend_test)
-add_test(function_test function_test)
 
 add_test(form_test
 	form_test "-c" "${CNF}/form_test.js" 

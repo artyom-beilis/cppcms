@@ -25,7 +25,7 @@
 #include "defs.h"
 #include "noncopyable.h"
 #include "intrusive_ptr.h"
-#include "hold_ptr.h"
+#include <booster/hold_ptr.h>
 #include "cstdint.h"
 
 namespace cppcms {
@@ -266,7 +266,7 @@ namespace cppcms {
 				bool notriggers);
 
 		struct data;
-		util::hold_ptr<data> d;
+		booster::hold_ptr<data> d;
 		http::context *context_;
 		std::set<std::string> triggers_;
 		intrusive_ptr<impl::base_cache> cache_module_;

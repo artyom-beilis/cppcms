@@ -21,8 +21,8 @@
 
 #include "defs.h"
 #include "noncopyable.h"
-#include "hold_ptr.h"
-#include "function.h"
+#include <booster/hold_ptr.h>
+#include <booster/function.h>
 #include <locale>
 
 namespace booster {
@@ -75,8 +75,8 @@ namespace cppcms {
 
 		cppcms::impl::service &impl();
 
-		void post(function<void()> const &handler);
-		void after_fork(function<void()> const &handler);
+		void post(booster::function<void()> const &handler);
+		void after_fork(booster::function<void()> const &handler);
 		
 		int threads_no();
 		int procs_no();
@@ -89,7 +89,7 @@ namespace cppcms {
 		void start_acceptor();
 		void setup_exit_handling();
 		bool prefork();
-		util::hold_ptr<impl::service> impl_;
+		booster::hold_ptr<impl::service> impl_;
 	};
 
 } //

@@ -22,7 +22,7 @@
 #include "defs.h"
 #include "noncopyable.h"
 #include "atomic_counter.h"
-#include "hold_ptr.h"
+#include <booster/hold_ptr.h>
 #include "intrusive_ptr.h"
 #include <string>
 
@@ -274,7 +274,7 @@ namespace cppcms {
 
 
 		struct data; // future use
-		util::hold_ptr<data> d;
+		booster::hold_ptr<data> d;
 
 		application *parent_;
 		application *root_;

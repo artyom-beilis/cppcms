@@ -21,7 +21,7 @@
 
 #include "defs.h"
 #include "session_storage.h"
-#include "hold_ptr.h"
+#include <booster/hold_ptr.h>
 #include <vector>
 
 
@@ -50,7 +50,7 @@ namespace sessions {
 
 		// members
 	
-		util::hold_ptr<data> d;
+		booster::hold_ptr<data> d;
 
 		std::string path_;
 		// friends 

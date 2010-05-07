@@ -21,8 +21,8 @@
 
 #include "noncopyable.h"
 #include "defs.h"
-#include "function.h"
-#include "hold_ptr.h"
+#include <booster/function.h>
+#include <booster/hold_ptr.h>
 #include "mem_bind.h"
 #include <string>
 #include <list>
@@ -54,11 +54,11 @@ namespace cppcms {
 	class CPPCMS_API url_dispatcher : public util::noncopyable {
 	public:
 		// Handlers
-		typedef function<void()> handler;
-		typedef function<void(std::string)> handler1;
-		typedef function<void(std::string,std::string)> handler2;
-		typedef function<void(std::string,std::string,std::string)> handler3;
-		typedef function<void(std::string,std::string,std::string,std::string)> handler4;
+		typedef booster::function<void()> handler;
+		typedef booster::function<void(std::string)> handler1;
+		typedef booster::function<void(std::string,std::string)> handler2;
+		typedef booster::function<void(std::string,std::string,std::string)> handler3;
+		typedef booster::function<void(std::string,std::string,std::string,std::string)> handler4;
 
 		///
 		/// Assign \a handler to pattern \a regex thus if URL that matches
@@ -160,7 +160,7 @@ namespace cppcms {
 		void mount(std::string match,application &app,int part);
 
 		struct data;
-		util::hold_ptr<data> d;
+		booster::hold_ptr<data> d;
 	};
 
 } // cppcms

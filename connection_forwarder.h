@@ -31,7 +31,7 @@ namespace cppcms {
 	private:
 
 		struct data;
-		util::hold_ptr<data> d;
+		booster::hold_ptr<data> d;
 		std::string ip_;
 		int port_;
 	};

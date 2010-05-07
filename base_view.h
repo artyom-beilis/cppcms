@@ -28,7 +28,7 @@
 #include <ctime>
 #include <memory>
 
-#include "hold_ptr.h"
+#include <booster/hold_ptr.h>
 #include "base_content.h"
 #include "noncopyable.h"
 #include "config.h"
@@ -59,7 +59,7 @@ protected:
 
 private:
 	struct data;
-	util::hold_ptr<data> d;
+	booster::hold_ptr<data> d;
 
 };
 

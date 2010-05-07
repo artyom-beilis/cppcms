@@ -22,8 +22,9 @@
 #include "application.h"
 #include "refcounted.h"
 #include "intrusive_ptr.h"
-#include "function.h"
+#include <booster/function.h>
 #include "json.h"
+#include "cppcms_error.h"
 
 namespace cppcms {
 namespace rpc {
@@ -109,7 +110,7 @@ namespace rpc {
 		bool notification_;
 
 		struct data;
-		util::hold_ptr<data> d;
+		booster::hold_ptr<data> d;
 	};
 
 	///
@@ -129,7 +130,7 @@ namespace rpc {
 		///
 		/// Generic type of JSON-RPC method
 		///
-		typedef function<void(json::array const &)> method_type;
+		typedef booster::function<void(json::array const &)> method_type;
 
 		///
 		/// Bind method JSON-RPC method with name \a name
@@ -202,7 +203,7 @@ namespace rpc {
 		std::string smd_;
 		
 		struct data;
-		util::hold_ptr<data> d;
+		booster::hold_ptr<data> d;
 	};
 
 

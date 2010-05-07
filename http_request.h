@@ -21,7 +21,7 @@
 
 #include "defs.h"
 #include "noncopyable.h"
-#include "hold_ptr.h"
+#include <booster/hold_ptr.h>
 
 #include <string>
 #include <map>
@@ -126,7 +126,7 @@ namespace http {
 		form_type post_;
 		files_type files_;
 		cookies_type cookies_;
-		util::hold_ptr<data> d;
+		booster::hold_ptr<data> d;
 		impl::cgi::connection *conn_;
 	};
 

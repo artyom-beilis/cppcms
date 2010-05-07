@@ -21,7 +21,7 @@
 
 #include "defs.h"
 #include "session_storage.h"
-#include "hold_ptr.h"
+#include <booster/hold_ptr.h>
 #include <pthread.h>
 #include <vector>
 
@@ -54,7 +54,7 @@ namespace sessions {
 
 		// members
 	
-		util::hold_ptr<data> d;
+		booster::hold_ptr<data> d;
 
 		void *memory_;
 		std::string path_;

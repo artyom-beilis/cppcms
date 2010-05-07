@@ -33,7 +33,7 @@
 #include "http_context.h"
 #include "http_request.h"
 #include "http_response.h"
-#include "copy_ptr.h"
+#include <booster/copy_ptr.h>
 #include "cppcms_error.h"
 #include "util.h"
 #include "regex.h"
@@ -96,7 +96,7 @@ namespace cppcms {
 		uint32_t reserved_1;
 		uint32_t reserved_2;
 		struct data;
-		util::hold_ptr<data> d;
+		booster::hold_ptr<data> d;
 
 	};
 
@@ -331,7 +331,7 @@ namespace cppcms {
 			form *current_;
 			unsigned offset_;
 			struct data;
-			util::copy_ptr<data> d;
+			booster::copy_ptr<data> d;
 
 		};
 
@@ -354,7 +354,7 @@ namespace cppcms {
 		typedef std::pair<base_form *,bool> widget_type;
 		std::vector<widget_type> elements_;
 		form *parent_;
-		util::hold_ptr<data> d;
+		booster::hold_ptr<data> d;
 	};
 
 
@@ -607,7 +607,7 @@ namespace cppcms {
 			uint32_t reserverd_ : 25;
 
 			struct data;
-			util::hold_ptr<data> d;
+			booster::hold_ptr<data> d;
 		};
 
 		///
@@ -702,7 +702,7 @@ namespace cppcms {
 			bool validate_charset_;
 			size_t code_points_;
 			struct data;
-			util::hold_ptr<data> d;
+			booster::hold_ptr<data> d;
 		};
 
 		class CPPCMS_API base_html_input : virtual public base_widget {
@@ -715,7 +715,7 @@ namespace cppcms {
 			virtual void render_value(form_context &context) = 0;
 		private:
 			struct data;
-			util::hold_ptr<data> d;
+			booster::hold_ptr<data> d;
 			std::string type_;
 		};
 
@@ -757,7 +757,7 @@ namespace cppcms {
 		private:
 			int size_;
 			struct data;
-			util::hold_ptr<data> d;
+			booster::hold_ptr<data> d;
 		};
 
 		class CPPCMS_API textarea : public base_text 
@@ -789,7 +789,7 @@ namespace cppcms {
 			int rows_,cols_;
 
 			struct data;
-			util::hold_ptr<data> d;
+			booster::hold_ptr<data> d;
 		};
 
 
@@ -972,7 +972,7 @@ namespace cppcms {
 			virtual bool validate();
 		private:
 			struct data;
-			util::hold_ptr<data> d;
+			booster::hold_ptr<data> d;
 			password *password_to_check_;
 		};
 
@@ -1000,7 +1000,7 @@ namespace cppcms {
 		private:
 			util::regex const *expression_;
 			struct data;
-			util::hold_ptr<data> d;
+			booster::hold_ptr<data> d;
 		};
 
 		///
@@ -1016,7 +1016,7 @@ namespace cppcms {
 		private:
 			static util::regex const email_expression_;
 			struct data;
-			util::hold_ptr<data> d;
+			booster::hold_ptr<data> d;
 		};
 
 		///
@@ -1058,7 +1058,7 @@ namespace cppcms {
 			virtual void load(http::context &context);
 		private:
 			struct data;
-			util::hold_ptr<data> d;
+			booster::hold_ptr<data> d;
 			std::string identification_;
 			bool value_;
 		};
@@ -1141,7 +1141,7 @@ namespace cppcms {
 			virtual void clear();
 		private:
 			struct data;
-			util::hold_ptr<data> d;
+			booster::hold_ptr<data> d;
 
 			struct element {
 				element();
@@ -1200,14 +1200,14 @@ namespace cppcms {
 
 			private:
 				struct data;
-				util::copy_ptr<data> d;
+				booster::copy_ptr<data> d;
 
 			};
 
 			std::vector<element> elements_;
 		private:
 			struct data;
-			util::hold_ptr<data> d;
+			booster::hold_ptr<data> d;
 
 			int selected_;
 			int default_selected_;
@@ -1223,7 +1223,7 @@ namespace cppcms {
 			virtual void render_input(form_context &context);
 		private:
 			struct data;
-			util::hold_ptr<data> d;
+			booster::hold_ptr<data> d;
 		};
 
 		class CPPCMS_API radio : public select_base {
@@ -1239,7 +1239,7 @@ namespace cppcms {
 			uint32_t reserved_ : 31;
 
 			struct data;
-			util::hold_ptr<data> d;
+			booster::hold_ptr<data> d;
 		};
 
 
@@ -1267,7 +1267,7 @@ namespace cppcms {
 			virtual void load(http::context &context);
 		private:
 			struct data;
-			util::hold_ptr<data> d;
+			booster::hold_ptr<data> d;
 			bool pressed_;
 			locale::message value_;
 		};

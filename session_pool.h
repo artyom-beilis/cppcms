@@ -21,7 +21,7 @@
 
 #include "defs.h"
 #include "intrusive_ptr.h"
-#include "hold_ptr.h"
+#include <booster/hold_ptr.h>
 #include "session_api.h"
 
 #include <memory>
@@ -64,7 +64,7 @@ namespace cppcms {
 		friend struct sid_factory;
 		friend class gc_job;
 
-		util::hold_ptr<data> d;
+		booster::hold_ptr<data> d;
 
 		std::auto_ptr<session_api_factory> backend_;
 		std::auto_ptr<sessions::encryptor_factory> encryptor_;

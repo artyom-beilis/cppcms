@@ -21,7 +21,7 @@
 
 #include "defs.h"
 #include "noncopyable.h"
-#include "hold_ptr.h"
+#include <booster/hold_ptr.h>
 
 #include <string>
 #include <iostream>
@@ -167,7 +167,7 @@ namespace http {
 		std::string get_async_chunk();
 
 		struct data;
-		util::hold_ptr<data> d;
+		booster::hold_ptr<data> d;
 
 		context &context_;
 		std::ostream *stream_;

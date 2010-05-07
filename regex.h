@@ -21,7 +21,7 @@
 
 #include "defs.h"
 #include "noncopyable.h"
-#include "hold_ptr.h"
+#include <booster/hold_ptr.h>
 #include <string>
 
 namespace cppcms { namespace util {
@@ -64,7 +64,7 @@ namespace cppcms { namespace util {
 
 	private:
 		struct data;
-		hold_ptr<data> d;
+		booster::hold_ptr<data> d;
 	};
 
 	///
@@ -85,7 +85,7 @@ namespace cppcms { namespace util {
 	private:
 		friend class regex;
 		struct data;
-		hold_ptr<data> d;
+		booster::hold_ptr<data> d;
 	};
 
 }} // cppcms::util

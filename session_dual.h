@@ -21,7 +21,7 @@
 
 #include "session_api.h"
 #include "defs.h"
-#include "hold_ptr.h"
+#include <booster/hold_ptr.h>
 #include "intrusive_ptr.h"
 #include <memory>
 
@@ -44,7 +44,7 @@ public:
 	virtual void clear(session_interface &);
 private:
 	struct data;
-	util::hold_ptr<data> d;
+	booster::hold_ptr<data> d;
 	intrusive_ptr<session_cookies>	client_;
 	intrusive_ptr<session_sid>	server_;
 	size_t data_size_limit_;

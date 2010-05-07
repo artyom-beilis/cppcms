@@ -19,7 +19,7 @@
 #ifndef CPPCMS_SESSION_COOKIES_H
 #define CPPCMS_SESSION_COOKIES_H
 #include "session_api.h"
-#include "hold_ptr.h"
+#include <booster/hold_ptr.h>
 #include "noncopyable.h"
 #include <memory>
 #include <string>
@@ -49,7 +49,7 @@ namespace sessions {
 		virtual void clear(session_interface &);
 	private:
 		struct data;
-		util::hold_ptr<data> d;
+		booster::hold_ptr<data> d;
 		std::auto_ptr<encryptor> encryptor_;
 	};
 

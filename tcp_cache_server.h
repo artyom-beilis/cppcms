@@ -23,7 +23,7 @@
 #include "base_cache.h"
 #include "noncopyable.h"
 #include "intrusive_ptr.h"
-#include "hold_ptr.h"
+#include <booster/hold_ptr.h>
 
 namespace cppcms {
 namespace impl {
@@ -37,7 +37,7 @@ private:
 	class session;
 	class server;
 	struct data;
-	util::hold_ptr<data> d;
+	booster::hold_ptr<data> d;
 };
 
 } // impl

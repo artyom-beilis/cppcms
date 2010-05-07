@@ -21,7 +21,7 @@
 
 #include "session_api.h"
 #include "defs.h"
-#include "hold_ptr.h"
+#include <booster/hold_ptr.h>
 #include "intrusive_ptr.h"
 #include "session_storage.h"
 
@@ -43,7 +43,7 @@ namespace sessions {
 		std::string key(std::string sid);
 		
 		struct data;
-		util::hold_ptr<data> d;
+		booster::hold_ptr<data> d;
 		intrusive_ptr<session_storage> storage_;
 	};
 

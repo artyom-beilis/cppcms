@@ -20,7 +20,7 @@
 #define CPPCMS_URANDOM_H
 
 #include "defs.h"
-#include "hold_ptr.h"
+#include <booster/hold_ptr.h>
 #include "noncopyable.h"
 
 namespace cppcms {
@@ -33,7 +33,7 @@ namespace cppcms {
 
 	private:
 		struct data;
-		util::hold_ptr<data> d;
+		booster::hold_ptr<data> d;
 		
 
 	};

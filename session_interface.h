@@ -21,7 +21,7 @@
 
 #include "defs.h"
 #include "noncopyable.h"
-#include "hold_ptr.h"
+#include <booster/hold_ptr.h>
 #include "intrusive_ptr.h"
 #include "cstdint.h"
 #include <string>
@@ -139,7 +139,7 @@ private:
 	
 	intrusive_ptr<session_api> storage_;
 	struct data;
-	util::hold_ptr<data> d; // for future use
+	booster::hold_ptr<data> d; // for future use
 
 	int cookie_age();
 	time_t   session_age();

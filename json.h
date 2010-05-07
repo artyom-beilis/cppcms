@@ -20,7 +20,7 @@
 #define CPPCMS_JSON_H
 
 #include "defs.h"
-#include "copy_ptr.h"
+#include <booster/copy_ptr.h>
 
 #include <vector>
 #include <map>
@@ -261,7 +261,7 @@ namespace json {
 				d.swap(other.d);
 			}
 		private:
-			util::copy_ptr<data> d;
+			booster::copy_ptr<data> d;
 		} d;
 
 		friend struct copyable;

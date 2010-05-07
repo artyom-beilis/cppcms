@@ -185,7 +185,7 @@ context::~context()
 {
 }
 
-void context::async_on_peer_reset(function<void()> const &h)
+void context::async_on_peer_reset(booster::function<void()> const &h)
 {
 	// For some wired can't go without bind on SunCC
 	conn_->aync_wait_for_close_by_peer(boost::bind(h));

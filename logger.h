@@ -23,8 +23,8 @@
 #include <iosfwd>
 #include <memory>
 
-#include "copy_ptr.h"
-#include "hold_ptr.h"
+#include <booster/copy_ptr.h>
+#include <booster/hold_ptr.h>
 #include "noncopyable.h"
 
 namespace cppcms {
@@ -56,7 +56,7 @@ namespace cppcms {
 			char const *module_;
 			logger *log_;
 			struct data;
-			util::copy_ptr<data> d;
+			booster::copy_ptr<data> d;
 			std::auto_ptr<std::ostringstream> output_; 
 		};
 		
@@ -85,7 +85,7 @@ namespace cppcms {
 	private:
 		static void init(std::auto_ptr<logger> &logger_ref);
 		struct data;
-		util::hold_ptr<data> d;
+		booster::hold_ptr<data> d;
 	};
 
 	

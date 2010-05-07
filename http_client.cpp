@@ -37,7 +37,7 @@ namespace cppcms {
 		std::string response;
 		std::vector<std::pair<std::string,std::string> > response_headers;
 		
-		void async_transfer(function<void(completion_status_type) const &handler,boost::asio::io_service &srv)
+		void async_transfer(booster::function<void(completion_status_type) const &handler,boost::asio::io_service &srv)
 		{
 			static const boost::regex r("^[hH][Tt][Tt][Pp]://([^:/]+)(:(\\d+))?(.*)$");
 			boost::cmatch match;

@@ -20,7 +20,7 @@
 #define CPPCMS_HTTP_COOKIE_H
 
 #include "defs.h"
-#include "copy_ptr.h"
+#include <booster/copy_ptr.h>
 
 #include <string>
 #include <iostream>
@@ -131,7 +131,7 @@ private:
 	void write(std::ostream &) const;
 	// for future use
 	struct data;
-	util::copy_ptr<data> d;
+	booster::copy_ptr<data> d;
 
 	// real members
 	std::string name_;

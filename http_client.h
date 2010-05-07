@@ -102,7 +102,7 @@ namespace cppcms {
 		/// Send request and get response asynchronously 
 		///
 
-		void async_transfer(function<void(completion_status_type)> const &handler);
+		void async_transfer(booster::function<void(completion_status_type)> const &handler);
 
 		///
 		/// Reset the object to initial state for reuse
@@ -128,7 +128,7 @@ namespace cppcms {
 
 		void check();
 
-		util::hold_ptr<http_client_impl> impl_;
+		booster::hold_ptr<http_client_impl> impl_;
 
 	};
 }

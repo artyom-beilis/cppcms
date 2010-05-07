@@ -256,12 +256,12 @@ intrusive_ptr<connection> connection::self()
 }
 
 void connection::async_prepare_request(	http::request &request,
-					function<void(bool)> const &h)
+					booster::function<void(bool)> const &h)
 {
 	async_read_headers(boost::bind(&connection::load_content,self(),_1,&request,h));
 }
 
-void connection::aync_wait_for_close_by_peer(function<void()> const &on_eof)
+void connection::aync_wait_for_close_by_peer(booster::function<void()> const &on_eof)
 {
 	async_read_eof(boost::bind(&connection::handle_eof,self(),on_eof));
 }

@@ -24,7 +24,7 @@
 #include "intrusive_ptr.h"
 #include <vector>
 #include <map>
-#include "function.h"
+#include <booster/function.h>
 #include "config.h"
 
 #include <booster/system_error.h>
@@ -43,10 +43,10 @@ namespace cppcms {
 namespace impl {
 namespace cgi {
 
-	typedef function<void(booster::system::error_code const &e)> handler;
-	typedef function<void(booster::system::error_code const &e,size_t)> io_handler;
-	typedef function<void()> callback;
-	typedef function<void(bool)> ehandler;
+	typedef booster::function<void(booster::system::error_code const &e)> handler;
+	typedef booster::function<void(booster::system::error_code const &e,size_t)> io_handler;
+	typedef booster::function<void()> callback;
+	typedef booster::function<void(bool)> ehandler;
 
 	class acceptor : public util::noncopyable {
 	public:

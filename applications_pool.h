@@ -21,7 +21,7 @@
 
 #include "defs.h"
 #include "noncopyable.h"
-#include "hold_ptr.h"
+#include <booster/hold_ptr.h>
 #include "intrusive_ptr.h"
 
 #include <memory>
@@ -150,7 +150,7 @@ namespace cppcms {
 		std::string script_name();
 		bool matched(basic_app_data &data,std::string script_name,std::string path_info,std::string &matched);
 		service *srv_;
-		util::hold_ptr<data> d;
+		booster::hold_ptr<data> d;
 	};
 
 	namespace details {

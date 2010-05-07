@@ -20,7 +20,7 @@
 #define CPPCMS_HTTP_FILE_H
 
 #include "defs.h"
-#include "hold_ptr.h"
+#include <booster/hold_ptr.h>
 #include "noncopyable.h"
 #include <sstream>
 #include <fstream>
@@ -51,7 +51,7 @@ namespace cppcms { namespace http {
 		uint32_t reserverd_ : 31;
 
 		struct impl_data; // for future use
-		util::hold_ptr<impl_data> d;
+		booster::hold_ptr<impl_data> d;
 		friend class request;
 	};
 
