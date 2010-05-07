@@ -45,7 +45,7 @@
 namespace cppcms {
 namespace impl {
 #ifdef CPPCMS_WIN32
-	class shared_object : public util::noncopyable {
+	class shared_object : public booster::noncopyable {
 	public:
 		static std::string name(std::string file,std::string path);
 
@@ -93,7 +93,7 @@ namespace impl {
 		bool remove_;
 	};
 #else
-	class shared_object : public util::noncopyable {
+	class shared_object : public booster::noncopyable {
 	public:
 		static std::string name(std::string file,std::string path);
 

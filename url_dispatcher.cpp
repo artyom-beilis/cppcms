@@ -32,7 +32,7 @@
 namespace cppcms {
 
 	namespace /* anon */ {
-		struct option : public util::noncopyable {
+		struct option : public booster::noncopyable {
 			option(std::string expr) :
 				expr_(expr)
 			{

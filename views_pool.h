@@ -20,7 +20,7 @@
 #define CPPCMS_VIEWS_POOL_H
 
 #include "defs.h"
-#include "noncopyable.h"
+#include <booster/noncopyable.h>
 #include "base_view.h"
 
 #include <memory>
@@ -31,7 +31,7 @@ namespace cppcms {
 
 	namespace json { class value; }
 
-	class CPPCMS_API views_pool : public util::noncopyable {
+	class CPPCMS_API views_pool : public booster::noncopyable {
 	public:
 		typedef std::auto_ptr<base_view> (*view_factory_type)(std::ostream &,base_content *c);
 		typedef std::map<std::string,view_factory_type> mapping_type;

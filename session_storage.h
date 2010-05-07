@@ -21,7 +21,7 @@
 
 #include "defs.h"
 #include "refcounted.h"
-#include "noncopyable.h"
+#include <booster/noncopyable.h>
 #include "intrusive_ptr.h"
 #include <string>
 
@@ -38,7 +38,7 @@ namespace sessions {
 	///
 	
 	class session_storage : 
-		public util::noncopyable,
+		public booster::noncopyable,
 		public refcounted
 	{
 	public:

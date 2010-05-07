@@ -20,7 +20,7 @@
 #define CPPCMS_SESSION_INTERFACE_H
 
 #include "defs.h"
-#include "noncopyable.h"
+#include <booster/noncopyable.h>
 #include <booster/hold_ptr.h>
 #include "intrusive_ptr.h"
 #include "cstdint.h"
@@ -39,7 +39,7 @@ namespace http {
 
 class session_api;
 
-class CPPCMS_API session_interface : private util::noncopyable {
+class CPPCMS_API session_interface : private booster::noncopyable {
 public:
 
 	session_interface(http::context &);

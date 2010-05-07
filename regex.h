@@ -20,7 +20,7 @@
 #define CPPCMS_UTIL_REGEX_H
 
 #include "defs.h"
-#include "noncopyable.h"
+#include <booster/noncopyable.h>
 #include <booster/hold_ptr.h>
 #include <string>
 
@@ -39,7 +39,7 @@ namespace cppcms { namespace util {
 	///
 	
 	
-	class CPPCMS_API regex : public noncopyable {
+	class CPPCMS_API regex : public booster::noncopyable {
 	public:
 		///
 		/// Creates new object that is used to match a regular \a expression.
@@ -74,7 +74,7 @@ namespace cppcms { namespace util {
 	/// \a util::regex.
 	///
 
-	class CPPCMS_API regex_result : public noncopyable {
+	class CPPCMS_API regex_result : public booster::noncopyable {
 	public:
 		regex_result();
 		~regex_result();

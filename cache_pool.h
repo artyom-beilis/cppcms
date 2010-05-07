@@ -20,7 +20,7 @@
 #define CPPCMS_CACHE_POOL_H
 
 #include "defs.h"
-#include "noncopyable.h"
+#include <booster/noncopyable.h>
 #include "intrusive_ptr.h"
 #include <booster/hold_ptr.h>
 

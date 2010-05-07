@@ -127,7 +127,7 @@ private:
 };
 
 
-class multipart_parser : public util::noncopyable {
+class multipart_parser : public booster::noncopyable {
 public:
 	multipart_parser(std::vector<char> &body, unsigned &ptr) :
 		separator_(body,ptr),

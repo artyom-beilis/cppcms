@@ -37,7 +37,7 @@
 
 namespace cppcms {
 	namespace impl {
-		class log_device : public util::noncopyable {
+		class log_device : public booster::noncopyable {
 		public:
 			virtual void write(std::string const &msg) = 0;
 			virtual ~log_device() {}

@@ -20,14 +20,14 @@
 #define CPPCMS_SESSION_COOKIES_H
 #include "session_api.h"
 #include <booster/hold_ptr.h>
-#include "noncopyable.h"
+#include <booster/noncopyable.h>
 #include <memory>
 #include <string>
 namespace cppcms {
 class session_interface;
 namespace sessions {
 
-	class encryptor : public util::noncopyable {
+	class encryptor : public booster::noncopyable {
 	public:
 		virtual std::string encrypt(std::string const &plain,time_t timeout) = 0;	
 		virtual bool decrypt(std::string const &cipher,std::string &plain,time_t *timeout = 0) = 0;

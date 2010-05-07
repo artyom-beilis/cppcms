@@ -43,7 +43,7 @@ namespace sessions {
 namespace impl {
 	using namespace cppcms::impl;
 
-	class sid_generator : public util::noncopyable {
+	class sid_generator : public booster::noncopyable {
 	public:
 		sid_generator()
 		{

@@ -20,7 +20,7 @@
 #define CPPCMS_HTTP_REQUEST_H
 
 #include "defs.h"
-#include "noncopyable.h"
+#include <booster/noncopyable.h>
 #include <booster/hold_ptr.h>
 
 #include <string>
@@ -35,7 +35,7 @@ namespace http {
 	class cookie;
 	class file;
 
-	class CPPCMS_API request : public util::noncopyable {
+	class CPPCMS_API request : public booster::noncopyable {
 	public:
 
 		// RFC 3875

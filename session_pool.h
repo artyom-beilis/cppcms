@@ -34,7 +34,7 @@ namespace cppcms {
 		class session_storage_factory;
 	};
 	
-	class CPPCMS_API session_pool: public util::noncopyable {
+	class CPPCMS_API session_pool: public booster::noncopyable {
 	public:
 		session_pool(service &srv);
 		~session_pool();

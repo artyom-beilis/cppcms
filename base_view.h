@@ -30,7 +30,7 @@
 
 #include <booster/hold_ptr.h>
 #include "base_content.h"
-#include "noncopyable.h"
+#include <booster/noncopyable.h>
 #include "config.h"
 
 namespace cppcms {
@@ -43,7 +43,7 @@ namespace cppcms {
 /// class.
 ///
 
-class CPPCMS_API base_view : util::noncopyable {
+class CPPCMS_API base_view : booster::noncopyable {
 public:
 	///
 	/// The main rendering function -- render the main HTML page. It is usually overridden in template engine.

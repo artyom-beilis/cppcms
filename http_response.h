@@ -20,7 +20,7 @@
 #define CPPCMS_HTTP_RESPONSE_H
 
 #include "defs.h"
-#include "noncopyable.h"
+#include <booster/noncopyable.h>
 #include <booster/hold_ptr.h>
 
 #include <string>
@@ -35,7 +35,7 @@ namespace http {
 	class context;
 	class cookie;
 
-	class CPPCMS_API response : public util::noncopyable {
+	class CPPCMS_API response : public booster::noncopyable {
 	public:
 		// RFC 2616 sec. 6.1.1
 		typedef enum {

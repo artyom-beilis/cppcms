@@ -20,7 +20,7 @@
 #define CPPCMS_SESSION_API_H
 
 #include "defs.h"
-#include "noncopyable.h"
+#include <booster/noncopyable.h>
 #include "refcounted.h"
 #include "intrusive_ptr.h"
 #include <string>
@@ -30,7 +30,7 @@ namespace cppcms {
 class session_interface;
 
 class session_api : 
-	public util::noncopyable,
+	public booster::noncopyable,
 	public refcounted
 {
 public:

@@ -38,7 +38,7 @@
 
 namespace cppcms {
 namespace impl {
-	class thread_pool : public util::noncopyable {
+	class thread_pool : public booster::noncopyable {
 	public:
 
 		bool cancel(int id) {

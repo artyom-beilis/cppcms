@@ -20,7 +20,7 @@
 #define CPPCMS_APPLICATIONS_POOL_H
 
 #include "defs.h"
-#include "noncopyable.h"
+#include <booster/noncopyable.h>
 #include <booster/hold_ptr.h>
 #include "intrusive_ptr.h"
 
@@ -54,7 +54,7 @@ namespace cppcms {
 		///
 		/// \brief a base class for user application factories
 		///
-		struct factory : public util::noncopyable {
+		struct factory : public booster::noncopyable {
 			///
 			/// Returns newly created instance of an application.
 			///

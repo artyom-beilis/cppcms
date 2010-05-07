@@ -44,7 +44,7 @@ namespace impl {
 		class acceptor;
 	}
 
-	class service : public util::noncopyable {
+	class service : public booster::noncopyable {
 	public:
 		service();
 		~service();

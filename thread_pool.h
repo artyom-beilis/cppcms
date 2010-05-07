@@ -20,7 +20,7 @@
 #define CPPCMS_THREAD_POOL_H
 
 #include "defs.h"
-#include "noncopyable.h"
+#include <booster/noncopyable.h>
 #include <booster/function.h>
 #include <booster/hold_ptr.h>
 
@@ -30,7 +30,7 @@ namespace cppcms {
 		class thread_pool;
 	}
 
-	class CPPCMS_API thread_pool : public util::noncopyable {
+	class CPPCMS_API thread_pool : public booster::noncopyable {
 	public:
 
 		int post(booster::function<void()> const &job);	

@@ -34,7 +34,7 @@
 namespace cppcms {
 namespace impl {
 
-class shmem_control : public util::noncopyable{
+class shmem_control : public booster::noncopyable{
 public:
 	shmem_control(size_t size) :
 		size_(size),

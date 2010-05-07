@@ -19,7 +19,7 @@
 #ifndef CPPCMS_IMPL_CGI_API_H
 #define CPPCMS_IMPL_CGI_API_H
 
-#include "noncopyable.h"
+#include <booster/noncopyable.h>
 #include "refcounted.h"
 #include "intrusive_ptr.h"
 #include <vector>
@@ -48,7 +48,7 @@ namespace cgi {
 	typedef booster::function<void()> callback;
 	typedef booster::function<void(bool)> ehandler;
 
-	class acceptor : public util::noncopyable {
+	class acceptor : public booster::noncopyable {
 	public:
 		virtual void async_accept() = 0;
 		virtual void stop() = 0;

@@ -38,7 +38,7 @@
 
 namespace cppcms {
 
-	struct applications_pool::basic_app_data : public util::noncopyable {
+	struct applications_pool::basic_app_data : public booster::noncopyable {
 		basic_app_data(std::string script) :
 			script_name(script),
 			match(0),

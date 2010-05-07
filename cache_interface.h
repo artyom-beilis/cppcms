@@ -23,7 +23,7 @@
 #include <set>
 
 #include "defs.h"
-#include "noncopyable.h"
+#include <booster/noncopyable.h>
 #include "intrusive_ptr.h"
 #include <booster/hold_ptr.h>
 #include "cstdint.h"
@@ -82,7 +82,7 @@ namespace cppcms {
        
 
 	
-	class CPPCMS_API cache_interface : public util::noncopyable {
+	class CPPCMS_API cache_interface : public booster::noncopyable {
 	public:
 
 		///

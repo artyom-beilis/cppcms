@@ -20,7 +20,7 @@
 #define CPPCMS_SERVICE_H
 
 #include "defs.h"
-#include "noncopyable.h"
+#include <booster/noncopyable.h>
 #include <booster/hold_ptr.h>
 #include <booster/function.h>
 #include <locale>
@@ -48,7 +48,7 @@ namespace cppcms {
 		class value;
 	}
 
-	class CPPCMS_API service : public util::noncopyable
+	class CPPCMS_API service : public booster::noncopyable
 	{
 	public:
 		service(json::value const &v);

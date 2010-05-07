@@ -20,7 +20,7 @@
 #define CPPCMS_HTTP_CLIENT_H
 
 #include "defs.h"
-#include "noncopyable.h"
+#include <booster/noncopyable.h>
 
 namespace cppcms {
 	class service;
@@ -29,7 +29,7 @@ namespace cppcms {
 	///
 	/// Very simple HTTP client for performing HTTP requests from CppCMS applications
 	///
-	class CPPCMS_API http_client : public util::noncopyable {
+	class CPPCMS_API http_client : public booster::noncopyable {
 	public:
 		///
 		/// Create new HTTP client

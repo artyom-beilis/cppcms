@@ -21,10 +21,10 @@
 
 #include "defs.h"
 #include <booster/hold_ptr.h>
-#include "noncopyable.h"
+#include <booster/noncopyable.h>
 
 namespace cppcms {
-	class CPPCMS_API urandom_device : public util::noncopyable {
+	class CPPCMS_API urandom_device : public booster::noncopyable {
 	public:
 		urandom_device();
 		~urandom_device();

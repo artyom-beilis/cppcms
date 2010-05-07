@@ -21,7 +21,7 @@
 
 #include "defs.h"
 #include <booster/hold_ptr.h>
-#include "noncopyable.h"
+#include <booster/noncopyable.h>
 #include <sstream>
 #include <fstream>
 

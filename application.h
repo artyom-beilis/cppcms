@@ -20,7 +20,7 @@
 #define CPPCMS_APPLICATION_H
 
 #include "defs.h"
-#include "noncopyable.h"
+#include <booster/noncopyable.h>
 #include "atomic_counter.h"
 #include <booster/hold_ptr.h>
 #include "intrusive_ptr.h"
@@ -86,7 +86,7 @@ namespace cppcms {
 	///     parent class and it destroys an attached class with delete.
 	///
 
-	class CPPCMS_API application : public util::noncopyable {
+	class CPPCMS_API application : public booster::noncopyable {
 	public:
 		///
 		/// Create a new application running on service \a srv, with a parent \a parent

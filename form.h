@@ -20,7 +20,7 @@
 #define CPPCMS_FORM_H
 
 #include "defs.h"
-#include "noncopyable.h"
+#include <booster/noncopyable.h>
 
 #include <string>
 #include <set>
@@ -160,7 +160,7 @@ namespace cppcms {
 	/// and validation of forms that include more then one widget
 	///
 
-	class CPPCMS_API form :	public util::noncopyable,
+	class CPPCMS_API form :	public booster::noncopyable,
 				public base_form
 	{
 	public:
@@ -371,7 +371,7 @@ namespace cppcms {
 
 		class CPPCMS_API base_widget : 	
 			public base_form,
-			public util::noncopyable
+			public booster::noncopyable
 		{
 		public:
 

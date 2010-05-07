@@ -28,7 +28,7 @@
 #include <string.h>
 #include <pthread.h>
 #include "cppcms_error.h"
-#include "noncopyable.h"
+#include <booster/noncopyable.h>
 
 namespace cppcms {
 namespace impl {
@@ -137,7 +137,7 @@ namespace impl {
 	}
 
 
-	class mutex : public util::noncopyable {
+	class mutex : public booster::noncopyable {
 	public:
 		class guard;
 		mutex(bool pshared = false) :
@@ -202,7 +202,7 @@ namespace impl {
 		pthread_mutex_t normal_;
 	};
 
-	class mutex::guard : public util::noncopyable {
+	class mutex::guard : public booster::noncopyable {
 	public:
 		guard(mutex &m) : m_(m) 
 		{
@@ -216,7 +216,7 @@ namespace impl {
 		mutex &m_;
 	};
 	
-	class shared_mutex : public util::noncopyable {
+	class shared_mutex : public booster::noncopyable {
 	public:
 		class shared_guard;
 		class unique_guard;
@@ -295,7 +295,7 @@ namespace impl {
 		pthread_rwlock_t normal_;
 	};
 	
-	class shared_mutex::shared_guard : public util::noncopyable {
+	class shared_mutex::shared_guard : public booster::noncopyable {
 	public:
 		shared_guard(shared_mutex &m) : m_(m) 
 		{
@@ -309,7 +309,7 @@ namespace impl {
 		shared_mutex &m_;
 	};
 	
-	class shared_mutex::unique_guard : public util::noncopyable {
+	class shared_mutex::unique_guard : public booster::noncopyable {
 	public:
 		unique_guard(shared_mutex &m) : m_(m) 
 		{

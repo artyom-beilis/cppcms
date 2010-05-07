@@ -25,10 +25,10 @@
 
 #include <booster/copy_ptr.h>
 #include <booster/hold_ptr.h>
-#include "noncopyable.h"
+#include <booster/noncopyable.h>
 
 namespace cppcms {
-	class CPPCMS_API logger : public util::noncopyable {
+	class CPPCMS_API logger : public booster::noncopyable {
 	public:
 		typedef enum {
 			fatal	= 10,

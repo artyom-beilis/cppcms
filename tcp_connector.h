@@ -21,7 +21,7 @@
 
 #include <string>
 #include <vector>
-#include "noncopyable.h"
+#include <booster/noncopyable.h>
 
 namespace cppcms {
 
@@ -29,7 +29,7 @@ namespace impl {
 class messenger;
 struct tcp_operation_header;
 
-class tcp_connector : private util::noncopyable
+class tcp_connector : private booster::noncopyable
 {
 protected:
 	messenger *tcp;

@@ -19,12 +19,12 @@
 #ifndef CPPCMS_TCP_MESSENGER_H
 #define CPPCMS_TCP_MESSENGER_H
 #include <booster/aio/socket.h>
-#include "noncopyable.h"
+#include <booster/noncopyable.h>
 #include "tcp_cache_protocol.h"
 
 namespace cppcms {
 namespace impl {
-class messenger : public util::noncopyable {
+class messenger : public booster::noncopyable {
 	booster::aio::socket socket_;
 	std::string ip_;
 	int port_;

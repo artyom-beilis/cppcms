@@ -20,7 +20,7 @@
 #define CPPCMS_HTTP_CONNECTION_H
 
 #include "defs.h"
-#include "noncopyable.h"
+#include <booster/noncopyable.h>
 
 namespace cppcms {
 
@@ -28,7 +28,7 @@ namespace cppcms {
 		class request;
 		class response;
 
-		class CGICC_API connection : private util::noncopyable {
+		class CGICC_API connection : private booster::noncopyable {
 		public:
 			http::request &request() = 0;
 			http::response &response() = 0;

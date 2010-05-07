@@ -19,7 +19,7 @@
 #ifndef CPPCMS_URL_DISPATCHER_H
 #define CPPCMS_URL_DISPATCHER_H
 
-#include "noncopyable.h"
+#include <booster/noncopyable.h>
 #include "defs.h"
 #include <booster/function.h>
 #include <booster/hold_ptr.h>
@@ -51,7 +51,7 @@ namespace cppcms {
 	/// \endcode
 	///
 
-	class CPPCMS_API url_dispatcher : public util::noncopyable {
+	class CPPCMS_API url_dispatcher : public booster::noncopyable {
 	public:
 		// Handlers
 		typedef booster::function<void()> handler;
