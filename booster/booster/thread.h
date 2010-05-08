@@ -177,6 +177,26 @@ namespace booster {
 	private:
 		Mutex *m_;
 	};
+#ifdef BOOSTER_POSIX
+	class BOOSTER_API fork_shared_mutex : public noncopyable {
+	public:
+		fork_shared_mutex();
+		~fork_shared_mutex();
+
+		bool try_lock() { return try_unique_lock(); }
+		bool try_unique_lock();
+		bool try_shared_lock();
+
+		void lock() { return unique_lock(); }
+		void unique_lock();
+		void shared_lock();
+
+		void unlock();
+	private:
+		struct data;
+		hold_ptr<data> d;
+	};
+#endif
 
 }//booster
 

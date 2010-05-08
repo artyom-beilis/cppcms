@@ -223,10 +223,12 @@ endmacro()
 add_booster_test(function function)
 add_booster_test(ptime posix_time)
 add_booster_test(thread thread)
+if(UNIX)
+	add_booster_test(thread fork)
+endif()
 add_booster_test(aio reactor)
 add_booster_test(aio timer)
 add_booster_test(aio event_loop)
 add_booster_test(aio socket)
-
 
 

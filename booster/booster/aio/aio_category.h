@@ -14,7 +14,8 @@ namespace aio {
 			select_failed,
 			eof,
 			invalid_endpoint,
-			no_service_provided
+			no_service_provided,
+			prefork_not_enabled
 		};
 
 		class BOOSTER_API category : public system::error_category {

@@ -17,6 +17,7 @@ namespace aio_error {
 		case eof: return "eof";
 		case invalid_endpoint: return "invalid endpoint";
 		case no_service_provided: return "no io_service provided";
+		case prefork_not_enabled: return "prefork acceptor is not enabled";
 		default:
 			return "unknown";
 		}

@@ -3,6 +3,13 @@
 #include <booster/thread.h>
 #include <booster/system_error.h>
 #include <errno.h>
+#include <string.h>
+
+#ifdef BOOSTER_POSIX
+#include <unistd.h>
+#include <fcntl.h>
+#include <stdio.h>
+#endif
 
 namespace booster {
 
@@ -150,6 +157,117 @@ namespace booster {
 	}
 
 	} // details
+
+#ifdef BOOSTER_POSIX
+
+	struct fork_shared_mutex::data {
+		pthread_rwlock_t lock;
+		FILE *lock_file;
+	};
+
+
+	fork_shared_mutex::fork_shared_mutex() : d(new data)
+	{
+		pthread_rwlock_init(&d->lock,0);
+		d->lock_file = tmpfile();
+		if(!d->lock_file) {
+			int err=errno;
+			pthread_rwlock_destroy(&d->lock);
+			throw system::system_error(system::error_code(err,system::system_category));
+		}
+	}
+	fork_shared_mutex::~fork_shared_mutex()
+	{
+		// only threads see the lock - it is safe
+		fclose(d->lock_file);
+		pthread_rwlock_destroy(&d->lock);
+	}
+	
+	bool fork_shared_mutex::try_unique_lock()
+	{
+		if(pthread_rwlock_trywrlock(&d->lock)!=0)
+			return false;
+		struct flock lock;
+		memset(&lock,0,sizeof(lock));
+		lock.l_type=F_WRLCK;
+		lock.l_whence=SEEK_SET;
+		int res = 0;
+		while((res = ::fcntl(fileno(d->lock_file),F_SETLK,&lock))!=0 && errno==EINTR)
+			;
+		if(res == 0)
+			return true;
+		int err = errno;
+		pthread_rwlock_unlock(&d->lock);
+		if(err == EACCES || err==EAGAIN)
+			return false;
+		throw system::system_error(system::error_code(err,system::system_category));
+	}
+	void fork_shared_mutex::unique_lock()
+	{
+		pthread_rwlock_wrlock(&d->lock);
+		struct flock lock;
+		memset(&lock,0,sizeof(lock));
+		lock.l_type=F_WRLCK;
+		lock.l_whence=SEEK_SET;
+		int res = 0;
+		while((res = ::fcntl(fileno(d->lock_file),F_SETLKW,&lock))!=0 && errno==EINTR)
+			;
+		if(res == 0)
+			return;
+		int err = errno;
+		pthread_rwlock_unlock(&d->lock);
+		throw system::system_error(system::error_code(err,system::system_category));
+	}
+
+	bool fork_shared_mutex::try_shared_lock()
+	{
+		if(pthread_rwlock_tryrdlock(&d->lock)!=0)
+			return false;
+		struct flock lock;
+		memset(&lock,0,sizeof(lock));
+		lock.l_type=F_RDLCK;
+		lock.l_whence=SEEK_SET;
+		int res = 0;
+		while((res = ::fcntl(fileno(d->lock_file),F_SETLK,&lock))!=0 && errno==EINTR)
+			;
+		if(res == 0)
+			return true;
+		int err = errno;
+		pthread_rwlock_unlock(&d->lock);
+		if(err == EACCES || err==EAGAIN)
+			return false;
+		throw system::system_error(system::error_code(err,system::system_category));
+	}
+
+	void fork_shared_mutex::shared_lock()
+	{
+		pthread_rwlock_rdlock(&d->lock);
+		struct flock lock;
+		memset(&lock,0,sizeof(lock));
+		lock.l_type=F_RDLCK;
+		lock.l_whence=SEEK_SET;
+		int res = 0;
+		while((res = ::fcntl(fileno(d->lock_file),F_SETLKW,&lock))!=0 && errno==EINTR)
+			;
+		if(res == 0)
+			return;
+		int err = errno;
+		pthread_rwlock_unlock(&d->lock);
+		throw system::system_error(system::error_code(err,system::system_category));
+	}
+
+	void fork_shared_mutex::unlock()
+	{
+		struct flock lock;
+		memset(&lock,0,sizeof(lock));
+		lock.l_type=F_UNLCK;
+		lock.l_whence=SEEK_SET;
+		int res = 0;
+		while((res = ::fcntl(fileno(d->lock_file),F_SETLKW,&lock))!=0 && errno==EINTR)
+			;
+		pthread_rwlock_unlock(&d->lock);
+	}
+#endif
 
 } // booster
 

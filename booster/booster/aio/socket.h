@@ -28,6 +28,10 @@ namespace aio {
 		io_service &get_io_service();
 		void set_io_service(io_service &srv);
 		void reset_io_service();
+
+		#ifndef BOOSTER_WIN32
+		void set_process_shared();
+		#endif
 		
 		void open(family_type d,socket_type t);
 		void open(family_type d,socket_type t,system::error_code &e);
@@ -112,6 +116,7 @@ namespace aio {
 		native_type fd_;
 		bool owner_;
 		bool nonblocking_was_set_;
+		bool process_shared_;
 		io_service *srv_;
 	};
 

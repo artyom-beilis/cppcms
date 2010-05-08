@@ -19,6 +19,7 @@
 #include <vector>
 #include <map>
 #include <deque>
+#include <list>
 
 #include "select_iterrupter.h"
 
@@ -133,6 +134,7 @@ public:
 	}
 	void reset()
 	{
+		destroy_accepted();
 		dispatch_queue_.clear();
 		map_.clear();
 		stop_ = false;
@@ -152,6 +154,9 @@ public:
 		reactor_type_(type),
 		stop_(false),
 		polling_(false)
+	#ifndef BOOSTER_WIN32
+		,acceptor_owner_(false)
+	#endif
 	{
 	}
 
@@ -170,6 +175,7 @@ public:
 	
 	~event_loop_impl()
 	{
+		destroy_accepted();
 	}
 	
 	int set_timer_event(ptime point,event_handler const &h)
@@ -205,6 +211,7 @@ public:
 			wake();
 		return ev.second.event_id;
 	}
+
 	void cancel_timer_event(int event_id)
 	{
 		lock_guard l(data_mutex_);
@@ -422,13 +429,15 @@ private:
 			assert(wait_time >= ptime::zero);
 		}
 
-
+		
 		int n = 0;
 
 		{
 			system::error_code poll_error;
 			polling_ = true;
 			try {
+				// refork injection
+				pre_poll(); 
 				data_mutex_.unlock();
 				lock_guard lg(poll_mutex_);
 				n = reactor_->poll(evs,evs_size,ptime::milliseconds(wait_time),poll_error);
@@ -436,10 +445,13 @@ private:
 			catch(...) {
 				data_mutex_.lock();
 				polling_ = false;
+				post_poll(evs,0);
 				throw;
 			}
 			data_mutex_.lock();
 			polling_ = false;
+		
+			post_poll(evs,poll_error ? 0 : n);
 			//
 			// We may get EBADF, so if we do not handle it we may loop
 			// forever. However, maybe there is a handler that handles this
@@ -512,6 +524,252 @@ private:
 		}
 	}
 
+#ifdef BOOSTER_WIN32
+	void pre_poll() {}
+	void post_poll_one() {}
+	void destroy_accepted() {}
+#endif
+
+#ifndef BOOSTER_WIN32
+	void destroy_accepted()
+	{
+		acceptor_events_type::iterator p;
+		for(p=acceptor_events_dispatched_.begin();p!=acceptor_events_dispatched_.end();++p) {
+			if(p->fd >= 0)
+				::close(p->fd);
+		}
+		acceptor_events_dispatched_.clear();
+	}
+
+	void pre_poll()
+	{
+		if(!shared_mutex_.get()) {
+			acceptor_events_type::iterator p,tmp;
+			for(p=acceptor_events_.begin();p!=acceptor_events_.end();) {
+				system::error_code e(aio_error::prefork_not_enabled,aio_error_cat);
+				dispatch_acceptor_event(p->h,e);
+				tmp=p;
+				++p;
+				acceptor_events_.erase(tmp);
+			}
+			return;
+		}
+
+		if(!shared_mutex_->try_lock()) {
+			return;
+		}
+
+		acceptor_owner_ = true;
+		
+		acceptor_events_type::iterator p,tmp,ev_ptr;
+		
+		for(p=acceptor_events_.begin();p!=acceptor_events_.end();) {
+			system::error_code e;
+			reactor_->select(p->fd,reactor::in,e);
+			if(e) {
+				dispatch_acceptor_event(p->h,e);
+				tmp=p;
+				++p;
+				acceptor_events_.erase(tmp);
+			}
+			else {
+				++p;
+			}
+		}
+	}
+
+	void post_poll(reactor::event *evs,int n)
+	{
+		if(!acceptor_owner_)
+			return;
+
+		try {
+			acceptor_events_type::iterator p;
+			
+			for(p=acceptor_events_.begin();p!=acceptor_events_.end();++p) {
+				system::error_code e;
+				reactor_->remove(p->fd,e);
+			}
+
+			for(int i=0;i<n;i++) {
+				acceptor_events_type::iterator p,tmp;
+				for(p=acceptor_events_.begin();p!=acceptor_events_.end();) {
+					if(p->fd != evs[i].fd) {
+						++p;
+						continue;
+					}
+					if(evs[i].events & (reactor::err | reactor::out)) {
+						dispatch_acceptor_event(p->h,system::error_code(aio_error::select_failed,aio_error_cat));
+					}
+					else if(evs[i].events & reactor::in) {
+						int new_fd = ::accept(p->fd,0,0);
+						if(new_fd < 0 && 
+						   (errno==EINTR || errno==EAGAIN || errno==EWOULDBLOCK))
+						{
+							++p;
+							continue;
+						}
+						
+						dispatch_acceptor_event(p->h,new_fd);
+					}
+					
+					tmp = p;
+					++p;
+					acceptor_events_.erase(tmp);
+				}
+			}
+		}
+		catch(...) {
+			acceptor_owner_=false;
+			shared_mutex_->unlock();
+			throw;
+		}
+		acceptor_owner_=false;
+		shared_mutex_->unlock();
+	}
+
+	struct acceptor_event {
+		acceptor_event(){}
+		acceptor_event(accept_handler const &hn,native_type fds) :
+			fd(fds),
+			h(hn)
+		{
+		}
+		acceptor_event(accept_handler const &hn,system::error_code const &er) :
+			h(hn),
+			e(er)
+		{
+		}
+		native_type fd;
+		accept_handler h;
+		system::error_code e;
+	};
+
+	typedef std::list<acceptor_event> acceptor_events_type;
+
+	acceptor_events_type acceptor_events_;
+	acceptor_events_type acceptor_events_dispatched_;
+	std::auto_ptr<fork_shared_mutex> shared_mutex_;
+	bool acceptor_owner_;	
+
+	struct accept_dispatcher;
+	friend class accept_dispatcher;
+	struct accept_dispatcher {
+		accept_dispatcher() : self(0) {}
+		accept_dispatcher(event_loop_impl *s,acceptor_events_type::iterator p) :
+			self(s),
+			ptr_(p) 
+		{}
+		
+		event_loop_impl *self;
+		acceptor_events_type::iterator ptr_;
+
+		void operator()()const
+		{
+			accept_handler h;
+			h.swap(ptr_->h);
+			int fd = ptr_->fd;
+			system::error_code e=ptr_->e;
+			self->acceptor_events_dispatched_.erase(ptr_);
+			h(e,fd);
+		}
+	};
+
+	void dispatch_acceptor_event(accept_handler const &h,int fd)
+	{
+		acceptor_events_type::iterator ev = 
+			acceptor_events_dispatched_.insert(acceptor_events_dispatched_.begin(),acceptor_event(h,fd));
+		dispatch_queue_.push_back(accept_dispatcher(this,ev));
+	}
+	
+	void dispatch_acceptor_event(accept_handler const &h,system::error_code const &e)
+	{
+		acceptor_events_type::iterator ev = 
+			acceptor_events_dispatched_.insert(acceptor_events_dispatched_.begin(),acceptor_event(h,e));
+		dispatch_queue_.push_back(accept_dispatcher(this,ev));
+	}
+
+	struct cancel_prefork_binder
+	{
+		cancel_prefork_binder(native_type f=invalid_socket,event_loop_impl *s=0) :
+			fd(f),self_(s)
+		{
+		}
+		native_type fd;
+		event_loop_impl *self_;
+		void operator()() const
+		{
+			self_->cancel_prefork_acceptor(fd);
+		}
+	};
+	struct set_prefork_binder {
+		set_prefork_binder(){}
+		set_prefork_binder(native_type f,accept_handler hn,event_loop_impl *s) :
+			fd(f),
+			self_(s),
+			h(hn)
+		{
+		}
+		native_type fd;
+		event_loop_impl *self_;
+		accept_handler h;
+		void operator()() const
+		{
+			self_->set_prefork_acceptor(fd,h);
+		}
+	};
+public:
+	void set_prefork_acceptor(native_type fd,accept_handler const &h)
+	{
+		lock_guard l(data_mutex_);
+		if(polling_ && acceptor_owner_) {
+			dispatch_queue_.push_back(set_prefork_binder(fd,h,this));
+			wake();
+			return;
+		}
+		bool found = false;
+		for(acceptor_events_type::iterator p=acceptor_events_.begin();p!=acceptor_events_.end();++p) {
+			if(p->fd==fd) {
+				dispatch_acceptor_event(h,system::error_code(EEXIST,system::system_category));
+				found = true;
+				break;
+			}
+		}
+		if(!found)
+			acceptor_events_.push_back(acceptor_event(h,fd));
+		if(polling_)
+			wake();
+	}
+	
+
+	void cancel_prefork_acceptor(native_type fd)
+	{
+		lock_guard l(data_mutex_);
+		if(polling_ && acceptor_owner_) {
+			dispatch_queue_.push_back(cancel_prefork_binder(fd,this));
+			wake();
+			return;
+		}
+
+		for(acceptor_events_type::iterator p=acceptor_events_.begin();p!=acceptor_events_.end();++p) {
+			if(p->fd==fd) {
+				acceptor_events_.erase(p);
+				break;
+			}
+		}
+		if(polling_)
+			wake();
+	}
+	void enable_prefork()
+	{
+		if(!shared_mutex_.get())
+			shared_mutex_.reset(new fork_shared_mutex());
+	}
+private:
+
+#endif
+
+
 }; 
 
 // For future use
@@ -573,6 +831,24 @@ std::string io_service::reactor_name()
 {
 	return impl_->name();
 }
+
+#ifndef BOOSTER_WIN32
+
+void io_service::set_prefork_acceptor(native_type fd,accept_handler const &h)
+{
+	impl_->set_prefork_acceptor(fd,h);
+}
+void io_service::cancel_prefork_acceptor(native_type fd)
+{
+	impl_->cancel_prefork_acceptor(fd);
+}
+void io_service::enable_prefork()
+{
+	impl_->enable_prefork();
+}
+
+#endif
+
 
 } // aio
 } // booster

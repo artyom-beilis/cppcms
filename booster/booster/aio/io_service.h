@@ -15,9 +15,8 @@
 namespace booster {
 class ptime;
 namespace aio {
-	typedef function<void(system::error_code const &)> event_handler;
-	typedef function<void()> handler;
 
+	typedef function<void(system::error_code const &e,int fd)> accept_handler;
 	class event_loop_impl;
 	class BOOSTER_API io_service : public noncopyable {
 	public:
@@ -28,6 +27,12 @@ namespace aio {
 		io_service(int reactor_type);
 		io_service();
 		~io_service();
+
+		#ifndef BOOSTER_WIN32
+		void set_prefork_acceptor(native_type fd,accept_handler const &h);
+		void cancel_prefork_acceptor(native_type fd);
+		void enable_prefork();
+		#endif
 
 		void set_io_event(native_type fd,int event,event_handler const &h);
 		void cancel_io_events(native_type fd);
