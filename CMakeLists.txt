@@ -399,7 +399,6 @@ set(CPPCMS_SOURCES
 	atomic_counter.cpp 
 	json.cpp 
 	encoding.cpp 
-	regex.cpp
 	form.cpp 
 	filters.cpp
 	cache_pool.cpp

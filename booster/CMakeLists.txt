@@ -95,6 +95,7 @@ endif()
 set(BOOSTER_SRC	
 	lib/thread/src/thread.cpp
 	lib/ptime/src/posix_time.cpp
+	lib/regex/src/pcre_regex.cpp
 	lib/system/src/posix_error.cpp
 	lib/system/src/windows_error.cpp
 	lib/aio/src/aio_category.cpp
@@ -139,6 +140,19 @@ endif(NOT HAVE_GETHOSTBYNAME)
 
 find_path(PTHREAD_INC pthread.h)
 include_directories(${PTHREAD_INC})
+
+find_path(PCRE_INCLUDE pcre.h)
+if(PCRE_INCLUDE)
+	include_directories(${PCRE_INCLUDE})
+endif()
+
+if(NOT PCRE_INCLUDE)
+	find_path(PCRE_INCLUDE2 pcre/pcre.h)
+	include_directories(${PCRE_INCLUDE2}/pcre)
+endif()
+
+find_library(PCRE_LIB pcre)
+
 
 include_directories(${CMAKE_BINARY_DIR})
 include_directories(.)
@@ -192,6 +206,7 @@ foreach(ALIB ${LINK_LIBS})
 	if(WS2_32)
 		target_link_libraries(${ALIB} ${WS2_32})
 	endif()
+	target_link_libraries(${ALIB} ${PCRE_LIB})
 endforeach()
 
 
@@ -226,6 +241,7 @@ add_booster_test(thread thread)
 if(UNIX)
 	add_booster_test(thread fork)
 endif()
+add_booster_test(regex regex)
 add_booster_test(aio reactor)
 add_booster_test(aio timer)
 add_booster_test(aio event_loop)

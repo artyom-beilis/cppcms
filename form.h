@@ -34,9 +34,9 @@
 #include "http_request.h"
 #include "http_response.h"
 #include <booster/copy_ptr.h>
+#include <booster/perl_regex.h>
 #include "cppcms_error.h"
 #include "util.h"
-#include "regex.h"
 #include "localization.h"
 
 namespace cppcms {
@@ -987,18 +987,24 @@ namespace cppcms {
 			///
 			/// Create widget using regular expression \a e
 			///
-			regex_field(util::regex const &e);
+			regex_field(booster::regex const &e);
+			
+			///
+			/// Create widget using regular expression \a e
+			///
+			regex_field(std::string const &e);
+
 
 			///
 			/// Set regular expression
 			///
-			void regex(util::regex const &e);
+			void regex(booster::regex const &e);
 
 			~regex_field();
 			
 			virtual bool validate();
 		private:
-			util::regex const *expression_;
+			booster::regex expression_;
 			struct data;
 			booster::hold_ptr<data> d;
 		};
@@ -1014,7 +1020,6 @@ namespace cppcms {
 			~email();
 
 		private:
-			static util::regex const email_expression_;
 			struct data;
 			booster::hold_ptr<data> d;
 		};

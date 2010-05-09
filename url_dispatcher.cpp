@@ -20,14 +20,15 @@
 #include "url_dispatcher.h"
 #include "application.h"
 
+#include <booster/regex.h>
+
 #include "config.h"
 #ifdef CPPCMS_USE_EXTERNAL_BOOST
-#   include <boost/regex.hpp>
+#   include <boost/shared_ptr.hpp>
 #else // Internal Boost
-#   include <cppcms_boost/regex.hpp>
+#   include <cppcms_boost/shared_ptr.hpp>
     namespace boost = cppcms_boost;
 #endif
-
 
 namespace cppcms {
 
@@ -43,13 +44,13 @@ namespace cppcms {
 
 			bool matches(std::string const &path)
 			{
-				return boost::regex_match(path.c_str(),match_,expr_);
+				return booster::regex_match(path.c_str(),match_,expr_);
 			}
 
 			virtual bool dispatch(std::string url) = 0;
 		protected:
-			boost::regex expr_;
-			boost::cmatch match_;
+			booster::regex expr_;
+			booster::cmatch match_;
 		};
 
 		struct mounted : public option {

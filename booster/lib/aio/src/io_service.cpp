@@ -526,7 +526,7 @@ private:
 
 #ifdef BOOSTER_WIN32
 	void pre_poll() {}
-	void post_poll_one() {}
+	void post_poll(reactor::event * /*evs*/,int /*n*/) {}
 	void destroy_accepted() {}
 #endif
 

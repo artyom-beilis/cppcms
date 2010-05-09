@@ -20,7 +20,6 @@
 #include "form.h"
 #include "config.h"
 #include "encoding.h"
-#include "regex.h"
 #include "filters.h"
 #include "cppcms_error.h"
 #include <stack>
@@ -30,6 +29,8 @@
 #   include <cppcms_boost/format.hpp>
     namespace boost = cppcms_boost;
 #endif
+
+#include <booster/regex.h>
 
 namespace cppcms {
 
@@ -775,28 +776,26 @@ bool password::validate()
 
 
 struct regex_field::data {};
-regex_field::regex_field() : expression_(0) {}
-regex_field::regex_field(util::regex const &e) : expression_(&e) {}
+regex_field::regex_field() {}
+regex_field::regex_field(booster::regex const &e) : expression_(e) {}
+regex_field::regex_field(std::string const &e) : expression_(e) {}
 regex_field::~regex_field() {}
 
-void regex_field::regex(util::regex const &e) 
+void regex_field::regex(booster::regex const &e) 
 {
-	expression_ = &e;
+	expression_ = e;
 }
+
 bool regex_field::validate()
 {
 	if(!text::validate())
 		return false;
-	valid(set() && expression_->match(value()));
+	valid(set() && booster::regex_match(value(),expression_));
 	return valid();
 }
 
 struct email::data {};
-namespace {
-	util::regex email_regex("^[^@]+@[^@]+$");
-}
-
-email::email() : regex_field(email_regex) {}
+email::email() : regex_field("^[^@]+@[^@]+$") {}
 email::~email() {}
 
 

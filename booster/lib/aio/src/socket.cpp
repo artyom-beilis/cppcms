@@ -943,8 +943,8 @@ void socket::async_accept(socket &target,event_handler const &h)
 		async_acceptor acceptor = { h, &target, this };
 		on_readable(acceptor);
 		return;
-	}
 #ifndef BOOSTER_WIN32
+	}
 	pshared_acceptor acc = { &target, h };
 	get_io_service().set_prefork_acceptor(fd_,acc);
 #endif

@@ -55,8 +55,7 @@ public:
 		cppcms::widgets::numeric<int> integer;
 		cppcms::widgets::numeric<double> real;
 		cppcms::widgets::password p1,p2;
-		cppcms::util::regex e("^(yes|no)$");
-		cppcms::widgets::regex_field regex(e);
+		cppcms::widgets::regex_field regex("^(yes|no)$");
 		cppcms::widgets::email email;
 		cppcms::widgets::checkbox checkbox;
 		cppcms::widgets::select_multiple select_multiple;

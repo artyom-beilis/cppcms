@@ -68,14 +68,14 @@
 #include "config.h"
 #ifdef CPPCMS_USE_EXTERNAL_BOOST
 #   include <boost/lexical_cast.hpp>
-#   include <boost/regex.hpp>
 #   include <boost/bind.hpp>
 #else // Internal Boost
 #   include <cppcms_boost/lexical_cast.hpp>
-#   include <cppcms_boost/regex.hpp>
 #   include <cppcms_boost/bind.hpp>
     namespace boost = cppcms_boost;
 #endif
+
+#include <booster/regex.h>
 
 
 #include <booster/aio/io_service.h>
@@ -139,7 +139,7 @@ void service::load_settings(int argc,char *argv[])
 		}
 	}
 	
-	boost::regex r("^--((\\w+)(-\\w+)*)=((true)|(false)|(null)|(-?\\d+(\\.\\d+)?([eE][\\+-]?\\d+)?)|([\\[\\{].*[\\]\\}])|(.*))$");
+	booster::regex r("^--((\\w+)(-\\w+)*)=((true)|(false)|(null)|(-?\\d+(\\.\\d+)?([eE][\\+-]?\\d+)?)|([\\[\\{].*[\\]\\}])|(.*))$");
 
 	for(int i=1;i<argc;i++) {
 		std::string arg=argv[i];
@@ -150,8 +150,8 @@ void service::load_settings(int argc,char *argv[])
 		if(arg=="-U")
 			break;
 		if(arg.substr(0,2)=="--") {
-			boost::cmatch m;
-			if(!boost::regex_match(arg.c_str(),m,r))
+			booster::cmatch m;
+			if(!booster::regex_match(arg.c_str(),m,r))
 				throw cppcms_error("Invalid switch: "+arg);
 			std::string path=m[1];
 			for(unsigned i=0;i<path.size();i++)

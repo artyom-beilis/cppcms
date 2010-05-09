@@ -25,11 +25,10 @@
 #include <set>
 #include <vector>
 #include "config.h"
+#include <booster/regex.h>
 #ifdef CPPCMS_USE_EXTERNAL_BOOST
-#   include <boost/regex.hpp>
 #   include <boost/shared_ptr.hpp>
 #else // Internal Boost
-#   include <cppcms_boost/regex.hpp>
 #   include <cppcms_boost/shared_ptr.hpp>
     namespace boost = cppcms_boost;
 #endif
@@ -53,7 +52,7 @@ namespace cppcms {
 		{
 		}
 		std::string script_name;
-		boost::regex expr;
+		booster::regex expr;
 		int match;
 		bool use_regex;
 	private:
@@ -201,12 +200,12 @@ bool applications_pool::matched(basic_app_data &data,std::string script_name,std
 	else if(expected_name.empty() && !script_name.empty())
 		return false;
 	
-	boost::cmatch match;
+	booster::cmatch match;
 	if(!data.use_regex) {
 		matched=path_info;
 		return true;
 	}
-	else if(boost::regex_match(path_info.c_str(),match,data.expr)) {
+	else if(booster::regex_match(path_info.c_str(),match,data.expr)) {
 		matched=match[data.match];
 		return true;
 	}
