@@ -37,13 +37,11 @@
 #include <map>
 
 #ifdef CPPCMS_USE_EXTERNAL_BOOST
-#   include <boost/lexical_cast.hpp>
 #   include <boost/iostreams/stream.hpp>
 #   include <boost/iostreams/filtering_stream.hpp>
 #   include <boost/iostreams/filter/gzip.hpp>
 #   include <boost/iostreams/tee.hpp>
 #else // Internal Boost
-#   include <cppcms_boost/lexical_cast.hpp>
 #   include <cppcms_boost/iostreams/stream.hpp>
 #   include <cppcms_boost/iostreams/filtering_stream.hpp>
 #   include <cppcms_boost/iostreams/filter/gzip.hpp>
@@ -58,6 +56,14 @@ namespace {
 	bool string_i_comp(std::string const &left,std::string const &right)
 	{
 		return http::protocol::compare(left,right) < 0;
+	}
+	template<typename T>
+	std::string itoa(T v)
+	{
+		std::ostringstream ss;
+		ss.imbue(std::locale::classic());
+		ss<<v;
+		return ss.str();
 	}
 } // anon
 
@@ -373,14 +379,14 @@ void response::make_error_response(int stat,std::string const &msg)
 
 
 void response::accept_ranges(std::string const &s) { set_header("Accept-Ranges",s); }
-void response::age(unsigned seconds) { set_header("Age",boost::lexical_cast<std::string>(seconds)); }
+void response::age(unsigned seconds) { set_header("Age",itoa(seconds)); }
 void response::allow(std::string const &s) { set_header("Allow",s); }
 void response::cache_control(std::string const &s) { set_header("Cache-Control",s); }
 void response::content_encoding(std::string const &s) { set_header("Content-Encoding",s); } 
 void response::content_language(std::string const &s) { set_header("Content-Language",s); }
 void response::content_length(unsigned long long len)
 {
-	set_header("Content-Length",boost::lexical_cast<std::string>(len));
+	set_header("Content-Length",itoa(len));
 }
 void response::content_location(std::string const &s) { set_header("Content-Locaton",s); }
 void response::content_md5(std::string const &s) { set_header("Content-MD5",s); }
@@ -393,7 +399,7 @@ void response::last_modified(time_t t) { set_header("Last-Modified",make_http_ti
 void response::location(std::string const &s) { set_header("Location",s); }
 void response::pragma(std::string const &s) { set_header("Pragma",s); }
 void response::proxy_authenticate(std::string const &s) { set_header("Proxy-Authenticate",s); }
-void response::retry_after(unsigned n) { set_header("Retry-After",boost::lexical_cast<std::string>(n)); }
+void response::retry_after(unsigned n) { set_header("Retry-After",itoa(n)); }
 void response::retry_after(std::string const &s) { set_header("Retry-After",s); }
 void response::status(int code)
 {
@@ -401,7 +407,7 @@ void response::status(int code)
 }
 void response::status(int code,std::string const &message)
 {
-	set_header("Status",boost::lexical_cast<std::string>(code)+" "+message);
+	set_header("Status",itoa(code)+" "+message);
 }
 void response::trailer(std::string const &s) { set_header("Trailer",s); }
 void response::transfer_encoding(std::string const &s) { set_header("Transfer-Encoding",s); }

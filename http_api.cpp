@@ -29,12 +29,11 @@
 #include "util.h"
 #include <string.h>
 #include <iostream>
+#include <sstream>
 #include <algorithm>
 #ifdef CPPCMS_USE_EXTERNAL_BOOST
-#   include <boost/lexical_cast.hpp>
 #   include <boost/bind.hpp>
 #else // Internal Boost
-#   include <cppcms_boost/lexical_cast.hpp>
 #   include <cppcms_boost/bind.hpp>
     namespace boost = cppcms_boost;
 #endif
@@ -63,7 +62,10 @@ namespace cgi {
 
 			env_["SERVER_SOFTWARE"]=PACKAGE_NAME "/" PACKAGE_VERSION;
 			env_["SERVER_NAME"]=srv.settings().get("service.ip","127.0.0.1");
-			env_["SERVER_PORT"]=boost::lexical_cast<std::string>(srv.settings().get("service.port",8080));
+			std::ostringstream ss;
+			ss.imbue(std::locale::classic());
+			ss << srv.settings().get("service.port",8080);
+			env_["SERVER_PORT"]=ss.str();
 			env_["GATEWAY_INTERFACE"]="CGI/1.0";
 			env_["SERVER_PROTOCOL"]="HTTP/1.0";
 

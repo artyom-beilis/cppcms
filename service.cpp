@@ -67,10 +67,8 @@
 #include <fstream>
 #include "config.h"
 #ifdef CPPCMS_USE_EXTERNAL_BOOST
-#   include <boost/lexical_cast.hpp>
 #   include <boost/bind.hpp>
 #else // Internal Boost
-#   include <cppcms_boost/lexical_cast.hpp>
 #   include <cppcms_boost/bind.hpp>
     namespace boost = cppcms_boost;
 #endif
@@ -164,7 +162,7 @@ void service::load_settings(int argc,char *argv[])
 			else if(!m[7].str().empty())
 				val.set(path,json::null());
 			else if(!m[8].str().empty())
-				val.set(path,boost::lexical_cast<double>(m[8].str()));
+				val.set(path,atof(m[8].str().c_str()));
 			else if(!m[11].str().empty()) {
 				std::istringstream ss(m[11].str());
 				json::value tmp;
