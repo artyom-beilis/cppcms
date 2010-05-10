@@ -28,12 +28,6 @@ namespace aio {
 		io_service();
 		~io_service();
 
-		#ifndef BOOSTER_WIN32
-		void set_prefork_acceptor(native_type fd,accept_handler const &h);
-		void cancel_prefork_acceptor(native_type fd);
-		void enable_prefork();
-		#endif
-
 		void set_io_event(native_type fd,int event,event_handler const &h);
 		void cancel_io_events(native_type fd);
 

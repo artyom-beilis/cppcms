@@ -26,10 +26,9 @@ typedef int socklen_t;
 
 #include <iostream>
 
-
 #include "category.h"
 
-#define BOOSTER_AIO_FORCE_POLL
+//#define BOOSTER_AIO_FORCE_POLL
 
 
 namespace booster {
@@ -71,7 +70,6 @@ socket::socket() :
 	fd_(invalid_socket),
 	owner_(true),
 	nonblocking_was_set_(false),
-	process_shared_(false),
 	srv_(0)
 {
 }
@@ -80,7 +78,6 @@ socket::socket(io_service &srv) :
 	fd_(invalid_socket),
 	owner_(true),
 	nonblocking_was_set_(false),
-	process_shared_(false),
 	srv_(&srv)
 {
 }
@@ -325,12 +322,6 @@ void socket::on_writeable(event_handler const &h)
 
 void socket::cancel()
 {
-#ifndef BOOSTER_WIN32
-	if(process_shared_) {
-		get_io_service().cancel_prefork_acceptor(fd_);
-		return;
-	}
-#endif
 	get_io_service().cancel_io_events(fd_);
 }
 
@@ -716,7 +707,11 @@ namespace {
 			if(e) { h(e); return; }
 			system::error_code reserr;
 			source->accept(*target,reserr);
-			h(reserr);
+			if(socket::would_block(reserr)) {
+				source->async_accept(*target,h);
+			}
+			else
+				h(reserr);
 		}
 	};
 	struct async_connector {
@@ -919,35 +914,12 @@ void socket::async_read_some(mutable_buffer const &buffer,io_handler const &h)
 	#endif
 }
 
-#ifndef BOOSTER_WIN32
-namespace {
-	struct pshared_acceptor {
-		socket *target;
-		event_handler h;
-		void operator()(system::error_code const &e,native_type fd)
-		{
-			if(fd!=invalid_socket) {
-				target->assign(fd);
-			}
-			h(e);
-		}
-	};
-};
-#endif
-
 void socket::async_accept(socket &target,event_handler const &h)
 {
-#ifndef BOOSTER_WIN32
-	if(!process_shared_) {
-#endif
-		async_acceptor acceptor = { h, &target, this };
-		on_readable(acceptor);
+	if(!dont_block(h))
 		return;
-#ifndef BOOSTER_WIN32
-	}
-	pshared_acceptor acc = { &target, h };
-	get_io_service().set_prefork_acceptor(fd_,acc);
-#endif
+	async_acceptor acceptor = { h, &target, this };
+	on_readable(acceptor);
 }
 
 void socket::async_connect(endpoint const &ep,event_handler const &h)
