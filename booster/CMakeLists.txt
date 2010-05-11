@@ -91,7 +91,6 @@ if(${CMAKE_HOST_WIN32})
 	find_library(WS2_32 ws2_32)
 endif()
 
-
 set(BOOSTER_SRC	
 	lib/thread/src/thread.cpp
 	lib/ptime/src/posix_time.cpp
@@ -106,6 +105,46 @@ set(BOOSTER_SRC
 	lib/aio/src/select_iterrupter.cpp
 	lib/aio/src/socket.cpp
 )
+
+message("-- Looking for ICU libraries")
+
+if("${CMAKE_BUILD_TYPE}" STREQUAL "Debug")
+	if(MSVC)
+		set(ICU_SUFFIX "d")
+	endif()
+endif()
+
+find_library(ICU_UC icuuc${ICU_SUFFIX})
+find_library(ICU_DATA icudt NAMES icudata)
+find_library(ICU_I18N icuin${ICU_SUFFIX} NAMES icui18n${ICU_SUFFIX})
+find_path(ICU_INCLUDE_DIR unicode/unistr.h)
+
+if(ICU_UC AND ICU_DATA AND ICU_I18N AND ICU_INCLUDE_DIR)
+	message("-- ICU Found, building booster locale")
+	set(WITH_BOOSTER_LOCALE ON)
+	include_directories(${ICU_INCLUDE_DIR})
+	set(BOOSTER_SRC ${BOOSTER_SRC}
+		lib/locale/src/boundary.cpp
+		lib/locale/src/codepage.cpp
+		lib/locale/src/collator.cpp
+		lib/locale/src/conversion.cpp
+		lib/locale/src/date_time.cpp
+		lib/locale/src/format.cpp
+		lib/locale/src/formatter.cpp
+		lib/locale/src/formatting.cpp
+		lib/locale/src/generator.cpp
+		lib/locale/src/info.cpp
+		lib/locale/src/message.cpp
+		lib/locale/src/mo_lambda.cpp
+		lib/locale/src/time_zone.cpp)
+
+endif()
+
+
+
+
+
+
 
 
 if(NOT HAVE_PTHREAD)
@@ -207,6 +246,11 @@ foreach(ALIB ${LINK_LIBS})
 		target_link_libraries(${ALIB} ${WS2_32})
 	endif()
 	target_link_libraries(${ALIB} ${PCRE_LIB})
+	if(WITH_BOOSTER_LOCALE)
+		target_link_libraries(${ALIB} ${ICU_UC})
+		target_link_libraries(${ALIB} ${ICU_I18N})
+		target_link_libraries(${ALIB} ${ICU_DATA})
+	endif()
 endforeach()
 
 
@@ -225,14 +269,18 @@ else()
 	set(BOOSTER_LIB booster-static)
 endif()
 
-macro(add_booster_test MODULE TEST)
+macro(add_booster_param_test MODULE TEST PARAMETER)
 	set(TEST_SRC "lib/${MODULE}/test/test_${TEST}.cpp")
 	set(TEST_NAME "test_${MODULE}_${TEST}")
 	add_executable(${TEST_NAME} ${TEST_SRC})
 	target_link_libraries(${TEST_NAME} ${BOOSTER_LIB})
 	set_target_properties(${TEST_NAME} PROPERTIES COMPILE_DEFINITIONS "${EXE_COM_DEFS}")
-	add_test(${TEST_NAME} ${TEST_NAME})
+	add_test(${TEST_NAME} ${TEST_NAME} ${PARAMETER})
 	set_tests_properties(${TEST_NAME} PROPERTIES TIMEOUT 10)
+endmacro()
+
+macro(add_booster_test MODULE TEST)
+	add_booster_param_test(${MODULE} ${TEST} "")
 endmacro()
 
 add_booster_test(function function)
@@ -251,4 +299,15 @@ if(NOT WIN32)
 	add_booster_test(aio prefork)
 endif()
 
+if(WITH_BOOSTER_LOCALE)
+	add_booster_test(locale boundary)
+	add_booster_test(locale codepage)
+	add_booster_test(locale collate)
+	add_booster_test(locale convert)
+	add_booster_test(locale date_time)
+	add_booster_test(locale formatting)
+	add_booster_test(locale generator)
+	add_booster_test(locale ios_prop)
+	add_booster_param_test(locale message "${CMAKE_CURRENT_SOURCE_DIR}/lib/locale/test")
+endif()
 

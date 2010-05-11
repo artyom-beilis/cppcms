@@ -25,6 +25,8 @@
 #include <booster/function.h>
 #include <locale>
 
+#include "locale_fwd.h"
+
 namespace booster {
 	namespace aio {
 		class io_service;
@@ -33,7 +35,6 @@ namespace booster {
 
 
 namespace cppcms {
-	namespace locale { class generator; }
 	namespace impl {
 		class service;
 	}

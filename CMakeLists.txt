@@ -423,39 +423,7 @@ set(CPPCMS_SOURCES
 	rpc_json.cpp
 )
 
-if(NOT USE_STD_LOCALES)
-
-	set(CPPCMS_SOURCES ${CPPCMS_SOURCES}
-		localization/locale_src_boundary.cpp
-		localization/locale_src_codepage.cpp
-		localization/locale_src_collator.cpp
-		localization/locale_src_conversion.cpp
-		localization/locale_src_date_time.cpp
-		localization/locale_src_format.cpp
-		localization/locale_src_formatter.cpp
-		localization/locale_src_formatting.cpp
-		localization/locale_src_generator.cpp
-		localization/locale_src_info.cpp
-		localization/locale_src_message.cpp
-		localization/locale_src_mo_lambda.cpp
-		localization/locale_src_time_zone.cpp)
-
-	set(CPPCMS_PUBLIC_HEADERS ${CPPCMS_PUBLIC_HEADERS}
-		localization/locale_boundary.h
-		localization/locale_codepage.h
-		localization/locale_collator.h
-		localization/locale_conversion.h
-		localization/locale_date_time.h
-		localization/locale_format.h
-		localization/locale_formatting.h
-		localization/locale_generator.h
-		localization/locale_info.h
-		localization/locale_message.h
-		localization/locale_time_zone.h
-		localization/localization.h)
-
-
-else(NOT USE_STD_LOCALES)
+if(USE_STD_LOCALES)
 
 	set(CPPCMS_SOURCES ${CPPCMS_SOURCES}
 		noicu/locale_src_conversion.cpp
@@ -475,9 +443,9 @@ else(NOT USE_STD_LOCALES)
 		noicu/locale_info.h
 		noicu/locale_message.h
 		noicu/locale_numeric.h
-		noicu/localization.h)
+		noicu/noicu_localization.h)
 
-endif(NOT USE_STD_LOCALES)
+endif(USE_STD_LOCALES)
 
 if(NOT DISABLE_GCRYPT)
 	find_path(GCRYPT_INCLUDE_DIR gcrypt.h)
@@ -538,9 +506,6 @@ endif(DISABLE_SHARED OR DISABLE_STATIC)
 
 
 foreach(ALIB ${CPPCMS_LIBS})
-	target_link_libraries(${ALIB} ${ICU_UC})
-	target_link_libraries(${ALIB} ${ICU_DATA})
-	target_link_libraries(${ALIB} ${ICU_I18N})
 	if(DISABLE_SHARED)
 		target_link_libraries(${ALIB} booster-static)
 	else(DISABLE_SHARED)
@@ -553,9 +518,6 @@ foreach(ALIB ${CPPCMS_LIBS})
 			target_link_libraries(${ALIB} boost)
 		endif(DISABLE_SHARED)
 	else(NOT USE_EXTERNAL_BOOST)
-		target_link_libraries(${ALIB} ${ICU_UC})
-		target_link_libraries(${ALIB} ${ICU_DATA})
-		target_link_libraries(${ALIB} ${ICU_I18N})
 		target_link_libraries(${ALIB} ${BOOST_REGEX})
 		target_link_libraries(${ALIB} ${BOOST_IOSTREAMS})
 		target_link_libraries(${ALIB} ${BOOST_DATE_TIME})

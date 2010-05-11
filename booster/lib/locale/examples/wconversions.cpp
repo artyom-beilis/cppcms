@@ -1,0 +1,77 @@
+//
+//  Copyright (c) 2009-2010 Artyom Beilis (Tonkikh)
+//
+//  Distributed under the Boost Software License, Version 1.0. (See
+//  accompanying file LICENSE_1_0.txt or copy at
+//  http://www.boost.org/LICENSE_1_0.txt)
+//
+
+//
+// ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! !
+//
+// BIG FAT WARNING FOR Microsoft Visual Studio Users
+//
+// YOU NEED TO CONVERT THIS SOURCE FILE ENCODING TO UTF-8 WITH BOM ENCODING.
+//
+// Unfortunately MSVC understands that the source code is encoded as
+// UTF-8 only if you add useless BOM in the beginning.
+//
+// So, before you compile "wide" examples with MSVC, please convert them to text
+// files with BOM. There are two very simple ways to do it:
+//
+// 1. Open file with Notepad and save it from there. It would convert 
+//    it to file with BOM.
+// 2. In Visual Studio go File->Advances Save Options... and select
+//    Unicode (UTF-8  with signature) Codepage 65001
+//
+// Note: once converted to UTF-8 with BOM, this source code would not
+// compile with other compilers, because no-one uses BOM with UTF-8 today
+// because it is absolutely meaningless in context of UTF-8.
+//
+// ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! !
+//
+#include <booster/locale.h>
+#include <booster/algorithm/string/case_conv.h>
+#include <iostream>
+
+#include <ctime>
+
+
+#ifndef BOOSTER_NO_SWPRINTF    
+int main()
+{
+    using namespace booster::locale;
+    using namespace std;
+    generator gen;
+    locale::global(locale(""));
+    locale loc=gen(""); 
+    // Create system default locale
+
+    locale::global(loc); 
+    // Make it system global
+    
+    wcout.imbue(loc);
+    // Set as default locale for output
+    
+    wcout<<L"Correct case conversion can't be done by simple, character by character conversion"<<endl;
+    wcout<<L"because case conversion is context sensitive and not 1-to-1 conversion"<<endl;
+    wcout<<L"For example:"<<endl;
+    wcout<<L"   German grüßen correctly converted to "<<to_upper(L"grüßen")<<L", instead of incorrect "
+                    <<booster::to_upper_copy(std::wstring(L"grüßen"))<<endl;
+    wcout<<L"     where ß is replaced with SS"<<endl;
+    wcout<<L"   Greek ὈΔΥΣΣΕΎΣ is correctly converted to "<<to_lower(L"ὈΔΥΣΣΕΎΣ")<<L", instead of incorrect "
+                    <<booster::to_lower_copy(std::wstring(L"ὈΔΥΣΣΕΎΣ"))<<endl;
+    wcout<<L"     where Σ is converted to σ or to ς, according to position in the word"<<endl;
+    wcout<<L"Such type of conversion just can be done using std::toupper that work on character base, also std::toupper is "<<endl;
+    wcout<<L"not fully applicable when working with variable character length like in UTF-8 or UTF-16 limiting the correct "<<endl;
+    wcout<<L"behavoir to BMP or ASCII only"<<endl;
+   
+}
+#else
+int main()
+{
+    std::cout<<"This platform does not support wcout"<<std::endl;
+}
+#endif
+
+// vim: tabstop=4 expandtab shiftwidth=4 softtabstop=4

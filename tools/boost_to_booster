@@ -1,0 +1,26 @@
+#!/bin/bash
+
+#svn export https://cppcms.svn.sourceforge.net/svnroot/cppcms/boost_locale/trunk
+rm -fr boost_locale
+cp -a trunk boost_locale
+./rename.py boost_locale booster
+
+find boost_locale -name '*.hpp' -exec rename .hpp .h '{}' \;
+
+find boost_locale -regextype posix-extended -regex '.*\.(cpp|h)' -exec sed -i 's/_HPP_INCLUDED/_H_INCLUDED/' '{}' \;
+find boost_locale -regextype posix-extended -regex '.*\.(cpp|h)' -exec sed -i 's/.hpp>/.h>/' '{}' \;
+find boost_locale -regextype posix-extended -regex '.*\.(cpp|h)' -exec sed -i 's/.hpp"/.h"/' '{}' \;
+find boost_locale -regextype posix-extended -regex '.*\.(cpp|h)' -exec sed -i 's/booster\/locale\/config.h/booster\/config.h/' '{}' \;
+find boost_locale -regextype posix-extended -regex '.*\.(cpp|h)' -exec sed -i 's/BOOSTER_LOCALE_DECL/BOOSTER_API/' '{}' \;
+find boost_locale -regextype posix-extended -regex '.*\.(cpp|h)' -exec sed -i 's/BOOST_LOCALE_SOURCE/BOOSTER_SOURCE/' '{}' \;
+
+sed -i 's/BOOST_VERSION >= 103600/0/' boost_locale/libs/locale/src/message.cpp
+
+rm -fr booster
+mkdir -p booster/lib/locale
+
+cp -a boost_locale/libs/locale/examples/  boost_locale/libs/locale/src/ boost_locale/libs/locale/test/ booster/lib/locale/
+cp -a boost_locale/booster booster/
+rm booster/booster/locale/config.h
+
+

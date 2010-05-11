@@ -36,9 +36,6 @@ namespace cppcms {
 	class cache_interface;
 	class session_interface;
 
-	namespace locale {
-		class environment;
-	}
 	namespace http {
 		class request;
 		class response;
