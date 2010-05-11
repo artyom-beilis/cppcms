@@ -54,7 +54,7 @@ int main()
 			std::cout << "Test unlock on exit" << std::endl;
 			usleep(100000);
 			TEST(!mutex_.try_lock());
-			usleep(200000);
+			usleep(500000);
 			TEST(mutex_.try_lock());
 		}
 		else { // child

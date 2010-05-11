@@ -181,7 +181,7 @@ if(NOT DISABLE_STATIC)
 	set(LINK_LIBS ${LINK_LIBS} booster-static)
 	set_target_properties(booster-static PROPERTIES COMPILE_DEFINITIONS "${BOOST_STATIC_DEFS}")
 	set_target_properties(booster-static PROPERTIES CLEAN_DIRECT_OUTPUT 1)
-	set_target_properties(booster-static PROPERTIES OUTPUT_NAME "cppcms_boost")
+	set_target_properties(booster-static PROPERTIES OUTPUT_NAME "booster")
 	install(TARGETS booster-static
 		RUNTIME DESTINATION bin
 		LIBRARY DESTINATION lib
