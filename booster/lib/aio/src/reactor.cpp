@@ -194,7 +194,7 @@ namespace aio {
 		{
 			pollfd_=::open("/dev/poll",O_RDWR);
 			if(!pollfd_)
-				throw system::system_error(system::error_code(errno,system::system_category));
+				throw system::system_error(system::error_code(errno,syscat));
 		}
 	
 		
@@ -269,7 +269,7 @@ namespace aio {
 		{
 			pollfd_=::epoll_create(16);
 			if(!pollfd_)
-				throw system::system_error(system::error_code(errno,system::system_category));
+				throw system::system_error(system::error_code(errno,syscat));
 		}
 		virtual ~epoll_reactor()
 		{
@@ -490,7 +490,7 @@ namespace aio {
 			kev_(::kqueue())
 		{
 			if(kev_ < 0)
-				throw system::system_error(system::error_code(errno,system::system_category));
+				throw system::system_error(system::error_code(errno,syscat));
 		}
 		void select(int fd,int new_flags,int &error)
 		{
@@ -776,7 +776,7 @@ namespace aio {
 		int error = 0;
 		impl_->select(fd,flags,error);
 		if(error)
-			e=system::error_code(error,system::system_category);
+			e=system::error_code(error,syscat);
 	}
 
 	int reactor::poll(reactor::event *events,int n,int timeout) 
@@ -793,7 +793,7 @@ namespace aio {
 		int error = 0;
 		int r=impl_->poll(events,n,timeout,error);
 		if(error)
-			e=system::error_code(error,system::system_category);
+			e=system::error_code(error,syscat);
 		return r;
 	}
 	

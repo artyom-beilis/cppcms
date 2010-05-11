@@ -66,7 +66,7 @@ namespace system {
 		}
 		std::string message() const
 		{
-			return category_->message(value_);
+			return std::string(category_->name()) + ": " + category_->message(value_);
 		}
 		operator bool () const
 		{

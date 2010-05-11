@@ -240,12 +240,15 @@ add_booster_test(ptime posix_time)
 add_booster_test(thread thread)
 if(UNIX)
 	add_booster_test(thread fork)
-	add_booster_test(aio prefork)
 endif()
+
 add_booster_test(regex regex)
 add_booster_test(aio reactor)
 add_booster_test(aio timer)
 add_booster_test(aio event_loop)
 add_booster_test(aio socket)
+if(NOT WIN32)
+	add_booster_test(aio prefork)
+endif()
 
 

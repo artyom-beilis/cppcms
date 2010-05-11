@@ -267,7 +267,7 @@ private:
 		void operator()() const
 		{
 			lock_guard l(self_->data_mutex_);
-
+			
 			io_data &cont=self_->map_[fd];
 			cont.current_event = 0;
 			system::error_code e;
@@ -297,9 +297,9 @@ private:
 			if(!self_->map_.is_valid(fd))
 			{
 				#ifdef BOOSTER_WIN32
-				system::error_code e(WSAEBADF,system::system_category);
+				system::error_code e(WSAEBADF,syscat);
 				#else
-				system::error_code e(EBADF,system::system_category);
+				system::error_code e(EBADF,syscat);
 				#endif
 				self_->dispatch_queue_.push_back(event_handler_dispatcher(h,e));
 				return;

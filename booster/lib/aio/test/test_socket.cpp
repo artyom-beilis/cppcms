@@ -608,8 +608,8 @@ struct socket_closer {
 	void operator()() const
 	{
 		sys::error_code e;
-		s_->close(e);
 		booster::ptime::millisleep(200);
+		s_->close(e);
 		if(e) {
 			std::cerr<<"Failed to close:"<<e.message()<<std::endl;
 			exit(1);

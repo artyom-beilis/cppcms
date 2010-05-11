@@ -40,9 +40,9 @@ namespace {
 	system::error_code geterror()
 	{
 		#ifdef BOOSTER_WIN32
-		return system::error_code(::WSAGetLastError(),system::system_category);
+		return system::error_code(::WSAGetLastError(),syscat);
 		#else
-		return system::error_code(errno,system::system_category);
+		return system::error_code(errno,syscat);
 		#endif
 	}
 	int close_file_descriptor(int fd)
@@ -733,7 +733,7 @@ namespace {
 				err=geterror();
 			}
 			else if(errval!=0) {
-				err=system::error_code(errval,system::system_category);
+				err=system::error_code(errval,syscat);
 			}
 			h(e);
 		}
