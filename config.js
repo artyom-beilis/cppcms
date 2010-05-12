@@ -6,8 +6,8 @@
 	// Service description
 	"service" : {
 		//"worker_processes" : 5,
-		"worker_threads" : 5,
-		//"worker_threads" : 25,
+		//"worker_threads" : 5,
+		"worker_threads" : 25,
 		"api" : "http",
 		//"api" : "scgi",
 		"port" : 8080,
