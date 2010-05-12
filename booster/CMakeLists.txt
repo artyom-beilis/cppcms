@@ -110,6 +110,7 @@ set(BOOSTER_SRC
 	lib/aio/src/reactor.cpp
 	lib/aio/src/select_iterrupter.cpp
 	lib/aio/src/socket.cpp
+	lib/smart_ptr/src/sp_counted_base.cpp
 )
 
 if(NOT DISABLE_ICU_LOCALIZATION)
@@ -297,6 +298,8 @@ add_booster_test(thread thread)
 if(UNIX)
 	add_booster_test(thread fork)
 endif()
+
+add_booster_test(smart_ptr shared_ptr)
 
 add_booster_test(regex regex)
 add_booster_test(aio reactor)
