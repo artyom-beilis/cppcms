@@ -10,13 +10,7 @@
 #include "locale_numeric.h"
 #include "locale_info.h"
 #include "locale_message.h"
-#include "config.h"
-#ifdef CPPCMS_USE_EXTERNAL_BOOST
-#   include <boost/regex.hpp>
-#else // Internal Boost
-#   include <cppcms_boost/regex.hpp>
-    namespace boost = cppcms_boost;
-#endif
+#include <booster/regex.h>
 
 #include <iostream>
 namespace cppcms {
@@ -155,12 +149,12 @@ namespace cppcms {
 
         std::locale generator::generate(std::string const &id,std::string const &input_encoding) const
         {
-            static const boost::regex reg("^([a-zA-Z]+)(([\\-_])([a-zA-Z]+))?(\\.([0-9a-zA-Z_\\-]+))?(@([0-9a-zA-Z_\\-]+))?$");
+            static const booster::regex reg("^([a-zA-Z]+)(([\\-_])([a-zA-Z]+))?(\\.([0-9a-zA-Z_\\-]+))?(@([0-9a-zA-Z_\\-]+))?$");
 
-            boost::cmatch m;
+            booster::cmatch m;
             std::string language="C",country,variant,encoding,sep;
 
-            if(boost::regex_match(id.c_str(),m,reg)) {
+            if(booster::regex_match(id.c_str(),m,reg)) {
                 language=m[1];
                 sep=m[3];
                 country=m[4];

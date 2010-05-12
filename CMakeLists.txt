@@ -16,7 +16,8 @@ enable_testing()
 #
 #############################################################################
 
-option(USE_STD_LOCALES	"Use standard std::locales instead of ICU" OFF)
+option(DISABLE_ICU_LOCALIZATION
+			"Use standard std::locales instead of ICU" OFF)
 option(DISABLE_SHARED	"Disable shared libraries build" OFF)
 option(DISABLE_STATIC	"Disable static libraries build" OFF)
 option(DISABLE_ICONV	"Disable usage iconv library - use ICU for conversion" OFF)
@@ -27,8 +28,12 @@ option(DISABLE_SCGI	"Disable scgi web server api" OFF)
 option(DISABLE_HTTP	"Disable http web server" OFF)
 
 
-if(USE_STD_LOCALES OR USE_EXTERNAL_BOOST)
+if(DISABLE_ICU_LOCALIZATION OR USE_EXTERNAL_BOOST)
 	set(CPPCMS_SUFFIX "-c")
+endif()
+
+if(DISABLE_ICU_LOCALIZATION)
+	set(BOOSTER_NO_LOCALE ON)
 endif()
 
 add_subdirectory(booster)
@@ -125,14 +130,13 @@ else(NOT USE_EXTERNAL_BOOST)
 	find_path(BOOST_INCLUDE_DIR boost/shared_ptr.hpp)
 	find_library(BOOST_SYSTEM	boost_system-${BOOST_SUFFIX} 	NAMES boost_system 	boost_system-mt)
 	find_library(BOOST_FILESYSTEM 	boost_filesystem-${BOOST_SUFFIX} NAMES boost_filesystem boost_filesystem-mt)
-	find_library(BOOST_REGEX	boost_regex-${BOOST_SUFFIX} 	NAMES boost_regex 	boost_regex-mt)
 	find_library(BOOST_IOSTREAMS	boost_iostreams-${BOOST_SUFFIX} NAMES boost_iostreams 	boost_iostreams-mt)
 	find_library(BOOST_ZLIB		boost_zlib-${BOOST_SUFFIX} 	NAMES boost_zlib 	boost_zlib)
 	include_directories(${BOOST_INCLUDE_DIR})
 endif(NOT USE_EXTERNAL_BOOST)
 
 
-if(NOT USE_STD_LOCALES)
+if(NOT DISABLE_ICU_LOCALIZATION)
 	find_library(ICU_UC icuuc${ICU_SUFFIX})
 	find_library(ICU_DATA icudata NAMES icudt)
 	find_library(ICU_I18N icui18n${ICU_SUFFIX} NAMES icuin${ICU_SUFFIX})
@@ -143,7 +147,7 @@ if(NOT USE_STD_LOCALES)
 	endif()
 	set(HAVE_ICU 1)
 else()
-	set(CPPCMS_USE_STD_LOCALES 1)
+	set(CPPCMS_DISABLE_ICU_LOCALIZATION 1)
 endif()
 
 
@@ -186,7 +190,7 @@ endif(NOT DISABLE_ICONV)
 include_directories(${CMAKE_BINARY_DIR})
 include_directories(${CMAKE_SOURCE_DIR})
 
-if(USE_STD_LOCALES)
+if(DISABLE_ICU_LOCALIZATION)
 	include_directories(noicu)
 else()
 	include_directories(localization)
@@ -423,7 +427,7 @@ set(CPPCMS_SOURCES
 	rpc_json.cpp
 )
 
-if(USE_STD_LOCALES)
+if(DISABLE_ICU_LOCALIZATION)
 
 	set(CPPCMS_SOURCES ${CPPCMS_SOURCES}
 		noicu/locale_src_conversion.cpp
@@ -445,7 +449,7 @@ if(USE_STD_LOCALES)
 		noicu/locale_numeric.h
 		noicu/noicu_localization.h)
 
-endif(USE_STD_LOCALES)
+endif(DISABLE_ICU_LOCALIZATION)
 
 if(NOT DISABLE_GCRYPT)
 	find_path(GCRYPT_INCLUDE_DIR gcrypt.h)
@@ -641,7 +645,7 @@ foreach(TEST ${ALL_TESTS})
 	target_link_libraries(${TEST} ${CPPCMS_LIB})
 endforeach()
 
-if(NOT USE_STD_LOCALES)
+if(NOT DISABLE_ICU_LOCALIZATION)
 	file(GLOB LOCALE_TEST_SOURCES "localization/locale_src_test_*.cpp")
 else()
 	file(GLOB LOCALE_TEST_SOURCES "noicu/locale_src_test_*.cpp")

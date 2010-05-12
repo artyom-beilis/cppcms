@@ -81,7 +81,7 @@
 #cmakedefine HAVE_ICU
 
 /* Use STD locales instead of ICU ones */
-#cmakedefine CPPCMS_USE_STD_LOCALES
+#cmakedefine CPPCMS_DISABLE_ICU_LOCALIZATION
 
 /* "Enable ICONV support" */
 #cmakedefine HAVE_ICONV

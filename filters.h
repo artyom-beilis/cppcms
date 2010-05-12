@@ -169,7 +169,7 @@ namespace cppcms {
 			return out;
 		}
 		
-		#ifndef CPPCMS_USE_STD_LOCALES
+		#ifndef CPPCMS_DISABLE_ICU_LOCALIZATION
 
 		///
 		/// \brief Output filter to_title

@@ -7,13 +7,7 @@
 //
 #define CPPCMS_LOCALE_SOURCE
 #include "locale_numeric.h"
-#include "config.h"
-#ifdef CPPCMS_USE_EXTERNAL_BOOST
-#   include <boost/regex.hpp>
-#else // Internal Boost
-#   include <cppcms_boost/regex.hpp>
-    namespace boost = cppcms_boost;
-#endif
+#include <booster/regex.h>
 
 namespace cppcms {
 namespace locale {
@@ -39,10 +33,10 @@ num_format::iter_type num_format::put_value(num_format::iter_type out,std::ios_b
 		std::tm tm;
 		time_t time=static_cast<time_t>(value);
 		if(!timezone.empty()) {
-			boost::cmatch m;
-			static boost::regex r("^([Gg][Mm][Tt]|[Uu][Tt][Cc])([\\+\\-]?(\\d+))(:(\\d+))?$");
+			booster::cmatch m;
+			static booster::regex r("^([Gg][Mm][Tt]|[Uu][Tt][Cc])([\\+\\-]?(\\d+))(:(\\d+))?$");
 			int gmtoff = 0;
-			if(boost::regex_match(timezone.c_str(),m,r)) {
+			if(booster::regex_match(timezone.c_str(),m,r)) {
 				gmtoff= 3600 * atoi(std::string(m[2]).c_str()) 
 					+ 60 * atoi(std::string(m[5]).c_str());
 			}

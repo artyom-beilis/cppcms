@@ -280,7 +280,7 @@ public:
 			context().skin(skin);
 		render("hello",c);
 	}
-	#ifndef CPPCMS_USE_STD_LOCALES
+	#ifndef CPPCMS_DISABLE_ICU_LOCALIZATION
 
 	void devide(cppcms::locale::boundary::boundary_type type,std::string const &str,char const *name)
 	{
@@ -318,7 +318,7 @@ public:
 			std::string name = f.name.value();
 			response().out() <<"Upper: "<<to_upper(name,loc)<<"<br>"<<std::endl;
 			response().out() <<"Lower: "<<to_lower(name,loc)<<"<br>"<<std::endl;
-			#ifndef CPPCMS_USE_STD_LOCALES
+			#ifndef CPPCMS_DISABLE_ICU_LOCALIZATION
 			response().out() <<"Title: "<<to_title(name,loc)<<"<br>"<<std::endl;
 			response().out() <<"Fold Case: "<<fold_case(name,loc)<<"<br>"<<std::endl;
 			#endif
@@ -330,7 +330,7 @@ public:
 				std::ofstream tmp("test.txt");
 				tmp<<descr;
 			}
-			#ifndef CPPCMS_USE_STD_LOCALES
+			#ifndef CPPCMS_DISABLE_ICU_LOCALIZATION
 			using namespace cppcms::locale;
 			devide(boundary::character,descr,"code");
 			devide(boundary::word,descr,"word");

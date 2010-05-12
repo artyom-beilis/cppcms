@@ -112,7 +112,7 @@ namespace cppcms { namespace filters {
 		out << locale::to_lower(obj_.get(out),out.getloc());
 	}
 
-	#ifndef CPPCMS_USE_STD_LOCALES
+	#ifndef CPPCMS_DISABLE_ICU_LOCALIZATION
 
 	struct to_title::data {};
 	to_title::to_title() {}

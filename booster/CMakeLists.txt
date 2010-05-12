@@ -8,6 +8,7 @@ enable_testing()
 
 option(DISABLE_SHARED	"Disable shared libraries build" OFF)
 option(DISABLE_STATIC	"Disable static libraries build" OFF)
+option(DISABLE_ICU_LOCALIZATION "Disable locale library" OFF)
 
 
 
@@ -16,6 +17,11 @@ option(DISABLE_STATIC	"Disable static libraries build" OFF)
 # Setup various build flags for different supported compilers and systems
 #
 #############################################################################
+
+if(DISABLE_ICU_LOCALIZATION)
+	set(BOOSTER_SUFFIX "-c")
+endif()
+
 
 if(CMAKE_COMPILER_IS_GNUCXX)
 	check_cxx_source_compiles(
@@ -79,10 +85,10 @@ endif(NOT CMAKE_BUILD_TYPE)
 if("${CMAKE_BUILD_TYPE}" STREQUAL "Debug")
 	if(MSVC)
 		set(ICU_SUFFIX "d")
-		if(NOT CPPCMS_SUFFIX)
-			set(CPPCMS_SUFFIX "-d")
+		if(NOT BOOSTER_SUFFIX)
+			set(BOOSTER_SUFFIX "-d")
 		else()
-			set(CPPCMS_SUFFIX "${CPPCMS_SUFFIX}d")
+			set(BOOSTER_SUFFIX "${BOOSTER_SUFFIX}d")
 		endif()
 	endif()
 endif()
@@ -106,38 +112,40 @@ set(BOOSTER_SRC
 	lib/aio/src/socket.cpp
 )
 
-message("-- Looking for ICU libraries")
+if(NOT DISABLE_ICU_LOCALIZATION)
+	message("-- Looking for ICU libraries")
 
-if("${CMAKE_BUILD_TYPE}" STREQUAL "Debug")
-	if(MSVC)
-		set(ICU_SUFFIX "d")
+	if("${CMAKE_BUILD_TYPE}" STREQUAL "Debug")
+		if(MSVC)
+			set(ICU_SUFFIX "d")
+		endif()
 	endif()
-endif()
 
-find_library(ICU_UC icuuc${ICU_SUFFIX})
-find_library(ICU_DATA icudt NAMES icudata)
-find_library(ICU_I18N icuin${ICU_SUFFIX} NAMES icui18n${ICU_SUFFIX})
-find_path(ICU_INCLUDE_DIR unicode/unistr.h)
+	find_library(ICU_UC icuuc${ICU_SUFFIX})
+	find_library(ICU_DATA icudt NAMES icudata)
+	find_library(ICU_I18N icuin${ICU_SUFFIX} NAMES icui18n${ICU_SUFFIX})
+	find_path(ICU_INCLUDE_DIR unicode/unistr.h)
 
-if(ICU_UC AND ICU_DATA AND ICU_I18N AND ICU_INCLUDE_DIR)
-	message("-- ICU Found, building booster locale")
-	set(WITH_BOOSTER_LOCALE ON)
-	include_directories(${ICU_INCLUDE_DIR})
-	set(BOOSTER_SRC ${BOOSTER_SRC}
-		lib/locale/src/boundary.cpp
-		lib/locale/src/codepage.cpp
-		lib/locale/src/collator.cpp
-		lib/locale/src/conversion.cpp
-		lib/locale/src/date_time.cpp
-		lib/locale/src/format.cpp
-		lib/locale/src/formatter.cpp
-		lib/locale/src/formatting.cpp
-		lib/locale/src/generator.cpp
-		lib/locale/src/info.cpp
-		lib/locale/src/message.cpp
-		lib/locale/src/mo_lambda.cpp
-		lib/locale/src/time_zone.cpp)
+	if(ICU_UC AND ICU_DATA AND ICU_I18N AND ICU_INCLUDE_DIR)
+		message("-- ICU Found, building booster locale")
+		set(WITH_BOOSTER_LOCALE ON)
+		include_directories(${ICU_INCLUDE_DIR})
+		set(BOOSTER_SRC ${BOOSTER_SRC}
+			lib/locale/src/boundary.cpp
+			lib/locale/src/codepage.cpp
+			lib/locale/src/collator.cpp
+			lib/locale/src/conversion.cpp
+			lib/locale/src/date_time.cpp
+			lib/locale/src/format.cpp
+			lib/locale/src/formatter.cpp
+			lib/locale/src/formatting.cpp
+			lib/locale/src/generator.cpp
+			lib/locale/src/info.cpp
+			lib/locale/src/message.cpp
+			lib/locale/src/mo_lambda.cpp
+			lib/locale/src/time_zone.cpp)
 
+	endif()
 endif()
 
 
@@ -207,7 +215,7 @@ if(NOT DISABLE_SHARED)
 	endif(WIN32)
 	set_target_properties(booster PROPERTIES COMPILE_DEFINITIONS "${BOOST_SHARED_DEFS}")
 	set_target_properties(booster PROPERTIES CLEAN_DIRECT_OUTPUT 1)
-	set_target_properties(booster PROPERTIES OUTPUT_NAME "booster")
+	set_target_properties(booster PROPERTIES OUTPUT_NAME "booster${BOOSTER_SUFFIX}")
 
 	install(TARGETS booster
 		RUNTIME DESTINATION bin
@@ -220,7 +228,7 @@ if(NOT DISABLE_STATIC)
 	set(LINK_LIBS ${LINK_LIBS} booster-static)
 	set_target_properties(booster-static PROPERTIES COMPILE_DEFINITIONS "${BOOST_STATIC_DEFS}")
 	set_target_properties(booster-static PROPERTIES CLEAN_DIRECT_OUTPUT 1)
-	set_target_properties(booster-static PROPERTIES OUTPUT_NAME "booster")
+	set_target_properties(booster-static PROPERTIES OUTPUT_NAME "booster${BOOSTER_SUFFIX}")
 	install(TARGETS booster-static
 		RUNTIME DESTINATION bin
 		LIBRARY DESTINATION lib
