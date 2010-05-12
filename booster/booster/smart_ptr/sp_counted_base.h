@@ -13,14 +13,27 @@
 //
 
 #include <booster/config.h>
-
 #include <booster/smart_ptr/sp_typeinfo.h>
+
+#ifndef BOOSTER_WIN32
+#include <pthread.h>
+#endif
 
 namespace booster
 {
 
 namespace detail
 {
+
+typedef union sp_counted_base_atomic {
+        int i;
+        unsigned int ui;
+        long int li;
+        unsigned long int uli;
+        long long int lli;
+        unsigned long long int ulli;
+        char at_least[8];
+} sp_counted_base_atomic_type;
 
 class BOOSTER_API sp_counted_base
 {
@@ -29,8 +42,13 @@ private:
     sp_counted_base( sp_counted_base const & );
     sp_counted_base & operator= ( sp_counted_base const & );
 
-    int use_count_;        // #shared
-    int weak_count_;       // #weak + (#shared != 0)
+    typedef sp_counted_base_atomic_type atomic_type;
+
+    mutable atomic_type use_count_;        // #shared
+    mutable atomic_type weak_count_;       // #weak + (#shared != 0)
+    #ifndef BOOSTER_WIN32
+    mutable pthread_mutex_t lock_;
+    #endif
 
 public:
 
