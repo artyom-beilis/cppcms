@@ -113,7 +113,7 @@ session_memory_storage_factory::~session_memory_storage_factory()
 {
 }
 
-booster::intrusive_ptr<session_storage> session_memory_storage_factory::get()
+booster::shared_ptr<session_storage> session_memory_storage_factory::get()
 {
 	return storage_;
 }

@@ -22,7 +22,7 @@
 #include "session_api.h"
 #include "defs.h"
 #include <booster/hold_ptr.h>
-#include <booster/intrusive_ptr.h>
+#include <booster/shared_ptr.h>
 #include <memory>
 
 namespace cppcms {
@@ -36,7 +36,7 @@ class encryptor;
 class CPPCMS_API session_dual : public session_api {
 public:
 	session_dual(	std::auto_ptr<encryptor> enc,
-			booster::intrusive_ptr<session_storage> storage,
+			booster::shared_ptr<session_storage> storage,
 			size_t data_size_limit);
 	virtual ~session_dual();
 	virtual void save(session_interface &,std::string const &data,time_t timeout,bool new_session,bool on_server);
@@ -45,8 +45,8 @@ public:
 private:
 	struct data;
 	booster::hold_ptr<data> d;
-	booster::intrusive_ptr<session_cookies>	client_;
-	booster::intrusive_ptr<session_sid>	server_;
+	booster::shared_ptr<session_cookies>	client_;
+	booster::shared_ptr<session_sid>	server_;
 	size_t data_size_limit_;
 };
 

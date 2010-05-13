@@ -111,7 +111,7 @@ namespace impl {
 
 struct session_sid::data {};
 
-session_sid::session_sid(booster::intrusive_ptr<session_storage> st) :
+session_sid::session_sid(booster::shared_ptr<session_storage> st) :
 	storage_(st)
 {
 }

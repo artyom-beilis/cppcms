@@ -21,17 +21,14 @@
 
 #include "defs.h"
 #include <booster/noncopyable.h>
-#include <booster/refcounted.h>
-#include <booster/intrusive_ptr.h>
+#include <booster/shared_ptr.h>
 #include <string>
 
 namespace cppcms {
 
 class session_interface;
 
-class session_api : 
-	public booster::noncopyable,
-	public booster::refcounted
+class session_api : public booster::noncopyable
 {
 public:
 	virtual void save(session_interface &,std::string const &data,time_t timeout, bool new_data, bool on_server) = 0;
@@ -44,7 +41,7 @@ class session_api_factory {
 public:
 	virtual bool requires_gc() = 0; 
 	virtual void gc() = 0;
-	virtual booster::intrusive_ptr<session_api> get() = 0;
+	virtual booster::shared_ptr<session_api> get() = 0;
 	virtual ~session_api_factory() {}
 };
 

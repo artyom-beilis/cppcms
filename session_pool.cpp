@@ -84,11 +84,12 @@ struct session_pool::sid_factory : public session_api_factory
 		if(pool_->storage_.get())
 			pool_->storage_->gc_job();
 	}
-	booster::intrusive_ptr<session_api> get() {
+	booster::shared_ptr<session_api> get() 
+	{
+		booster::shared_ptr<session_api> p;
 		if(pool_->storage_.get())
-			return new session_sid(pool_->storage_->get());
-		else
-			return 0;
+			p.reset(new session_sid(pool_->storage_->get()));
+		return p;
 	}
 private:
 	session_pool *pool_;
@@ -101,11 +102,12 @@ struct session_pool::cookies_factory : public session_api_factory
 		return false; 
 	}
 	void gc() {}
-	booster::intrusive_ptr<session_api> get() {
+	booster::shared_ptr<session_api> get() 
+	{
+		booster::shared_ptr<session_api> p;
 		if(pool_->encryptor_.get())
-			return new session_cookies(pool_->encryptor_->get());
-		else
-			return 0;
+			p.reset(new session_cookies(pool_->encryptor_->get()));
+		return p;
 	}
 private:
 	session_pool *pool_;
@@ -125,11 +127,12 @@ struct session_pool::dual_factory : public session_api_factory
 		if(pool_->storage_.get())
 			pool_->storage_->gc_job();
 	}
-	booster::intrusive_ptr<session_api> get() {
+	booster::shared_ptr<session_api> get() 
+	{
+		booster::shared_ptr<session_api> p;
 		if(pool_->storage_.get() && pool_->encryptor_.get())
-			return new session_dual(pool_->encryptor_->get(),pool_->storage_->get(),limit_);
-		else
-			return 0;
+			p.reset(new session_dual(pool_->encryptor_->get(),pool_->storage_->get(),limit_));
+		return p;
 	}
 private:
 	unsigned limit_;
@@ -256,12 +259,12 @@ session_pool::~session_pool()
 {
 }
 
-booster::intrusive_ptr<session_api> session_pool::get()
+booster::shared_ptr<session_api> session_pool::get()
 {
+	booster::shared_ptr<session_api> p;
 	if(backend_.get())
-		return backend_->get();
-	else
-		return 0;
+		p=backend_->get();
+	return p;
 }
 
 void session_pool::backend(std::auto_ptr<session_api_factory> b)

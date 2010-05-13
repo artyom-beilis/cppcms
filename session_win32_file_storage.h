@@ -61,13 +61,13 @@ namespace sessions {
 	class CPPCMS_API session_file_storage_factory : public session_storage_factory {
 	public:
 		session_file_storage_factory(std::string path);
-		virtual booster::intrusive_ptr<session_storage> get();
+		virtual booster::shared_ptr<session_storage> get();
 		virtual bool requires_gc();
 		virtual void gc_job();
 		virtual ~session_file_storage_factory();
 	private:
 		struct data;
-		booster::intrusive_ptr<session_file_storage> storage_;
+		booster::shared_ptr<session_file_storage> storage_;
 	};
 } // sessions
 } // cppcms

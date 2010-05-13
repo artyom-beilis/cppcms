@@ -20,9 +20,8 @@
 #define CPPCMS_SESSION_STORAGE_H
 
 #include "defs.h"
-#include <booster/refcounted.h>
 #include <booster/noncopyable.h>
-#include <booster/intrusive_ptr.h>
+#include <booster/shared_ptr.h>
 #include <string>
 
 namespace cppcms {
@@ -37,9 +36,7 @@ namespace sessions {
 	/// to a single intstance, otherwise you have to create multiple instances of object
 	///
 	
-	class session_storage : 
-		public booster::noncopyable,
-		public booster::refcounted
+	class session_storage : public booster::noncopyable
 	{
 	public:
 		///
@@ -67,7 +64,7 @@ namespace sessions {
 
 	class session_storage_factory {
 	public:
-		virtual booster::intrusive_ptr<session_storage> get() = 0;
+		virtual booster::shared_ptr<session_storage> get() = 0;
 		virtual bool requires_gc() = 0;
 		virtual void gc_job() {}
 		virtual ~session_storage_factory() {}

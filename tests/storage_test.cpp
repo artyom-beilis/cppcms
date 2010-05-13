@@ -40,7 +40,7 @@
 std::string dir = "./sessions";
 std::string bs="0123456789abcdef0123456789abcde";
 
-void test(booster::intrusive_ptr<cppcms::sessions::session_storage> storage)
+void test(booster::shared_ptr<cppcms::sessions::session_storage> storage)
 {
 	time_t now=time(0)+3;
 	storage->save(bs+"1",now,"");
@@ -77,7 +77,7 @@ std::vector<std::string> list_files()
 	return files;
 }
 
-void test_files(booster::intrusive_ptr<cppcms::sessions::session_storage> storage,
+void test_files(booster::shared_ptr<cppcms::sessions::session_storage> storage,
 		cppcms::sessions::session_storage_factory &f)
 {
 	test(storage);
@@ -107,7 +107,7 @@ void test_files(booster::intrusive_ptr<cppcms::sessions::session_storage> storag
 int main()
 {
 	try {
-		booster::intrusive_ptr<cppcms::sessions::session_storage> storage;
+		booster::shared_ptr<cppcms::sessions::session_storage> storage;
 		using namespace cppcms::sessions;
 
 		std::cout << "Testing memory storage" << std::endl;
