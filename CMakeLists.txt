@@ -38,6 +38,9 @@ endif()
 
 add_subdirectory(booster)
 include_directories(booster)
+include_directories(cppcms)
+include_directories(src)
+include_directories(private)
 
 
 
@@ -346,47 +349,47 @@ set(CPPCMS_PUBLIC_HEADERS
 
 
 set(CPPCMS_SOURCES 
-	service.cpp 
-	cgi_api.cpp 
-	http_request.cpp 
-	http_response.cpp 
-	http_context.cpp 
-	cppcms_error.cpp 
-	cppcms_error_category.cpp 
-	thread_pool.cpp 
-	applications_pool.cpp 
-	application.cpp 
-	url_dispatcher.cpp 
-	http_cookie.cpp  
-	util.cpp 
-	base64.cpp 
-	base_view.cpp 
-	views_pool.cpp
-	internal_file_server.cpp 
-	json.cpp 
-	encoding.cpp 
-	form.cpp 
-	filters.cpp
-	cache_pool.cpp
-	cache_interface.cpp
-	cache_storage.cpp
-	tcp_cache_client.cpp
-	cache_over_ip.cpp
-	tcp_messenger.cpp
-	tcp_connector.cpp
-	tcp_cache_server.cpp
-	connection_forwarder.cpp
-	session_pool.cpp
-	base_encryptor.cpp
-	hmac_encryptor.cpp
-	md5.cpp
-	urandom.cpp
-	session_cookies.cpp
-	session_dual.cpp
-	session_sid.cpp
-	session_interface.cpp
-	session_memory_storage.cpp
-	rpc_json.cpp
+	src/service.cpp 
+	src/cgi_api.cpp 
+	src/http_request.cpp 
+	src/http_response.cpp 
+	src/http_context.cpp 
+	src/cppcms_error.cpp 
+	src/cppcms_error_category.cpp 
+	src/thread_pool.cpp 
+	src/applications_pool.cpp 
+	src/application.cpp 
+	src/url_dispatcher.cpp 
+	src/http_cookie.cpp  
+	src/util.cpp 
+	src/base64.cpp 
+	src/base_view.cpp 
+	src/views_pool.cpp
+	src/internal_file_server.cpp 
+	src/json.cpp 
+	src/encoding.cpp 
+	src/form.cpp 
+	src/filters.cpp
+	src/cache_pool.cpp
+	src/cache_interface.cpp
+	src/cache_storage.cpp
+	src/tcp_cache_client.cpp
+	src/cache_over_ip.cpp
+	src/tcp_messenger.cpp
+	src/tcp_connector.cpp
+	src/tcp_cache_server.cpp
+	src/connection_forwarder.cpp
+	src/session_pool.cpp
+	src/base_encryptor.cpp
+	src/hmac_encryptor.cpp
+	src/md5.cpp
+	src/urandom.cpp
+	src/session_cookies.cpp
+	src/session_dual.cpp
+	src/session_sid.cpp
+	src/session_interface.cpp
+	src/session_memory_storage.cpp
+	src/rpc_json.cpp
 )
 
 if(DISABLE_ICU_LOCALIZATION)
@@ -422,25 +425,25 @@ if(NOT DISABLE_GCRYPT)
 endif(NOT DISABLE_GCRYPT)
 
 if(NOT DISABLE_FCGI)
-	set(CPPCMS_SOURCES ${CPPCMS_SOURCES} fastcgi_api.cpp)
+	set(CPPCMS_SOURCES ${CPPCMS_SOURCES} src/fastcgi_api.cpp)
 	set(CPPCMS_HAS_FCGI 1)
 endif()
 
 if(NOT DISABLE_SCGI)
-	set(CPPCMS_SOURCES ${CPPCMS_SOURCES} scgi_api.cpp)
+	set(CPPCMS_SOURCES ${CPPCMS_SOURCES} src/scgi_api.cpp)
 	set(CPPCMS_HAS_SCGI 1)
 endif()
 
 
 if(NOT DISABLE_HTTP)
-	set(CPPCMS_SOURCES ${CPPCMS_SOURCES} http_api.cpp)
+	set(CPPCMS_SOURCES ${CPPCMS_SOURCES} src/http_api.cpp)
 	set(CPPCMS_HAS_HTTP 1)
 endif()
 	
 
 
 if(LIB_GCRYPT)
-	set(CPPCMS_SOURCES ${CPPCMS_SOURCES} aes_encryptor.cpp)
+	set(CPPCMS_SOURCES ${CPPCMS_SOURCES} src/aes_encryptor.cpp)
 	set(HAVE_GCRYPT 1)
 else(LIB_GCRYPT)
 	message("GNU Gcrypt library not found, disabling aes_encryptor")
@@ -448,9 +451,9 @@ endif(LIB_GCRYPT)
 
 
 if(WIN32 AND NOT CYGWIN)
-	set(CPPCMS_SOURCES ${CPPCMS_SOURCES} session_win32_file_storage.cpp)
+	set(CPPCMS_SOURCES ${CPPCMS_SOURCES} src/session_win32_file_storage.cpp)
 else(WIN32 AND NOT CYGWIN)
-	set(CPPCMS_SOURCES ${CPPCMS_SOURCES} session_posix_file_storage.cpp)
+	set(CPPCMS_SOURCES ${CPPCMS_SOURCES} src/session_posix_file_storage.cpp)
 endif(WIN32 AND NOT CYGWIN)
 
 if(NOT DISABLE_SHARED)
@@ -535,40 +538,40 @@ endif(NOT PYTHON)
 
 add_custom_command(
 	OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/skin1.cpp
-	COMMAND ${PYTHON} ${CMAKE_CURRENT_SOURCE_DIR}/cppcms_tmpl_cc 
+	COMMAND ${PYTHON} ${CMAKE_CURRENT_SOURCE_DIR}/bin/cppcms_tmpl_cc 
 		-s skin1 
 		-o ${CMAKE_CURRENT_BINARY_DIR}/skin1.cpp 
-			${CMAKE_CURRENT_SOURCE_DIR}/hello_world_skin1.tmpl 
-			${CMAKE_CURRENT_SOURCE_DIR}/hello_world_view1.tmpl
+			${CMAKE_CURRENT_SOURCE_DIR}/src/hello_world_skin1.tmpl 
+			${CMAKE_CURRENT_SOURCE_DIR}/src/hello_world_view1.tmpl
 	DEPENDS 
-		${CMAKE_CURRENT_SOURCE_DIR}/cppcms_tmpl_cc 
-		${CMAKE_CURRENT_SOURCE_DIR}/hello_world_skin1.tmpl 
-		${CMAKE_CURRENT_SOURCE_DIR}/hello_world_view1.tmpl)
+		${CMAKE_CURRENT_SOURCE_DIR}/bin/cppcms_tmpl_cc 
+		${CMAKE_CURRENT_SOURCE_DIR}/src/hello_world_skin1.tmpl 
+		${CMAKE_CURRENT_SOURCE_DIR}/src/hello_world_view1.tmpl)
 
 add_custom_command(
 	OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/skin2.cpp
-	COMMAND ${PYTHON} ${CMAKE_CURRENT_SOURCE_DIR}/cppcms_tmpl_cc 
+	COMMAND ${PYTHON} ${CMAKE_CURRENT_SOURCE_DIR}/bin/cppcms_tmpl_cc 
 		-s skin2 
 		-o ${CMAKE_CURRENT_BINARY_DIR}/skin2.cpp 
-			${CMAKE_CURRENT_SOURCE_DIR}/hello_world_skin2.tmpl 
-			${CMAKE_CURRENT_SOURCE_DIR}/hello_world_view1.tmpl
+			${CMAKE_CURRENT_SOURCE_DIR}/src/hello_world_skin2.tmpl 
+			${CMAKE_CURRENT_SOURCE_DIR}/src/hello_world_view1.tmpl
 	DEPENDS 
-		${CMAKE_CURRENT_SOURCE_DIR}/cppcms_tmpl_cc 
-		${CMAKE_CURRENT_SOURCE_DIR}/hello_world_skin2.tmpl 
-		${CMAKE_CURRENT_SOURCE_DIR}/hello_world_view1.tmpl)
+		${CMAKE_CURRENT_SOURCE_DIR}/bin/cppcms_tmpl_cc 
+		${CMAKE_CURRENT_SOURCE_DIR}/src/hello_world_skin2.tmpl 
+		${CMAKE_CURRENT_SOURCE_DIR}/src/hello_world_view1.tmpl)
 
 if(NOT DISABLE_SHARED)
 	add_custom_command(
 		OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/skin3.cpp
-		COMMAND ${PYTHON} ${CMAKE_CURRENT_SOURCE_DIR}/cppcms_tmpl_cc 
+		COMMAND ${PYTHON} ${CMAKE_CURRENT_SOURCE_DIR}/bin/cppcms_tmpl_cc 
 			-s skin3 
 			-o ${CMAKE_CURRENT_BINARY_DIR}/skin3.cpp 
-				${CMAKE_CURRENT_SOURCE_DIR}/hello_world_skin2.tmpl 
-				${CMAKE_CURRENT_SOURCE_DIR}/hello_world_view1.tmpl
+				${CMAKE_CURRENT_SOURCE_DIR}/src/hello_world_skin2.tmpl 
+				${CMAKE_CURRENT_SOURCE_DIR}/src/hello_world_view1.tmpl
 		DEPENDS 
-			${CMAKE_CURRENT_SOURCE_DIR}/cppcms_tmpl_cc 
-			${CMAKE_CURRENT_SOURCE_DIR}/hello_world_skin2.tmpl 
-			${CMAKE_CURRENT_SOURCE_DIR}/hello_world_view1.tmpl)
+			${CMAKE_CURRENT_SOURCE_DIR}/bin/cppcms_tmpl_cc 
+			${CMAKE_CURRENT_SOURCE_DIR}/src/hello_world_skin2.tmpl 
+			${CMAKE_CURRENT_SOURCE_DIR}/src/hello_world_view1.tmpl)
 	add_library(skin3 MODULE skin3.cpp)
 	set(SKIN3_DEFS CPPCMS_SKIN_MODULE DLL_EXPORT)
 	set_target_properties(skin3 PROPERTIES
@@ -578,13 +581,13 @@ endif(NOT DISABLE_SHARED)
 
 
 
-add_executable(hello_world hello_world.cpp skin1.cpp skin2.cpp)
+add_executable(hello_world src/hello_world.cpp skin1.cpp skin2.cpp)
 target_link_libraries(hello_world ${CPPCMS_LIB})
 
-add_executable(cppcms_scale cache_server_main.cpp)
+add_executable(cppcms_scale src/cache_server_main.cpp)
 target_link_libraries(cppcms_scale ${CPPCMS_LIB})
 
-add_executable(cppcms_config_find_param cppcms_config_find_param.cpp json.cpp)
+add_executable(cppcms_config_find_param src/cppcms_config_find_param.cpp src/json.cpp)
 
 #########################################
 # Tests
@@ -647,7 +650,7 @@ if(MSVC AND NOT DISABLE_STATIC)
 	set_target_properties(cppcms-static PROPERTIES PREFIX "lib")
 endif(MSVC AND NOT DISABLE_STATIC)
 
-configure_file(config.cmake.h config.h)
+configure_file(config.cmake.h cppcms/config.h)
 
 
 install(TARGETS ${CPPCMS_LIBS} cppcms_config_find_param cppcms_scale
