@@ -6,15 +6,15 @@
 //  http://www.boost.org/LICENSE_1_0.txt)
 //
 #define CPPCMS_LOCALE_SOURCE
-#include "config.h"
+#include <cppcms/config.h>
 #ifdef CPPCMS_USE_EXTERNAL_BOOST
 #   include <boost/config.hpp>
 #else // Internal Boost
 #   include <cppcms_boost/config.hpp>
     namespace boost = cppcms_boost;
 #endif
-#include "locale_info.h"
-#include "locale_message.h"
+#include <cppcms/locale_info.h>
+#include <cppcms/locale_message.h>
 #ifdef CPPCMS_USE_EXTERNAL_BOOST
 #   include <boost/shared_ptr.hpp>
 #   include <boost/unordered_map.hpp>

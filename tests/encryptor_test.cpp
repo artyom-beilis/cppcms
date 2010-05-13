@@ -16,8 +16,8 @@
 //  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 ///////////////////////////////////////////////////////////////////////////////
-#include "config.h"
-#include "session_cookies.h"
+#include <cppcms/config.h>
+#include <cppcms/session_cookies.h>
 #include "hmac_encryptor.h"
 #ifdef HAVE_GCRYPT
 #include "aes_encryptor.h"

@@ -22,9 +22,9 @@
 #include <vector>
 #include <string>
 
-#include "session_cookies.h"
-#include "urandom.h"
-#include "cstdint.h"
+#include <cppcms/session_cookies.h>
+#include <cppcms/urandom.h>
+#include <cppcms/cstdint.h>
 
 namespace cppcms {
 namespace sessions {

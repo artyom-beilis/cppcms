@@ -9,15 +9,15 @@
 #define CPPCMS_SRC_LOCALE_FORMATTING_INFO_HPP_INCLUDED
 
 
-#include "config.h"
+#include <cppcms/config.h>
 #ifdef CPPCMS_USE_EXTERNAL_BOOST
 #   include <boost/config.hpp>
 #else // Internal Boost
 #   include <cppcms_boost/config.hpp>
     namespace boost = cppcms_boost;
 #endif
-#include "locale_formatting.h"
-#include "cstdint.h"
+#include <cppcms/locale_formatting.h>
+#include <cppcms/cstdint.h>
 #include <string>
 #include <ios>
 

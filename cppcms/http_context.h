@@ -19,7 +19,7 @@
 #ifndef CPPCMS_HTTP_CONTEXT_H
 #define CPPCMS_HTTP_CONTEXT_H
 
-#include "defs.h"
+#include <cppcms/defs.h>
 #include <booster/hold_ptr.h>
 #include <booster/intrusive_ptr.h>
 #include <booster/shared_ptr.h>

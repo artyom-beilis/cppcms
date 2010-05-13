@@ -27,7 +27,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <pthread.h>
-#include "cppcms_error.h"
+#include <cppcms/cppcms_error.h>
 #include <booster/noncopyable.h>
 
 namespace cppcms {

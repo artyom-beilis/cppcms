@@ -16,7 +16,7 @@
 //  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 ///////////////////////////////////////////////////////////////////////////////
-#include "base64.h"
+#include <cppcms/base64.h>
 
 #include <iostream>
 #include <stdio.h>

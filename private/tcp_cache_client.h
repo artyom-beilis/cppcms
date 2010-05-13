@@ -19,8 +19,8 @@
 #ifndef TCP_CHACHE_H
 #define TCP_CHACHE_H
 #include "base_cache.h"
-#include "cache_interface.h"
-#include "session_storage.h"
+#include <cppcms/cache_interface.h>
+#include <cppcms/session_storage.h>
 #include "tcp_connector.h"
 #include <string>
 

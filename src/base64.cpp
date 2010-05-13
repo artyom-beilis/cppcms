@@ -7,7 +7,7 @@
  */
 
 #define CPPCMS_SOURCE
-#include "base64.h"
+#include <cppcms/base64.h>
 
 
 namespace {

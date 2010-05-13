@@ -19,10 +19,10 @@
 #ifndef CPPCMS_RPC_JSON_OBJECT_H
 #define CPPCMS_RPC_JSON_OBJECT_H
 
-#include "application.h"
+#include <cppcms/application.h>
 #include <booster/function.h>
-#include "json.h"
-#include "cppcms_error.h"
+#include <cppcms/json.h>
+#include <cppcms/cppcms_error.h>
 
 namespace cppcms {
 namespace rpc {

@@ -16,9 +16,9 @@
 //  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 ///////////////////////////////////////////////////////////////////////////////
-#include "defs.h"
+#include <cppcms/defs.h>
 #include "test.h"
-#include "session_storage.h"
+#include <cppcms/session_storage.h>
 #include "session_memory_storage.h"
 #ifdef CPPCMS_WIN_NATIVE
 #include "session_win32_file_storage.h"
@@ -27,7 +27,7 @@
 #endif
 #include <iostream>
 #include <vector>
-#include "config.h"
+#include <cppcms/config.h>
 #ifdef CPPCMS_USE_EXTERNAL_BOOST
 #   include <boost/filesystem.hpp>
 #else // Internal Boost

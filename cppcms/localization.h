@@ -1,7 +1,7 @@
 #ifndef CPPCMS_LOCALIZATION_H
 #define CPPCMS_LOCALIZATION_H
 
-#include "config.h"
+#include <cppcms/config.h>
 
 #ifdef HAVE_ICU
 #	include <booster/locale.h>
@@ -10,7 +10,7 @@
 		namespace locale = ::booster::locale;
 	}
 #else
-#	include "noicu_localization.h"
+#	include <cppcms/noicu_localization.h>
 #endif
 
 

@@ -19,10 +19,10 @@
 #ifndef CPPCMS_SESSION_POOL_H
 #define CPPCMS_SESSION_POOL_H
 
-#include "defs.h"
+#include <cppcms/defs.h>
 #include <booster/shared_ptr.h>
 #include <booster/hold_ptr.h>
-#include "session_api.h"
+#include <cppcms/session_api.h>
 
 #include <memory>
 

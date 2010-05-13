@@ -16,7 +16,7 @@
 //  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 ///////////////////////////////////////////////////////////////////////////////
-#include "config.h"
+#include <cppcms/config.h>
 #include <booster/thread.h>
 #include "atomic_counter.h"
 #include "test.h"

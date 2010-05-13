@@ -19,7 +19,7 @@
 #ifndef CPPCMS_BASE_CONTENT_H
 #define CPPCMS_BASE_CONTENT_H
 
-#include "defs.h"
+#include <cppcms/defs.h>
 
 namespace cppcms {
 	///

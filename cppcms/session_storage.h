@@ -19,7 +19,7 @@
 #ifndef CPPCMS_SESSION_STORAGE_H
 #define CPPCMS_SESSION_STORAGE_H
 
-#include "defs.h"
+#include <cppcms/defs.h>
 #include <booster/noncopyable.h>
 #include <booster/shared_ptr.h>
 #include <string>

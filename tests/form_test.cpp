@@ -16,14 +16,14 @@
 //  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 ///////////////////////////////////////////////////////////////////////////////
-#include <service.h>
-#include <application.h>
-#include <applications_pool.h>
-#include <thread_pool.h>
-#include <localization.h>
-#include <url_dispatcher.h>
-#include <form.h>
-#include <http_response.h>
+#include <cppcms/service.h>
+#include <cppcms/application.h>
+#include <cppcms/applications_pool.h>
+#include <cppcms/thread_pool.h>
+#include <cppcms/localization.h>
+#include <cppcms/url_dispatcher.h>
+#include <cppcms/form.h>
+#include <cppcms/http_response.h>
 #include <iostream>
 
 #include "client.h"

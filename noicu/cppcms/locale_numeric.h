@@ -12,7 +12,7 @@
 #include <string>
 #include <ios>
 #include <limits>
-#include "locale_formatting.h"
+#include <cppcms/locale_formatting.h>
 #include <algorithm>
 
 namespace cppcms {

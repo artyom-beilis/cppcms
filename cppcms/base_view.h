@@ -19,7 +19,7 @@
 #ifndef CPPCMS_BASE_VIEW_H
 #define CPPCMS_BASE_VIEW_H
 
-#include "defs.h"
+#include <cppcms/defs.h>
 
 #include <ostream>
 #include <sstream>
@@ -29,9 +29,9 @@
 #include <memory>
 
 #include <booster/hold_ptr.h>
-#include "base_content.h"
+#include <cppcms/base_content.h>
 #include <booster/noncopyable.h>
-#include "config.h"
+#include <cppcms/config.h>
 
 namespace cppcms {
 

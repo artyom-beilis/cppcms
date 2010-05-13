@@ -8,10 +8,10 @@
 #ifndef CPPCMS_LOCALE_FORMAT_HPP_INCLUDED
 #define CPPCMS_LOCALE_FORMAT_HPP_INCLUDED
 
-#include "defs.h"
-#include "config.h"
-#include "locale_message.h"
-#include "locale_formatting.h"
+#include <cppcms/defs.h>
+#include <cppcms/config.h>
+#include <cppcms/locale_message.h>
+#include <cppcms/locale_formatting.h>
 
 #include <sstream>
 #include <iostream>

@@ -19,13 +19,13 @@
 #ifndef CPPCMS_SERVICE_H
 #define CPPCMS_SERVICE_H
 
-#include "defs.h"
+#include <cppcms/defs.h>
 #include <booster/noncopyable.h>
 #include <booster/hold_ptr.h>
 #include <booster/function.h>
 #include <locale>
 
-#include "locale_fwd.h"
+#include <cppcms/locale_fwd.h>
 
 namespace booster {
 	namespace aio {

@@ -19,7 +19,7 @@
 #ifndef CPPCMS_ERROR_H
 #define CPPCMS_ERROR_H
 
-#include "defs.h"
+#include <cppcms/defs.h>
 #include <string>
 #include <stdexcept>
 

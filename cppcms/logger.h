@@ -19,7 +19,7 @@
 #ifndef CPPCMS_LOGGER_H
 #define CPPCMS_LOGGER_H
 
-#include "defs.h"
+#include <cppcms/defs.h>
 #include <iosfwd>
 #include <memory>
 

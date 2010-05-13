@@ -19,7 +19,7 @@
 #define CPPCMS_SOURCE
 #include "tcp_messenger.h"
 #include "tcp_connector.h"
-#include "cppcms_error.h"
+#include <cppcms/cppcms_error.h>
 
 namespace cppcms {
 namespace impl {

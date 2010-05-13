@@ -19,7 +19,7 @@
 #ifndef CPPCMS_SESSION_TCP_STORAGE_H
 #define CPPCMS_SESSION_TCP_STORAGE_H
 
-#include "session_storage.h"
+#include <cppcms/session_storage.h>
 #include "tcp_connector.h"
 #include "session_backend_factory.h"
 

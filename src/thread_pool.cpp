@@ -17,10 +17,10 @@
 //
 ///////////////////////////////////////////////////////////////////////////////
 #define CPPCMS_SOURCE
-#include "thread_pool.h"
+#include <cppcms/thread_pool.h>
 #include <list>
 #include <vector>
-#include "config.h"
+#include <cppcms/config.h>
 #ifdef CPPCMS_USE_EXTERNAL_BOOST
 #   include <boost/bind.hpp>
 #else // Internal Boost

@@ -19,7 +19,7 @@
 #ifndef CPPCMS_URANDOM_H
 #define CPPCMS_URANDOM_H
 
-#include "defs.h"
+#include <cppcms/defs.h>
 #include <booster/hold_ptr.h>
 #include <booster/noncopyable.h>
 

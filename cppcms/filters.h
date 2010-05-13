@@ -24,9 +24,9 @@
 #include <sstream>
 #include <vector>
 #include <iostream>
-#include "defs.h"
+#include <cppcms/defs.h>
 #include <booster/copy_ptr.h>
-#include "localization.h"
+#include <cppcms/localization.h>
 
 namespace cppcms {
 	namespace filters {

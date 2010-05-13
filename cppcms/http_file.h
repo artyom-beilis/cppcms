@@ -19,7 +19,7 @@
 #ifndef CPPCMS_HTTP_FILE_H
 #define CPPCMS_HTTP_FILE_H
 
-#include "defs.h"
+#include <cppcms/defs.h>
 #include <booster/hold_ptr.h>
 #include <booster/noncopyable.h>
 #include <sstream>

@@ -18,7 +18,7 @@
 ///////////////////////////////////////////////////////////////////////////////
 #ifndef CPPCMS_SESSION_COOKIES_H
 #define CPPCMS_SESSION_COOKIES_H
-#include "session_api.h"
+#include <cppcms/session_api.h>
 #include <booster/hold_ptr.h>
 #include <booster/noncopyable.h>
 #include <memory>

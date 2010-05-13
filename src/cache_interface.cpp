@@ -17,14 +17,14 @@
 //
 ///////////////////////////////////////////////////////////////////////////////
 #define CPPCMS_SOURCE
-#include "cache_interface.h"
+#include <cppcms/cache_interface.h>
 #include "base_cache.h"
-#include "cache_pool.h"
-#include "http_context.h"
-#include "http_response.h"
-#include "json.h"
-#include "service.h"
-#include "cppcms_error.h"
+#include <cppcms/cache_pool.h>
+#include <cppcms/http_context.h>
+#include <cppcms/http_response.h>
+#include <cppcms/json.h>
+#include <cppcms/service.h>
+#include <cppcms/cppcms_error.h>
 #include <sstream>
 #include <iostream>
 

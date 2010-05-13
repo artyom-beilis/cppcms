@@ -20,7 +20,7 @@
 #define THREAD_CHACHE_H
 #include "base_cache.h"
 #include <booster/intrusive_ptr.h>
-#include "defs.h"
+#include <cppcms/defs.h>
 
 namespace cppcms {
 namespace impl {

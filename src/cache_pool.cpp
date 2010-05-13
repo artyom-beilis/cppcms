@@ -17,12 +17,12 @@
 //
 ///////////////////////////////////////////////////////////////////////////////
 #define CPPCMS_SOURCE
-#include "cache_pool.h"
+#include <cppcms/cache_pool.h>
 #include "cache_storage.h"
 #include "base_cache.h"
-#include "cppcms_error.h"
+#include <cppcms/cppcms_error.h>
 #include "cache_over_ip.h"
-#include "json.h"
+#include <cppcms/json.h>
 
 namespace cppcms {
 

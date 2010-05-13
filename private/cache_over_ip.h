@@ -18,7 +18,7 @@
 ///////////////////////////////////////////////////////////////////////////////
 #ifndef CPPCMS_CACHE_OVER_IP_H
 #define CPPCMS_CACHE_OVER_IP_H
-#include "defs.h"
+#include <cppcms/defs.h>
 #include <booster/intrusive_ptr.h>
 #include "base_cache.h"
 #include <string>

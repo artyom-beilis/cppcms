@@ -22,11 +22,11 @@
 #include <string>
 #include <set>
 
-#include "defs.h"
+#include <cppcms/defs.h>
 #include <booster/noncopyable.h>
 #include <booster/intrusive_ptr.h>
 #include <booster/hold_ptr.h>
-#include "cstdint.h"
+#include <cppcms/cstdint.h>
 
 namespace cppcms {
 

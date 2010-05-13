@@ -19,7 +19,7 @@
 #ifndef CPPCMS_UTIL_H
 #define CPPCMS_UTIL_H
 
-#include "defs.h"
+#include <cppcms/defs.h>
 #include <string>
 
 namespace cppcms {

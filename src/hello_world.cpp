@@ -16,25 +16,25 @@
 //  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 ///////////////////////////////////////////////////////////////////////////////
-#include "application.h"
-#include "url_dispatcher.h"
-#include "applications_pool.h"
-#include "service.h"
-#include "http_response.h"
-#include "http_request.h"
-#include "http_cookie.h"
-#include "localization.h"
-#include "http_context.h"
-#include "filters.h"
+#include <cppcms/application.h>
+#include <cppcms/url_dispatcher.h>
+#include <cppcms/applications_pool.h>
+#include <cppcms/service.h>
+#include <cppcms/http_response.h>
+#include <cppcms/http_request.h>
+#include <cppcms/http_cookie.h>
+#include <cppcms/localization.h>
+#include <cppcms/http_context.h>
+#include <cppcms/filters.h>
 #include <booster/intrusive_ptr.h>
-#include "form.h"
-#include "cache_interface.h"
-#include "session_interface.h"
+#include <cppcms/form.h>
+#include <cppcms/cache_interface.h>
+#include <cppcms/session_interface.h>
 #include <sstream>
 #include <stdexcept>
 #include <stdlib.h>
 #include <set>
-#include "config.h"
+#include <cppcms/config.h>
 #ifdef CPPCMS_USE_EXTERNAL_BOOST
 #   include <boost/bind.hpp>
 #else // Internal Boost

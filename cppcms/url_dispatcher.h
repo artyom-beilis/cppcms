@@ -20,10 +20,10 @@
 #define CPPCMS_URL_DISPATCHER_H
 
 #include <booster/noncopyable.h>
-#include "defs.h"
+#include <cppcms/defs.h>
 #include <booster/function.h>
 #include <booster/hold_ptr.h>
-#include "mem_bind.h"
+#include <cppcms/mem_bind.h>
 #include <string>
 #include <list>
 

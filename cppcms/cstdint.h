@@ -18,7 +18,7 @@
 ///////////////////////////////////////////////////////////////////////////////
 #ifndef CPPCMS_CSTDINT_H
 #define CPPCMS_CSTDINT_H
-#include "config.h"
+#include <cppcms/config.h>
 #if defined(HAVE_STDINT_H)
 #include <stdint.h>
 #elif defined(HAVE_INTTYPES_H)

@@ -17,7 +17,7 @@
 //
 ///////////////////////////////////////////////////////////////////////////////
 #define CPPCMS_SOURCE
-#include "defs.h"
+#include <cppcms/defs.h>
 #ifdef CPPCMS_WIN32
 #include <windows.h>
 #include <winsock2.h>
@@ -31,11 +31,11 @@
 #endif
 #include <signal.h>
 #endif
-#include "service.h"
+#include <cppcms/service.h>
 #include "service_impl.h"
-#include "applications_pool.h"
-#include "thread_pool.h"
-#include "cppcms_error.h"
+#include <cppcms/applications_pool.h>
+#include <cppcms/thread_pool.h>
+#include <cppcms/cppcms_error.h>
 #include "cgi_acceptor.h"
 #include "cgi_api.h"
 #ifdef CPPCMS_HAS_SCGI
@@ -48,12 +48,12 @@
 # include "fastcgi_api.h"
 #endif
 
-#include "cache_pool.h"
+#include <cppcms/cache_pool.h>
 #include "internal_file_server.h"
-#include "json.h"
-#include "localization.h"
-#include "views_pool.h"
-#include "session_pool.h"
+#include <cppcms/json.h>
+#include <cppcms/localization.h>
+#include <cppcms/views_pool.h>
+#include <cppcms/session_pool.h>
 
 
 #ifdef CPPCMS_POSIX
@@ -65,7 +65,7 @@
 #include <stdlib.h>
 #include <iostream>
 #include <fstream>
-#include "config.h"
+#include <cppcms/config.h>
 #ifdef CPPCMS_USE_EXTERNAL_BOOST
 #   include <boost/bind.hpp>
 #else // Internal Boost

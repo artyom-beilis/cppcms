@@ -17,9 +17,9 @@
 //
 ///////////////////////////////////////////////////////////////////////////////
 #define CPPCMS_SOURCE
-#include "session_cookies.h"
-#include "cppcms_error.h"
-#include "session_interface.h"
+#include <cppcms/session_cookies.h>
+#include <cppcms/cppcms_error.h>
+#include <cppcms/session_interface.h>
 
 #include <time.h>
 

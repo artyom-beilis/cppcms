@@ -6,9 +6,9 @@
 //  http://www.boost.org/LICENSE_1_0.txt)
 //
 
-#include "locale_conversion.h"
-#include "locale_generator.h"
-#include "locale_info.h"
+#include <cppcms/locale_conversion.h>
+#include <cppcms/locale_generator.h>
+#include <cppcms/locale_info.h>
 #include <iomanip>
 #include "locale_src_test_locale.hpp"
 

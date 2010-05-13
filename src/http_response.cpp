@@ -18,18 +18,18 @@
 ///////////////////////////////////////////////////////////////////////////////
 #define CPPCMS_SOURCE
 #include "cgi_api.h"
-#include "http_response.h"
-#include "http_context.h"
-#include "http_request.h"
-#include "http_cookie.h"
+#include <cppcms/http_response.h>
+#include <cppcms/http_context.h>
+#include <cppcms/http_request.h>
+#include <cppcms/http_cookie.h>
 #include "http_protocol.h"
-#include "json.h"
-#include "cppcms_error.h"
-#include "service.h"
-#include "config.h"
-#include "localization.h"
-#include "util.h"
-#include "session_interface.h"
+#include <cppcms/json.h>
+#include <cppcms/cppcms_error.h>
+#include <cppcms/service.h>
+#include <cppcms/config.h>
+#include <cppcms/localization.h>
+#include <cppcms/util.h>
+#include <cppcms/session_interface.h>
 
 #include <iostream>
 #include <sstream>

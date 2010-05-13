@@ -19,7 +19,7 @@
 #ifndef CPPCMS_BASE64_H
 #define CPPCMS_BASE64_H
 
-#include "defs.h"
+#include <cppcms/defs.h>
 #include <string>
 
 

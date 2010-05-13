@@ -19,12 +19,12 @@
 #define CPPCMS_SOURCE
 #include "cgi_api.h"
 #include "cgi_acceptor.h"
-#include "service.h"
+#include <cppcms/service.h>
 #include "service_impl.h"
 #include "cppcms_error_category.h"
 #include <iostream>
 #include <stdlib.h>
-#include "config.h"
+#include <cppcms/config.h>
 #ifdef CPPCMS_USE_EXTERNAL_BOOST
 #   include <boost/bind.hpp>
 #else // Internal Boost

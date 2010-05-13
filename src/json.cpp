@@ -17,7 +17,7 @@
 //
 ///////////////////////////////////////////////////////////////////////////////
 #define CPPCMS_SOURCE
-#include "json.h"
+#include <cppcms/json.h>
 #include <sstream>
 #include <stdio.h>
 #include <typeinfo>
@@ -28,7 +28,7 @@
 #include <stack>
 #include "utf_iterator.h"
 
-#include "config.h"
+#include <cppcms/config.h>
 #ifdef CPPCMS_USE_EXTERNAL_BOOST
 #   include <boost/variant.hpp>
 #else // Internal Boost

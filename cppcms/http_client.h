@@ -19,7 +19,7 @@
 #ifndef CPPCMS_HTTP_CLIENT_H
 #define CPPCMS_HTTP_CLIENT_H
 
-#include "defs.h"
+#include <cppcms/defs.h>
 #include <booster/noncopyable.h>
 
 namespace cppcms {

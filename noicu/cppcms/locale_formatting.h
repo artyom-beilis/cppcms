@@ -8,9 +8,9 @@
 #ifndef CPPCMS_LOCALE_FORMATTING_HPP_INCLUDED
 #define CPPCMS_LOCALE_FORMATTING_HPP_INCLUDED
 
-#include "defs.h"
-#include "config.h"
-#include "cstdint.h"
+#include <cppcms/defs.h>
+#include <cppcms/config.h>
+#include <cppcms/cstdint.h>
 #include <ostream>
 #include <istream>
 #include <string>

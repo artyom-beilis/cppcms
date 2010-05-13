@@ -21,8 +21,8 @@
 #define _POSIX_PTHREAD_SEMANTICS
 #endif
 #include "session_posix_file_storage.h"
-#include "cppcms_error.h"
-#include "config.h"
+#include <cppcms/cppcms_error.h>
+#include <cppcms/config.h>
 
 #ifdef CPPCMS_USE_EXTERNAL_BOOST
 #   include <boost/crc.hpp>
@@ -43,7 +43,7 @@
 #include <limits.h>
 #include <stdlib.h>
 #include <string.h>
-#include "cstdint.h"
+#include <cppcms/cstdint.h>
 #include "posix_util.h"
 
 namespace cppcms {

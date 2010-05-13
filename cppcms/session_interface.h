@@ -19,11 +19,11 @@
 #ifndef CPPCMS_SESSION_INTERFACE_H
 #define CPPCMS_SESSION_INTERFACE_H
 
-#include "defs.h"
+#include <cppcms/defs.h>
 #include <booster/noncopyable.h>
 #include <booster/hold_ptr.h>
 #include <booster/shared_ptr.h>
-#include "cstdint.h"
+#include <cppcms/cstdint.h>
 #include <string>
 #include <map>
 #include <memory>

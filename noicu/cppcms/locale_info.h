@@ -11,8 +11,8 @@
 #include <string>
 #include <map>
 #include <memory>
-#include "defs.h"
-#include "config.h"
+#include <cppcms/defs.h>
+#include <cppcms/config.h>
 
 namespace cppcms {
     namespace locale {

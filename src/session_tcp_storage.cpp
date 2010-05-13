@@ -18,7 +18,7 @@
 ///////////////////////////////////////////////////////////////////////////////
 #include "tcp_messenger.h"
 #include "session_tcp_storage.h"
-#include "session_sid.h"
+#include <cppcms/session_sid.h>
 #include "global_config.h"
 
 namespace cppcms {

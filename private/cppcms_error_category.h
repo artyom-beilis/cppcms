@@ -19,7 +19,7 @@
 #ifndef CPPCMS_ERROR_CATEGORY_H
 #define CPPCMS_ERROR_CATEGORY_H
 
-#include "config.h"
+#include <cppcms/config.h>
 #include <booster/system_error.h>
 
 namespace cppcms {

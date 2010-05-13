@@ -16,13 +16,13 @@
 //  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 ///////////////////////////////////////////////////////////////////////////////
-#include <service.h>
-#include <application.h>
-#include <applications_pool.h>
-#include <http_request.h>
-#include <http_response.h>
-#include <http_context.h>
-#include <json.h>
+#include <cppcms/service.h>
+#include <cppcms/application.h>
+#include <cppcms/applications_pool.h>
+#include <cppcms/http_request.h>
+#include <cppcms/http_response.h>
+#include <cppcms/http_context.h>
+#include <cppcms/json.h>
 #include <connection_forwarder.h>
 #include <iostream>
 #include "client.h"

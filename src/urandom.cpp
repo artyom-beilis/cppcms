@@ -17,8 +17,8 @@
 //
 ///////////////////////////////////////////////////////////////////////////////
 #define CPPCMS_SOURCE
-#include "urandom.h"
-#include "cppcms_error.h"
+#include <cppcms/urandom.h>
+#include <cppcms/cppcms_error.h>
 
 #ifdef CPPCMS_WIN_NATIVE
 

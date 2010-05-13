@@ -19,12 +19,12 @@
 #ifndef CPPCMS_HTTP_COOKIE_H
 #define CPPCMS_HTTP_COOKIE_H
 
-#include "defs.h"
+#include <cppcms/defs.h>
 #include <booster/copy_ptr.h>
 
 #include <string>
 #include <iostream>
-#include "cstdint.h"
+#include <cppcms/cstdint.h>
 namespace cppcms { namespace http {
 
 class cookie;

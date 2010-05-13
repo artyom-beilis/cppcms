@@ -19,7 +19,7 @@
 #ifndef CPPCMS_CONNECTION_FORWARDER_H
 #define CPPCMS_CONNECTION_FORWARDER_H
 
-#include "application.h"
+#include <cppcms/application.h>
 
 namespace cppcms {
 

@@ -19,11 +19,11 @@
 #ifndef CPPCMS_SESSION_SID_H
 #define CPPCMS_SESSION_SID_H
 
-#include "session_api.h"
-#include "defs.h"
+#include <cppcms/session_api.h>
+#include <cppcms/defs.h>
 #include <booster/hold_ptr.h>
 #include <booster/shared_ptr.h>
-#include "session_storage.h"
+#include <cppcms/session_storage.h>
 
 namespace cppcms {
 namespace sessions {

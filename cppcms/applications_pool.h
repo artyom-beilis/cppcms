@@ -19,7 +19,7 @@
 #ifndef CPPCMS_APPLICATIONS_POOL_H
 #define CPPCMS_APPLICATIONS_POOL_H
 
-#include "defs.h"
+#include <cppcms/defs.h>
 #include <booster/noncopyable.h>
 #include <booster/hold_ptr.h>
 #include <booster/intrusive_ptr.h>

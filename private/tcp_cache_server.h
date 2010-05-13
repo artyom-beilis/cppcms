@@ -19,7 +19,7 @@
 #ifndef CPPCMS_TCP_CACHE_SERVER_H
 #define CPPCMS_TCP_CACHE_SERVER_H
 
-#include "defs.h"
+#include <cppcms/defs.h>
 #include "base_cache.h"
 #include <booster/noncopyable.h>
 #include <booster/intrusive_ptr.h>

@@ -17,12 +17,12 @@
 //
 ///////////////////////////////////////////////////////////////////////////////
 #define CPPCMS_SOURCE
-#include "base_view.h"
-#include "util.h"
-#include "cppcms_error.h"
+#include <cppcms/base_view.h>
+#include <cppcms/util.h>
+#include <cppcms/cppcms_error.h>
 
 #include <vector>
-#include "config.h"
+#include <cppcms/config.h>
 #ifdef CPPCMS_USE_EXTERNAL_BOOST
 #   include <boost/format.hpp>
 #else // Internal Boost

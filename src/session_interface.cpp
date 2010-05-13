@@ -17,17 +17,17 @@
 //
 ///////////////////////////////////////////////////////////////////////////////
 #define CPPCMS_SOURCE
-#include "session_interface.h"
-#include "session_pool.h"
-#include "session_api.h"
-#include "util.h"
-#include "http_context.h"
-#include "http_request.h"
-#include "http_response.h"
-#include "http_cookie.h"
-#include "cppcms_error.h"
-#include "service.h"
-#include "json.h"
+#include <cppcms/session_interface.h>
+#include <cppcms/session_pool.h>
+#include <cppcms/session_api.h>
+#include <cppcms/util.h>
+#include <cppcms/http_context.h>
+#include <cppcms/http_request.h>
+#include <cppcms/http_response.h>
+#include <cppcms/http_cookie.h>
+#include <cppcms/cppcms_error.h>
+#include <cppcms/service.h>
+#include <cppcms/json.h>
 
 #include <sstream>
 #include "string.h"

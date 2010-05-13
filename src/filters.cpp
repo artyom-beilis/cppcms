@@ -17,9 +17,9 @@
 //
 ///////////////////////////////////////////////////////////////////////////////
 #define CPPCMS_SOURCE
-#include "filters.h"
-#include "base64.h"
-#include "util.h"
+#include <cppcms/filters.h>
+#include <cppcms/base64.h>
+#include <cppcms/util.h>
 #include <iostream>
 
 namespace cppcms { namespace filters {

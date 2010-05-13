@@ -1,7 +1,7 @@
 #ifndef CPPCMS_LOCALE_FWD_H
 #define CPPCMS_LOCALE_FWD_H
 
-#include "config.h"
+#include <cppcms/config.h>
 
 #ifdef HAVE_ICU
 	namespace booster {

@@ -7,8 +7,8 @@
 //
 #ifndef CPPCMS_LOCALE_GENERATOR_HPP
 #define CPPCMS_LOCALE_GENERATOR_HPP
-#include "defs.h"
-#include "config.h"
+#include <cppcms/defs.h>
+#include <cppcms/config.h>
 #include <string>
 #include <locale>
 #include <memory>

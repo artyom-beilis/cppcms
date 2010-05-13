@@ -17,10 +17,10 @@
 //
 ///////////////////////////////////////////////////////////////////////////////
 #define CPPCMS_SOURCE
-#include "session_dual.h"
-#include "session_interface.h"
-#include "session_cookies.h"
-#include "session_sid.h"
+#include <cppcms/session_dual.h>
+#include <cppcms/session_interface.h>
+#include <cppcms/session_cookies.h>
+#include <cppcms/session_sid.h>
 
 using namespace std;
 

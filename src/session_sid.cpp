@@ -17,17 +17,17 @@
 //
 ///////////////////////////////////////////////////////////////////////////////
 #define CPPCMS_SOURCE
-#include "session_sid.h"
+#include <cppcms/session_sid.h>
 #include "md5.h"
-#include "session_storage.h"
-#include "session_interface.h"
+#include <cppcms/session_storage.h>
+#include <cppcms/session_interface.h>
 #include <fstream>
-#include "cppcms_error.h"
-#include "urandom.h"
+#include <cppcms/cppcms_error.h>
+#include <cppcms/urandom.h>
 #include <stdio.h>
 #include <time.h>
 
-#include "config.h"
+#include <cppcms/config.h>
 #include <booster/thread.h>
 
 #ifndef CPPCMS_WIN_NATIVE

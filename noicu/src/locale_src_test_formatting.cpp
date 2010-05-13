@@ -6,15 +6,15 @@
 //  http://www.boost.org/LICENSE_1_0.txt)
 //
 
-#include "locale_formatting.h"
-#include "locale_format.h"
-#include "locale_generator.h"
+#include <cppcms/locale_formatting.h>
+#include <cppcms/locale_format.h>
+#include <cppcms/locale_generator.h>
 #include "locale_src_test_locale.hpp"
 #include "locale_src_test_locale_tools.hpp"
 #include <sstream>
 #include <iostream>
 #include <iomanip>
-#include "encoding.h"
+#include <cppcms/encoding.h>
 
 using namespace cppcms::locale;
 

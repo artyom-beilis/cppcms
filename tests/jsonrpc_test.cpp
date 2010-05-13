@@ -1,6 +1,6 @@
-#include "rpc_json.h"
+#include <cppcms/rpc_json.h>
 #include "test.h"
-#include "applications_pool.h"
+#include <cppcms/applications_pool.h>
 
 #include "client.h"
 

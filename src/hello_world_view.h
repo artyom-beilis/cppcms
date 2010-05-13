@@ -16,7 +16,7 @@
 //  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 ///////////////////////////////////////////////////////////////////////////////
-#include "view.h"
+#include <cppcms/view.h>
 #include <list>
 class my_hello_world;
 namespace view {

@@ -6,7 +6,7 @@
 //  http://www.boost.org/LICENSE_1_0.txt)
 //
 #define CPPCMS_LOCALE_SOURCE
-#include "locale_numeric.h"
+#include <cppcms/locale_numeric.h>
 #include <booster/regex.h>
 
 namespace cppcms {

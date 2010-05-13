@@ -17,7 +17,7 @@
 //
 ///////////////////////////////////////////////////////////////////////////////
 #define CPPCMS_SOURCE
-#include "util.h"
+#include <cppcms/util.h>
 #include "http_protocol.h"
 #include <stdio.h>
 

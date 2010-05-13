@@ -19,7 +19,7 @@
 #ifndef TCP_CACHE_PROTO_H
 #define TCP_CACHE_PROTO_H
 
-#include "cstdint.h"
+#include <cppcms/cstdint.h>
 
 namespace cppcms {
 namespace impl {

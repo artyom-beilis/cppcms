@@ -16,7 +16,7 @@
 //  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 ///////////////////////////////////////////////////////////////////////////////
-#include "json.h"
+#include <cppcms/json.h>
 #include "test.h"
 #include <iostream>
 #include <sstream>

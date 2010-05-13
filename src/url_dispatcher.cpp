@@ -17,8 +17,8 @@
 //
 ///////////////////////////////////////////////////////////////////////////////
 #define CPPCMS_SOURCE
-#include "url_dispatcher.h"
-#include "application.h"
+#include <cppcms/url_dispatcher.h>
+#include <cppcms/application.h>
 
 #include <booster/regex.h>
 #include <booster/shared_ptr.h>

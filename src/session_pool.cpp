@@ -17,18 +17,18 @@
 //
 ///////////////////////////////////////////////////////////////////////////////
 #define CPPCMS_SOURCE
-#include "session_pool.h"
-#include "service.h"
-#include "thread_pool.h"
-#include "session_cookies.h"
-#include "session_sid.h"
-#include "session_dual.h"
+#include <cppcms/session_pool.h>
+#include <cppcms/service.h>
+#include <cppcms/thread_pool.h>
+#include <cppcms/session_cookies.h>
+#include <cppcms/session_sid.h>
+#include <cppcms/session_dual.h>
 #include "hmac_encryptor.h"
-#include "json.h"
-#include "cppcms_error.h"
+#include <cppcms/json.h>
+#include <cppcms/cppcms_error.h>
 #include <booster/shared_ptr.h>
 #include <booster/enable_shared_from_this.h>
-#include "config.h"
+#include <cppcms/config.h>
 #ifdef CPPCMS_USE_EXTERNAL_BOOST
 #   include <boost/bind.hpp>
 #else // Internal Boost

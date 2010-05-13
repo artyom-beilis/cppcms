@@ -17,14 +17,14 @@
 //
 ///////////////////////////////////////////////////////////////////////////////
 #define CPPCMS_SOURCE
-#include "applications_pool.h"
-#include "application.h"
-#include "service.h"
-#include "cppcms_error.h"
-#include "json.h"
+#include <cppcms/applications_pool.h>
+#include <cppcms/application.h>
+#include <cppcms/service.h>
+#include <cppcms/cppcms_error.h>
+#include <cppcms/json.h>
 #include <set>
 #include <vector>
-#include "config.h"
+#include <cppcms/config.h>
 #include <booster/regex.h>
 #include <booster/shared_ptr.h>
 #include <booster/thread.h>

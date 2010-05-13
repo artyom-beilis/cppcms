@@ -17,9 +17,9 @@
 //
 ///////////////////////////////////////////////////////////////////////////////
 #define CPPCMS_SOURCE
-#include "logger.h"
-#include "cppcms_error.h"
-#include "config.h"
+#include <cppcms/logger.h>
+#include <cppcms/cppcms_error.h>
+#include <cppcms/config.h>
 #ifdef CPPCMS_USE_EXTERNAL_BOOST
 #   include <boost/format.hpp>
 #else // Internal Boost

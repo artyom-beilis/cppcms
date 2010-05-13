@@ -21,9 +21,9 @@
 
 #include <stdlib.h>
 #include <string>
-#include "service.h"
-#include "thread_pool.h"
-#include "json.h"
+#include <cppcms/service.h>
+#include <cppcms/thread_pool.h>
+#include <cppcms/json.h>
 
 static bool run_ok=false;
 

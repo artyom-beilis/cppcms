@@ -19,7 +19,7 @@
 #ifndef CPPCMS_JSON_H
 #define CPPCMS_JSON_H
 
-#include "defs.h"
+#include <cppcms/defs.h>
 #include <booster/copy_ptr.h>
 
 #include <vector>

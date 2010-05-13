@@ -19,7 +19,7 @@
 #ifndef CPPCMS_IMPL_SCGI_API_H
 #define CPPCMS_IMPL_SCGI_API_H
 
-#include "defs.h"
+#include <cppcms/defs.h>
 #include <string>
 #include <memory>
 

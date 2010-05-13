@@ -16,8 +16,8 @@
 //  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 ///////////////////////////////////////////////////////////////////////////////
-#include "application.h"
-#include "applications_pool.h"
+#include <cppcms/application.h>
+#include <cppcms/applications_pool.h>
 #include <string>
 #include <map>
 

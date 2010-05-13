@@ -18,7 +18,7 @@
 ///////////////////////////////////////////////////////////////////////////////
 #ifndef CPPCMS_UTF_ITERATOR_H
 #define CPPCMS_UTF_ITERATOR_H
-#include "cstdint.h"
+#include <cppcms/cstdint.h>
 #include <string.h>
 
 namespace cppcms {

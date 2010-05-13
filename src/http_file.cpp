@@ -17,7 +17,7 @@
 //
 ///////////////////////////////////////////////////////////////////////////////
 #define CPPCMS_SOURCE
-#include "http_file.h"
+#include <cppcms/http_file.h>
 
 namespace cppcms {
 namespace http {

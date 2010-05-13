@@ -17,10 +17,10 @@
 //
 ///////////////////////////////////////////////////////////////////////////////
 #define CPPCMS_SOURCE
-#include "views_pool.h"
-#include "json.h"
-#include "config.h"
-#include "cppcms_error.h"
+#include <cppcms/views_pool.h>
+#include <cppcms/json.h>
+#include <cppcms/config.h>
+#include <cppcms/cppcms_error.h>
 #ifdef CPPCMS_USE_EXTERNAL_BOOST
 #   include <boost/format.hpp>
 #else // Internal Boost

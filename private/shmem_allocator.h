@@ -18,7 +18,7 @@
 ///////////////////////////////////////////////////////////////////////////////
 #ifndef CPPCMS_ALLOCATORS
 #define CPPCMS_ALLOCATORS
-#include "config.h"
+#include <cppcms/config.h>
 
 #ifdef CPPCMS_USE_EXTERNAL_BOOST
 #   include <boost/interprocess/managed_external_buffer.hpp>
@@ -28,7 +28,7 @@
 #endif
 
 #include "posix_util.h"
-#include "cppcms_error.h"
+#include <cppcms/cppcms_error.h>
 #include <string>
 
 namespace cppcms {

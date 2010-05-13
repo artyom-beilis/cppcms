@@ -18,7 +18,7 @@
 ///////////////////////////////////////////////////////////////////////////////
 #define CPPCMS_SOURCE
 #include "session_memory_storage.h"
-#include "config.h"
+#include <cppcms/config.h>
 #ifdef CPPCMS_USE_EXTERNAL_BOOST
 #   include <boost/unordered_map.hpp>
 #else // Internal Boost

@@ -19,8 +19,8 @@
 #ifndef CPPCMS_SESSIOM_MEMORY_STORAGE_H
 #define CPPCMS_SESSIOM_MEMORY_STORAGE_H
 
-#include "defs.h"
-#include "session_storage.h"
+#include <cppcms/defs.h>
+#include <cppcms/session_storage.h>
 namespace cppcms {
 namespace sessions {
 

@@ -17,8 +17,8 @@
 //
 ///////////////////////////////////////////////////////////////////////////////
 #define CPPCMS_SOURCE
-#include "cppcms_error.h"
-#include "config.h"
+#include <cppcms/cppcms_error.h>
+#include <cppcms/config.h>
 #include <iostream>
 #include <string.h>
 

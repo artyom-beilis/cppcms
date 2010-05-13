@@ -19,13 +19,13 @@
 #ifndef CPPCMS_HTTP_RESPONSE_H
 #define CPPCMS_HTTP_RESPONSE_H
 
-#include "defs.h"
+#include <cppcms/defs.h>
 #include <booster/noncopyable.h>
 #include <booster/hold_ptr.h>
 
 #include <string>
 #include <iostream>
-#include "cstdint.h"
+#include <cppcms/cstdint.h>
 
 namespace cppcms {
 class cache_interface;

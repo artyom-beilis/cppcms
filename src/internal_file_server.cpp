@@ -17,20 +17,20 @@
 //
 ///////////////////////////////////////////////////////////////////////////////
 #define CPPCMS_SOURCE
-#include "config.h"
+#include <cppcms/config.h>
 # if defined(HAVE_CANONICALIZE_FILE_NAME) && !defined(_GNU_SOURCE)
 # define _GNU_SOURCE
 #endif
 
 #include <stdlib.h>
 
-#include "application.h"
-#include "service.h"
-#include "http_response.h"
+#include <cppcms/application.h>
+#include <cppcms/service.h>
+#include <cppcms/http_response.h>
 #include "internal_file_server.h"
-#include "cppcms_error.h"
-#include "json.h"
-#include "util.h"
+#include <cppcms/cppcms_error.h>
+#include <cppcms/json.h>
+#include <cppcms/util.h>
 #include <sstream>
 #include <fstream>
 #include <string.h>

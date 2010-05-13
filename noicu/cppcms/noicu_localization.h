@@ -8,13 +8,13 @@
 #ifndef CPPCMS_NOICU_LOCALIZATION_HPP_INCLUDED
 #define CPPCMS_NOICU_LOCALIZATION_HPP_INCLUDED
 
-#include "locale_format.h"
-#include "locale_formatting.h"
-#include "locale_generator.h"
-#include "locale_info.h"
-#include "locale_message.h"
-#include "locale_numeric.h"
-#include "locale_conversion.h"
+#include <cppcms/locale_format.h>
+#include <cppcms/locale_formatting.h>
+#include <cppcms/locale_generator.h>
+#include <cppcms/locale_info.h>
+#include <cppcms/locale_message.h>
+#include <cppcms/locale_numeric.h>
+#include <cppcms/locale_conversion.h>
 
 #endif
 

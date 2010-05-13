@@ -18,19 +18,19 @@
 ///////////////////////////////////////////////////////////////////////////////
 #define CPPCMS_SOURCE
 #include "cgi_api.h"
-#include "service.h"
-#include "http_context.h"
-#include "http_request.h"
-#include "http_response.h"
-#include "application.h"
-#include "applications_pool.h"
-#include "thread_pool.h"
-#include "views_pool.h"
-#include "cache_interface.h"
-#include "session_interface.h"
-#include "cppcms_error.h"
+#include <cppcms/service.h>
+#include <cppcms/http_context.h>
+#include <cppcms/http_request.h>
+#include <cppcms/http_response.h>
+#include <cppcms/application.h>
+#include <cppcms/applications_pool.h>
+#include <cppcms/thread_pool.h>
+#include <cppcms/views_pool.h>
+#include <cppcms/cache_interface.h>
+#include <cppcms/session_interface.h>
+#include <cppcms/cppcms_error.h>
 
-#include "config.h"
+#include <cppcms/config.h>
 #ifdef CPPCMS_USE_EXTERNAL_BOOST
 #   include <boost/bind.hpp>
 #else // Internal Boost

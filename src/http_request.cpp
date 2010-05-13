@@ -18,11 +18,11 @@
 ///////////////////////////////////////////////////////////////////////////////
 #define CPPCMS_SOURCE
 #include "cgi_api.h"
-#include "http_request.h"
-#include "http_cookie.h"
-#include "http_file.h"
+#include <cppcms/http_request.h>
+#include <cppcms/http_cookie.h>
+#include <cppcms/http_file.h>
 #include "http_protocol.h"
-#include "util.h"
+#include <cppcms/util.h>
 
 #include <stdio.h>
 #include <stdlib.h>

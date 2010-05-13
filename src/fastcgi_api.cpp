@@ -19,15 +19,15 @@
 #define CPPCMS_SOURCE
 #include "cgi_api.h"
 #include "cgi_acceptor.h"
-#include "service.h"
+#include <cppcms/service.h>
 #include "service_impl.h"
 #include "cppcms_error_category.h"
-#include "json.h"
-#include "cstdint.h"
+#include <cppcms/json.h>
+#include <cppcms/cstdint.h>
 #include <stdlib.h>
 #include <string.h>
 #include <iostream>
-#include "config.h"
+#include <cppcms/config.h>
 
 #include <booster/aio/buffer.h>
 

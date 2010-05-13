@@ -18,11 +18,11 @@
 ///////////////////////////////////////////////////////////////////////////////
 #define CPPCMS_SOURCE
 #include "encoding_validators.h"
-#include "encoding.h"
+#include <cppcms/encoding.h>
 #include "utf_iterator.h"
-#include "cppcms_error.h"
-#include "localization.h"
-#include "config.h"
+#include <cppcms/cppcms_error.h>
+#include <cppcms/localization.h>
+#include <cppcms/config.h>
 #include <errno.h>
 #include <string>
 #include <stdexcept>

@@ -18,8 +18,8 @@
 ///////////////////////////////////////////////////////////////////////////////
 #define CPPCMS_SOURCE
 #include "base_encryptor.h"
-#include "base64.h"
-#include "cppcms_error.h"
+#include <cppcms/base64.h>
+#include <cppcms/cppcms_error.h>
 #include <stdio.h>
 #include <stdlib.h>
 

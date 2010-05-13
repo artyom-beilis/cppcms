@@ -18,8 +18,8 @@
 ///////////////////////////////////////////////////////////////////////////////
 #define CPPCMS_SOURCE
 #include "session_win32_file_storage.h"
-#include "cppcms_error.h"
-#include "config.h"
+#include <cppcms/cppcms_error.h>
+#include <cppcms/config.h>
 
 #ifdef CPPCMS_USE_EXTERNAL_BOOST
 #   include <boost/crc.hpp>
@@ -35,7 +35,7 @@
 
 #include <sstream>
 
-#include "cstdint.h"
+#include <cppcms/cstdint.h>
 
 namespace cppcms {
 namespace sessions {

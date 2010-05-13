@@ -17,11 +17,11 @@
 //
 ///////////////////////////////////////////////////////////////////////////////
 #define CPPCMS_SOURCE
-#include "form.h"
-#include "config.h"
-#include "encoding.h"
-#include "filters.h"
-#include "cppcms_error.h"
+#include <cppcms/form.h>
+#include <cppcms/config.h>
+#include <cppcms/encoding.h>
+#include <cppcms/filters.h>
+#include <cppcms/cppcms_error.h>
 #include <stack>
 #ifdef CPPCMS_USE_EXTERNAL_BOOST
 #   include <boost/format.hpp>

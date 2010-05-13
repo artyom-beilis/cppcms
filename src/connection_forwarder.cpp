@@ -18,12 +18,12 @@
 ///////////////////////////////////////////////////////////////////////////////
 #define CPPCMS_SOURCE
 #include "connection_forwarder.h"
-#include "http_context.h"
-#include "http_request.h"
-#include "http_response.h"
-#include "service.h"
+#include <cppcms/http_context.h>
+#include <cppcms/http_request.h>
+#include <cppcms/http_response.h>
+#include <cppcms/service.h>
 #include "service_impl.h"
-#include "url_dispatcher.h"
+#include <cppcms/url_dispatcher.h>
 #include "cgi_api.h"
 #include <booster/aio/socket.h>
 #include <booster/aio/io_service.h>

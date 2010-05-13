@@ -18,7 +18,7 @@
 ///////////////////////////////////////////////////////////////////////////////
 #define CPPCMS_SOURCE
 #include "tcp_messenger.h"
-#include "cppcms_error.h"
+#include <cppcms/cppcms_error.h>
 
 #include <booster/aio/socket.h>
 #include <booster/aio/buffer.h>

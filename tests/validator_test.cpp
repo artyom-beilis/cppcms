@@ -16,7 +16,7 @@
 //  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 ///////////////////////////////////////////////////////////////////////////////
-#include "encoding.h"
+#include <cppcms/encoding.h>
 #include <iostream>
 #include <iconv.h>
 #include <stdlib.h>

@@ -6,8 +6,8 @@
 //  http://www.boost.org/LICENSE_1_0.txt)
 //
 #define CPPCMS_LOCALE_SOURCE
-#include "locale_info.h"
-#include "locale_conversion.h"
+#include <cppcms/locale_info.h>
+#include <cppcms/locale_conversion.h>
 #include "locale_src_info_impl.hpp"
 
 namespace cppcms {

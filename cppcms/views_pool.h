@@ -19,9 +19,9 @@
 #ifndef CPPCMS_VIEWS_POOL_H
 #define CPPCMS_VIEWS_POOL_H
 
-#include "defs.h"
+#include <cppcms/defs.h>
 #include <booster/noncopyable.h>
-#include "base_view.h"
+#include <cppcms/base_view.h>
 
 #include <memory>
 #include <map>

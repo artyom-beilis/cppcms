@@ -8,14 +8,14 @@
 #ifndef CPPCMS_LOCALE_MESSAGE_HPP_INCLUDED
 #define CPPCMS_LOCALE_MESSAGE_HPP_INCLUDED
 
-#include "defs.h"
-#include "config.h"
+#include <cppcms/defs.h>
+#include <cppcms/config.h>
 #include <locale>
 #include <string>
 #include <vector>
 #include <set>
 #include <memory>
-#include "locale_formatting.h"
+#include <cppcms/locale_formatting.h>
 
 namespace cppcms {
     namespace locale {

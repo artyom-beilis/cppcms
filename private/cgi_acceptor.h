@@ -20,11 +20,11 @@
 #define CPPCMS_CGI_ACCEPTOR_H
 
 #include "cgi_api.h"
-#include "service.h"
+#include <cppcms/service.h>
 #include "service_impl.h"
-#include "http_context.h"
+#include <cppcms/http_context.h>
 
-#include "config.h"
+#include <cppcms/config.h>
 
 #include <booster/aio/socket.h>
 #include <booster/aio/endpoint.h>

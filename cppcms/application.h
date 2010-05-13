@@ -19,7 +19,7 @@
 #ifndef CPPCMS_APPLICATION_H
 #define CPPCMS_APPLICATION_H
 
-#include "defs.h"
+#include <cppcms/defs.h>
 #include <booster/noncopyable.h>
 #include <booster/hold_ptr.h>
 #include <booster/atomic_counter.h>

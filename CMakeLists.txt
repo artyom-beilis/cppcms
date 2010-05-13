@@ -38,7 +38,6 @@ endif()
 
 add_subdirectory(booster)
 include_directories(booster)
-include_directories(cppcms)
 include_directories(src)
 include_directories(private)
 
@@ -395,14 +394,14 @@ set(CPPCMS_SOURCES
 if(DISABLE_ICU_LOCALIZATION)
 
 	set(CPPCMS_SOURCES ${CPPCMS_SOURCES}
-		noicu/locale_src_conversion.cpp
-		noicu/locale_src_format.cpp
-		noicu/locale_src_formatting.cpp
-		noicu/locale_src_generator.cpp
-		noicu/locale_src_info.cpp
-		noicu/locale_src_message.cpp
-		noicu/locale_src_mo_lambda.cpp
-		noicu/locale_src_numeric.cpp)
+		noicu/src/locale_src_conversion.cpp
+		noicu/src/locale_src_format.cpp
+		noicu/src/locale_src_formatting.cpp
+		noicu/src/locale_src_generator.cpp
+		noicu/src/locale_src_info.cpp
+		noicu/src/locale_src_message.cpp
+		noicu/src/locale_src_mo_lambda.cpp
+		noicu/src/locale_src_numeric.cpp)
 
 	set(CPPCMS_PUBLIC_HEADERS ${CPPCMS_PUBLIC_HEADERS}
 		noicu/locale_conversion.h

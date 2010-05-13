@@ -17,18 +17,18 @@
 //
 ///////////////////////////////////////////////////////////////////////////////
 #define CPPCMS_SOURCE
-#include "url_dispatcher.h"
-#include "http_request.h"
-#include "http_response.h"
+#include <cppcms/url_dispatcher.h>
+#include <cppcms/http_request.h>
+#include <cppcms/http_response.h>
 #include "http_protocol.h"
-#include "service.h"
+#include <cppcms/service.h>
 #include "service_impl.h"
-#include "json.h"
+#include <cppcms/json.h>
 #include "cgi_api.h"
-#include "util.h"
+#include <cppcms/util.h>
 
 #include <stdlib.h>
-#include "config.h"
+#include <cppcms/config.h>
 #ifdef CPPCMS_USE_EXTERNAL_BOOST
 #   include <boost/bind.hpp>
 #else // Internal Boost

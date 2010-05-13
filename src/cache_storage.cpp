@@ -17,7 +17,7 @@
 //
 ///////////////////////////////////////////////////////////////////////////////
 #define CPPCMS_SOURCE
-#include "config.h"
+#include <cppcms/config.h>
 #include "cache_storage.h"
 #include <booster/thread.h>
 
@@ -30,7 +30,7 @@
 #include <list>
 #include <limits>
 #include <iostream>
-#include "cstdint.h"
+#include <cppcms/cstdint.h>
 
 namespace cppcms {
 namespace impl {

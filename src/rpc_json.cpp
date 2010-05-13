@@ -17,10 +17,10 @@
 //
 ///////////////////////////////////////////////////////////////////////////////
 #define CPPCMS_SOURCE
-#include "rpc_json.h" 
-#include "http_context.h"
-#include "http_request.h"
-#include "http_response.h"
+#include <cppcms/rpc_json.h> 
+#include <cppcms/http_context.h>
+#include <cppcms/http_request.h>
+#include <cppcms/http_response.h>
 
 #include <sstream>
 #include <fstream>

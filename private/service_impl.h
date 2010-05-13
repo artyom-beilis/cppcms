@@ -19,8 +19,8 @@
 #ifndef CPPCMS_SERVICE_IMPL_H
 #define CPPCMS_SERVICE_IMPL_H
 
-#include "json.h"
-#include "localization.h"
+#include <cppcms/json.h>
+#include <cppcms/localization.h>
 #include <booster/aio/io_service.h>
 #include <booster/shared_ptr.h>
 #include <memory>

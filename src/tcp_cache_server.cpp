@@ -18,7 +18,7 @@
 ///////////////////////////////////////////////////////////////////////////////
 #define CPPCMS_SOURCE
 // MUST BE FIRST TO COMPILE CORRECTLY UNDER CYGWIN
-#include "defs.h"
+#include <cppcms/defs.h>
 #ifndef CPPCMS_WIN32
 #if defined(__sun)
 #define _POSIX_PTHREAD_SEMANTICS
@@ -28,8 +28,8 @@
 
 #include "tcp_cache_protocol.h"
 #include "cache_storage.h"
-#include "cppcms_error.h"
-#include "config.h"
+#include <cppcms/cppcms_error.h>
+#include <cppcms/config.h>
 #ifdef CPPCMS_USE_EXTERNAL_BOOST
 #   include <boost/bind.hpp>
 #else // Internal Boost

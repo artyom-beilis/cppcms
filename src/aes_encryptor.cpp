@@ -23,10 +23,10 @@
 #include <string>
 #include <vector>
 #include <algorithm>
-#include "cppcms_error.h"
+#include <cppcms/cppcms_error.h>
 #include "aes_encryptor.h"
 
-#include "base64.h"
+#include <cppcms/base64.h>
 
 #ifdef CPPCMS_WIN_NATIVE
 #define CPPCMS_GCRYPT_USE_BOOSTER_THREADS

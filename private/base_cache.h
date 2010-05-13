@@ -21,9 +21,9 @@
 
 #include <string>
 #include <set>
-#include "defs.h"
+#include <cppcms/defs.h>
 #include <booster/intrusive_ptr.h>
-#include "cstdint.h"
+#include <cppcms/cstdint.h>
 
 namespace cppcms {
 	namespace impl {

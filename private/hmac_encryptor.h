@@ -19,7 +19,7 @@
 #ifndef CPPCMS_HMAC_ENCRYPTOR_H
 #define CPPCMS_HMAC_ENCRYPTOR_H
 #include "base_encryptor.h"
-#include "config.h"
+#include <cppcms/config.h>
 #include <booster/thread.h>
 
 namespace cppcms {

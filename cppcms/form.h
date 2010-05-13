@@ -19,7 +19,7 @@
 #ifndef CPPCMS_FORM_H
 #define CPPCMS_FORM_H
 
-#include "defs.h"
+#include <cppcms/defs.h>
 #include <booster/noncopyable.h>
 
 #include <string>
@@ -30,14 +30,14 @@
 #include <stack>
 #include <ostream>
 #include <sstream>
-#include "http_context.h"
-#include "http_request.h"
-#include "http_response.h"
+#include <cppcms/http_context.h>
+#include <cppcms/http_request.h>
+#include <cppcms/http_response.h>
 #include <booster/copy_ptr.h>
 #include <booster/perl_regex.h>
-#include "cppcms_error.h"
-#include "util.h"
-#include "localization.h"
+#include <cppcms/cppcms_error.h>
+#include <cppcms/util.h>
+#include <cppcms/localization.h>
 
 namespace cppcms {
 
