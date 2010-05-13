@@ -164,7 +164,7 @@ namespace rpc {
 		}
 
 		try {
-			current_call_ = new json_call(context());
+			current_call_.reset(new json_call(context()));
 			methods_map_type::iterator p=methods_.find(method());
 			if(p==methods_.end()) {
 				if(!notification())
@@ -232,12 +232,12 @@ namespace rpc {
 		check_call();
 		current_call_->return_error(context(),e);
 	}
-	booster::intrusive_ptr<json_call> json_rpc_server::release_call()
+	booster::shared_ptr<json_call> json_rpc_server::release_call()
 	{
 		check_call();
 		current_call_->attach_context(release_context());
-		booster::intrusive_ptr<json_call> call = current_call_;
-		current_call_ = 0;
+		booster::shared_ptr<json_call> call = current_call_;
+		current_call_.reset();
 		return call;
 	}
 	std::string json_rpc_server::method()
