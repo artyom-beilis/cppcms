@@ -20,8 +20,8 @@
 #define CPPCMS_RPC_JSON_OBJECT_H
 
 #include "application.h"
-#include "refcounted.h"
-#include "intrusive_ptr.h"
+#include <booster/refcounted.h>
+#include <booster/intrusive_ptr.h>
 #include <booster/function.h>
 #include "json.h"
 #include "cppcms_error.h"
@@ -51,7 +51,7 @@ namespace rpc {
 	/// for handling asynchronous responses only. Similar API is provided
 	/// in json_rpc_server class for synchronous methods.
 	///
-	class CPPCMS_API json_call : public refcounted {
+	class CPPCMS_API json_call : public booster::refcounted {
 	public:
 
 		///
@@ -100,10 +100,10 @@ namespace rpc {
 		friend class json_rpc_server;
 		void return_result(http::context &,json::value const &);
 		void return_error(http::context &,json::value const &);
-		void attach_context(intrusive_ptr<http::context> context);
+		void attach_context(booster::intrusive_ptr<http::context> context);
 
 		void check_not_notification();
-		intrusive_ptr<http::context> context_;
+		booster::intrusive_ptr<http::context> context_;
 		json::value  id_;
 		json::array params_;
 		std::string method_;
@@ -160,7 +160,7 @@ namespace rpc {
 		/// Release json_call for asynchronous responses. Calls release_context() and
 		/// assignes it to json_call object.
 		///
-		intrusive_ptr<json_call> release_call();
+		booster::intrusive_ptr<json_call> release_call();
 		
 		json_rpc_server(cppcms::service &srv);
 		~json_rpc_server();
@@ -198,7 +198,7 @@ namespace rpc {
 		};
 		typedef std::map<std::string,method_data> methods_map_type;
 		methods_map_type methods_;
-		intrusive_ptr<json_call> current_call_;
+		booster::intrusive_ptr<json_call> current_call_;
 
 		std::string smd_;
 		

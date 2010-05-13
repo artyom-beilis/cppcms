@@ -83,10 +83,10 @@ struct builder {
 		ips(ips_), ports(ports_)
 	{
 	}
-	boost::shared_ptr<session_api> operator()(worker_thread &w)
+	booster::shared_ptr<session_api> operator()(worker_thread &w)
 	{
-		boost::shared_ptr<session_server_storage> storage(new session_tcp_storage(ips,ports));
-		return boost::shared_ptr<session_api>(new session_sid(storage));
+		booster::shared_ptr<session_server_storage> storage(new session_tcp_storage(ips,ports));
+		return booster::shared_ptr<session_api>(new session_sid(storage));
 	}
 } ;
 

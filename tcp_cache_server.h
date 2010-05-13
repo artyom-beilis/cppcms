@@ -22,7 +22,7 @@
 #include "defs.h"
 #include "base_cache.h"
 #include <booster/noncopyable.h>
-#include "intrusive_ptr.h"
+#include <booster/intrusive_ptr.h>
 #include <booster/hold_ptr.h>
 
 namespace cppcms {
@@ -30,7 +30,7 @@ namespace impl {
 
 class CPPCMS_API tcp_cache_service : public booster::noncopyable {
 public:
-	tcp_cache_service(intrusive_ptr<base_cache> cache,int threads,std::string ip,int port);
+	tcp_cache_service(booster::intrusive_ptr<base_cache> cache,int threads,std::string ip,int port);
 	~tcp_cache_service();
 	void stop();
 private:

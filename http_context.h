@@ -21,8 +21,8 @@
 
 #include "defs.h"
 #include <booster/hold_ptr.h>
-#include "intrusive_ptr.h"
-#include "refcounted.h"
+#include <booster/intrusive_ptr.h>
+#include <booster/refcounted.h>
 #include <booster/function.h>
 #include <locale>
 
@@ -48,13 +48,13 @@ namespace cppcms {
 		/// and destroyed when HTTP request/response is completed
 		///
 		
-		class CPPCMS_API context : public refcounted
+		class CPPCMS_API context : public booster::refcounted
 		{
 		public:
 			///
 			/// Internal API, don't use it
 			///
-			context(intrusive_ptr<impl::cgi::connection> conn);
+			context(booster::intrusive_ptr<impl::cgi::connection> conn);
 			///
 			/// Destructor.
 			~context();
@@ -168,13 +168,13 @@ namespace cppcms {
 			void async_on_peer_reset(booster::function<void()> const &h);
 		private:
 			void on_request_ready(bool error);
-			static void dispatch(intrusive_ptr<application> app,std::string url,bool syncronous);
+			static void dispatch(booster::intrusive_ptr<application> app,std::string url,bool syncronous);
 			void try_restart(bool e);
-			intrusive_ptr<context> self();
+			booster::intrusive_ptr<context> self();
 
 			struct data;
 			booster::hold_ptr<data> d;
-			intrusive_ptr<impl::cgi::connection> conn_;
+			booster::intrusive_ptr<impl::cgi::connection> conn_;
 		};
 
 	}

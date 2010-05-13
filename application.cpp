@@ -23,7 +23,6 @@
 #include "service.h"
 #include "cppcms_error.h"
 #include "url_dispatcher.h"
-#include "intrusive_ptr.h"
 #include "applications_pool.h"
 #include "http_response.h"
 #include "views_pool.h"
@@ -49,7 +48,7 @@ struct application::data {
 	{
 	}
 	cppcms::service *service;
-	intrusive_ptr<http::context> conn;
+	booster::intrusive_ptr<http::context> conn;
 	int pool_id;
 	url_dispatcher url;
 	std::vector<application *> managed_children;
@@ -94,7 +93,7 @@ url_dispatcher &application::dispatcher()
 	return d->url;
 }
 
-intrusive_ptr<http::context> application::get_context()
+booster::intrusive_ptr<http::context> application::get_context()
 {
 	return root()->d->conn;
 }
@@ -106,9 +105,9 @@ http::context &application::context()
 	return *root()->d->conn;
 }
 
-intrusive_ptr<http::context> application::release_context()
+booster::intrusive_ptr<http::context> application::release_context()
 {
-	intrusive_ptr<http::context> ptr=root()->d->conn;
+	booster::intrusive_ptr<http::context> ptr=root()->d->conn;
 	assign_context(0);
 	return ptr;
 }
@@ -119,7 +118,7 @@ bool application::is_asynchronous()
 	return pool_id() < 0;
 }
 
-void application::assign_context(intrusive_ptr<http::context> conn)
+void application::assign_context(booster::intrusive_ptr<http::context> conn)
 {
 	root()->d->conn=conn;
 }
@@ -220,43 +219,46 @@ void application::recycle()
 	assign_context(0);
 }
 
-void intrusive_ptr_add_ref(application *app)
-{
-	++(app->root()->refs_);
-}
-
-// REMEMBER THIS IS CALLED FROM DESTRUCTOR!!!
-void intrusive_ptr_release(application *app)
-{
-	// it is called in destructors... So be very careful
-	try {
-		app = app->root();
-		long refs=--(app->refs_);
-		if(refs > 0)
-			return;
-		
-		cppcms::service &service=app->service();
-
-		try {
-			app->recycle();
-		}
-		catch(...) {
-			if(app->pool_id() < 0) {
-				service.applications_pool().put(app);
-			}
-			else
-				delete app;
-			throw;
-		}
-
-		service.applications_pool().put(app);
-		// return the application to pool... or delete it if "pooled"
-	}
-	catch(...) 
-	{
-		// FIXME LOG IT?
-	}
-}
 
 
 } // cppcms
+
+namespace booster {
+	void intrusive_ptr_add_ref(cppcms::application *app)
+	{
+		++(app->root()->refs_);
+	}
+
+	// REMEMBER THIS IS CALLED FROM DESTRUCTOR!!!
+	void intrusive_ptr_release(cppcms::application *app)
+	{
+		// it is called in destructors... So be very careful
+		try {
+			app = app->root();
+			long refs=--(app->refs_);
+			if(refs > 0)
+				return;
+			
+			cppcms::service &service=app->service();
+
+			try {
+				app->recycle();
+			}
+			catch(...) {
+				if(app->pool_id() < 0) {
+					service.applications_pool().put(app);
+				}
+				else
+					delete app;
+				throw;
+			}
+
+			service.applications_pool().put(app);
+			// return the application to pool... or delete it if "pooled"
+		}
+		catch(...) 
+		{
+			// FIXME LOG IT?
+		}
+	}
+} // booster

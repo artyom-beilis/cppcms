@@ -22,15 +22,8 @@
 #include "json.h"
 #include "localization.h"
 #include <booster/aio/io_service.h>
+#include <booster/shared_ptr.h>
 #include <memory>
-
-#include "config.h"
-#ifdef CPPCMS_USE_EXTERNAL_BOOST
-#   include <boost/shared_ptr.hpp>
-#else // Internal Boost
-#   include <cppcms_boost/shared_ptr.hpp>
-    namespace boost = cppcms_boost;
-#endif
 
 
 namespace cppcms {
@@ -58,7 +51,7 @@ namespace impl {
 		friend class cppcms::service;
 		std::auto_ptr<booster::aio::io_service> io_service_;
 
-		std::vector<boost::shared_ptr<cgi::acceptor> > acceptors_;
+		std::vector<booster::shared_ptr<cgi::acceptor> > acceptors_;
 		std::auto_ptr<json::value> settings_;
 		std::auto_ptr<applications_pool> applications_pool_;
 		std::auto_ptr<thread_pool> thread_pool_;

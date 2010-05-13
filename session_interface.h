@@ -22,7 +22,7 @@
 #include "defs.h"
 #include <booster/noncopyable.h>
 #include <booster/hold_ptr.h>
-#include "intrusive_ptr.h"
+#include <booster/intrusive_ptr.h>
 #include "cstdint.h"
 #include <string>
 #include <map>
@@ -137,7 +137,7 @@ private:
 
 	// storage itself
 	
-	intrusive_ptr<session_api> storage_;
+	booster::intrusive_ptr<session_api> storage_;
 	struct data;
 	booster::hold_ptr<data> d; // for future use
 

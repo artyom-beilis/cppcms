@@ -56,7 +56,7 @@ namespace http {
 		}
 	};
 
-context::context(intrusive_ptr<impl::cgi::connection> conn) :
+context::context(booster::intrusive_ptr<impl::cgi::connection> conn) :
 	conn_(conn)
 {
 	d.reset(new data(*this));
@@ -95,7 +95,7 @@ void context::on_request_ready(bool error)
 	std::string script_name = conn_->getenv("SCRIPT_NAME");
 	std::string matched;
 
-	intrusive_ptr<application> app = service().applications_pool().get(script_name,path_info,matched);
+	booster::intrusive_ptr<application> app = service().applications_pool().get(script_name,path_info,matched);
 
 	if(!app) {
 		response().io_mode(http::response::asynchronous);
@@ -115,7 +115,7 @@ void context::on_request_ready(bool error)
 	}
 }
 // static 
-void context::dispatch(intrusive_ptr<application> app,std::string url,bool syncronous)
+void context::dispatch(booster::intrusive_ptr<application> app,std::string url,bool syncronous)
 {
 	try {
 		if(syncronous)
@@ -169,15 +169,15 @@ void context::try_restart(bool e)
 	if(e) return;
 
 	if(conn_->is_reuseable()) {
-		intrusive_ptr<context> cont=new context(conn_);
+		booster::intrusive_ptr<context> cont=new context(conn_);
 		cont->run();
 	}
 	conn_=0;
 }
 
-intrusive_ptr<context> context::self()
+booster::intrusive_ptr<context> context::self()
 {
-	intrusive_ptr<context> ptr(this);
+	booster::intrusive_ptr<context> ptr(this);
 	return ptr;
 }
 

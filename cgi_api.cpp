@@ -138,7 +138,7 @@ public:
 	struct none{};
 	struct eof{};
 	typedef std::pair<std::string,std::string> pair_type;
-	typedef boost::shared_ptr<http::file> file_type;
+	typedef booster::shared_ptr<http::file> file_type;
 	typedef enum { none, eof, error } result_type;
 	typedef boost::variant<result_type,pair_type,file_type,eof> variant_type;
 
@@ -250,7 +250,7 @@ cppcms::service &connection::service()
 {
 	return *service_;
 }
-intrusive_ptr<connection> connection::self()
+booster::intrusive_ptr<connection> connection::self()
 {
 	return this;
 }

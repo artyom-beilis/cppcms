@@ -27,7 +27,7 @@
 namespace cppcms {
 
 struct cache_pool::data {
-	intrusive_ptr<impl::base_cache> module;
+	booster::intrusive_ptr<impl::base_cache> module;
 };
 
 cache_pool::cache_pool(json::value const &settings) :
@@ -65,7 +65,7 @@ cache_pool::cache_pool(json::value const &settings) :
 			throw cppcms_error("Invalid settings in cache.tcp.ports or cache.tcp.ips");
 		}
 
-		intrusive_ptr<impl::base_cache> l1=d->module;
+		booster::intrusive_ptr<impl::base_cache> l1=d->module;
 		d->module=impl::tcp_cache_factory(ips,ports,l1);
 	}
 }
@@ -74,7 +74,7 @@ cache_pool::~cache_pool()
 {
 }
 
-intrusive_ptr<impl::base_cache> cache_pool::get()
+booster::intrusive_ptr<impl::base_cache> cache_pool::get()
 {
 	return d->module;
 }

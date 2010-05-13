@@ -80,13 +80,13 @@ namespace cgi {
 			{
 				self_->some_headers_data_read(e,n,h_);
 			}
-			binder(intrusive_ptr<http> self,handler const &h) :
+			binder(booster::intrusive_ptr<http> self,handler const &h) :
 				self_(self),
 				h_(h)
 			{
 			}
 		private:
-			intrusive_ptr<http> self_;
+			booster::intrusive_ptr<http> self_;
 			handler h_;
 		};
 		virtual void async_read_headers(handler const &h)
@@ -414,7 +414,7 @@ namespace cgi {
 		}
 
 
-		intrusive_ptr<http> self()
+		booster::intrusive_ptr<http> self()
 		{
 			return this;
 		}

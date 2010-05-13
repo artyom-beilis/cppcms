@@ -60,7 +60,7 @@ int main(int argc,char **argv)
 {
 	try {
 		cppcms::service srv(argc,argv);
-		cppcms::intrusive_ptr<cppcms::application> app;
+		booster::intrusive_ptr<cppcms::application> app;
 		if(!srv.settings().get("test.async",false)) {
 			srv.applications_pool().mount( cppcms::applications_factory<unit_test>());
 		}

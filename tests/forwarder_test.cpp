@@ -27,14 +27,7 @@
 #include <iostream>
 #include "client.h"
 
-#include "config.h"
-#ifdef CPPCMS_USE_EXTERNAL_BOOST
-#   include <boost/shared_ptr.hpp>
-#else // Internal Boost
-#   include <cppcms_boost/shared_ptr.hpp>
-    namespace boost = cppcms_boost;
-#endif
-
+#include <booster/shared_ptr.h>
 #include <booster/thread.h>
 
 class unit_test : public cppcms::application 
@@ -86,7 +79,7 @@ public:
 
 	}
 
-	boost::shared_ptr<cppcms::service> service()
+	booster::shared_ptr<cppcms::service> service()
 	{
 		return srv;
 	}
@@ -104,8 +97,8 @@ public:
 		fw_ok=true;
 	}
 private:
-	boost::shared_ptr<cppcms::service> srv;
-	cppcms::intrusive_ptr<cppcms::application> app_;
+	booster::shared_ptr<cppcms::service> srv;
+	booster::intrusive_ptr<cppcms::application> app_;
 };
 
 

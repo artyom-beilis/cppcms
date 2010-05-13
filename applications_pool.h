@@ -22,7 +22,7 @@
 #include "defs.h"
 #include <booster/noncopyable.h>
 #include <booster/hold_ptr.h>
-#include "intrusive_ptr.h"
+#include <booster/intrusive_ptr.h>
 
 #include <memory>
 #include <string>
@@ -101,7 +101,7 @@ namespace cppcms {
 		///
 		/// This member function is thread safe.
 		///
-		void mount(intrusive_ptr<application> app);
+		void mount(booster::intrusive_ptr<application> app);
 		///
 		/// Mount an asynchronous application \a app  for processing of requests for which CGI PATH_INFO
 		/// matches the regular expression \a path_info. The marched part of an regular expression \a select would 
@@ -109,7 +109,7 @@ namespace cppcms {
 		///
 		/// This member function is thread safe.
 		///
-		void mount(intrusive_ptr<application> app,std::string path_info,int select);
+		void mount(booster::intrusive_ptr<application> app,std::string path_info,int select);
 		///
 		/// Mount an asynchronous application \a app  for processing of requests for which CGI SCRIPT_NAME exactly
 		/// matches \a script_name parameter. And PATH_INFO patches regular expression \a path_info.
@@ -117,7 +117,7 @@ namespace cppcms {
 		///
 		/// This member function is thread safe.
 		///
-		void mount(intrusive_ptr<application> app,std::string script_name);
+		void mount(booster::intrusive_ptr<application> app,std::string script_name);
 		///
 		/// Mount an asynchronous application \a app  for processing of requests for which CGI SCRIPT_NAME exactly
 		/// matches \a script_name parameter. And PATH_INFO patches regular expression \a path_info.
@@ -125,12 +125,12 @@ namespace cppcms {
 		///
 		/// This member function is thread safe.
 		///
-		void mount(intrusive_ptr<application> app,std::string script_name,std::string path_info, int select);
+		void mount(booster::intrusive_ptr<application> app,std::string script_name,std::string path_info, int select);
 
 		///
 		/// Internal API - do not use it directly
 		///
-		intrusive_ptr<application> get(std::string script_name,std::string path_info,std::string &match);
+		booster::intrusive_ptr<application> get(std::string script_name,std::string path_info,std::string &match);
 		///
 		/// Internal API - do not use it directly
 		///

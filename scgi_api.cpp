@@ -178,7 +178,7 @@ namespace cgi {
 
 	private:
 		size_t start_,end_,sep_;
-		intrusive_ptr<scgi> self()
+		booster::intrusive_ptr<scgi> self()
 		{
 			return this;
 		}

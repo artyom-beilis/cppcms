@@ -24,7 +24,7 @@
 
 #include "defs.h"
 #include <booster/noncopyable.h>
-#include "intrusive_ptr.h"
+#include <booster/intrusive_ptr.h>
 #include <booster/hold_ptr.h>
 #include "cstdint.h"
 
@@ -269,7 +269,7 @@ namespace cppcms {
 		booster::hold_ptr<data> d;
 		http::context *context_;
 		std::set<std::string> triggers_;
-		intrusive_ptr<impl::base_cache> cache_module_;
+		booster::intrusive_ptr<impl::base_cache> cache_module_;
 
 		uint32_t page_compression_used_ : 1;
 		uint32_t reserved : 31;

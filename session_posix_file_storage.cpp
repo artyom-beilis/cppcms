@@ -377,7 +377,7 @@ session_file_storage_factory::~session_file_storage_factory()
 {
 }
 
-intrusive_ptr<session_storage> session_file_storage_factory::get()
+booster::intrusive_ptr<session_storage> session_file_storage_factory::get()
 {
 	return storage_;
 }

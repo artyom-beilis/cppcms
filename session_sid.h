@@ -22,7 +22,7 @@
 #include "session_api.h"
 #include "defs.h"
 #include <booster/hold_ptr.h>
-#include "intrusive_ptr.h"
+#include <booster/intrusive_ptr.h>
 #include "session_storage.h"
 
 namespace cppcms {
@@ -32,7 +32,7 @@ namespace sessions {
 	
 	class CPPCMS_API session_sid : public session_api {
 	public:
-		session_sid(intrusive_ptr<session_storage> s);
+		session_sid(booster::intrusive_ptr<session_storage> s);
 		~session_sid();
 		virtual void save(session_interface &,std::string const &data,time_t timeout,bool,bool);
 		virtual bool load(session_interface &,std::string &data,time_t &timeout);
@@ -44,7 +44,7 @@ namespace sessions {
 		
 		struct data;
 		booster::hold_ptr<data> d;
-		intrusive_ptr<session_storage> storage_;
+		booster::intrusive_ptr<session_storage> storage_;
 	};
 
 } // sessions

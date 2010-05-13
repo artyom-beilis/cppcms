@@ -26,13 +26,8 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-#include "config.h"
-#ifdef CPPCMS_USE_EXTERNAL_BOOST
-#   include <boost/shared_ptr.hpp>
-#else // Internal Boost
-#   include <cppcms_boost/shared_ptr.hpp>
-    namespace boost = cppcms_boost;
-#endif
+#include <booster/shared_ptr.h>
+
 
 namespace cppcms { namespace http {
 
@@ -105,7 +100,7 @@ bool request::parse_cookies()
 
 
 struct request::data {
-	std::vector<boost::shared_ptr<file> > files;
+	std::vector<booster::shared_ptr<file> > files;
 	std::vector<char> post_data;
 };
 

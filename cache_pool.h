@@ -21,7 +21,7 @@
 
 #include "defs.h"
 #include <booster/noncopyable.h>
-#include "intrusive_ptr.h"
+#include <booster/intrusive_ptr.h>
 #include <booster/hold_ptr.h>
 
 namespace cppcms {
@@ -32,7 +32,7 @@ namespace cppcms {
 	public:
 		cache_pool(json::value const &settings);
 		~cache_pool();
-		intrusive_ptr<impl::base_cache> get();
+		booster::intrusive_ptr<impl::base_cache> get();
 	private:
 		struct data;
 		booster::hold_ptr<data> d;

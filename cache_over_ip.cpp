@@ -18,7 +18,7 @@
 ///////////////////////////////////////////////////////////////////////////////
 #define CPPCMS_SOURCE
 #include "tcp_cache_client.h"
-#include "atomic_counter.h"
+#include <booster/atomic_counter.h>
 
 #include <booster/thread.h>
 
@@ -26,7 +26,7 @@ namespace cppcms {
 namespace impl {
 	class cache_over_ip : public base_cache {
 	public:
-		cache_over_ip(std::vector<std::string> ips,std::vector<int> ports,intrusive_ptr<base_cache> l1) :
+		cache_over_ip(std::vector<std::string> ips,std::vector<int> ports,booster::intrusive_ptr<base_cache> l1) :
 			ips_(ips),
 			ports_(ports),
 			l1_(l1),
@@ -126,15 +126,15 @@ namespace impl {
 		booster::thread_specific_ptr<tcp_cache> tcp_;
 		std::vector<std::string> ips_;
 		std::vector<int> ports_;
-		intrusive_ptr<base_cache> l1_;
-		atomic_counter refs_;
+		booster::intrusive_ptr<base_cache> l1_;
+		booster::atomic_counter refs_;
 	
 	};
 
-intrusive_ptr<base_cache> CPPCMS_API 
+booster::intrusive_ptr<base_cache> CPPCMS_API 
 tcp_cache_factory(	std::vector<std::string> const &ips,
 			std::vector<int> const &ports,
-			intrusive_ptr<base_cache> l1)
+			booster::intrusive_ptr<base_cache> l1)
 {
 	return new cache_over_ip(ips,ports,l1);
 }

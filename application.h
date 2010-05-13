@@ -21,10 +21,20 @@
 
 #include "defs.h"
 #include <booster/noncopyable.h>
-#include "atomic_counter.h"
 #include <booster/hold_ptr.h>
-#include "intrusive_ptr.h"
+#include <booster/atomic_counter.h>
+#include <booster/intrusive_ptr.h>
 #include <string>
+
+namespace cppcms {
+	class application;
+}
+
+namespace booster {
+	void CPPCMS_API intrusive_ptr_add_ref(cppcms::application *p);
+	void CPPCMS_API intrusive_ptr_release(cppcms::application *p);
+}
+
 
 namespace cppcms {
 
@@ -45,15 +55,6 @@ namespace cppcms {
 		class value;
 	}
 
-	///
-	/// Increase reference count of the p->root().
-	///
-	void CPPCMS_API intrusive_ptr_add_ref(application *p);
-	///
-	/// Decrease reference count of the p->root(). If reference count is 0, and application is asynchronous:
-	/// destroy it, otherwise recycle it to the application pool for future use.
-	///
-	void CPPCMS_API intrusive_ptr_release(application *p);
 
 	///
 	/// \brief application class is the base class for all user created applications.
@@ -230,19 +231,19 @@ namespace cppcms {
 		/// 
 		/// Note: because application hierarchy shared same context, it affects all classes in it.
 		///
-		intrusive_ptr<http::context> release_context();
+		booster::intrusive_ptr<http::context> release_context();
 
 		///
 		/// Get reference counted pointer to the http::context
 		///
-		intrusive_ptr<http::context> get_context();
+		booster::intrusive_ptr<http::context> get_context();
 
 		///
 		/// Set context to the application. The application gets shared ownership on the context.
 		///
 		/// Note: because application hierarchy shared same context, it affects all classes in it.
 		///
-		void assign_context(intrusive_ptr<http::context> conn);
+		void assign_context(booster::intrusive_ptr<http::context> conn);
 
 		///
 		/// Returns true if current application was created as asynchronous application.
@@ -276,10 +277,10 @@ namespace cppcms {
 		application *parent_;
 		application *root_;
 
-		atomic_counter refs_;
+		booster::atomic_counter refs_;
 		friend class applications_pool;
-		friend void intrusive_ptr_add_ref(application *p);
-		friend void intrusive_ptr_release(application *p);
+		friend void booster::intrusive_ptr_add_ref(application *p);
+		friend void booster::intrusive_ptr_release(application *p);
 	};
 
 } // cppcms

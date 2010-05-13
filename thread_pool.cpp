@@ -22,14 +22,13 @@
 #include <vector>
 #include "config.h"
 #ifdef CPPCMS_USE_EXTERNAL_BOOST
-#   include <boost/shared_ptr.hpp>
 #   include <boost/bind.hpp>
 #else // Internal Boost
-#   include <cppcms_boost/shared_ptr.hpp>
 #   include <cppcms_boost/bind.hpp>
     namespace boost = cppcms_boost;
 #endif
 
+#include <booster/shared_ptr.h>
 #include <booster/thread.h>
 
 #if defined(CPPCMS_POSIX)
@@ -88,7 +87,7 @@ namespace impl {
 			}
 
 			for(unsigned i=0;i<workers_.size();i++) {
-				boost::shared_ptr<booster::thread> thread=workers_[i];
+				booster::shared_ptr<booster::thread> thread=workers_[i];
 				workers_[i].reset();
 				if(thread)
 					thread->join();
@@ -137,7 +136,7 @@ namespace impl {
 		int job_id_;
 		typedef std::list<std::pair<int,booster::function<void()> > > queue_type;
 		queue_type queue_;
-		std::vector<boost::shared_ptr<booster::thread> > workers_;
+		std::vector<booster::shared_ptr<booster::thread> > workers_;
 
 	};
 	

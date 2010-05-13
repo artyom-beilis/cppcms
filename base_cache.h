@@ -22,7 +22,7 @@
 #include <string>
 #include <set>
 #include "defs.h"
-#include "intrusive_ptr.h"
+#include <booster/intrusive_ptr.h>
 #include "cstdint.h"
 
 namespace cppcms {
@@ -46,15 +46,18 @@ namespace cppcms {
 			}
 		};
 	} // impl
+} //cppcms
+namespace booster {
 
-	inline void intrusive_ptr_add_ref(impl::base_cache *ptr)
+	inline void intrusive_ptr_add_ref(cppcms::impl::base_cache *ptr)
 	{
 		ptr->add_ref();
 	}
-	inline void intrusive_ptr_release(impl::base_cache *ptr)
+	inline void intrusive_ptr_release(cppcms::impl::base_cache *ptr)
 	{
 		if(ptr && ptr->del_ref())
 			delete ptr;
 	}
-} // cppcms
+} // booster
+
 #endif

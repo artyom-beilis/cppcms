@@ -26,13 +26,7 @@
 #include <vector>
 #include "config.h"
 #include <booster/regex.h>
-#ifdef CPPCMS_USE_EXTERNAL_BOOST
-#   include <boost/shared_ptr.hpp>
-#else // Internal Boost
-#   include <cppcms_boost/shared_ptr.hpp>
-    namespace boost = cppcms_boost;
-#endif
-
+#include <booster/shared_ptr.h>
 #include <booster/thread.h>
 
 namespace cppcms {
@@ -109,8 +103,8 @@ namespace cppcms {
 	};
 
 	struct applications_pool::data {
-		std::vector<boost::shared_ptr<app_data> > apps;
-		typedef std::map<application *,boost::shared_ptr<long_running_app_data> > long_running_aps_type;
+		std::vector<booster::shared_ptr<app_data> > apps;
+		typedef std::map<application *,booster::shared_ptr<long_running_app_data> > long_running_aps_type;
 		long_running_aps_type long_running_aps;
 		int limit;
 		booster::recursive_mutex mutex;
@@ -136,47 +130,47 @@ std::string applications_pool::script_name()
 void applications_pool::mount(std::auto_ptr<factory> aps)
 {
 	lock_it lock(d->mutex);
-	d->apps.push_back(boost::shared_ptr<app_data>(new app_data(script_name(),aps)));
+	d->apps.push_back(booster::shared_ptr<app_data>(new app_data(script_name(),aps)));
 }
 void applications_pool::mount(std::auto_ptr<factory> aps,std::string path_info,int select)
 {
 	lock_it lock(d->mutex);
-	d->apps.push_back(boost::shared_ptr<app_data>(new app_data(script_name(),path_info,select,aps)));
+	d->apps.push_back(booster::shared_ptr<app_data>(new app_data(script_name(),path_info,select,aps)));
 }
 void applications_pool::mount(std::auto_ptr<factory> aps,std::string script_name)
 {
 	lock_it lock(d->mutex);
-	d->apps.push_back(boost::shared_ptr<app_data>(new app_data(script_name,aps)));
+	d->apps.push_back(booster::shared_ptr<app_data>(new app_data(script_name,aps)));
 }
 void applications_pool::mount(std::auto_ptr<factory> aps,std::string script_name,std::string path_info,int select)
 {
 	lock_it lock(d->mutex);
-	d->apps.push_back(boost::shared_ptr<app_data>(new app_data(script_name,path_info,select,aps)));
+	d->apps.push_back(booster::shared_ptr<app_data>(new app_data(script_name,path_info,select,aps)));
 }
 
-void applications_pool::mount(intrusive_ptr<application> app)
+void applications_pool::mount(booster::intrusive_ptr<application> app)
 {
 	lock_it lock(d->mutex);
 	d->long_running_aps[app.get()]=
-		boost::shared_ptr<long_running_app_data>(new long_running_app_data(script_name()));
+		booster::shared_ptr<long_running_app_data>(new long_running_app_data(script_name()));
 }
-void applications_pool::mount(intrusive_ptr<application> app,std::string path_info,int select)
+void applications_pool::mount(booster::intrusive_ptr<application> app,std::string path_info,int select)
 {
 	lock_it lock(d->mutex);
 	d->long_running_aps[app.get()]=
-		boost::shared_ptr<long_running_app_data>(new long_running_app_data(script_name(),path_info,select));
+		booster::shared_ptr<long_running_app_data>(new long_running_app_data(script_name(),path_info,select));
 }
-void applications_pool::mount(intrusive_ptr<application> app,std::string script_name)
+void applications_pool::mount(booster::intrusive_ptr<application> app,std::string script_name)
 {
 	lock_it lock(d->mutex);
 	d->long_running_aps[app.get()]=
-		boost::shared_ptr<long_running_app_data>(new long_running_app_data(script_name));
+		booster::shared_ptr<long_running_app_data>(new long_running_app_data(script_name));
 }
-void applications_pool::mount(intrusive_ptr<application> app,std::string script_name,std::string path_info,int select)
+void applications_pool::mount(booster::intrusive_ptr<application> app,std::string script_name,std::string path_info,int select)
 {
 	lock_it lock(d->mutex);
 	d->long_running_aps[app.get()]=
-		boost::shared_ptr<long_running_app_data>(new long_running_app_data(script_name,path_info,select));
+		booster::shared_ptr<long_running_app_data>(new long_running_app_data(script_name,path_info,select));
 }
 
 bool applications_pool::matched(basic_app_data &data,std::string script_name,std::string path_info,std::string &matched)
@@ -215,7 +209,7 @@ bool applications_pool::matched(basic_app_data &data,std::string script_name,std
 }
 
 
-intrusive_ptr<application> applications_pool::get(std::string script_name,std::string path_info,std::string &m)
+booster::intrusive_ptr<application> applications_pool::get(std::string script_name,std::string path_info,std::string &m)
 {
 	lock_it lock(d->mutex);
 	for(unsigned i=0;i<d->apps.size();i++) {
@@ -223,19 +217,19 @@ intrusive_ptr<application> applications_pool::get(std::string script_name,std::s
 			continue;
 
 		if(d->apps[i]->pool.empty()) {
-			intrusive_ptr<application> app=(*d->apps[i]->factory)(*srv_).release();
+			booster::intrusive_ptr<application> app=(*d->apps[i]->factory)(*srv_).release();
 			app->pool_id(i);
 			return app;
 		}
 		d->apps[i]->size--;
-		intrusive_ptr<application> app(*(d->apps[i]->pool.begin()));
+		booster::intrusive_ptr<application> app(*(d->apps[i]->pool.begin()));
 		d->apps[i]->pool.erase(app.get());
 		return app;
 	}
 	for(data::long_running_aps_type::iterator p=d->long_running_aps.begin();p!=d->long_running_aps.end();++p){
 		if(!matched(*p->second,script_name,path_info,m))
 			continue;
-		intrusive_ptr<application> app=p->first;
+		booster::intrusive_ptr<application> app=p->first;
 		return app;
 	}
 	return 0;

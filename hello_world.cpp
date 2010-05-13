@@ -26,7 +26,7 @@
 #include "localization.h"
 #include "http_context.h"
 #include "filters.h"
-#include "intrusive_ptr.h"
+#include <booster/intrusive_ptr.h>
 #include "form.h"
 #include "cache_interface.h"
 #include "session_interface.h"
@@ -79,12 +79,12 @@ public:
 			release_context()->async_complete_response();
 		}
 		else if(pos == messages_.size()) {
-			cppcms::intrusive_ptr<cppcms::http::context> context=release_context();
+			booster::intrusive_ptr<cppcms::http::context> context=release_context();
 			waiters_.insert(context);
 			context->async_on_peer_reset(
 				boost::bind(
 					&chat::remove_context,
-					cppcms::intrusive_ptr<chat>(this),
+					booster::intrusive_ptr<chat>(this),
 					context));
 		}
 		else {
@@ -92,7 +92,7 @@ public:
 			release_context()->async_complete_response();
 		}
 	}
-	void remove_context(cppcms::intrusive_ptr<cppcms::http::context> context)
+	void remove_context(booster::intrusive_ptr<cppcms::http::context> context)
 	{
 		std::cerr<<"Connection closed"<<std::endl;
 		waiters_.erase(context);
@@ -108,7 +108,7 @@ public:
 	}
 private:
 	std::vector<std::string> messages_;
-	typedef std::set<cppcms::intrusive_ptr<cppcms::http::context> > waiters_type;
+	typedef std::set<booster::intrusive_ptr<cppcms::http::context> > waiters_type;
 	waiters_type waiters_;
 };
 
@@ -136,7 +136,7 @@ private:
 	{
 		broadcast();
 		timer_.expires_from_now(booster::ptime(100));
-		timer_.async_wait(cppcms::util::mem_bind(&stock::on_timeout,cppcms::intrusive_ptr<stock>(this)));
+		timer_.async_wait(cppcms::util::mem_bind(&stock::on_timeout,booster::intrusive_ptr<stock>(this)));
 	}
 	void get()
 	{
@@ -186,7 +186,7 @@ private:
 
 	int counter_;
 	double price_;
-	std::vector<cppcms::intrusive_ptr<cppcms::http::context> > all_;
+	std::vector<booster::intrusive_ptr<cppcms::http::context> > all_;
 	booster::aio::deadline_timer timer_;
 };
 
@@ -454,7 +454,7 @@ int main(int argc,char **argv)
 {
 	try {
 		cppcms::service service(argc,argv);
-		cppcms::intrusive_ptr<chat> c=new chat(service);
+		booster::intrusive_ptr<chat> c=new chat(service);
 		service.applications_pool().mount(c,"/chat");
 		service.applications_pool().mount(cppcms::applications_factory<hello>(),"/hello");
 		service.applications_pool().mount(new stock(service),"/stock");

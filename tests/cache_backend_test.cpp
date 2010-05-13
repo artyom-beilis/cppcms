@@ -21,7 +21,7 @@
 #include "tcp_cache_server.h"
 #include "cache_over_ip.h"
 #include "base_cache.h"
-#include "intrusive_ptr.h"
+#include <booster/intrusive_ptr.h>
 #include "test.h"
 #include <iostream>
 #include <memory>
@@ -36,7 +36,7 @@ void ssleep(int x) { sleep(x); }
 
 
 
-void test_cache(cppcms::intrusive_ptr<cppcms::impl::base_cache> cache,bool test_generators=true)
+void test_cache(booster::intrusive_ptr<cppcms::impl::base_cache> cache,bool test_generators=true)
 {
 	std::string tmp;
 	std::set<std::string> tags;
@@ -100,7 +100,7 @@ void test_cache(cppcms::intrusive_ptr<cppcms::impl::base_cache> cache,bool test_
 	}
 }
 
-void test_two_clients(cppcms::intrusive_ptr<cppcms::impl::base_cache> c1,cppcms::intrusive_ptr<cppcms::impl::base_cache> c2)
+void test_two_clients(booster::intrusive_ptr<cppcms::impl::base_cache> c1,booster::intrusive_ptr<cppcms::impl::base_cache> c2)
 {
 	std::string tmp;
 	std::set<std::string> tags;

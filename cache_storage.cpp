@@ -398,13 +398,13 @@ public:
 }; // mem cache
 
 
-intrusive_ptr<base_cache> thread_cache_factory(unsigned items)
+booster::intrusive_ptr<base_cache> thread_cache_factory(unsigned items)
 {
 	return new mem_cache<thread_settings>(items);
 }
 
 #ifndef CPPCMS_WIN32
-intrusive_ptr<base_cache> process_cache_factory(size_t memory)
+booster::intrusive_ptr<base_cache> process_cache_factory(size_t memory)
 {
 	process_settings::init(memory);
 	return new mem_cache<process_settings>(0);

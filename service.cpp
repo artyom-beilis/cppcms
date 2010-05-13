@@ -546,7 +546,7 @@ void service::setup_acceptor(json::value const &v,int backlog)
 	if(!a.get())
 		throw cppcms_error("Unknown api: " + api);
 
-	impl_->acceptors_.push_back(boost::shared_ptr<acceptor>(a));
+	impl_->acceptors_.push_back(booster::shared_ptr<acceptor>(a));
 }
 
 void service::start_acceptor()

@@ -21,14 +21,7 @@
 #include "application.h"
 
 #include <booster/regex.h>
-
-#include "config.h"
-#ifdef CPPCMS_USE_EXTERNAL_BOOST
-#   include <boost/shared_ptr.hpp>
-#else // Internal Boost
-#   include <cppcms_boost/shared_ptr.hpp>
-    namespace boost = cppcms_boost;
-#endif
+#include <booster/shared_ptr.h>
 
 namespace cppcms {
 
@@ -120,17 +113,17 @@ namespace cppcms {
 
 
 		template<typename H>
-		boost::shared_ptr<option> make_handler(std::string expr,H const &handler,int a=0,int b=0,int c=0,int d=0)
+		booster::shared_ptr<option> make_handler(std::string expr,H const &handler,int a=0,int b=0,int c=0,int d=0)
 		{
-			return boost::shared_ptr<option>(new base_handler<H>(expr,handler,a,b,c,d));
+			return booster::shared_ptr<option>(new base_handler<H>(expr,handler,a,b,c,d));
 		}
 
 	} // anonynoys
 
 
 	struct url_dispatcher::data {
-		std::vector<boost::shared_ptr<option> > options;
-		boost::shared_ptr<option> last_option;
+		std::vector<booster::shared_ptr<option> > options;
+		booster::shared_ptr<option> last_option;
 	};
 
 	// Meanwhile nothing
@@ -154,7 +147,7 @@ namespace cppcms {
 
 	void url_dispatcher::mount(std::string match,application &app,int select)
 	{
-		d->options.push_back(boost::shared_ptr<option>(new mounted(match,select,&app)));
+		d->options.push_back(booster::shared_ptr<option>(new mounted(match,select,&app)));
 	}
 
 

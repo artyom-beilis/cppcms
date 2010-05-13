@@ -117,7 +117,7 @@ namespace rpc {
 		return params_;
 	}
 
-	void json_call::attach_context(intrusive_ptr<http::context> c)
+	void json_call::attach_context(booster::intrusive_ptr<http::context> c)
 	{
 		context_ = c;
 	}
@@ -232,11 +232,11 @@ namespace rpc {
 		check_call();
 		current_call_->return_error(context(),e);
 	}
-	intrusive_ptr<json_call> json_rpc_server::release_call()
+	booster::intrusive_ptr<json_call> json_rpc_server::release_call()
 	{
 		check_call();
 		current_call_->attach_context(release_context());
-		intrusive_ptr<json_call> call = current_call_;
+		booster::intrusive_ptr<json_call> call = current_call_;
 		current_call_ = 0;
 		return call;
 	}

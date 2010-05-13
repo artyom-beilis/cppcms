@@ -28,6 +28,7 @@
     namespace boost = cppcms_boost;
 #endif
 
+#include <booster/shared_ptr.h>
 #include <booster/thread.h>
 
 #ifdef CPPCMS_WIN32
@@ -197,7 +198,7 @@ private:
 	std::string file_name_;
 	time_t time_stamp_;
 	mapping_type mapping_;
-	boost::shared_ptr<impl::shared_object> shared_object_;	
+	booster::shared_ptr<impl::shared_object> shared_object_;	
 
 };
 

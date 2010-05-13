@@ -20,8 +20,8 @@
 #define CPPCMS_IMPL_CGI_API_H
 
 #include <booster/noncopyable.h>
-#include "refcounted.h"
-#include "intrusive_ptr.h"
+#include <booster/refcounted.h>
+#include <booster/intrusive_ptr.h>
 #include <vector>
 #include <map>
 #include <booster/function.h>
@@ -55,7 +55,7 @@ namespace cgi {
 		virtual ~acceptor(){}
 	};
 
-	class connection : public refcounted
+	class connection : public booster::refcounted
 	{
 	public:
 		connection(cppcms::service &srv);
@@ -103,7 +103,7 @@ namespace cgi {
 		/****************************************************************************/
 
 	protected:
-		intrusive_ptr<connection> self();
+		booster::intrusive_ptr<connection> self();
 		void async_read(void *,size_t,io_handler const &h);
 		void async_write(void const *,size_t,io_handler const &h);
 	private:

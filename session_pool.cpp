@@ -26,16 +26,13 @@
 #include "hmac_encryptor.h"
 #include "json.h"
 #include "cppcms_error.h"
+#include <booster/shared_ptr.h>
+#include <booster/enable_shared_from_this.h>
 #include "config.h"
-
 #ifdef CPPCMS_USE_EXTERNAL_BOOST
 #   include <boost/bind.hpp>
-#   include <boost/shared_ptr.hpp>
-#   include <boost/enable_shared_from_this.hpp>
 #else // Internal Boost
 #   include <cppcms_boost/bind.hpp>
-#   include <cppcms_boost/shared_ptr.hpp>
-#   include <cppcms_boost/enable_shared_from_this.hpp>
     namespace boost = cppcms_boost;
 #endif
 
@@ -87,7 +84,7 @@ struct session_pool::sid_factory : public session_api_factory
 		if(pool_->storage_.get())
 			pool_->storage_->gc_job();
 	}
-	intrusive_ptr<session_api> get() {
+	booster::intrusive_ptr<session_api> get() {
 		if(pool_->storage_.get())
 			return new session_sid(pool_->storage_->get());
 		else
@@ -104,7 +101,7 @@ struct session_pool::cookies_factory : public session_api_factory
 		return false; 
 	}
 	void gc() {}
-	intrusive_ptr<session_api> get() {
+	booster::intrusive_ptr<session_api> get() {
 		if(pool_->encryptor_.get())
 			return new session_cookies(pool_->encryptor_->get());
 		else
@@ -128,7 +125,7 @@ struct session_pool::dual_factory : public session_api_factory
 		if(pool_->storage_.get())
 			pool_->storage_->gc_job();
 	}
-	intrusive_ptr<session_api> get() {
+	booster::intrusive_ptr<session_api> get() {
 		if(pool_->storage_.get() && pool_->encryptor_.get())
 			return new session_dual(pool_->encryptor_->get(),pool_->storage_->get(),limit_);
 		else
@@ -140,7 +137,7 @@ private:
 };
 
 
-class session_pool::gc_job : public boost::enable_shared_from_this<gc_job> {
+class session_pool::gc_job : public booster::enable_shared_from_this<gc_job> {
 public:
 	gc_job(service *ser,int freq,session_pool *pool) :
 		timer_(new booster::aio::deadline_timer(ser->get_io_service())),
@@ -160,7 +157,7 @@ private:
 		timer_->expires_from_now(booster::ptime(freq_));
 		timer_->async_wait(boost::bind(&gc_job::async_run,shared_from_this()));
 	}
-	boost::shared_ptr<booster::aio::deadline_timer> timer_;
+	booster::shared_ptr<booster::aio::deadline_timer> timer_;
 	service *service_;
 	int freq_;
 	session_pool *pool_;
@@ -249,7 +246,7 @@ void session_pool::after_fork()
 			return;
 		int frequency = service_->settings().get("session.gc",0);
 		if(frequency > 0) {
-			boost::shared_ptr<gc_job> job(new gc_job(service_,frequency,this));
+			booster::shared_ptr<gc_job> job(new gc_job(service_,frequency,this));
 			job->async_run();
 		}
 	}
@@ -259,7 +256,7 @@ session_pool::~session_pool()
 {
 }
 
-intrusive_ptr<session_api> session_pool::get()
+booster::intrusive_ptr<session_api> session_pool::get()
 {
 	if(backend_.get())
 		return backend_->get();

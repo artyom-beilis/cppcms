@@ -20,7 +20,7 @@
 #define CPPCMS_SESSION_POOL_H
 
 #include "defs.h"
-#include "intrusive_ptr.h"
+#include <booster/intrusive_ptr.h>
 #include <booster/hold_ptr.h>
 #include "session_api.h"
 
@@ -41,7 +41,7 @@ namespace cppcms {
 
 		void init();
 
-		intrusive_ptr<session_api> get();
+		booster::intrusive_ptr<session_api> get();
 
 		void backend(std::auto_ptr<session_api_factory> b);
 		void encryptor(std::auto_ptr<sessions::encryptor_factory> e);

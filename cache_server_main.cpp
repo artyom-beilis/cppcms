@@ -149,7 +149,7 @@ int main(int argc,char **argv)
 	{
 		params par(argc,argv);
 
-		cppcms::intrusive_ptr<cppcms::impl::base_cache> cache;
+		booster::intrusive_ptr<cppcms::impl::base_cache> cache;
 		//auto_ptr<session_server_storage> storage;
 
 		if(par.en_cache)

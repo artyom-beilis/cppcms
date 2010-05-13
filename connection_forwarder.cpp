@@ -30,16 +30,17 @@
 #include <booster/aio/buffer.h>
 #include <booster/aio/endpoint.h>
 
+#include <booster/shared_ptr.h>
+#include <booster/enable_shared_from_this.h>
+
 #ifdef CPPCMS_USE_EXTERNAL_BOOST
 #   include <boost/bind.hpp>
-#   include <boost/enable_shared_from_this.hpp>
 #   include <boost/format.hpp>
 #   if defined(CPPCMS_WIN32) && _WIN32_WINNT <= 0x0501 && !defined(BOOST_ASIO_DISABLE_IOCP)
 #   define NO_CANCELIO
 #   endif
 #else // Internal Boost
 #   include <cppcms_boost/bind.hpp>
-#   include <cppcms_boost/enable_shared_from_this.hpp>
 #   include <cppcms_boost/format.hpp>
     namespace boost = cppcms_boost;
 #   if defined(CPPCMS_WIN32) && _WIN32_WINNT <= 0x0501 && !defined(CPPCMS_BOOST_ASIO_DISABLE_IOCP)
@@ -51,9 +52,9 @@ namespace io = booster::aio;
 
 namespace cppcms {
 	namespace impl {
-		class tcp_pipe : public boost::enable_shared_from_this<tcp_pipe> {
+		class tcp_pipe : public booster::enable_shared_from_this<tcp_pipe> {
 		public:
-			tcp_pipe(intrusive_ptr<http::context> connection,std::string const &ip,int port) :
+			tcp_pipe(booster::intrusive_ptr<http::context> connection,std::string const &ip,int port) :
 				connection_(connection),
 				ip_(ip),
 				port_(port),
@@ -128,7 +129,7 @@ namespace cppcms {
 				}
 			}
 
-			intrusive_ptr<http::context> connection_;
+			booster::intrusive_ptr<http::context> connection_;
 			std::string ip_;
 			int port_;
 			std::string data_;
@@ -150,7 +151,7 @@ namespace cppcms {
 	}
 	void connection_forwarder::main(std::string unused)
 	{
-		intrusive_ptr<http::context> con = release_context();
+		booster::intrusive_ptr<http::context> con = release_context();
 		std::string env_str;
 		env_str.reserve(1000);
 
@@ -180,7 +181,7 @@ namespace cppcms {
 		header+=',';
 		header.append(reinterpret_cast<char *>(post.first),post.second);
 		
-		boost::shared_ptr<impl::tcp_pipe> pipe(new impl::tcp_pipe(con,ip_,port_));
+		booster::shared_ptr<impl::tcp_pipe> pipe(new impl::tcp_pipe(con,ip_,port_));
 		pipe->async_send_receive(header);
 	}
 };

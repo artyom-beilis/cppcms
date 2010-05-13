@@ -639,7 +639,7 @@ namespace cgi {
 		}
 
 
-		intrusive_ptr<fastcgi> self()
+		booster::intrusive_ptr<fastcgi> self()
 		{
 			return this;
 		}

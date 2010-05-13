@@ -205,42 +205,6 @@ set(CPPCMS_LIBRARY_PREFIX ${CMAKE_SHARED_LIBRARY_PREFIX})
 # Atomic API tests
 #
 
-check_cxx_source_compiles(
-	"#include <windows.h>
-	int main() { volatile long v=0; return InterlockedCompareExchange(&v,1,0); }"
-	HAVE_WIN32_INTERLOCKED)
-
-check_cxx_source_compiles(
-	"int main() { volatile long v=0; return __sync_add_and_fetch(&v,1); }"
-	HAVE_SYNC_FETCH_AND_ADD)
-
-check_cxx_source_compiles(
-	"#include <bits/atomicity.h> 
-	using __gnu_cxx::__exchange_and_add;
-	int main(){ volatile int x=0; return __exchange_and_add(&x,1);}"
-	HAVE_GCC_BITS_EXCHANGE_AND_ADD)
-
-check_cxx_source_compiles(
-	"#include <ext/atomicity.h> 
-	using __gnu_cxx::__exchange_and_add;
-	int main(){ volatile int x=0; return __exchange_and_add(&x,1);}"
-	HAVE_GCC_EXT_EXCHANGE_AND_ADD)
-
-check_cxx_source_compiles(
-	"#include <sys/types.h>
-	#include <machine/atomic.h>
-	int main() { volatile unsigned v=0; return atomic_fetchadd_int(&v,1); }"
-	HAVE_FREEBSD_ATOMIC)
-
-check_cxx_source_compiles(
-	"#include <atomic.h>
-	int main() { volatile unsigned v=0; return atomic_add_int_nv(&v,1); }"
-	HAVE_SOLARIS_ATOMIC)
-
-check_cxx_source_compiles(
-	"#include <libkern/OSAtomic.h>
-	int main() { volatile int v=0; return OSAtomicAdd32(1,&v); }"
-	HAVE_MAC_OS_X_ATOMIC)
 
 check_cxx_source_compiles(
 	"#include <string> 
@@ -339,7 +303,6 @@ endif(USE_EXTERNAL_BOOST)
 set(CPPCMS_PUBLIC_HEADERS
 	application.h
 	applications_pool.h
-	atomic_counter.h
 	base64.h
 	base_content.h
 	base_view.h
@@ -400,7 +363,6 @@ set(CPPCMS_SOURCES
 	base_view.cpp 
 	views_pool.cpp
 	internal_file_server.cpp 
-	atomic_counter.cpp 
 	json.cpp 
 	encoding.cpp 
 	form.cpp 
@@ -631,7 +593,6 @@ add_executable(cppcms_config_find_param cppcms_config_find_param.cpp json.cpp)
 set(ALL_TESTS 
 	form_test
 	proto_test
-	atomic_test
 	encryptor_test
 	storage_test
 	cache_backend_test
@@ -706,7 +667,6 @@ install(PROGRAMS cppcms_tmpl_cc cppcms_run
 
 set(CNF "${CMAKE_CURRENT_SOURCE_DIR}/tests")
 
-add_test(atomic_test atomic_test)
 add_test(base64_test base64_test)
 add_test(encryptor_test encryptor_test)
 add_test(storage_test storage_test)

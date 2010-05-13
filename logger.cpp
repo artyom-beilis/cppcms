@@ -22,13 +22,12 @@
 #include "config.h"
 #ifdef CPPCMS_USE_EXTERNAL_BOOST
 #   include <boost/format.hpp>
-#   include <boost/shared_ptr.hpp>
 #else // Internal Boost
 #   include <cppcms_boost/format.hpp>
-#   include <cppcms_boost/shared_ptr.hpp>
     namespace boost = cppcms_boost;
 #endif
 
+#include <booster/shared_ptr.h>
 #include <booster/thread.h>
 
 #include <sstream>
@@ -87,7 +86,7 @@ namespace cppcms {
 		typedef std::map<std::string,logger::level_type> module_level_type;
 		module_level_type module_level;
 		std::auto_ptr<std::fstream> output;
-		std::vector<boost::shared_ptr<impl::log_device> > devices;
+		std::vector<booster::shared_ptr<impl::log_device> > devices;
 	};
 
 	logger::level_type logger::module_level(char const *module)
