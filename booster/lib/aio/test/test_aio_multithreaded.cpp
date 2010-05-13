@@ -1,3 +1,10 @@
+//
+//  Copyright (c) 2010 Artyom Beilis (Tonkikh)
+//
+//  Distributed under the Boost Software License, Version 1.0. (See
+//  accompanying file LICENSE_1_0.txt or copy at
+//  http://www.boost.org/LICENSE_1_0.txt)
+//
 #include <booster/aio/socket.h>
 #include <booster/aio/buffer.h>
 #include <booster/aio/io_service.h>

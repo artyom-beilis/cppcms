@@ -1,3 +1,11 @@
+#
+#  Copyright (c) 2010 Artyom Beilis (Tonkikh)
+#
+#  Distributed under the Boost Software License, Version 1.0. (See
+#  accompanying file LICENSE_1_0.txt or copy at
+#  http://www.boost.org/LICENSE_1_0.txt)
+#
+
 cmake_minimum_required(VERSION 2.6)
 project(booster)
 include(CheckFunctionExists)
@@ -130,8 +138,32 @@ check_cxx_source_compiles(
 	int main() { volatile int v=0; return OSAtomicAdd32(1,&v); }"
 	BOOSTER_HAVE_MAC_OS_X_ATOMIC)
 
+check_cxx_source_compiles(
+	"#include <stdint.h>
+	int main() { int64_t x=10; return 0; }"
+	BOOSTER_HAVE_STDINT_H)
 
+check_cxx_source_compiles(
+	"#include <inttypes.h>
+	int main() { int64_t x=10; return 0; }"
+	BOOSTER_HAVE_INTTYPES_H)
 
+if(WIN32)
+	check_cxx_source_compiles(
+	"#include <winsock2.h>
+	#include <windows.h>
+	int main()
+	{ struct sockaddr_in6 in6; struct in6_addr in6addr; ::inet_pton(AF_INET6,\"::1\",&in6addr); return 0; }"
+	BOOSTER_AIO_HAVE_PF_INET6)
+else()
+	check_cxx_source_compiles(
+	"#include <arpa/inet.h>
+	#include <sys/socket.h>
+	#include <sys/un.h>
+	#include <netinet/in.h>
+	{ struct sockaddr_in6 in6; struct in6_addr in6addr; ::inet_pton(AF_INET6,\"::1\",&in6addr); return 0; }"
+	BOOSTER_AIO_HAVE_PF_INET6)
+endif()
 
 
 
@@ -149,6 +181,7 @@ set(BOOSTER_SRC
 	lib/aio/src/select_iterrupter.cpp
 	lib/aio/src/socket.cpp
 	lib/smart_ptr/src/sp_counted_base.cpp
+	lib/smart_ptr/src/atomic_counter.cpp
 )
 
 if(NOT DISABLE_ICU_LOCALIZATION)
@@ -338,6 +371,8 @@ if(UNIX)
 endif()
 
 add_booster_test(smart_ptr shared_ptr)
+add_booster_test(smart_ptr atomic_counter)
+add_booster_test(smart_ptr sp_counter)
 
 add_booster_test(regex regex)
 add_booster_test(aio reactor)

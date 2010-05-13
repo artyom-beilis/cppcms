@@ -1,10 +1,18 @@
+//
+//  Copyright (c) 2010 Artyom Beilis (Tonkikh)
+//
+//  Distributed under the Boost Software License, Version 1.0. (See
+//  accompanying file LICENSE_1_0.txt or copy at
+//  http://www.boost.org/LICENSE_1_0.txt)
+//
 #ifndef BOOSTER_CSTDINT_H
 #define BOOSTER_CSTDINT_H
-#include <booster/config.h>
 
-#if !defined(BOOSTER_MSVC) && !defined(__FreeBSD__)
+#include <booster/build_config.h>
+
+#if defined BOOSTER_HAVE_STDINT_H
 #  include <stdint.h>
-#elif defined(__FreeBSD__)
+#elif defined BOOSTER_HAVE_INTTYPES_H
 #  include <inttypes.h>
 #else 
 namespace booster { 
