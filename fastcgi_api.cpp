@@ -639,9 +639,9 @@ namespace cgi {
 		}
 
 
-		booster::intrusive_ptr<fastcgi> self()
+		booster::shared_ptr<fastcgi> self()
 		{
-			return this;
+			return booster::static_pointer_cast<fastcgi>(shared_from_this());
 		}
 		
 		

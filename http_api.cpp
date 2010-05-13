@@ -80,13 +80,13 @@ namespace cgi {
 			{
 				self_->some_headers_data_read(e,n,h_);
 			}
-			binder(booster::intrusive_ptr<http> self,handler const &h) :
+			binder(booster::shared_ptr<http> self,handler const &h) :
 				self_(self),
 				h_(h)
 			{
 			}
 		private:
-			booster::intrusive_ptr<http> self_;
+			booster::shared_ptr<http> self_;
 			handler h_;
 		};
 		virtual void async_read_headers(handler const &h)
@@ -414,9 +414,9 @@ namespace cgi {
 		}
 
 
-		booster::intrusive_ptr<http> self()
+		booster::shared_ptr<http> self()
 		{
-			return this;
+			return booster::static_pointer_cast<http>(shared_from_this());
 		}
 		
 		friend class socket_acceptor<http>;

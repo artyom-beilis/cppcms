@@ -89,7 +89,7 @@ namespace impl {
 			{
 				if(stopped_)
 					return;
-				ServerAPI *api=new ServerAPI(srv_);
+				booster::shared_ptr<ServerAPI> api(new ServerAPI(srv_));
 				api_=api;
 				asio_socket_ = &api->socket_;
 				acceptor_.async_accept(*asio_socket_,accept_binder(this));
@@ -108,14 +108,14 @@ namespace impl {
 					if(tcp_)
 						asio_socket_->set_option(io::socket::tcp_no_delay,true);
 					booster::intrusive_ptr< ::cppcms::http::context> cnt(new ::cppcms::http::context(api_));
-					api_=0;
+					api_.reset();
 					cnt->run();	
 				}
 				async_accept();
 			}
 
 			cppcms::service &srv_;
-			booster::intrusive_ptr<connection> api_;
+			booster::shared_ptr<connection> api_;
 			booster::aio::socket *asio_socket_,acceptor_;
 			bool stopped_;
 			bool tcp_;

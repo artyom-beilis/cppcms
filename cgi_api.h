@@ -20,8 +20,8 @@
 #define CPPCMS_IMPL_CGI_API_H
 
 #include <booster/noncopyable.h>
-#include <booster/refcounted.h>
-#include <booster/intrusive_ptr.h>
+#include <booster/shared_ptr.h>
+#include <booster/enable_shared_from_this.h>
 #include <vector>
 #include <map>
 #include <booster/function.h>
@@ -55,7 +55,9 @@ namespace cgi {
 		virtual ~acceptor(){}
 	};
 
-	class connection : public booster::refcounted
+	class connection : 
+		public booster::noncopyable,
+		public booster::enable_shared_from_this<connection>
 	{
 	public:
 		connection(cppcms::service &srv);
@@ -103,7 +105,7 @@ namespace cgi {
 		/****************************************************************************/
 
 	protected:
-		booster::intrusive_ptr<connection> self();
+		booster::shared_ptr<connection> self();
 		void async_read(void *,size_t,io_handler const &h);
 		void async_write(void const *,size_t,io_handler const &h);
 	private:

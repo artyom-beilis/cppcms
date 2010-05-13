@@ -250,9 +250,9 @@ cppcms::service &connection::service()
 {
 	return *service_;
 }
-booster::intrusive_ptr<connection> connection::self()
+booster::shared_ptr<connection> connection::self()
 {
-	return this;
+	return shared_from_this();
 }
 
 void connection::async_prepare_request(	http::request &request,

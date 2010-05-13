@@ -22,6 +22,7 @@
 #include "defs.h"
 #include <booster/hold_ptr.h>
 #include <booster/intrusive_ptr.h>
+#include <booster/shared_ptr.h>
 #include <booster/refcounted.h>
 #include <booster/function.h>
 #include <locale>
@@ -54,7 +55,7 @@ namespace cppcms {
 			///
 			/// Internal API, don't use it
 			///
-			context(booster::intrusive_ptr<impl::cgi::connection> conn);
+			context(booster::shared_ptr<impl::cgi::connection> conn);
 			///
 			/// Destructor.
 			~context();
@@ -174,7 +175,7 @@ namespace cppcms {
 
 			struct data;
 			booster::hold_ptr<data> d;
-			booster::intrusive_ptr<impl::cgi::connection> conn_;
+			booster::shared_ptr<impl::cgi::connection> conn_;
 		};
 
 	}

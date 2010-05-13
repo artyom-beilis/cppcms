@@ -56,7 +56,7 @@ namespace http {
 		}
 	};
 
-context::context(booster::intrusive_ptr<impl::cgi::connection> conn) :
+context::context(booster::shared_ptr<impl::cgi::connection> conn) :
 	conn_(conn)
 {
 	d.reset(new data(*this));
@@ -172,7 +172,7 @@ void context::try_restart(bool e)
 		booster::intrusive_ptr<context> cont=new context(conn_);
 		cont->run();
 	}
-	conn_=0;
+	conn_.reset();
 }
 
 booster::intrusive_ptr<context> context::self()

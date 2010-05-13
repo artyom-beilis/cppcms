@@ -178,9 +178,9 @@ namespace cgi {
 
 	private:
 		size_t start_,end_,sep_;
-		booster::intrusive_ptr<scgi> self()
+		booster::shared_ptr<scgi> self()
 		{
-			return this;
+			return booster::static_pointer_cast<scgi>(shared_from_this());
 		}
 		friend class socket_acceptor<scgi>;
 		io::socket socket_;
