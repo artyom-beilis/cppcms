@@ -97,6 +97,44 @@ if(${CMAKE_HOST_WIN32})
 	find_library(WS2_32 ws2_32)
 endif()
 
+
+check_cxx_source_compiles(
+	"int main() { volatile int v=0; return __sync_bool_compare_and_swap(&v,0,1); }"
+	BOOSTER_HAS_GCC_SYNC)
+
+check_cxx_source_compiles(
+	"#include <bits/atomicity.h> 
+	using __gnu_cxx::__exchange_and_add;
+	int main(){ volatile int x=0; return __exchange_and_add(&x,1);}"
+	BOOSTER_HAVE_GCC_BITS_EXCHANGE_AND_ADD)
+
+check_cxx_source_compiles(
+	"#include <ext/atomicity.h> 
+	using __gnu_cxx::__exchange_and_add;
+	int main(){ volatile int x=0; return __exchange_and_add(&x,1);}"
+	BOOSTER_HAVE_GCC_EXT_EXCHANGE_AND_ADD)
+
+check_cxx_source_compiles(
+	"#include <sys/types.h>
+	#include <machine/atomic.h>
+	int main() { volatile unsigned v=0; return atomic_cmpset_int(&v,1); }"
+	BOOSTER_HAVE_FREEBSD_ATOMIC)
+
+check_cxx_source_compiles(
+	"#include <atomic.h>
+	int main() { volatile unsigned v=0; return atomic_add_int_nv(&v,1); }"
+	BOOSTER_HAVE_SOLARIS_ATOMIC)
+
+check_cxx_source_compiles(
+	"#include <libkern/OSAtomic.h>
+	int main() { volatile int v=0; return OSAtomicAdd32(1,&v); }"
+	BOOSTER_HAVE_MAC_OS_X_ATOMIC)
+
+
+
+
+
+
 set(BOOSTER_SRC	
 	lib/thread/src/thread.cpp
 	lib/ptime/src/posix_time.cpp
@@ -321,4 +359,6 @@ if(WITH_BOOSTER_LOCALE)
 	add_booster_test(locale ios_prop)
 	add_booster_param_test(locale message "${CMAKE_CURRENT_SOURCE_DIR}/lib/locale/test")
 endif()
+
+configure_file(lib/booster_build_config.cmake.h booster/build_config.h)
 

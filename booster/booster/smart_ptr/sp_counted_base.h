@@ -22,57 +22,58 @@
 namespace booster
 {
 
-namespace detail
-{
+    namespace detail
+    {
 
-typedef union sp_counted_base_atomic {
-        int i;
-        unsigned int ui;
-        long int li;
-        unsigned long int uli;
-        long long int lli;
-        unsigned long long int ulli;
-        char at_least[8];
-} sp_counted_base_atomic_type;
+        typedef union sp_counted_base_atomic {
+            int i;
+            unsigned int ui;
+            long int li;
+            unsigned long int uli;
+            long long int lli;
+            unsigned long long int ulli;
+            char at_least[8];
+        } sp_counted_base_atomic_type;
 
-class BOOSTER_API sp_counted_base
-{
-private:
+        
+        class BOOSTER_API sp_counted_base
+        {
+        private:
 
-    sp_counted_base( sp_counted_base const & );
-    sp_counted_base & operator= ( sp_counted_base const & );
+            sp_counted_base( sp_counted_base const & );
+            sp_counted_base & operator= ( sp_counted_base const & );
 
-    typedef sp_counted_base_atomic_type atomic_type;
+            typedef sp_counted_base_atomic_type atomic_type;
 
-    mutable atomic_type use_count_;        // #shared
-    mutable atomic_type weak_count_;       // #weak + (#shared != 0)
-    #ifndef BOOSTER_WIN32
-    mutable pthread_mutex_t lock_;
-    #endif
+            mutable atomic_type use_count_;        // #shared
+            mutable atomic_type weak_count_;       // #weak + (#shared != 0)
+#ifndef BOOSTER_WIN32
+            mutable pthread_mutex_t lock_;
+#endif
 
-public:
+        public:
 
-    sp_counted_base();
-    virtual ~sp_counted_base(); // nothrow
+            sp_counted_base();
+            virtual ~sp_counted_base(); // nothrow
 
-    // dispose() is called when use_count_ drops to zero, to release
-    // the resources managed by *this.
+            // dispose() is called when use_count_ drops to zero, to release
+            // the resources managed by *this.
 
-    virtual void dispose() = 0; // nothrow
+            virtual void dispose() = 0; // nothrow
 
-    // destroy() is called when weak_count_ drops to zero.
+            // destroy() is called when weak_count_ drops to zero.
 
-    virtual void destroy(); // nothrow
-    virtual void * get_deleter( sp_typeinfo const & ti ) = 0;
-    void add_ref_copy();
-    bool add_ref_lock(); // true on success
-    void release(); // nothrow
-    void weak_add_ref(); // nothrow
-    void weak_release(); // nothrow
-    long use_count() const; // nothrow
-};
+            virtual void destroy(); // nothrow
+            virtual void * get_deleter( sp_typeinfo const & ti ) = 0;
+            void add_ref_copy();
+            bool add_ref_lock(); // true on success
+            void release(); // nothrow
+            void weak_add_ref(); // nothrow
+            void weak_release(); // nothrow
+            long use_count() const; // nothrow
+        };
 
-} // namespace detail
+    } // namespace detail
 
 } // namespace boost
 

@@ -11,20 +11,26 @@
 //
 
 #include <booster/smart_ptr/sp_counted_base.h>
+#include <booster/build_config.h>
 
-//#define BOOSTER_HAS_GCC_SYNC
+#undef SP_ATOMIC
+
 
 #if defined BOOSTER_WIN32
 
-#include <windows.h>
-#define SP_ATOMIC
+///////////////
+//  Windows
+///////////////
+
+#   include <windows.h>
+#   define SP_ATOMIC
 
 namespace booster { 
     namespace detail {
 
-        static bool atomic_cas(sp_counted_base_atomic_type *pw,int old_value,int new_value)
+        static bool atomic_cas(sp_counted_base_atomic_type volatile *pw,int old_value,int new_value)
         {
-            return InterlockedCompareExchange(&pw->i,new_value,old_value)==old_value;
+            return InterlockedCompareExchange(&pw->li,new_value,old_value)==old_value;
         }
 
         static int atomic_get(sp_counted_base_atomic_type volatile *pw)
@@ -49,34 +55,81 @@ namespace booster {
             do {
                 tmp=InterlockedCompareExchange(&pw->li,vo+dv,vo);
             }while(tmp!=vo);
+            return tmp;
         }
 
-        static void sp_atomic_increment(sp_counted_base_atomic_type volatile *pw)
+        static void atomic_increment(sp_counted_base_atomic_type volatile *pw)
         {
             InterlockedIncrement(&pw->li);
         }
 
     } //details
 }  // booster
-#elif defined (__FreeBSD__)
+
+#elif defined BOOSTER_HAVE_MAC_OS_X_ATOMIC
+
+////////////
+// Mac OS X
+////////////
+
 namespace booster { 
     namespace detail {
 
-#include <sys/types.h>
-#include <machine/atomic.h>
-#define SP_ATOMIC
+#   include <libkern/OSAtomic.h>
+#   define SP_ATOMIC
+
+        static bool atomic_cas(sp_counted_base_atomic_type volatile *pw,int old_value,int new_value)
+        {
+            return OSCompareAndSwap(old_value,new_value,&pw->i);
+        }
+        static int atomic_get(sp_counted_base_atomic_type volatile *pw)
+        {
+            OSSynchronizeIO();
+            return pw->i;
+        }
+
+        static void atomic_set(sp_counted_base_atomic_type volatile *pw,int v)
+        {
+            pw->i=v;
+            OSSynchronizeIO();
+        }
+        static int atomic_exchange_and_add(sp_counted_base_atomic_type volatile * pw, int dv)
+        {
+            return OSAddAtomic(dv,&pw->i);
+        }
+        static void atomic_increment(sp_counted_base_atomic_type volatile *pw)
+        {
+            atomic_exchange_and_add(pw,1);
+        }
+    } // detail
+} // booster
+
+
+#elif defined BOOSTER_HAVE_FREEBSD_ATOMIC
+
+////////////
+// FreeBSD
+///////////
+
+namespace booster { 
+    namespace detail {
+
+#   include <sys/types.h>
+#   include <machine/atomic.h>
+#   define SP_ATOMIC
+
         static bool atomic_cas(sp_counted_base_atomic_type volatile *pw,int old_value,int new_value)
         {
             return atomic_cmpset_int(&pw->i,old_value,new_value);
         }
         static int atomic_get(sp_counted_base_atomic_type volatile *pw)
         {
-            return atomic_load_acq(&pw->i);
+            return atomic_load_acq_int(&pw->i);
         }
 
         static void atomic_set(sp_counted_base_atomic_type volatile *pw,int v)
         {
-            atomic_store_rel(&pw->i,v);
+            atomic_store_rel_int(&pw->i,v);
         }
         static int atomic_exchange_and_add(sp_counted_base_atomic_type volatile * pw, int dv)
         {
@@ -86,18 +139,23 @@ namespace booster {
         {
             atomic_exchange_and_add(pw,1);
         }
-    }
-}
-#elif defined(__sun)
+    } // detail
+} // booster
+#elif defined BOOSTER_HAVE_SOLARIS_ATOMIC
+///////////////
+// Sun Solaris
+///////////////
+
+#   include <atomic.h>
+#   define SP_ATOMIC
+
 namespace booster { 
     namespace detail {
 
-#include <atomic.h>
-#define SP_ATOMIC
 
         static bool atomic_cas(sp_counted_base_atomic_type volatile *pw,int old_value,int new_value)
         {
-            return atomic_cas_uint(&pw->ui,unsigned(old_value),unsigned(new_value))==old_value;
+            return atomic_cas_uint(&pw->ui,unsigned(old_value),unsigned(new_value))==unsigned(old_value);
         }
         static int atomic_get(sp_counted_base_atomic_type volatile *pw)
         {
@@ -118,38 +176,44 @@ namespace booster {
         {
             atomic_add_int(&pw->i,1);
         }
-    }
-}
+    } // detail
+} // booster
+
 #elif defined BOOSTER_HAS_GCC_SYNC
-#define SP_ATOMIC
+//////////////////////////
+// GCC __sync_
+/////////////////////////
+
+#   define SP_ATOMIC
 namespace booster { 
     namespace detail {
 
-        int atomic_get(sp_counted_base_atomic_type volatile *pw)
+        static int atomic_get(sp_counted_base_atomic_type volatile *pw)
         {
             __sync_synchronize();
             return pw->i;
         }
-        void atomic_set(sp_counted_base_atomic_type volatile *pw,int v)
+        static void atomic_set(sp_counted_base_atomic_type volatile *pw,int v)
         {
             pw->i=v;
             __sync_synchronize();
         }
-        bool atomic_cas(sp_counted_base_atomic_type volatile *pw,int old_value,int new_value)
+        static bool atomic_cas(sp_counted_base_atomic_type volatile *pw,int old_value,int new_value)
         {
             return __sync_bool_compare_and_swap(&pw->i,old_value,new_value);
         }
-        int atomic_exchange_and_add(sp_counted_base_atomic_type volatile * pw, int dv)
+        static int atomic_exchange_and_add(sp_counted_base_atomic_type volatile * pw, int dv)
         {
             return __sync_fetch_and_add(&pw->i,dv);
         }
-        inline void atomic_increment( sp_counted_base_atomic_type volatile * pw)
+        static void atomic_increment( sp_counted_base_atomic_type volatile * pw)
         {
             atomic_exchange_and_add(pw,1);
         }
     }
 }
-#endif
+
+#endif // Any atomic op
 
 
 //////////////
@@ -162,7 +226,9 @@ namespace booster
     namespace detail
     {
 
-#ifdef SP_ATOMIC
+#if defined SP_ATOMIC
+
+        // We have full atomic operations support
 
         inline int atomic_conditional_increment( sp_counted_base_atomic_type * pw)
         {
@@ -224,15 +290,6 @@ namespace booster
 
 #else // PTHREAD
 
-        inline void init_mutex(pthread_mutex_t *m)
-        {
-            pthread_mutex_init(m,0);
-        }
-        inline void destroy_mutex(pthread_mutex_t *m)
-        {
-            pthread_mutex_destroy(m);
-        }
-
         inline int atomic_exchange_and_add( sp_counted_base_atomic_type * pw, int dv, pthread_mutex_t *m)
         {
             pthread_mutex_lock(m);
@@ -276,14 +333,14 @@ namespace booster
 
         sp_counted_base::sp_counted_base()
         {
-            init_mutex(&lock_);
+            pthread_mutex_init(&lock_,0);
             atomic_set(&use_count_,1,&lock_);
             atomic_set(&weak_count_,1,&lock_);
         }
 
         sp_counted_base::~sp_counted_base() // nothrow
         {
-            destroy_mutex(&lock_);
+            pthread_mutex_destroy(&lock_);
         }
 
         void sp_counted_base::add_ref_copy()
