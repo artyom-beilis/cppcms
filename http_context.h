@@ -23,7 +23,7 @@
 #include <booster/hold_ptr.h>
 #include <booster/intrusive_ptr.h>
 #include <booster/shared_ptr.h>
-#include <booster/refcounted.h>
+#include <booster/enable_shared_from_this.h>
 #include <booster/function.h>
 #include <locale>
 
@@ -49,7 +49,9 @@ namespace cppcms {
 		/// and destroyed when HTTP request/response is completed
 		///
 		
-		class CPPCMS_API context : public booster::refcounted
+		class CPPCMS_API context : 
+			public booster::noncopyable,
+			public booster::enable_shared_from_this<context>
 		{
 		public:
 			///
@@ -171,7 +173,7 @@ namespace cppcms {
 			void on_request_ready(bool error);
 			static void dispatch(booster::intrusive_ptr<application> app,std::string url,bool syncronous);
 			void try_restart(bool e);
-			booster::intrusive_ptr<context> self();
+			booster::shared_ptr<context> self();
 
 			struct data;
 			booster::hold_ptr<data> d;

@@ -107,7 +107,7 @@ namespace impl {
 				if(!e) {
 					if(tcp_)
 						asio_socket_->set_option(io::socket::tcp_no_delay,true);
-					booster::intrusive_ptr< ::cppcms::http::context> cnt(new ::cppcms::http::context(api_));
+					booster::shared_ptr< ::cppcms::http::context> cnt(new ::cppcms::http::context(api_));
 					api_.reset();
 					cnt->run();	
 				}

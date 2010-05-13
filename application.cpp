@@ -43,12 +43,11 @@ namespace cppcms {
 struct application::data {
 	data(cppcms::service *s):
 		service(s),
-		conn(0),
 		pool_id(-1)
 	{
 	}
 	cppcms::service *service;
-	booster::intrusive_ptr<http::context> conn;
+	booster::shared_ptr<http::context> conn;
 	int pool_id;
 	url_dispatcher url;
 	std::vector<application *> managed_children;
@@ -93,7 +92,7 @@ url_dispatcher &application::dispatcher()
 	return d->url;
 }
 
-booster::intrusive_ptr<http::context> application::get_context()
+booster::shared_ptr<http::context> application::get_context()
 {
 	return root()->d->conn;
 }
@@ -105,10 +104,10 @@ http::context &application::context()
 	return *root()->d->conn;
 }
 
-booster::intrusive_ptr<http::context> application::release_context()
+booster::shared_ptr<http::context> application::release_context()
 {
-	booster::intrusive_ptr<http::context> ptr=root()->d->conn;
-	assign_context(0);
+	booster::shared_ptr<http::context> ptr=root()->d->conn;
+	assign_context(booster::shared_ptr<http::context>());
 	return ptr;
 }
 
@@ -118,7 +117,7 @@ bool application::is_asynchronous()
 	return pool_id() < 0;
 }
 
-void application::assign_context(booster::intrusive_ptr<http::context> conn)
+void application::assign_context(booster::shared_ptr<http::context> conn)
 {
 	root()->d->conn=conn;
 }
@@ -216,7 +215,7 @@ void application::recycle()
 		response().finalize();
 		context().async_complete_response();
 	}
-	assign_context(0);
+	assign_context(booster::shared_ptr<http::context>());
 }
 
 

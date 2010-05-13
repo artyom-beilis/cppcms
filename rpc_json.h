@@ -100,10 +100,10 @@ namespace rpc {
 		friend class json_rpc_server;
 		void return_result(http::context &,json::value const &);
 		void return_error(http::context &,json::value const &);
-		void attach_context(booster::intrusive_ptr<http::context> context);
+		void attach_context(booster::shared_ptr<http::context> context);
 
 		void check_not_notification();
-		booster::intrusive_ptr<http::context> context_;
+		booster::shared_ptr<http::context> context_;
 		json::value  id_;
 		json::array params_;
 		std::string method_;

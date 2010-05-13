@@ -79,7 +79,7 @@ public:
 			release_context()->async_complete_response();
 		}
 		else if(pos == messages_.size()) {
-			booster::intrusive_ptr<cppcms::http::context> context=release_context();
+			booster::shared_ptr<cppcms::http::context> context=release_context();
 			waiters_.insert(context);
 			context->async_on_peer_reset(
 				boost::bind(
@@ -92,7 +92,7 @@ public:
 			release_context()->async_complete_response();
 		}
 	}
-	void remove_context(booster::intrusive_ptr<cppcms::http::context> context)
+	void remove_context(booster::shared_ptr<cppcms::http::context> context)
 	{
 		std::cerr<<"Connection closed"<<std::endl;
 		waiters_.erase(context);
@@ -108,7 +108,7 @@ public:
 	}
 private:
 	std::vector<std::string> messages_;
-	typedef std::set<booster::intrusive_ptr<cppcms::http::context> > waiters_type;
+	typedef std::set<booster::shared_ptr<cppcms::http::context> > waiters_type;
 	waiters_type waiters_;
 };
 
@@ -186,7 +186,7 @@ private:
 
 	int counter_;
 	double price_;
-	std::vector<booster::intrusive_ptr<cppcms::http::context> > all_;
+	std::vector<booster::shared_ptr<cppcms::http::context> > all_;
 	booster::aio::deadline_timer timer_;
 };
 

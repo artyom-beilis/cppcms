@@ -169,16 +169,15 @@ void context::try_restart(bool e)
 	if(e) return;
 
 	if(conn_->is_reuseable()) {
-		booster::intrusive_ptr<context> cont=new context(conn_);
+		booster::shared_ptr<context> cont(new context(conn_));
 		cont->run();
 	}
 	conn_.reset();
 }
 
-booster::intrusive_ptr<context> context::self()
+booster::shared_ptr<context> context::self()
 {
-	booster::intrusive_ptr<context> ptr(this);
-	return ptr;
+	return shared_from_this();
 }
 
 context::~context()

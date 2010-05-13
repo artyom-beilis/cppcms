@@ -24,6 +24,7 @@
 #include <booster/hold_ptr.h>
 #include <booster/atomic_counter.h>
 #include <booster/intrusive_ptr.h>
+#include <booster/shared_ptr.h>
 #include <string>
 
 namespace cppcms {
@@ -231,19 +232,19 @@ namespace cppcms {
 		/// 
 		/// Note: because application hierarchy shared same context, it affects all classes in it.
 		///
-		booster::intrusive_ptr<http::context> release_context();
+		booster::shared_ptr<http::context> release_context();
 
 		///
 		/// Get reference counted pointer to the http::context
 		///
-		booster::intrusive_ptr<http::context> get_context();
+		booster::shared_ptr<http::context> get_context();
 
 		///
 		/// Set context to the application. The application gets shared ownership on the context.
 		///
 		/// Note: because application hierarchy shared same context, it affects all classes in it.
 		///
-		void assign_context(booster::intrusive_ptr<http::context> conn);
+		void assign_context(booster::shared_ptr<http::context> conn);
 
 		///
 		/// Returns true if current application was created as asynchronous application.

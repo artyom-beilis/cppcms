@@ -54,7 +54,7 @@ namespace cppcms {
 	namespace impl {
 		class tcp_pipe : public booster::enable_shared_from_this<tcp_pipe> {
 		public:
-			tcp_pipe(booster::intrusive_ptr<http::context> connection,std::string const &ip,int port) :
+			tcp_pipe(booster::shared_ptr<http::context> connection,std::string const &ip,int port) :
 				connection_(connection),
 				ip_(ip),
 				port_(port),
@@ -129,7 +129,7 @@ namespace cppcms {
 				}
 			}
 
-			booster::intrusive_ptr<http::context> connection_;
+			booster::shared_ptr<http::context> connection_;
 			std::string ip_;
 			int port_;
 			std::string data_;
@@ -151,7 +151,7 @@ namespace cppcms {
 	}
 	void connection_forwarder::main(std::string unused)
 	{
-		booster::intrusive_ptr<http::context> con = release_context();
+		booster::shared_ptr<http::context> con = release_context();
 		std::string env_str;
 		env_str.reserve(1000);
 

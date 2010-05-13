@@ -117,7 +117,7 @@ namespace rpc {
 		return params_;
 	}
 
-	void json_call::attach_context(booster::intrusive_ptr<http::context> c)
+	void json_call::attach_context(booster::shared_ptr<http::context> c)
 	{
 		context_ = c;
 	}

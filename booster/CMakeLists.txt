@@ -161,6 +161,7 @@ else()
 	#include <sys/socket.h>
 	#include <sys/un.h>
 	#include <netinet/in.h>
+	int main()
 	{ struct sockaddr_in6 in6; struct in6_addr in6addr; ::inet_pton(AF_INET6,\"::1\",&in6addr); return 0; }"
 	BOOSTER_AIO_HAVE_PF_INET6)
 endif()
