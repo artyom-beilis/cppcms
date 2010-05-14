@@ -625,13 +625,13 @@ set_tests_properties(
 	proto_test_async_http
 	proto_test_sync_scgi
 	proto_test_async_scgi
-	PROPERTIES TIMEOUT 30)
+	PROPERTIES TIMEOUT 120)
 
 if(NOT WIN32)
 	set_tests_properties(
 		proto_test_sync_scgi_unix
 		proto_test_async_scgi_unix
-		PROPERTIES TIMEOUT 30)
+		PROPERTIES TIMEOUT 120)
 
 endif()
 

@@ -8,6 +8,7 @@
 #define BOOSTER_SOURCE
 #include <booster/config.h>
 #ifndef BOOSTER_WIN32
+#include <sys/types.h>
 #include <arpa/inet.h>
 #include <sys/socket.h>
 #include <sys/un.h>

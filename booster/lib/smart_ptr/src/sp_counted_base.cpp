@@ -120,20 +120,20 @@ namespace booster {
 
         static bool atomic_cas(sp_counted_base_atomic_type volatile *pw,int old_value,int new_value)
         {
-            return atomic_cmpset_int(&pw->i,old_value,new_value);
+            return atomic_cmpset_int(&pw->ui,old_value,new_value);
         }
         static int atomic_get(sp_counted_base_atomic_type volatile *pw)
         {
-            return atomic_load_acq_int(&pw->i);
+            return atomic_load_acq_int(&pw->ui);
         }
 
         static void atomic_set(sp_counted_base_atomic_type volatile *pw,int v)
         {
-            atomic_store_rel_int(&pw->i,v);
+            atomic_store_rel_int(&pw->ui,v);
         }
         static int atomic_exchange_and_add(sp_counted_base_atomic_type volatile * pw, int dv)
         {
-            return atomic_fetchadd_int(&pw->i,dv);
+            return atomic_fetchadd_int(&pw->ui,dv);
         }
         static void atomic_increment(sp_counted_base_atomic_type volatile *pw)
         {

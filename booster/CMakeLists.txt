@@ -125,7 +125,7 @@ check_cxx_source_compiles(
 check_cxx_source_compiles(
 	"#include <sys/types.h>
 	#include <machine/atomic.h>
-	int main() { volatile unsigned v=0; return atomic_cmpset_int(&v,1); }"
+	int main() { volatile unsigned v=0; return atomic_cmpset_int(&v,1,0); }"
 	BOOSTER_HAVE_FREEBSD_ATOMIC)
 
 check_cxx_source_compiles(
