@@ -22,18 +22,15 @@
 #include "session_memory_storage.h"
 #ifdef CPPCMS_WIN_NATIVE
 #include "session_win32_file_storage.h"
+#include <windows.h>
 #else
 #include "session_posix_file_storage.h"
+#include <sys/types.h>
+#include <dirent.h>
 #endif
+#include <string.h>
 #include <iostream>
 #include <vector>
-#include <cppcms/config.h>
-#ifdef CPPCMS_USE_EXTERNAL_BOOST
-#   include <boost/filesystem.hpp>
-#else // Internal Boost
-#   include <cppcms_boost/filesystem.hpp>
-    namespace boost = cppcms_boost;
-#endif
 
 
 
@@ -64,17 +61,32 @@ void test(booster::shared_ptr<cppcms::sessions::session_storage> storage)
 	storage->remove(bs+"2");
 }
 
-std::vector<std::string> list_files()
+int count_files()
 {
-	namespace fs = boost::filesystem;
-	std::vector<std::string> files;
-	fs::directory_iterator end;
-	for(fs::directory_iterator p(dir);p!=end;++p) {
-		if(!is_directory(p->status())) {
-			files.push_back(p->path().filename());
-		}
+#ifndef CPPCMS_WIN_NATIVE
+	DIR *d=opendir(dir.c_str());
+	TEST(d);
+	int counter = 0;
+	struct dirent *de;
+	while((de=readdir(d))!=0) {
+		if(strlen(de->d_name)==32)
+			counter++;
 	}
-	return files;
+	closedir(d);
+	return counter;
+#else
+	WIN32_FIND_DATA entry;
+	HANDLE d=FindFirstFile(dir.c_str(),&entry);
+	int counter=0;
+	if(d==INVALID_HANDLE_VALUE)
+		return 0;
+	do {
+		if(strlen(entry,cFileName)==32)
+			counter++;
+	}while(FindNextFile(d,&entry));
+	FindClose(d);
+	return counter;
+#endif
 }
 
 void test_files(booster::shared_ptr<cppcms::sessions::session_storage> storage,
@@ -84,23 +96,23 @@ void test_files(booster::shared_ptr<cppcms::sessions::session_storage> storage,
 	TEST(f.requires_gc());
 	time_t now=time(0);
 	storage->save(bs+"1",now,"test");
-	TEST(list_files().size()==1);
+	TEST(count_files()==1);
 	storage->remove(bs+"1");
-	TEST(list_files().size()==0);
+	TEST(count_files()==0);
 	storage->save(bs+"1",now-1,"test");
 	storage->save(bs+"2",now+1,"test2");
-	TEST(list_files().size()==2);
+	TEST(count_files()==2);
 	f.gc_job();
-	TEST(list_files().size()==1);
+	TEST(count_files()==1);
 	std::string tstr;
 	time_t ttime;
 	TEST(!storage->load(bs+"1",ttime,tstr));
 	TEST(storage->load(bs+"2",ttime,tstr));
 	TEST(ttime==now+1 && tstr=="test2");
 	storage->save(bs+"2",now-1,"test2");
-	TEST(list_files().size()==1);
+	TEST(count_files()==1);
 	f.gc_job();
-	TEST(list_files().size()==0);
+	TEST(count_files()==0);
 }
 
 

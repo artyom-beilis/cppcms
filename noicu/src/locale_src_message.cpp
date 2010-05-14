@@ -16,12 +16,12 @@
 #include <cppcms/locale_info.h>
 #include <cppcms/locale_message.h>
 #ifdef CPPCMS_USE_EXTERNAL_BOOST
-#   include <boost/shared_ptr.hpp>
 #   include <boost/unordered_map.hpp>
 #else // Internal Boost
-#   include <cppcms_boost/shared_ptr.hpp>
 #   include <cppcms_boost/unordered_map.hpp>
 #endif
+
+#include <booster/shared_ptr.h>
 
 
 #include "locale_src_mo_hash.hpp"
@@ -323,8 +323,8 @@ namespace cppcms {
                 }
 
                 catalogs_set_type catalogs_;
-                std::vector<boost::shared_ptr<mo_file> > mo_catalogs_;
-                std::vector<boost::shared_ptr<lambda::plural> > plural_forms_;
+                std::vector<booster::shared_ptr<mo_file> > mo_catalogs_;
+                std::vector<booster::shared_ptr<lambda::plural> > plural_forms_;
                 domains_map_type domains_;
 
                 

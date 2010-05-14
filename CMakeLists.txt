@@ -22,24 +22,20 @@ option(DISABLE_SHARED	"Disable shared libraries build" OFF)
 option(DISABLE_STATIC	"Disable static libraries build" OFF)
 option(DISABLE_ICONV	"Disable usage iconv library - use ICU for conversion" OFF)
 option(DISABLE_GCRYPT	"Disable usage of gcrypt library, no AES cookies encryption would be available" OFF)
-option(USE_EXTERNAL_BOOST "Use external Boost library and not internal one, boost version provided by BOOST_SUFFIX variable" OFF)
 option(DISABLE_FCGI	"Disable fastcgi web server api" OFF)
 option(DISABLE_SCGI	"Disable scgi web server api" OFF)
 option(DISABLE_HTTP	"Disable http web server" OFF)
 
 
-if(DISABLE_ICU_LOCALIZATION OR USE_EXTERNAL_BOOST)
-	set(CPPCMS_SUFFIX "-c")
-endif()
-
 if(DISABLE_ICU_LOCALIZATION)
-	set(BOOSTER_NO_LOCALE ON)
+	set(CPPCMS_SUFFIX "-c")
 endif()
 
 add_subdirectory(booster)
 include_directories(booster)
 include_directories(src)
 include_directories(private)
+include_directories(cppcms_boost)
 
 
 
@@ -118,24 +114,6 @@ if("${CMAKE_BUILD_TYPE}" STREQUAL "Debug")
 		endif()
 	endif()
 endif()
-
-
-if(USE_EXTERNAL_BOOST)
-	set(CPPCMS_USE_EXTERNAL_BOOST 1)
-endif(USE_EXTERNAL_BOOST)
-
-
-if(NOT USE_EXTERNAL_BOOST)
-	add_subdirectory(cppcms_boost)
-	include_directories(cppcms_boost)
-else(NOT USE_EXTERNAL_BOOST)
-	find_path(BOOST_INCLUDE_DIR boost/shared_ptr.hpp)
-	find_library(BOOST_SYSTEM	boost_system-${BOOST_SUFFIX} 	NAMES boost_system 	boost_system-mt)
-	find_library(BOOST_FILESYSTEM 	boost_filesystem-${BOOST_SUFFIX} NAMES boost_filesystem boost_filesystem-mt)
-	find_library(BOOST_IOSTREAMS	boost_iostreams-${BOOST_SUFFIX} NAMES boost_iostreams 	boost_iostreams-mt)
-	find_library(BOOST_ZLIB		boost_zlib-${BOOST_SUFFIX} 	NAMES boost_zlib 	boost_zlib)
-	include_directories(${BOOST_INCLUDE_DIR})
-endif(NOT USE_EXTERNAL_BOOST)
 
 
 if(NOT DISABLE_ICU_LOCALIZATION)
@@ -243,6 +221,11 @@ check_cxx_source_compiles(
 	int main(){std::list<int> l; __typeof__(l.begin()) p=l.begin();}"
 	HAVE_UNDERSCORE_TYPEOF)
 
+find_library(ZLIB z NAMES zdll zlib)
+find_path(ZLIB_INCLUDE_DIR zlib.h)
+include_directories(${ZLIB_INCLUDE_DIR})
+
+
 if(${CMAKE_HOST_WIN32})
 	find_library(WS2_32 ws2_32)
 	find_library(WSOCK32 wsock32)
@@ -284,23 +267,7 @@ endif(${CMAKE_HOST_WIN32})
 
 check_function_exists(canonicalize_file_name HAVE_CANONICALIZE_FILE_NAME)
 
-if(USE_EXTERNAL_BOOST)
-	if(WIN32)
-		add_definitions(-DBOOST_ALL_NO_LIB)
-		add_definitions(-DBOOST_REGEX_DYN_LINK)
-		add_definitions(-DBOOST_FILESYSTEM_DYN_LINK)
-		add_definitions(-DBOOST_SYSTEM_DYN_LINK)
-		add_definitions(-DBOOST_IOSTREAMS_DYN_LINK)
-		add_definitions(-DBOOST_THREAD_DYN_LINK)
-		add_definitions(-DBOOST_DATE_TIME_DYN_LINK)
-		add_definitions(-DBOOST_ZLIB_DYN_LINK)
-	endif(WIN32)
-else(USE_EXTERNAL_BOOST)
-	add_definitions(-DCPPCMS_BOOST_ALL_NO_LIB)
-	if(NOT DISABLE_SHARED)
-		add_definitions(-DCPPCMS_BOOST_ALL_DYN_LINK)
-	endif(NOT DISABLE_SHARED)
-endif(USE_EXTERNAL_BOOST)
+add_definitions(-DCPPCMS_BOOST_ALL_NO_LIB)
 
 set(CPPCMS_PUBLIC_HEADERS
 	application.h
@@ -389,6 +356,8 @@ set(CPPCMS_SOURCES
 	src/session_interface.cpp
 	src/session_memory_storage.cpp
 	src/rpc_json.cpp
+	cppcms_boost/src/zlib.cpp
+	cppcms_boost/src/gzip.cpp
 )
 
 if(DISABLE_ICU_LOCALIZATION)
@@ -479,24 +448,6 @@ foreach(ALIB ${CPPCMS_LIBS})
 	else(DISABLE_SHARED)
 		target_link_libraries(${ALIB} booster)
 	endif(DISABLE_SHARED)
-	if(NOT USE_EXTERNAL_BOOST)
-		if(DISABLE_SHARED)
-			target_link_libraries(${ALIB} boost-static)
-		else(DISABLE_SHARED)
-			target_link_libraries(${ALIB} boost)
-		endif(DISABLE_SHARED)
-	else(NOT USE_EXTERNAL_BOOST)
-		target_link_libraries(${ALIB} ${BOOST_REGEX})
-		target_link_libraries(${ALIB} ${BOOST_IOSTREAMS})
-		target_link_libraries(${ALIB} ${BOOST_DATE_TIME})
-		target_link_libraries(${ALIB} ${BOOST_THREAD})
-		target_link_libraries(${ALIB} ${BOOST_FILESYSTEM})
-		target_link_libraries(${ALIB} ${BOOST_SYSTEM})
-		if(BOOST_ZLIB)
-			target_link_libraries(${ALIB} ${BOOST_ZLIB})
-		endif(BOOST_ZLIB)
-	endif(NOT USE_EXTERNAL_BOOST)
-
 	if(LIB_GCRYPT)
 		target_link_libraries(${ALIB} ${LIB_GCRYPT})
 	endif(LIB_GCRYPT)
@@ -524,6 +475,10 @@ foreach(ALIB ${CPPCMS_LIBS})
 	if(LIB_DL)
 		target_link_libraries(${ALIB} ${LIB_DL})
 	endif(LIB_DL)
+
+	if(ZLIB)
+		target_link_libraries(${ALIB} ${ZLIB})
+	endif(ZLIB)
 endforeach(ALIB)
 
 
