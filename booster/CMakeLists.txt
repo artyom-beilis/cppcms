@@ -293,7 +293,8 @@ if(NOT DISABLE_SHARED)
 	install(TARGETS booster
 		RUNTIME DESTINATION bin
 		LIBRARY DESTINATION lib
-		ARCHIVE DESTINATION lib)
+		ARCHIVE DESTINATION lib
+		PUBLIC_HEADER DESTINATION include/booster)
 endif(NOT DISABLE_SHARED)	
 
 if(NOT DISABLE_STATIC)
@@ -305,8 +306,12 @@ if(NOT DISABLE_STATIC)
 	install(TARGETS booster-static
 		RUNTIME DESTINATION bin
 		LIBRARY DESTINATION lib
-		ARCHIVE DESTINATION lib)
+		ARCHIVE DESTINATION lib
+		PUBLIC_HEADER DESTINATION include/booster/)
 endif(NOT DISABLE_STATIC)	
+
+install(DIRECTORY booster DESTINATION include
+        PATTERN ".svn" EXCLUDE)
 
 
 foreach(ALIB ${LINK_LIBS})
@@ -332,6 +337,15 @@ foreach(ALIB ${LINK_LIBS})
 		target_link_libraries(${ALIB} ${ICU_I18N})
 		target_link_libraries(${ALIB} ${ICU_DATA})
 	endif()
+	set_target_properties(${ALIB} PROPERTIES PUBLIC_HEADER "${CMAKE_BINARY_DIR}/booster/build_config.h")
+	
+	if(WIN32)
+		set_target_properties(${ALIB} PROPERTIES VERSION 0 SOVERSION 0)
+	else()
+		set_target_properties(${ALIB} PROPERTIES VERSION 0.0.0 SOVERSION 0)
+	endif()
+
+
 endforeach()
 
 

@@ -269,49 +269,7 @@ check_function_exists(canonicalize_file_name HAVE_CANONICALIZE_FILE_NAME)
 
 add_definitions(-DCPPCMS_BOOST_ALL_NO_LIB)
 
-set(CPPCMS_PUBLIC_HEADERS
-	application.h
-	applications_pool.h
-	base64.h
-	base_content.h
-	base_view.h
-	cache_interface.h
-	cache_pool.h
-	# connection_forwarder.h
-	cppcms_error.h
-	cstdint.h
-	defs.h
-	encoding.h
-	filters.h
-	form.h
-	http_context.h
-	http_cookie.h
-	http_file.h
-	http_request.h
-	http_response.h
-	intrusive_ptr.h
-	json.h
-	mem_bind.h
-	noncopyable.h
-	refcounted.h
-	regex.h
-	rpc_json.h
-	service.h
-	session_api.h
-	session_cookies.h
-	session_dual.h
-	session_interface.h
-	session_pool.h
-	session_sid.h
-	session_storage.h
-	thread_pool.h
-	urandom.h
-	url_dispatcher.h
-	util.h
-	view.h
-	views_pool.h
-	${CMAKE_CURRENT_BINARY_DIR}/config.h
-)
+set(CPPCMS_PUBLIC_HEADERS ${CMAKE_CURRENT_BINARY_DIR}/cppcms/config.h)
 
 
 set(CPPCMS_SOURCES 
@@ -371,16 +329,6 @@ if(DISABLE_ICU_LOCALIZATION)
 		noicu/src/locale_src_message.cpp
 		noicu/src/locale_src_mo_lambda.cpp
 		noicu/src/locale_src_numeric.cpp)
-
-	set(CPPCMS_PUBLIC_HEADERS ${CPPCMS_PUBLIC_HEADERS}
-		noicu/locale_conversion.h
-		noicu/locale_format.h
-		noicu/locale_formatting.h
-		noicu/locale_generator.h
-		noicu/locale_info.h
-		noicu/locale_message.h
-		noicu/locale_numeric.h
-		noicu/noicu_localization.h)
 
 endif(DISABLE_ICU_LOCALIZATION)
 
@@ -563,14 +511,12 @@ foreach(TEST ${ALL_TESTS})
 	target_link_libraries(${TEST} ${CPPCMS_LIB})
 endforeach()
 
-if(NOT DISABLE_ICU_LOCALIZATION)
-	file(GLOB LOCALE_TEST_SOURCES "localization/locale_src_test_*.cpp")
-else()
-	file(GLOB LOCALE_TEST_SOURCES "noicu/locale_src_test_*.cpp")
+if(DISABLE_ICU_LOCALIZATION)
+	file(GLOB LOCALE_TEST_SOURCES "noicu/src/locale_src_test_*.cpp")
 endif()
 
 foreach(LFILE ${LOCALE_TEST_SOURCES})
-	string(REGEX REPLACE ".*(localization|noicu)/(.*)\\.cpp" "\\2" TEST_NAME ${LFILE})
+	string(REGEX REPLACE ".*noicu/src/(.*)\\.cpp" "\\1" TEST_NAME ${LFILE})
 	add_executable(${TEST_NAME} ${LFILE})
 	target_link_libraries(${TEST_NAME} ${CPPCMS_LIB})
 	set(LOCALE_TESTS "${LOCALE_TESTS} ${TEST_NAME}")
@@ -606,15 +552,27 @@ endif(MSVC AND NOT DISABLE_STATIC)
 
 configure_file(config.cmake.h cppcms/config.h)
 
+#################
+# Installation
+#################
+
 
 install(TARGETS ${CPPCMS_LIBS} cppcms_config_find_param cppcms_scale
 	RUNTIME DESTINATION bin
 	LIBRARY DESTINATION lib
 	ARCHIVE DESTINATION lib
 	PUBLIC_HEADER DESTINATION include/cppcms)
-
-install(PROGRAMS cppcms_tmpl_cc cppcms_run
+install(PROGRAMS bin/cppcms_tmpl_cc bin/cppcms_run
 	DESTINATION bin)
+
+install(DIRECTORY cppcms DESTINATION include
+        PATTERN ".svn" EXCLUDE)
+
+if(DISABLE_ICU_LOCALIZATION)
+	install(DIRECTORY noicu/cppcms DESTINATION include
+        	PATTERN ".svn" EXCLUDE)
+endif()
+
 
 #############
 # TESTS
