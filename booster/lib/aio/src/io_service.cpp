@@ -12,8 +12,8 @@
 #ifndef BOOSTER_WIN32
 #include <sys/socket.h>
 #else
-#include <windows.h>
 #include <winsock2.h>
+#include <windows.h>
 #endif
 
 
@@ -446,7 +446,7 @@ private:
 				// refork injection
 				data_mutex_.unlock();
 				lock_guard lg(poll_mutex_);
-				n = reactor_->poll(evs,evs_size,ptime::milliseconds(wait_time),poll_error);
+				n = reactor_->poll(evs,evs_size,int(ptime::milliseconds(wait_time)),poll_error);
 			}
 			catch(...) {
 				data_mutex_.lock();

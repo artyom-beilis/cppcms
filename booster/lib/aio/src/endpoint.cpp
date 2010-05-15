@@ -13,8 +13,8 @@
 #include <sys/un.h>
 #include <netinet/in.h>
 #else
-#include <windows.h>
 #include <winsock2.h>
+#include <windows.h>
 #include <sstream>
 #endif
 #include <booster/aio/endpoint.h>

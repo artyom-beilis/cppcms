@@ -127,8 +127,8 @@ namespace aio {
 	/// Create a connected pair of sockets, under UNIX creates unix-domain-sockets
 	/// under windows AF_INET sockets
 	///
-	void socket_pair(socket_type t,socket &s1,socket &s2,system::error_code &e);
-	void socket_pair(socket_type t,socket &s1,socket &s2);
+	BOOSTER_API void socket_pair(socket_type t,socket &s1,socket &s2,system::error_code &e);
+	BOOSTER_API void socket_pair(socket_type t,socket &s1,socket &s2);
 
 } // aio
 } // booster

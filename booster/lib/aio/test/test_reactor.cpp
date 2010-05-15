@@ -35,6 +35,7 @@ int main()
 			r.select(a,reactor::in | reactor::out);
 			r.select(b,reactor::in | reactor::out);
 			TEST(r.poll(evs,3,0)==2);
+
 			TEST((evs[0].fd==a && evs[1].fd==b) || (evs[0].fd==b && evs[1].fd==a));
 			TEST(evs[0].events==reactor::out);
 			TEST(evs[1].events==reactor::out);
@@ -44,6 +45,7 @@ int main()
 			TEST(evs[0].events==reactor::out);
 			char c='x';
 			send(a,&c,1,0);
+
 			r.select(b,reactor::in);
 			TEST(r.poll(evs,3,1000)==1);
 			TEST(evs[0].fd==b);
@@ -61,14 +63,14 @@ int main()
 			#else
 			shutdown(a,SD_BOTH);
 			#endif
-			close(a);
+			closefd(a);
 			booster::ptime::millisleep(100);
 			TEST(r.poll(evs,3,0)==1);
 			TEST(evs[0].fd==b);
 			TEST(evs[0].events==(reactor::out | reactor::in));
 			int res;
 			TEST((res=recv(b,&c,1,0))==0);
-			close(b);
+			closefd(b);
 		}
 	}
 	catch(std::exception const &e) {

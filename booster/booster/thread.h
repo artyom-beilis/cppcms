@@ -148,7 +148,7 @@ namespace booster {
 
 
 	template<typename Mutex>
-	class BOOSTER_API unique_lock : public noncopyable {
+	class unique_lock : public noncopyable {
 	public:
 		unique_lock(Mutex &m) : m_(&m)
 		{
@@ -167,7 +167,7 @@ namespace booster {
 	};
 
 	template<typename Mutex>
-	class BOOSTER_API shared_lock : public noncopyable {
+	class shared_lock : public noncopyable {
 	public:
 		shared_lock(Mutex &m) : m_(&m)
 		{

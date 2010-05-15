@@ -10,6 +10,7 @@
 
 #include <string>
 #include <stdexcept>
+#include <functional>
 
 #include <booster/config.h>
 

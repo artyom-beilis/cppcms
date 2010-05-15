@@ -11,7 +11,9 @@
 #include <iostream>
 #include <stdlib.h>
 
+#ifndef BOOSTER_WIN32
 #include <unistd.h>
+#endif
 
 bool called_ = false;
 

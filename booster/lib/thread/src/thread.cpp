@@ -32,7 +32,7 @@ namespace booster {
 		try {
 			d->cb();
 		}
-		catch(std::exception const &e) {
+		catch(std::exception const &/*e*/) {
 			/// TODO
 		}
 		catch(...) {

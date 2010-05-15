@@ -44,6 +44,8 @@
 
 #if defined(_MSC_VER)
 #define BOOSTER_MSVC
+// This warning is really not revevant
+#pragma warning (disable: 4275 4251) 
 #endif
 
 

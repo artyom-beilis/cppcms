@@ -6,6 +6,9 @@
 //  http://www.boost.org/LICENSE_1_0.txt)
 //
 #define BOOSTER_SOURCE
+#ifdef _MSC_VER
+#define _CRT_SECURE_NO_WARNINGS
+#endif
 #include <booster/posix_time.h>
 
 #ifdef BOOSTER_WIN_NATIVE
@@ -53,7 +56,7 @@ void ptime::sleep(ptime const &p)
 	ptime n = now();
 	ptime end = n + p;
 	while(end > n) {
-		::Sleep(milliseconds(end - n));
+		::Sleep(DWORD(milliseconds(end - n)));
 		n = now();
 	}
 	#endif

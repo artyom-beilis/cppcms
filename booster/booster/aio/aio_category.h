@@ -30,9 +30,11 @@ namespace aio {
 			virtual char const *name() const;
 			virtual std::string message(int cat) const;
 		};
+		
+		BOOSTER_API aio_error::category const &get_category();
 	}
 
-	extern const aio_error::category aio_error_cat;
+	static aio_error::category const &aio_error_cat = aio_error::get_category();
 }
 } // booster
 

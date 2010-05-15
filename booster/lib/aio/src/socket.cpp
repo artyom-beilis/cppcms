@@ -20,8 +20,8 @@
 #include <sys/ioctl.h>
 #include <sys/uio.h>
 #else
-#include <windows.h>
 #include <winsock2.h>
+#include <windows.h>
 typedef int socklen_t;
 #endif
 
@@ -517,7 +517,7 @@ bool socket::get_option(boolean_option_type opt,system::error_code &e)
 		e=geterror();
 		return false;
 	}
-	return bool(value);
+	return value!=0;
 }
 
 bool socket::get_option(boolean_option_type opt)

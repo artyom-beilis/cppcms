@@ -159,7 +159,11 @@ void got_error(booster::system::error_code const &e)
 void run_closer()
 {
 	booster::ptime::millisleep(100);
+	#ifdef BOOSTER_WIN32
+	closesocket(the_socket);
+	#else
 	close(the_socket);
+	#endif
 }
 
 void run_stopper(booster::system::error_code const &e)

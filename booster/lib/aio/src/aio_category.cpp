@@ -29,9 +29,14 @@ namespace aio_error {
 			return "unknown";
 		}
 	}
+	
+	category const &get_category()
+	{
+		static const category cat;
+		return cat;
+	}
+	
 } // aio_error
-
-const aio_error::category aio_error_cat;
 
 } // aio
 } // booster

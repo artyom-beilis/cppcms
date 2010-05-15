@@ -652,7 +652,7 @@ namespace aio {
 
 			count = 0;
 
-			for(pollfds_type::iterator p=pollfds_.begin(),e=pollfds_.end();read > 0 && p!=e;++p) {
+			for(pollfds_type::iterator p=pollfds_.begin(),end=pollfds_.end();read > 0 && p!=end;++p) {
 				int fd=p->first;
 				bool r = isset(fd,&rd);
 				read-=int(r);
