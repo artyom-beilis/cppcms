@@ -360,17 +360,19 @@ namespace json {
 
 	template<int n>					
 	struct traits<char[n]> {			
-		static void set(value &v,char in[n])
+		typedef char vtype[n];
+		static void set(value &v,vtype const &in)
 		{					
 			v.str(in);
 		}					
 	};
 	template<int n>					
 	struct traits<char const [n]> {			
-		static void set(value &v,char const in[n])
+		typedef char const vtype[n];
+		static void set(value &v,vtype const &in)
 		{					
 			v.str(in);
-		}					
+		}
 	};
 
 	
