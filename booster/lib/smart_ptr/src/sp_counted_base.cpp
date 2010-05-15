@@ -170,11 +170,11 @@ namespace booster {
         }
         static int atomic_exchange_and_add(sp_counted_base_atomic_type volatile * pw, int dv)
         {
-            return atomic_add_int_nv(&pw->i,dv)-dv;
+            return atomic_add_int_nv(&pw->ui,dv)-dv;
         }
         static void atomic_increment(sp_counted_base_atomic_type volatile *pw)
         {
-            atomic_add_int(&pw->i,1);
+            atomic_add_int(&pw->ui,1);
         }
     } // detail
 } // booster

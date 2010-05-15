@@ -105,6 +105,29 @@ if(${CMAKE_HOST_WIN32})
 	find_library(WS2_32 ws2_32)
 endif()
 
+check_function_exists(socket HAVE_SOCKET)
+if(NOT HAVE_SOCKET)
+	check_library_exists(socket socket "" HAVE_LIB_SOCKET)
+	if(NOT HAVE_LIB_SOCKET)
+		message(FATAL " No library with socket found")
+	else(NOT HAVE_LIB_SOCKET)
+		find_library(LIB_SOCKET socket)
+	endif(NOT HAVE_LIB_SOCKET)
+endif(NOT HAVE_SOCKET)
+
+check_function_exists(gethostbyname HAVE_GETHOSTBYNAME)
+if(NOT HAVE_GETHOSTBYNAME)
+	check_library_exists(socket gethostbyname "" LIB_SOCKGETHOSTBYNAME)
+	if(NOT LIB_SOCKGETHOSTBYNAME)
+		check_library_exists(nsl gethostbyname "" HAVE_LIB_NSL)
+		if(NOT HAVE_LIB_NSL)
+			message(FATAL " No library with gethostbyname found")
+		else(NOT HAVE_LIB_NSL)
+			find_library(LIB_NSL nsl)
+		endif(NOT HAVE_LIB_NSL)
+	endif(NOT LIB_SOCKGETHOSTBYNAME)
+endif(NOT HAVE_GETHOSTBYNAME)
+
 
 check_cxx_source_compiles(
 	"int main() { volatile int v=0; return __sync_bool_compare_and_swap(&v,0,1); }"
@@ -149,6 +172,7 @@ check_cxx_source_compiles(
 	BOOSTER_HAVE_INTTYPES_H)
 
 if(WIN32)
+	set(CMAKE_REQUIRED_LIBRARIES ${WS2_32})
 	check_cxx_source_compiles(
 	"#include <winsock2.h>
 	#include <windows.h>
@@ -156,6 +180,7 @@ if(WIN32)
 	{ struct sockaddr_in6 in6; struct in6_addr in6addr; ::inet_pton(AF_INET6,\"::1\",&in6addr); return 0; }"
 	BOOSTER_AIO_HAVE_PF_INET6)
 else()
+	set(CMAKE_REQUIRED_LIBRARIES ${LIB_SOCKGETHOSTBYNAME} ${LIB_SOCKET} ${LIB_NSL})
 	check_cxx_source_compiles(
 	"#include <arpa/inet.h>
 	#include <sys/socket.h>
@@ -232,29 +257,6 @@ if(NOT HAVE_PTHREAD)
 	find_library(LIB_PTHREAD pthread NAMES thr kse pthreadGC2)
 endif(NOT HAVE_PTHREAD)
 
-
-check_function_exists(socket HAVE_SOCKET)
-if(NOT HAVE_SOCKET)
-	check_library_exists(socket socket "" HAVE_LIB_SOCKET)
-	if(NOT HAVE_LIB_SOCKET)
-		message(FATAL " No library with socket found")
-	else(NOT HAVE_LIB_SOCKET)
-		find_library(LIB_SOCKET socket)
-	endif(NOT HAVE_LIB_SOCKET)
-endif(NOT HAVE_SOCKET)
-
-check_function_exists(gethostbyname HAVE_GETHOSTBYNAME)
-if(NOT HAVE_GETHOSTBYNAME)
-	check_library_exists(socket gethostbyname "" LIB_SOCKGETHOSTBYNAME)
-	if(NOT LIB_SOCKGETHOSTBYNAME)
-		check_library_exists(nsl gethostbyname "" HAVE_LIB_NSL)
-		if(NOT HAVE_LIB_NSL)
-			message(FATAL " No library with gethostbyname found")
-		else(NOT HAVE_LIB_NSL)
-			find_library(LIB_NSL nsl)
-		endif(NOT HAVE_LIB_NSL)
-	endif(NOT LIB_SOCKGETHOSTBYNAME)
-endif(NOT HAVE_GETHOSTBYNAME)
 
 
 
