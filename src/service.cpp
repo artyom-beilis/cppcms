@@ -19,8 +19,9 @@
 #define CPPCMS_SOURCE
 #include <cppcms/defs.h>
 #ifdef CPPCMS_WIN32
-#include <windows.h>
+#define NOMINMAX
 #include <winsock2.h>
+#include <windows.h>
 #else
 #include <errno.h>
 #endif

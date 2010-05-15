@@ -25,6 +25,7 @@
 #include "test.h"
 #include <iostream>
 #include <memory>
+#include <time.h>
 #ifdef CPPCMS_WIN_NATIVE
 #include <windows.h>
 void ssleep(int x) { Sleep(x*1000); }

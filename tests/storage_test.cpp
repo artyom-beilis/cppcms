@@ -32,6 +32,7 @@
 #include <iostream>
 #include <vector>
 
+#include <time.h>
 
 
 std::string dir = "./sessions";
@@ -76,12 +77,13 @@ int count_files()
 	return counter;
 #else
 	WIN32_FIND_DATA entry;
-	HANDLE d=FindFirstFile(dir.c_str(),&entry);
+	HANDLE d=FindFirstFile((dir+"/*").c_str(),&entry);
 	int counter=0;
-	if(d==INVALID_HANDLE_VALUE)
+	if(d==INVALID_HANDLE_VALUE) {
 		return 0;
+	}
 	do {
-		if(strlen(entry,cFileName)==32)
+		if(strlen(entry.cFileName)==32)
 			counter++;
 	}while(FindNextFile(d,&entry));
 	FindClose(d);
@@ -143,7 +145,7 @@ int main()
 		#else
 		session_file_storage_factory f(dir);
 		storage=f.get();
-		test_files(storage.f);
+		test_files(storage,f);
 		#endif
 	}
 	catch(std::exception const &e) {

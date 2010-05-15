@@ -50,9 +50,10 @@ namespace json {
 	typedef std::map<std::string,value> object;
 
 	template<typename T>
-	struct traits {
-		static void set(value &v,T const &in);
-	};
+	struct traits;
+//	{
+//		static void set(value &v,T const &in);
+//	};
 
 
 	typedef enum {
@@ -244,7 +245,7 @@ namespace json {
 		void write_value(std::ostream &out,int tabs) const;
 
 		struct data;
-		struct copyable {
+		struct CPPCMS_API copyable {
 
 			data *operator->() { return &*d; }
 			data &operator*() { return *d; }
@@ -359,13 +360,20 @@ namespace json {
 
 	template<int n>					
 	struct traits<char[n]> {			
-		typedef char array_type[n];
-		static void set(value &v,array_type const &in)
+		static void set(value &v,char in[n])
+		{					
+			v.str(in);
+		}					
+	};
+	template<int n>					
+	struct traits<char const [n]> {			
+		static void set(value &v,char const in[n])
 		{					
 			v.str(in);
 		}					
 	};
 
+	
 	template<>					
 	struct traits<char const *> {			
 		static void set(value &v,char const * const &in)

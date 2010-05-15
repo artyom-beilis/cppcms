@@ -30,6 +30,7 @@
 #include <list>
 #include <limits>
 #include <iostream>
+#include <time.h>
 #include <cppcms/cstdint.h>
 
 namespace cppcms {

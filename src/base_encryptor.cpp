@@ -59,14 +59,16 @@ string base_encryptor::base64_enc(vector<unsigned char> const &data)
 {
 	size_t size=b64url::encoded_size(data.size());
 	vector<unsigned char> result(size,0);
-	b64url::encode(&data.front(),&data.front()+data.size(),&result.front());
+	if(data.size() > 0) {
+		b64url::encode(&data.front(),&data.front()+data.size(),&result.front());
+	}
 	return string(result.begin(),result.end());
 }
 
 void base_encryptor::base64_dec(std::string const &in,std::vector<unsigned char> &data)
 {
 	int size=b64url::decoded_size(in.size());
-	if(size<0) return;
+	if(size<=0) return;
 	data.resize(size);
 	unsigned char const *ptr=(unsigned char const *)in.data();
 	b64url::decode((unsigned char const *)ptr,ptr+in.size(),&data.front());

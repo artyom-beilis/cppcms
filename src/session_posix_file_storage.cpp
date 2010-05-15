@@ -264,15 +264,20 @@ bool session_file_storage::read_from_file(int fd,time_t &timeout,std::string &da
 	if(!read_all(fd,&crc,sizeof(crc)) || !read_all(fd,&size,sizeof(size)))
 		return false;
 	std::vector<char> buffer(size,0);
-	if(!read_all(fd,&buffer.front(),size))
-		return false;
 	boost::crc_32_type crc_calc;
-	crc_calc.process_bytes(&buffer.front(),size);
+	if(size > 0) {
+		if(!read_all(fd,&buffer.front(),size))
+			return false;
+		crc_calc.process_bytes(&buffer.front(),size);
+	}
 	uint32_t real_crc=crc_calc.checksum();
 	if(crc != real_crc)
 		return false;
 	timeout=f_timeout;
-	data.assign(&buffer.front(),size);
+	if(size > 0)
+		data.assign(&buffer.front(),size);
+	else
+		data.clear();
 	return true;
 }
 

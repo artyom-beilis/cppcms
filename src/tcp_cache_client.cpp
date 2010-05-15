@@ -21,6 +21,8 @@
 #include "tcp_cache_client.h"
 #include "tcp_cache_protocol.h"
 
+#include <time.h>
+
 namespace cppcms {
 namespace impl {
 tcp_cache::~tcp_cache()

@@ -26,7 +26,7 @@
     namespace boost = cppcms_boost;
 #endif
 #include <booster/thread.h>
-
+#include <time.h>
 #include <map>
 
 namespace cppcms {

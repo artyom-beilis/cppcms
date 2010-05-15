@@ -34,7 +34,6 @@
 #include <windows.h>
 
 #include <sstream>
-
 #include <cppcms/cstdint.h>
 
 namespace cppcms {
@@ -170,15 +169,20 @@ bool session_file_storage::read_from_file(HANDLE h,time_t &timeout,std::string &
 	if(!read_all(h,&crc,sizeof(crc)) || !read_all(h,&size,sizeof(size)))
 		return false;
 	std::vector<char> buffer(size,0);
-	if(!read_all(h,&buffer.front(),size))
-		return false;
 	boost::crc_32_type crc_calc;
-	crc_calc.process_bytes(&buffer.front(),size);
+	if(size > 0) {
+		if(!read_all(h,&buffer.front(),size))
+			return false;
+		crc_calc.process_bytes(&buffer.front(),size);
+	}
 	uint32_t real_crc=crc_calc.checksum();
 	if(crc != real_crc)
 		return false;
 	timeout=f_timeout;
-	data.assign(&buffer.front(),size);
+	if(size > 0)
+		data.assign(&buffer.front(),size);
+	else
+		data.clear();
 	return true;
 }
 
