@@ -474,8 +474,8 @@ if(NOT DISABLE_SHARED)
 			${CMAKE_CURRENT_SOURCE_DIR}/bin/cppcms_tmpl_cc 
 			${CMAKE_CURRENT_SOURCE_DIR}/src/hello_world_skin2.tmpl 
 			${CMAKE_CURRENT_SOURCE_DIR}/src/hello_world_view1.tmpl)
-	add_library(skin3 MODULE skin3.cpp)
-	set(SKIN3_DEFS CPPCMS_SKIN_MODULE DLL_EXPORT)
+	add_library(skin3 SHARED skin3.cpp)
+	set(SKIN3_DEFS DLL_EXPORT)
 	set_target_properties(skin3 PROPERTIES
 				COMPILE_DEFINITIONS "${SKIN3_DEFS}")
 	target_link_libraries(skin3 ${CPPCMS_LIB})

@@ -239,7 +239,15 @@ views_pool::views_pool(json::value const &settings) :
 		std::string name=skins[i];
 		if(d->skins.find(name)!=d->skins.end())
 			throw cppcms_error("Two skins with same name provided:" + name);
-		d->skins[name]=skin(name,paths,d->dynamic_reload);
+		skin a_skin(name,paths,d->dynamic_reload);
+		if(static_instance().d->skins.find(name)==
+			static_instance().d->skins.end()) 
+		{
+			throw cppcms_error("Looks like skin `"+name+"' is not valid skin shared library");
+		}
+		a_skin.copy_mapping(static_instance().d->skins[name]);
+		d->skins[name]=a_skin;
+
 	}
 	if(d->default_skin.empty())
 		d->default_skin=skins[0];
@@ -267,8 +275,15 @@ void views_pool::render(std::string skin_name,std::string template_name,std::ost
 				if(!p->second.is_updated()) {
 					d->skins.erase(p);
 					skin new_skin = skin(skin_name,d->search_path,true);
-					new_skin.copy_mapping(d->skins[skin_name]);
-					d->skins[skin_name] = new_skin;
+					if(static_instance().d->skins.find(skin_name)!=
+						static_instance().d->skins.end()) 
+					{
+						new_skin.copy_mapping(static_instance().d->skins[skin_name]);
+						d->skins[skin_name] = new_skin;
+					}
+					else {
+						throw cppcms_error("Failed to reload skin: " + skin_name);
+					}
 				}
 			}
 		}
