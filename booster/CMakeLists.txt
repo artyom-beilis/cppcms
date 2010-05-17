@@ -209,6 +209,7 @@ set(BOOSTER_SRC
 	lib/aio/src/socket.cpp
 	lib/smart_ptr/src/sp_counted_base.cpp
 	lib/smart_ptr/src/atomic_counter.cpp
+	lib/log/src/log.cpp
 )
 
 if(NOT DISABLE_ICU_LOCALIZATION)
@@ -395,6 +396,8 @@ endif()
 add_booster_test(smart_ptr shared_ptr)
 add_booster_test(smart_ptr atomic_counter)
 add_booster_test(smart_ptr sp_counter)
+
+add_booster_test(log log)
 
 add_booster_test(regex regex)
 add_booster_test(aio reactor)

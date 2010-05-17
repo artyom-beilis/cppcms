@@ -1,5 +1,8 @@
 #include <booster/log.h>
 #include <iostream>
+#include <fstream>
+#include <booster/shared_ptr.h>
+#include <booster/weak_ptr.h>
 #include "test.h"
 
 booster::log::level_type last_level;
@@ -31,29 +34,28 @@ int never_called()
 }
 
 int main()
-
+{
 	try {
 		namespace bl = booster::log;
 		booster::shared_ptr<bl::sink> s(new my_sink);
-		bl::instance().add_sink(s);
+		bl::logger::instance().add_sink(s);
 		reset();
 		BOOSTER_EMERG("test") << "Test";
 		TEST(called);
 		TEST(last_message == "Test");
 		TEST(last_module==std::string("test"));
-		TEST(last_level ==bl::error);
+		TEST(last_level ==bl::emergency);
 		reset();
 		BOOSTER_ALERT("test") << "x";
 		TEST(called);
-		TEST(last_level==bl::emergency);
+		TEST(last_level==bl::alert);
 		reset();
 		BOOSTER_ERROR("test") << "x";
 		TEST(called);
 		TEST(last_level==bl::error);
 		reset();
 		BOOSTER_WARNING("test") << "x";
-		TEST(called);
-		TEST(last_level==bl::warning);
+		TEST(!called);
 		reset();
 		BOOSTER_NOTICE("test") << "x";
 		TEST(!called);
@@ -61,28 +63,28 @@ int main()
 		BOOSTER_DEBUG("test") << "x";
 		TEST(!called);
 		reset();
-		bl::instance().set_default_level(bl::notice);
+		bl::logger::instance().set_default_level(bl::notice);
 		BOOSTER_NOTICE("test") << "x";
 		TEST(called);
 		reset();
 		BOOSTER_INFO("test") << "x";
 		TEST(!called);
 		reset();
-		bl::instance().set_log_level(bl::error,"test");
+		bl::logger::instance().set_log_level(bl::error,"test");
 		BOOSTER_ERROR("test") << "x";
 		TEST(called);
 		reset();
 		BOOSTER_WARNING("test") << "x";
 		TEST(!called);
 		reset();
-		bl::instance().set_log_level(bl::warning,"test");
+		bl::logger::instance().set_log_level(bl::warning,"test");
 		BOOSTER_WARNING("test") << "x";
 		TEST(called);
 		reset();
 		BOOSTER_NOTICE("test") << "x";
 		TEST(!called);
 		reset();
-		bl::instance().reset_log_level("test");
+		bl::logger::instance().reset_log_level("test");
 		BOOSTER_NOTICE("test") << "x";
 		TEST(called);
 		reset();
@@ -93,14 +95,38 @@ int main()
 		TEST(!called);
 		TEST(!never_called_called);
 		reset();
-		 
+		bl::logger::instance().remove_sink(s);
+		BOOSTER_ERROR("test") << "message";
+		TEST(!called);
+		reset();
+		bl::logger::instance().add_sink(s);
+		BOOSTER_ERROR("test") << "message";
+		TEST(called);
+		reset();
+		bl::logger::instance().remove_all_sinks();
+		BOOSTER_ERROR("test") << "message";
+		TEST(!called);
+		reset();
 
+		booster::shared_ptr<bl::sinks::file> f(new bl::sinks::file());
+		f->open("test.log");
+		bl::logger::instance().add_sink(f);
+		BOOSTER_ERROR("module") << "Message " << 3.14159;
+		std::ifstream ifs("test.log");
+		TEST(ifs.good());
+		std::string line;
+		std::getline(ifs,line);
+		TEST(line.find("Message ")!=std::string::npos);
+		TEST(line.find("module")!=std::string::npos);
+		TEST(line.find("3.14159")!=std::string::npos);
 	}
 	catch(std::exception const &e)
 	{
 		std::cerr << "Fail: " <<e.what() << std::endl;
 		return 1;
 	}
+	
 	std::cout << "Ok" << std::endl;
+
 	return 0;
 }

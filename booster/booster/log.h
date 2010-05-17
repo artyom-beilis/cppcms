@@ -40,6 +40,7 @@ namespace log {
 	class BOOSTER_API message {
 	public:
 		message(level_type l,char const *m,char const *name,int line);
+		
 		message();
 		~message();
 		message(message &);
@@ -52,12 +53,6 @@ namespace log {
 		std::string log_message() const;
 
 		std::ostream &out();
-
-		operator bool() const
-		{
-			return true;
-		}
-	
 	private:
 		level_type level_;
 		char const *module_;
@@ -69,13 +64,6 @@ namespace log {
 		struct data;
 		copy_ptr<data> d;
 	};
-
-	template<typename T>
-	message &operator<<(message &msg,T const &v)
-	{
-		msg.out() << v;
-		return msg;
-	}
 
 	class BOOSTER_API sink : public noncopyable {
 	public:
@@ -171,8 +159,8 @@ namespace log {
 
 
 	#define BOOSTER_LOG(_l,_m) 								\
-		::booster::log::logger::instance().should_be_logged(::booster::log::_l,m)	\
-		&& message(::booster::log::_l,m_,__FILE__,__LINE__)			
+		::booster::log::logger::instance().should_be_logged(::booster::log::_l,_m)	\
+		&& ::booster::log::message(::booster::log::_l,_m,__FILE__,__LINE__).out()			
 
 	
 	#define BOOSTER_EMERG(_m)	BOOSTER_LOG(emergency,_m)

@@ -106,7 +106,7 @@ namespace log {
 		std::set<shared_ptr<sink> > sinks;
 	};
 
-	logger::logger()
+	logger::logger() : d(new data())
 	{
 		memset(entries_,0,sizeof(entries_));
 		default_level_ = error;
@@ -223,11 +223,11 @@ namespace log {
 			ss.imbue(std::locale::classic());
 			ptime now = ptime::now();
 			std::tm formatted = ptime::universal_time(now);
-			static char const format[]="%Y-%m-%d %H:%M:%S GMT";
-			ss << "[";
+			static char const format[]="%Y-%m-%d %H:%M:%S GMT; ";
 			std::use_facet<std::time_put<char> >(ss.getloc()).put(ss,ss,' ',&formatted,format,format+sizeof(format)-1);
-			ss << ", " << msg.module()<<": " << logger::level_to_string(msg.level()) <<" in " << msg.file_name() <<":" <<msg.file_line() <<"]";
-			ss << msg.log_message();
+			ss << msg.module()<<", " << logger::level_to_string(msg.level()) << ": " << msg.log_message();
+
+			ss <<" (" << msg.file_name() <<":" <<msg.file_line() <<")";
 			return ss.str();
 		}
 		struct standard_error::data{};
