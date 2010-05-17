@@ -127,17 +127,21 @@ namespace log {
 			file();
 			virtual ~file();
 			void open(std::string file_name);
-			
-			//void max_files(unsigned limit);
-			//void max_size(size_t file_size);
+			void max_files(unsigned limit);
+			void append();
 			
 			virtual void log(message const &);
 		private:
+
+			void shift(std::string const &base);
+			std::string format_file(std::string const &,int);
+
 			hold_ptr<std::fstream> file_;
 			unsigned max_files_;
 			size_t max_size_;
 			size_t current_size_;
 			bool opened_;
+			bool append_;
 			
 			struct data;
 			hold_ptr<data> d;

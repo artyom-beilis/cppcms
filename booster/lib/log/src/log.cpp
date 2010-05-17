@@ -18,8 +18,15 @@
 #include <set>
 #include <string.h>
 
+#include <stdio.h>
+
+
 #ifdef BOOSTER_POSIX
 #include <syslog.h>
+#include <unistd.h>
+#else
+#define NOMINMAX
+#include <windows.h>
 #endif
 
 namespace booster {
@@ -253,7 +260,8 @@ namespace log {
 			max_files_(0),
 			max_size_(0),
 			current_size_(0),
-			opened_(false)
+			opened_(false),
+			append_(false)
 		{
 			file_->imbue(std::locale::classic());
 		}
@@ -261,22 +269,51 @@ namespace log {
 		{
 		}
 		
-		/*
 		void file::max_files(unsigned m)
 		{
 			if(!opened_) max_files_=m;
 		}
-		void file::max_size(size_t file_size)
+		/*void file::max_size(size_t file_size)
 		{
 			if(!opened_) max_size_ = file_size;
-		}
-		*/
+		}*/
 
 		void file::open(std::string file_name)
 		{
-			file_->open(file_name.c_str(),std::fstream::out);
+			if(max_files_ > 0)
+				shift(file_name);
+			
+			if(append_)
+				file_->open(file_name.c_str(),std::fstream::out | std::fstream::app);
+			else
+				file_->open(file_name.c_str(),std::fstream::out);
+
 			if(!*file_)
 				throw std::runtime_error("Failed to open file " + file_name);
+		}
+		std::string file::format_file(std::string const &base,int n)
+		{
+			std::ostringstream ss;
+			ss.imbue(std::locale::classic());
+			ss << base << "." << n;
+			return ss.str();
+		}
+		void file::append() 
+		{
+			append_ = true;
+		}
+		void file::shift(std::string const &base)
+		{
+			#ifdef BOOSTER_POSIX
+			::unlink(format_file(base,max_files_).c_str());
+			#else
+			::DeleteFile(format_file(base,max_files_).c_str());
+			#endif
+			for(unsigned file = max_files_-1;file > 0 ; file --) {
+				rename(format_file(base,file).c_str(),format_file(base,file+1).c_str());
+			}
+			
+			rename(base.c_str(),format_file(base,1).c_str());
 		}
 		void file::log(message const &msg)
 		{
