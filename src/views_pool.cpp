@@ -31,6 +31,8 @@
 #include <booster/shared_ptr.h>
 #include <booster/thread.h>
 
+#include <booster/log.h>
+
 #ifdef CPPCMS_WIN32
 #include <windows.h>
 #include <process.h>
@@ -273,6 +275,7 @@ void views_pool::render(std::string skin_name,std::string template_name,std::ost
 				if(p==d->skins.end())
 					throw cppcms_error("There is no such skin:" + skin_name);
 				if(!p->second.is_updated()) {
+					BOOSTER_DEBUG("cppcms") << "Reloading skin " << skin_name;
 					d->skins.erase(p);
 					skin new_skin = skin(skin_name,d->search_path,true);
 					if(static_instance().d->skins.find(skin_name)!=

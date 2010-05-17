@@ -20,6 +20,7 @@
 
 #include <stdio.h>
 
+#include <stdexcept>
 
 #ifdef BOOSTER_POSIX
 #include <syslog.h>
@@ -107,7 +108,7 @@ namespace log {
 		struct init { 
 			init() 
 			{
-				logger::instance().add_sink(shared_ptr<sink>(new sinks::standard_error()));
+				logger::instance();
 			} 
 		} the_init;
 	}
@@ -226,6 +227,19 @@ namespace log {
 		default:
 			return "unknown";
 		}
+	}
+
+	level_type logger::string_to_level(std::string const &l)
+	{
+		if(l=="emergency") return emergency;
+		if(l=="alert") return alert;
+		if(l=="critical") return critical;
+		if(l=="error") return error;
+		if(l=="warning") return warning;
+		if(l=="notice") return notice;
+		if(l=="info") return info;
+		if(l=="debug") return debug;
+		throw std::invalid_argument("Invalig logging level :" + l);
 	}
 
 	namespace sinks {

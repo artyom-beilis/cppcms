@@ -84,6 +84,7 @@ namespace cppcms {
 		int process_id();
 	private:
 		void setup();
+		void setup_logging();
 		void setup_acceptor(json::value const &,int);
 		void load_settings(int argc,char *argv[]);
 		void stop();

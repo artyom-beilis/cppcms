@@ -87,7 +87,7 @@
 		"default_skin" : "skin1",
 		 "paths" : [ "./" ],
 		 "skins" : [ "skin3" ],
-		 //"auto_reload" : true
+		 "auto_reload" : true
 	},
 	"cache" : {
 		"backend" : "thread_shared", 
@@ -100,6 +100,20 @@
 		"enable" : true,
 		"doument_root" : "."
 		// "mime_types" : "mime.type"
+	},
+	"logging" : {
+		"level" : "error", // "debug",
+		"stderr" : true,
+		"file" : {
+			"name" : "", // "cppcms.log" ,
+			"max_files" : 3,
+			"append" : true
+		},
+		"syslog" : {
+			"enable" : false, //true,
+			"id" : "cppcms",
+			"options" : [ "LOG_CONS" ]
+		}
 	}
 	
 }

@@ -60,6 +60,7 @@
 
 #ifdef CPPCMS_POSIX
 #include <sys/wait.h>
+#include <syslog.h>
 #endif
 
 #include <stdio.h>
@@ -185,12 +186,71 @@ void service::load_settings(int argc,char *argv[])
 
 void service::setup()
 {
+	setup_logging();
 	impl_->id_=0;
 	int apps=settings().get("service.applications_pool_size",threads_no()*2);
 	impl_->applications_pool_.reset(new cppcms::applications_pool(*this,apps));
 	impl_->views_pool_.reset(new cppcms::views_pool(settings()));
 	impl_->cache_pool_.reset(new cppcms::cache_pool(settings()));
 	impl_->session_pool_.reset(new cppcms::session_pool(*this));
+}
+
+void service::setup_logging()
+{
+	using namespace booster::log;
+	level_type level = logger::string_to_level(settings().get("logging.level","error"));
+	logger::instance().set_default_level(level);
+	if(	(
+			settings().find("logging.file").is_undefined()
+			&& settings().find("logging.syslog").is_undefined()
+			&& settings().find("logging.stderr").is_undefined()
+		)
+		|| 
+		settings().get("logging.stderr",false)==true
+	  )
+	{
+		logger::instance().add_sink(booster::shared_ptr<sink>(new sinks::standard_error()));
+	}
+	if(settings().get("logging.syslog.enable",false)==true) {
+		#ifndef CPPCMS_POSIX
+			throw cppcms_error("Syslog is not availible on Windows");
+		#else
+		std::string id = settings().get("logging.syslog.id","");
+		std::vector<std::string> vops = settings().get("logging.syslog.options",std::vector<std::string>());
+		std::string sfacility = settings().get("logging.syslog.options","");
+		int ops = 0;
+		for(unsigned i=0;i<vops.size();i++) {
+			std::string const &op=vops[i];
+			if(op=="LOG_CONS") ops|=LOG_CONS;
+			else if(op=="LOG_NDELAY") ops|=LOG_NDELAY;
+			else if(op=="LOG_NOWAIT") ops|=LOG_NOWAIT;
+			else if(op=="LOG_ODELAY") ops|=LOG_ODELAY;
+			#ifdef LOG_PERROR
+			else if(op=="LOG_PERROR") ops|=LOG_PERROR;
+			#endif
+			else if(op=="LOG_PID") ops|=LOG_PID;
+		}
+		std::cerr << ops << std::endl;
+		if(id.empty())
+			::openlog(0,ops,0);
+		else
+			::openlog(id.c_str(),ops,0);
+		logger::instance().add_sink(booster::shared_ptr<sink>(new sinks::syslog()));
+		#endif
+	}
+
+	std::string log_file;
+	if(!(log_file=settings().get("logging.file.name","")).empty()) {
+		booster::shared_ptr<sinks::file> file(new sinks::file());
+		int max_files=0;
+		if((max_files = settings().get("logging.file.max_files",0)) > 0)
+			file->max_files(max_files);
+		bool append = false;
+		if((append = settings().get("logging.file.append",false))==true)
+			file->append();
+		file->open(log_file);
+		logger::instance().add_sink(file);
+	}
 }
 
 cppcms::session_pool &service::session_pool()

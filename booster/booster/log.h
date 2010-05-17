@@ -88,6 +88,7 @@ namespace log {
 		void log(message const &);
 
 		static char const *level_to_string(level_type level);
+		static level_type string_to_level(std::string const &);
 
 	private:
 		
