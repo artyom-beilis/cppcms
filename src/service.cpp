@@ -56,6 +56,7 @@
 #include <cppcms/views_pool.h>
 #include <cppcms/session_pool.h>
 
+#include <booster/log.h>
 
 #ifdef CPPCMS_POSIX
 #include <sys/wait.h>
@@ -422,20 +423,20 @@ bool service::prefork()
 					// TODO: Make better error handling
 					if(!WIFEXITED(status) || WEXITSTATUS(status)!=0){
 						if(WIFEXITED(status)) {
-							std::cerr<<"Chaild exited with "<<WEXITSTATUS(status)<<std::endl;
+							BOOSTER_CRITICAL("cppcms") <<"Chaild exited with "<<WEXITSTATUS(status);
 						}
 						else if(WIFSIGNALED(status)) {
-							std::cerr<<"Chaild killed by "<<WTERMSIG(status)<<std::endl;
+							BOOSTER_CRITICAL("cppcms") <<"Chaild killed by "<<WTERMSIG(status);
 						}
 						else {
-							std::cerr<<"Chaild exited for unknown reason"<<std::endl;
+							BOOSTER_CRITICAL("cppcms") <<"Chaild exited for unknown reason";
 						}
 						impl_->id_ = p - pids.begin() + 1;
 						*p=-1;
 						pid = ::fork();
 						if(pid < 0) {
 							int err=errno;
-							std::cerr<<"Failed to create process: " <<strerror(err)<<std::endl;
+							BOOSTER_ALERT("cppcms") <<"Failed to create process: " <<strerror(err);
 						}
 						else if(pid == 0) {
 							::sigaction(SIGCHLD,&sa_old,NULL);

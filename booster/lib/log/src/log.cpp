@@ -97,7 +97,12 @@ namespace log {
 
 	namespace {
 		// make sure it is created
-		struct init { init() { logger::instance(); } } the_init;
+		struct init { 
+			init() 
+			{
+				logger::instance().add_sink(shared_ptr<sink>(new sinks::standard_error()));
+			} 
+		} the_init;
 	}
 
 	struct logger::data {

@@ -554,7 +554,6 @@ namespace cgi {
 		{
 			if(e) { h(e); return; }
 			if(header_.type!=fcgi_stdin || header_.content_length!=0) {
-				std::cerr<<int(header_.type) <<" "<<header_.content_length<<std::endl;
 				h(booster::system::error_code(errc::protocol_violation,cppcms_category));
 				return;				
 			}

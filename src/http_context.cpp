@@ -29,6 +29,7 @@
 #include <cppcms/cache_interface.h>
 #include <cppcms/session_interface.h>
 #include <cppcms/cppcms_error.h>
+#include <booster/log.h>
 
 #include <cppcms/config.h>
 #ifdef CPPCMS_USE_EXTERNAL_BOOST
@@ -127,8 +128,7 @@ void context::dispatch(booster::intrusive_ptr<application> app,std::string url,b
 			app->response().make_error_response(http::response::internal_server_error,e.what());
 		}
 		else {
-			// TODO log it
-			std::cerr<<"Catched excepion ["<<e.what()<<"]"<<std::endl;
+			BOOSTER_ERROR("cppcms") << "Catched excepion ["<<e.what()<<"]";
 		}
 	}
 }

@@ -36,6 +36,8 @@
     namespace boost = cppcms_boost;
 #endif
 
+#include <booster/log.h>
+
 
 namespace cppcms { namespace impl { namespace cgi {
 /*
@@ -301,6 +303,8 @@ void connection::load_content(booster::system::error_code const &e,http::request
 		long long allowed=service().settings().get("security.multipart_form_data_limit",64*1024)*1024;
 		if(content_length > allowed) { 
 			set_error(h,"security violation: multipart/form-data content length too big");
+			BOOSTER_NOTICE("cppcms") << "multipart/form-data size too big " << content_length << 
+				" REMOTE_ADDR = `" << getenv("REMOTE_ADDR") << "' REMOTE_HOST=`" << getenv("REMOTE_HOST") << "'";
 			return;
 		}
 		// FIXME
@@ -310,7 +314,8 @@ void connection::load_content(booster::system::error_code const &e,http::request
 	long long allowed=service().settings().get("security.content_length_limit",1024)*1024;
 	if(content_length > allowed) {
 		set_error(h,"security violation POST content length too big");
-		// TODO log
+		BOOSTER_NOTICE("cppcms") << "POST data size too big " << content_length << 
+			" REMOTE_ADDR = `" << getenv("REMOTE_ADDR") << "' REMOTE_HOST=`" << getenv("REMOTE_HOST") << "'";
 		return;
 	}
 

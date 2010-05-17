@@ -43,6 +43,7 @@
 #include <booster/aio/io_service.h>
 #include <booster/aio/endpoint.h>
 #include <booster/aio/buffer.h>
+#include <booster/log.h>
 #include <time.h>
 #include <stdlib.h>
 
@@ -351,16 +352,16 @@ static void thread_function(io::io_service *io)
 				// Not much to do...
 				// Object will be destroyed automatically 
 				// Because it does not resubmit itself
-				std::cerr <<"CppCMS Error "<<e.what()<<std::endl;
+				BOOSTER_ERROR("cache_server") <<"CppCMS Error "<<e.what();
 			}
 		}
 	}
 	catch(std::exception const &e)
 	{
-		std::cerr << "Fatal" << e.what() << std::endl;
+		BOOSTER_ERROR("cache_server") << "Fatal" << e.what();
 	}
 	catch(...){
-		std::cerr << "Unknown exception" << std::endl;
+		BOOSTER_ERROR("cache_server") << "Unknown exception" << std::endl;
 	}
 	io->stop();
 }
