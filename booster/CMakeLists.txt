@@ -298,11 +298,6 @@ if(NOT DISABLE_SHARED)
 	set_target_properties(booster PROPERTIES CLEAN_DIRECT_OUTPUT 1)
 	set_target_properties(booster PROPERTIES OUTPUT_NAME "booster${BOOSTER_SUFFIX}")
 
-	install(TARGETS booster
-		RUNTIME DESTINATION bin
-		LIBRARY DESTINATION lib
-		ARCHIVE DESTINATION lib
-		PUBLIC_HEADER DESTINATION include/booster)
 endif(NOT DISABLE_SHARED)	
 
 if(NOT DISABLE_STATIC)
@@ -311,11 +306,6 @@ if(NOT DISABLE_STATIC)
 	set_target_properties(booster-static PROPERTIES COMPILE_DEFINITIONS "${BOOST_STATIC_DEFS}")
 	set_target_properties(booster-static PROPERTIES CLEAN_DIRECT_OUTPUT 1)
 	set_target_properties(booster-static PROPERTIES OUTPUT_NAME "booster${BOOSTER_SUFFIX}")
-	install(TARGETS booster-static
-		RUNTIME DESTINATION bin
-		LIBRARY DESTINATION lib
-		ARCHIVE DESTINATION lib
-		PUBLIC_HEADER DESTINATION include/booster/)
 endif(NOT DISABLE_STATIC)
 
 install(DIRECTORY booster DESTINATION include
@@ -421,4 +411,9 @@ if(WITH_BOOSTER_LOCALE)
 endif()
 
 configure_file(lib/booster_build_config.cmake.h booster/build_config.h)
+install(TARGETS ${LINK_LIBS}
+	RUNTIME DESTINATION bin
+	LIBRARY DESTINATION lib
+	ARCHIVE DESTINATION lib
+	PUBLIC_HEADER DESTINATION include/booster)
 

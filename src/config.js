@@ -7,12 +7,13 @@
 	"service" : {
 		//"worker_processes" : 5,
 		//"worker_threads" : 5,
-		"worker_threads" : 25,
+		"worker_threads" : 5,
+	//	"api" : "scgi",
 		"api" : "http",
-		//"api" : "scgi",
-		"port" : 8080,
+	//	"port" : 8080,
+	//	"port" : 8081,
 	//	"ip" : "0.0.0.0"
-		"ip" : "127.0.0.1",
+	//	"ip" : "127.0.0.1",
 	//	 "socket" : "/tmp/scgi.socket",
 		"nodes" : [
 			{

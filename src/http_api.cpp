@@ -245,7 +245,7 @@ namespace cgi {
 			for(;;) {
 				switch(output_parser_.step()) {
 				case parser::more_data:
-					if(!h.empty())
+					if(h)
 						h(booster::system::error_code(),s);
 					return s;
 				case parser::got_header:
@@ -289,7 +289,7 @@ namespace cgi {
 				<<"]"<<std::endl;
 #endif
 			headers_done_=true;
-			if(h.empty()) {
+			if(!h) {
 				booster::system::error_code e;
 				socket_.write(packet,e);
 				if(e) return 0;

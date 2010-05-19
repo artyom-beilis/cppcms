@@ -9,7 +9,8 @@
 #define BOOSTER_FUNCTION_H
 
 #include <stdexcept>
-#include <booster/clone_ptr.h>
+#include <booster/intrusive_ptr.h>
+#include <booster/refcounted.h>
 
 namespace booster {
 	template<typename Type>
@@ -23,15 +24,14 @@ namespace booster {
 		}
 	};
 
-	#define BOOSTER_FUNCTION							\
+	#define BOOSTER_FUNCTION						\
 	template<typename Result BOOSTER_TEMPLATE_PARAMS >			\
 	class function<Result(BOOSTER_TYPE_PARAMS)>				\
 	{									\
 	public:									\
 		typedef Result result_type;					\
-		struct callable {						\
+		struct callable : public refcounted {				\
 			virtual Result call(BOOSTER_TYPE_PARAMS) =0;		\
-			virtual callable *clone() const = 0;			\
 			virtual ~callable(){}					\
 		};								\
 										\
@@ -41,8 +41,6 @@ namespace booster {
 			callable_impl(F f) : func(f){}				\
 			virtual R call(BOOSTER_TYPE_PARAMS) 			\
 			{  return func(BOOSTER_CALL_PARAMS); }			\
-			virtual callable *clone() const				\
-			{ return new callable_impl<R,F>(func); }		\
 		};								\
 		template<typename F>						\
 		struct callable_impl<void,F> : public callable {		\
@@ -50,8 +48,6 @@ namespace booster {
 			callable_impl(F f) : func(f){}				\
 			virtual void call(BOOSTER_TYPE_PARAMS) 			\
 			{  func(BOOSTER_CALL_PARAMS); }				\
-			virtual callable *clone() const				\
-			{ return new callable_impl<void,F>(func); }		\
 		};								\
 		function(){}							\
 		template<typename F>						\
@@ -69,9 +65,10 @@ namespace booster {
 			return call_ptr->call(BOOSTER_CALL_PARAMS); 		\
 		}								\
 		bool empty() const { return call_ptr.get()==0; }		\
+		operator bool() const { return !empty(); }			\
 		void swap(function &other) { call_ptr.swap(other.call_ptr); }	\
 	private:								\
-		clone_ptr<callable> call_ptr;					\
+		intrusive_ptr<callable> call_ptr;				\
 	};									\
 
 	#define BOOSTER_TEMPLATE_PARAMS
@@ -147,6 +144,5 @@ namespace booster {
 	#undef BOOSTER_FUNCTION
 
 } // booster
-
 
 #endif

@@ -380,6 +380,7 @@ public:
 			"<html><body>\n"
 			"<h1>Hello World!</h1>\n";
 		response().out()<<locale::format("{1,datetime=f}") % time(0) << "<br>\n";
+		response().out()<<locale::format("{1,datetime=f}") % cppcms::filters::escape(time(0)) << "<br>\n";
 		response().out()<<std::use_facet<locale::info>(response().out().getloc()).language()<<"<br>\n";
 		cppcms::http::request::cookies_type::const_iterator p;
 		for(p=request().cookies().begin();p!=request().cookies().end();++p) {

@@ -291,6 +291,8 @@ void connection::load_content(booster::system::error_code const &e,http::request
 	std::string content_type = getenv("CONTENT_TYPE");
 	std::string s_content_length=getenv("CONTENT_LENGTH");
 
+	BOOSTER_DEBUG("cgi") << getenv("REQUEST_METHOD") << " " << getenv("REQUEST_URI");
+
 	long long content_length = s_content_length.empty() ? 0 : atoll(s_content_length.c_str());
 
 	if(content_length < 0)  {
@@ -310,13 +312,14 @@ void connection::load_content(booster::system::error_code const &e,http::request
 		// FIXME
 		return;
 	}
-
-	long long allowed=service().settings().get("security.content_length_limit",1024)*1024;
-	if(content_length > allowed) {
-		set_error(h,"security violation POST content length too big");
-		BOOSTER_NOTICE("cppcms") << "POST data size too big " << content_length << 
-			" REMOTE_ADDR = `" << getenv("REMOTE_ADDR") << "' REMOTE_HOST=`" << getenv("REMOTE_HOST") << "'";
-		return;
+	if(content_length > 0) {
+		long long allowed=service().settings().get("security.content_length_limit",1024)*1024;
+		if(content_length > allowed) {
+			set_error(h,"security violation POST content length too big");
+			BOOSTER_NOTICE("cppcms") << "POST data size too big " << content_length << 
+				" REMOTE_ADDR = `" << getenv("REMOTE_ADDR") << "' REMOTE_HOST=`" << getenv("REMOTE_HOST") << "'";
+			return;
+		}
 	}
 
 	content_.clear();

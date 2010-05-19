@@ -123,7 +123,7 @@ namespace impl {
 					}
 				}
 
-				if(!job.empty())
+				if(job)
 					job();
 			} 	
 		}

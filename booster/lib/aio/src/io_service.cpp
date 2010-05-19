@@ -281,9 +281,9 @@ private:
 			self_->reactor_->remove(fd,e);
 			e = system::error_code(aio_error::canceled,aio_error_cat);
 			// Maybe it is closed
-			if(!cont.readable.empty())
+			if(cont.readable)
 				self_->dispatch_queue_.push_back(event_handler_dispatcher(cont.readable,e));
-			if(!cont.writeable.empty())
+			if(cont.writeable)
 				self_->dispatch_queue_.push_back(event_handler_dispatcher(cont.writeable,e));
 			self_->map_.erase(fd);
 		}
@@ -507,9 +507,9 @@ private:
 			
 			cont.current_event = new_events;
 
-			if(!cont.readable.empty() && (new_events & reactor::in) == 0)
+			if(cont.readable && (new_events & reactor::in) == 0)
 				dispatch_queue_.push_back(event_handler_dispatcher(cont.readable,dispatch_error));
-			if(!cont.writeable.empty() && (new_events & reactor::out) == 0)
+			if(cont.writeable && (new_events & reactor::out) == 0)
 				dispatch_queue_.push_back(event_handler_dispatcher(cont.writeable,dispatch_error));
 			
 			if(new_events == 0)

@@ -31,15 +31,6 @@
 namespace cppcms {
 	namespace filters {
 
-		#define CPPCMS_STREAMED(Streamable)						\
-		inline std::ostream &operator<<(std::ostream &out,Streamable const &object)	\
-		{										\
-			object(out);								\
-			return out;								\
-		};
-
-		
-
 		class CPPCMS_API streamable {
 		public:
 			typedef void (*to_stream_type)(std::ostream &,void const *ptr);
@@ -112,8 +103,6 @@ namespace cppcms {
 		///
 		template<>
 		CPPCMS_API streamable::streamable(std::string const &str);
-
-		CPPCMS_STREAMED(streamable)
 
 		///
 		/// \brief Output filter to_upper
@@ -399,8 +388,6 @@ namespace cppcms {
 	///////////////////////////////
 
 }
-
-#undef CPPCMS_STREAMED
 
 
 #endif

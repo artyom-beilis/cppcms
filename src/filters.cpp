@@ -157,7 +157,7 @@ namespace cppcms { namespace filters {
 	raw const &raw::operator=(raw const &other){ obj_ = other.obj_; return *this; }
 	void raw::operator()(std::ostream &out) const
 	{
-		out << obj_;;
+		obj_(out);
 	}
 
 	struct base64_urlencode::data {};

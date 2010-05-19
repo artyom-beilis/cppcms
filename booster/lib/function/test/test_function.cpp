@@ -52,16 +52,16 @@ int main()
 		TEST(fooi_called);
 		function<int()> fi=fooi;
 		TEST(fi()==10);
-		TEST(!fi.empty());
+		TEST(fi);
 		function<void(int)> fvi;
-		TEST(fvi.empty());
+		TEST(!fvi);
 		try {
 			fvi(10);
 			throw std::runtime_error("Not throws!");
 		}
 		catch(booster::bad_function_call const &e) {}
 		fvi=fooid;
-		TEST(!fvi.empty());
+		TEST(fvi);
 		fvi(10);
 		TEST(fooid_called);
 		int x=2;

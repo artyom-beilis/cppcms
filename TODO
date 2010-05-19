@@ -1,11 +1,10 @@
 - Unit Testing:
   - Templates
-  - Templates dynamic reloading
+  - Templates dynamic reloading?
   - Cache **Interface**
   - Sessions **Interface**  
   - Encoding Validators
   - Url Dispatcher
-- Logger!
 - http_request.*, cgi_api.*
 	Implement File Upload
 - Reintergrate Sessions over TCP/IP
