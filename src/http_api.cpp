@@ -315,7 +315,7 @@ namespace cgi {
 
 			env_["REQUEST_METHOD"]=request_method_;
 			std::string remote_addr;
-			if(service().settings().get("http.proxy.behind",false)) {
+			if(service().settings().get("http.proxy.behind",false)==false) {
 				remote_addr=socket_.remote_endpoint().ip();
 			}
 			else {
