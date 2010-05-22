@@ -473,10 +473,12 @@ namespace cgi {
 				return *p++;
 			}
 			else if(e-p >= 4) {
-				return	(((*p++) & 0x7F) << 24)
-					| ((*p++) << 16)
-					| ((*p++) << 8)
-					| (*p++);
+				uint32_t B3=*p++;
+				uint32_t B2=*p++;
+				uint32_t B1=*p++;
+				uint32_t B0=*p++;
+				uint32_t len = ((B3 & 0x7fU) << 24) + (B2 << 16) + (B1 << 8) + B0;
+				return len;
 			}
 			else {
 				return 0xFFFFFFFFu;
