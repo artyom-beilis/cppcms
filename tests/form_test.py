@@ -163,6 +163,6 @@ test_valid('radio4','/radio','_1=10','invalid\n-1 ')
 
 test_valid('submit1','/submit','_1=1','valid\n1')
 test_valid('submit2','/submit','_2=1','valid\n0')
-body='<p><label for="submit_id">message:</label> <span class="cppcms_form_error">error</span> <span class="cppcms_form_input"><input type="submit" id="submit_id" name="submit_name" value="test"  ></span><span class="cppcms_form_help">help</span></p>\n'
+body='<p><label for="submit_id">message</label>&nbsp;<span class="cppcms_form_error">error</span> <span class="cppcms_form_input"><input type="submit" id="submit_id" name="submit_name" value="test"  ></span><span class="cppcms_form_help">help</span></p>\n'
 test_valid('submit3','/submitl','',body)
 

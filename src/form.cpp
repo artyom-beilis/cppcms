@@ -459,7 +459,8 @@ void base_widget::render(form_context &context)
 {
 	auto_generate(&context);
 	std::ostream &output = context.out();
-	switch(context.html_list()) {
+	html_list_type type = context.html_list();
+	switch(type) {
 	case as_p: output<<"<p>"; break;
 	case as_table: output<<"<tr><th>"; break;
 	case as_ul: output<<"<li>"; break;
@@ -471,9 +472,11 @@ void base_widget::render(form_context &context)
 		if(id_.empty())
 			output << filters::escape(message());
 		else
-			output<<"<label for=\"" << id() << "\">" << filters::escape(message()) <<":</label> ";
+			output<<"<label for=\"" << id() << "\">" << filters::escape(message()) <<"</label>";
+		if(type!=as_table && type!=as_dl)
+			output << "&nbsp;";
 	}
-	else {
+	else if(type == as_table) {
 		output<<"&nbsp;";
 	}
 	switch(context.html_list()) {
@@ -490,7 +493,7 @@ void base_widget::render(form_context &context)
 			output<<"*";
 		output<<"</span> ";
 	}
-	else {
+	else if(type == as_table){
 		output<<"&nbsp;";
 	}
 	output<<"<span class=\"cppcms_form_input\">";
@@ -510,12 +513,7 @@ void base_widget::render(form_context &context)
 	case as_table: output<<"</td><tr>\n"; break;
 	case as_ul: output<<"</li>\n"; break;
 	case as_dl: output<<"</dd>\n"; break;
-	case as_space: 
-		if(context.html() == as_xhtml) 
-			output<<"<br />\n";
-		else
-			output<<"<br>\n";
-		break;
+	case as_space: output<<"\n";
 	default: ;
 	}
 }
