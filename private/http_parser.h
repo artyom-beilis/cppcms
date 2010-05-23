@@ -54,7 +54,7 @@ protected:
 	inline int getc()
 	{
 		if(body_ptr_ < body_.size()) {
-			return body_[body_ptr_++];
+			return (unsigned char)body_[body_ptr_++];
 		}
 		else {
 			body_.clear();
