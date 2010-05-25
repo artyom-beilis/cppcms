@@ -174,8 +174,8 @@ std::string endpoint::ip() const
 #else
 			std::ostringstream tmp;
 			tmp.imbue(std::locale::classic());
-			char const *p = reinterpret_cast<char const *>(&d->sa.in.sin_addr);
-			tmp << int(p[0]) <<"." << int(p[1]) <<"."<<int(p[2]) <<"." << int(p[2]);
+			unsigned char const *p = reinterpret_cast<unsigned char const *>(&d->sa.in.sin_addr);
+			tmp << int(p[0]) <<"." << int(p[1]) <<"."<<int(p[2]) <<"." << int(p[3]);
 			return tmp.str();
 #endif
 		}
