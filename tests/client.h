@@ -30,12 +30,14 @@ static bool run_ok=false;
 struct runner {
 	runner(cppcms::service &srv) : srv_(&srv)
 	{
-		command_ = srv.settings().get<std::string>("test.exec");
+		command_ = srv.settings().get<std::string>("test.exec","none");
 	}
 	void operator()() const
 	{
-		run_ok = ::system(command_.c_str()) == 0;
-		srv_->shutdown();
+		if(command_ != "none") {
+			run_ok = ::system(command_.c_str()) == 0;
+			srv_->shutdown();	
+		}
 	}
 private:
 	cppcms::service *srv_;

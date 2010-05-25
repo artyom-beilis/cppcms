@@ -505,6 +505,7 @@ set(ALL_TESTS
 	base64_test
 	forwarder_test
 	jsonrpc_test
+	cookie_test
 	)
 foreach(TEST ${ALL_TESTS})
 	add_executable(${TEST} tests/${TEST}.cpp)
@@ -591,6 +592,10 @@ add_test(cache_backend_test cache_backend_test)
 add_test(form_test
 	form_test "-c" "${CNF}/form_test.js" 
 	"--test-exec=${PYTHON} ${CNF}/form_test.py")
+
+add_test(cookie_test
+	cookie_test "-c" "${CNF}/cookie_test.js" 
+	"--test-exec=${PYTHON} ${CNF}/cookie_test.py")
 
 add_test(forwarder_test
 	forwarder_test "-c" "${CNF}/forwarder_test.js" 

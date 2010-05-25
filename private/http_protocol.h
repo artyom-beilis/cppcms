@@ -93,7 +93,7 @@ namespace protocol {
 	{
 		It p=begin;
 		std::string result;
-		if(p>=end || *p++!='\"')
+		if(p>=end || *p!='\"')
 			return result;
 		result.reserve(end-p);
 		p++;

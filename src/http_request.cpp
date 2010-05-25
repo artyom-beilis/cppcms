@@ -31,6 +31,20 @@
 
 namespace cppcms { namespace http {
 
+namespace {
+	template<typename Iterator>
+	void skip_after_period(Iterator &p,Iterator e)
+	{
+		while(p<e) {
+			if(*p==';' || *p==',') {
+				++p;
+				return;
+			}
+			++p;
+		}
+	}
+}
+
 bool request::read_key_value(
 		std::string::const_iterator &p,
 		std::string::const_iterator e,
@@ -42,18 +56,23 @@ bool request::read_key_value(
 	tmp=p;
 	p=http::protocol::tocken(p,e);
 	if(p==tmp && p<e) {
+		skip_after_period(p,e);
 		return false;
 	}
 	key.assign(tmp,p);
 	p=http::protocol::skip_ws(p,e);
 	if(p<e && *p!='=') {
-		return false;
+		if(*p==';' || *p==',') {
+			++p;
+			return true;
+		}
 	}
 	p=http::protocol::skip_ws(p+1,e);
 	if(*p=='"') {
 		tmp=p;
 		value=http::protocol::unquote(p,e);
 		if(p==tmp) {
+			p=e;
 			return false;
 		}
 	}
@@ -61,6 +80,10 @@ bool request::read_key_value(
 		tmp=p;
 		p=http::protocol::tocken(p,e);
 		value.assign(tmp,p);
+		if(p==tmp && p<e && *p!=';'&& *p!=',') {
+			skip_after_period(p,e);
+			return false;
+		}
 	}
 	p=http::protocol::skip_ws(p,e);
 	if(p<e && (*p==';' || *p==',' ))
@@ -77,7 +100,8 @@ bool request::parse_cookies()
 	while(p<e) {
 		std::string key,value;
 		if(!read_key_value(p,e,key,value)) {
-			return false;
+			cookie = http::cookie();
+			continue;
 		}
 		if(key[0]=='$') {
 			if(cookie.name().empty()) {
