@@ -11,7 +11,8 @@ msgstr "היי"
 msgid "#hello"
 msgstr "#היי"
 
-msgid "#context#hello"
+msgctxt "context"
+msgid "hello"
 msgstr "היי בהקשר אחר"
 
 

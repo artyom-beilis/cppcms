@@ -407,6 +407,7 @@ if(WITH_BOOSTER_LOCALE)
 	add_booster_test(locale formatting)
 	add_booster_test(locale generator)
 	add_booster_test(locale ios_prop)
+	add_booster_test(locale icu_vs_os_timezone)
 	add_booster_param_test(locale message "${CMAKE_CURRENT_SOURCE_DIR}/lib/locale/test")
 endif()
 

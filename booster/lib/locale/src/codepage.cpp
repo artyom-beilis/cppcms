@@ -600,7 +600,7 @@ namespace locale {
         #ifdef BOOSTER_NO_CHAR32_T_CODECVT
         throw std::runtime_error("std::codecvt<char32_t,char,mbstate_t> is not supported by this compiler");
         #else
-        return code_converter<char32_t>::create(inf);i
+        return code_converter<char32_t>::create(inf);
         #endif
     }
     #endif

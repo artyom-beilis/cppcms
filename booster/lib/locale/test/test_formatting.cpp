@@ -12,6 +12,7 @@
 
 #include <booster/locale/formatting.h>
 #include <booster/locale/format.h>
+#include <booster/locale/time_zone.h>
 #include <booster/locale/generator.h>
 #include "test_locale.h"
 #include "test_locale_tools.h"
@@ -206,10 +207,11 @@ void test_manip(std::string e_charset="UTF-8")
     TEST_FP4(as::datetime,as::date_full  ,as::time_full  ,as::gmt,a_datetime,"Thursday, February 5, 1970 3:33:13 PM GMT+00:00",time_t,a_datetime);
 
     time_t now=time(0);
+    time_t lnow = now + 3600 * 4;
     char local_time_str[256];
     std::string format="%H:%M:%S";
     std::basic_string<CharType> format_string(format.begin(),format.end());
-    strftime(local_time_str,sizeof(local_time_str),format.c_str(),localtime(&now));
+    strftime(local_time_str,sizeof(local_time_str),format.c_str(),gmtime(&lnow));
     TEST_FMT(as::ftime(format_string),now,local_time_str);
     TEST_FMT(as::ftime(format_string)<<as::gmt<<as::local_time,now,local_time_str);
 
@@ -303,10 +305,11 @@ void test_format(std::string charset="UTF-8")
     #endif
 
     time_t now=time(0);
+    time_t lnow = now + 3600 * 4;
     char local_time_str[256];
     std::string format="'%H:%M:%S'";
     std::basic_string<CharType> format_string(format.begin(),format.end());
-    strftime(local_time_str,sizeof(local_time_str),format.c_str(),localtime(&now));
+    strftime(local_time_str,sizeof(local_time_str),format.c_str(),gmtime(&lnow));
 
     FORMAT("{1,ftime='''%H:%M:%S'''}",now,local_time_str);
     FORMAT("{1,local,ftime='''%H:%M:%S'''}",now,local_time_str);
@@ -334,6 +337,7 @@ void test_format(std::string charset="UTF-8")
 int main()
 {
     try {
+        booster::locale::time_zone::global(booster::locale::time_zone("GMT+4:00"));
         std::cout << "Testing char, UTF-8" << std::endl;
         test_manip<char>();
         test_format<char>();
