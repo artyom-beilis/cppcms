@@ -1,6 +1,6 @@
 #!/bin/bash
 
-#svn export https://cppcms.svn.sourceforge.net/svnroot/cppcms/boost_locale/trunk
+svn export https://cppcms.svn.sourceforge.net/svnroot/cppcms/boost_locale/trunk
 rm -fr boost_locale
 cp -a trunk boost_locale
 ./rename.py boost_locale booster

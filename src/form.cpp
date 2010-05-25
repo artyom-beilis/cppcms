@@ -392,17 +392,17 @@ void base_widget::help(locale::message const &v)
 void base_widget::message(std::string v)
 {
 	has_message_ = 1;
-	message_=locale::message("#NOTRANS#" + v);
+	message_=locale::message("NOTRANS",v);
 }
 void base_widget::error_message(std::string v)
 {
 	has_error_ = 1;
-	error_message_=locale::message("#NOTRANS#" + v);
+	error_message_=locale::message("NOTRANS",v);
 }
 void base_widget::help(std::string v)
 {
 	has_help_ = 1;
-	help_=locale::message("#NOTRANS#" + v);
+	help_=locale::message("NOTRANS",v);
 }
 
 void base_widget::attributes_string(std::string v)
@@ -1310,7 +1310,7 @@ submit::~submit()
 
 void submit::value(std::string val)
 {
-	value_=locale::message("#NOTRANS#" + val);
+	value_=locale::message("NOTRANS",val);
 }
 void submit::value(locale::message const &msg)
 {

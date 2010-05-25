@@ -8,10 +8,11 @@ msgstr ""
 msgid "hello"
 msgstr "שלום"
 
-msgid "##hello"
+msgid "#hello"
 msgstr "#שלום"
 
-msgid "#context#hello"
+msgctxt "context"
+msgid "hello"
 msgstr "שלום בהקשר אחר"
 
 msgid "x day"
@@ -21,17 +22,11 @@ msgstr[1] "יומיים"
 msgstr[2] "x ימים"
 msgstr[3] "x יום"
 
-msgid "#context#x day"
+msgctxt "context"
+msgid "x day"
 msgid_plural "בהקשר x days"
 msgstr[0] "בהקשר יום x"
 msgstr[1] "בהקשר יומיים"
 msgstr[2] "בהקשר x ימים"
 msgstr[3] "בהקשר x יום"
-
-msgid "##x day"
-msgid_plural "x days"
-msgstr[0] "#יום x"
-msgstr[1] "#יומיים"
-msgstr[2] "#x ימים"
-msgstr[3] "#x יום"
 

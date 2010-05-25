@@ -189,14 +189,14 @@ namespace cppcms {
 
                 typedef std::pair<CharType const *,CharType const *> pair_type;
 
-                virtual CharType const *get(int domain_id,char const *id) const
+                virtual CharType const *get(int domain_id,char const *context,char const *id) const
                 {
-                    return get_string(domain_id,id).first;
+                    return get_string(domain_id,context,id).first;
                 }
 
-                virtual CharType const *get(int domain_id,char const *single_id,int n) const
+                virtual CharType const *get(int domain_id,char const *context,char const *single_id,int n) const
                 {
-                    pair_type ptr = get_string(domain_id,single_id);
+                    pair_type ptr = get_string(domain_id,context,single_id);
                     if(!ptr.first)
                         return 0;
                     int form=0;
@@ -302,9 +302,19 @@ namespace cppcms {
                     return meta.substr(pos,end_pos - pos);
                 }
 
-
-                pair_type get_string(int domain_id,char const *id) const
+                pair_type get_string(int domain_id,char const *context,char const *in_id) const
                 {
+                    char const *id = in_id;
+                    std::string cid;
+
+                    if(context!=0 && *context!=0) {
+                        cid.reserve(strlen(context) + strlen(in_id) + 1);
+                        cid.append(context);
+                        cid+='\4'; // EOT
+                        cid.append(in_id);
+                        id = cid.c_str();
+                    }
+
                     pair_type null_pair((CharType const *)0,(CharType const *)0);
                     if(domain_id < 0 || size_t(domain_id) >= catalogs_.size())
                         return null_pair;

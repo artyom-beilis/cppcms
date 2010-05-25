@@ -1,46 +1,48 @@
 //
-//  Copyright (c) 2009 Artyom Beilis (Tonkikh)
+//  Copyright (c) 2009-2010 Artyom Beilis (Tonkikh)
 //
 //  Distributed under the Boost Software License, Version 1.0. (See
 //  accompanying file LICENSE_1_0.txt or copy at
 //  http://www.boost.org/LICENSE_1_0.txt)
 //
-#ifndef CPPCMS_LOCALE_MESSAGE_HPP_INCLUDED
-#define CPPCMS_LOCALE_MESSAGE_HPP_INCLUDED
+#ifndef CPPCMS_LOCALE_MESSAGE_H_INCLUDED
+#define CPPCMS_LOCALE_MESSAGE_H_INCLUDED
 
-#include <cppcms/defs.h>
 #include <cppcms/config.h>
+#ifdef _MSC_VER
+#  pragma warning(push)
+#  pragma warning(disable : 4275 4251 4231 4660)
+#endif
 #include <locale>
 #include <string>
 #include <vector>
 #include <set>
 #include <memory>
-#include <cppcms/locale_formatting.h>
+#include "locale_formatting.h"
+
+
 
 namespace cppcms {
     namespace locale {
+        ///
+        /// \defgroup message Message Formatting (translation) 
+        ///
+        ///This module provides message translation functionality, i.e. allow your application to speak native language
+        ///
+        /// @{
+        /// 
 
         class info;
+
         ///
-        /// \brief Hook class for DLL
-        ///
-        /// This class is big ugly hook for DLL in order to make sure that both program and DLL
-        /// refer to same locale::id when it uses some atomic static members.
-        ///
-        /// Further we specialize it for char, wchar_t, char16_t and char32_t in order to make them work.
+        /// \cond INTERNAL
         ///
         template<typename CharType>
         struct base_message_format: public std::locale::facet
         {
         };
-
        
        
-        ///
-        /// \brief A facet used for message formatting
-        ///
-        /// This class is usually used via translate function
-        /// 
         template<typename CharType>
         class message_format : public base_message_format<CharType>
         {
@@ -54,8 +56,8 @@ namespace cppcms {
             {
             }
 
-            virtual char_type const *get(int domain_id,char const *id) const = 0;
-            virtual char_type const *get(int domain_id,char const *single_id,int n) const = 0;
+            virtual char_type const *get(int domain_id,char const *context,char const *id) const = 0;
+            virtual char_type const *get(int domain_id,char const *context,char const *single_id,int n) const = 0;
             virtual int domain(std::string const &domain) const = 0;
 
 #if defined (__SUNPRO_CC) && defined (_RWSTD_VER)
@@ -70,9 +72,14 @@ namespace cppcms {
 
         };
 
+        /// \endcond
 
         ///
-        /// This class represents a message that can be converted to specific locale message
+        /// \brief This class represents a message that can be converted to specific locale message
+        ///
+        /// It holds original ASCII string that is queried in the dictionary when converting to output string.
+        /// The created string may be UTF-8, UTF-16, UTF-32 or other 8-bit encoded string according to target 
+        /// character type and locale encoding.
         ///
         struct message {
         public:
@@ -83,6 +90,7 @@ namespace cppcms {
             message() :
                 n_(0),
                 c_id_(""),
+                c_context_(""),
                 c_plural_(0)
             {
             }
@@ -94,6 +102,7 @@ namespace cppcms {
             explicit message(char const *id) :
                 n_(0),
                 c_id_(id),
+                c_context_(""),
                 c_plural_(0)
             {
             }
@@ -107,9 +116,38 @@ namespace cppcms {
             explicit message(char const *single,char const *plural,int n) :
                 n_(n),
                 c_id_(single),
+                c_context_(""),
                 c_plural_(plural)
             {
             }
+
+            ///
+            /// Create a simple message from 0 terminated strings, with context
+            /// information. The string should exist
+            /// until message is destroyed. Generally useful with static constant strings
+            /// 
+            explicit message(char const *context,char const *id) :
+                n_(0),
+                c_id_(id),
+                c_context_(context),
+                c_plural_(0)
+            {
+            }
+
+            ///
+            /// Create a simple plural form message from 0 terminated strings, with context. The strings should exist
+            /// until message is destroyed. Generally useful with static constant strings.
+            ///
+            /// \a n is the number, \a single and \a plural are single and plural forms of message
+            /// 
+            explicit message(char const *context,char const *single,char const *plural,int n) :
+                n_(n),
+                c_id_(single),
+                c_context_(context),
+                c_plural_(plural)
+            {
+            }
+
 
             ///
             /// Create a simple message from string.
@@ -117,6 +155,7 @@ namespace cppcms {
             explicit message(std::string const &id) :
                 n_(0),
                 c_id_(0),
+                c_context_(0),
                 c_plural_(0),
                 id_(id)
             {
@@ -130,8 +169,38 @@ namespace cppcms {
             explicit message(std::string const &single,std::string const &plural,int number) :
                 n_(number),
                 c_id_(0),
+                c_context_(0),
                 c_plural_(0),
                 id_(single),
+                plural_(plural)
+            {
+            }
+
+            ///
+            /// Create a simple message from string with context.
+            ///
+            explicit message(std::string const &context,std::string const &id) :
+                n_(0),
+                c_id_(0),
+                c_context_(0),
+                c_plural_(0),
+                id_(id),
+                context_(context)
+            {
+            }
+
+            ///
+            /// Create a simple plural form message from strings.
+            ///
+            /// \a n is the number, \a single and \a plural are single and plural forms of message
+            /// 
+            explicit message(std::string const &context,std::string const &single,std::string const &plural,int number) :
+                n_(number),
+                c_id_(0),
+                c_context_(0),
+                c_plural_(0),
+                id_(single),
+                context_(context),
                 plural_(plural)
             {
             }
@@ -229,56 +298,42 @@ namespace cppcms {
                 static const CharType empty_string[1] = {0};
 
                 char const *id = c_id_ ? c_id_ : id_.c_str();
+                char const *context = c_context_ ? c_context_ : context_.c_str();
                 char const *plural = c_plural_ ? c_plural_ : (plural_.empty() ? 0 : plural_.c_str());
                 
-                if(*id == 0)
+                if(*id == 0 || context == 0)
                     return empty_string;
                 
                 if(std::has_facet<message_format<CharType> >(loc)) {
                     message_format<CharType> const &msg = std::use_facet<message_format<CharType> >(loc);
                     
                     if(!plural) {
-                        translated = msg.get(domain_id,id);
+                        translated = msg.get(domain_id,context,id);
                     }
                     else {
-                        translated = msg.get(domain_id,id,n_);
+                        translated = msg.get(domain_id,context,id,n_);
                     }
                 }
 
                 if(!translated) {
-                    char const *msg = plural ? ( n_ == 1 ? cut_comment(id) : plural) : cut_comment(id);
+                    char const *msg = plural ? ( n_ == 1 ? id : plural) : id;
 
-                    std::ctype<CharType> const &ct = std::use_facet<std::ctype<CharType> >(loc);
                     while(*msg)
-                        buffer+=ct.widen(*msg++);
+                        buffer+=static_cast<CharType>(*msg++);
 
                     translated = buffer.c_str();
                 }
                 return translated;
             }
 
-            char const *cut_comment(char const *id) const
-            {
-                static const char key = '#';
-                if(*id == key) {
-                    if(id[1] == key)
-                        return id+1;
-                    char c;
-                    id++;
-                    while((c=*id)!=0 && c!=key)
-                        id++;
-                    if(*id==key)
-                        id++;
-                }
-                return id;
-            }
-
             /// members
 
             int n_;
             char const *c_id_;
+            char const *c_context_;
             char const *c_plural_;
             std::string id_;
+            std::string context_;
             std::string plural_;
         };
 
@@ -301,11 +356,25 @@ namespace cppcms {
             return message(msg);
         }
         ///
-        /// Translate a plural message from, \a single and \a plural are not copied 
+        /// Translate a message in context, \a msg and \a context are not copied 
+        ///
+        inline message translate(char const *context,char const *msg)
+        {
+            return message(context,msg);
+        }
+        ///
+        /// Translate a plural message form, \a single and \a plural are not copied 
         ///
         inline message translate(char const *single,char const *plural,int n)
         {
             return message(single,plural,n);
+        }
+        ///
+        /// Translate a plural message from in constext, \a context, \a single and \a plural are not copied 
+        ///
+        inline message translate(char const *context,char const *single,char const *plural,int n)
+        {
+            return message(context,single,plural,n);
         }
         
         ///
@@ -315,13 +384,97 @@ namespace cppcms {
         {
             return message(msg);
         }
+        
         ///
-        /// Translate a plural message from, \a single and \a plural are copied 
+        /// Translate a message in context,\a context and \a msg is copied 
         ///
+        inline message translate(std::string const &context,std::string const &msg)
+        {
+            return message(context,msg);
+        }
+        ///
+        /// Translate a plural message form in constext, \a context, \a single and \a plural are copied 
+        ///
+        inline message translate(std::string const &context,std::string const &single,std::string const &plural,int n)
+        {
+            return message(context,single,plural,n);
+        }
+
+        ///
+        /// Translate a plural message form, \a single and \a plural are copied 
+        ///
+
         inline message translate(std::string const &single,std::string const &plural,int n)
         {
             return message(single,plural,n);
         }
+
+        // 
+        // gettext compatibility functions
+        //
+
+        ///
+        /// Translate message \a id according to locale \a loc
+        ///
+        inline std::string gettext(char const *id,std::locale const &loc=std::locale())
+        {
+            return message(id).str<char>(loc);
+        }
+        ///
+        /// Translate plural form according to locale \a loc
+        ///
+        inline std::string ngettext(char const *s,char const *p,int n,std::locale const &loc=std::locale())
+        {
+            return message(s,p,n).str<char>(loc);
+        }
+        ///
+        /// Translate message \a id according to locale \a loc in domain \a domain
+        ///
+        inline std::string dgettext(char const *domain,char const *id,std::locale const &loc=std::locale())
+        {
+            return message(id).str<char>(loc,domain);
+        }
+
+        ///
+        /// Translate plural form according to locale \a loc in domain \a domain
+        ///
+        inline std::string dngettext(char const *domain,char const *s,char const *p,int n,std::locale const &loc=std::locale())
+        {
+            return message(s,p,n).str<char>(loc,domain);
+        }
+        ///
+        /// Translate message \a id according to locale \a loc in context \a context
+        ///
+        inline std::string pgettext(char const *context,char const *id,std::locale const &loc=std::locale())
+        {
+            return message(context,id).str<char>(loc);
+        }
+        ///
+        /// Translate plural form according to locale \a loc in context \a context
+        ///
+        inline std::string npgettext(char const *context,char const *s,char const *p,int n,std::locale const &loc=std::locale())
+        {
+            return message(context,s,p,n).str<char>(loc);
+        }
+        ///
+        /// Translate message \a id according to locale \a loc in domain \a domain in context \a context
+        ///
+        inline std::string dpgettext(char const *domain,char const *context,char const *id,std::locale const &loc=std::locale())
+        {
+            return message(context,id).str<char>(loc,domain);
+        }
+        ///
+        /// Translate plural form according to locale \a loc in domain \a domain in context \a context
+        ///
+        inline std::string dnpgettext(char const *domain,char const *context,char const *s,char const *p,int n,std::locale const &loc=std::locale())
+        {
+            return message(context,s,p,n).str<char>(loc,domain);
+        }
+
+
+        ///
+        /// \cond INTERNAL
+        ///
         
         template<>
         struct CPPCMS_API base_message_format<char> : public std::locale::facet 
@@ -336,7 +489,14 @@ namespace cppcms {
         CPPCMS_API message_format<char> *message_format<char>::create(   info const &,
                                                                                 std::vector<std::string> const &domains,
                                                                                 std::vector<std::string> const &paths);
+        /// \endcond
+
+        ///
+        /// @}
+        ///
+
         namespace as {
+            /// \cond INTERNAL
             namespace details {
                 struct set_domain {
                     std::string domain_id;
@@ -349,9 +509,15 @@ namespace cppcms {
                     return out;
                 }
             } // details
+            /// \endcond
 
             ///
-            /// Manipulator for switching domain in ostream,
+            /// \addtogroup manipulators
+            ///
+            /// @{
+            
+            ///
+            /// Manipulator for switching message domain in ostream,
             ///
             inline details::set_domain domain(std::string const &id)
             {
@@ -359,9 +525,14 @@ namespace cppcms {
                 tmp.domain_id = id;
                 return tmp;
             }
+            /// @}
         } // as
     } // locale 
 } // boost
+
+#ifdef _MSC_VER
+#pragma warning(pop)
+#endif
 
 
 #endif
