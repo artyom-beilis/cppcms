@@ -43,8 +43,8 @@ public:
 	virtual bool load(session_interface &,std::string &data,time_t &timeout);
 	virtual void clear(session_interface &);
 private:
-	struct data;
-	booster::hold_ptr<data> d;
+	struct _data;
+	booster::hold_ptr<_data> d;
 	booster::shared_ptr<session_cookies>	client_;
 	booster::shared_ptr<session_sid>	server_;
 	size_t data_size_limit_;

@@ -138,7 +138,7 @@ namespace cppcms {
 		};
 	} // impl
 
-	struct connection_forwarder::data {};
+	struct connection_forwarder::_data {};
 
 	connection_forwarder::connection_forwarder(cppcms::service &srv,std::string const &ip,int port) :
 		application(srv),

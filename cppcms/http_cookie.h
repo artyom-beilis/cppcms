@@ -130,8 +130,8 @@ private:
 
 	void write(std::ostream &) const;
 	// for future use
-	struct data;
-	booster::copy_ptr<data> d;
+	struct _data;
+	booster::copy_ptr<_data> d;
 
 	// real members
 	std::string name_;

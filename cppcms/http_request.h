@@ -121,12 +121,12 @@ namespace http {
 				std::string &key,
 				std::string &value);
 
-		struct data;
+		struct _data;
 		form_type get_;
 		form_type post_;
 		files_type files_;
 		cookies_type cookies_;
-		booster::hold_ptr<data> d;
+		booster::hold_ptr<_data> d;
 		impl::cgi::connection *conn_;
 	};
 

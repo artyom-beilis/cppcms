@@ -26,7 +26,7 @@
 
 namespace cppcms { namespace http {
 
-struct cookie::data { };
+struct cookie::_data { };
 
 std::string cookie::name() const { return name_; }
 void cookie::name(std::string v) { name_=v; }

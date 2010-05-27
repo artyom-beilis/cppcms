@@ -34,8 +34,8 @@ namespace cppcms {
 		~cache_pool();
 		booster::intrusive_ptr<impl::base_cache> get();
 	private:
-		struct data;
-		booster::hold_ptr<data> d;
+		struct _data;
+		booster::hold_ptr<_data> d;
 	};
 }
 

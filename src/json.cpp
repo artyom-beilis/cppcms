@@ -79,7 +79,7 @@ namespace json {
 			json::array
 		>  variant_type;
 
-	struct value::data {
+	struct value::_data {
 	public:
 		variant_type &value()
 		{
@@ -97,7 +97,7 @@ namespace json {
 	using namespace std;
 	
 	value::copyable::copyable() :
-		d(new value::data()) 
+		d(new value::_data()) 
 	{
 	}
 	value::copyable::~copyable()

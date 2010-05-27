@@ -32,12 +32,12 @@
 
 namespace cppcms {
 
-struct base_view::data {
+struct base_view::_data {
 	std::ostream *out;
 };
 
 base_view::base_view(std::ostream &out) :
-	d(new data)
+	d(new _data)
 {
 	d->out=&out;
 }

@@ -366,7 +366,7 @@ static void thread_function(io::io_service *io)
 	io->stop();
 }
 
-struct tcp_cache_service::data {
+struct tcp_cache_service::_data {
 	io::io_service io;
 	std::auto_ptr<server> srv_cache;
 	booster::intrusive_ptr<base_cache> cache;
@@ -374,7 +374,7 @@ struct tcp_cache_service::data {
 };
 
 tcp_cache_service::tcp_cache_service(booster::intrusive_ptr<base_cache> cache,int threads,std::string ip,int port) :
-	d(new data)
+	d(new _data)
 {
 	d->cache=cache;
 	d->srv_cache.reset(new server(d->io,ip,port,*cache));

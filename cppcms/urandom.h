@@ -32,8 +32,8 @@ namespace cppcms {
 		void generate(void *,unsigned n);
 
 	private:
-		struct data;
-		booster::hold_ptr<data> d;
+		struct _data;
+		booster::hold_ptr<_data> d;
 		
 
 	};

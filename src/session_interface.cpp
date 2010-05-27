@@ -36,7 +36,7 @@ using namespace std;
 
 namespace cppcms {
 
-	struct session_interface::data {};
+	struct session_interface::_data {};
 
 	struct session_interface::entry {
 		std::string value;

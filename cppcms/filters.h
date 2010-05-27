@@ -121,8 +121,8 @@ namespace cppcms {
 
 		private:						
 			streamable obj_;			
-			struct data;					
-			booster::copy_ptr<data> d;				
+			struct _data;					
+			booster::copy_ptr<_data> d;				
 		};
 
 		inline std::ostream &operator<<(std::ostream &out,to_upper const &obj)
@@ -148,8 +148,8 @@ namespace cppcms {
 
 		private:						
 			streamable obj_;			
-			struct data;					
-			booster::copy_ptr<data> d;				
+			struct _data;					
+			booster::copy_ptr<_data> d;				
 		};
 
 		inline std::ostream &operator<<(std::ostream &out,to_lower const &obj)
@@ -177,8 +177,8 @@ namespace cppcms {
 
 		private:						
 			streamable obj_;			
-			struct data;					
-			booster::copy_ptr<data> d;				
+			struct _data;					
+			booster::copy_ptr<_data> d;				
 		};
 
 		inline std::ostream &operator<<(std::ostream &out,to_title const &obj)
@@ -206,8 +206,8 @@ namespace cppcms {
 
 		private:						
 			streamable obj_;			
-			struct data;					
-			booster::copy_ptr<data> d;				
+			struct _data;					
+			booster::copy_ptr<_data> d;				
 		};
 
 		inline std::ostream &operator<<(std::ostream &out,escape const &obj)
@@ -234,8 +234,8 @@ namespace cppcms {
 
 		private:						
 			streamable obj_;			
-			struct data;					
-			booster::copy_ptr<data> d;				
+			struct _data;					
+			booster::copy_ptr<_data> d;				
 		};
 
 		inline std::ostream &operator<<(std::ostream &out,urlencode const &obj)
@@ -261,8 +261,8 @@ namespace cppcms {
 
 		private:						
 			streamable obj_;			
-			struct data;					
-			booster::copy_ptr<data> d;				
+			struct _data;					
+			booster::copy_ptr<_data> d;				
 		};
 
 		inline std::ostream &operator<<(std::ostream &out,base64_urlencode const &obj)
@@ -288,8 +288,8 @@ namespace cppcms {
 
 		private:						
 			streamable obj_;			
-			struct data;					
-			booster::copy_ptr<data> d;				
+			struct _data;					
+			booster::copy_ptr<_data> d;				
 		
 		
 		
@@ -318,9 +318,9 @@ namespace cppcms {
 			date(double time);
 			void operator()(std::ostream &out) const;
 		private:
-			struct data;
+			struct _data;
 			double time_;
-			booster::copy_ptr<data> d;
+			booster::copy_ptr<_data> d;
 		};
 		
 		inline std::ostream &operator<<(std::ostream &out,date const &obj)
@@ -344,9 +344,9 @@ namespace cppcms {
 			time(double time);
 			void operator()(std::ostream &out) const;
 		private:
-			struct data;
+			struct _data;
 			double time_;
-			booster::copy_ptr<data> d;
+			booster::copy_ptr<_data> d;
 		};
 		
 		inline std::ostream &operator<<(std::ostream &out,time const &obj)
@@ -369,9 +369,9 @@ namespace cppcms {
 			datetime(double t);
 			void operator()(std::ostream &out) const;
 		private:
-			struct data;
+			struct _data;
 			double time_;
-			booster::copy_ptr<data> d;
+			booster::copy_ptr<_data> d;
 		};
 		
 		inline std::ostream &operator<<(std::ostream &out,datetime const &obj)

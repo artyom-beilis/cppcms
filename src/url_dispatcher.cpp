@@ -121,14 +121,14 @@ namespace cppcms {
 	} // anonynoys
 
 
-	struct url_dispatcher::data {
+	struct url_dispatcher::_data {
 		std::vector<booster::shared_ptr<option> > options;
 		booster::shared_ptr<option> last_option;
 	};
 
 	// Meanwhile nothing
 	url_dispatcher::url_dispatcher() :
-			d(new url_dispatcher::data())
+			d(new url_dispatcher::_data())
 	{
 	}
 	url_dispatcher::~url_dispatcher()

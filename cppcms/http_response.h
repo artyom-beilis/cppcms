@@ -166,8 +166,8 @@ namespace http {
 		void write_http_headers(std::ostream &);
 		std::string get_async_chunk();
 
-		struct data;
-		booster::hold_ptr<data> d;
+		struct _data;
+		booster::hold_ptr<_data> d;
 
 		context &context_;
 		std::ostream *stream_;

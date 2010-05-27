@@ -34,12 +34,12 @@ namespace sessions {
 
 class session_memory_storage : public session_storage {
 	typedef std::multimap<time_t,std::string> timeout_type;
-	struct data {
+	struct _data {
 		time_t timeout;
 		std::string info;
 		timeout_type::iterator timeout_ptr;
 	};
-	typedef boost::unordered_map<std::string,data> map_type;
+	typedef boost::unordered_map<std::string,_data> map_type;
 	map_type map_;
 	timeout_type timeout_;
 	booster::shared_mutex mutex_;
@@ -50,7 +50,7 @@ public:
 		booster::unique_lock<booster::shared_mutex> lock(mutex_);
 		map_type::iterator p=map_.find(key);
 		if(p==map_.end()) {
-			data &d=map_[key];
+			_data &d=map_[key];
 			d.timeout=to;
 			d.info=value;
 			d.timeout_ptr=timeout_.insert(std::pair<time_t,std::string>(to,key));

@@ -123,7 +123,7 @@ bool request::parse_cookies()
 }
 
 
-struct request::data {
+struct request::_data {
 	std::vector<booster::shared_ptr<file> > files;
 	std::vector<char> post_data;
 };
@@ -184,7 +184,7 @@ std::pair<void *,size_t> request::raw_post_data()
 }
 
 request::request(impl::cgi::connection &conn) :
-	d(new data),
+	d(new _data),
 	conn_(&conn)
 {
 }

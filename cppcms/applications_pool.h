@@ -146,11 +146,11 @@ namespace cppcms {
 		struct basic_app_data;
 		struct app_data;
 		struct long_running_app_data;
-		struct data;
+		struct _data;
 		std::string script_name();
 		bool matched(basic_app_data &data,std::string script_name,std::string path_info,std::string &matched);
 		service *srv_;
-		booster::hold_ptr<data> d;
+		booster::hold_ptr<_data> d;
 	};
 
 	namespace details {

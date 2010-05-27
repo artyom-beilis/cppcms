@@ -40,8 +40,8 @@
 
 namespace cppcms {
 
-struct application::data {
-	data(cppcms::service *s):
+struct application::_data {
+	_data(cppcms::service *s):
 		service(s),
 		pool_id(-1)
 	{
@@ -54,7 +54,7 @@ struct application::data {
 };
 
 application::application(cppcms::service &srv) :
-	d(new data(&srv)),
+	d(new _data(&srv)),
 	refs_(0)
 {
 	parent_=root_=this;

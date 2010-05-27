@@ -30,7 +30,7 @@ namespace cppcms {
 namespace rpc {
 
     call_error::call_error(std::string const &m) : cppcms_error(m) {} 
-	struct json_call::data {};
+	struct json_call::_data {};
 
 	json_call::json_call(http::context &c) 
 	{
@@ -122,7 +122,7 @@ namespace rpc {
 		context_ = c;
 	}
 	
-	struct json_rpc_server::data{};
+	struct json_rpc_server::_data{};
 
 	json_rpc_server::json_rpc_server(cppcms::service &srv) :
 		application(srv)

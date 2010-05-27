@@ -63,9 +63,9 @@ namespace cppcms {
 		static views_pool &static_instance();
 	private:
 
-		struct data;
+		struct _data;
 		struct skin;
-		booster::hold_ptr<data> d;
+		booster::hold_ptr<_data> d;
 	};
 
 }

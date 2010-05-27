@@ -265,8 +265,8 @@ namespace cppcms {
 				std::string &buffer,
 				bool notriggers);
 
-		struct data;
-		booster::hold_ptr<data> d;
+		struct _data;
+		booster::hold_ptr<_data> d;
 		http::context *context_;
 		std::set<std::string> triggers_;
 		booster::intrusive_ptr<impl::base_cache> cache_module_;

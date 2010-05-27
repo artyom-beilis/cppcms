@@ -159,8 +159,8 @@ namespace cppcms {
 		friend class application;
 		void mount(std::string match,application &app,int part);
 
-		struct data;
-		booster::hold_ptr<data> d;
+		struct _data;
+		booster::hold_ptr<_data> d;
 	};
 
 } // cppcms

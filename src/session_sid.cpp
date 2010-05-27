@@ -109,7 +109,7 @@ namespace impl {
 
 
 
-struct session_sid::data {};
+struct session_sid::_data {};
 
 session_sid::session_sid(booster::shared_ptr<session_storage> st) :
 	storage_(st)

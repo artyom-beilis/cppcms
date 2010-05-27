@@ -40,7 +40,7 @@ namespace sessions {
 		virtual void remove(std::string const &sid);
 	private:
 		struct locked_file;
-		struct data;
+		struct _data;
 		bool read_timestamp(int fd);
 		bool read_from_file(int fd,time_t &timeout,std::string &data);
 		void save_to_file(int fd,time_t timeout,std::string const &in);
@@ -54,7 +54,7 @@ namespace sessions {
 
 		// members
 	
-		booster::hold_ptr<data> d;
+		booster::hold_ptr<_data> d;
 
 		void *memory_;
 		std::string path_;
@@ -76,7 +76,7 @@ namespace sessions {
 		virtual void gc_job();
 		virtual ~session_file_storage_factory();
 	private:
-		struct data;
+		struct _data;
 		booster::shared_ptr<session_file_storage> storage_;
 	};
 } // sessions

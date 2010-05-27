@@ -244,13 +244,13 @@ namespace json {
 		void write(std::ostream &out,int tabs) const;
 		void write_value(std::ostream &out,int tabs) const;
 
-		struct data;
+		struct _data;
 		struct CPPCMS_API copyable {
 
-			data *operator->() { return &*d; }
-			data &operator*() { return *d; }
-			data const *operator->() const { return &*d; }
-			data const &operator*() const { return *d; }
+			_data *operator->() { return &*d; }
+			_data &operator*() { return *d; }
+			_data const *operator->() const { return &*d; }
+			_data const &operator*() const { return *d; }
 
 			copyable();
 			copyable(copyable const &r);
@@ -262,7 +262,7 @@ namespace json {
 				d.swap(other.d);
 			}
 		private:
-			booster::copy_ptr<data> d;
+			booster::copy_ptr<_data> d;
 		} d;
 
 		friend struct copyable;

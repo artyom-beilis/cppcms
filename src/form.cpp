@@ -34,7 +34,7 @@
 
 namespace cppcms {
 
-struct form_context::data {};
+struct form_context::_data {};
 
 form_context::form_context() :
 	html_type_(as_html),
@@ -106,7 +106,7 @@ base_form::~base_form()
 }
 
 // Meanwhile -- empty
-struct form::data {
+struct form::_data {
 // TOADD
 };
 
@@ -185,7 +185,7 @@ void form::attach(widgets::base_widget *subform)
 	subform->parent(this);
 }
 
-struct form::iterator::data {};
+struct form::iterator::_data {};
 
 form::iterator::iterator() : current_(0), offset_(0)
 {
@@ -282,7 +282,7 @@ namespace widgets {
 ////////////////////////////////
 
 
-struct base_widget::data {};
+struct base_widget::_data {};
 
 base_widget::base_widget() : 
 	parent_(0),
@@ -548,7 +548,7 @@ bool base_widget::validate()
 ////////////////////////////////
 
 
-struct base_text::data {};
+struct base_text::_data {};
 
 
 base_text::base_text() : low_(0),high_(-1),validate_charset_(true)
@@ -646,7 +646,7 @@ bool base_text::validate()
 /// widgets::text
 /////////////////////////////////////////////
 
-struct text::data {};
+struct text::_data {};
 
 text::~text() {}
 text::text(): base_html_input("text"), size_(-1) {}
@@ -671,7 +671,7 @@ void text::render_attributes(form_context &context)
 	}
 }
 
-struct base_html_input::data{};
+struct base_html_input::_data{};
 
 base_html_input::base_html_input(std::string const &type) : type_(type) {}
 base_html_input::~base_html_input() {}
@@ -699,7 +699,7 @@ void base_html_input::render_input(form_context &context)
 /////////////////////////////////////////////
 
 
-struct textarea::data {};
+struct textarea::_data {};
 
 textarea::textarea() : rows_(-1), cols_(-1) {}
 textarea::~textarea() {}
@@ -740,7 +740,7 @@ void textarea::render_input(form_context &context)
 ////////////////////////
 /// Password widget  ///
 ////////////////////////
-struct password::data {};
+struct password::_data {};
 
 password::password() : text("password"), password_to_check_(0)
 {
@@ -773,7 +773,7 @@ bool password::validate()
 }
 
 
-struct regex_field::data {};
+struct regex_field::_data {};
 regex_field::regex_field() {}
 regex_field::regex_field(booster::regex const &e) : expression_(e) {}
 regex_field::regex_field(std::string const &e) : expression_(e) {}
@@ -792,12 +792,12 @@ bool regex_field::validate()
 	return valid();
 }
 
-struct email::data {};
+struct email::_data {};
 email::email() : regex_field("^[^@]+@[^@]+$") {}
 email::~email() {}
 
 
-struct checkbox::data {};
+struct checkbox::_data {};
 
 checkbox::checkbox(std::string const &type) : 
 	base_html_input(type),
@@ -863,7 +863,7 @@ void checkbox::load(http::context &context)
 	}
 }
 
-struct select_multiple::data{};
+struct select_multiple::_data{};
 
 
 select_multiple::element::element():
@@ -1051,8 +1051,8 @@ void select_multiple::rows(unsigned v)
 // Select base
 ///////////////////
 
-struct select_base::data {};
-struct select_base::element::data {};
+struct select_base::_data {};
+struct select_base::element::_data {};
 select_base::element::element() : need_translation(0)
 {
 }
@@ -1185,7 +1185,7 @@ void select_base::load(http::context &context)
 /// select
 ///////////////////
 
-struct select::data {};
+struct select::_data {};
 
 select::select() {}
 select::~select() {}
@@ -1223,7 +1223,7 @@ void select::render_input(form_context &context)
 /// Radio
 /////////////////////////
 
-struct radio::data {};
+struct radio::_data {};
 
 radio::radio() : vertical_(1)
 {
@@ -1297,7 +1297,7 @@ void radio::render_input(form_context &context)
 // Submit
 ////////////////
 
-struct submit::data {};
+struct submit::_data {};
 submit::submit() : 
 	base_html_input("submit"),
 	pressed_(false)

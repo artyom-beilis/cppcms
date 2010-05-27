@@ -41,7 +41,7 @@ size_t file::size() const
 	return size_;
 }
 
-std::istream &file::data()
+std::istream &file::_data()
 {
 	if(saved_in_file_)
 		return file_;

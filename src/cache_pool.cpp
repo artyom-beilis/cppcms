@@ -26,12 +26,12 @@
 
 namespace cppcms {
 
-struct cache_pool::data {
+struct cache_pool::_data {
 	booster::intrusive_ptr<impl::base_cache> module;
 };
 
 cache_pool::cache_pool(json::value const &settings) :
-	d(new data())
+	d(new _data())
 {
 	std::string type = settings.get("cache.backend","none");
 	if(type=="thread_shared") {

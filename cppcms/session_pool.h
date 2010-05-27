@@ -57,14 +57,14 @@ namespace cppcms {
 		template<typename Encryptor>
 		struct enc_factory;
 		
-		struct data;
+		struct _data;
 
 		friend struct cookies_factory;
 		friend struct dual_factory;
 		friend struct sid_factory;
 		friend class gc_job;
 
-		booster::hold_ptr<data> d;
+		booster::hold_ptr<_data> d;
 
 		std::auto_ptr<session_api_factory> backend_;
 		std::auto_ptr<sessions::encryptor_factory> encryptor_;

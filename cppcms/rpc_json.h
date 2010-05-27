@@ -107,8 +107,8 @@ namespace rpc {
 		std::string method_;
 		bool notification_;
 
-		struct data;
-		booster::hold_ptr<data> d;
+		struct _data;
+		booster::hold_ptr<_data> d;
 	};
 
 	///
@@ -200,8 +200,8 @@ namespace rpc {
 
 		std::string smd_;
 		
-		struct data;
-		booster::hold_ptr<data> d;
+		struct _data;
+		booster::hold_ptr<_data> d;
 	};
 
 

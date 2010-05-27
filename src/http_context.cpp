@@ -43,14 +43,14 @@
 namespace cppcms {
 namespace http {
 
-	struct context::data {
+	struct context::_data {
 		std::locale locale;
 		std::string skin;
 		http::request request;
 		std::auto_ptr<http::response> response;
 		std::auto_ptr<cache_interface> cache;
 		std::auto_ptr<session_interface> session;
-		data(context &cntx) :
+		_data(context &cntx) :
 			locale(cntx.connection().service().locale()),
 			request(cntx.connection())
 		{
@@ -60,7 +60,7 @@ namespace http {
 context::context(booster::shared_ptr<impl::cgi::connection> conn) :
 	conn_(conn)
 {
-	d.reset(new data(*this));
+	d.reset(new _data(*this));
 	d->response.reset(new http::response(*this));
 	skin(service().views_pool().default_skin());
 	d->cache.reset(new cache_interface(*this));

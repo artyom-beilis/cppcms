@@ -138,8 +138,8 @@ private:
 	// storage itself
 	
 	booster::shared_ptr<session_api> storage_;
-	struct data;
-	booster::hold_ptr<data> d; // for future use
+	struct _data;
+	booster::hold_ptr<_data> d; // for future use
 
 	int cookie_age();
 	time_t   session_age();

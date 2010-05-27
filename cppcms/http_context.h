@@ -175,8 +175,8 @@ namespace cppcms {
 			void try_restart(bool e);
 			booster::shared_ptr<context> self();
 
-			struct data;
-			booster::hold_ptr<data> d;
+			struct _data;
+			booster::hold_ptr<_data> d;
 			booster::shared_ptr<impl::cgi::connection> conn_;
 		};
 

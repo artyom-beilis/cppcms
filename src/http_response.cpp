@@ -83,7 +83,7 @@ namespace  {
 	};
 }
 
-struct response::data {
+struct response::_data {
 	typedef bool (*compare_type)(std::string const &left,std::string const &right);
 	typedef std::map<std::string,std::string,compare_type> headers_type;
 	headers_type headers;
@@ -93,7 +93,7 @@ struct response::data {
 	boost::iostreams::stream<output_device> output;
 	boost::iostreams::filtering_ostream filter;
 
-	data(impl::cgi::connection *conn) : 
+	_data(impl::cgi::connection *conn) : 
 		headers(string_i_comp),
 		output(output_device(conn),conn->service().settings().get("service.output_buffer_size",16384))
 	{
@@ -102,7 +102,7 @@ struct response::data {
 
 
 response::response(context &context) :
-	d(new data(&context.connection())),
+	d(new _data(&context.connection())),
 	context_(context),
 	stream_(0),
 	io_mode_(normal),
@@ -172,7 +172,7 @@ void response::finalize()
 
 std::string response::get_header(std::string const &name)
 {
-	data::headers_type::const_iterator p=d->headers.find(name);
+	_data::headers_type::const_iterator p=d->headers.find(name);
 	if(p!=d->headers.end())
 		return p->second;
 	return std::string();
@@ -219,7 +219,7 @@ void response::write_http_headers(std::ostream &out)
 {
 	context_.session().save();
 
-	for(data::headers_type::const_iterator h=d->headers.begin();h!=d->headers.end();++h) {
+	for(_data::headers_type::const_iterator h=d->headers.begin();h!=d->headers.end();++h) {
 		out<<h->first<<": "<<h->second<<"\r\n";
 	}
 	for(unsigned i=0;i<d->cookies.size();i++) {

@@ -95,8 +95,8 @@ namespace cppcms {
 		std::ostream *output_;
 		uint32_t reserved_1;
 		uint32_t reserved_2;
-		struct data;
-		booster::hold_ptr<data> d;
+		struct _data;
+		booster::hold_ptr<_data> d;
 
 	};
 
@@ -330,8 +330,8 @@ namespace cppcms {
 			std::stack<unsigned> return_positions_;
 			form *current_;
 			unsigned offset_;
-			struct data;
-			booster::copy_ptr<data> d;
+			struct _data;
+			booster::copy_ptr<_data> d;
 
 		};
 
@@ -349,12 +349,12 @@ namespace cppcms {
 	private:
 		friend class iterator;
 
-		struct data;
+		struct _data;
 		// Widget and ownership true mine
 		typedef std::pair<base_form *,bool> widget_type;
 		std::vector<widget_type> elements_;
 		form *parent_;
-		booster::hold_ptr<data> d;
+		booster::hold_ptr<_data> d;
 	};
 
 
@@ -606,8 +606,8 @@ namespace cppcms {
 			uint32_t has_help_ : 1;
 			uint32_t reserverd_ : 25;
 
-			struct data;
-			booster::hold_ptr<data> d;
+			struct _data;
+			booster::hold_ptr<_data> d;
 		};
 
 		///
@@ -701,8 +701,8 @@ namespace cppcms {
 			int high_;
 			bool validate_charset_;
 			size_t code_points_;
-			struct data;
-			booster::hold_ptr<data> d;
+			struct _data;
+			booster::hold_ptr<_data> d;
 		};
 
 		class CPPCMS_API base_html_input : virtual public base_widget {
@@ -714,8 +714,8 @@ namespace cppcms {
 		protected:
 			virtual void render_value(form_context &context) = 0;
 		private:
-			struct data;
-			booster::hold_ptr<data> d;
+			struct _data;
+			booster::hold_ptr<_data> d;
 			std::string type_;
 		};
 
@@ -756,8 +756,8 @@ namespace cppcms {
 			virtual void render_value(form_context &context);
 		private:
 			int size_;
-			struct data;
-			booster::hold_ptr<data> d;
+			struct _data;
+			booster::hold_ptr<_data> d;
 		};
 
 		class CPPCMS_API textarea : public base_text 
@@ -788,8 +788,8 @@ namespace cppcms {
 		private:
 			int rows_,cols_;
 
-			struct data;
-			booster::hold_ptr<data> d;
+			struct _data;
+			booster::hold_ptr<_data> d;
 		};
 
 
@@ -971,8 +971,8 @@ namespace cppcms {
 			void check_equal(password &p2);
 			virtual bool validate();
 		private:
-			struct data;
-			booster::hold_ptr<data> d;
+			struct _data;
+			booster::hold_ptr<_data> d;
 			password *password_to_check_;
 		};
 
@@ -1005,8 +1005,8 @@ namespace cppcms {
 			virtual bool validate();
 		private:
 			booster::regex expression_;
-			struct data;
-			booster::hold_ptr<data> d;
+			struct _data;
+			booster::hold_ptr<_data> d;
 		};
 
 		///
@@ -1020,8 +1020,8 @@ namespace cppcms {
 			~email();
 
 		private:
-			struct data;
-			booster::hold_ptr<data> d;
+			struct _data;
+			booster::hold_ptr<_data> d;
 		};
 
 		///
@@ -1062,8 +1062,8 @@ namespace cppcms {
 			virtual void render_value(form_context &context);
 			virtual void load(http::context &context);
 		private:
-			struct data;
-			booster::hold_ptr<data> d;
+			struct _data;
+			booster::hold_ptr<_data> d;
 			std::string identification_;
 			bool value_;
 		};
@@ -1145,8 +1145,8 @@ namespace cppcms {
 			virtual void load(http::context &context);
 			virtual void clear();
 		private:
-			struct data;
-			booster::hold_ptr<data> d;
+			struct _data;
+			booster::hold_ptr<_data> d;
 
 			struct element {
 				element();
@@ -1204,15 +1204,15 @@ namespace cppcms {
 				locale::message tr_option;
 
 			private:
-				struct data;
-				booster::copy_ptr<data> d;
+				struct _data;
+				booster::copy_ptr<_data> d;
 
 			};
 
 			std::vector<element> elements_;
 		private:
-			struct data;
-			booster::hold_ptr<data> d;
+			struct _data;
+			booster::hold_ptr<_data> d;
 
 			int selected_;
 			int default_selected_;
@@ -1227,8 +1227,8 @@ namespace cppcms {
 			virtual ~select();
 			virtual void render_input(form_context &context);
 		private:
-			struct data;
-			booster::hold_ptr<data> d;
+			struct _data;
+			booster::hold_ptr<_data> d;
 		};
 
 		class CPPCMS_API radio : public select_base {
@@ -1243,8 +1243,8 @@ namespace cppcms {
 			uint32_t vertical_ : 1;
 			uint32_t reserved_ : 31;
 
-			struct data;
-			booster::hold_ptr<data> d;
+			struct _data;
+			booster::hold_ptr<_data> d;
 		};
 
 
@@ -1271,8 +1271,8 @@ namespace cppcms {
 			virtual void render_value(form_context &context);
 			virtual void load(http::context &context);
 		private:
-			struct data;
-			booster::hold_ptr<data> d;
+			struct _data;
+			booster::hold_ptr<_data> d;
 			bool pressed_;
 			locale::message value_;
 		};

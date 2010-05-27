@@ -102,7 +102,7 @@ namespace cppcms {
 		}
 	};
 
-	struct applications_pool::data {
+	struct applications_pool::_data {
 		std::vector<booster::shared_ptr<app_data> > apps;
 		typedef std::map<application *,booster::shared_ptr<long_running_app_data> > long_running_aps_type;
 		long_running_aps_type long_running_aps;
@@ -114,7 +114,7 @@ namespace cppcms {
 
 applications_pool::applications_pool(service &srv,int limit) :
 	srv_(&srv),
-	d(new applications_pool::data())
+	d(new applications_pool::_data())
 {
 	d->limit=limit;
 }
@@ -226,7 +226,7 @@ booster::intrusive_ptr<application> applications_pool::get(std::string script_na
 		d->apps[i]->pool.erase(app.get());
 		return app;
 	}
-	for(data::long_running_aps_type::iterator p=d->long_running_aps.begin();p!=d->long_running_aps.end();++p){
+	for(_data::long_running_aps_type::iterator p=d->long_running_aps.begin();p!=d->long_running_aps.end();++p){
 		if(!matched(*p->second,script_name,path_info,m))
 			continue;
 		booster::intrusive_ptr<application> app=p->first;

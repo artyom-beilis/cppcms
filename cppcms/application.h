@@ -272,8 +272,8 @@ namespace cppcms {
 		int pool_id();
 
 
-		struct data; // future use
-		booster::hold_ptr<data> d;
+		struct _data; // future use
+		booster::hold_ptr<_data> d;
 
 		application *parent_;
 		application *root_;

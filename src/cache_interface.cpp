@@ -50,7 +50,7 @@ namespace {
 	}
 }
 
-struct cache_interface::data {};
+struct cache_interface::_data {};
 
 cache_interface::cache_interface(http::context &context) :
 	context_(&context),

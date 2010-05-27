@@ -52,7 +52,7 @@
 
 
 namespace cppcms {
-struct session_pool::data 
+struct session_pool::_data 
 {
 };
 

@@ -36,8 +36,8 @@ public:
 private:
 	class session;
 	class server;
-	struct data;
-	booster::hold_ptr<data> d;
+	struct _data;
+	booster::hold_ptr<_data> d;
 };
 
 } // impl

@@ -204,7 +204,7 @@ private:
 
 };
 
-struct views_pool::data {
+struct views_pool::_data {
 	bool dynamic_reload;
 	typedef std::map<std::string,skin> skins_type;
 	skins_type skins;
@@ -214,7 +214,7 @@ struct views_pool::data {
 };
 
 views_pool::views_pool() :
-	d(new data())
+	d(new _data())
 {
 }
 
@@ -224,7 +224,7 @@ std::string views_pool::default_skin() const
 }
 
 views_pool::views_pool(json::value const &settings) :
-	d(new data())
+	d(new _data())
 {
 	d->skins=static_instance().d->skins;
 	std::vector<std::string> paths=settings.get("views.paths",std::vector<std::string>());
@@ -261,7 +261,7 @@ void views_pool::render(std::string skin_name,std::string template_name,std::ost
 		for(;;){
 			{	// Check if update
 				booster::shared_lock<booster::shared_mutex> lock(d->lock_);
-				data::skins_type::const_iterator p=d->skins.find(skin_name);
+				_data::skins_type::const_iterator p=d->skins.find(skin_name);
 				if(p==d->skins.end())
 					throw cppcms_error("There is no such skin:" + skin_name);
 				if(p->second.is_updated()) {
@@ -271,7 +271,7 @@ void views_pool::render(std::string skin_name,std::string template_name,std::ost
 			}
 			{	// Reload
 				booster::unique_lock<booster::shared_mutex> lock(d->lock_);
-				data::skins_type::iterator p=d->skins.find(skin_name);
+				_data::skins_type::iterator p=d->skins.find(skin_name);
 				if(p==d->skins.end())
 					throw cppcms_error("There is no such skin:" + skin_name);
 				if(!p->second.is_updated()) {
@@ -292,7 +292,7 @@ void views_pool::render(std::string skin_name,std::string template_name,std::ost
 		}
 	}
 	else {	// No need to reload
-		data::skins_type::const_iterator p=d->skins.find(skin_name);
+		_data::skins_type::const_iterator p=d->skins.find(skin_name);
 		if(p==d->skins.end())
 			throw cppcms_error("There is no such skin:" + skin_name);
 		p->second.render(template_name,out,content);
@@ -305,7 +305,7 @@ views_pool::~views_pool()
 
 void views_pool::add_view(std::string name,mapping_type const &mapping)
 {
-	data::skins_type::iterator p=d->skins.find(name);
+	_data::skins_type::iterator p=d->skins.find(name);
 	if(p!=d->skins.end())
 		throw cppcms_error("Skin " + name + "can't be loaded twice");
 	d->skins[name]=skin(name,mapping);

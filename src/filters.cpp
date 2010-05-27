@@ -88,7 +88,7 @@ namespace cppcms { namespace filters {
 
 ///////////////////////////////////
 	
-	struct to_upper::data {};
+	struct to_upper::_data {};
 	to_upper::to_upper() {}
 	to_upper::~to_upper() {}
 	to_upper::to_upper(to_upper const &other) : obj_(other.obj_) {}
@@ -101,7 +101,7 @@ namespace cppcms { namespace filters {
 		out << ::cppcms::locale::to_upper( tmp,loc);
 	}
 
-	struct to_lower::data {};
+	struct to_lower::_data {};
 	to_lower::to_lower() {}
 	to_lower::~to_lower() {}
 	to_lower::to_lower(to_lower const &other) : obj_(other.obj_) {}
@@ -114,7 +114,7 @@ namespace cppcms { namespace filters {
 
 	#ifndef CPPCMS_DISABLE_ICU_LOCALIZATION
 
-	struct to_title::data {};
+	struct to_title::_data {};
 	to_title::to_title() {}
 	to_title::~to_title() {}
 	to_title::to_title(to_title const &other) : obj_(other.obj_) {}
@@ -127,7 +127,7 @@ namespace cppcms { namespace filters {
 
 	#endif
 
-	struct escape::data {};
+	struct escape::_data {};
 	escape::escape() {}
 	escape::~escape() {}
 	escape::escape(escape const &other) : obj_(other.obj_) {}
@@ -138,7 +138,7 @@ namespace cppcms { namespace filters {
 		out << util::escape(obj_.get(out));
 	}
 
-	struct urlencode::data {};
+	struct urlencode::_data {};
 	urlencode::urlencode() {}
 	urlencode::~urlencode() {}
 	urlencode::urlencode(urlencode const &other) : obj_(other.obj_) {}
@@ -149,7 +149,7 @@ namespace cppcms { namespace filters {
 		out << util::urlencode(obj_.get(out));
 	}
 
-	struct raw::data {};
+	struct raw::_data {};
 	raw::raw() {}
 	raw::~raw() {}
 	raw::raw(raw const &other) : obj_(other.obj_) {}
@@ -160,7 +160,7 @@ namespace cppcms { namespace filters {
 		obj_(out);
 	}
 
-	struct base64_urlencode::data {};
+	struct base64_urlencode::_data {};
 	base64_urlencode::base64_urlencode() {}
 	base64_urlencode::~base64_urlencode() {}
 	base64_urlencode::base64_urlencode(base64_urlencode const &other) : obj_(other.obj_) {}
@@ -179,9 +179,9 @@ namespace cppcms { namespace filters {
 		os<<buf;
 	}
 
-	struct date::data {};
-	struct time::data {};
-	struct datetime::data {};
+	struct date::_data {};
+	struct time::_data {};
+	struct datetime::_data {};
 
 	date::date() : time_(0) {}
 	datetime::datetime() : time_(0){}

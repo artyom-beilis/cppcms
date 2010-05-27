@@ -28,13 +28,13 @@
 
 namespace cppcms {
 
-	struct urandom_device::data {
+	struct urandom_device::_data {
 		HCRYPTPROV provider;
 		data() : provider(0) {}
 	};
 
 	urandom_device::urandom_device() :
-		d(new data())
+		d(new _data())
 	{
 		if(CryptAcquireContext(&d->provider,0,0,PROV_RSA_FULL,0)) 
 			return;
@@ -68,7 +68,7 @@ namespace cppcms {
 #include <fstream>
 
 namespace cppcms {
-	struct urandom_device::data {};
+	struct urandom_device::_data {};
 
 	urandom_device::urandom_device()
 	{

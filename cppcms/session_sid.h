@@ -42,8 +42,8 @@ namespace sessions {
 		bool valid_sid(std::string const &cookie,std::string &id);
 		std::string key(std::string sid);
 		
-		struct data;
-		booster::hold_ptr<data> d;
+		struct _data;
+		booster::hold_ptr<_data> d;
 		booster::shared_ptr<session_storage> storage_;
 	};
 

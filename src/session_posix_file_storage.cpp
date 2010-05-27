@@ -49,7 +49,7 @@
 namespace cppcms {
 namespace sessions {
 
-struct session_file_storage::data {};
+struct session_file_storage::_data {};
 
 using namespace cppcms::impl;
 
@@ -371,7 +371,7 @@ void session_file_storage::gc()
 	}
 }
 
-struct session_file_storage_factory::data {};
+struct session_file_storage_factory::_data {};
 
 session_file_storage_factory::session_file_storage_factory(std::string path,int conc,int proc_no,bool force_lock) :
 	storage_(new session_file_storage(path,conc,proc_no,force_lock))

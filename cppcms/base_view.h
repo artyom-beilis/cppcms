@@ -58,8 +58,8 @@ protected:
 	std::ostream &out();
 
 private:
-	struct data;
-	booster::hold_ptr<data> d;
+	struct _data;
+	booster::hold_ptr<_data> d;
 
 };
 
