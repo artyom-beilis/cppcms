@@ -1333,8 +1333,31 @@ bool submit::value()
 	return pressed_;
 }
 
+struct hidden::_data{};
+hidden::hidden() : text("hidden") {}
+hidden::~hidden() {}
+
+void hidden::render(form_context &context)
+{
+	auto_generate(&context);
+	std::ostream &output = context.out();
+	
+	context.widget_part(first_part);
+	render_input(context);
+
+	output<<attributes_string();
+
+	context.widget_part(second_part);
+	render_input(context);
+
+}
+
+
 
 } // widgets 
+
+
+
 
 } // cppcms
 

@@ -760,6 +760,18 @@ namespace cppcms {
 			booster::hold_ptr<_data> d;
 		};
 
+		class CPPCMS_API hidden : public text 
+		{
+		public:
+			hidden();
+			~hidden();
+			virtual void render(form_context &context);
+		private:
+			struct _data;
+			booster::hold_ptr<_data> d;
+		};
+
+
 		class CPPCMS_API textarea : public base_text 
 		{
 		public:

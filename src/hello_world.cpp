@@ -201,6 +201,7 @@ public:
 	cppcms::widgets::select_multiple sel;
 	cppcms::widgets::radio sel1;
 	cppcms::widgets::select sel2;
+	cppcms::widgets::hidden secret;
 	
 	my_form()
 	{
@@ -227,7 +228,7 @@ public:
 		sel2.add("You are sexist");
 		sel.at_least(2);
 		sel1.non_empty();
-		*this + name + age + p1 + p2 + description + sel + sel1 + sel2;
+		*this + name + age + p1 + p2 + description + sel + sel1 + sel2 + secret;
 	}
 };
 
