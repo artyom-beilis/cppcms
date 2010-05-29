@@ -36,12 +36,26 @@ std::string file::filename() const
 {
 	return filename_;
 }
-size_t file::size() const
+size_t file::size() 
 {
-	return size_;
+	if(saved_in_file_) {
+		return file_.tellp();
+	}
+	else {
+		return file_data_.str().size();
+	}
 }
 
-std::istream &file::_data()
+std::istream &file::data()
+{
+	if(saved_in_file_)
+		return file_;
+	else
+		return file_data_;
+}
+
+
+std::ostream &file::write_data()
 {
 	if(saved_in_file_)
 		return file_;
@@ -52,7 +66,8 @@ std::istream &file::_data()
 
 struct file::impl_data {};
 
-file::file()
+file::file() :
+	saved_in_file_(0)
 {
 }
 
@@ -60,6 +75,20 @@ file::~file()
 {
 }
 
+void file::filename(std::string const &v)
+{
+	filename_=v;
+}
+
+void file::name(std::string const &v)
+{
+	name_=v;
+}
+
+void file::mime(std::string const &v)
+{
+	mime_=v;
+}
 
 
 } // http

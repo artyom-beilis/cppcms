@@ -25,6 +25,7 @@
 #include "service_impl.h"
 #include <cppcms/json.h>
 #include "cgi_api.h"
+#include "multipart_parser.h"
 #include <cppcms/util.h>
 
 #include <stdlib.h>
@@ -40,202 +41,6 @@
 
 
 namespace cppcms { namespace impl { namespace cgi {
-/*
-class multipart_separator {
-public:
-	multipart_separator(std::vector<char> &body,unsigned &body_ptr,std::string boundary) :
-		body_(body),
-		body_ptr_(body_ptr)
-	{
-		boundary_ = "--" + boundary;
-		pos_ = 0;
-		last_ = false;
-	}
-	
-	int getc()
-	{
-		if(body_ptr_ < body_.size()) {
-			return body_[body_ptr_++];
-		}
-		else {
-			body_.clear();
-			body_ptr_=0;
-			return -1;
-		}
-	}
-
-	enum { incomplete, last_chunk, chunk };
-	int next()
-	{
-		for(;;){
-			int c=getc();
-			if(c < 0)
-				return incomplete;
-			if(pos_ < bodundary_.size()) {
-				if(c == boundary_[pos_]) {
-					pos_++;
-				}
-				else {
-					if(pos_ != 0)
-						output_.append(boundary_.substr(0,pos_));
-					output_.append(char(c));
-					pos_ = 0;
-				}
-			}
-			else if(pos_ == boundary_.size()) {
-				c == '-';
-				last_ = true;
-				pos_ = 0x10001;
-			}
-			else {
-				unsigned diff = pos_ & 0xFFFF;
-				if(last_){
-					if(last_ending[diff]==c) {
-						pos_ ++;
-						diff ++ ;
-					}
-					else {
-						output_.append(last_ending,diff);
-						output_.append(char(c));
-						pos_ = 0;
-						last_ = false;
-					}
-					if(diff == 4)
-						return last_chunk;
-				}
-				else {
-					if(ending[diff] == c) {
-						pos_ ++;
-						diff ++;
-					}
-					else {
-						output_.append(ending,diff);
-						output_.append(char(c));
-						pos_ = 0;
-					}
-					if(diff == 2) {
-						pos_ = 0;
-						return chunk;
-					}
-				}
-			}
-		}
-	}
-
-private:
-	static char const last_ending[]="--\r\n"
-	static char const ending[]="\r\n"
-	
-};
-
-
-class multipart_parser : public booster::noncopyable {
-public:
-	multipart_parser(std::vector<char> &body, unsigned &ptr) :
-		separator_(body,ptr),
-		parser_(body,ptr)
-	{
-	}
-
-	struct none{};
-	struct eof{};
-	typedef std::pair<std::string,std::string> pair_type;
-	typedef booster::shared_ptr<http::file> file_type;
-	typedef enum { none, eof, error } result_type;
-	typedef boost::variant<result_type,pair_type,file_type,eof> variant_type;
-
-	void append(bool final = false)
-	{
-		if(result_.which() == 1) {
-			std::string &last=boost::get<pair_type>(result_).second;
-			last.append(separator_.output());
-		}
-		else if(result_.which() == 2) {
-			file_type &file == boost::get<file_type>(result_);
-			file.write(separator_.output());
-			if(final)
-				file.close();
-		}
-	}
-
-	variant_type next()
-	{
-		switch(state:) {
-		case done:
-			return eof;
-		case reading_data:
-			switch(separator_.next()) {
-			case multipart_separator::incomplete:
-				append();
-				return none;
-			case multipart_separator::chunk;
-				{
-					append(final);
-					variant_type tmp = result_;
-					result_=none;
-					state_ = reading_headers;
-					return tmp;
-				}
-			case multipart_separator::last_chunk;
-				{
-					append(final);
-					variant_type tmp = result_;
-					result_=none;
-					state_ = done;
-					return tmp;
-				}
-			default:
-				throw cppcms_error(
-					(boost::format("Internal error at " __FILE__ "line %d") % __LINE__).str());
-			}
-			break;
-		case reading_headers:
-			switch(parser_.step())
-			case parset::mode_data:
-				return none;
-			case parser::error_observerd:
-				return error;
-			case parser::end_of_headers:
-				if(result_.which() == 0)
-					return error;
-				state_ = reading_data;
-				return none;
-			case parser::got_header:
-				{
-					std::string const header = parser.header_;
-					parser.header_.clean();
-					std::string::const_iterator m,p=header.begin();
-					std::string::const_iterator e=header.end();
-					p=http::protocol::skip_ws(p,e);
-					m=p;
-					p=http::protocol::tocken(p,e);
-					std::string type(m,p); 
-					if(http::protocol::compare("Content-Disposition",type)==0) 
-					{
-						while(p!=e) {
-							if(http::protocol::separator(*p)) {
-								++p;
-								continue;
-							}
-							m=p;
-							if((p=http::protocol::tocken(p,e))!=m) {
-								if(http::protocol::compare(std::string(m,p),"name"))
-							}
-						}
-									
-					}
-					
-				}
-		}
-	}
-
-
-private:
-	multipart_separator separator_;
-	cppcms::http::impl::parser parser_;
-};
-*/
-
 
 connection::connection(cppcms::service &srv) :
 	service_(&srv),
@@ -299,41 +104,99 @@ void connection::load_content(booster::system::error_code const &e,http::request
 		set_error(h,"Incorrect content length");
 		return;
 	}
-
-	if(http::protocol::is_prefix_of("multipart/form-data",content_type)) {
-		// 64 MB
-		long long allowed=service().settings().get("security.multipart_form_data_limit",64*1024)*1024;
-		if(content_length > allowed) { 
-			set_error(h,"security violation: multipart/form-data content length too big");
-			BOOSTER_NOTICE("cppcms") << "multipart/form-data size too big " << content_length << 
-				" REMOTE_ADDR = `" << getenv("REMOTE_ADDR") << "' REMOTE_HOST=`" << getenv("REMOTE_HOST") << "'";
-			return;
-		}
-		// FIXME
-		return;
-	}
+	
 	if(content_length > 0) {
-		long long allowed=service().settings().get("security.content_length_limit",1024)*1024;
-		if(content_length > allowed) {
-			set_error(h,"security violation POST content length too big");
-			BOOSTER_NOTICE("cppcms") << "POST data size too big " << content_length << 
-				" REMOTE_ADDR = `" << getenv("REMOTE_ADDR") << "' REMOTE_HOST=`" << getenv("REMOTE_HOST") << "'";
-			return;
+		if(http::protocol::is_prefix_of("multipart/form-data",content_type)) {
+			// 64 MB
+			long long allowed=service().settings().get("security.multipart_form_data_limit",64*1024)*1024;
+			if(content_length > allowed) { 
+				set_error(h,"security violation: multipart/form-data content length too big");
+				BOOSTER_NOTICE("cppcms") << "multipart/form-data size too big " << content_length << 
+					" REMOTE_ADDR = `" << getenv("REMOTE_ADDR") << "' REMOTE_HOST=`" << getenv("REMOTE_HOST") << "'";
+				return;
+			}
+			multipart_parser_.reset(new multipart_parser());
+			read_size_ = content_length;
+			if(!multipart_parser_->set_content_type(content_type)) {
+				set_error(h,"Invalid multipart/form-data request");
+				BOOSTER_NOTICE("cppcms") << "Invalid multipart/form-data request" << content_length << 
+					" REMOTE_ADDR = `" << getenv("REMOTE_ADDR") << "' REMOTE_HOST=`" << getenv("REMOTE_HOST") << "'";
+				return;
+			}
+			content_.clear();
+			content_.resize(8192);
+			async_read_some(&content_.front(),content_.size(),
+				boost::bind(&connection::on_some_multipart_read,
+					self(),
+					_1,
+					_2,
+					request,
+					h));
 		}
-	}
-
-	content_.clear();
-
-	if(content_length > 0) {
-		content_.resize(content_length,0);
-		async_read(	&content_.front(),
-				content_.size(),
-				boost::bind(&connection::on_post_data_loaded,self(),_1,request,h));
+		else {
+			long long allowed=service().settings().get("security.content_length_limit",1024)*1024;
+			if(content_length > allowed) {
+				set_error(h,"security violation POST content length too big");
+				BOOSTER_NOTICE("cppcms") << "POST data size too big " << content_length << 
+					" REMOTE_ADDR = `" << getenv("REMOTE_ADDR") << "' REMOTE_HOST=`" << getenv("REMOTE_HOST") << "'";
+				return;
+			}
+			content_.clear();
+			content_.resize(content_length,0);
+			async_read(	&content_.front(),
+					content_.size(),
+					boost::bind(&connection::on_post_data_loaded,self(),_1,request,h));
+		}
 	}
 	else  {
 		on_post_data_loaded(booster::system::error_code(),request,h);
 	}
 }
+
+void connection::on_some_multipart_read(booster::system::error_code const &e,size_t n,http::request *request,ehandler const &h)
+{
+	if(e) { set_error(h,e.message()); return; }
+	read_size_-=n;
+	if(read_size_ < 0) { set_error(h,"Bad request"); return ;}
+	multipart_parser::parsing_result_type r = multipart_parser_->consume(&content_.front(),n);
+	if(r == multipart_parser::eof) {
+		if(read_size_ != 0)  {
+			set_error(h,"Bad request");
+			return;
+		}
+		content_.clear();
+		multipart_parser::files_type files = multipart_parser_->get_files();
+		size_t allowed=service().settings().get("security.content_length_limit",1024)*1024;
+		for(unsigned i=0;i<files.size();i++) {
+			if(files[i]->mime().empty() && files[i]->size() > allowed) {
+				set_error(h,"Conent Lengths to big");
+				return;
+			}
+		}
+		request->set_post_data(files);
+		multipart_parser_.reset();
+		if(!request->prepare()) {
+			set_error(h,"Bad Request");
+			return;
+		}
+		h(false);
+		return;
+	}
+	else if (r==multipart_parser::parsing_error) {
+		set_error(h,"Bad request");
+		return;
+	}
+	else {
+		async_read_some(&content_.front(),content_.size(),
+			boost::bind(&connection::on_some_multipart_read,
+				self(),
+				_1,
+				_2,
+				request,
+				h));
+	}
+}
+
 
 void connection::on_post_data_loaded(booster::system::error_code const &e,http::request *request,ehandler const &h)
 {

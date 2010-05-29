@@ -124,7 +124,6 @@ bool request::parse_cookies()
 
 
 struct request::_data {
-	std::vector<booster::shared_ptr<file> > files;
 	std::vector<char> post_data;
 };
 
@@ -133,6 +132,32 @@ void request::set_post_data(std::vector<char> &post_data)
 	d->post_data.clear();
 	d->post_data.swap(post_data);
 }
+
+namespace {
+	std::string read_file(std::istream &in)
+	{
+		std::string res;
+		while(!in.eof()) {
+			char buf[256];
+			in.read(buf,256);
+			res.append(buf,in.gcount());
+		}
+		return res;
+	}
+}
+
+void request::set_post_data(std::vector<booster::shared_ptr<file> > const &multipart)
+{
+	for(unsigned i=0;i<multipart.size();i++) {
+		if(multipart[i]->mime().empty() || multipart[i]->filename().empty()) {
+			post_.insert(std::make_pair(multipart[i]->name(),read_file(multipart[i]->data())));
+		}
+		else {
+			files_.push_back(multipart[i]);
+		}
+	}
+}
+
 
 bool request::parse_form_urlencoded(char const *begin,char const *end,form_type &out)
 {
@@ -284,10 +309,7 @@ request::form_type const &request::post_or_get()
 }
 request::files_type request::files()
 {
-	files_type files(d->files.size());
-	for(unsigned i=0;i<d->files.size();i++) 
-		files[i]=d->files[i].get();
-	return files;
+	return files_;
 }
 
 

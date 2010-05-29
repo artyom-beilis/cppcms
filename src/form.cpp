@@ -22,6 +22,7 @@
 #include <cppcms/encoding.h>
 #include <cppcms/filters.h>
 #include <cppcms/cppcms_error.h>
+#include <cppcms/http_file.h>
 #include <stack>
 #ifdef CPPCMS_USE_EXTERNAL_BOOST
 #   include <boost/format.hpp>
@@ -1349,6 +1350,156 @@ void hidden::render(form_context &context)
 
 	context.widget_part(second_part);
 	render_input(context);
+
+}
+
+
+struct file::_data{};
+
+file::file() : 
+	base_html_input("file"),
+	size_min_(-1),
+	size_max_(-1),
+	check_charset_(1),
+	check_non_empty_(0)
+{
+}
+
+file::~file()
+{
+}
+
+void file::non_empty() 
+{
+	check_non_empty_=1;
+}
+
+void file::limits(int min,int max)
+{
+	size_min_ = min;
+	size_max_ = max;
+}
+
+std::pair<int,int> file::limits()
+{
+	return std::pair<int,int>(size_min_,size_max_);
+}
+
+void file::validate_filename_charset(bool v)
+{
+	check_charset_=v ? 1 : 0;
+}
+
+bool file::validate_filename_charset()
+{
+	return check_charset_;
+}
+
+booster::shared_ptr<http::file> file::value()
+{
+	if(!set())
+		throw cppcms_error("File was not loaded");
+	return file_;
+}
+
+void file::mime(std::string const &s)
+{
+	mime_string_=s;
+	mime_regex_ = booster::regex();
+}
+
+void file::mime(booster::regex const &r)
+{
+	mime_string_.clear();
+	mime_regex_ = r;
+}
+
+void file::add_valid_magic(std::string const &m)
+{
+	magics_.push_back(m);
+}
+
+void file::load(http::context &context)
+{
+	auto_generate();
+	set(false);
+	valid(true);
+	if(name().empty())
+		return;
+	std::string const field_name = name();
+	std::vector<booster::shared_ptr<http::file> > files = context.request().files();
+	for(unsigned i=0;i<files.size();i++) {
+		if(files[i]->name()==field_name) {
+			file_=files[i];
+			set(true);
+			break;
+		}
+	}
+	if(set()) {
+		std::string file_name = file_->filename();
+		if(check_charset_) {
+			size_t count=0;
+			if(!encoding::valid(context.locale(),file_name.c_str(),file_name.c_str()+file_name.size(),count)) {
+				valid(false);
+			}
+		}
+	}
+}
+void file::render_value(form_context &context)
+{
+	// Nothing really to do
+}
+bool file::validate()
+{
+	if(!set()) {
+		if(check_non_empty_) {
+			valid(false);
+			return false;
+		}
+		else {
+			valid(true);
+			return true;
+		}
+	}
+	if(!valid())
+		return false;
+	if(size_max_ != -1 || size_min_!= -1) {
+		size_t file_size = file_->size();
+		if(size_max_ != -1 && file_size > size_t(size_max_)) {
+			valid(false);
+			return false;
+		}
+		if(size_min_ != -1 && file_size < size_t(size_min_)) {
+			valid(false);
+			return false;
+		}
+	}
+	if(!mime_string_.empty() && file_->mime()!=mime_string_) {
+		valid(false);
+		return false;
+	}
+	if(!mime_regex_.empty() && !booster::regex_match(file_->mime(),mime_regex_)){
+		valid(false);
+		return false;
+	}
+	if(valid() && !magics_.empty()) {
+		size_t size_max = 0;
+		for(unsigned i=0;i<magics_.size();i++)
+			size_max=std::max(magics_[i].size(),size_max);
+		std::vector<char> buf(size_max+1,0);
+		file_->data().seekg(0);
+		file_->data().read(&buf.front(),size_max);
+		std::string magic(&buf.front(),file_->data().gcount());
+		file_->data().seekg(0);
+		valid(false);
+		for(unsigned i=0;i<magics_.size();i++) {
+			if(magic.compare(0,magics_[i].size(),magics_[i])==0) {
+				valid(true);
+				break;
+			}
+		}
+	}
+	return valid();
 
 }
 

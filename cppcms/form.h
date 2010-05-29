@@ -35,11 +35,16 @@
 #include <cppcms/http_response.h>
 #include <booster/copy_ptr.h>
 #include <booster/perl_regex.h>
+#include <booster/shared_ptr.h>
 #include <cppcms/cppcms_error.h>
 #include <cppcms/util.h>
 #include <cppcms/localization.h>
 
 namespace cppcms {
+
+	namespace http {
+		class file;
+	}
 
 	namespace widgets {
 		class base_widget;
@@ -1254,6 +1259,83 @@ namespace cppcms {
 		private:
 			uint32_t vertical_ : 1;
 			uint32_t reserved_ : 31;
+
+			struct _data;
+			booster::hold_ptr<_data> d;
+		};
+
+		class CPPCMS_API file : public base_html_input {
+		public:
+			///
+			/// Ensure that file is uploaded.
+			///
+			void non_empty();
+			///
+			/// Set minimum and maximum limits for file size. Note max == -1 indicates that there
+			/// is no maximal limit, min==0 indicates that there is no minimal limit.
+			///
+			///
+			void limits(int min,int max);
+
+			///
+			/// Get minimal and maximal size limits, 
+			///
+			
+			std::pair<int,int> limits();
+
+			///
+			/// Validate the filename's charset (default is on)
+			///
+			void validate_filename_charset(bool);
+			///
+			/// Get validation option for filename's charset
+			///
+			bool validate_filename_charset();
+
+			///
+			/// Get uploaded file
+			///
+			booster::shared_ptr<http::file> value();
+
+			///
+			/// Set required file mime type
+			///
+			void mime(std::string const &);
+
+			///
+			/// Set regular expression that checks for valid mime type
+			///
+			void mime(booster::regex const &expr);
+
+			///
+			/// Add a string that represents a valid magic number that shoud exist on begging of file
+			///
+			/// By default no tests are performed
+			///
+			void add_valid_magic(std::string const &);
+
+			virtual void load(http::context &context);
+			virtual void render_value(form_context &context);
+			virtual bool validate();
+			
+			file();
+			~file();
+
+		private:
+
+			int size_min_;
+			int size_max_;
+			
+			std::vector<std::string> magics_;
+			
+			std::string mime_string_;
+			booster::regex mime_regex_;
+
+			uint32_t check_charset_ : 1;
+			uint32_t check_non_empty_ : 1;
+			uint32_t reserved_ : 30;
+
+			booster::shared_ptr<http::file> file_;
 
 			struct _data;
 			booster::hold_ptr<_data> d;

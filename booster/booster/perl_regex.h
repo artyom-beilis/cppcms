@@ -44,6 +44,7 @@ namespace booster {
 		bool search(char const *begin,char const *end,int flags = 0) const;
 		bool search(char const *begin,char const *end,std::vector<std::pair<int,int> > &marks,int flags = 0) const;
 
+		bool empty() const;
 
 		static const int perl = 0;
 		static const int normal = 0; 

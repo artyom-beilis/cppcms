@@ -1,0 +1,15 @@
+-----------------------------7da3a5810028
+Content-Disposition: form-data; name="submit-name"
+
+שלום
+-----------------------------7da3a5810028
+Content-Disposition: form-data; name="file"; filename="z:\tmp\שלום.txt"
+Content-Type: text/plain
+
+שלום עולם!
+
+-----------------------------7da3a5810028
+Content-Disposition: form-data; name="submit"
+
+Send
+-----------------------------7da3a5810028--

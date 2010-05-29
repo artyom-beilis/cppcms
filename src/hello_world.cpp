@@ -201,6 +201,8 @@ public:
 	cppcms::widgets::select_multiple sel;
 	cppcms::widgets::radio sel1;
 	cppcms::widgets::select sel2;
+	cppcms::widgets::file gif;
+	cppcms::widgets::file text;
 	cppcms::widgets::hidden secret;
 	
 	my_form()
@@ -228,7 +230,12 @@ public:
 		sel2.add("You are sexist");
 		sel.at_least(2);
 		sel1.non_empty();
-		*this + name + age + p1 + p2 + description + sel + sel1 + sel2 + secret;
+		gif.non_empty();
+		gif.add_valid_magic("GIF89a");
+		gif.add_valid_magic("GIF87a");
+		gif.add_valid_magic("\x89PNG\r\n\x1a\n");
+		text.mime(booster::regex("text/.*"));
+		*this + name + age + p1 + p2 + description + sel + sel1 + sel2 + gif + text + secret ;
 	}
 };
 
@@ -341,9 +348,7 @@ public:
 		}
 
 		if(ok) {
-
 			response().out() << f.name.value() <<" " <<f.age.value();
-
 			f.clear();
 		}
 
@@ -352,7 +357,7 @@ public:
 		response().out()<<
 			"<form action='" <<
 				request().script_name() + request().path_info()
-			<<  "' method='post'>\n"
+			<<  "' method='post' enctype='multipart/form-data' >\n"
 			"<table>\n";
 
 		cppcms::form_context context(response().out());

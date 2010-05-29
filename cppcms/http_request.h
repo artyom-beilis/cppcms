@@ -22,6 +22,7 @@
 #include <cppcms/defs.h>
 #include <booster/noncopyable.h>
 #include <booster/hold_ptr.h>
+#include <booster/shared_ptr.h>
 
 #include <string>
 #include <map>
@@ -92,7 +93,7 @@ namespace http {
 		
 		typedef std::multimap<std::string,std::string> form_type;
 		typedef std::map<std::string,cookie> cookies_type;
-		typedef std::vector<file *> files_type;
+		typedef std::vector<booster::shared_ptr<file> > files_type;
 
 		cookies_type const &cookies();
 		form_type const &get();
@@ -110,6 +111,7 @@ namespace http {
 		friend class impl::cgi::connection;
 
 		void set_post_data(std::vector<char> &post_data);
+		void set_post_data(std::vector<booster::shared_ptr<file> > const &multipart);
 		bool prepare();
 
 		bool parse_cookies();

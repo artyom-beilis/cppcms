@@ -146,6 +146,11 @@ namespace booster {
 		}
 		return true;
 	}
+
+	bool regex::empty() const
+	{
+		return d->re == 0;
+	}
 	
 	bool regex::match(char const *begin,char const *end,int /*flags*/) const
 	{

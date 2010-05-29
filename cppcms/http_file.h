@@ -29,13 +29,17 @@ namespace cppcms { namespace http {
 
 	class request;
 
-	class CPPCMS_API file {
+	class CPPCMS_API file : public booster::noncopyable {
 	public:
 		std::string name() const;
 		std::string mime() const;
 		std::string filename() const;
+		void name(std::string const &);
+		void mime(std::string const &);
+		void filename(std::string const &);
 		std::istream &data();
-		size_t size() const;
+		std::ostream &write_data();
+		size_t size();
 		file();
 		~file();
 	private:

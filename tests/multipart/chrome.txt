@@ -1,0 +1,15 @@
+------WebKitFormBoundaryuYwgZwieYHQ3+AR8
+Content-Disposition: form-data; name="submit-name"
+
+שלום
+------WebKitFormBoundaryuYwgZwieYHQ3+AR8
+Content-Disposition: form-data; name="file"; filename="שלום.txt"
+Content-Type: text/plain
+
+שלום עולם!
+
+------WebKitFormBoundaryuYwgZwieYHQ3+AR8
+Content-Disposition: form-data; name="submit"
+
+Send
+------WebKitFormBoundaryuYwgZwieYHQ3+AR8--

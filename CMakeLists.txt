@@ -285,6 +285,7 @@ set(CPPCMS_SOURCES
 	src/application.cpp 
 	src/url_dispatcher.cpp 
 	src/http_cookie.cpp  
+	src/http_file.cpp  
 	src/util.cpp 
 	src/base64.cpp 
 	src/base_view.cpp 
@@ -506,6 +507,7 @@ set(ALL_TESTS
 	forwarder_test
 	jsonrpc_test
 	cookie_test
+	multipart_parser_test
 	)
 foreach(TEST ${ALL_TESTS})
 	add_executable(${TEST} tests/${TEST}.cpp)
@@ -587,6 +589,7 @@ add_test(base64_test base64_test)
 add_test(encryptor_test encryptor_test)
 add_test(storage_test storage_test)
 add_test(json_test json_test)
+add_test(multipart_parser_test multipart_parser_test "${CNF}")
 add_test(cache_backend_test cache_backend_test)
 
 add_test(form_test
