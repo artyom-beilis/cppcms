@@ -5,8 +5,6 @@
   - Sessions **Interface**  
   - Encoding Validators
   - Url Dispatcher
-- http_request.*, cgi_api.*
-	Implement File Upload
 - Reintergrate Sessions over TCP/IP
 - Forwarding management
 - form.*
