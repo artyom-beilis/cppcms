@@ -70,6 +70,11 @@ namespace booster {
 	template<typename Iterator>
 	class match_results {
 	public:
+		match_results()
+		{
+			begin_ = Iterator();
+			end_ = Iterator();
+		}
 		typedef sub_match<Iterator> value_type;
 		value_type operator[](int n) const
 		{
