@@ -131,6 +131,13 @@ void request::set_post_data(std::vector<char> &post_data)
 {
 	d->post_data.clear();
 	d->post_data.swap(post_data);
+
+	if(http::protocol::is_prefix_of("application/x-www-form-urlencoded",content_type())) {
+		if(!d->post_data.empty()) {
+			char const *pdata=&d->post_data.front();
+			parse_form_urlencoded(pdata,pdata+d->post_data.size(),post_);
+		}
+	}
 }
 
 namespace {
@@ -181,18 +188,10 @@ bool request::prepare()
 	if(!parse_form_urlencoded(query.c_str(),query.c_str()+query.size(),get_))  {
 		get_.clear();
 	}
-	
-	if(http::protocol::is_prefix_of("application/x-www-form-urlencoded",content_type())) {
-		if(!d->post_data.empty()) {
-			char const *pdata=&d->post_data.front();
-			if(!parse_form_urlencoded(pdata,pdata+d->post_data.size(),post_)) 
-				return false;
-		}
-	}
-	if(!parse_cookies())
-		return false;
+	parse_cookies();
 	return true;
 }
+
 std::pair<void *,size_t> request::raw_post_data()
 {
 	std::pair<void *,size_t> r;

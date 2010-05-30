@@ -85,7 +85,7 @@ void context::skin(std::string const &skin)
 
 void context::run()
 {
-	conn_->async_prepare_request(d->request,boost::bind(&context::on_request_ready,self(),_1));
+	conn_->async_prepare_request(this,boost::bind(&context::on_request_ready,self(),_1));
 }
 
 void context::on_request_ready(bool error)

@@ -35,6 +35,7 @@ namespace cppcms {
 	class service;
 	class application;
 	namespace http {
+		class context;
 		class request;
 		class response;
 	}
@@ -65,7 +66,7 @@ namespace cgi {
 		virtual ~connection();
 		cppcms::service &service();
 	
-		void async_prepare_request(	http::request &request,
+		void async_prepare_request(	http::context *context,
 						ehandler const &on_post_data_ready);
 
 		void async_write_response(	http::response &response,
@@ -118,9 +119,10 @@ namespace cgi {
 		friend struct writer;
 
 		void set_error(ehandler const &h,std::string s);
-		void load_content(booster::system::error_code const &e,http::request *request,ehandler const &h);
-		void on_post_data_loaded(booster::system::error_code const &e,http::request *r,ehandler const &h);
-		void on_some_multipart_read(booster::system::error_code const &e,size_t n,http::request *request,ehandler const &h);
+		void on_headers_read(booster::system::error_code const &e,http::context *,ehandler const &h);
+		void load_content(booster::system::error_code const &e,http::context *,ehandler const &h);
+		void on_post_data_loaded(booster::system::error_code const &e,http::context *,ehandler const &h);
+		void on_some_multipart_read(booster::system::error_code const &e,size_t n,http::context *,ehandler const &h);
 		void on_async_write_written(booster::system::error_code const &e,bool complete_response,ehandler const &h);
 		void on_eof_written(booster::system::error_code const &e,ehandler const &h);
 		void handle_eof(callback const &on_eof);

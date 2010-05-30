@@ -18,6 +18,7 @@
 ///////////////////////////////////////////////////////////////////////////////
 #define CPPCMS_SOURCE
 #include <cppcms/url_dispatcher.h>
+#include <cppcms/http_context.h>
 #include <cppcms/http_request.h>
 #include <cppcms/http_response.h>
 #include "http_protocol.h"
@@ -62,10 +63,20 @@ booster::shared_ptr<connection> connection::self()
 	return shared_from_this();
 }
 
-void connection::async_prepare_request(	http::request &request,
+void connection::async_prepare_request(	http::context *context,
 					booster::function<void(bool)> const &h)
 {
-	async_read_headers(boost::bind(&connection::load_content,self(),_1,&request,h));
+	async_read_headers(boost::bind(&connection::on_headers_read,self(),_1,context,h));
+}
+
+void connection::on_headers_read(booster::system::error_code const &e,http::context *context,ehandler const &h)
+{
+	if(e)  {
+		set_error(h,e.message());
+		return;
+	}
+	context->request().prepare();
+	load_content(e,context,h);
 }
 
 void connection::aync_wait_for_close_by_peer(booster::function<void()> const &on_eof)
@@ -86,7 +97,7 @@ void connection::set_error(ehandler const &h,std::string s)
 	h(true);
 }
 
-void connection::load_content(booster::system::error_code const &e,http::request *request,ehandler const &h)
+void connection::load_content(booster::system::error_code const &e,http::context *context,ehandler const &h)
 {
 	if(e)  {
 		set_error(h,e.message());
@@ -130,7 +141,7 @@ void connection::load_content(booster::system::error_code const &e,http::request
 					self(),
 					_1,
 					_2,
-					request,
+					context,
 					h));
 		}
 		else {
@@ -145,15 +156,15 @@ void connection::load_content(booster::system::error_code const &e,http::request
 			content_.resize(content_length,0);
 			async_read(	&content_.front(),
 					content_.size(),
-					boost::bind(&connection::on_post_data_loaded,self(),_1,request,h));
+					boost::bind(&connection::on_post_data_loaded,self(),_1,context,h));
 		}
 	}
 	else  {
-		on_post_data_loaded(booster::system::error_code(),request,h);
+		on_post_data_loaded(booster::system::error_code(),context,h);
 	}
 }
 
-void connection::on_some_multipart_read(booster::system::error_code const &e,size_t n,http::request *request,ehandler const &h)
+void connection::on_some_multipart_read(booster::system::error_code const &e,size_t n,http::context *context,ehandler const &h)
 {
 	if(e) { set_error(h,e.message()); return; }
 	read_size_-=n;
@@ -173,12 +184,8 @@ void connection::on_some_multipart_read(booster::system::error_code const &e,siz
 				return;
 			}
 		}
-		request->set_post_data(files);
+		context->request().set_post_data(files);
 		multipart_parser_.reset();
-		if(!request->prepare()) {
-			set_error(h,"Bad Request");
-			return;
-		}
 		h(false);
 		return;
 	}
@@ -192,22 +199,16 @@ void connection::on_some_multipart_read(booster::system::error_code const &e,siz
 				self(),
 				_1,
 				_2,
-				request,
+				context,
 				h));
 	}
 }
 
 
-void connection::on_post_data_loaded(booster::system::error_code const &e,http::request *request,ehandler const &h)
+void connection::on_post_data_loaded(booster::system::error_code const &e,http::context *context,ehandler const &h)
 {
 	if(e) { set_error(h,e.message()); return; }
-
-	request->set_post_data(content_);
-
-	if(!request->prepare()) {
-		set_error(h,"Bad Request");
-		return;
-	}
+	context->request().set_post_data(content_);
 	h(false);
 }
 
