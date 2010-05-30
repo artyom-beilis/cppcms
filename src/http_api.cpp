@@ -39,6 +39,7 @@
 #endif
 
 #include <booster/aio/buffer.h>
+#include <booster/log.h>
 
 namespace io = booster::aio;
 
@@ -129,6 +130,7 @@ namespace cgi {
 							request_method_.assign(input_parser_.header_.begin(),rmethod);
 							request_uri_.assign(rmethod+1,query);
 							first_header_observerd_=true;
+							BOOSTER_INFO("cppcms_http") << request_method_ <<" " << request_uri_;
 						}
 						else {
 							h(booster::system::error_code(errc::protocol_violation,cppcms_category));
