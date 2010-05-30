@@ -303,7 +303,7 @@ set(CPPCMS_SOURCES
 	src/tcp_messenger.cpp
 	src/tcp_connector.cpp
 	src/tcp_cache_server.cpp
-	src/connection_forwarder.cpp
+	src/forwarder.cpp
 	src/session_pool.cpp
 	src/base_encryptor.cpp
 	src/hmac_encryptor.cpp

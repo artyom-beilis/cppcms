@@ -107,8 +107,6 @@ void connection::load_content(booster::system::error_code const &e,http::context
 	std::string content_type = getenv("CONTENT_TYPE");
 	std::string s_content_length=getenv("CONTENT_LENGTH");
 
-	BOOSTER_DEBUG("cgi") << getenv("REQUEST_METHOD") << " " << getenv("REQUEST_URI");
-
 	long long content_length = s_content_length.empty() ? 0 : atoll(s_content_length.c_str());
 
 	if(content_length < 0)  {

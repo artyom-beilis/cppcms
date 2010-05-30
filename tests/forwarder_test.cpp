@@ -23,7 +23,7 @@
 #include <cppcms/http_response.h>
 #include <cppcms/http_context.h>
 #include <cppcms/json.h>
-#include <connection_forwarder.h>
+#include <cppcms/forwarder.h>
 #include <iostream>
 #include "client.h"
 
@@ -74,7 +74,7 @@ public:
 		settings["http"]["script_names"][0]="/test";
 
 		srv.reset(new cppcms::service(settings));
-		app_=new cppcms::connection_forwarder(*srv,"127.0.0.1",8081);
+		app_=new mini_forwarder(*srv);
 		srv->applications_pool().mount(app_);
 
 	}
@@ -97,6 +97,13 @@ public:
 		fw_ok=true;
 	}
 private:
+	struct mini_forwarder : public cppcms::application {
+		mini_forwarder(cppcms::service &s) : cppcms::application(s) {}
+		virtual void main(std::string unused)
+		{
+			cppcms::forward_connection(release_context(),"127.0.0.1",8081);
+		}
+	};
 	booster::shared_ptr<cppcms::service> srv;
 	booster::intrusive_ptr<cppcms::application> app_;
 };

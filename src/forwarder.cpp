@@ -17,10 +17,11 @@
 //
 ///////////////////////////////////////////////////////////////////////////////
 #define CPPCMS_SOURCE
-#include "connection_forwarder.h"
+#include <cppcms/forwarder.h>
 #include <cppcms/http_context.h>
 #include <cppcms/http_request.h>
 #include <cppcms/http_response.h>
+#include <cppcms/mount_point.h>
 #include <cppcms/service.h>
 #include "service_impl.h"
 #include <cppcms/url_dispatcher.h>
@@ -136,52 +137,81 @@ namespace cppcms {
 			io::socket socket_;
 			std::vector<char> input_;
 		};
+
+		std::string make_scgi_header(std::map<std::string,std::string> const &env,size_t addon_size)
+		{
+			std::string env_str;
+			env_str.reserve(1000);
+
+			std::map<std::string,std::string>::const_iterator cl;
+
+			cl=env.find("CONTENT_LENGTH");
+			if(cl!=env.end()) {
+				env_str.append(cl->first.c_str(),cl->first.size()+1);
+				env_str.append(cl->second.c_str(),cl->second.size()+1);
+			}
+			else {
+				env_str.append("CONTENT_LENGTH");
+				env_str.append("\0" "0",3);
+			}
+
+			for(std::map<std::string,std::string>::const_iterator p=env.begin();p!=env.end();++p) {
+				if(p==cl)
+					continue;
+				env_str.append(p->first.c_str(),p->first.size()+1);
+				env_str.append(p->second.c_str(),p->second.size()+1);
+			}
+			std::string header=(boost::format("%1%:",std::locale::classic()) % env_str.size()).str();
+			header.reserve(header.size()+env_str.size()+addon_size);
+			header+=env_str;
+			header+=',';
+			return header;
+		}
+
 	} // impl
 
-	struct connection_forwarder::_data {};
+	
+	void forward_connection(booster::shared_ptr<http::context> con,std::string const &ip,int port)
+	{
 
-	connection_forwarder::connection_forwarder(cppcms::service &srv,std::string const &ip,int port) :
-		application(srv),
-		ip_(ip),
-		port_(port)
-	{
-	}
-	connection_forwarder::~connection_forwarder()
-	{
-	}
-	void connection_forwarder::main(std::string unused)
-	{
-		booster::shared_ptr<http::context> con = release_context();
-		std::string env_str;
-		env_str.reserve(1000);
-
-		std::pair<void *,size_t> post = con->request().raw_post_data();
 		std::map<std::string,std::string> const &env = con->connection().getenv();
-		std::map<std::string,std::string>::const_iterator cl;
-
-		cl=env.find("CONTENT_LENGTH");
-		if(cl!=env.end()) {
-			env_str.append(cl->first.c_str(),cl->first.size()+1);
-			env_str.append(cl->second.c_str(),cl->second.size()+1);
-		}
-		else {
-			env_str.append("CONTENT_LENGTH");
-			env_str.append("\0" "0",3);
-		}
-
-		for(std::map<std::string,std::string>::const_iterator p=env.begin();p!=env.end();++p) {
-			if(p==cl)
-				continue;
-			env_str.append(p->first.c_str(),p->first.size()+1);
-			env_str.append(p->second.c_str(),p->second.size()+1);
-		}
-		std::string header=(boost::format("%1%:",std::locale::classic()) % env_str.size()).str();
-		header.reserve(header.size()+env_str.size()+post.second);
-		header+=env_str;
-		header+=',';
+		std::pair<void *,size_t> post = con->request().raw_post_data();
+		std::string header = impl::make_scgi_header(env,post.second);
 		header.append(reinterpret_cast<char *>(post.first),post.second);
 		
-		booster::shared_ptr<impl::tcp_pipe> pipe(new impl::tcp_pipe(con,ip_,port_));
+		booster::shared_ptr<impl::tcp_pipe> pipe(new impl::tcp_pipe(con,ip,port));
 		pipe->async_send_receive(header);
 	}
+
+
+
+	struct forwarder::_data {};
+	forwarder::forwarder()
+	{
+	}
+	forwarder::~forwarder()
+	{
+	}
+	
+	void forwarder::add_forwarding_rule(booster::shared_ptr<mount_point> p,std::string const &ip,int port)
+	{
+		booster::unique_lock<booster::shared_mutex> lock(mutex_);
+		rules_[p]=address_type(ip,port);
+	}
+	void forwarder::remove_forwarding_rule(booster::shared_ptr<mount_point> p)
+	{
+		booster::unique_lock<booster::shared_mutex> lock(mutex_);
+		rules_.erase(p);
+	}
+	forwarder::address_type forwarder::check_forwading_rules(std::string const &h,std::string const &s,std::string const &p)
+	{
+		booster::shared_lock<booster::shared_mutex> lock(mutex_);
+		for(rules_type::const_iterator it=rules_.begin();it!=rules_.end();++it) {
+			if(it->first->match(h,s,p).first)
+				return it->second;
+		}
+		return address_type(std::string(),0);
+	}
+
+
 };
