@@ -87,8 +87,8 @@
 	"views" : {
 		"default_skin" : "skin1",
 		 "paths" : [ "./" ],
-		 "skins" : [ "skin3" ],
-		 "auto_reload" : true
+		 //"skins" : [ "skin3" ],
+		 //"auto_reload" : true
 	},
 	"cache" : {
 		"backend" : "thread_shared", 
@@ -103,7 +103,7 @@
 		// "mime_types" : "mime.type"
 	},
 	"logging" : {
-		"level" : "error", // "debug",
+		"level" : "info", // "debug",
 		"stderr" : true,
 		"file" : {
 			"name" : "", // "cppcms.log" ,

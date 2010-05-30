@@ -31,6 +31,7 @@ namespace cppcms {
 
 	class application;
 	class service;
+	class mount_point;
 	
 	///
 	/// \brief Application pool is the central class that holds user created applications
@@ -71,29 +72,13 @@ namespace cppcms {
 		void mount(std::auto_ptr<factory> aps);
 		
 		///
-		/// Mount an application factory \a aps for processing of requests for which CGI PATH_INFO
-		/// matches the regular expression \a path_info. The marched part of an regular expression \a select would 
-		/// be passed for URL matching.
+		/// Mount an application factory \a app  by mount_point \a point application matching and
+		/// URL selection rules
 		///
 		/// This member function is thread safe.
 		///
-		void mount(std::auto_ptr<factory> aps,std::string path_info,int select);
 
-		///
-		/// Mount an application factory \a aps for processing of requests for which CGI SCRIPT_NAME exactly
-		/// matches \a script_name parameter. CGI PATH_INFO is passed to application for URL matching.
-		///
-		/// This member function is thread safe.
-		///
-		void mount(std::auto_ptr<factory> aps,std::string script_name);
-		///
-		/// Mount an application factory \a aps for processing of requests for which CGI SCRIPT_NAME exactly
-		/// matches \a script_name parameter. And PATH_INFO patches regular expression \a path_info.
-		/// The matched part \a select is passed to application for URL matching.
-		///
-		/// This member function is thread safe.
-		///
-		void mount(std::auto_ptr<factory> aps,std::string script_name,std::string path_info, int select);
+		void mount(std::auto_ptr<factory> aps,mount_point const &point);
 
 		///
 		/// Mount an asynchronous application \a app for processing of any incoming requests. Application
@@ -103,34 +88,17 @@ namespace cppcms {
 		///
 		void mount(booster::intrusive_ptr<application> app);
 		///
-		/// Mount an asynchronous application \a app  for processing of requests for which CGI PATH_INFO
-		/// matches the regular expression \a path_info. The marched part of an regular expression \a select would 
-		/// be passed for URL matching.
+		/// Mount an asynchronous application \a app  by mount_point \a point application matching and
+		/// URL selection rules
 		///
 		/// This member function is thread safe.
 		///
-		void mount(booster::intrusive_ptr<application> app,std::string path_info,int select);
-		///
-		/// Mount an asynchronous application \a app  for processing of requests for which CGI SCRIPT_NAME exactly
-		/// matches \a script_name parameter. And PATH_INFO patches regular expression \a path_info.
-		/// The matched part \a select is passed to application for URL matching.
-		///
-		/// This member function is thread safe.
-		///
-		void mount(booster::intrusive_ptr<application> app,std::string script_name);
-		///
-		/// Mount an asynchronous application \a app  for processing of requests for which CGI SCRIPT_NAME exactly
-		/// matches \a script_name parameter. And PATH_INFO patches regular expression \a path_info.
-		/// The matched part \a select is passed to application for URL matching.
-		///
-		/// This member function is thread safe.
-		///
-		void mount(booster::intrusive_ptr<application> app,std::string script_name,std::string path_info, int select);
+		void mount(booster::intrusive_ptr<application> app,mount_point const &point);
 
 		///
 		/// Internal API - do not use it directly
 		///
-		booster::intrusive_ptr<application> get(std::string script_name,std::string path_info,std::string &match);
+		booster::intrusive_ptr<application> get(std::string const &h,std::string const &s,std::string const &path_info,std::string &match);
 		///
 		/// Internal API - do not use it directly
 		///
@@ -147,8 +115,6 @@ namespace cppcms {
 		struct app_data;
 		struct long_running_app_data;
 		struct _data;
-		std::string script_name();
-		bool matched(basic_app_data &data,std::string script_name,std::string path_info,std::string &matched);
 		service *srv_;
 		booster::hold_ptr<_data> d;
 	};

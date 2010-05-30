@@ -315,6 +315,7 @@ set(CPPCMS_SOURCES
 	src/session_interface.cpp
 	src/session_memory_storage.cpp
 	src/rpc_json.cpp
+	src/mount_point.cpp
 	cppcms_boost/src/zlib.cpp
 	cppcms_boost/src/gzip.cpp
 )

@@ -92,11 +92,12 @@ void context::on_request_ready(bool error)
 {
 	if(error) return;
 	
+	std::string host = conn_->getenv("HTTP_HOST");
 	std::string path_info = conn_->getenv("PATH_INFO");
 	std::string script_name = conn_->getenv("SCRIPT_NAME");
 	std::string matched;
 
-	booster::intrusive_ptr<application> app = service().applications_pool().get(script_name,path_info,matched);
+	booster::intrusive_ptr<application> app = service().applications_pool().get(host,script_name,path_info,matched);
 
 	if(!app) {
 		response().io_mode(http::response::asynchronous);

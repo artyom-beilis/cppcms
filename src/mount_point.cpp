@@ -29,6 +29,79 @@ mount_point::mount_point() :
 {
 }
 
+mount_point::mount_point(std::string const &path,int group) :
+	path_info_(path),
+	group_(group),
+	selection_(match_path_info)
+{
+}
+
+mount_point::mount_point(std::string const &script) :
+	script_name_(script),
+	group_(0),
+	selection_(match_path_info)
+{
+}
+
+mount_point::mount_point(std::string const &script,std::string const &path,int group) :
+	script_name_(script),
+	path_info_(path),
+	group_(group),
+	selection_(match_path_info)
+{
+}
+
+mount_point::mount_point(mount_point::selection_type sel,std::string const &selected,int group) :
+	group_(group),
+	selection_(sel)
+{
+	if(sel == match_path_info)
+		path_info_ = booster::regex(selected);
+	else
+		script_name_ = booster::regex(selected);
+}
+
+mount_point::mount_point(mount_point::selection_type sel,std::string const &non,std::string const &selected,int group) :
+	group_(group),
+	selection_(sel)
+{
+	if(sel == match_path_info) {
+		path_info_ = booster::regex(selected);
+		script_name_ = booster::regex(non);
+	}
+	else {
+		script_name_ = booster::regex(selected);
+		path_info_ = booster::regex(non);
+	}
+}
+
+mount_point::mount_point(mount_point::selection_type sel,std::string const &non) :
+	group_(0),
+	selection_(sel)
+{
+	if(sel == match_path_info) {
+		script_name_ = booster::regex(non);
+	}
+	else {
+		path_info_ = booster::regex(non);
+	}
+}
+
+mount_point::mount_point(	selection_type sel,
+				booster::regex const &http_host,
+				booster::regex const &script,
+				booster::regex const &path,
+				int group) 
+	:	host_(http_host),
+		script_name_(script),
+		path_info_(path),
+		group_(group),
+		selection_(sel)
+{
+}
+
+
+
 mount_point::~mount_point()
 {
 }
@@ -109,8 +182,10 @@ std::pair<bool,std::string> mount_point::match(std::string const &h,std::string 
 {
 	std::pair<bool,std::string> res;
 	res.first = false;
+
 	if(!host_.empty() && !booster::regex_match(h,host_))
 		return res;
+
 	if(selection_ == match_path_info) {
 		if(!script_name_.empty() && !booster::regex_match(s,script_name_))
 			return res;
@@ -119,12 +194,22 @@ std::pair<bool,std::string> mount_point::match(std::string const &h,std::string 
 			res.first = true;
 			return res;
 		}
-		booster::smatch m;
-		if(!booster::regex_match(p,m,path_info_))
+		
+		if(group_ == 0) {
+			if(!booster::regex_match(p,path_info_))
+				return res;
+			res.second=p;
+			res.first=true;
 			return res;
-		res.second=m[group_];
-		res.first = true;
-		return res;
+		}
+		else {
+			booster::smatch m;
+			if(!booster::regex_match(p,m,path_info_))
+				return res;
+			res.second=m[group_];
+			res.first = true;
+			return res;
+		}
 	}
 	else {
 		if(!path_info_.empty() && !booster::regex_match(p,path_info_))
@@ -134,12 +219,21 @@ std::pair<bool,std::string> mount_point::match(std::string const &h,std::string 
 			res.first = true;
 			return res;
 		}
-		booster::smatch m;
-		if(!booster::regex_match(s,m,script_name_))
+		if(group_ == 0) {
+			if(!booster::regex_match(s,script_name_))
+				return res;
+			res.second=s;
+			res.first = true;
 			return res;
-		res.second=m[group_];
-		res.first = true;
-		return res;
+		}
+		else {
+			booster::smatch m;
+			if(!booster::regex_match(s,m,script_name_))
+				return res;
+			res.second=m[group_];
+			res.first = true;
+			return res;
+		}
 	}
 }
 

@@ -30,6 +30,7 @@
 #include <cppcms/form.h>
 #include <cppcms/cache_interface.h>
 #include <cppcms/session_interface.h>
+#include <cppcms/mount_point.h>
 #include <sstream>
 #include <stdexcept>
 #include <stdlib.h>
@@ -462,9 +463,9 @@ int main(int argc,char **argv)
 	try {
 		cppcms::service service(argc,argv);
 		booster::intrusive_ptr<chat> c=new chat(service);
-		service.applications_pool().mount(c,"/chat");
-		service.applications_pool().mount(cppcms::applications_factory<hello>(),"/hello");
-		service.applications_pool().mount(new stock(service),"/stock");
+		service.applications_pool().mount(c,cppcms::mount_point("/chat"));
+		service.applications_pool().mount(cppcms::applications_factory<hello>(),cppcms::mount_point("/hello"));
+		service.applications_pool().mount(new stock(service),cppcms::mount_point("/stock"));
 		service.run();
 		std::cout<<"Done..."<<std::endl;
 	}

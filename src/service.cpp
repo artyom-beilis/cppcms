@@ -37,6 +37,7 @@
 #include <cppcms/applications_pool.h>
 #include <cppcms/thread_pool.h>
 #include <cppcms/cppcms_error.h>
+#include <cppcms/mount_point.h>
 #include "cgi_acceptor.h"
 #include "cgi_api.h"
 #ifdef CPPCMS_HAS_SCGI
@@ -375,7 +376,7 @@ void service::run()
 	start_acceptor();
 
 	if(settings().get("file_server.enable",false))
-		applications_pool().mount(applications_factory<cppcms::impl::file_server>(),"");
+		applications_pool().mount(applications_factory<cppcms::impl::file_server>(),mount_point(""));
 
 	if(prefork()) {
 		return;
