@@ -1284,6 +1284,18 @@ namespace cppcms {
 			std::pair<int,int> limits();
 
 			///
+			/// Set filename validation pattern. For example ".*\\.(jpg|jpeg|png)"
+			///
+			/// Please, note that it is good idea to check magic number as well.
+			///
+			void filename(booster::regex const &fn);
+
+			///
+			/// Get regular expression for filename validation
+			///
+			booster::regex filename();
+			
+			///
 			/// Validate the filename's charset (default is on)
 			///
 			void validate_filename_charset(bool);
@@ -1330,6 +1342,7 @@ namespace cppcms {
 			
 			std::string mime_string_;
 			booster::regex mime_regex_;
+			booster::regex filename_regex_;
 
 			uint32_t check_charset_ : 1;
 			uint32_t check_non_empty_ : 1;

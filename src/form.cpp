@@ -1482,6 +1482,10 @@ bool file::validate()
 		valid(false);
 		return false;
 	}
+	if(!filename_regex_.empty() && !booster::regex_match(file_->filename(),filename_regex_)){
+		valid(false);
+		return false;
+	}
 	if(valid() && !magics_.empty()) {
 		size_t size_max = 0;
 		for(unsigned i=0;i<magics_.size();i++)
