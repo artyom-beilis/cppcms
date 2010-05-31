@@ -28,7 +28,7 @@
 #include <cppcms/forwarder.h>
 #include <iostream>
 #include "client.h"
-
+#include "test.h"
 #include <booster/shared_ptr.h>
 #include <booster/thread.h>
 
@@ -74,6 +74,10 @@ public:
 		settings["service"]["api"]="http";
 		settings["service"]["port"]=8080;
 		settings["http"]["script_names"][0]="/test";
+		if(internal) {
+			settings["forwarding"]["rules"][0]["ip"]="127.0.0.1";
+			settings["forwarding"]["rules"][0]["port"]=8081;
+		}
 		srv.reset(new cppcms::service(settings));
 
 		if(!internal) {
@@ -83,7 +87,7 @@ public:
 		}
 		else {
 			std::cout << "Tesing internal forwarder" << std::endl;
-			srv->forwarder().add_forwarding_rule(booster::shared_ptr<cppcms::mount_point>(new cppcms::mount_point()),"127.0.0.1",80801);
+			TEST(srv->forwarder().check_forwading_rules("127.0.0.1:8080","/test","").second==8081);
 		}
 
 	}

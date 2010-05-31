@@ -199,13 +199,14 @@ void connection::on_headers_read(booster::system::error_code const &e,http::cont
 		set_error(h,e.message());
 		return;
 	}
-	forwarder::address_type addr = forwarder().check_forwading_rules(
+	forwarder::address_type addr = service().forwarder().check_forwading_rules(
 		getenv("HTTP_HOST"),
 		getenv("SCRIPT_NAME"),
 		getenv("PATH_INFO"));
+	
 	if(addr.second != 0 && !addr.first.empty()) {
-		cgi_forwarder f(self(),addr.first,addr.second);
-		f.async_run();
+		booster::shared_ptr<cgi_forwarder> f(new cgi_forwarder(self(),addr.first,addr.second));
+		f->async_run();
 		h(true);
 		return;
 	}
