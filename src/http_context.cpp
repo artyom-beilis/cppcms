@@ -61,10 +61,6 @@ context::context(booster::shared_ptr<impl::cgi::connection> conn) :
 	conn_(conn)
 {
 	d.reset(new _data(*this));
-	d->response.reset(new http::response(*this));
-	skin(service().views_pool().default_skin());
-	d->cache.reset(new cache_interface(*this));
-	d->session.reset(new session_interface(*this));
 }
 
 std::string context::skin()
@@ -92,6 +88,8 @@ void context::on_request_ready(bool error)
 {
 	if(error) return;
 	
+	d->response.reset(new http::response(*this));
+	
 	std::string host = conn_->getenv("HTTP_HOST");
 	std::string path_info = conn_->getenv("PATH_INFO");
 	std::string script_name = conn_->getenv("SCRIPT_NAME");
@@ -105,6 +103,10 @@ void context::on_request_ready(bool error)
 		async_complete_response();
 		return;
 	}
+
+	skin(service().views_pool().default_skin());
+	d->cache.reset(new cache_interface(*this));
+	d->session.reset(new session_interface(*this));
 
 	app->assign_context(self());
 	
