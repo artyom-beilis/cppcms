@@ -44,6 +44,7 @@ namespace cppcms {
 	class session_pool;
 	class cache_pool;
 	class views_pool;
+	class forwarder; 
 	
 	namespace json {
 		class value;
@@ -66,6 +67,7 @@ namespace cppcms {
 		cppcms::session_pool &session_pool();
 		cppcms::views_pool &views_pool();
 		cppcms::cache_pool &cache_pool();
+		cppcms::forwarder &forwarder();
 
 		locale::generator const &generator();
 		std::locale locale();

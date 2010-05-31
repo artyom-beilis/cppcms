@@ -33,6 +33,8 @@
 
 #include <booster/shared_ptr.h>
 #include <booster/enable_shared_from_this.h>
+#include <scgi_header.h>
+
 
 #ifdef CPPCMS_USE_EXTERNAL_BOOST
 #   include <boost/bind.hpp>

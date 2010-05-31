@@ -115,6 +115,17 @@
 			"id" : "cppcms",
 			"options" : [ "LOG_CONS" ]
 		}
+	},
+	"forwarding" : {
+		"rules" : [
+			//{
+			//	"host" : "www.google.com",
+			//	"script_name" : ".*\\.php",
+			//	"path_info" : "/foo.*",
+			//	"ip" : "127.0.0.1",
+			//	"port" : 5604
+			//},
+		]
 	}
 	
 }

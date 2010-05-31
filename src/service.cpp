@@ -38,6 +38,7 @@
 #include <cppcms/thread_pool.h>
 #include <cppcms/cppcms_error.h>
 #include <cppcms/mount_point.h>
+#include <cppcms/forwarder.h>
 #include "cgi_acceptor.h"
 #include "cgi_api.h"
 #ifdef CPPCMS_HAS_SCGI
@@ -369,9 +370,34 @@ void service::after_fork(booster::function<void()> const &cb)
 	impl_->on_fork_.push_back(cb);
 }
 
+cppcms::forwarder &service::forwarder()
+{
+	if(!impl_->forwarder_.get()) {
+		impl_->forwarder_.reset(new cppcms::forwarder());
+		if(settings().find("forwarding.rules").type()==json::is_array) {
+			json::array rules=settings().at("forwarding.rules").array();
+			for(unsigned i=0;i<rules.size();i++) {
+				mount_point mp;
+				if(rules[i].find("host").type()==json::is_string) 
+					mp.host(booster::regex(rules[i].get<std::string>("host")));
+				if(rules[i].find("script_name").type()==json::is_string) 
+					mp.script_name(booster::regex(rules[i].get<std::string>("script_name")));
+				if(rules[i].find("path_info").type()==json::is_string) 
+					mp.path_info(booster::regex(rules[i].get<std::string>("path_info")));
+				std::string ip=rules[i].get<std::string>("ip");
+				int port=rules[i].get<int>("port");
+				impl_->forwarder_->add_forwarding_rule(booster::shared_ptr<mount_point>(new mount_point(mp)),ip,port);
+			}
+		}
+	}
+	return *impl_->forwarder_;
+}
+
+
 void service::run()
 {
 	generator();
+	forwarder();
 	session_pool().init();
 	start_acceptor();
 
@@ -729,7 +755,6 @@ booster::aio::io_service &service::get_io_service()
 {
 	return impl_->get_io_service();
 }
-
 
 namespace impl {
 	service::service() :
