@@ -601,9 +601,16 @@ add_test(cookie_test
 	cookie_test "-c" "${CNF}/cookie_test.js" 
 	"--test-exec=${PYTHON} ${CNF}/cookie_test.py")
 
+
+add_test(internal_forwarder_test 
+	forwarder_test "-c" "${CNF}/forwarder_test.js" 
+	"--test-exec=${PYTHON} ${CNF}/forwarder_test.py"
+	"--test-internal=true")
+
 add_test(forwarder_test
 	forwarder_test "-c" "${CNF}/forwarder_test.js" 
-	"--test-exec=${PYTHON} ${CNF}/forwarder_test.py")
+	"--test-exec=${PYTHON} ${CNF}/forwarder_test.py"
+	"--test-internal=false")
 
 add_test(jsonrpc_test
 	jsonrpc_test "-c" "${CNF}/jsonrpc_test.js"

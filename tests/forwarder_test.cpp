@@ -22,6 +22,8 @@
 #include <cppcms/http_request.h>
 #include <cppcms/http_response.h>
 #include <cppcms/http_context.h>
+#include <cppcms/forwarder.h>
+#include <cppcms/mount_point.h>
 #include <cppcms/json.h>
 #include <cppcms/forwarder.h>
 #include <iostream>
@@ -66,16 +68,23 @@ bool fw_ok=false;
 
 class forwarder {
 public:
-	forwarder()
+	forwarder(bool internal)
 	{
 		cppcms::json::value settings;
 		settings["service"]["api"]="http";
 		settings["service"]["port"]=8080;
 		settings["http"]["script_names"][0]="/test";
-
 		srv.reset(new cppcms::service(settings));
-		app_=new mini_forwarder(*srv);
-		srv->applications_pool().mount(app_);
+
+		if(!internal) {
+			std::cout << "Tesing application level forwarding" << std::endl;
+			app_=new mini_forwarder(*srv);
+			srv->applications_pool().mount(app_);
+		}
+		else {
+			std::cout << "Tesing internal forwarder" << std::endl;
+			srv->forwarder().add_forwarding_rule(booster::shared_ptr<cppcms::mount_point>(new cppcms::mount_point()),"127.0.0.1",80801);
+		}
 
 	}
 
@@ -115,8 +124,9 @@ int main(int argc,char **argv) {
 		srv.applications_pool().mount( cppcms::applications_factory<unit_test>());
 		if(srv.settings().find("test.exec").type()==cppcms::json::is_string)
 			srv.after_fork(submitter(srv));
-		
-		forwarder fw;
+	
+		bool internal=srv.settings().get<bool>("test.internal");	
+		forwarder fw(internal);
 		booster::thread fw_thread(fw);
 		
 		srv.run();
