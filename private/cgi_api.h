@@ -114,9 +114,11 @@ namespace cgi {
 
 		struct reader;
 		struct writer;
+		struct cgi_forwarder;
 
 		friend struct reader;
 		friend struct writer;
+		friend struct cgi_forwarder;
 
 		void set_error(ehandler const &h,std::string s);
 		void on_headers_read(booster::system::error_code const &e,http::context *,ehandler const &h);

@@ -21,6 +21,7 @@
 #include <cppcms/http_context.h>
 #include <cppcms/http_request.h>
 #include <cppcms/http_response.h>
+#include <cppcms/forwarder.h>
 #include "http_protocol.h"
 #include <cppcms/service.h>
 #include "service_impl.h"
@@ -28,7 +29,7 @@
 #include "cgi_api.h"
 #include "multipart_parser.h"
 #include <cppcms/util.h>
-
+#include <scgi_header.h>
 #include <stdlib.h>
 #include <cppcms/config.h>
 #ifdef CPPCMS_USE_EXTERNAL_BOOST
@@ -39,9 +40,132 @@
 #endif
 
 #include <booster/log.h>
+#include <booster/aio/endpoint.h>
+#include <booster/aio/aio_category.h>
+#include <booster/aio/socket.h>
+#include <booster/aio/buffer.h>
 
 
 namespace cppcms { namespace impl { namespace cgi {
+
+	//
+	// Special forwarder from generic CGI to SCGI
+	//
+	struct connection::cgi_forwarder : public booster::enable_shared_from_this<connection::cgi_forwarder> {
+	public:
+		cgi_forwarder(booster::shared_ptr<connection> c,std::string ip,int port) :
+			conn_(c),
+			scgi_(c->get_io_service()),
+			ep_(ip,port)
+		{
+			booster::aio::endpoint ep(ip,port);
+			booster::system::error_code e;
+			scgi_.open(ep.family(),booster::aio::sock_stream,e);
+			if(e) {	return;	}
+		}
+		void async_run()
+		{
+			scgi_.async_connect(ep_,boost::bind(&cgi_forwarder::on_connected,shared_from_this(),_1));
+		}
+	private:
+		void on_connected(booster::system::error_code const &e)
+		{
+			if(e) return;
+			header_ = make_scgi_header(conn_->getenv(),0);
+			scgi_.async_write(
+				booster::aio::buffer(header_),
+				boost::bind(&cgi_forwarder::on_header_sent,shared_from_this(),_1,_2));
+		}
+		void on_header_sent(booster::system::error_code const &e,size_t n)
+		{
+			if(e || n!=header_.size())
+				return;
+			header_.clear();
+			std::string slen = conn_->getenv("CONTENT_LENGTH");
+			content_length_ = slen.empty() ? 0LL : atoll(slen.c_str());
+			if(content_length_ > 0) {
+				post_.resize( content_length_ > 8192 ? 8192 : content_length_,0);
+				write_post();
+			}
+			else {
+				response_.resize(8192);
+				read_response();
+			}
+		}
+		void write_post()
+		{
+			if(content_length_ > 0) {
+				if(content_length_ <  (long long)(post_.size())) {
+					post_.resize(content_length_);
+				}
+				conn_->async_read_some(&post_.front(),post_.size(),
+					boost::bind(&cgi_forwarder::on_post_data_read,shared_from_this(),_1,_2));
+			}
+			else {
+				response_.swap(post_);
+				response_.resize(8192);
+				read_response();
+			}
+		}
+		void on_post_data_read(booster::system::error_code const &e,size_t len)
+		{
+			if(e)  { cleanup(); return; }
+			scgi_.async_write(
+				booster::aio::buffer(&post_.front(),len),
+				boost::bind(&cgi_forwarder::on_post_data_written,shared_from_this(),_1,_2));
+		}
+		void on_post_data_written(booster::system::error_code const &e,size_t len)
+		{
+			if(e) { return; }
+			content_length_ -= len;
+			write_post();
+		}
+		
+		void read_response() 
+		{
+			conn_->async_read_eof(boost::bind(&cgi_forwarder::cleanup,shared_from_this()));
+			scgi_.async_read_some(booster::aio::buffer(response_),
+						boost::bind(&cgi_forwarder::on_response_read,shared_from_this(),_1,_2));
+		}
+		void on_response_read(booster::system::error_code const &e,size_t len)
+		{
+			if(e) {
+				conn_->async_write_eof(boost::bind(&cgi_forwarder::cleanup,shared_from_this()));
+				return;
+			}
+			else {
+				conn_->async_write(&response_.front(),len,boost::bind(&cgi_forwarder::on_response_written,shared_from_this(),_1,_2));
+			}
+		}
+		void on_response_written(booster::system::error_code const &e,size_t len)
+		{
+			if(e) { cleanup(); return; }
+			scgi_.async_read_some(booster::aio::buffer(response_),
+				boost::bind(&cgi_forwarder::on_response_read,shared_from_this(),_1,_2));
+		}
+
+		void cleanup()
+		{
+			booster::system::error_code e;
+			scgi_.shutdown(booster::aio::socket::shut_rdwr,e);
+			scgi_.close(e);
+		}
+
+		booster::shared_ptr<connection> conn_;
+		booster::aio::socket scgi_;
+		booster::aio::endpoint ep_;
+		long long int content_length_;
+		std::string header_;
+		std::vector<char> post_;
+		std::vector<char> response_;
+
+	};
+
+
+
+
+
+
 
 connection::connection(cppcms::service &srv) :
 	service_(&srv),
@@ -73,6 +197,16 @@ void connection::on_headers_read(booster::system::error_code const &e,http::cont
 {
 	if(e)  {
 		set_error(h,e.message());
+		return;
+	}
+	forwarder::address_type addr = forwarder().check_forwading_rules(
+		getenv("HTTP_HOST"),
+		getenv("SCRIPT_NAME"),
+		getenv("PATH_INFO"));
+	if(addr.second != 0 && !addr.first.empty()) {
+		cgi_forwarder f(self(),addr.first,addr.second);
+		f.async_run();
+		h(true);
 		return;
 	}
 	context->request().prepare();
@@ -339,6 +473,7 @@ size_t connection::write(void const *data,size_t n)
 	}
 	return wr;
 }
+
 
 } // cgi
 } // impl
