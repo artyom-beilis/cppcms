@@ -1187,22 +1187,58 @@ namespace cppcms {
 			
 		};
 
+	
+		///
+		/// This is the base class for "select" like widgets which includes dropdown list
+		/// and radio buttons set.
+		///
 		class CPPCMS_API select_base : public base_widget {
 		public:
 			select_base();
 			virtual ~select_base();
 
+			///
+			/// Add new entry to selection list
+			///
 			void add(std::string const &string);
+
+			///
+			/// Add new entry to selection list giving the unique entry identification \a id
+			///
 			void add(std::string const &string,std::string const &id);
+			///
+			/// Add new localized entry to selection list
+			///
 			void add(locale::message const &msg);
+			///
+			/// Add new localized entry to selection list giving the unique entry identification \a id
+			///
 			void add(locale::message const &msg,std::string const &id);
 
+			///
+			/// Return the selected entry number in the list starting from 0. -1 indicates that nothing
+			/// was selected.
+			/// 
 			int selected();
+
+			///
+			/// Return the identification string of the selected entry, empty string indicates that 
+			/// nothing was selected
+			///
 			std::string selected_id();
 
+			///
+			/// Select entry number \a no in the list for rendering
+			///
 			void selected(int no);
+			///
+			/// Select entry with identification \a id in the list for rendering
+			///
 			void selected_id(std::string id);
 
+			///
+			/// Require that item should be selected (for validation)
+			///
 			void non_empty();
 			
 			virtual void render_input(form_context &context) = 0;
@@ -1210,10 +1246,16 @@ namespace cppcms {
 			virtual void load(http::context &context);
 			virtual void clear();
 		protected:
-			struct element {
+
+			struct CPPCMS_API element {
+				
 				element();
 				element(std::string const &v,locale::message const &msg);
 				element(std::string const &v,std::string const &msg);
+				element(element const &);
+				element const &operator=(element const &);
+				~element();
+
 				uint32_t need_translation : 1;
 				uint32_t reserved : 31;
 				std::string id;
@@ -1238,6 +1280,10 @@ namespace cppcms {
 			uint32_t reserverd  : 32;
 		};
 
+		///
+		/// Select widget that uses drop-down list
+		///
+		
 		class CPPCMS_API select : public select_base {
 		public:
 			select();
@@ -1248,12 +1294,22 @@ namespace cppcms {
 			booster::hold_ptr<_data> d;
 		};
 
+		///
+		/// Select widget that uses a set of radio buttons
+		///
 		class CPPCMS_API radio : public select_base {
 		public:
 			radio();
 			virtual ~radio();
 			virtual void render_input(form_context &context);
+			
+			///
+			/// Return the rendering order
+			///
 			bool vertical();
+			///
+			/// Set rendering order of the list one behind other (default) or in same line.
+			///
 			void vertical(bool);
 
 		private:
@@ -1264,6 +1320,9 @@ namespace cppcms {
 			booster::hold_ptr<_data> d;
 		};
 
+		///
+		/// Class that represents file upload form entry
+		///
 		class CPPCMS_API file : public base_html_input {
 		public:
 			///
@@ -1355,7 +1414,9 @@ namespace cppcms {
 		};
 
 
-
+		///
+		/// Submit button widget
+		///
 		class CPPCMS_API submit : public base_html_input {
 		public:
 			submit();
@@ -1383,6 +1444,8 @@ namespace cppcms {
 			bool pressed_;
 			locale::message value_;
 		};
+
+
 		
 
 	} // widgets

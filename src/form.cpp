@@ -1072,6 +1072,31 @@ select_base::element::element(std::string const &v,locale::message const &msg) :
 {
 }
 
+select_base::element::element(select_base::element const &other) : 
+	need_translation(other.need_translation),
+	reserved(other.reserved),
+	id(other.id),
+	str_option(other.str_option),
+	tr_option(other.tr_option)
+{
+}
+
+select_base::element const &select_base::element::operator=(select_base::element const &other)
+{
+	if(this!=&other) {
+		need_translation = other.need_translation;
+		reserved = other.reserved;
+		id=other.id;
+		str_option=other.str_option;
+		tr_option=other.tr_option;
+	}
+	return *this;
+}
+
+select_base::element::~element()
+{
+}
+
 
 select_base::select_base() : selected_(-1), default_selected_(-1), non_empty_(0)
 {
