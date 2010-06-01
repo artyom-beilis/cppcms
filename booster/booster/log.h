@@ -11,6 +11,7 @@
 #include <booster/config.h>
 #include <iosfwd>
 #include <memory>
+#include <string>
 #include <booster/copy_ptr.h>
 #include <booster/hold_ptr.h>
 #include <booster/noncopyable.h>

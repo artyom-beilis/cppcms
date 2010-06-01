@@ -30,7 +30,7 @@ namespace cppcms {
 
 	struct urandom_device::_data {
 		HCRYPTPROV provider;
-		data() : provider(0) {}
+		_data() : provider(0) {}
 	};
 
 	urandom_device::urandom_device() :

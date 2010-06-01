@@ -20,6 +20,7 @@
 #define CPPCMS_HTTP_FILE_H
 
 #include <cppcms/defs.h>
+#include <cppcms/cstdint.h>
 #include <booster/hold_ptr.h>
 #include <booster/noncopyable.h>
 #include <sstream>
