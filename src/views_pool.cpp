@@ -134,7 +134,7 @@ namespace impl {
 
 } // impl
 
-#if !defined(HAVE_STAT) && defined(HAVE__STAT)
+#if !defined(CPPCMS_HAVE_STAT) && defined(CPPCMS_HAVE__STAT)
 #define stat _stat
 #endif
 

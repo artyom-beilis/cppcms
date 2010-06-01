@@ -18,7 +18,7 @@
 ///////////////////////////////////////////////////////////////////////////////
 #define CPPCMS_SOURCE
 #include <cppcms/config.h>
-# if defined(HAVE_CANONICALIZE_FILE_NAME) && !defined(_GNU_SOURCE)
+# if defined(CPPCMS_HAVE_CANONICALIZE_FILE_NAME) && !defined(_GNU_SOURCE)
 # define _GNU_SOURCE
 #endif
 
@@ -143,7 +143,7 @@ bool file_server::canonical(std::string normal,std::string &real)
 #ifndef CPPCMS_WIN_NATIVE
 
 
-	#ifdef HAVE_CANONICALIZE_FILE_NAME
+	#ifdef CPPCMS_HAVE_CANONICALIZE_FILE_NAME
 
 		char *canon=::canonicalize_file_name(normal.c_str());
 		if(!canon) return false;

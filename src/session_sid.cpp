@@ -80,7 +80,7 @@ namespace impl {
 			md5_finish(&st,md5);
 
 			for(int i=0;i<16;i++) {
-			#ifdef HAVE_SNPRINTF
+			#ifdef CPPCMS_HAVE_SNPRINTF
 				snprintf(res+i*2,3,"%02x",md5[i]);
 			#else
 				sprintf(res+i*2,"%02x",md5[i]);

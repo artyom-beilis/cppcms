@@ -66,7 +66,7 @@ std::string urlencode(std::string const &s)
 				default:
 				{
 					char buf[4];
-#ifdef HAVE_SNPRINTF	
+#ifdef CPPCMS_HAVE_SNPRINTF	
 					snprintf(buf,sizeof(buf),"%%%02x",(unsigned)(c));
 #else
 					sprintf(buf,"%%%02x",(unsigned)(c));

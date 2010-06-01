@@ -1,8 +1,8 @@
 cmake_minimum_required(VERSION 2.6)
 project(cppcms)
-set(PACKAGE_NAME "CppCMS")
-set(PACKAGE_STRING "CppCMS/0.99.1")
-set(PACKAGE_VERSION "0.99.1")
+set(CPPCMS_PACKAGE_NAME "CppCMS")
+set(CPPCMS_PACKAGE_STRING "CppCMS/0.99.1")
+set(CPPCMS_PACKAGE_VERSION "0.99.1")
 
 include(CheckFunctionExists)
 include(CheckCXXSourceCompiles)
@@ -125,23 +125,23 @@ if(NOT DISABLE_ICU_LOCALIZATION)
 	if(NOT ICU_UC OR NOT ICU_DATA OR NOT ICU_I18N OR NOT ICU_INCLUDE_DIR)
 		message(FATAL " Failed to find ICU library, can't continue")
 	endif()
-	set(HAVE_ICU 1)
+	set(CPPCMS_HAVE_ICU 1)
 else()
 	set(CPPCMS_DISABLE_ICU_LOCALIZATION 1)
 endif()
 
 
-find_path(HAVE_STDINT_H stdint.h)
-find_path(HAVE_INTTYPES_H inttypes.h)
+find_path(CPPCMS_HAVE_STDINT_H stdint.h)
+find_path(CPPCMS_HAVE_INTTYPES_H inttypes.h)
 
-check_function_exists(atoll HAVE_ATOLL)
-check_function_exists(_atoi64 HAVE_ATOI64)
-check_function_exists(gmtime_r HAVE_GMTIME_R)
-check_function_exists(localtime_r HAVE_LOCALTIME_R)
-check_function_exists(strerror_r HAVE_STRERROR_R)
-check_function_exists(snprintf HAVE_SNPRINTF)
-check_function_exists(stat HAVE_STAT)
-check_function_exists(_stat HAVE__STAT)
+check_function_exists(atoll CPPCMS_HAVE_ATOLL)
+check_function_exists(_atoi64 CPPCMS_HAVE_ATOI64)
+check_function_exists(gmtime_r CPPCMS_HAVE_GMTIME_R)
+check_function_exists(localtime_r CPPCMS_HAVE_LOCALTIME_R)
+check_function_exists(strerror_r CPPCMS_HAVE_STRERROR_R)
+check_function_exists(snprintf CPPCMS_HAVE_SNPRINTF)
+check_function_exists(stat CPPCMS_HAVE_STAT)
+check_function_exists(_stat CPPCMS_HAVE__STAT)
 include_directories(${ICU_INCLUDE_DIR})
 
 
@@ -155,16 +155,16 @@ if(NOT DISABLE_ICONV)
 		find_path(ICONV_INCLUDE_DIR iconv.h)
 		find_library(ICONV_LIB iconv)
 		if(ICONV_LIB AND ICONV_INCLUDE_DIR)
-			set(HAVE_ICONV 1)
+			set(CPPCMS_HAVE_ICONV 1)
 			include_directories(${ICONV_INCLUDE_DIR})
 		endif()
 	else(NOT LIBC_ICONV)
-		set(HAVE_ICONV 1)
+		set(CPPCMS_HAVE_ICONV 1)
 	endif(NOT LIBC_ICONV)
 
-	if(NOT HAVE_ICONV)
+	if(NOT CPPCMS_HAVE_ICONV)
 		message(STATUS " iconv not found, falling back to ICU")
-	endif(NOT HAVE_ICONV)
+	endif(NOT CPPCMS_HAVE_ICONV)
 endif(NOT DISABLE_ICONV)
 
 include_directories(${CMAKE_BINARY_DIR})
@@ -189,37 +189,37 @@ set(CPPCMS_LIBRARY_PREFIX ${CMAKE_SHARED_LIBRARY_PREFIX})
 check_cxx_source_compiles(
 	"#include <string> 
 	int main() { std::wstring s; }"
-	HAVE_STD_WSTRING)
+	CPPCMS_HAVE_STD_WSTRING)
 
 check_cxx_source_compiles(
 	"#include <time.h> 
 	int main() { struct tm t; char const *p=t.tm_zone; long o=t.tm_gmtoff; }"
-	HAVE_BSD_TM)
+	CPPCMS_HAVE_BSD_TM)
 
 check_cxx_source_compiles(
 	"#include <string> 
 	int main() { std::u16string s16; std::u32string s32; }"
-	HAVE_CPP0X_UXSTRING)
+	CPPCMS_HAVE_CPP0X_UXSTRING)
 
 check_cxx_source_compiles(
 	"#include <list> 
 	int main(){std::list<int> l; auto p=l.begin();}"
-	HAVE_CPP_0X_AUTO)
+	CPPCMS_HAVE_CPP_0X_AUTO)
 
 check_cxx_source_compiles(
 	"#include <list> 
 	int main(){std::list<int> l; decltype(l.begin()) p=l.begin();}"
-	HAVE_CPP_0X_DECLTYPE)
+	CPPCMS_HAVE_CPP_0X_DECLTYPE)
 
 check_cxx_source_compiles(
 	"#include <list> 
 	int main(){std::list<int> l; typeof(l.begin()) p=l.begin();}"
-	HAVE_GCC_TYPEOF)
+	CPPCMS_HAVE_GCC_TYPEOF)
 
 check_cxx_source_compiles(
 	"#include <list> 
 	int main(){std::list<int> l; __typeof__(l.begin()) p=l.begin();}"
-	HAVE_UNDERSCORE_TYPEOF)
+	CPPCMS_HAVE_UNDERSCORE_TYPEOF)
 
 find_library(ZLIB z NAMES zdll zlib)
 find_path(ZLIB_INCLUDE_DIR zlib.h)
@@ -230,42 +230,42 @@ if(${CMAKE_HOST_WIN32})
 	find_library(WS2_32 ws2_32)
 	find_library(WSOCK32 wsock32)
 else(${CMAKE_HOST_WIN32})
-	check_function_exists(dlopen HAVE_DLOPEN)
-	if(NOT HAVE_DLOPEN)
-		check_library_exists(dl dlopen "" HAVE_LIB_DL)
-		if(NOT HAVE_LIB_DL)
+	check_function_exists(dlopen CPPCMS_HAVE_DLOPEN)
+	if(NOT CPPCMS_HAVE_DLOPEN)
+		check_library_exists(dl dlopen "" CPPCMS_HAVE_LIB_DL)
+		if(NOT CPPCMS_HAVE_LIB_DL)
 			message(FATAL " No library with dlopen found")
-		else(NOT HAVE_LIB_DL)
+		else(NOT CPPCMS_HAVE_LIB_DL)
 			find_library(LIB_DL dl)
-		endif(NOT HAVE_LIB_DL)
-	endif(NOT HAVE_DLOPEN)
+		endif(NOT CPPCMS_HAVE_LIB_DL)
+	endif(NOT CPPCMS_HAVE_DLOPEN)
 	
-	check_function_exists(socket HAVE_SOCKET)
-	if(NOT HAVE_SOCKET)
-		check_library_exists(socket socket "" HAVE_LIB_SOCKET)
-		if(NOT HAVE_LIB_SOCKET)
+	check_function_exists(socket CPPCMS_HAVE_SOCKET)
+	if(NOT CPPCMS_HAVE_SOCKET)
+		check_library_exists(socket socket "" CPPCMS_HAVE_LIB_SOCKET)
+		if(NOT CPPCMS_HAVE_LIB_SOCKET)
 			message(FATAL " No library with socket found")
-		else(NOT HAVE_LIB_SOCKET)
+		else(NOT CPPCMS_HAVE_LIB_SOCKET)
 			find_library(LIB_SOCKET socket)
-		endif(NOT HAVE_LIB_SOCKET)
-	endif(NOT HAVE_SOCKET)
+		endif(NOT CPPCMS_HAVE_LIB_SOCKET)
+	endif(NOT CPPCMS_HAVE_SOCKET)
 
-	check_function_exists(gethostbyname HAVE_GETHOSTBYNAME)
-	if(NOT HAVE_GETHOSTBYNAME)
+	check_function_exists(gethostbyname CPPCMS_HAVE_GETHOSTBYNAME)
+	if(NOT CPPCMS_HAVE_GETHOSTBYNAME)
 		check_library_exists(socket gethostbyname "" LIB_SOCKGETHOSTBYNAME)
 		if(NOT LIB_SOCKGETHOSTBYNAME)
-			check_library_exists(nsl gethostbyname "" HAVE_LIB_NSL)
-			if(NOT HAVE_LIB_NSL)
+			check_library_exists(nsl gethostbyname "" CPPCMS_HAVE_LIB_NSL)
+			if(NOT CPPCMS_HAVE_LIB_NSL)
 				message(FATAL " No library with gethostbyname found")
-			else(NOT HAVE_LIB_NSL)
+			else(NOT CPPCMS_HAVE_LIB_NSL)
 				find_library(LIB_NSL nsl)
-			endif(NOT HAVE_LIB_NSL)
+			endif(NOT CPPCMS_HAVE_LIB_NSL)
 		endif(NOT LIB_SOCKGETHOSTBYNAME)
-	endif(NOT HAVE_GETHOSTBYNAME)
+	endif(NOT CPPCMS_HAVE_GETHOSTBYNAME)
 endif(${CMAKE_HOST_WIN32}) 
 
 
-check_function_exists(canonicalize_file_name HAVE_CANONICALIZE_FILE_NAME)
+check_function_exists(canonicalize_file_name CPPCMS_HAVE_CANONICALIZE_FILE_NAME)
 
 add_definitions(-DCPPCMS_BOOST_ALL_NO_LIB)
 
@@ -362,7 +362,7 @@ endif()
 
 if(LIB_GCRYPT)
 	set(CPPCMS_SOURCES ${CPPCMS_SOURCES} src/aes_encryptor.cpp)
-	set(HAVE_GCRYPT 1)
+	set(CPPCMS_HAVE_GCRYPT 1)
 else(LIB_GCRYPT)
 	message("GNU Gcrypt library not found, disabling aes_encryptor")
 endif(LIB_GCRYPT)

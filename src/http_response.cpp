@@ -113,7 +113,7 @@ response::response(context &context) :
 {
 	set_content_header("text/html");
 	if(context_.settings().get("server.disable_xpowered_by",false)==0) {
-		set_header("X-Powered-By", PACKAGE_NAME "/" PACKAGE_VERSION);
+		set_header("X-Powered-By", CPPCMS_PACKAGE_NAME "/" CPPCMS_PACKAGE_VERSION);
 	}
 }
 
@@ -421,7 +421,7 @@ std::string response::make_http_time(time_t t)
 	// RFC 2616
 	// "Sun, 06 Nov 1994 08:49:37 GMT"
 	std::tm tv;
-	#ifdef HAVE_GMTIME_R
+	#ifdef CPPCMS_HAVE_GMTIME_R
 	gmtime_r(&t,&tv);
 	#elif defined(CPPCMS_WIN_NATIVE)
 	tv=*gmtime(&t); // Win32 uses TLS

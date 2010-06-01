@@ -50,7 +50,7 @@ namespace {
 
 std::string cppcms_error::strerror(int err)
 {
-	#ifdef HAVE_STRERROR_R
+	#ifdef CPPCMS_HAVE_STRERROR_R
 	char buf[256] = {0};
 	return strerror_wrapper(strerror_r(err,buf,sizeof(buf)),buf);
 	#else

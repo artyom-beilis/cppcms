@@ -66,13 +66,13 @@ private:
 } // cppcms
 
 
-#if defined(HAVE_CPP_0X_AUTO)
+#if defined(CPPCMS_HAVE_CPP_0X_AUTO)
 #	define CPPCMS_TYPEOF(x) auto
-#elif defined(HAVE_CPP_0X_DECLTYPE)
+#elif defined(CPPCMS_HAVE_CPP_0X_DECLTYPE)
 #	define CPPCMS_TYPEOF(x) decltype(x)
-#elif defined(HAVE_GCC_TYPEOF)
+#elif defined(CPPCMS_HAVE_GCC_TYPEOF)
 #	define CPPCMS_TYPEOF(x) typeof(x)
-#elif defined(HAVE_UNDERSCORE_TYPEOF)
+#elif defined(CPPCMS_HAVE_UNDERSCORE_TYPEOF)
 #	define CPPCMS_TYPEOF(x) __typeof__(x)
 #else
 #	define CPPCMS_TYPEOF(x) automatic_type_identification_is_not_supported_by_this_compiler

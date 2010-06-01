@@ -3,7 +3,7 @@
 
 #include <cppcms/config.h>
 
-#ifdef HAVE_ICU
+#ifdef CPPCMS_HAVE_ICU
 #	include <booster/locale.h>
 
 	namespace cppcms {

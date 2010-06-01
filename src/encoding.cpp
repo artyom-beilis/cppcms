@@ -28,9 +28,9 @@
 #include <stdexcept>
 #include <iostream>
 
-#if defined HAVE_ICONV
+#if defined CPPCMS_HAVE_ICONV
 #include <iconv.h>
-#elif defined(HAVE_ICU)
+#elif defined(CPPCMS_HAVE_ICU)
 #include <unicode/ucnv.h> // For Win32
 #endif
 
@@ -40,7 +40,7 @@ namespace cppcms {
 namespace encoding {
 
 namespace impl{ 
-#ifdef HAVE_ICONV
+#ifdef CPPCMS_HAVE_ICONV
 	typedef size_t (*posix_iconv_type)(iconv_t cd,char **, size_t *t,char **,size_t *);
 	typedef size_t (*gnu_iconv_type)(iconv_t cd,char const **, size_t *t,char **,size_t *);
 
@@ -141,7 +141,7 @@ namespace impl{
 
 
 	typedef iconv_validator validator;
-#elif defined(HAVE_ICU)
+#elif defined(CPPCMS_HAVE_ICU)
 	class uconv_validator {
 	public:
 		uconv_validator(std::string const &charset) :
@@ -374,7 +374,7 @@ bool CPPCMS_API valid(char const *encoding,char const *begin,char const *end,siz
 	impl::validators_set::encoding_tester_type tester = impl::all_validators.get(encoding);
 	if(tester)
 		return tester(begin,end,count);
-	#if defined(HAVE_ICU) || defined(HAVE_ICONV)
+	#if defined(CPPCMS_HAVE_ICU) || defined(CPPCMS_HAVE_ICONV)
 	try {
 		impl::validator vtester(encoding);
 		return vtester.valid(begin,end,count);
@@ -387,7 +387,7 @@ bool CPPCMS_API valid(char const *encoding,char const *begin,char const *end,siz
 	#endif
 }
 
-#if defined(HAVE_ICONV) || defined(HAVE_ICU)
+#if defined(CPPCMS_HAVE_ICONV) || defined(CPPCMS_HAVE_ICU)
 
 inline bool is_utf8(char const *c_encoding)
 {
@@ -398,7 +398,7 @@ inline bool is_utf8(char const *c_encoding)
 }
 
 
-#ifdef HAVE_ICONV
+#ifdef CPPCMS_HAVE_ICONV
 namespace impl {
 	std::string iconv_convert_to(char const *to,char const *from,char const *begin,char const *end)
 	{
@@ -445,7 +445,7 @@ std::string CPPCMS_API to_utf8(char const *c_encoding,char const *begin,char con
 		result.assign(begin,end-begin);
 		return result;
 	}
-#ifdef HAVE_ICONV
+#ifdef CPPCMS_HAVE_ICONV
 	return impl::iconv_convert_to("UTF-8",c_encoding,begin,end);
 #else // USE ICU
 	return locale::conv::to_utf<char>(begin,end,c_encoding);
@@ -490,7 +490,7 @@ std::string CPPCMS_API from_utf8(char const *c_encoding,char const *begin,char c
 		result.assign(begin,end-begin);
 		return result;
 	}
-#ifdef HAVE_ICONV
+#ifdef CPPCMS_HAVE_ICONV
 	return impl::iconv_convert_to(c_encoding,"UTF-8",begin,end);
 #else // USE ICU
 	return locale::conv::from_utf<char>(begin,end,c_encoding);
@@ -525,7 +525,7 @@ std::string CPPCMS_API from_utf8(std::locale const &loc,std::string const &str)
 		return from_utf8(inf.encoding().c_str(),str);
 }
 
-#endif // HAVE_ICONV || HAVE_ICU
+#endif // CPPCMS_HAVE_ICONV || CPPCMS_HAVE_ICU
 	
 	
 } } // cppcms::encoding

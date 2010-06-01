@@ -19,7 +19,7 @@
 #include <cppcms/config.h>
 #include <cppcms/session_cookies.h>
 #include "hmac_encryptor.h"
-#ifdef HAVE_GCRYPT
+#ifdef CPPCMS_HAVE_GCRYPT
 #include "aes_encryptor.h"
 #endif
 #include "test.h"
@@ -87,7 +87,7 @@ int main()
 
 		std::cout << "Testing hmac" << std::endl;
 		run_test<cppcms::sessions::impl::hmac_cipher>();
-		#ifdef HAVE_GCRYPT
+		#ifdef CPPCMS_HAVE_GCRYPT
 		std::cout << "Testing aes" << std::endl;
 		run_test<cppcms::sessions::impl::aes_cipher>();
 		#endif

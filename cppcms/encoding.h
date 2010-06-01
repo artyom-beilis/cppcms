@@ -57,7 +57,7 @@ namespace cppcms {
 		///
 		bool CPPCMS_API valid(std::string const &encoding,char const *begin,char const *end,size_t &count);
 
-		#if defined(HAVE_ICU) || defined(HAVE_ICONV)
+		#if defined(CPPCMS_HAVE_ICU) || defined(CPPCMS_HAVE_ICONV)
 
 		///
 		/// Convert string in range [begin,end) from local 8 bit encoding according to locale \a loc to UTF-8

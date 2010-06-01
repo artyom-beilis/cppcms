@@ -61,7 +61,7 @@ namespace cgi {
 			total_read_(0)
 		{
 
-			env_["SERVER_SOFTWARE"]=PACKAGE_NAME "/" PACKAGE_VERSION;
+			env_["SERVER_SOFTWARE"]=CPPCMS_PACKAGE_NAME "/" CPPCMS_PACKAGE_VERSION;
 			env_["SERVER_NAME"]=srv.settings().get("service.ip","127.0.0.1");
 			std::ostringstream ss;
 			ss.imbue(std::locale::classic());
@@ -278,7 +278,7 @@ namespace cgi {
 		size_t write_response(io_handler const &h,size_t s)
 		{
 			char const *addon = 
-				"Server: CppCMS-Embedded/" PACKAGE_VERSION "\r\n"
+				"Server: CppCMS-Embedded/" CPPCMS_PACKAGE_VERSION "\r\n"
 				"Connection: close\r\n";
 
 			response_line_.append(addon);

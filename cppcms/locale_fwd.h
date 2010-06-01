@@ -3,7 +3,7 @@
 
 #include <cppcms/config.h>
 
-#ifdef HAVE_ICU
+#ifdef CPPCMS_HAVE_ICU
 	namespace booster {
 		namespace locale {
 			class generator;

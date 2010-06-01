@@ -245,7 +245,7 @@ namespace json {
 				default:
 					if(0x00<=*i && *i<=0x1F) {
 						char buf[8];
-#ifdef HAVE_SNPRINTF						
+#ifdef CPPCMS_HAVE_SNPRINTF						
 						snprintf(buf,sizeof(buf),"\\u%04X",*i);
 #else
 						sprintf(buf,"\\u%04X",*i);
