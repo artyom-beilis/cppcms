@@ -283,6 +283,7 @@ find_library(PCRE_LIB pcre)
 
 
 include_directories(${CMAKE_BINARY_DIR})
+include_directories(${CMAKE_CURRENT_BINARY_DIR})
 include_directories(.)
 include_directories(lib/test)
 

@@ -168,6 +168,8 @@ if(NOT DISABLE_ICONV)
 endif(NOT DISABLE_ICONV)
 
 include_directories(${CMAKE_BINARY_DIR})
+include_directories(${CMAKE_CURRENT_BINARY_DIR})
+include_directories(${CMAKE_CURRENT_BINARY_DIR}/booster)
 include_directories(${CMAKE_SOURCE_DIR})
 
 if(DISABLE_ICU_LOCALIZATION)
