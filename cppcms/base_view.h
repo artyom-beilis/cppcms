@@ -54,8 +54,12 @@ public:
 
 protected:
 
+	/// \cond INTERNAL
+
 	base_view(std::ostream &out);
 	std::ostream &out();
+
+	/// \endcond
 
 private:
 	struct _data;

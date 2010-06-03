@@ -95,20 +95,20 @@ namespace cppcms {
 		///
 		void mount(booster::intrusive_ptr<application> app,mount_point const &point);
 
-		///
-		/// Internal API - do not use it directly
-		///
-		booster::intrusive_ptr<application> get(std::string const &h,std::string const &s,std::string const &path_info,std::string &match);
-		///
-		/// Internal API - do not use it directly
-		///
-		void put(application *app);
 
 		///
-		/// Internal API - do not use it directly
+		/// \cond INTERNAL
 		///
+		///  INTERNAL API
+
+		booster::intrusive_ptr<application> 
+		get(std::string const &h,std::string const &s,std::string const &path_info,std::string &match);
+
+		void put(application *app);
 		applications_pool(service &srv,int pool_size_limit);
 		~applications_pool();
+
+		/// \endcond
 
 	private:
 		struct basic_app_data;

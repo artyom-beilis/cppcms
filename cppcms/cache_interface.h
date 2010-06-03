@@ -23,6 +23,7 @@
 #include <set>
 
 #include <cppcms/defs.h>
+#include <cppcms/serialization_classes.h>
 #include <booster/noncopyable.h>
 #include <booster/intrusive_ptr.h>
 #include <booster/hold_ptr.h>
@@ -37,8 +38,6 @@ namespace cppcms {
 		class context;
 	};
 
-	template<typename Object>
-	struct serialization_traits;
 
 	///
 	/// \brief This class is the major gateway of the application to CppCMS caching abilities. Any access too cache
@@ -86,11 +85,14 @@ namespace cppcms {
 	public:
 
 		///
+		/// \cond INTERNAL
+		///
 		/// Internal API, don't use it
 		///
 		cache_interface(http::context &context);
 		~cache_interface();
 
+		/// \endcond
 		
 		///
 		/// Rise a trigger \a trigger. All cached objects that depend on this trigger would be invalidated

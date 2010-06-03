@@ -130,9 +130,15 @@ else()
 	set(CPPCMS_DISABLE_ICU_LOCALIZATION 1)
 endif()
 
+check_cxx_source_compiles(
+	"#include <stdint.h> 
+	int main(){int32_t x; int64_t y; return 0; }"
+	CPPCMS_HAVE_STDINT_H)
 
-find_path(CPPCMS_HAVE_STDINT_H stdint.h)
-find_path(CPPCMS_HAVE_INTTYPES_H inttypes.h)
+check_cxx_source_compiles(
+	"#include <inttypes.h> 
+	int main(){int32_t x; int64_t y; return 0; }"
+	CPPCMS_HAVE_INTTYPES_H)
 
 check_function_exists(atoll CPPCMS_HAVE_ATOLL)
 check_function_exists(_atoi64 CPPCMS_HAVE_ATOI64)
@@ -318,6 +324,7 @@ set(CPPCMS_SOURCES
 	src/session_memory_storage.cpp
 	src/rpc_json.cpp
 	src/mount_point.cpp
+	src/archive.cpp
 	cppcms_boost/src/zlib.cpp
 	cppcms_boost/src/gzip.cpp
 )

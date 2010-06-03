@@ -64,7 +64,7 @@
 			"path" : "/",
 			"secure" : false
 		},
-		"location" : "client",
+		//"location" : "client",
 	//	"location" : "server",
 	//	"location" : "both",
 		"client_size_limit" : 1000,
@@ -103,7 +103,8 @@
 		// "mime_types" : "mime.type"
 	},
 	"logging" : {
-		"level" : "info", // "debug",
+		//"level" : "info", // "debug",
+		"level" : "error", // "debug",
 		"stderr" : true,
 		"file" : {
 			"name" : "", // "cppcms.log" ,
