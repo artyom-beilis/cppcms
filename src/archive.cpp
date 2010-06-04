@@ -18,6 +18,7 @@
 ///////////////////////////////////////////////////////////////////////////////
 #define CPPCMS_SOURCE
 #include <cppcms/serialization_classes.h>
+#include <cppcms/cstdint.h>
 #include <string.h>
 
 namespace cppcms {
