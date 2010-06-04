@@ -24,6 +24,9 @@
 #include <string>
 #include <stdexcept>
 
+#include <booster/traits/enable_if.h>
+#include <booster/traits/is_base_of.h>
+
 namespace cppcms {
 
 	#ifdef CPPCMS_DOXYGEN_DOCS
@@ -46,7 +49,7 @@ namespace cppcms {
 	
 	#else
 	 
-	template<typename Object>
+	template<typename Object,typename Enable = void>
 	struct archive_traits;
 	#endif
 
@@ -291,15 +294,15 @@ namespace cppcms {
 	
 	#else
 
-	template<typename Object>
+	template<typename Object,typename Enable = void>
 	struct serialization_traits;
 
 	///
 	/// Traits for serializable objects - converts object to and from string
 	/// using archive class
 	///
-	template<>
-	struct serialization_traits<serializable_base> {
+	template<typename D>
+	struct serialization_traits<D,typename booster::enable_if<booster::is_base_of<serializable_base,D> >::type> {
 		///
 		/// Convert string to object
 		///

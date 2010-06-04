@@ -518,6 +518,7 @@ set(ALL_TESTS
 	jsonrpc_test
 	cookie_test
 	multipart_parser_test
+	serialization_test
 	)
 foreach(TEST ${ALL_TESTS})
 	add_executable(${TEST} tests/${TEST}.cpp)
@@ -601,6 +602,7 @@ add_test(storage_test storage_test)
 add_test(json_test json_test)
 add_test(multipart_parser_test multipart_parser_test "${CNF}")
 add_test(cache_backend_test cache_backend_test)
+add_test(serialization_test serialization_test)
 
 add_test(form_test
 	form_test "-c" "${CNF}/form_test.js" 

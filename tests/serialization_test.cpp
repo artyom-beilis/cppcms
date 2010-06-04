@@ -64,7 +64,7 @@ struct test1  : public cppcms::serializable {
 
 	void serialize(cppcms::archive &a)
 	{
-		a & str & x & v & mapping;
+		a & str & x & v & mapping & p;
 	}
 };
 
@@ -99,6 +99,7 @@ void test_ptr()
 int main()
 {
 	try {
+		std::cout << "Testing POD" << std::endl;
 		{
 			cppcms::archive a;
 			unsigned int x=0xDEADBEEF;
@@ -111,6 +112,7 @@ int main()
 			a.reset();
 			TEST(a.next_chunk_size() == sizeof(int));
 		}
+		std::cout << "Testing String" << std::endl;
 		{
 			cppcms::archive a;
 			std::string x="Hello World";
@@ -123,6 +125,19 @@ int main()
 			a.reset();
 			TEST(a.next_chunk_size() == x.size());
 		}
+		std::cout << "Testing POD array" << std::endl;
+		{
+			cppcms::archive a;
+			int x[2]={10,20};
+			a & x;
+			a.mode(cppcms::archive::load_from_archive);
+			TEST(a.next_chunk_size()==sizeof(int)*2);
+			int y[2]={0,0};
+			a & y;
+			TEST(x[0]==y[0] && x[1]==y[1]);
+			TEST(a.eof());
+		}
+		std::cout << "Testing POD vector" << std::endl;
 		{
 			cppcms::archive a;
 			std::vector<int> x;
@@ -138,6 +153,7 @@ int main()
 			TEST(a.eof());
 		}
 
+		std::cout << "Testing list" << std::endl;
 		{
 			cppcms::archive a;
 			std::list<int> x;
@@ -152,6 +168,7 @@ int main()
 			TEST(a.eof());
 		}
 
+		std::cout << "Testing compund" << std::endl;
 		{
 			cppcms::archive a;
 			std::vector<std::string> x;
@@ -166,6 +183,7 @@ int main()
 			TEST(a.eof());
 		}
 
+		std::cout << "Testing set" << std::endl;
 		{
 			cppcms::archive a;
 			std::set<std::string> x;
@@ -180,6 +198,7 @@ int main()
 			TEST(a.eof());
 		}
 		
+		std::cout << "Testing map" << std::endl;
 		{
 			cppcms::archive a;
 			std::map<std::string,std::vector<int> > x;
@@ -194,6 +213,7 @@ int main()
 			TEST(a.eof());
 		}
 		
+		std::cout << "Testing multimap" << std::endl;
 		{
 			cppcms::archive a;
 			std::multimap<std::string,std::vector<int> > x,y;
@@ -204,24 +224,27 @@ int main()
 			TEST(x==y);
 			TEST(a.eof());
 		}
+		std::cout << "Testing smart pointer" << std::endl;
+	
 		test_ptr<booster::shared_ptr<int> >();
 		test_ptr<booster::hold_ptr<int> >();
 		test_ptr<booster::copy_ptr<int> >();
 		test_ptr<booster::clone_ptr<int> >();
 		test_ptr<std::auto_ptr<int> >();
 
+		std::cout << "Testing object serialization" << std::endl;
 		std::string tmp;
 		{
-			test2 t;
+			test1 t;
 			t.init();
 			{
-				test2 const &tt=t;
-				cppcms::serialization_traits<cppcms::serializable_base>::save(tt,tmp);
+				test1 const &tt=t;
+				cppcms::serialization_traits<test1>::save(tt,tmp);
 			}
 		}
 		{
-			test2 t;
-			cppcms::serialization_traits<cppcms::serializable_base>::load(tmp,t);
+			test1 t;
+			cppcms::serialization_traits<test1>::load(tmp,t);
 			t.check();
 		}
 

@@ -235,7 +235,7 @@ namespace cppcms {
 		{
 			std::string buffer;
 			serialization_traits<Serializable>::save(data,buffer);
-			store(key,data,triggers,timeout,notriggers);
+			store(key,buffer,triggers,timeout,notriggers);
 		}
 
 		///

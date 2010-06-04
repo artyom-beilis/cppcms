@@ -28,6 +28,9 @@
 #include <booster/clone_ptr.h>
 #include <booster/copy_ptr.h>
 
+#include <booster/traits/enable_if.h>
+#include <booster/traits/is_base_of.h>
+
 #include <memory>
 #include <iterator>
 #include <map>
@@ -40,8 +43,8 @@
 namespace cppcms {
 
 	
-	template<>
-	struct archive_traits<serializable_base> {
+	template<typename S>
+	struct archive_traits<S,typename booster::enable_if<booster::is_base_of<serializable_base,S> >::type > {
 		static void save(serializable_base const &d,archive &a)
 		{
 			d.save(a);
@@ -63,9 +66,7 @@ namespace cppcms {
 			archive_traits<T>::load(o,a);
 		}
 	};
-
-
-
+	
 	template<>
 	struct archive_traits<std::string> {
 		static void save(std::string const &o,archive &a) 
