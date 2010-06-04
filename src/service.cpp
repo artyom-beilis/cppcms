@@ -195,6 +195,9 @@ void service::setup()
 	impl_->views_pool_.reset(new cppcms::views_pool(settings()));
 	impl_->cache_pool_.reset(new cppcms::cache_pool(settings()));
 	impl_->session_pool_.reset(new cppcms::session_pool(*this));
+	if(settings().get("file_server.enable",false)) {
+		applications_pool().mount(applications_factory<cppcms::impl::file_server>(),mount_point(""));
+	}
 }
 
 void service::setup_logging()
@@ -232,7 +235,6 @@ void service::setup_logging()
 			#endif
 			else if(op=="LOG_PID") ops|=LOG_PID;
 		}
-		std::cerr << ops << std::endl;
 		if(id.empty())
 			::openlog(0,ops,0);
 		else
@@ -400,9 +402,6 @@ void service::run()
 	forwarder();
 	session_pool().init();
 	start_acceptor();
-
-	if(settings().get("file_server.enable",false))
-		applications_pool().mount(applications_factory<cppcms::impl::file_server>(),mount_point(""));
 
 	if(prefork()) {
 		return;
