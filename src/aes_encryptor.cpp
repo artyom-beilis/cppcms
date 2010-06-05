@@ -129,39 +129,53 @@ class load {
 
 } // anon namespace
 
-aes_cipher::aes_cipher(string k) :
-	base_encryptor(k)
+void aes_cipher::load()
 {
+	if(loaded_)
+		return;;
 	bool in=false,out=false;
-	in=gcry_cipher_open(&hd_in,GCRY_CIPHER_AES,GCRY_CIPHER_MODE_CBC,0) == 0;
-	out=gcry_cipher_open(&hd_out,GCRY_CIPHER_AES,GCRY_CIPHER_MODE_CBC,0) == 0;
-	if(!in || !out){
-		goto error_exit;
+	try {
+		in=gcry_cipher_open(&hd_in,GCRY_CIPHER_AES,GCRY_CIPHER_MODE_CBC,0) == 0;
+		out=gcry_cipher_open(&hd_out,GCRY_CIPHER_AES,GCRY_CIPHER_MODE_CBC,0) == 0;
+		if(!in || !out){
+			throw cppcms_error("AES cipher initialization failed");
+		}
+	
+		if( gcry_cipher_setkey(hd_in,&key.front(),16) != 0) {
+			throw cppcms_error("AES cipher initialization failed");
+		}
+		if( gcry_cipher_setkey(hd_out,&key.front(),16) != 0) {
+			throw cppcms_error("AES cipher initialization failed");
+		}
+		char iv[16];
+		gcry_create_nonce(iv,sizeof(iv));
+		gcry_cipher_setiv(hd_out,iv,sizeof(iv));
+		return;
 	}
+	catch(...) {
+		if(in) gcry_cipher_close(hd_in);
+		if(out) gcry_cipher_close(hd_out);
+		throw;
+	}
+}
 
-	if( gcry_cipher_setkey(hd_in,&key.front(),16) != 0) {
-		goto error_exit;
-	}
-	if( gcry_cipher_setkey(hd_out,&key.front(),16) != 0)
-		goto error_exit;
-	char iv[16];
-	gcry_create_nonce(iv,sizeof(iv));
-	gcry_cipher_setiv(hd_out,iv,sizeof(iv));
-	return;
-error_exit:
-	if(in) gcry_cipher_close(hd_in);
-	if(out) gcry_cipher_close(hd_out);
-	throw cppcms_error("AES cipher initialization failed");
+aes_cipher::aes_cipher(string k) :
+	base_encryptor(k),
+	loaded_(false)
+{
 }
 
 aes_cipher::~aes_cipher()
 {
-	gcry_cipher_close(hd_in);
-	gcry_cipher_close(hd_out);
+	if(loaded_) {
+		gcry_cipher_close(hd_in);
+		gcry_cipher_close(hd_out);
+	}
 }
 
 string aes_cipher::encrypt(string const &plain,time_t timeout)
 {
+	load();
 	size_t block_size=(plain.size() + 15) / 16 * 16;
 
 	vector<unsigned char> data(sizeof(aes_hdr)+sizeof(info)+block_size,0);
@@ -180,6 +194,7 @@ string aes_cipher::encrypt(string const &plain,time_t timeout)
 
 bool aes_cipher::decrypt(string const &cipher,string &plain,time_t *timeout)
 {
+	load();
 	vector<unsigned char> data;
 	base64_dec(cipher,data);
 	size_t norm_size=b64url::decoded_size(cipher.size());
