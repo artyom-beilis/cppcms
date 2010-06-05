@@ -180,6 +180,22 @@ namespace cppcms {
 		return a;
 	}
 
+	template<typename Archivable>
+	archive & operator <<(archive &a,Archivable const &object)
+	{
+		archive_traits<Archivable>::save(object,a);
+		return a;
+	}
+
+	template<typename Archivable>
+	archive & operator >>(archive &a,Archivable &object)
+	{
+		archive_traits<Archivable>::load(object,a);
+		return a;
+	}
+
+	
+	
 	
 	///
 	/// Base abstract class for object that can be serialized into std::string

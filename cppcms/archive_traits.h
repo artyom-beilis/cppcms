@@ -87,12 +87,34 @@ namespace cppcms {
 			size_t len;
 		};
 
+		struct const_pod_data {
+			void const *pointer;
+			size_t len;
+		};
+
+		inline archive &operator<<(archive &a,const_pod_data const &d)
+		{
+			a.write_chunk(d.pointer,d.len);
+			return a;
+		}
+
+		
 		inline archive &operator&(archive &a,pod_data const &d)
 		{
 			if(a.mode()==archive::load_from_archive)
 				a.read_chunk(d.pointer,d.len);
 			else
 				a.write_chunk(d.pointer,d.len);
+			return a;
+		}
+		inline archive &operator<<(archive &a,pod_data const &d)
+		{
+			a.write_chunk(d.pointer,d.len);
+			return a;
+		}
+		inline archive &operator>>(archive &a,pod_data const &d)
+		{
+			a.read_chunk(d.pointer,d.len);
 			return a;
 		}
 
@@ -104,6 +126,14 @@ namespace cppcms {
 		details::pod_data d = { &v , sizeof(v) };
 		return d;
 	}
+	
+	template<typename T>
+	details::const_pod_data as_pod(T const &v)
+	{
+		details::const_pod_data d = { &v , sizeof(v) };
+		return d;
+	}
+	
 } // cppcms
 
 
@@ -138,11 +168,18 @@ namespace cppcms {						\
 	struct archive_traits<Type[n]> {			\
 		static void save(Type const d[n],archive &a)	\
 		{						\
-			a.write_chunk(&d[0],sizeof(d));		\
+			a.write_chunk(&d[0],sizeof(Type)*n);	\
 		}						\
 		static void load(Type d[n],archive &a)		\
 		{						\
-			a.read_chunk(&d[0],sizeof(d));		\
+			a.read_chunk(&d[0],sizeof(Type)*n);	\
+		}						\
+	};							\
+	template<int n>						\
+	struct archive_traits<Type const [n]> {			\
+		static void save(Type const d[n],archive &a)	\
+		{						\
+			a.write_chunk(&d[0],sizeof(Type)*n);	\
 		}						\
 	};							\
 								\
@@ -184,12 +221,12 @@ namespace cppcms {
 		static void save(T const d[size],archive &a)
 		{
 			for(int i=0;i<size;i++)
-				archive_traits<T>::save(d[i]);
+				archive_traits<T>::save(d[i],a);
 		}
 		static void load(T d[size],archive &a)
 		{
 			for(int i=0;i<size;i++)
-				archive_traits<T>::load(d[i]);
+				archive_traits<T>::load(d[i],a);
 		}
 	};
 
