@@ -61,29 +61,39 @@ bool request::read_key_value(
 	}
 	key.assign(tmp,p);
 	p=http::protocol::skip_ws(p,e);
-	if(p<e && *p!='=') {
-		if(*p==';' || *p==',') {
-			++p;
-			return true;
-		}
-	}
-	p=http::protocol::skip_ws(p+1,e);
-	if(*p=='"') {
-		tmp=p;
-		value=http::protocol::unquote(p,e);
-		if(p==tmp) {
-			p=e;
-			return false;
+	if(p<e) {
+		if(*p!='=') {
+			if(*p==';' || *p==',') {
+				++p;
+				return true;
+			}
 		}
 	}
 	else {
-		tmp=p;
-		p=http::protocol::tocken(p,e);
-		value.assign(tmp,p);
-		if(p==tmp && p<e && *p!=';'&& *p!=',') {
-			skip_after_period(p,e);
-			return false;
+		return true;
+	}
+	p=http::protocol::skip_ws(p+1,e);
+	if(p < e) {
+		if(*p=='"') {
+			tmp=p;
+			value=http::protocol::unquote(p,e);
+			if(p==tmp) {
+				p=e;
+				return false;
+			}
 		}
+		else {
+			tmp=p;
+			p=http::protocol::tocken(p,e);
+			value.assign(tmp,p);
+			if(p==tmp && p<e && *p!=';'&& *p!=',') {
+				skip_after_period(p,e);
+				return false;
+			}
+		}
+	}
+	else {
+		return true;
 	}
 	p=http::protocol::skip_ws(p,e);
 	if(p<e && (*p==';' || *p==',' ))
