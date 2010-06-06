@@ -39,10 +39,11 @@
 #include <set>
 #include <sstream>
 
+/// \cond internal
 
 namespace cppcms {
 
-	
+		
 	template<typename S>
 	struct archive_traits<S,typename booster::enable_if<booster::is_base_of<serializable_base,S> >::type > {
 		static void save(serializable_base const &d,archive &a)
@@ -415,7 +416,7 @@ CPPCMS_ARCHIVE_INTRUSIVE_POINTER(booster::intrusive_ptr)
 
 
 
-
+/// \endcond
 
 
 #endif

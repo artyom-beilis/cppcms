@@ -30,6 +30,9 @@
 
 
 namespace cppcms {
+///
+/// \brief This namespace includes all JSON parsing and formatting related classes and functions
+///
 namespace json {
 
 
@@ -37,7 +40,13 @@ namespace json {
 
 	class value;
 
+	///
+	/// Special object that is convertible to null json value
+	///
 	struct null {};
+	///
+	/// Special object that is convertible to undefined json value
+	///
 	struct undefined {};
 
 	inline bool operator==(undefined const &l,undefined const &r) {return true;}
@@ -45,33 +54,63 @@ namespace json {
 	inline bool operator==(null const &l,null const &r) {return true;}
 	inline bool operator!=(null const &l,null const &r) {return false;}
 
-
+	///
+	/// The json::array - std::vector of json::value's
+	///
 	typedef std::vector<value> array;
+	///
+	/// The json::object - std::map of json::value's
+	///
 	typedef std::map<std::string,value> object;
 
+	#ifdef CPPCMS_DOXYGEN_DOCS
+
+	///
+	/// The type traits schema for converting json values to/from orinary objects
+	/// i.e. serialization from JSON to C++ object
+	///
+	template<typename T>
+	struct traits {
+		///
+		/// Convert json value \a v to an object of type T and return it
+		///
+		static T get(value const &v);
+		///
+		/// Convert an object \a in to a json::value \a v
+		///
+		static void set(value &v,T const &in);
+	};
+
+	#else
+	
 	template<typename T>
 	struct traits;
-//	{
-//		static void set(value &v,T const &in);
-//	};
+
+	#endif
 
 
+	///
+	/// The type of json value
+	///
 	typedef enum {
-		is_undefined,
-		is_null,
-		is_boolean,
-		is_number,
-		is_string,
-		is_object,
-		is_array
+		is_undefined,	///< Undefined value
+		is_null,	///< null value
+		is_boolean,	///< boolean value
+		is_number,	///< numeric value
+		is_string,	///< string value
+		is_object,	///< object value 
+		is_array	///< array value
 	} json_type;
 
 
 	enum {
-		compact = 0,
-		readable = 1
+		compact = 0, ///< Print JSON values in most compact format
+		readable = 1 ///< Print JSON values in human readable format (with identention)
 	};
 	
+	///
+	/// The error that is thrown in case of bad conversion of json::value to ordinary value
+	///
 	class CPPCMS_API bad_value_cast : public std::bad_cast {
 	public:
 
@@ -88,65 +127,168 @@ namespace json {
 	
 	class value;
 
+	///
+	/// Read json object from input stream
+	///
 	std::istream CPPCMS_API &operator>>(std::istream &in,value &v);
+
+	///
+	/// Write json object to output stream
+	///
 	std::ostream CPPCMS_API &operator<<(std::ostream &out,value const &v);
+
+	///
+	/// Write human readable representation of json_type 
+	///
 	std::ostream CPPCMS_API &operator<<(std::ostream &out,json_type);
 
+	///
+	/// This class is central representation of json objects. It can be a value from any type
+	/// including object, array and undefined
+	///
 	class CPPCMS_API value {
 	public:
 
+		///
+		/// Get the type of the value
+		/// 
 		json_type type() const;
 		
+		///
+		/// Returns true if type()==json::is_undefined
+		///
 		bool is_undefined() const;
+		///
+		/// Returns true if type()==json::is_null
+		///
 		bool is_null() const;
 
+		///
+		/// Convert value to boolean, throws bad_value_cast if value's type is not boolean
+		///
 		bool const &boolean() const;
+		///
+		/// Convert value to double, throws bad_value_cast if value's type is not number
+		///
 		double const &number() const;
+		///
+		/// Convert value to strng, throws bad_value_cast if value's type is not string
+		///
 		std::string const &str() const;
+		///
+		/// Convert value to json::object, throws bad_value_cast if value's type is not object
+		///
 		json::object const &object() const;
+		///
+		/// Convert value to json::array, throws bad_value_cast if value's type is not array
+		///
 		json::array const &array() const;
 
+		///
+		/// Get reference to bool variable that represents this value, throws bad_value_cast if type is invalid
+		///
 		bool &boolean();
+		///
+		/// Get reference to double variable that represents this value, throws bad_value_cast if type is invalid
+		///
 		double &number();
+		///
+		/// Get reference to string variable that represents this value, throws bad_value_cast if type is invalid
+		///
 		std::string &str();
-		json::object &object();
+		///
+		/// Get reference to object variable that represents this value, throws bad_value_cast if type is invalid
+		///
+ 		json::object &object();
+		///
+		/// Get reference to array variable that represents this value, throws bad_value_cast if type is invalid
+		///
 		json::array &array();
 
+		///
+		/// Set value to undefined type
+		///
 		void undefined();
+		///
+		/// Set value to null type
+		///
 		void null();
 
+		///
+		/// Set value to boolean type and assign it
+		///
 		void boolean(bool);
+		///
+		/// Set value to numeric type and assign it
+		///
 		void number(double );
+		///
+		/// Set value to string type and assign it
+		///
 		void str(std::string const &);
+		///
+		/// Set value to object type and assign it
+		///
 		void object(json::object const &);
+		///
+		/// Set value to array type and assign it
+		///
 		void array(json::array const &);
 
 
+		///
+		/// Convert the value to type T, using json::traits, throws bad_value_cast if conversion is not possible
+		///
 		template<typename T>
 		T get_value() const
 		{
 			return traits<T>::get(*this);
 		}
 		
+		///
+		/// Convert the object \a v of type T to the value
+		/// 
 		template<typename T>
 		void set_value(T const &v)
 		{
 			traits<T>::set(*this,v);
 		}
 
+		///
+		/// Searches a value in the path \a path
+		///
+		/// For example if the json::value represents { "x" : { "y" : 10 } }, then find("x.y") would return
+		/// a reference to value that hold a number 10, find("x") returns a reference to a value
+		/// that holds an object { "y" : 10 } and find("foo") would return value of undefined type.
+		///
+		value const &find(std::string path) const; 		
 
-		// returns empty if not found
-		value const &find(std::string) const; 		
+		///
+		/// Searches a value in the path \a path, if not found throw bad_value_cast.
+		///
+		/// For example if the json::value represents { "x" : { "y" : 10 } }, then find("x.y") would return
+		/// a reference to value that hold a number 10, find("x") returns a reference to a value
+		/// that holds an object { "y" : 10 } and find("foo") throws
+		///
+		value const &at(std::string path) const;  
+		///
+		/// Searches a value in the path \a path, if not found throw bad_value_cast.
+		///
+		/// For example if the json::value represents { "x" : { "y" : 10 } }, then find("x.y") would return
+		/// a reference to value that hold a number 10, find("x") returns a reference to a value
+		/// that holds an object { "y" : 10 } and find("foo") throws
+		///
+		value &at(std::string path);
 
-		// throws if not found
-		value const &at(std::string) const;  
-		value &at(std::string);
-
-		// sets 
-		void at(std::string,value const &v);
+		///
+		/// Sets the value \a v at the path \a path, if the path invalid, creates it.
+		///
+		void at(std::string path,value const &v);
 
 		
-
+		///
+		/// Creates a value from and object \a v of type T
+		///
 		template<typename T>
 		value(T const &v)
 		{
@@ -156,13 +298,15 @@ namespace json {
 		///
 		/// Returns the type of variable in path, if not found returns undefined
 		///
+		/// Same as find(path).type()
+		///
 		json_type type(std::string path) const
 		{
 			return find(path).type();
 		}
 
 		///
-		/// Set value at specific path
+		/// Convert an object \a v of type T to a value at specific path, same as at(path,value(v))
 		///
 		template<typename T>
 		void set(std::string path,T const &v)
@@ -170,6 +314,10 @@ namespace json {
 			at(path,value(v));
 		}
 
+		///
+		/// Get a string value from a path \a path. If the path is not invalid or the object
+		/// is not of type string at this path, returns \a def instead
+		///
 		std::string get(std::string path,char const *def) const
 		{
 			value const &v=find(path);
@@ -182,13 +330,21 @@ namespace json {
 				return def;
 			}
 		}
-
+		
+		///
+		/// Get an object of type T from the path \a path. Throws bad_value_cast if such path does not
+		/// exists of conversion can't be done
+		///
 		template<typename T>
 		T get(std::string path) const
 		{
 			return at(path).get_value<T>();
 		}
 
+		///
+		/// Get an object of type T from the path \a path. Returns \a def if such path does not
+		/// exists of conversion can't be done
+		///
 		template<typename T>
 		T get(std::string path,T const &def) const
 		{
@@ -203,37 +359,95 @@ namespace json {
 			}
 		}
 
+		///
+		/// Returns a reference to the node \a name of the value. 
+		/// For value = {"x",10} and name == "x" return a value that holds 10.
+		///
+		/// If value is not object it's type set to object.
+		/// If such node does not exits, it is created with undefined value
+		///
 		value &operator[](std::string name);
+
+		///
+		/// Returns reference to the node \a name of the value.
+		/// For value = {"x",10} and name == "x" return a value that holds 10.
+		///
+		/// If value is not object or such node does not exits, throws bad_value_cast
+		///
 		value const &operator[](std::string name) const;
+
+		///
+		/// Returns a reference to \a n 'th entry of the array. If the value is not an array it is reset to array,
+		/// of the array is too small it is resized to size of at least n+1
+		///
 		value &operator[](size_t n);
+		///
+		/// Returns a reference to \a n 'th entry of array, if the value is not array or n is too big, throws
+		/// bad_value_cast
+		///
 		value const &operator[](size_t n) const;
 
-
+		///
+		/// Convert a value to std::string, if \a how has value \a readable it is converted with indentation
+		///
 		std::string save(int how=compact) const;
+		///
+		/// Write a value to std::ostream, if \a how has value \a readable it is converted with indentation
+		///
 		void save(std::ostream &out,int how=compact) const;
+		///
+		/// Read a value from std::istream.
+		///
+		/// Note: only JSON object and JSON array are considered valid values
+		///
+		/// \param full  require EOF once the object is read, otherwise consider it as syntax error
+		/// \param line_number  return a number of the line where syntax error occurred
+		/// \result returns true if the value was read successfully, otherwise returns false to indicate a syntax error.
+		///
 		bool load(std::istream &in,bool full,int *line_number=0);
 
+		///
+		/// Compare two values objects, return true if they are same
+		///
 		bool operator==(value const &other) const;
+		///
+		/// Compare two values objects, return false if they are same
+		///
 		bool operator!=(value const &other) const;
 
-
+		///
+		/// Copy constructor
+		///
 		value(value const &other) :
 			d(other.d)
 		{
 		}
+		///
+		/// Assignment operator
+		///
 		value const &operator=(value const &other)
 		{
 			d=other.d;
 			return *this;
 		}
+		///
+		/// Default value - creates a value of undefined type
+		///
 		value()
 		{
 		}
+		
+		///
+		/// Destructor
+		///
 
 		~value()
 		{
 		}
 
+		///
+		/// Swaps two values, does not throw.
+		///
 		void swap(value &other)
 		{
 			d.swap(other.d);
@@ -269,15 +483,8 @@ namespace json {
 	};
 
 
-/*****************************************************************
-
-	template<typename T>
-	struct traits {
-		static T get(value const &v);
-		static void set(value &v,T const &in);
-	};
-
-*******************************************************************/
+	
+	/// \cond INTERNAL
 
 	template<typename T1,typename T2>
 	struct traits<std::pair<T1,T2> > {
@@ -383,8 +590,8 @@ namespace json {
 			v.str(in);
 		}					
 	};
-
-
+	
+	/// \endcond
 
 
 } // json

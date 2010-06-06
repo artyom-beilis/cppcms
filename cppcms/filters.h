@@ -29,19 +29,32 @@
 #include <cppcms/localization.h>
 
 namespace cppcms {
+	///
+	/// \brief This namespace various filters that can be used in templates for filtering data
+	///
+	///
 	namespace filters {
 
+		///
+		/// This is special object that is used to store a reference to any other object 
+		/// that can be written to std::ostream, giving as easy way to write a filter for
+		/// any object that can be written to stream
+		///
 		class CPPCMS_API streamable {
 		public:
+			/// \cond INTERNAL
 			typedef void (*to_stream_type)(std::ostream &,void const *ptr);
 			typedef std::string (*to_string_type)(std::ios &,void const *ptr);
-			
+			/// \endcond
 
 			streamable();
 			~streamable();
 			streamable(streamable const &other);
 			streamable const &operator=(streamable const &other);
 
+			///
+			/// Create a streamable object from arbitrary object that can be written to stream
+			///
 			template<typename S>
 			streamable(S const &ptr)
 			{
@@ -53,6 +66,9 @@ namespace cppcms {
 				set(p,s1,s2,info);
 			}
 
+			///
+			/// Get the reference to "streamed object", throws std::bad_cast if the type is wrong
+			///
 			template<typename T>
 			T const &get() const
 			{
@@ -62,9 +78,20 @@ namespace cppcms {
 				return *object;
 			}
 			
+			///
+			/// Create a streamable object from C string
+			///
 			streamable(char const *ptr);
 
+			///
+			/// Write the object to output stream
+			///
+
 			void operator()(std::ostream &output) const;
+
+			///
+			/// Convert the object to string using settings and locale in ios class
+			///
 			std::string get(std::ios &ios) const;
 		private:
 			void set(void const *ptr,to_stream_type f1,to_string_type f2,std::type_info const *type);

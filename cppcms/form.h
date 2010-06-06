@@ -364,6 +364,9 @@ namespace cppcms {
 
 
 
+	///
+	/// \brief This namespace includes all widgets (html-forms) supported by cppcms
+	///
 	namespace widgets {
 
 		///

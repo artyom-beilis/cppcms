@@ -21,6 +21,7 @@
 
 namespace cppcms { namespace util {
 
+	/// \cond INTERNAL
 	namespace details {
 		template<typename C,typename P>
 		struct binder0 {
@@ -54,6 +55,7 @@ namespace cppcms { namespace util {
 		};
 	}
 
+	/// \endcond
 	template<typename C,typename P>
 	details::binder0<C,P> mem_bind(void (C::*mem)(),P obj)
 	{
