@@ -1,0 +1,86 @@
+# Copyright (C) Artyom Beilis
+# This file is distributed under the same license as the mb package.
+#
+msgid ""
+msgstr ""
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2010-01-14 16:22+0200\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#: src/forums.cpp:15
+msgid "Title"
+msgstr "כותרת"
+
+#: src/forums.cpp:16 src/thread.cpp:16
+msgid "Author"
+msgstr "מחבר"
+
+#: src/forums.cpp:17 src/thread.cpp:17
+msgid "Comment"
+msgstr "הערה"
+
+#: src/forums.cpp:18
+msgid "Create"
+msgstr "צור"
+
+#: src/thread.cpp:18
+msgid "Send"
+msgstr "שלח"
+
+#: master.tmpl:5
+msgid "Wellcome to Message Board"
+msgstr "ברוכים הבאים ללוח מודעות"
+
+#: master.tmpl:11
+msgid "LTR"
+msgstr "RTL"
+
+#: master.tmpl:37
+msgid "Home"
+msgstr "בית"
+
+#: forums.tmpl:11
+msgid "No Topics"
+msgstr "אין דיונים"
+
+#: forums.tmpl:13
+msgid "Create New Disussion"
+msgstr "צור דיון "
+
+#: forums.tmpl:23
+msgid "Next Page"
+msgstr "הדף הבא"
+
+#: forums.tmpl:26
+msgid "Prev Page"
+msgstr "הדף הקודם"
+
+#: thread.tmpl:6
+msgid "reply"
+msgstr "הגב"
+
+#: thread.tmpl:18
+msgid "Disussion: {1}"
+msgstr "דיון: {1}"
+
+#: thread.tmpl:23
+msgid "Flat View"
+msgstr "מבנה סדרתי"
+
+#: thread.tmpl:24
+msgid "Tree View"
+msgstr "מבנה עץ"
+
+#: thread.tmpl:39 thread.tmpl:64
+msgid "There is no comments"
+msgstr "אין הערות"
+
+#: thread.tmpl:75
+msgid "Comment to thread: {1}"
+msgstr "הגב לדיון {1}"
+
+#: thread.tmpl:79
+msgid "Back to thread"
+msgstr "בחזרה לדיון"

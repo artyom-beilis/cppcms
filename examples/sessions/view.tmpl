@@ -1,0 +1,21 @@
+<% c++ #include "content.h" %>
+<% skin view %>
+<% view message uses content::message %>
+<% template render() %>
+<html>
+<body>
+    <h1>Hello <% who %> <% name %></h1>
+    <% if (content.age != -1.0) %>
+        <p>Your age is <% age %></p>
+        <h2>Change details</h2>
+    <% else %>
+        <h2>Input your details</h2>
+    <% end %>
+    <form method="post" action="" >
+    <% form as_p info %>
+    </form>
+  </body>
+<html>
+<% end template %>
+<% end view %>
+<% end skin %>

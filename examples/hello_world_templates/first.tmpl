@@ -1,0 +1,12 @@
+<% c++ #include "content.h" %>
+<% skin my_view %>
+<% view message uses content::message %>
+<% template render() %>
+<html>
+  <body>
+    <h1><% message %> World!</h1>
+  </body>
+<html>
+<% end template %>
+<% end view %>
+<% end skin %>

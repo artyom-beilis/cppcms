@@ -1,0 +1,16 @@
+msgid ""
+msgstr ""
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#: view.tmpl:6
+msgid "LTR"
+msgstr "RTL"
+
+#: view.tmpl:11
+msgid "We want to say"
+msgstr "אני רוצה לומר"
+
+#: hello.cpp:21
+msgid "Hello World"
+msgstr "שלום עולם"
