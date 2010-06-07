@@ -33,6 +33,7 @@ class thread_pool;
 class session_pool;
 
 namespace impl {
+	class prefork_acceptor;
 	namespace cgi {
 		class acceptor;
 	}
@@ -52,6 +53,9 @@ namespace impl {
 		std::auto_ptr<booster::aio::io_service> io_service_;
 
 		std::vector<booster::shared_ptr<cgi::acceptor> > acceptors_;
+		#ifndef CPPCMS_WIN32
+		std::auto_ptr<prefork_acceptor> prefork_acceptor_;
+		#endif
 		std::auto_ptr<json::value> settings_;
 		std::auto_ptr<applications_pool> applications_pool_;
 		std::auto_ptr<thread_pool> thread_pool_;

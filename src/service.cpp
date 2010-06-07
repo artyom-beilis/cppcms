@@ -40,6 +40,9 @@
 #include <cppcms/mount_point.h>
 #include <cppcms/forwarder.h>
 #include "cgi_acceptor.h"
+#ifndef CPPCMS_WIN32
+#include "prefork_acceptor.h"
+#endif
 #include "cgi_api.h"
 #ifdef CPPCMS_HAS_SCGI
 # include "scgi_api.h"
@@ -295,7 +298,8 @@ namespace {
 		case CTRL_BREAK_EVENT:
 		case CTRL_CLOSE_EVENT:
 		case CTRL_SHUTDOWN_EVENT:
-			the_service->shutdown();
+			if(the_service)
+				the_service->shutdown();
 			return TRUE;
 		default:
 			return FALSE;
@@ -306,7 +310,8 @@ namespace {
 
 	void handler(int nothing)
 	{
-		the_service->shutdown();
+		if(the_service)
+			the_service->shutdown();
 	}
 
 #endif
@@ -407,6 +412,11 @@ void service::run()
 		return;
 	}
 	thread_pool(); // make sure we start it
+
+	#ifndef CPPCMS_WIN32
+	if(impl_->prefork_acceptor_.get())
+		impl_->prefork_acceptor_->start();
+	#endif
 	
 	for(unsigned i=0;i<impl_->on_fork_.size();i++)
 		impl_->on_fork_[i]();
@@ -418,7 +428,15 @@ void service::run()
 
 	setup_exit_handling();
 
-	impl_->get_io_service().run();
+	try {
+		impl_->get_io_service().run();
+	}
+	catch(...) {
+		the_service = 0;
+		throw;
+	}
+	the_service = 0;
+
 }
 
 int service::procs_no()
@@ -428,10 +446,7 @@ int service::procs_no()
 		procs = 0;
 	#ifdef CPPCMS_WIN32
 	if(procs > 0)
-		throw cppcms_error("Prefork is not supported under Windows");
-	#else 
-	if(procs > 1)
-		throw cppcms_error("Prefork support is removed from CppCMS 1.x.x. It may be back in future releases");
+		throw cppcms_error("Prefork is not supported under Windows and Cygwin");
 	#endif
 	return procs;
 }
@@ -561,7 +576,7 @@ int service::process_id()
 	return impl_->id_;
 }
 
-void service::setup_acceptor(json::value const &v,int backlog)
+std::auto_ptr<cppcms::impl::cgi::acceptor> service::setup_acceptor(json::value const &v,int backlog,int port_shift)
 {
 	using namespace cppcms::impl::cgi;
 
@@ -575,7 +590,7 @@ void service::setup_acceptor(json::value const &v,int backlog)
 
 	if(socket.empty()) {
 		ip=v.get("ip","127.0.0.1");
-		port=v.get("port",8080);
+		port=v.get("port",8080) + port_shift;
 		tcp=true;
 	}
 	else {
@@ -634,13 +649,18 @@ void service::setup_acceptor(json::value const &v,int backlog)
 	if(!a.get())
 		throw cppcms_error("Unknown api: " + api);
 
-	impl_->acceptors_.push_back(booster::shared_ptr<acceptor>(a));
+	return a;
 }
 
-void service::start_acceptor()
+void service::start_acceptor(bool after_fork)
 {
 	using namespace impl::cgi;
 	int backlog=settings().get("service.backlog",threads_no() * std::max(procs_no(),1) * 2);
+	bool preforking = procs_no() > 1 && !after_fork;
+	#ifndef CPPCMS_WIN32
+	if(preforking)
+		impl_->prefork_acceptor_.reset(new impl::prefork_acceptor(this));
+	#endif
 
 	if(	settings().find("service.list").type()!=json::is_undefined 
 		&& settings().find("service.api").type()!=json::is_undefined) 
@@ -649,14 +669,33 @@ void service::start_acceptor()
 	}
 
 	if(settings().find("service.api").type()!=json::is_undefined) {
-		setup_acceptor(settings()["service"],backlog);
+		booster::shared_ptr<acceptor> ac(setup_acceptor(settings()["service"],backlog));
+		#ifndef CPPCMS_WIN32
+		if(preforking) {
+			impl_->prefork_acceptor_->add_acceptor(ac);
+		}
+		else 
+		#endif
+		{
+			impl_->acceptors_.push_back(ac);
+		}
 	}
 	if(settings().find("service.list").type()!=json::is_undefined) {
-		json::array list=settings()["service"].array();
+		json::array list=settings()["service.list"].array();
 		if(list.empty())
 			throw cppcms_error("At least one service should be provided in service.list");
-		for(unsigned i=0;i<list.size();i++)
-			setup_acceptor(list[i],backlog);
+		for(unsigned i=0;i<list.size();i++) {
+			booster::shared_ptr<acceptor> ac(setup_acceptor(list[i],backlog));
+			#ifndef CPPCMS_WIN32
+			if(preforking) {
+				impl_->prefork_acceptor_->add_acceptor(ac);
+			}
+			else 
+			#endif
+			{
+				impl_->acceptors_.push_back(ac);
+			}
+		}
 	}
 }
 

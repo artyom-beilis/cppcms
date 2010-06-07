@@ -85,6 +85,29 @@ namespace impl {
 				}
 			};
 
+			#ifndef CPPCMS_WIN32
+			virtual booster::shared_ptr< ::cppcms::http::context> accept(int fd)
+			{
+				booster::shared_ptr<ServerAPI> api;
+				try {
+					api.reset(new ServerAPI(srv_));
+					api->socket_.assign(fd);
+					fd=-1;
+				}
+				catch(...) {
+					::close(fd);
+					throw;
+				}
+				if(tcp_)
+					api->socket_.set_option(io::socket::tcp_no_delay,true);
+				booster::shared_ptr< ::cppcms::http::context> cnt(new ::cppcms::http::context(api));
+				return cnt;
+			}
+			#endif
+			virtual booster::aio::socket &socket() 
+			{
+				return acceptor_;
+			}
 			virtual void async_accept()
 			{
 				if(stopped_)

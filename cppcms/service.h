@@ -24,7 +24,7 @@
 #include <booster/hold_ptr.h>
 #include <booster/function.h>
 #include <locale>
-
+#include <memory>
 #include <cppcms/locale_fwd.h>
 
 namespace booster {
@@ -37,6 +37,9 @@ namespace booster {
 namespace cppcms {
 	namespace impl {
 		class service;
+		namespace cgi {
+			class acceptor;
+		}
 	}
 
 	class applications_pool;
@@ -87,10 +90,10 @@ namespace cppcms {
 	private:
 		void setup();
 		void setup_logging();
-		void setup_acceptor(json::value const &,int);
+		std::auto_ptr<cppcms::impl::cgi::acceptor> setup_acceptor(json::value const &,int,int shift=0);
 		void load_settings(int argc,char *argv[]);
 		void stop();
-		void start_acceptor();
+		void start_acceptor(bool after_fork=false);
 		void setup_exit_handling();
 		bool prefork();
 		booster::hold_ptr<impl::service> impl_;

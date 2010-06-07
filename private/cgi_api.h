@@ -28,7 +28,12 @@
 #include <cppcms/config.h>
 
 #include <booster/system_error.h>
-namespace booster { namespace aio { class io_service; }}
+namespace booster {
+	namespace aio { 
+		class io_service;
+		class socket;
+	}
+}
 
 
 namespace cppcms {
@@ -50,9 +55,14 @@ namespace cgi {
 	typedef booster::function<void()> callback;
 	typedef booster::function<void(bool)> ehandler;
 
+	class connection;
 	class acceptor : public booster::noncopyable {
 	public:
 		virtual void async_accept() = 0;
+		virtual booster::aio::socket &socket() = 0;
+		#ifndef CPPCMS_WIN32
+		virtual booster::shared_ptr<cppcms::http::context> accept(int fd) = 0;
+		#endif
 		virtual void stop() = 0;
 		virtual ~acceptor(){}
 	};
