@@ -261,7 +261,7 @@ namespace json {
 		/// a reference to value that hold a number 10, find("x") returns a reference to a value
 		/// that holds an object { "y" : 10 } and find("foo") would return value of undefined type.
 		///
-		value const &find(std::string path) const; 		
+		value const &find(std::string const &path) const; 		
 
 		///
 		/// Searches a value in the path \a path, if not found throw bad_value_cast.
@@ -270,7 +270,7 @@ namespace json {
 		/// a reference to value that hold a number 10, find("x") returns a reference to a value
 		/// that holds an object { "y" : 10 } and find("foo") throws
 		///
-		value const &at(std::string path) const;  
+		value const &at(std::string const &path) const;  
 		///
 		/// Searches a value in the path \a path, if not found throw bad_value_cast.
 		///
@@ -278,12 +278,12 @@ namespace json {
 		/// a reference to value that hold a number 10, find("x") returns a reference to a value
 		/// that holds an object { "y" : 10 } and find("foo") throws
 		///
-		value &at(std::string path);
+		value &at(std::string const &path);
 
 		///
 		/// Sets the value \a v at the path \a path, if the path invalid, creates it.
 		///
-		void at(std::string path,value const &v);
+		void at(std::string const &path,value const &v);
 
 		
 		///
@@ -300,7 +300,7 @@ namespace json {
 		///
 		/// Same as find(path).type()
 		///
-		json_type type(std::string path) const
+		json_type type(std::string const &path) const
 		{
 			return find(path).type();
 		}
@@ -309,7 +309,7 @@ namespace json {
 		/// Convert an object \a v of type T to a value at specific path, same as at(path,value(v))
 		///
 		template<typename T>
-		void set(std::string path,T const &v)
+		void set(std::string const &path,T const &v)
 		{
 			at(path,value(v));
 		}
@@ -318,7 +318,7 @@ namespace json {
 		/// Get a string value from a path \a path. If the path is not invalid or the object
 		/// is not of type string at this path, returns \a def instead
 		///
-		std::string get(std::string path,char const *def) const
+		std::string get(std::string const &path,char const *def) const
 		{
 			value const &v=find(path);
 			if(v.is_undefined())
@@ -336,7 +336,7 @@ namespace json {
 		/// exists of conversion can't be done
 		///
 		template<typename T>
-		T get(std::string path) const
+		T get(std::string const &path) const
 		{
 			return at(path).get_value<T>();
 		}
@@ -346,7 +346,7 @@ namespace json {
 		/// exists of conversion can't be done
 		///
 		template<typename T>
-		T get(std::string path,T const &def) const
+		T get(std::string const &path,T const &def) const
 		{
 			value const &v=find(path);
 			if(v.is_undefined())
@@ -366,7 +366,7 @@ namespace json {
 		/// If value is not object it's type set to object.
 		/// If such node does not exits, it is created with undefined value
 		///
-		value &operator[](std::string name);
+		value &operator[](std::string const &name);
 
 		///
 		/// Returns reference to the node \a name of the value.
@@ -374,7 +374,7 @@ namespace json {
 		///
 		/// If value is not object or such node does not exits, throws bad_value_cast
 		///
-		value const &operator[](std::string name) const;
+		value const &operator[](std::string const &name) const;
 
 		///
 		/// Returns a reference to \a n 'th entry of the array. If the value is not an array it is reset to array,

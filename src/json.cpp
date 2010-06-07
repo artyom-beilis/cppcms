@@ -400,7 +400,7 @@ namespace json {
 
 
 	// returns empty if not found
-	value const &value::find(std::string path) const
+	value const &value::find(std::string const &path) const
 	{
 		static value const empty;
 		value const *ptr=this;
@@ -408,7 +408,7 @@ namespace json {
 		size_t new_pos;
 		do {
 			new_pos=path.find('.',pos);
-			std::string part=path.substr(pos,new_pos - pos);
+			std::string const part=path.substr(pos,new_pos - pos);
 			if(new_pos!=std::string::npos)
 				new_pos++;
 			if(part.empty())
@@ -427,14 +427,14 @@ namespace json {
 	}
 	
 	// throws if not found
-	value const &value::at(std::string path) const
+	value const &value::at(std::string const &path) const
 	{
 		value const &v=find(path);
 		if(v.is_undefined())
 			throw bad_value_cast("Value not found at "+path );
 		return v;
 	}
-	value &value::at(std::string path)
+	value &value::at(std::string const &path)
 	{
 		value *ptr=this;
 		size_t pos=0;
@@ -458,7 +458,7 @@ namespace json {
 		} while(new_pos < path.size());
 		return *ptr;
 	}
-	void value::at(std::string path,value const &v)
+	void value::at(std::string const &path,value const &v)
 	{
 		value *ptr=this;
 		size_t pos=0;
@@ -488,7 +488,7 @@ namespace json {
 		*ptr=v;
 	}
 
-	value &value::operator[](std::string name)
+	value &value::operator[](std::string const &name)
 	{
 		if(type()!=json::is_object)
 			set_value(json::object());
@@ -501,7 +501,7 @@ namespace json {
 		return p->second;
 	}
 
-	value const &value::operator[](std::string name) const
+	value const &value::operator[](std::string const &name) const
 	{
 		if(type()!=json::is_object)
 			throw bad_value_cast("",type(),json::is_object);
