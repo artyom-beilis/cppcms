@@ -87,6 +87,7 @@
 #include <booster/aio/io_service.h>
 #include <booster/aio/socket.h>
 #include <booster/aio/buffer.h>
+#include <booster/aio/reactor.h>
 
 namespace cppcms {
 
@@ -189,10 +190,33 @@ void service::load_settings(int argc,char *argv[])
 
 }
 
+namespace {
+	int reactor_type(std::string const &name)
+	{
+		using booster::aio::reactor;
+		if(name=="select")
+			return reactor::use_select;
+		if(name=="poll")
+			return reactor::use_poll;
+		if(name=="epoll")
+			return reactor::use_epoll;
+		if(name=="devpoll")
+			return reactor::use_dev_poll;
+		if(name=="kqueue")
+			return reactor::use_kqueue;
+		return reactor::use_default;
+	}
+}
+
 void service::setup()
 {
 	setup_logging();
 	impl_->id_=0;
+	int reactor=reactor_type(settings().get("service.reactor","default"));
+	impl_->io_service_.reset(new io::io_service(reactor));
+	impl_->sig_.reset(new io::socket(*impl_->io_service_));
+	impl_->breaker_.reset(new io::socket(*impl_->io_service_));
+
 	int apps=settings().get("service.applications_pool_size",threads_no()*2);
 	impl_->applications_pool_.reset(new cppcms::applications_pool(*this,apps));
 	impl_->views_pool_.reset(new cppcms::views_pool(settings()));
@@ -795,10 +819,7 @@ booster::aio::io_service &service::get_io_service()
 }
 
 namespace impl {
-	service::service() :
-		io_service_(new io::io_service()),
-		sig_(new io::socket(*io_service_)),
-		breaker_(new io::socket(*io_service_))
+	service::service() 
 	{
 	}
 	service::~service()
