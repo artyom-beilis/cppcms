@@ -48,6 +48,15 @@ namespace cppcms {
 		/// Decode text in range [begin,end) from URL-encoding (percent-encoding)
 		///
 		std::string CPPCMS_API urldecode(char const *begin,char const *end);
+		///
+		/// Make MD5 hash of string
+		///
+		std::string CPPCMS_API md5(std::string const &input);
+		///
+		/// Make MD5 hash of string as hexadecimal string
+		///
+		std::string CPPCMS_API md5hex(std::string const &input);
+
 	}
 }
 

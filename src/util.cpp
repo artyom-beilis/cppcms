@@ -20,6 +20,7 @@
 #include <cppcms/util.h>
 #include "http_protocol.h"
 #include <stdio.h>
+#include "md5.h"
 
 namespace cppcms {
 namespace util {
@@ -112,5 +113,35 @@ std::string urldecode(char const *begin,char const *end)
 	}
 	return result;
 }
+
+std::string md5(std::string const &in)
+{
+	using namespace cppcms::impl;
+	unsigned char data[16];
+	md5_state_t state;
+	md5_init(&state);
+	md5_append(&state,reinterpret_cast<unsigned const char *>(in.c_str()),in.size());
+	md5_finish(&state,data);
+	return std::string(reinterpret_cast<char *>(data),16);
+}
+
+std::string md5hex(std::string const &in)
+{
+	using namespace cppcms::impl;
+	unsigned char data[16];
+	md5_state_t state;
+	md5_init(&state);
+	md5_append(&state,reinterpret_cast<unsigned const char *>(in.c_str()),in.size());
+	md5_finish(&state,data);
+	char buf[33]={0};
+	for(int i=0;i<16;i++) {
+		unsigned val=data[i];
+		sprintf(buf+i*2,"%02x",val);
+	}
+	return std::string(buf,32);
+}
+
+
+
 } // util
 } // util
