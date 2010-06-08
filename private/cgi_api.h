@@ -25,9 +25,11 @@
 #include <vector>
 #include <map>
 #include <booster/function.h>
+#include <booster/system_error.h>
+
+#include <cppcms/defs.h>
 #include <cppcms/config.h>
 
-#include <booster/system_error.h>
 namespace booster {
 	namespace aio { 
 		class io_service;
