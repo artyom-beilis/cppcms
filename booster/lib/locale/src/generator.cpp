@@ -225,6 +225,36 @@ namespace booster {
             else
                 return p->second;
         }
-    }
-}
+
+        namespace details {
+            struct initializer_class {
+                template<typename CharType>
+                static void preload()
+                {
+                    std::locale l;
+                    std::has_facet<info>(l);
+                    std::has_facet<num_format<CharType> >(l);
+                    std::has_facet<num_parse<CharType> >(l);
+                    std::has_facet<collator<CharType> >(l);
+                    std::has_facet<std::codecvt<CharType,char,mbstate_t> >(l);
+                    std::has_facet<message_format<CharType> >(l);
+                }
+                initializer_class()
+                {
+                    preload<char>();
+                    #ifndef BOOSTER_NO_STD_WSTRING
+                    preload<wchar_t>();
+                    #endif
+                    #ifdef BOOSTER_HAS_CHAR16_T
+                    preload<char16_t>();
+                    #endif
+                    #ifdef BOOSTER_HAS_CHAR32_T
+                    preload<char32_t>();
+                    #endif
+                }
+            } the_initializer;
+        } // details
+
+    } // locale
+} // boost
 // vim: tabstop=4 expandtab shiftwidth=4 softtabstop=4 
