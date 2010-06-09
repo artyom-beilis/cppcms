@@ -73,6 +73,7 @@ public:
 		cppcms::json::value settings;
 		settings["service"]["api"]="http";
 		settings["service"]["port"]=8080;
+		settings["service"]["disable_global_exit_handling"]=true;
 		settings["http"]["script_names"][0]="/test";
 		if(internal) {
 			settings["forwarding"]["rules"][0]["ip"]="127.0.0.1";
@@ -122,7 +123,8 @@ private:
 };
 
 
-int main(int argc,char **argv) {
+int main(int argc,char **argv) 
+{
 	try {
 		cppcms::service srv(argc,argv);
 		srv.applications_pool().mount( cppcms::applications_factory<unit_test>());
