@@ -15,7 +15,8 @@
 		"ip" : "0.0.0.0",
 	//	"ip" : "127.0.0.1",
 	//	 "socket" : "/tmp/scgi.socket",
-		"reactor" : "default" , // "select", "poll", "epoll", "devpoll", "kqueue"
+	//	"disable_global_exit_handling" , false
+	//	"reactor" : "default" , // "select", "poll", "epoll", "devpoll", "kqueue"
 		"nodes" : [
 			{
 				"id" : 1,
