@@ -107,6 +107,7 @@ endif(NOT CMAKE_BUILD_TYPE)
 if("${CMAKE_BUILD_TYPE}" STREQUAL "Debug")
 	if(MSVC)
 		set(ICU_SUFFIX "d")
+		set(ZLIB_SUFFIX "d")
 		if(NOT CPPCMS_SUFFIX)
 			set(CPPCMS_SUFFIX "-d")
 		else()
@@ -229,7 +230,7 @@ check_cxx_source_compiles(
 	int main(){std::list<int> l; __typeof__(l.begin()) p=l.begin();}"
 	CPPCMS_HAVE_UNDERSCORE_TYPEOF)
 
-find_library(ZLIB z NAMES zdll zlib)
+find_library(ZLIB z NAMES zdll zlib${ZLIB_SUFFIX} zlib)
 find_path(ZLIB_INCLUDE_DIR zlib.h)
 include_directories(${ZLIB_INCLUDE_DIR})
 

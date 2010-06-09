@@ -93,6 +93,7 @@ endif(NOT CMAKE_BUILD_TYPE)
 if("${CMAKE_BUILD_TYPE}" STREQUAL "Debug")
 	if(MSVC)
 		set(ICU_SUFFIX "d")
+		set(PCRE_SUFFIX "d")
 		if(NOT BOOSTER_SUFFIX)
 			set(BOOSTER_SUFFIX "-d")
 		else()
@@ -279,7 +280,7 @@ if(NOT PCRE_INCLUDE)
 	include_directories(${PCRE_INCLUDE2}/pcre)
 endif()
 
-find_library(PCRE_LIB pcre)
+find_library(PCRE_LIB NAMES pcre${PCRE_SUFFIX} pcre)
 
 
 include_directories(${CMAKE_BINARY_DIR})
