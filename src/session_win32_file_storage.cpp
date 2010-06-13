@@ -17,9 +17,14 @@
 //
 ///////////////////////////////////////////////////////////////////////////////
 #define CPPCMS_SOURCE
+#define NOMINMAX
 #include "session_win32_file_storage.h"
 #include <cppcms/cppcms_error.h>
 #include <cppcms/config.h>
+
+#include <booster/nowide/convert.h>
+#include <booster/nowide/cstdio.h>
+
 
 #ifdef CPPCMS_USE_EXTERNAL_BOOST
 #   include <boost/crc.hpp>
@@ -31,10 +36,11 @@
 #include <memory>
 #include <time.h>
 
-#include <windows.h>
 
 #include <sstream>
 #include <cppcms/cstdint.h>
+
+#include <windows.h>
 
 namespace cppcms {
 namespace sessions {
@@ -79,7 +85,7 @@ public:
 		int sleep_time=0;
 		
 		for(;;) {
-			h_=::CreateFile(name_.c_str(),
+			h_=::CreateFileW(booster::nowide::convert(name_).c_str(),
 					GENERIC_READ | GENERIC_WRITE,
 					FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE,
 					NULL,
@@ -218,30 +224,32 @@ bool session_file_storage::read_all(HANDLE h,void *vbuf,int n)
 
 void session_file_storage::gc()
 {
-	std::auto_ptr<WIN32_FIND_DATA> entry(new WIN32_FIND_DATA);
+	std::auto_ptr<_WIN32_FIND_DATAW> entry(new _WIN32_FIND_DATAW);
 	HANDLE d=INVALID_HANDLE_VALUE;
 	std::string search_path = path_ + "/*";
 	try{
-		if((d=::FindFirstFile(search_path.c_str(),entry.get()))==INVALID_HANDLE_VALUE) {
+		if((d=::FindFirstFileW(booster::nowide::convert(search_path).c_str(),entry.get()))==INVALID_HANDLE_VALUE) {
 			if(GetLastError() == ERROR_FILE_NOT_FOUND)
 				return;
 			throw cppcms_error("Failed to open directory :"+path_);
 		}
 		do {
+			if(entry->cFileName[32]!=0)
+				continue;
 			int i;
+			std::string filename=booster::nowide::convert(entry->cFileName);
 			for(i=0;i<32;i++) {
-				if(!isxdigit(entry->cFileName[i]))
+				if(!isxdigit(filename[i]))
 					break;
 			}
-			if(i!=32 || entry->cFileName[i]!=0) 
+			if(i!=32) 
 				continue;
-			std::string sid=entry->cFileName;
 			{
-				locked_file file(this,sid);
+				locked_file file(this,filename);
 				if(!read_timestamp(file.handle()))
-					::DeleteFile(file.name().c_str());
+					::DeleteFileW(booster::nowide::convert(file.name()).c_str());
 			}
-		} while(::FindNextFile(d,entry.get()));
+		} while(::FindNextFileW(d,entry.get()));
 		::FindClose(d);
 	}
 	catch(...) {

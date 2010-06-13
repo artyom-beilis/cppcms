@@ -72,7 +72,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <iostream>
-#include <fstream>
+#include <booster/nowide/fstream.h>
 #include <cppcms/config.h>
 #ifdef CPPCMS_USE_EXTERNAL_BOOST
 #   include <boost/bind.hpp>
@@ -135,7 +135,7 @@ void service::load_settings(int argc,char *argv[])
 
 
 	if(!file_name.empty()) {
-		std::ifstream fin(file_name.c_str());
+		booster::nowide::ifstream fin(file_name.c_str());
 		if(!fin)
 			throw cppcms_error("Failed to open filename:"+file_name);
 		int line_no=0;

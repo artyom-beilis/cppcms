@@ -23,7 +23,7 @@
 #include <cppcms/http_response.h>
 
 #include <sstream>
-#include <fstream>
+#include <booster/nowide/fstream.h>
 #include <streambuf>
 
 namespace cppcms {
@@ -143,7 +143,7 @@ namespace rpc {
 	}
 	void json_rpc_server::smd_from_file(std::string const &file)
 	{
-		std::ifstream smd(file.c_str());
+		booster::nowide::ifstream smd(file.c_str());
 		if(!smd)
 			throw cppcms_error("Failed to open:" + file);
 		smd_.reserve(1024);

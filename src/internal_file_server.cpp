@@ -32,7 +32,7 @@
 #include <cppcms/json.h>
 #include <cppcms/util.h>
 #include <sstream>
-#include <fstream>
+#include <booster/nowide/fstream.h>
 #include <string.h>
 
 #include <sys/types.h>
@@ -115,7 +115,7 @@ file_server::file_server(cppcms::service &srv) : application(srv)
 
 void file_server::load_mime_types(std::string file_name)
 {
-	std::ifstream inp(file_name.c_str());
+	booster::nowide::ifstream inp(file_name.c_str());
 	if(!inp) {
 		return;
 	}
@@ -253,7 +253,7 @@ void file_server::main(std::string file_name)
 		response().io_mode(http::response::nogzip);
 	}
 
-	std::ifstream file(path.c_str(),std::ifstream::binary | std::ifstream::in);
+	booster::nowide::ifstream file(path.c_str(),std::ios_base::binary);
 	if(!file) {
 		show404();
 		return;
