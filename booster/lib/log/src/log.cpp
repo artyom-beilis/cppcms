@@ -13,7 +13,8 @@
 #include <booster/weak_ptr.h>
 #include <iostream>
 #include <sstream>
-#include <fstream>
+#include <booster/nowide/fstream.h>
+#include <booster/nowide/cstdio.h>
 #include <locale>
 #include <set>
 #include <string.h>
@@ -270,16 +271,16 @@ namespace log {
 			std::cerr << format_plain_text_message(msg) << std::endl;
 		}
 
-		struct file::data {};
+		struct file::data { booster::nowide::fstream stream; };
 		file::file() :
-			file_(new std::fstream()),
 			max_files_(0),
 			max_size_(0),
 			current_size_(0),
 			opened_(false),
-			append_(false)
+			append_(false),
+			d(new file::data())
 		{
-			file_->imbue(std::locale::classic());
+			d->stream.imbue(std::locale::classic());
 		}
 		file::~file()
 		{
@@ -300,11 +301,11 @@ namespace log {
 				shift(file_name);
 			
 			if(append_)
-				file_->open(file_name.c_str(),std::fstream::out | std::fstream::app);
+				d->stream.open(file_name.c_str(),std::fstream::out | std::fstream::app);
 			else
-				file_->open(file_name.c_str(),std::fstream::out);
+				d->stream.open(file_name.c_str(),std::fstream::out);
 
-			if(!*file_)
+			if(!d->stream)
 				throw std::runtime_error("Failed to open file " + file_name);
 		}
 		std::string file::format_file(std::string const &base,int n)
@@ -320,20 +321,16 @@ namespace log {
 		}
 		void file::shift(std::string const &base)
 		{
-			#ifdef BOOSTER_POSIX
-			::unlink(format_file(base,max_files_).c_str());
-			#else
-			::DeleteFile(format_file(base,max_files_).c_str());
-			#endif
+			booster::nowide::remove(format_file(base,max_files_).c_str());
 			for(unsigned file = max_files_-1;file > 0 ; file --) {
-				rename(format_file(base,file).c_str(),format_file(base,file+1).c_str());
+				booster::nowide::rename(format_file(base,file).c_str(),format_file(base,file+1).c_str());
 			}
 			
-			rename(base.c_str(),format_file(base,1).c_str());
+			booster::nowide::rename(base.c_str(),format_file(base,1).c_str());
 		}
 		void file::log(message const &msg)
 		{
-			*file_ << format_plain_text_message(msg) << std::endl;
+			d->stream << format_plain_text_message(msg) << std::endl;
 		}
 		#ifdef BOOSTER_POSIX
 		struct syslog::data {};

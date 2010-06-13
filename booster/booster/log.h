@@ -138,7 +138,6 @@ namespace log {
 			void shift(std::string const &base);
 			std::string format_file(std::string const &,int);
 
-			hold_ptr<std::fstream> file_;
 			unsigned max_files_;
 			size_t max_size_;
 			size_t current_size_;

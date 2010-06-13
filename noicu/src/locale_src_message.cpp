@@ -23,11 +23,12 @@
 
 #include <booster/shared_ptr.h>
 
+#include <booster/nowide/fstream.h>
+
 
 #include "locale_src_mo_hash.hpp"
 #include "locale_src_mo_lambda.hpp"
 
-#include <fstream>
 #include <iostream>
 #include <stdexcept>
 #include <string.h>
@@ -110,7 +111,7 @@ namespace cppcms {
             private:
                 void load_file_direct(std::string file_name)
                 {
-                    std::ifstream file(file_name.c_str(),std::ios::binary);
+                    booster::nowide::ifstream file(file_name.c_str(),std::ios::binary);
                     if(!file)
                         throw std::runtime_error("No such file");
                     //
