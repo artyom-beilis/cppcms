@@ -189,7 +189,7 @@ namespace nowide {
 		}
 		void open(char const *file_name,std::ios_base::openmode mode = std::ios_base::in)
 		{
-			if(!buf_->open(file_name,mode)) {
+			if(!buf_->open(file_name,mode | std::ios_base::in)) {
 				this->setstate(std::ios_base::failbit);
 			}
 			else {
@@ -246,7 +246,7 @@ namespace nowide {
 		}
 		void open(char const *file_name,std::ios_base::openmode mode = std::ios_base::out)
 		{
-			if(!buf_->open(file_name,mode)) {
+			if(!buf_->open(file_name,mode | std::ios_base::out)) {
 				this->setstate(std::ios_base::failbit);
 			}
 			else {
