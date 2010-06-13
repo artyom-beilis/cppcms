@@ -21,7 +21,7 @@
 #include "mo_hash.h"
 #include "mo_lambda.h"
 
-#include <fstream>
+#include <booster/nowide/fstream.h>
 #include <iostream>
 
 #include <string.h>
@@ -104,7 +104,7 @@ namespace booster {
             private:
                 void load_file_direct(std::string file_name)
                 {
-                    std::ifstream file(file_name.c_str(),std::ios::binary);
+                    booster::nowide::ifstream file(file_name.c_str(),std::ios::binary);
                     if(!file)
                         throw std::runtime_error("No such file");
                     //
