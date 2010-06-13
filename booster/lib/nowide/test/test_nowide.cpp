@@ -1,6 +1,7 @@
 #include <booster/nowide/convert.h>
-#include <booster/nowide/cstdio.h>
 #include <booster/nowide/fstream.h>
+#include <booster/nowide/cstdio.h>
+#include <iostream>
 
 #include <iostream>
 #include "test.h"
@@ -20,6 +21,8 @@ int main()
 		#endif
 		std::cout << "Testing cstdio" << std::endl;
 		{
+			nw::remove("שלום.txt");
+			nw::remove("עולם.txt");
 			FILE *f=nw::fopen("שלום.txt","w");
 			TEST(f);
 			fprintf(f,"test");
