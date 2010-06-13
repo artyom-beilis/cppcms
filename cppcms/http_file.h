@@ -22,6 +22,7 @@
 #include <cppcms/defs.h>
 #include <cppcms/cstdint.h>
 #include <booster/hold_ptr.h>
+#include <booster/nowide/fstream.h>
 #include <booster/noncopyable.h>
 #include <sstream>
 #include <fstream>
@@ -40,20 +41,33 @@ namespace cppcms { namespace http {
 		void filename(std::string const &);
 		std::istream &data();
 		std::ostream &write_data();
-		size_t size();
+
+		void save_to(std::string const &filename);
+		void set_memory_limit(size_t size);
+		void set_temporary_directory(std::string const &dir);
+
+		long long size();
 		file();
 		~file();
 	private:
 		std::string name_;
 		std::string mime_;
 		std::string filename_;
-		size_t size_;
+		size_t size_limit_;
 
-		std::fstream file_;
+		booster::nowide::fstream file_;
 		std::stringstream file_data_;
+		std::string tmp_file_name_;
+		std::string temporary_dir_;
+
+		void move_to_file();
+		void save_by_copy(std::string const &file_name,std::istream &in);
+		void copy_stream(std::istream &in,std::ostream &out);
+
 		
 		uint32_t saved_in_file_ : 1;
-		uint32_t reserverd_ : 31;
+		uint32_t removed_ : 1 ;
+		uint32_t reserverd_ : 30;
 
 		struct impl_data; // for future use
 		booster::hold_ptr<impl_data> d;
