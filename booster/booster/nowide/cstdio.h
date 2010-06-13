@@ -1,5 +1,5 @@
-#ifndef CPPCMS_NOWIDE_H
-#define CPPCMS_NOWIDE_H
+#ifndef CPPCMS_NOWIDE_CSTDIO_H
+#define CPPCMS_NOWIDE_CSTDIO_H
 
 #include <cstdio>
 #include <stdio.h>
