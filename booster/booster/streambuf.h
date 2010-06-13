@@ -3,6 +3,7 @@
 
 #include <booster/config.h>
 #include <streambuf>
+#include <stdio.h>
 #include <booster/hold_ptr.h>
 #include <memory>
 #include <vector>

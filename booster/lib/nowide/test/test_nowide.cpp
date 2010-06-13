@@ -13,9 +13,9 @@ int main()
 {
 	try {
 		namespace nw=booster::nowide;
+		wchar_t shalom[5] = { 0x05e9,0x05dc,0x05d5,0x05dd, 0};
 		#ifdef BOOSTER_WIN_NATIVE
 		std::cout << "Testing converting" << std::endl;
-		wchar_t shalom[5] = { 0x05e9,0x05dc,0x05d5,0x05dd, 0};
 		TEST(nw::convert(shalom)=="שלום");
 		TEST(nw::convert("שלום")==shalom);
 		#endif
@@ -45,24 +45,61 @@ int main()
 			TEST(fo);
 			fo<<"test"<<std::endl;
 			fo.close();
-			nw::ifstream fi;
-			fi.open("שלום.txt");
-			TEST(fi);
-			std::string tmp;
-			fi  >> tmp;
-			TEST(tmp=="test");
-			fi.close();
-			nw::remove("שלום.txt");
-			fi.open("שלום.txt");
-			TEST(!fi);
-			nw::fstream f("שלום.txt",nw::fstream::in | nw::fstream::out | nw::fstream::trunc);
-			TEST(f);
-			f << "test2" ;
-			tmp.clear();
-			f.seekg(0);
-			f>> tmp;
-			TEST(tmp=="test2");
-			f.close();
+			#ifdef BOOSTER_WIN_NATIVE
+			{
+				FILE *tmp=_wfopen((std::wstring(shalom)+L".txt").c_str(),L"r");
+				TEST(tmp);
+				TEST(fgetc(tmp)=='t');
+				TEST(fgetc(tmp)=='e');
+				TEST(fgetc(tmp)=='s');
+				TEST(fgetc(tmp)=='t');
+				TEST(fgetc(tmp)=='\n');
+				TEST(fgetc(tmp)==EOF);
+				fclose(tmp);
+			}
+			#endif
+			{
+				nw::ifstream fi;
+				fi.open("שלום.txt");
+				TEST(fi);
+				std::string tmp;
+				fi  >> tmp;
+				TEST(tmp=="test");
+				fi.close();
+			}
+			{
+				nw::ifstream fi("שלום.txt");
+				TEST(fi);
+				std::string tmp;
+				fi  >> tmp;
+				TEST(tmp=="test");
+				fi.close();
+			}
+			{
+				nw::ifstream fi("שלום.txt",std::ios::binary);
+				TEST(fi);
+				std::string tmp;
+				fi  >> tmp;
+				TEST(tmp=="test");
+				fi.close();
+			}
+
+			{
+				nw::ifstream fi;
+				nw::remove("שלום.txt");
+				fi.open("שלום.txt");
+				TEST(!fi);
+			}
+			{
+				nw::fstream f("שלום.txt",nw::fstream::in | nw::fstream::out | nw::fstream::trunc | nw::fstream::binary);
+				TEST(f);
+				f << "test2" ;
+				std::string tmp;
+				f.seekg(0);
+				f>> tmp;
+				TEST(tmp=="test2");
+				f.close();
+			}
 			nw::remove("שלום.txt");
 		}
 			

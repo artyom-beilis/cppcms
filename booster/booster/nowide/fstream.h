@@ -148,19 +148,19 @@ namespace nowide {
 			if(mode==(std::ios_base::out | std::ios_base::app | std::ios_base::in))
 				return "a+";
 			if(mode==(std::ios_base::binary | std::ios_base::in))
-				return "br";
+				return "rb";
 			if(mode==(std::ios_base::binary | std::ios_base::out))
-				return "bw";
+				return "wb";
 			if(mode==(std::ios_base::binary | std::ios_base::out | std::ios_base::trunc))
-				return "bw";
+				return "wb";
 			if(mode==(std::ios_base::binary | std::ios_base::out | std::ios_base::app))
-				return "ba";
+				return "ab";
 			if(mode==(std::ios_base::binary | std::ios_base::out | std::ios_base::in))
-				return "br+";
+				return "r+b";
 			if(mode==(std::ios_base::binary | std::ios_base::out | std::ios_base::trunc | std::ios_base::in))
-				return "bw+";
+				return "w+b";
 			if(mode==(std::ios_base::binary | std::ios_base::out | std::ios_base::app | std::ios_base::in))
-				return "ba+";
+				return "a+b";
 			return "";	
 		}
 
