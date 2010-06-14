@@ -50,47 +50,104 @@ namespace cppcms {
 		class base_widget;
 	}
 
+	///
+	/// \brief this struct holds various flags for HTML generation control
+	///
 	struct form_flags {
+		///
+		/// This enum represents HTML/XHTML switch
+		///
 		typedef enum {
 			as_html = 0,	///< render form/widget as ordinary HTML
 			as_xhtml= 1,	///< render form/widget as XHTML
 		} html_type;
 
+		///
+		/// This enum represents the style of widgets generation
+		///
 		typedef enum {
 			as_p	= 0 , ///< Render each widget using paragraphs
 			as_table= 1 , ///< Render each widget using table
 			as_ul 	= 2 , ///< Render each widget using unordered list
 			as_dl	= 3 , ///< Render each widget using definitions list
 			as_space= 4   ///< Render each widget using simple blank space separators
-
-			// to be extended
 		} html_list_type;
 
+		///
+		/// This is special flag for partial generation of widget's HTML
+		///
 		typedef enum {
 			first_part  = 0, ///< Render part 1; HTML attributes can be inserted after it
 			second_part = 1  ///< Render part 2 -- compete part 1.
 		} widget_part_type;
 	};
 
+	///
+	/// \brief This class represent the context required for generation of HTML for the widgets
+	///
 	class CPPCMS_API form_context : public form_flags
 	{
 	public:
+		///
+		/// Default constructor
+		///
 		form_context();
+		///
+		/// Copy-constructor
+		///
 		form_context(form_context const &other);
+		///
+		/// Assignment
+		///
 		form_context const &operator = (form_context const &other);
+		///
+		/// Create a rendering context
+		///
+		/// \param output the output std::ostream to write HTML to
+		/// \param ht flags representing the type of HTML that should be generated
+		/// \param hlt flag that defines the style of widgets generation
+		///
 		form_context(	std::ostream &output,
 				html_type ht = form_flags::as_html,
 				html_list_type hlt=form_flags::as_p);
+		///
+		/// Destructor
+		///
 		~form_context();
-		
+	
+		///
+		/// Set an HTML/XHTML flag
+		///	
 		void html(html_type t);
+		///
+		/// Set widgets rendering style
+		///
 		void html_list(html_list_type t);
+		///
+		/// Set flag for rendering of partial widget
+		///
 		void widget_part(widget_part_type t);
+
+		///
+		/// Set the output stream
+		///
 		void out(std::ostream &out);
 		
+		///
+		/// Set an HTML/XHTML flag - default as_html
+		///	
 		html_type html() const;
+		///
+		/// Get widgets rendering style - default as_p
+		///
 		html_list_type html_list() const;
+		///
+		/// Get the part of widget that should be generated, see widget_part_type, default first_part
+		///
 		widget_part_type widget_part() const;
+		///
+		/// Get the output stream
+		///
 		std::ostream &out() const;
 
 	private:

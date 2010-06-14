@@ -24,6 +24,10 @@
 
 namespace cppcms {
 
+	///
+	/// \brief This namespace holds various useful helper functions for we developer
+	///
+
 	namespace util {
 		///
 		/// Escape string for inclusion in HTML page, i.e.
@@ -49,11 +53,11 @@ namespace cppcms {
 		///
 		std::string CPPCMS_API urldecode(char const *begin,char const *end);
 		///
-		/// Make MD5 hash of string
+		/// Make MD5 hash of string \a input converting into binary string of 16 bytes
 		///
 		std::string CPPCMS_API md5(std::string const &input);
 		///
-		/// Make MD5 hash of string as hexadecimal string
+		/// Make MD5 hash of string \a input converting it into hexadecimal string representing this hash
 		///
 		std::string CPPCMS_API md5hex(std::string const &input);
 

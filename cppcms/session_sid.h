@@ -30,12 +30,30 @@ namespace sessions {
 
 	namespace impl { class sid_generator; }
 	
+	///
+	/// \brief An implementation of session_api that stores the data using session_storage and unique session id.
+	///
 	class CPPCMS_API session_sid : public session_api {
 	public:
+		///
+		/// Create a new session_sid with a pointer \a s to session_storage
+		///
 		session_sid(booster::shared_ptr<session_storage> s);
+		///
+		/// Delete an object and release a session_storage it used.
+		///
 		~session_sid();
+		///
+		/// See session_api::save
+		///
 		virtual void save(session_interface &,std::string const &data,time_t timeout,bool,bool);
+		///
+		/// See session_api::load
+		///
 		virtual bool load(session_interface &,std::string &data,time_t &timeout);
+		///
+		/// See session_api::clear
+		///
 		virtual void clear(session_interface &);
 	private:
 

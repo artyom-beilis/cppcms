@@ -33,18 +33,37 @@ namespace cppcms {
 		class encryptor_factory;
 		class session_storage_factory;
 	};
-	
+
+	///
+	/// \brief This class provides an access to session management backends an allow customization.
+	///
+	/// When user implements its own session_api, sessions::encryptor or sessions::session_storage 
+	/// interfaces it may set their factories to these classes
+	///	
 	class CPPCMS_API session_pool: public booster::noncopyable {
 	public:
+		/// \cond INTERNAL
 		session_pool(service &srv);
 		~session_pool();
 
 		void init();
 
 		booster::shared_ptr<session_api> get();
+		/// \endcond
 
+		///
+		/// Assign your own implementation of session_api passing pointer to session_api_factory.
+		///
 		void backend(std::auto_ptr<session_api_factory> b);
+		///
+		/// Assign your own implementation of sessions::encryptor that would be used for client side session
+		/// management by passing pointer to sessions::encryptor_factory
+		///
 		void encryptor(std::auto_ptr<sessions::encryptor_factory> e);
+		///
+		/// Assign your own implementation of sessions::session_storage that would be used for server side session
+		/// management by passing pointer to sessions::session_storage_factory
+		///
 		void storage(std::auto_ptr<sessions::session_storage_factory> s);
 	private:
 

@@ -56,30 +56,51 @@ namespace cppcms { namespace util {
 	}
 
 	/// \endcond
+
+	///
+	/// Bind a member function \a mem of object referenced by a pointer \a obj creating a functional
+	/// object that has an member function void operator()() const and calls obj->mem() 
+	///
 	template<typename C,typename P>
 	details::binder0<C,P> mem_bind(void (C::*mem)(),P obj)
 	{
 		details::binder0<C,P> tmp={mem,obj};
 		return tmp;
 	}
+	///
+	/// Bind a member function \a mem of object referenced by a pointer \a obj creating a functional
+	/// object that has an member function void operator()(P1 p) const and calls obj->mem(p) 
+	///
 	template<typename C,typename P,typename P1>
 	details::binder1<C,P,P1> mem_bind(void (C::*mem)(P1),P obj)
 	{
 		details::binder1<C,P,P1> tmp={mem,obj};
 		return tmp;
 	}
+	///
+	/// Bind a member function \a mem of object referenced by a pointer \a obj creating a functional
+	/// object that has an member function void operator()(P1 p1,P2 p2) const and calls obj->mem(p1,p2) 
+	///
 	template<typename C,typename P,typename P1,typename P2>
 	details::binder2<C,P,P1,P2> mem_bind(void (C::*mem)(P1,P2),P obj)
 	{
 		details::binder2<C,P,P1,P2> tmp={mem,obj};
 		return tmp;
 	}
+	///
+	/// Bind a member function \a mem of object referenced by a pointer \a obj creating a functional
+	/// object that has an member function void operator()(P1 p1,P2 p2,P3 p3) const and calls obj->mem(p1,p2,p3) 
+	///
 	template<typename C,typename P,typename P1,typename P2,typename P3>
 	details::binder3<C,P,P1,P2,P3> mem_bind(void (C::*mem)(P1,P2,P3),P obj)
 	{
 		details::binder3<C,P,P1,P2,P3> tmp={mem,obj};
 		return tmp;
 	}
+	///
+	/// Bind a member function \a mem of object referenced by a pointer \a obj creating a functional
+	/// object that has an member function void operator()(P1 p1,P2 p2,P3 p3,P4 ) const and calls obj->mem(p1,p2,p3,p4) 
+	///
 	template<typename C,typename P,typename P1,typename P2,typename P3,typename P4>
 	details::binder4<C,P,P1,P2,P3,P4> mem_bind(void (C::*mem)(P1,P2,P3,P4),P obj)
 	{

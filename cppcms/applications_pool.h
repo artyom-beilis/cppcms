@@ -96,10 +96,7 @@ namespace cppcms {
 		void mount(booster::intrusive_ptr<application> app,mount_point const &point);
 
 
-		///
 		/// \cond INTERNAL
-		///
-		///  INTERNAL API
 
 		booster::intrusive_ptr<application> 
 		get(std::string const &h,std::string const &s,std::string const &path_info,std::string &match);
@@ -119,6 +116,7 @@ namespace cppcms {
 		booster::hold_ptr<_data> d;
 	};
 
+	/// \cond INTERNAL 
 	namespace details {
 		template<typename T>
 		struct simple_factory0 : public applications_pool::factory
@@ -153,6 +151,8 @@ namespace cppcms {
 			}
 		};
 	} // details
+
+	/// \endcond
 
 	///
 	/// Create application factory for application of type T, such as T has a constructor

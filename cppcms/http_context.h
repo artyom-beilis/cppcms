@@ -36,6 +36,9 @@ namespace cppcms {
 	namespace json { class value; }
 	namespace impl { namespace cgi { class connection; } }
 
+	///
+	/// \brief This namespace represent classes that are directly connected to handing HTTP requests and responses
+	///
 	namespace http {
 		class request;
 		class response;
@@ -54,17 +57,14 @@ namespace cppcms {
 			public booster::enable_shared_from_this<context>
 		{
 		public:
-			///
-			/// Internal API, don't use it
-			///
+			/// \cond INTERNAL
+
 			context(booster::shared_ptr<impl::cgi::connection> conn);
-			///
-			/// Destructor.
 			~context();
-			///
-			/// Internal API, don't use it
-			///
 			impl::cgi::connection &connection();
+			void run();
+
+			/// \endcond
 
 			///
 			/// Get an interface to HTTP request
@@ -129,10 +129,6 @@ namespace cppcms {
 			///
 			void skin(std::string const &name);
 
-			///
-			/// Internal API, Don't use it
-			///
-			void run();
 
 			typedef enum {
 				operation_completed, ///< Asynchronous operation completed successfully 
@@ -163,9 +159,10 @@ namespace cppcms {
 			/// connections that had timeout or just disconnected by user
 			///
 			/// Notes: 
-			/// 1. if async_complete_response was called, handler would not
+			///
+			/// -# if async_complete_response was called, handler would not
 			///    be called any more.
-			/// 2. If async_flush_output fails, this does not mean that 
+			/// -# If async_flush_output fails, this does not mean that 
 			///    this handler would be called as well, so you need to check both
 			///
 			void async_on_peer_reset(booster::function<void()> const &h);

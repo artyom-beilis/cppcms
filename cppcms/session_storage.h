@@ -32,8 +32,8 @@ namespace sessions {
 	/// custom session storage device like, database storage device
 	///
 	/// Note: if the member functions save/load/remove are thread safe -- can be called
-	/// from different threads, than you may create a single session and return \a intrusive_ptr
-	/// to a single intstance, otherwise you have to create multiple instances of object
+	/// from different threads, than you may create a single session and return \a shared_ptr
+	/// to a single instance, otherwise you have to create multiple instances of object
 	///
 	
 	class session_storage : public booster::noncopyable
@@ -57,16 +57,37 @@ namespace sessions {
 		
 		virtual void remove(std::string const &sid) = 0;
 		
+		///
+		/// Destroy an object
+		///
 		virtual ~session_storage()
 		{
 		}
 	};
 
+	///
+	/// \brief The factory is an interface to a factory that creates session_storage objects, it should be thread safe.
+	///
 	class session_storage_factory {
 	public:
+		///
+		/// Get a pointer to session_storage. Note if the returned pointer is same for different calls
+		/// session_storage implementation should be thread safe.
+		///
 		virtual booster::shared_ptr<session_storage> get() = 0;
+
+		///
+		/// Return true if session_storage requires garbage collection - removal of expired session time-to-time
+		///
 		virtual bool requires_gc() = 0;
+		///
+		/// Actual garbage collection job (if required). If requires_gc returns true it will be called once-in-a-while to remove
+		/// all expired objects from the DB.
+		///
 		virtual void gc_job() {}
+		///
+		/// Delete the object, cleanup
+		///
 		virtual ~session_storage_factory() {}
 	};
 

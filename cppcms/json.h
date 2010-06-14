@@ -109,11 +109,13 @@ namespace json {
 	};
 	
 	///
-	/// The error that is thrown in case of bad conversion of json::value to ordinary value
+	/// \brief The error that is thrown in case of bad conversion of json::value to ordinary value
+	///
+	/// When implementing json::traits for complex classes you are expected to throw this exception
+	/// in case of invalid formatting
 	///
 	class CPPCMS_API bad_value_cast : public std::bad_cast {
 	public:
-
 		bad_value_cast(); 
 		bad_value_cast(std::string const &s);
 		bad_value_cast(std::string const &s,json_type actual);

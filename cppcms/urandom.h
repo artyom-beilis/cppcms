@@ -24,12 +24,30 @@
 #include <booster/noncopyable.h>
 
 namespace cppcms {
+
+	///
+	/// \brief High entropy random number generator
+	///
+	/// This is cryptographic random number generator that uses /dev/urandom on POSIX platforms
+	/// and CryptoAPI's CryptGenRandom function under MS Windows
+	///
 	class CPPCMS_API urandom_device : public booster::noncopyable {
 	public:
+
+		///
+		/// Create a new random number generator
+		///
 		urandom_device();
+
+		///
+		/// Destory it
+		///
 		~urandom_device();
 		
-		void generate(void *,unsigned n);
+		///
+		/// Fill a buffer pointer by \a ptr of \a n bytes with random numbers
+		///
+		void generate(void *ptr,unsigned n);
 
 	private:
 		struct _data;
