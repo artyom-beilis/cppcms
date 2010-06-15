@@ -134,7 +134,7 @@ int main(int argc,char **argv)
 	try {
 		int block_size[]={ 1, -1, 5, 3, 10 };
 		for(unsigned i=0;i<sizeof(block_size)/sizeof(block_size[0]);i++) {
-			std::cerr << "Testing for max-block-size = " << block_size[i] << std::endl;
+			std::cout << "Testing for max-block-size = " << block_size[i] << std::endl;
 			{
 				cppcms::impl::multipart_parser parser;
 				TEST(parser.set_content_type(test_1_content));

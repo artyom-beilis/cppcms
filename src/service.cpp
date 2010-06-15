@@ -781,8 +781,13 @@ locale::generator const &service::generator()
 
 	if(!paths.empty() && !domains.empty()) {
 		unsigned i;
-		for(i=0;i<paths.size();i++)
+		for(i=0;i<paths.size();i++) {
+			#ifdef CPPCMS_WIN_NATIVE
+			gen.add_messages_path(booster::nowide::convert(paths[i]));
+			#else
 			gen.add_messages_path(paths[i]);
+			#endif
+		}
 		for(i=0;i<domains.size();i++)
 			gen.add_messages_domain(domains[i]);
 	}
