@@ -202,7 +202,7 @@ namespace booster {
             template<>
             BOOSTER_API std::string from_utf(char const *begin,char const *end,std::string const &charset,method_type how);
 
-            #ifndef BOOSTER_NO_STD_WSTRING
+            #if !defined(BOOSTER_NO_STD_WSTRING) || defined(BOOSTER_WIN_NATIVE)
             template<>
             BOOSTER_API std::basic_string<wchar_t> to_utf(char const *begin,char const *end,std::string const &charset,method_type how);
 

@@ -143,9 +143,6 @@ check_cxx_source_compiles(
 
 check_function_exists(atoll CPPCMS_HAVE_ATOLL)
 check_function_exists(_atoi64 CPPCMS_HAVE_ATOI64)
-check_function_exists(gmtime_r CPPCMS_HAVE_GMTIME_R)
-check_function_exists(localtime_r CPPCMS_HAVE_LOCALTIME_R)
-check_function_exists(strerror_r CPPCMS_HAVE_STRERROR_R)
 check_function_exists(snprintf CPPCMS_HAVE_SNPRINTF)
 check_function_exists(stat CPPCMS_HAVE_STAT)
 check_function_exists(_stat CPPCMS_HAVE__STAT)

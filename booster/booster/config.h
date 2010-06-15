@@ -10,7 +10,7 @@
 
 #if defined(__WIN32) || defined(_WIN32) || defined(WIN32) || defined(__CYGWIN__)
 #	if defined(DLL_EXPORT)
-#		if defined(BOOSTER_SOURCE) || defined(BOOSTER_LOCALE_SOURCE)
+#		if defined(BOOSTER_SOURCE)
 #			define BOOSTER_API __declspec(dllexport)
 #		else
 #			define BOOSTER_API __declspec(dllimport)

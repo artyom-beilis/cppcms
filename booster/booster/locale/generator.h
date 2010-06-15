@@ -108,6 +108,15 @@ namespace booster {
             /// 
             void add_messages_path(std::string const &path);
 
+            #if defined(BOOSTER_WIN_NATIVE)
+            ///
+            /// Add a "wide" search path where dictionaries are looked in. 
+            /// This function is Win32 specific only as windows "ANSI" API does not support full
+            /// range of paths as on any other operating systems
+            /// 
+            void add_messages_path(std::wstring const &path);
+            #endif
+
             ///
             /// Remove all added paths
             ///

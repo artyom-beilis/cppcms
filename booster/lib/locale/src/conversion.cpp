@@ -5,7 +5,7 @@
 //  accompanying file LICENSE_1_0.txt or copy at
 //  http://www.boost.org/LICENSE_1_0.txt)
 //
-#define BOOSTER_LOCALE_SOURCE
+#define BOOSTER_SOURCE
 #include <booster/locale/conversion.h>
 #include <booster/locale/info.h>
 #include <unicode/normlzr.h>

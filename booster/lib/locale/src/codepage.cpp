@@ -5,7 +5,7 @@
 //  accompanying file LICENSE_1_0.txt or copy at
 //  http://www.boost.org/LICENSE_1_0.txt)
 //
-#define BOOSTER_LOCALE_SOURCE
+#define BOOSTER_SOURCE
 #include <booster/locale/codepage.h>
 #include "uconv.h"
 #include <unicode/ucnv.h>
@@ -646,7 +646,7 @@ namespace locale {
             return from_utf_impl<char>(begin,end,charset,how);
         }
 
-        #ifndef BOOSTER_NO_STD_WSTRING
+        #if !defined(BOOSTER_NO_STD_WSTRING) || defined(BOOSTER_WIN_NATIVE)
         template<>
         BOOSTER_API std::basic_string<wchar_t> to_utf(char const *begin,char const *end,std::string const &charset,method_type how)
         {

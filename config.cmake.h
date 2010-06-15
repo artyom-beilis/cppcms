@@ -40,15 +40,6 @@
 
 #cmakedefine CPPCMS_HAVE__STAT
 
-/* Have gmtime_r */
-#cmakedefine CPPCMS_HAVE_GMTIME_R
-
-/* Have localtime_r */
-#cmakedefine CPPCMS_HAVE_LOCALTIME_R
-
-/* Have strerror_r */
-#cmakedefine CPPCMS_HAVE_STRERROR_R
-
 /* Have tm.tm_zone */
 
 #cmakedefine CPPCMS_HAVE_BSD_TM

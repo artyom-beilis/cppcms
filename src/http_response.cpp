@@ -31,6 +31,7 @@
 #include <cppcms/util.h>
 #include <cppcms/session_interface.h>
 
+#include <booster/posix_time.h>
 #include <iostream>
 #include <sstream>
 #include <iterator>
@@ -420,15 +421,13 @@ std::string response::make_http_time(time_t t)
 {
 	// RFC 2616
 	// "Sun, 06 Nov 1994 08:49:37 GMT"
-	std::tm tv;
-	#ifdef CPPCMS_HAVE_GMTIME_R
-	gmtime_r(&t,&tv);
-	#elif defined(CPPCMS_WIN_NATIVE)
-	tv=*gmtime(&t); // Win32 uses TLS
-	#endif
+
+	std::tm tv=booster::ptime::universal_time(booster::ptime(t));
+
 	std::ostringstream ss;
-	std::locale C("C");
+	std::locale C=std::locale::classic();
 	ss.imbue(C);
+
 	std::time_put<char> const &put = std::use_facet<std::time_put<char> >(C);
 	char const format[]="%a, %d %b %Y %H:%M:%S GMT"; 
 	put.put(ss,ss,' ',&tv,format,format+sizeof(format)-1);

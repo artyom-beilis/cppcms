@@ -8,6 +8,7 @@
 
 #include <booster/locale/generator.h>
 #include <booster/locale/message.h>
+#include <booster/locale/codepage.h>
 #include "test_locale.h"
 #include "test_locale_tools.h"
 
@@ -271,9 +272,34 @@ void test_translate(std::string original,std::string expected,std::locale const 
 }
 
 
+#ifdef BOOSTER_WIN_NATIVE
+
+void test_wide_path(int argc,char **argv)
+{
+    std::cout << "Testing loading catalogs from wide path" << std::endl;
+    booster::locale::generator g;
+    g.add_messages_domain("default");
+    if(argc==2)
+        g.add_messages_path(booster::locale::conv::to_utf<wchar_t>(argv[1],"windows-1252"));
+    else
+        g.add_messages_path(L"./");
+
+    std::locale l=g("he_IL.UTF-8");
+
+    TEST(booster::locale::gettext("hello",l)=="שלום");
+
+}
+
+#endif
+
+
 int main(int argc,char **argv)
 {
     try {
+        #ifdef BOOSTER_WIN_NATIVE
+        test_wide_path(argc,argv);
+        #endif
+
         booster::locale::generator g;
         g.add_messages_domain("default");
         g.add_messages_domain("simple");
@@ -283,6 +309,7 @@ int main(int argc,char **argv)
             g.add_messages_path(argv[1]);
         else
             g.add_messages_path("./");
+
         
         std::string locales[] = { "he_IL.UTF-8", "he_IL.ISO-8859-8" };
 
