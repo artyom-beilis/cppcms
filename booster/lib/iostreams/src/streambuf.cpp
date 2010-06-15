@@ -19,7 +19,7 @@ namespace booster {
 	{
 		if(pptr()==0) {
 			buffer_out_.resize(buffer_size_+1,0);
-			setp(&buffer_out_.front(),&buffer_out_.front()+buffer_out_.size());
+			setp(&buffer_out_.front(),&buffer_out_.front()+buffer_size_);
 		}
 		
 		std::streamsize n=pptr() - pbase();
