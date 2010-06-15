@@ -8,6 +8,7 @@
 #define CPPCMS_LOCALE_SOURCE
 #include <cppcms/locale_numeric.h>
 #include <booster/regex.h>
+#include <booster/posix_time.h>
 
 namespace cppcms {
 namespace locale {
@@ -41,13 +42,7 @@ num_format::iter_type num_format::put_value(num_format::iter_type out,std::ios_b
 					+ 60 * atoi(std::string(m[5]).c_str());
 			}
 			time+=gmtoff;
-			#ifdef HAVE_GMTIME_R
-				gmtime_r(&time,&tm);
-			#elif defined(CPPCMS_WIN_NATIVE)
-				tm=*gmtime(&time); // TLS
-			#else
-			#	error "No gmtime_r and no thread safe gmtime is given"
-			#endif
+			tm=booster::ptime::universal_time(booster::ptime(time));
 
 			#ifdef HAVE_BSD_TM 
 			// Set correct timezone name and offset where possible
@@ -57,13 +52,7 @@ num_format::iter_type num_format::put_value(num_format::iter_type out,std::ios_b
 			#endif
 		}
 		else {
-			#ifdef HAVE_LOCALTIME_R
-				localtime_r(&time,&tm);
-			#elif defined(CPPCMS_WIN_NATIVE)
-				tm=*localtime(&time); // TLS
-			#else
-			#	error "No localtime_r and no thread safe localtime is given"
-			#endif
+			tm=booster::ptime::local_time(booster::ptime(time));
 		}
 		return std::use_facet<std::time_put<char> >(ios.getloc()).put(out,ios,fill,&tm,format.data(),format.data()+format.size());
 	}

@@ -14,7 +14,7 @@ namespace cppcms {
 namespace locale {
 namespace impl{
     
-    #ifdef HAVE_STD_WSTRING
+    #ifdef CPPCMS_HAVE_STD_WSTRING
     
     std::wstring to_wide(char const *begin,char const *end)
     {
@@ -59,7 +59,7 @@ namespace impl{
 
     std::string convert(conversion_type how,char const *begin,char const *end,std::locale const &l)
     {
-        #ifdef HAVE_STD_WSTRING
+        #ifdef CPPCMS_HAVE_STD_WSTRING
         typedef std::ctype<wchar_t> wctype;
         if(begin!=end && std::has_facet<info>(l) && std::use_facet<info>(l).utf8() && std::has_facet<wctype>(l)) {
             std::wstring s = to_wide(begin,end);
