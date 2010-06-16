@@ -782,7 +782,9 @@ locale::generator const &service::generator()
 	if(!paths.empty() && !domains.empty()) {
 		unsigned i;
 		for(i=0;i<paths.size();i++) {
-			#ifdef CPPCMS_WIN_NATIVE
+			#if defined(CPPCMS_WIN_NATIVE) && !defined(CPPCMS_DISABLE_ICU_LOCALIZATION)
+			// No ICU localization use booster::nowide library for file interface
+			// so path's already assumed UTF-8... Just use ordinary variant
 			gen.add_messages_path(booster::nowide::convert(paths[i]));
 			#else
 			gen.add_messages_path(paths[i]);

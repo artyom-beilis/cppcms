@@ -45,16 +45,24 @@ run_test ./booster/test_aio_timer
 run_test ./booster/test_aio_event_loop
 run_test ./booster/test_aio_socket
 run_test ./booster/test_aio_endpoint
-run_test ./booster/test_locale_boundary
-run_test ./booster/test_locale_codepage
-run_test ./booster/test_locale_collate
-run_test ./booster/test_locale_convert
-run_test ./booster/test_locale_date_time
-run_test ./booster/test_locale_formatting
-run_test ./booster/test_locale_generator
-run_test ./booster/test_locale_ios_prop
-run_test ./booster/test_locale_icu_vs_os_timezone
-run_test ./booster/test_locale_message ../tests
+if test "x$NOICU" = "x" 
+then
+	run_test ./booster/test_locale_boundary
+	run_test ./booster/test_locale_codepage
+	run_test ./booster/test_locale_collate
+	run_test ./booster/test_locale_convert
+	run_test ./booster/test_locale_date_time
+	run_test ./booster/test_locale_formatting
+	run_test ./booster/test_locale_generator
+	run_test ./booster/test_locale_ios_prop
+	run_test ./booster/test_locale_icu_vs_os_timezone
+	run_test ./booster/test_locale_message ../tests
+else
+	run_test ./locale_src_test_convert
+	run_test ./locale_src_test_formatting
+	run_test ./locale_src_test_ios_prop
+	run_test ./locale_src_test_message ../tests
+fi
 
 run_test ./base64_test
 run_test ./encryptor_test
@@ -75,6 +83,12 @@ run_test ./proto_test -c ../tests/proto_test.js --test-async=async --service-api
 run_test ./proto_test -c ../tests/proto_test.js --test-async=sync --service-api=http --service-port=8080 "--test-exec=$PYTHON ../tests/proto_test.py http"
 run_test ./proto_test -c ../tests/proto_test.js --test-async=async --service-api=scgi --service-port=8080 "--test-exec=$PYTHON ../tests/proto_test.py scgi_tcp"
 run_test ./proto_test -c ../tests/proto_test.js --test-async=sync --service-api=scgi --service-port=8080 "--test-exec=$PYTHON ../tests/proto_test.py scgi_tcp"
+
+if test "x$NOUNIX" = "x"
+then
+	run_test ./proto_test -c ../tests/proto_test.js --test-async=async --service-api=scgi --service-socket=/tmp/cppcms_test_socket "--test-exec=$PYTHON ../tests/proto_test.py scgi_unix"
+	run_test ./proto_test -c ../tests/proto_test.js --test-async=sync --service-api=scgi --service-socket=/tmp/cppcms_test_socket "--test-exec=$PYTHON ../tests/proto_test.py scgi_unix"
+fi
 
 if test -e fail.flag 
 then
