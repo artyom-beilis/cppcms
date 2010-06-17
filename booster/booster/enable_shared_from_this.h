@@ -21,6 +21,12 @@
 namespace booster
 {
 
+///
+/// \brief This class is borrowed from boost
+///
+/// For details see: http://www.boost.org/doc/libs/release/libs/smart_ptr
+///
+
 template<class T> class enable_shared_from_this
 {
 protected:

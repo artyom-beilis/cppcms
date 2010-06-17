@@ -15,6 +15,11 @@
 #include <booster/config.h>
 
 namespace booster {
+
+///
+/// \brief this namespace includes partial implementation of std::tr1's/boost's system_error, error_code
+/// classes 
+///
 namespace system {
 	class error_category {
 	public:

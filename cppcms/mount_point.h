@@ -166,7 +166,7 @@ namespace cppcms {
 		///           opposite of \a sel, if sel is match_path_info then non_selected_part checked against SCRIPT_NAME
 		///           otherwise it is checked against PATH_INFO
 		/// \param selected_part is a regular expression for matching against PATH_INFO or SCRIPT_NAME according \a sel
-		/// \param regular expression subgroup of \a selected_part for URL dispatching 
+		/// \param group regular expression subgroup of \a selected_part for URL dispatching 
 		///
 		mount_point(	selection_type sel,
 				std::string const &non_selected_part,

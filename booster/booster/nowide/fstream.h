@@ -12,6 +12,11 @@
 #endif
 
 namespace booster {
+///
+/// \brief This namespace includes implementation of basic STL's / STDLIb's functions
+/// such that they accept UTF-8 strings. on Windows. Otherwise it is just an alias
+/// of std namespace (i.e. not on Windows)
+///
 namespace nowide {
 #ifndef BOOSTER_WIN_NATIVE
 
@@ -24,7 +29,8 @@ namespace nowide {
 	using std::ofstream;
 	using std::fstream;
 
-#else // windows crap:
+#endif
+#if defined(BOOSTER_WIN_NATIVE) || defined(BOOSTER_DOXYGEN_DOCS)
 
 	#if  defined BOOSTER_MSVC
 

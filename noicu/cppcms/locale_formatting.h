@@ -70,6 +70,9 @@ namespace cppcms {
         template<>
         CPPCMS_API std::string ext_pattern(std::ios_base &,flags::pattern_type pattern_id);
 
+        ///
+        /// \brief This namespace includes locale related iostream manipulators
+        ///
         namespace as {
 
             #define CPPCMS_LOCALE_AS_MANIPULATOR(name,mask)  \
@@ -90,6 +93,7 @@ namespace cppcms {
             CPPCMS_LOCALE_AS_MANIPULATOR(currency_iso,currency_flags_mask)
             CPPCMS_LOCALE_AS_MANIPULATOR(currency_national,currency_flags_mask)
             
+            /// \cond INTERNAL
             namespace details {
                 template<typename CharType>
                 struct add_ftime {
@@ -119,6 +123,8 @@ namespace cppcms {
                 }
 
             }
+
+            /// \endcond
 
             template<typename CharType>
             details::add_ftime<CharType> ftime(std::basic_string<CharType> const &format)

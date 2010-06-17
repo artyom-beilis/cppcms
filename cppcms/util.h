@@ -31,10 +31,11 @@ namespace cppcms {
 	namespace util {
 		///
 		/// Escape string for inclusion in HTML page, i.e.
-		/// < --- &lt;
-		/// > --- &gt;
-		/// & --- &amp;
-		/// " --- &quot;
+		///
+		/// - < - \&lt;
+		/// - > - \&gt;
+		/// - \& - \&amp;
+		/// - &quot; - \&quot;
 		///
 		/// Note, this function does not deal with encodings, so it's up to you to
 		/// provide valid text encoding

@@ -39,7 +39,7 @@ class encryptor;
 class CPPCMS_API session_dual : public session_api {
 public:
 	///
-	/// Create a new object using encryptor \a enc and session_storage \s storage.
+	/// Create a new object using encryptor \a enc and session_storage \a storage.
 	/// \a data_size_limit represents the maximal data size that can be stored on client side, if the data size is bigger then that
 	/// the session data will be stored on server 
 	///

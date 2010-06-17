@@ -346,34 +346,68 @@ namespace cppcms {
 			///
 			iterator(form &);
 
+			///
+			/// Destructor
+			///
 			~iterator();
+
+			///
+			/// Copy the iterator, this is not cheap operation.
+			///
+
 			iterator(iterator const &other);
+			///
+			/// Assign the iterator, this is not cheap operation.
+			///
 			iterator const &operator = (iterator const &other);
 
+			///
+			/// Returns the underlying widget. Condition: *this!=iterator()
+			///
 			widgets::base_widget *operator->() const
 			{
 				return get();
 			}
+
+			///
+			/// Returns the underlying widget. Condition: *this!=iterator()
+			///
 			widgets::base_widget &operator*() const
 			{
 				return *get();
 			}
 
+			///
+			/// Check if two iterators pointing to same element
+			///
 			bool operator==(iterator const &other) const
 			{
 				return equal(other);
 			}
+			///
+			/// Check if two iterators pointing to different element
+			///
 			bool operator!=(iterator const &other) const
 			{
 				return !equal(other);
 			}
 
+			///
+			/// Post Increment operator, it forward the iterator no text widget.
+			/// Note it does not point to higher level form container.
+			///
+			/// Note: prefer using ++i then i++ as copying iterator is not cheap.
+			///
 			iterator operator++(int unused)
 			{
 				iterator tmp(*this);
 				next();
 				return tmp;
 			}
+			///
+			/// Increment operator. It forward the iterator no text widget.
+			/// Note it does not point to higher level form container
+			///
 			iterator &operator++()
 			{
 				next();
@@ -770,13 +804,36 @@ namespace cppcms {
 			booster::hold_ptr<_data> d;
 		};
 
+		///
+		/// This class represents a basic widget that generates html for common widgets
+		/// that use <input \/> HTML tag.
+		///
+		/// It allows you creating your own widgets easier as it does most of job required for
+		/// generating the HTML and user is required only to generate actual value like
+		/// value="10.34" as for numeric widget.
+		///
+
 		class CPPCMS_API base_html_input : virtual public base_widget {
 		public:
+
+			///
+			/// Creates new instance, \a type is HTML type tag of the input element, for example "text" or
+			/// "password".
+			///
 			base_html_input(std::string const &type);
+			///
+			/// Virtual destructor... 
+			///
 			virtual ~base_html_input();
+			///
+			/// This function is actual HTML generation function that calls render_value where needed.
+			///
 			virtual void render_input(form_context &context);
 
 		protected:
+			///
+			/// This is what user actually expected to implement. Write actual value HTML tag.
+			/// 
 			virtual void render_value(form_context &context) = 0;
 		private:
 			struct _data;
@@ -825,11 +882,25 @@ namespace cppcms {
 			booster::hold_ptr<_data> d;
 		};
 
+		///
+		/// This widget represents hidden input form type. It is used to provide
+		/// some invisible to user information.
+		///
+		/// I has same properties that text widget has but it does not render any HTML
+		/// related to message(), help() and other informational types.
+		///
+		/// When your render the form in templates it is good idea to render it separately
+		/// to make sure that no invalid HTML would be created.
+		///
+
 		class CPPCMS_API hidden : public text 
 		{
 		public:
 			hidden();
 			~hidden();
+			///
+			/// Actual rendering function that is redefined
+			///
 			virtual void render(form_context &context);
 		private:
 			struct _data;
@@ -837,6 +908,10 @@ namespace cppcms {
 		};
 
 
+		///
+		/// This text widget behaves similarly to text widget but uses rather HTML
+		/// textarea and not input HTML tags
+		///
 		class CPPCMS_API textarea : public base_text 
 		{
 		public:

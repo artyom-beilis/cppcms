@@ -28,10 +28,7 @@ namespace cppcms {
 	namespace json { class value; }
 	namespace impl { class base_cache; }
 
-	///
 	/// \cond INTERNAL
-	///
-	
 	class CPPCMS_API cache_pool {
 	public:
 		cache_pool(json::value const &settings);
@@ -41,7 +38,6 @@ namespace cppcms {
 		struct _data;
 		booster::hold_ptr<_data> d;
 	};
-
 	/// \endcond
 }
 

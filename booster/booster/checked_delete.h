@@ -18,6 +18,8 @@
 namespace booster
 {
 
+/// \cond INTERNAL
+
 // verify that types are complete for increased safety
 
 template<class T> inline void checked_delete(T * x)
@@ -57,7 +59,7 @@ template<class T> struct checked_array_deleter
         booster::checked_array_delete(x);
     }
 };
-
+/// \endcond
 } // namespace boost
 
 #endif  // #ifndef BOOST_CHECKED_DELETE_HPP_INCLUDED

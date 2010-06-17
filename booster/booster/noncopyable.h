@@ -9,6 +9,9 @@
 #define BOOSTER_NONCOPYABLE_H
 
 namespace booster { 
+	///
+	/// \brief This class makes impossible to copy any class derived from this one.
+	///
 	class noncopyable {
 	private:
 		noncopyable(noncopyable const &);

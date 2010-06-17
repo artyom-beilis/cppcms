@@ -14,6 +14,9 @@
 namespace booster {
 namespace aio {
 
+	///
+	/// \brief This namespace includes Booster.Aio specific error codes
+	///
 	namespace aio_error {
 		enum {
 			ok,

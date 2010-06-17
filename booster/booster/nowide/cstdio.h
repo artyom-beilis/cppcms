@@ -13,7 +13,10 @@ namespace booster {
 		using std::freopen;
 		using std::remove;
 		using std::rename;
-	#else
+	#endif
+
+	#if defined(BOOSTER_WIN_NATIVE) || defined(BOOSTER_DOXYGEN_DOCS)
+
 		inline FILE *fopen(char const *file_name,char const *mode)
 		{
 			try {

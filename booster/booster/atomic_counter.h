@@ -10,6 +10,11 @@
 
 #include <booster/config.h>
 
+
+///
+/// \brief Booster library namespace. The library that implements Boost Like API
+/// in ABI backward compatible way
+///
 namespace booster {
 
 	///

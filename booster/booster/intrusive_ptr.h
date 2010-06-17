@@ -21,20 +21,23 @@
 namespace booster
 {
 
-//
-//  intrusive_ptr
-//
-//  A smart pointer that uses intrusive reference counting.
-//
-//  Relies on unqualified calls to
-//  
-//      void intrusive_ptr_add_ref(T * p);
-//      void intrusive_ptr_release(T * p);
-//
-//          (p != 0)
-//
-//  The object is responsible for destroying itself.
-//
+///
+/// \brief intrusive_ptr is the class taken as-is from boost.
+///
+///
+///  A smart pointer that uses intrusive reference counting.
+///
+///  Relies on unqualified calls to
+///  
+///      void intrusive_ptr_add_ref(T * p);
+///      void intrusive_ptr_release(T * p);
+///
+///          (p != 0)
+///
+///  The object is responsible for destroying itself.
+///
+///  See: http://www.boost.org/doc/libs/release/libs/smart_ptr
+///
 
 template<class T> class intrusive_ptr
 {

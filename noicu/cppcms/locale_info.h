@@ -15,6 +15,15 @@
 #include <cppcms/config.h>
 
 namespace cppcms {
+    ///
+    /// \brief this is implementation of simple localization that is not dependent on ICU library.
+    ///
+    /// It is very similar to booster::locale but much more limited and simple. It is designed
+    /// to be used in embedded environent and use standard libraries features only.
+    ///
+    /// It is build only if CppCMS is built without ICU support and booster::locale is not build.
+    ///
+    ///
     namespace locale {
 
         class info_impl;

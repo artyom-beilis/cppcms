@@ -30,6 +30,9 @@ namespace booster
 # pragma option push -pc
 #endif
 
+///
+/// An exeption that is throws in case of creating of shared_ptr from expired weak_ptr
+///
 class bad_weak_ptr: public std::exception
 {
 public:

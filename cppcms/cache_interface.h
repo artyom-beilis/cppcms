@@ -171,7 +171,7 @@ namespace cppcms {
 		///
 		/// \param key -- the key that uniquely defines the frame.
 		/// \param frame -- the actual value
-		/// \parma triggers  -- the set of triggers that the key should depend on (\a key is added automatically)
+		/// \param triggers  -- the set of triggers that the key should depend on (\a key is added automatically)
 		/// \param timeout -- maximal object lifetime, -1 is infinity
 		/// \param notriggers -- if \a notriggers is true no frame dependent triggers would be added to the current
 		///     page trigger set. Otherwise (default) current page would depend on the \a key and \a triggers as its
@@ -220,8 +220,8 @@ namespace cppcms {
 		/// Store a serializeable object to the cache.
 		///
 		/// \param key -- the key that uniquely defines the object.
-		/// \param date -- the actual object
-		/// \parma triggers  -- the set of triggers that the key should depend on (\a key is added automatically)
+		/// \param data -- the actual object
+		/// \param triggers  -- the set of triggers that the key should depend on (\a key is added automatically)
 		/// \param timeout -- maximal object lifetime, -1 is infinity
 		/// \param notriggers -- if \a notriggers is true no frame dependent triggers would be added to the current
 		///     page trigger set. Otherwise (default) current page would depend on the \a key and \a triggers as its

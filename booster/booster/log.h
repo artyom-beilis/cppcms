@@ -24,6 +24,10 @@ class shared_ptr;
 template<typename T>
 class weak_ptr;
 
+///
+/// \brief This namespace includes Booster.Log related classes
+///
+
 namespace log {
 	
 	typedef enum {
@@ -110,6 +114,11 @@ namespace log {
 		~logger();
 	};
 
+	///
+	/// \brief This namespace includes various output devices (sinks) for logger.
+	///
+	/// It includes several standard devices that can be used in most applications
+	///
 	namespace sinks {
 		
 		BOOSTER_API std::string format_plain_text_message(message const &msg);

@@ -4,7 +4,7 @@
 #include <booster/config.h>
 #include <stdexcept>
 
-#ifdef BOOSTER_WIN_NATIVE
+#if defined(BOOSTER_WIN_NATIVE) || defined(BOOSTER_DOXYGEN_DOCS)
 namespace booster {
 	namespace nowide {
 

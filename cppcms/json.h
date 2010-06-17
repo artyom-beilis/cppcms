@@ -402,6 +402,7 @@ namespace json {
 		///
 		/// Note: only JSON object and JSON array are considered valid values
 		///
+		/// \param in the std::istream used to read the data
 		/// \param full  require EOF once the object is read, otherwise consider it as syntax error
 		/// \param line_number  return a number of the line where syntax error occurred
 		/// \result returns true if the value was read successfully, otherwise returns false to indicate a syntax error.

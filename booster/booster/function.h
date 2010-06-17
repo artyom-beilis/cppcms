@@ -23,6 +23,82 @@ namespace booster {
 		}
 	};
 
+
+	#ifdef BOOSTER_DOXYGEN_DOCS
+	///
+	/// \brief This is Booster's implementation of std::tr1::function/booster::function.
+	///
+	/// This function is created from generic object that can be "called" i.e. 
+	/// a class with operator() or function pointer that has same signature as
+	/// the function.
+	///
+	/// See: http://www.boost.org/doc/html/function.html
+	///
+	/// Notes:
+	///
+	/// - this code is not taken from Boost and has slightly different interface.
+	/// - as most of compilers do not support Variadic templates yet, this class
+	///   is explicitly specialized for Params of size 0 to 8. So maximal amout
+	///   of parameters that can be used is 8.
+	///
+	///
+	template<typename Result,typename ...Params>			
+	class function<Result(Params...)>				
+	{									
+	public:									
+		///
+		/// Type of result, for use with boost::bind
+		///
+		typedef Result result_type;		
+		///
+		/// Default constructor, creates an empty functions
+		///			
+		function();
+		///
+		/// Creates a function from a functional \a func of type F. func
+		/// should be copyable. It is copied and stored inside function object.
+		///
+		template<typename F>						
+		function(F func);
+		
+		///
+		/// Copy function, Copies underlying functional object.
+		///
+		function(function const &other);
+
+		///
+		/// Assign a functional \a func of type F. func
+		/// should be copyable. It is copied and stored inside function object.
+		///
+		template<typename F>						
+		function const &operator=(F func);
+
+		///
+		/// Assignment operator. Copies underlying functional object.
+		/// 
+		function const &operator=(function const &other);
+
+		///
+		/// Calls underling functional object. If the function is empty, throws bad_function_call.
+		///
+		result_type operator()(Params... params) const;
+		///
+		/// Return true if the function is empty
+		///
+		bool empty() const;
+		///
+		/// Returns true if the function is not empty
+		///
+		operator bool() const;
+
+		///
+		/// Swaps two functional object. Does not throw.
+		///
+		void swap(function &other);
+	};			
+
+	#else
+
 	#define BOOSTER_FUNCTION							\
 	template<typename Result BOOSTER_TEMPLATE_PARAMS >			\
 	class function<Result(BOOSTER_TYPE_PARAMS)>				\
@@ -152,6 +228,8 @@ namespace booster {
 	#undef BOOSTER_CALL_PARAMS
 
 	#undef BOOSTER_FUNCTION
+
+	#endif // DOC
 
 } // booster
 

@@ -18,6 +18,11 @@ namespace booster {
 	namespace system {
 		class error_code;
 	}
+
+
+	///
+	/// \brief This namespace povides and API to asynchronous sockets API
+	///
 	namespace aio {
 		class endpoint;
 		class socket;

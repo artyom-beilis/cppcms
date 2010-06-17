@@ -18,6 +18,9 @@
 
 namespace cppcms {
     namespace locale {
+
+        /// \cond INTERNAL
+
         namespace details {
 
             template<typename CharType>

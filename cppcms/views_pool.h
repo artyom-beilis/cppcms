@@ -33,6 +33,9 @@ namespace cppcms {
 
 	class CPPCMS_API views_pool : public booster::noncopyable {
 	public:
+
+		/// \cond INTERNAL
+
 		typedef std::auto_ptr<base_view> (*view_factory_type)(std::ostream &,base_content *c);
 		typedef std::map<std::string,view_factory_type> mapping_type;
 
@@ -46,9 +49,24 @@ namespace cppcms {
 		views_pool();
 		views_pool(json::value const &settings);
 		~views_pool();
+		
+		void add_view(std::string skin,mapping_type const &mapping);
+		void remove_view(std::string skin);
+
+		static views_pool &static_instance();
+
+		/// \endcond
 	
 		///
-		/// Thread safe member function
+		/// This member function is used to render templates. Generally you should not use
+		/// it directly, unless you have very good reasons.
+		///
+		/// \param skin - the name of the skin that should be used
+		/// \param template_name - the name of template (class) that should be rendered.
+		/// \param out - the output stream into which the view should be rendered
+		/// \param content - the content that should be rendered using this view.
+		///
+		/// This function is thread safe
 		///
 		void render(std::string skin,std::string template_name,std::ostream &out,base_content &content);
 
@@ -57,10 +75,6 @@ namespace cppcms {
 		///
 		std::string default_skin() const;
 		
-		void add_view(std::string skin,mapping_type const &mapping);
-		void remove_view(std::string skin);
-
-		static views_pool &static_instance();
 	private:
 
 		struct _data;

@@ -24,13 +24,6 @@
 
 namespace cppcms {
     namespace locale {
-        ///
-        /// \defgroup message Message Formatting (translation) 
-        ///
-        ///This module provides message translation functionality, i.e. allow your application to speak native language
-        ///
-        /// @{
-        /// 
 
         class info;
 
@@ -491,10 +484,6 @@ namespace cppcms {
                                                                                 std::vector<std::string> const &paths);
         /// \endcond
 
-        ///
-        /// @}
-        ///
-
         namespace as {
             /// \cond INTERNAL
             namespace details {
@@ -511,11 +500,7 @@ namespace cppcms {
             } // details
             /// \endcond
 
-            ///
-            /// \addtogroup manipulators
-            ///
-            /// @{
-            
+           
             ///
             /// Manipulator for switching message domain in ostream,
             ///
@@ -525,7 +510,6 @@ namespace cppcms {
                 tmp.domain_id = id;
                 return tmp;
             }
-            /// @}
         } // as
     } // locale 
 } // boost
