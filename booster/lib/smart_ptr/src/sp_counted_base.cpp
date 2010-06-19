@@ -80,22 +80,22 @@ namespace booster {
 
         static bool atomic_cas(sp_counted_base_atomic_type volatile *pw,int old_value,int new_value)
         {
-            return OSCompareAndSwap(old_value,new_value,&pw->i);
+            return OSAtomicCompareAndSwapInt(old_value,new_value,&pw->i);
         }
         static int atomic_get(sp_counted_base_atomic_type volatile *pw)
         {
-            OSSynchronizeIO();
+            OSMemoryBarrier();
             return pw->i;
         }
 
         static void atomic_set(sp_counted_base_atomic_type volatile *pw,int v)
         {
             pw->i=v;
-            OSSynchronizeIO();
+            OSMemoryBarrier();
         }
         static int atomic_exchange_and_add(sp_counted_base_atomic_type volatile * pw, int dv)
         {
-            return OSAddAtomic(dv,&pw->i);
+            return OSAtomicAdd32(dv,&pw->i)-dv;
         }
         static void atomic_increment(sp_counted_base_atomic_type volatile *pw)
         {
