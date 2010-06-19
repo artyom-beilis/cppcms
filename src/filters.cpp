@@ -182,40 +182,81 @@ namespace cppcms { namespace filters {
 	struct date::_data {};
 	struct time::_data {};
 	struct datetime::_data {};
+	struct strftime::_data {};
 
-	date::date() : time_(0) {}
-	datetime::datetime() : time_(0){}
-	time::time() : time_(0) {}
+	date::date() {}
+	datetime::datetime() {}
+	time::time()  {}
+	strftime::strftime()  {}
 	
 	date::~date() {}
 	datetime::~datetime() {}
 	time::~time() {}
+	strftime::~strftime() {}
 	
-	date::date(date const &other) : time_(other.time_) {}
-	time::time(time const &other) : time_(other.time_) {}
-	datetime::datetime(datetime const &other) : time_(other.time_) {}
+	date::date(date const &other) : time_(other.time_),tz_(other.tz_) {}
+	time::time(time const &other) : time_(other.time_),tz_(other.tz_) {}
+	datetime::datetime(datetime const &other) : time_(other.time_),tz_(other.tz_) {}
+	strftime::strftime(strftime const &other) : time_(other.time_),tz_(other.tz_),format_(other.format_) {}
 
-	date const &date::operator=(date const &other) { time_=other.time_; return *this; }
-	time const &time::operator=(time const &other) { time_=other.time_; return *this; }
-	datetime const &datetime::operator=(datetime const &other) { time_=other.time_; return *this; }
+	date const &date::operator=(date const &other) { time_=other.time_; tz_ = other.tz_; return *this; }
+	time const &time::operator=(time const &other) { time_=other.time_; tz_ = other.tz_; return *this; }
+	datetime const &datetime::operator=(datetime const &other) { time_=other.time_; tz_ = other.tz_; return *this; }
+	strftime const &strftime::operator=(strftime const &other) { time_=other.time_; tz_ = other.tz_; format_ = other.format_; return *this; }
 
-	date::date(double t) : time_(t) {}
-	time::time(double t) : time_(t) {}
-	datetime::datetime(double t) : time_(t) {}
+	date::date(streamable const &t) : time_(t) {}
+	time::time(streamable const &t) : time_(t) {}
+	datetime::datetime(streamable const &t) : time_(t) {}
+	strftime::strftime(streamable const &t,std::string const &fmt) : time_(t),format_(fmt) {}
+
+	date::date(streamable const &t,std::string const &tz) : time_(t),tz_(tz) {}
+	time::time(streamable const &t,std::string const &tz) : time_(t),tz_(tz) {}
+	datetime::datetime(streamable const &t,std::string const &tz) : time_(t),tz_(tz) {}
+	strftime::strftime(streamable const &t,std::string const &fmt,std::string const &tz) : time_(t),tz_(tz),format_(fmt) {}
 
 	void date::operator()(std::ostream &out) const
 	{
-		out << format("{1,date}") % time_;
+		std::ostringstream ss;
+		ss.copyfmt(out);
+		if(!tz_.empty())
+			ss << cppcms::locale::as::time_zone(tz_);
+		ss << cppcms::locale::as::date;
+		time_(ss);
+		out << ss.str();
+
 	}
 	
 	void time::operator()(std::ostream &out) const
 	{
-		out << format("{1,time}") % time_;
+		std::ostringstream ss;
+		ss.copyfmt(out);
+		if(!tz_.empty())
+			ss << cppcms::locale::as::time_zone(tz_);
+		ss << cppcms::locale::as::time;
+		time_(ss);
+		out << ss.str();
 	}
 	
 	void datetime::operator()(std::ostream &out) const
 	{
-		out << format("{1,datetime}") % time_;
+		std::ostringstream ss;
+		ss.copyfmt(out);
+		if(!tz_.empty())
+			ss << cppcms::locale::as::time_zone(tz_);
+		ss << cppcms::locale::as::datetime;
+		time_(ss);
+		out << ss.str();
+	}
+	
+	void strftime::operator()(std::ostream &out) const
+	{
+		std::ostringstream ss;
+		ss.copyfmt(out);
+		if(!tz_.empty())
+			ss << cppcms::locale::as::time_zone(tz_);
+		ss << cppcms::locale::as::datetime << cppcms::locale::as::ftime(format_);
+		time_(ss);
+		out << ss.str();
 	}
 
 

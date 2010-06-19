@@ -329,12 +329,8 @@ namespace cppcms {
 		}
 		
 		///
-		/// \brief Format date to ouput stream
+		/// \brief Formats date to the stream, date is represented as number - POSIX time, a plain number
 		///
-		/// Formats date to the stream, date is represented as time_t
-		///
-
-
 		class CPPCMS_API date {
 		public:
 			date();
@@ -342,11 +338,20 @@ namespace cppcms {
 			date const &operator=(date const &other);
 			~date();
 
-			date(double time);
+			///
+			/// Create date filter that formats current local-time date using POSIX time representation \a time
+			///
+			date(streamable const &time);
+			///
+			/// Create date filter that formats current date using POSIX time representation \a time,
+			/// in a timezone \a timezone
+			///
+			date(streamable const &time,std::string const &timezone);
 			void operator()(std::ostream &out) const;
 		private:
 			struct _data;
-			double time_;
+			streamable time_;
+			std::string tz_;
 			booster::copy_ptr<_data> d;
 		};
 		
@@ -357,9 +362,9 @@ namespace cppcms {
 		}
 		
 		///
-		/// \brief Format time to ouput stream
+		/// \brief Format local time to ouput stream
 		///
-		/// Formats time to the stream, time is represented as time_t
+		/// Formats time to the stream, time is represented as number
 		///
 		class CPPCMS_API time {
 		public:
@@ -368,11 +373,20 @@ namespace cppcms {
 			time const &operator=(time const &other);
 			~time();
 
-			time(double time);
+			///
+			/// Create time filter that formats current local-time time using POSIX time representation \a t
+			///
+			time(streamable const &t);
+			///
+			/// Create time filter that formats current time using POSIX time representation \a t,
+			/// in a timezone \a timezone
+			///
+			time(streamable const &time,std::string const &timezone);
 			void operator()(std::ostream &out) const;
 		private:
 			struct _data;
-			double time_;
+			streamable time_;
+			std::string tz_;
 			booster::copy_ptr<_data> d;
 		};
 		
@@ -393,15 +407,59 @@ namespace cppcms {
 			datetime const &operator=(datetime const &other);
 			~datetime();
 
-			datetime(double t);
+			///
+			/// Create date and time filter that formats current local-time date and time using POSIX time representation \a t
+			///
+			datetime(streamable const &t);
+			///
+			/// Create date and time filter that formats current date and time using POSIX time representation \a t,
+			/// in a timezone \a timezone
+			///
+			datetime(streamable const &time,std::string const &timezone);
 			void operator()(std::ostream &out) const;
 		private:
 			struct _data;
-			double time_;
+			streamable time_;
+			std::string tz_;
 			booster::copy_ptr<_data> d;
 		};
 		
-		inline std::ostream &operator<<(std::ostream &out,datetime const &obj)
+		///
+		/// \brief Custom time formating filter
+		///
+		/// Formats date and time to the stream, date and time is represented as time_t
+		///
+		class CPPCMS_API strftime {
+		public:
+			strftime();
+			strftime(strftime const &other);
+			strftime const &operator=(strftime const &other);
+			~strftime();
+
+			///
+			/// Create date and time filter that formats current local-time date and time using POSIX time representation \a t
+			/// according to strftime like format \a fmt, see booster::locale::as::ftime or cppcms::locale::as::ftime for details 
+			/// (depending on your localization backend)
+			///
+			strftime(streamable const &t,std::string const &fmt);
+			///
+			/// Create date and time filter that formats current date and time using POSIX time representation \a t,
+			/// in a timezone \a timezone
+			/// according to strftime like format \a fmt, see booster::locale::as::ftime or cppcms::locale::as::ftime for details 
+			/// (depending on your localization backend)
+			///
+			strftime(streamable const &time,std::string const &timezone,std::string const &fmt);
+
+			void operator()(std::ostream &out) const;
+		private:
+			struct _data;
+			streamable time_;
+			std::string tz_;
+			std::string format_;
+			booster::copy_ptr<_data> d;
+		};
+		
+		inline std::ostream &operator<<(std::ostream &out,strftime const &obj)
 		{
 			obj(out);
 			return out;
