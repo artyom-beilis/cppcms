@@ -20,10 +20,17 @@
 #  define AIO_HAVE_POLL
 #  define AIO_HAVE_POSIX_SELECT
 
-#elif defined(__FreeBSD__) || defined(__APPLE__)
+#elif defined(__FreeBSD__)
 
 #  define AIO_HAVE_KQUEUE
 #  define AIO_HAVE_POLL
+#  define AIO_HAVE_POSIX_SELECT
+
+#elif defined(__APPLE__)
+
+// poll(2) is buggy and Mac OS X, removed
+
+#  define AIO_HAVE_KQUEUE
 #  define AIO_HAVE_POSIX_SELECT
 
 #elif defined(__CYGWIN__) || defined(__WIN32) || defined(_WIN32) || defined(WIN32)

@@ -154,7 +154,7 @@ namespace aio {
 					read ++;
 				}
 			}
-			return count;
+			return read;
 		}
 	private:
 		bool check(native_type fd,int &error)
