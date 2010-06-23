@@ -586,9 +586,9 @@ def main():
     global output_file
     global exit_flag
     while indx < len(os.sys.argv):
-        if os.sys.argv[indx]=='-s':
+        if os.sys.argv[indx]=='-s' or os.sys.argv[indx]=='-n':
             if indx+1>=len(os.sys.argv):
-                sys.stderr.write("-s should be followed by skin name\n")
+                sys.stderr.write("-s (-n) should be followed by skin name\n")
                 help()
                 exit_flag=1
                 return
