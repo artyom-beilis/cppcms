@@ -287,7 +287,7 @@ void session_file_storage::save_to_file(int fd,time_t timeout,std::string const 
 		int64_t timeout;
 		uint32_t crc;
 		uint32_t size;
-	} tmp = { timeout, 0, in.size() };
+	} tmp = { timeout, 0, static_cast<uint32_t>(in.size()) };
 	boost::crc_32_type crc_calc;
 	crc_calc.process_bytes(in.data(),in.size());
 	tmp.crc=crc_calc.checksum();
