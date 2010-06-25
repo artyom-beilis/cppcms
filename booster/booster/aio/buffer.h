@@ -30,8 +30,12 @@ namespace booster {
 
 			std::pair<entry const *,size_t> get() const
 			{
-				if(size_ == 0) 
-					return buffer_data_type(0,0);
+				if(size_ == 0) {
+					buffer_data_type bt;
+					bt.first=0;
+					bt.second=0;
+					return bt;
+				}
 				else if(size_ == 1)
 					return buffer_data_type(&entry_,1);
 				else
