@@ -404,7 +404,13 @@ void tcp_cache_service::stop()
 
 tcp_cache_service::~tcp_cache_service()
 {
-	d->srv_cache.reset();
+	try {
+		d->io.stop();
+		for(unsigned i=0;i<d->threads.size();i++)
+			d->threads[i]->join();
+		d->srv_cache.reset();
+	}
+	catch(...){}
 }
 
 } // impl
