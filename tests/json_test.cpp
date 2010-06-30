@@ -170,6 +170,31 @@ int main()
 		TEST(format(1.35e30)=="1.35e+30");
 		TEST(format(big_int * 1e30) == fl2+"e+30");
 
+		v["x"]=10000000;
+		THROWS(v.get<short>("x"));
+		TEST(v.get<int>("x")==10000000);
+		v["x"]=-1;
+		THROWS(v.get<unsigned>("x"));
+		THROWS(v.get<unsigned short>("x"));
+		THROWS(v.get<unsigned long >("x"));
+
+		TEST(v.get<int>("x")==-1);
+		TEST(v.get<short>("x")==-1);
+		TEST(v.get<long>("x")==-1);
+
+		if(std::numeric_limits<double>::max() != std::numeric_limits<float>::max()) {
+			double val = std::numeric_limits<double>::max() / 100;
+			v["x"]=val;
+			THROWS(v.get<float>("x"));
+			TEST(v.get<double>("x")==val);
+			TEST(v.get<long double>("x")==val);
+		}
+
+		if(std::numeric_limits<long double>::max() != std::numeric_limits<double>::max()) {
+			long double val = std::numeric_limits<long double>::max() / 100;
+			THROWS(v["x"]=val);
+		}
+
 	}
 	catch(std::exception const &e)
 	{

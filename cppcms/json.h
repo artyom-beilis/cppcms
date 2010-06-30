@@ -27,7 +27,7 @@
 #include <string>
 #include <iostream>
 #include <typeinfo>
-
+#include <limits>
 
 namespace cppcms {
 ///
@@ -548,18 +548,73 @@ namespace json {
 	CPPCMS_JSON_SPECIALIZE(json::array,array);
 
 	#undef CPPCMS_JSON_SPECIALIZE
-
-	template<>					
-	struct traits<int> {				
-		static int get(value const &v)		
-		{					
-			return static_cast<int>(v.number());
-		}					
-		static void set(value &v,int const &in)
-		{					
-			v.number(in);			
-		}					
+	
+	#define CPPCMS_JSON_SPECIALIZE_INT(type) 		\
+	template<>						\
+	struct traits<type> {					\
+		static type get(value const &v)			\
+		{						\
+			type res=static_cast<type>(v.number());	\
+			if(res!=v.number())			\
+				throw bad_value_cast();		\
+			return res;				\
+		}						\
+		static void set(value &v,type const &in)	\
+		{						\
+			v.number(static_cast<double>(in));	\
+		}						\
 	};
+
+	CPPCMS_JSON_SPECIALIZE_INT(char)
+	CPPCMS_JSON_SPECIALIZE_INT(unsigned char)
+	CPPCMS_JSON_SPECIALIZE_INT(signed char)
+	CPPCMS_JSON_SPECIALIZE_INT(wchar_t)
+	CPPCMS_JSON_SPECIALIZE_INT(short)
+	CPPCMS_JSON_SPECIALIZE_INT(unsigned short)
+	CPPCMS_JSON_SPECIALIZE_INT(int)
+	CPPCMS_JSON_SPECIALIZE_INT(unsigned int)
+	CPPCMS_JSON_SPECIALIZE_INT(long)
+	CPPCMS_JSON_SPECIALIZE_INT(unsigned long)
+	CPPCMS_JSON_SPECIALIZE_INT(long long)
+	CPPCMS_JSON_SPECIALIZE_INT(unsigned long long)
+
+	#undef CPPCMS_JSON_SPECIALIZE_INT
+
+	template<>
+	struct traits<float> {
+		static float get(value const &v)
+		{
+			double r=v.number();
+			if(	r < std::numeric_limits<float>::min()
+			     || std::numeric_limits<float>::max() < r )
+			{
+				throw bad_value_cast();
+			}
+			return static_cast<float>(r);
+		}
+		static void set(value &v,float const &in)
+		{
+			v.number(in);
+		}
+	};
+	
+	template<>
+	struct traits<long double> {
+		static long double get(value const &v)
+		{
+			return v.number();
+		}
+		static void set(value &v,long double const &in)
+		{
+			if( in < std::numeric_limits<double>::min()
+			     || std::numeric_limits<double>::max() < in )
+			{
+				throw bad_value_cast();
+			}
+			v.number(static_cast<double>(in));
+		}
+	};
+
 	template<>					
 	struct traits<json::null> {				
 		static void set(value &v,json::null const &in)
