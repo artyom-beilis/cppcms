@@ -19,6 +19,8 @@
 #include <cppcms/json.h>
 #include "test.h"
 #include <iostream>
+#include <limits>
+#include <stdlib.h>
 #include <sstream>
 #include <iomanip>
 using namespace cppcms;
@@ -152,6 +154,21 @@ int main()
 		v["y"][1]="test";
 		v["y"][2]=json::array();
 		TEST(format(v)=="{\"x\":10,\"y\":[null,\"test\",[]]}");
+
+		std::string fl="123456789123456789123456789123456789";
+		fl = fl.substr(0,std::numeric_limits<double>::digits10);
+		double big_int=atof(fl.c_str());
+		TEST(format(big_int)==fl);
+		TEST(format(1277880000)=="1277880000");
+		TEST(format(-1277880000)=="-1277880000");
+		TEST(atoi(format(std::numeric_limits<int>::max()).c_str()) == std::numeric_limits<int>::max());
+		TEST(atoi(format(std::numeric_limits<int>::min()).c_str()) == std::numeric_limits<int>::min());
+		std::string fl2=fl.substr(0,1)+'.'+fl.substr(1);
+		big_int=atof(fl2.c_str());
+		TEST(format(big_int)==fl2);
+		TEST(format(-big_int)=="-" + fl2);
+		TEST(format(1.35e30)=="1.35e+30");
+		TEST(format(big_int * 1e30) == fl2+"e+30");
 
 	}
 	catch(std::exception const &e)

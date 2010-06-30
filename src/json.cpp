@@ -24,6 +24,8 @@
 #include <algorithm>
 #include <iostream>
 #include <locale>
+#include <limits>
+#include <iomanip>
 #include <stdexcept>
 #include <stack>
 #include "utf_iterator.h"
@@ -324,7 +326,7 @@ namespace json {
 			out<<"null";
 			break;
 		case json::is_number:
-			out<<number();
+			out<<std::setprecision(std::numeric_limits<double>::digits10+1)<<number();
 			break;
 		case json::is_string:
 			out<<escape(str());
