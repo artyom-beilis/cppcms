@@ -549,20 +549,26 @@ namespace json {
 
 	#undef CPPCMS_JSON_SPECIALIZE
 	
-	#define CPPCMS_JSON_SPECIALIZE_INT(type) 		\
-	template<>						\
-	struct traits<type> {					\
-		static type get(value const &v)			\
-		{						\
-			type res=static_cast<type>(v.number());	\
-			if(res!=v.number())			\
-				throw bad_value_cast();		\
-			return res;				\
-		}						\
-		static void set(value &v,type const &in)	\
-		{						\
-			v.number(static_cast<double>(in));	\
-		}						\
+	#define CPPCMS_JSON_SPECIALIZE_INT(type) 			\
+	template<>							\
+	struct traits<type> {						\
+		static type get(value const &v)				\
+		{							\
+			type res=static_cast<type>(v.number());		\
+			if(res!=v.number())				\
+				throw bad_value_cast();			\
+			return res;					\
+		}							\
+		static void set(value &v,type const &in)		\
+		{							\
+			if(std::numeric_limits<type>::digits >		\
+				std::numeric_limits<double>::digits	\
+				&& static_cast<double>(in)!=in)		\
+			{						\
+				throw bad_value_cast();			\
+			}						\
+			v.number(static_cast<double>(in));		\
+		}							\
 	};
 
 	CPPCMS_JSON_SPECIALIZE_INT(char)

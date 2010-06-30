@@ -182,6 +182,10 @@ int main()
 		TEST(v.get<short>("x")==-1);
 		TEST(v.get<long>("x")==-1);
 
+		if(sizeof(long long) >= sizeof(double)) {
+			THROWS(v["x"]=std::numeric_limits<long long>::max());
+		}
+		
 		if(std::numeric_limits<double>::max() != std::numeric_limits<float>::max()) {
 			double val = std::numeric_limits<double>::max() / 100;
 			v["x"]=val;
