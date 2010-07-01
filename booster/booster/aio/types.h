@@ -13,7 +13,7 @@
 
 namespace booster {
 	template<typename F>
-	class function;
+	class callback;
 
 	namespace system {
 		class error_code;
@@ -36,9 +36,9 @@ namespace booster {
 		static const int invalid_socket = -1;
 		#endif
 
-		typedef function<void(system::error_code const &)> event_handler;
-		typedef function<void()> handler;
-		typedef function<void(system::error_code const &,size_t)> io_handler;
+		typedef callback<void(system::error_code const &)> event_handler;
+		typedef callback<void()> handler;
+		typedef callback<void(system::error_code const &,size_t)> io_handler;
 
 		typedef enum {
 			pf_unix,

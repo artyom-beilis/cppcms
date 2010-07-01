@@ -25,6 +25,7 @@
 #include <vector>
 #include <map>
 #include <booster/function.h>
+#include <booster/callback.h>
 #include <booster/system_error.h>
 
 #include <cppcms/defs.h>
@@ -52,10 +53,10 @@ namespace impl {
 	class multipart_parser;
 namespace cgi {
 
-	typedef booster::function<void(booster::system::error_code const &e)> handler;
-	typedef booster::function<void(booster::system::error_code const &e,size_t)> io_handler;
-	typedef booster::function<void()> callback;
-	typedef booster::function<void(bool)> ehandler;
+	typedef booster::callback<void(booster::system::error_code const &e)> handler;
+	typedef booster::callback<void(booster::system::error_code const &e,size_t)> io_handler;
+	typedef booster::callback<void()> callback;
+	typedef booster::callback<void(bool)> ehandler;
 
 	class connection;
 	class acceptor : public booster::noncopyable {

@@ -47,7 +47,7 @@
 #include "hello_world_view.h"
 
 #include <booster/aio/deadline_timer.h>
-#include <booster/function.h>
+#include <booster/callback.h>
 #include <booster/posix_time.h>
 #include <booster/system_error.h>
 

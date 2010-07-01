@@ -5,7 +5,7 @@
 //  accompanying file LICENSE_1_0.txt or copy at
 //  http://www.boost.org/LICENSE_1_0.txt)
 //
-#include <booster/function.h>
+#include <booster/callback.h>
 #include "test.h"
 #include <iostream>
 
@@ -47,39 +47,39 @@ struct call_counter {
 
 int main()
 {
-	using booster::function;
+	using booster::callback;
 	try {
 		reset();
-		function<void()> f=foov;
+		callback<void()> f=foov;
 		f();
 		TEST(foov_called);
 		f=fooi;
 		f();
 		TEST(fooi_called);
-		function<int()> fi=fooi;
+		callback<int()> fi=fooi;
 		TEST(fi()==10);
 		TEST(fi);
-		function<void(int)> fvi;
+		callback<void(int)> fvi;
 		TEST(!fvi);
 		try {
 			fvi(10);
 			throw std::runtime_error("Not throws!");
 		}
-		catch(booster::bad_function_call const &e) {}
+		catch(booster::bad_callback_call const &e) {}
 		fvi=fooid;
 		TEST(fvi);
 		fvi(10);
 		TEST(fooid_called);
 		int x=2;
-		TEST(function<int(int&)>(fooii)(x)==2);
+		TEST(callback<int(int&)>(fooii)(x)==2);
 		TEST(x==3);
 
-		function<int()> fcnt1=call_counter();
-		function<int()> fcnt2=fcnt1;
+		callback<int()> fcnt1=call_counter();
+		callback<int()> fcnt2=fcnt1;
 		TEST(fcnt1()==1);
 		TEST(fcnt1()==2);
-		TEST(fcnt2()==1);
-		TEST(fcnt2()==2);
+		TEST(fcnt2()==3);
+		TEST(fcnt2()==4);
 	}
 	catch(std::exception const &e)
 	{

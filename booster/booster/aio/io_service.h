@@ -14,7 +14,7 @@
 #include <booster/thread.h>
 #include <booster/system_error.h>
 #include <booster/aio/aio_category.h>
-#include <booster/function.h>
+#include <booster/callback.h>
 #include <booster/noncopyable.h>
 #include <string>
 #include <memory>
@@ -23,7 +23,7 @@ namespace booster {
 class ptime;
 namespace aio {
 
-	typedef function<void(system::error_code const &e,int fd)> accept_handler;
+	typedef callback<void(system::error_code const &e,int fd)> accept_handler;
 	class event_loop_impl;
 	class BOOSTER_API io_service : public noncopyable {
 	public:

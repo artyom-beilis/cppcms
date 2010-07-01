@@ -48,6 +48,7 @@
 #include "session_memory_storage.h"
 
 #include <booster/aio/deadline_timer.h>
+#include <booster/callback.h>
 #include <booster/posix_time.h>
 
 

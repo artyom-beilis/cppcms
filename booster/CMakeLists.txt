@@ -386,6 +386,7 @@ macro(add_booster_test MODULE TEST)
 endmacro()
 
 add_booster_test(function function)
+add_booster_test(function callback)
 add_booster_test(ptime posix_time)
 add_booster_test(thread thread)
 if(UNIX)
