@@ -32,10 +32,23 @@ if(DISABLE_ICU_LOCALIZATION)
 endif()
 
 add_subdirectory(booster)
+
 include_directories(booster)
 include_directories(src)
 include_directories(private)
 include_directories(cppcms_boost)
+include_directories(${CMAKE_BINARY_DIR})
+include_directories(${CMAKE_CURRENT_BINARY_DIR})
+include_directories(${CMAKE_CURRENT_BINARY_DIR}/booster)
+include_directories(${CMAKE_SOURCE_DIR})
+
+if(DISABLE_ICU_LOCALIZATION)
+	include_directories(noicu)
+else()
+	include_directories(localization)
+endif()
+
+
 
 
 
@@ -170,18 +183,6 @@ if(NOT DISABLE_ICONV)
 		message(STATUS " iconv not found, falling back to ICU")
 	endif(NOT CPPCMS_HAVE_ICONV)
 endif(NOT DISABLE_ICONV)
-
-include_directories(${CMAKE_BINARY_DIR})
-include_directories(${CMAKE_CURRENT_BINARY_DIR})
-include_directories(${CMAKE_CURRENT_BINARY_DIR}/booster)
-include_directories(${CMAKE_SOURCE_DIR})
-
-if(DISABLE_ICU_LOCALIZATION)
-	include_directories(noicu)
-else()
-	include_directories(localization)
-endif()
-
 
 
 set(CPPCMS_LIBRARY_SUFFIX ${CMAKE_SHARED_LIBRARY_SUFFIX})

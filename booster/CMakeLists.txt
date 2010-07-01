@@ -19,6 +19,11 @@ option(DISABLE_STATIC	"Disable static libraries build" OFF)
 option(DISABLE_ICU_LOCALIZATION "Disable locale library" OFF)
 
 
+include_directories(${CMAKE_BINARY_DIR})
+include_directories(${CMAKE_CURRENT_BINARY_DIR})
+include_directories(.)
+include_directories(lib/test)
+
 
 #############################################################################
 #
@@ -285,10 +290,6 @@ endif()
 find_library(PCRE_LIB NAMES pcre${PCRE_SUFFIX} pcre)
 
 
-include_directories(${CMAKE_BINARY_DIR})
-include_directories(${CMAKE_CURRENT_BINARY_DIR})
-include_directories(.)
-include_directories(lib/test)
 
 set(LINK_LIBS )
 
