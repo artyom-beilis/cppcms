@@ -167,8 +167,18 @@ int main()
 		big_int=atof(fl2.c_str());
 		TEST(format(big_int)==fl2);
 		TEST(format(-big_int)=="-" + fl2);
-		TEST(format(1.35e30)=="1.35e+30");
-		TEST(format(big_int * 1e30) == fl2+"e+30");
+
+		{
+			std::string tmp;
+			
+			tmp = format(1.35e30);
+			TEST(tmp.substr(0,5)=="1.35e");
+			TEST(tmp.substr(tmp.size()-2)=="30");
+
+			tmp = format(big_int * 1e30);
+			TEST(tmp.substr(0,fl2.size()+1) == fl2+"e");
+			TEST(tmp.substr(tmp.size()-2)=="30");
+		}
 
 		v["x"]=10000000;
 		THROWS(v.get<short>("x"));
