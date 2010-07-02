@@ -54,6 +54,9 @@
 # include "fastcgi_api.h"
 #endif
 
+
+#include "cached_settings.h"
+
 #include <cppcms/cache_pool.h>
 #include "internal_file_server.h"
 #include <cppcms/json.h>
@@ -208,8 +211,15 @@ namespace {
 	}
 }
 
+
+impl::cached_settings const &service::cached_settings()
+{
+	return *impl_->cached_settings_;
+}
+
 void service::setup()
 {
+	impl_->cached_settings_.reset(new impl::cached_settings(settings()));
 	setup_logging();
 	impl_->id_=0;
 	int reactor=reactor_type(settings().get("service.reactor","default"));
@@ -306,7 +316,7 @@ service::~service()
 
 int service::threads_no()
 {
-	return settings().get("service.worker_threads",5);
+	return cached_settings().service.worker_threads;
 }
 
 namespace {
@@ -465,7 +475,7 @@ void service::run()
 
 int service::procs_no()
 {
-	int procs=settings().get("service.worker_processes",0);
+	int procs=cached_settings().service.worker_processes;
 	if(procs < 0)
 		procs = 0;
 	#ifdef CPPCMS_WIN32

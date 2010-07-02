@@ -56,6 +56,8 @@ file_server::file_server(cppcms::service &srv) : application(srv)
 
 	std::string mime_file=settings().get("file_server.mime_types","");
 
+	allow_deflate_ = settings().get("file_server.allow_deflate",false);
+
 
 	if(mime_file.empty()) {
 		mime_[".pdf"]	=      "application/pdf";
@@ -249,7 +251,7 @@ void file_server::main(std::string file_name)
 	else
 		response().content_type("application/octet-stream");
 
-	if(!settings().get("http.allow_deflate",false)) {
+	if(!allow_deflate_) {
 		response().io_mode(http::response::nogzip);
 	}
 

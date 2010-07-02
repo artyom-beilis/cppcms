@@ -23,6 +23,7 @@
 #include <cppcms/http_request.h>
 #include <cppcms/http_cookie.h>
 #include "http_protocol.h"
+#include "cached_settings.h"
 #include <cppcms/json.h>
 #include <cppcms/cppcms_error.h>
 #include <cppcms/service.h>
@@ -96,7 +97,7 @@ struct response::_data {
 
 	_data(impl::cgi::connection *conn) : 
 		headers(string_i_comp),
-		output(output_device(conn),conn->service().settings().get("service.output_buffer_size",16384))
+		output(output_device(conn),conn->service().cached_settings().service.output_buffer_size)
 	{
 	}
 };
@@ -113,7 +114,7 @@ response::response(context &context) :
 	finalized_(0)
 {
 	set_content_header("text/html");
-	if(context_.settings().get("server.disable_xpowered_by",false)==0) {
+	if(context_.service().cached_settings().service.disable_xpowered_by==false) {
 		set_header("X-Powered-By", CPPCMS_PACKAGE_NAME "/" CPPCMS_PACKAGE_VERSION);
 	}
 }
@@ -124,7 +125,7 @@ response::~response()
 
 void response::set_content_header(std::string const &content_type)
 {
-	if(context_.settings().get("localization.disable_charset_in_content_type",false)) {
+	if(context_.service().cached_settings().localization.disable_charset_in_content_type) {
 		set_header("Content-Type",content_type);
 	}
 	else {
@@ -190,7 +191,7 @@ bool response::need_gzip()
 		return false;
 	if(io_mode_!=normal)
 		return false;
-	if(context_.settings().get("gzip.enable",true)==0)
+	if(context_.service().cached_settings().gzip.enable==false)
 		return false;
 	if(context_.request().http_accept_encoding().find("gzip")==std::string::npos)
 		return false;
@@ -275,10 +276,10 @@ std::ostream &response::out()
 	if(gzip) {
 		gzip_params params;
 
-		int level=context_.settings().get("gzip.level",-1);
+		int level=context_.service().cached_settings().gzip.level;
 		if(level!=-1)
 			params.level=level;
-		int buffer=context_.settings().get("gzip.buffer",-1);
+		int buffer=context_.service().cached_settings().gzip.buffer;
 		if(buffer!=-1)
 			d->filter.push(gzip_compressor(params,buffer));
 		else

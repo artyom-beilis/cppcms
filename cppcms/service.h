@@ -38,6 +38,7 @@ namespace booster {
 ///
 namespace cppcms {
 	namespace impl {
+		struct cached_settings;
 		class service;
 		namespace cgi {
 			class acceptor;
@@ -188,6 +189,8 @@ namespace cppcms {
 
 		/// \cond INTERNAL
 		cppcms::impl::service &impl();
+
+		impl::cached_settings const &cached_settings();
 		/// \endcond
 
 	private:

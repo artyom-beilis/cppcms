@@ -33,6 +33,7 @@ class thread_pool;
 class session_pool;
 
 namespace impl {
+	class cached_settings;
 	class prefork_acceptor;
 	namespace cgi {
 		class acceptor;
@@ -64,6 +65,7 @@ namespace impl {
 		std::auto_ptr<cache_pool> cache_pool_;
 		std::auto_ptr<session_pool> session_pool_;
 		std::auto_ptr<cppcms::forwarder> forwarder_;
+		std::auto_ptr<impl::cached_settings> cached_settings_;
 		std::locale default_locale_;
 
 		std::vector<booster::function<void()> > on_fork_;

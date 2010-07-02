@@ -25,6 +25,7 @@
 #include "http_protocol.h"
 #include <cppcms/service.h>
 #include "service_impl.h"
+#include "cached_settings.h"
 #include <cppcms/json.h>
 #include "cgi_api.h"
 #include "multipart_parser.h"
@@ -252,7 +253,7 @@ void connection::load_content(booster::system::error_code const &e,http::context
 	if(content_length > 0) {
 		if(http::protocol::is_prefix_of("multipart/form-data",content_type)) {
 			// 64 MB
-			long long allowed=service().settings().get("security.multipart_form_data_limit",64*1024)*1024;
+			long long allowed=service().cached_settings().security.multipart_form_data_limit*1024;
 			if(content_length > allowed) { 
 				set_error(h,"security violation: multipart/form-data content length too big");
 				BOOSTER_NOTICE("cppcms") << "multipart/form-data size too big " << content_length << 
@@ -278,7 +279,7 @@ void connection::load_content(booster::system::error_code const &e,http::context
 					h));
 		}
 		else {
-			long long allowed=service().settings().get("security.content_length_limit",1024)*1024;
+			long long allowed=service().cached_settings().security.content_length_limit*1024;
 			if(content_length > allowed) {
 				set_error(h,"security violation POST content length too big");
 				BOOSTER_NOTICE("cppcms") << "POST data size too big " << content_length << 
@@ -310,7 +311,7 @@ void connection::on_some_multipart_read(booster::system::error_code const &e,siz
 		}
 		content_.clear();
 		multipart_parser::files_type files = multipart_parser_->get_files();
-		size_t allowed=service().settings().get("security.content_length_limit",1024)*1024;
+		size_t allowed=service().cached_settings().security.content_length_limit*1024;
 		for(unsigned i=0;i<files.size();i++) {
 			if(files[i]->mime().empty() && files[i]->size() > allowed) {
 				set_error(h,"Conent Lengths to big");

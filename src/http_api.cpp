@@ -41,6 +41,8 @@
 #include <booster/aio/buffer.h>
 #include <booster/log.h>
 
+#include "cached_settings.h"
+
 namespace io = booster::aio;
 
 
@@ -62,10 +64,10 @@ namespace cgi {
 		{
 
 			env_["SERVER_SOFTWARE"]=CPPCMS_PACKAGE_NAME "/" CPPCMS_PACKAGE_VERSION;
-			env_["SERVER_NAME"]=srv.settings().get("service.ip","127.0.0.1");
+			env_["SERVER_NAME"]=srv.cached_settings().service.ip;
 			std::ostringstream ss;
 			ss.imbue(std::locale::classic());
-			ss << srv.settings().get("service.port",8080);
+			ss << srv.cached_settings().service.port;
 			env_["SERVER_PORT"]=ss.str();
 			env_["GATEWAY_INTERFACE"]="CGI/1.0";
 			env_["SERVER_PROTOCOL"]="HTTP/1.0";
@@ -317,15 +319,12 @@ namespace cgi {
 
 			env_["REQUEST_METHOD"]=request_method_;
 			std::string remote_addr;
-			if(service().settings().get("http.proxy.behind",false)==false) {
+			if(service().cached_settings().http.proxy.behind==false) {
 				remote_addr=socket_.remote_endpoint().ip();
 			}
 			else {
-				std::vector<std::string> default_headers;
-				default_headers.push_back("X-Forwarded-For");
-
-				std::vector<std::string> headers = 
-					service().settings().get("http.proxy.remote_addr_headers",default_headers);
+				std::vector<std::string> const &headers = 
+					service().cached_settings().http.proxy.remote_addr_headers;
 
 				for(unsigned i=0;i<headers.size();i++) {
 					std::map<std::string,std::string>::const_iterator p;
@@ -343,14 +342,8 @@ namespace cgi {
 			}
 			
 
-			std::vector<std::string> script_names = 
-				service().settings().get("http.script_names",std::vector<std::string>());
-
-			std::string additional=service().settings().get("http.script","");
-			
-			if(!additional.empty())
-				script_names.push_back(additional);
-
+			std::vector<std::string> const &script_names = 
+				service().cached_settings().http.script_names;
 
 			for(unsigned i=0;i<script_names.size();i++) {
 

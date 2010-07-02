@@ -29,6 +29,8 @@
 #include <cppcms/service.h>
 #include <cppcms/json.h>
 
+#include "cached_settings.h"
+
 #include <sstream>
 #include "string.h"
 
@@ -56,8 +58,8 @@ session_interface::session_interface(http::context &context) :
 	context_(&context),
 	loaded_(0)
 {
-	timeout_val_def_=context_->settings().get("session.timeout",24*3600);
-	string s_how=context_->settings().get("session.expire","browser");
+	timeout_val_def_=context.service().cached_settings().session.timeout;
+	string s_how=context.service().cached_settings().session.expire;
 	if(s_how=="fixed") {
 		how_def_=fixed;
 	}
@@ -304,14 +306,14 @@ void session_interface::set_session_cookie(int64_t age,string const &data,string
 {
 	if(data.empty())
 		age=-1;
-	std::string cookie_name=context_->settings().get("session.cookies.prefix","cppcms_session");
+	std::string cookie_name=context_->service().cached_settings().session.cookies.prefix;
 	if(!key.empty()) {
 		cookie_name+="_";
 		cookie_name+=key;
 	}
-	std::string domain = context_->settings().get("session.cookies.domain","");
-	std::string path   = context_->settings().get("session.cookies.path","/");
-	bool secure = context_->settings().get("session.cookies.secure",0);
+	std::string const &domain = context_->service().cached_settings().session.cookies.domain;
+	std::string const &path   = context_->service().cached_settings().session.cookies.path;
+	bool secure = context_->service().cached_settings().session.cookies.secure;
 
 	http::cookie the_cookie(cookie_name,util::urlencode(data),path,domain);
 
@@ -335,7 +337,7 @@ void session_interface::set_session_cookie(string const &data)
 string session_interface::get_session_cookie()
 {
 	check();
-	string name=context_->settings().get("session.cookies.prefix","cppcms_session");
+	string name=context_->service().cached_settings().session.cookies.prefix;
 	http::request::cookies_type const &cookies = context_->request().cookies();
 	http::request::cookies_type::const_iterator p=cookies.find(name);
 	if(p==cookies.end())

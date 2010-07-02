@@ -38,6 +38,8 @@
     namespace boost = cppcms_boost;
 #endif
 
+#include "cached_settings.h"
+
 
 #ifdef CPPCMS_WIN_NATIVE
 #include <winsock2.h>
@@ -64,7 +66,9 @@ namespace cgi {
 			int procs=srv.procs_no();
 			if(procs < 1) procs=1;
 			int threads=srv.threads_no();
-			cuncurrency_hint_=srv.settings().get("fastcgi.cuncurrency_hint",procs*threads);
+			cuncurrency_hint_=srv.cached_settings().fastcgi.cuncurrency_hint;
+			if(cuncurrency_hint_ < 0)
+				cuncurrency_hint_ = procs*threads;
 		}
 		~fastcgi()
 		{
