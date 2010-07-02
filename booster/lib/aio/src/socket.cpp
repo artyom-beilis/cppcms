@@ -647,11 +647,19 @@ size_t socket::write(const_buffer const &buf)
 }
 
 namespace {
-	struct reader_some {
+	struct reader_some : public booster::callable<void(system::error_code const &e)> {
 		io_handler h;
 		mutable_buffer buf;
 		socket *sock;
-		void operator()(system::error_code const &e) const
+
+		typedef intrusive_ptr<reader_some> pointer;
+
+		reader_some(io_handler const &ih,mutable_buffer const &ibuf,socket *isock) :
+			h(ih),buf(ibuf),sock(isock)
+		{
+		}
+
+		void operator()(system::error_code const &e) 
 		{
 			if(e) {
 				h(e,0);
@@ -660,18 +668,26 @@ namespace {
 				system::error_code err;
 				size_t n=sock->read_some(buf,err);
 				if(n==0 && err && socket::would_block(err))
-					sock->on_readable(*this);
+					sock->on_readable(pointer(this));
 				else
 					h(err,n);
 			}
 		}
 	};
 
-	struct writer_some {
+	struct writer_some : public booster::callable<void(system::error_code const &e)> {
 		io_handler h;
 		const_buffer buf;
 		socket *sock;
-		void operator()(system::error_code const &e) const
+		
+		typedef intrusive_ptr<writer_some> pointer;
+		
+		writer_some(io_handler const &ih,const_buffer const &ibuf,socket *isock) :
+			h(ih),buf(ibuf),sock(isock)
+		{
+		}
+
+		void operator()(system::error_code const &e) 
 		{
 			if(e) {
 				h(e,0);
@@ -680,36 +696,44 @@ namespace {
 				system::error_code err;
 				size_t n=sock->write_some(buf,err);
 				if(n==0 && err && socket::would_block(err))
-					sock->on_writeable(*this); 
+					sock->on_writeable(pointer(this)); 
 				else
 					h(err,n);
 			}
 		}
 	};
 
-	struct io_binder {
+	struct io_binder : public callable<void()> {
+		typedef std::auto_ptr<io_binder> pointer;
 		io_handler h;
 		size_t n;
 		system::error_code e;
-		void operator()() const
+		io_binder(io_handler const &ih,size_t in,system::error_code const &ie) : h(ih),n(in),e(ie) {}
+		void operator()()
 		{
 			h(e,n);
 		}
 	};
 
-	struct event_binder {
+	struct event_binder : public callable<void()> {
 		event_handler h;
 		system::error_code e;
-		void operator()() const
+		event_binder(event_handler const &ih,system::error_code const &ie) : h(ih),e(ie) {}
+		typedef std::auto_ptr<event_binder> pointer;
+		void operator()()
 		{
 			h(e);
 		}
 	};
 
-	struct async_acceptor {
+	struct async_acceptor : public callable<void(system::error_code const &e)> {
 		event_handler h;
 		socket *target;
 		socket *source;
+		async_acceptor(event_handler const &_h,socket *_t,socket *_s) : h(_h),target(_t),source(_s) {}
+
+		typedef std::auto_ptr<async_acceptor> pointer;
+
 		void operator()(system::error_code const &e)
 		{
 			if(e) { h(e); return; }
@@ -722,9 +746,14 @@ namespace {
 				h(reserr);
 		}
 	};
-	struct async_connector {
+	struct async_connector : public callable<void(system::error_code const &e)> {
 		event_handler h;
 		socket *sock;
+
+		async_connector(event_handler const &_h,socket *_s) : h(_h),sock(_s) {}
+
+		typedef std::auto_ptr<async_connector> pointer;
+
 		void operator()(system::error_code const &e)
 		{
 			if(e) { h(e); return; }
@@ -747,7 +776,9 @@ namespace {
 		}
 	};
 
-	struct reader_all {
+	struct reader_all : public callable<void(system::error_code const &e)>
+	{
+		typedef intrusive_ptr<reader_all> pointer;
 		reader_all(socket *s,mutable_buffer const &b,io_handler const &handler) :
 			count(0),
 			self(s)
@@ -755,19 +786,19 @@ namespace {
 			#ifdef BOOSTER_AIO_FORCE_POLL
 			buf = b;
 			h=handler;
-			self->on_readable(*this);
+			self->on_readable(intrusive_ptr<reader_all>(this));
 			#else
 			system::error_code e;
 			size_t n = s->read_some(b,e);
 			count+=n;
 			buf=b+n;
 			if(buf.empty() || (e && !socket::would_block(e))) {
-				io_binder binder = { handler, count, e }; 
+				io_binder::pointer binder(new io_binder( handler, count, e));
 				self->get_io_service().post(binder);
 			}
 			else {
 				h=handler;
-				self->on_readable(*this);
+				self->on_readable(intrusive_ptr<reader_all>(this));
 			}
 			#endif
 		}
@@ -786,7 +817,7 @@ namespace {
 					h(err,count);
 				}
 				else {
-					self->on_readable(*this);
+					self->on_readable(intrusive_ptr<reader_all>(this));
 				}
 			}
 		}
@@ -797,7 +828,9 @@ namespace {
 		io_handler h;
 	};
 
-	struct writer_all {
+	struct writer_all : public callable<void(system::error_code const &e)> 
+	{
+		typedef intrusive_ptr<writer_all> pointer;
 		writer_all(socket *s,const_buffer const &b,io_handler const &handler) :
 			count(0),
 			self(s)
@@ -806,7 +839,7 @@ namespace {
 
 			h=handler;
 			buf = b;
-			self->on_writeable(*this);
+			self->on_writeable(intrusive_ptr<writer_all>(this));
 
 			#else
 
@@ -815,12 +848,12 @@ namespace {
 			count+=n;
 			buf=b+n;
 			if(buf.empty() || (e && !socket::would_block(e))) {
-				io_binder binder = { handler, count, e }; 
+				io_binder::pointer binder(new io_binder( handler, count, e ));
 				self->get_io_service().post(binder);
 			}
 			else {
 				h=handler;
-				self->on_writeable(*this);
+				self->on_writeable(intrusive_ptr<writer_all>(this));
 			}
 
 			#endif
@@ -840,7 +873,7 @@ namespace {
 					h(err,count);
 				}
 				else {
-					self->on_writeable(*this);
+					self->on_writeable(intrusive_ptr<writer_all>(this));
 				}
 			}
 		}
@@ -885,17 +918,17 @@ void socket::async_write_some(const_buffer const &buffer,io_handler const &h)
 	if(!dont_block(h))
 		return;
 	#ifdef BOOSTER_AIO_FORCE_POLL
-	writer_some writer = { h,buffer,this };
+	writer_some::pointer writer(new writer_some(h,buffer,this));
 	on_writeable(writer);
 	#else
 	system::error_code e;
 	size_t n = write_some(buffer,e);
 	if(e && would_block(e)) {
-		writer_some writer = { h,buffer,this };
+		writer_some::pointer writer(new writer_some(h,buffer,this));
 		on_writeable(writer);
 	}
 	else {
-		io_binder binder = { h,n,e };
+		io_binder::pointer binder(new io_binder( h,n,e ));
 		get_io_service().post(binder);
 	}
 	#endif
@@ -906,17 +939,17 @@ void socket::async_read_some(mutable_buffer const &buffer,io_handler const &h)
 	if(!dont_block(h))
 		return;
 	#ifdef BOOSTER_AIO_FORCE_POLL
-	reader_some reader = { h,buffer,this };
+	reader_some::pointer reader(new reader_some(h,buffer,this));
 	on_readable(reader);
 	#else
 	system::error_code e;
 	size_t n = read_some(buffer,e);
 	if(e &&  would_block(e)) {
-		reader_some reader = { h,buffer,this };
+		reader_some::pointer reader(new reader_some(h,buffer,this));
 		on_readable(reader);
 	}
 	else {
-		io_binder binder = { h,n,e };
+		io_binder::pointer binder(new io_binder( h,n,e ));
 		get_io_service().post(binder);
 	}
 	#endif
@@ -926,7 +959,7 @@ void socket::async_accept(socket &target,event_handler const &h)
 {
 	if(!dont_block(h))
 		return;
-	async_acceptor acceptor = { h, &target, this };
+	async_acceptor::pointer acceptor(new async_acceptor( h, &target, this ));
 	on_readable(acceptor);
 }
 
@@ -937,11 +970,11 @@ void socket::async_connect(endpoint const &ep,event_handler const &h)
 	system::error_code e;
 	connect(ep,e);
 	if(e && would_block(e)) {
-		async_connector connector = {h,this};
+		async_connector::pointer connector(new async_connector(h,this));
 		on_writeable(connector);
 	}
 	else {
-		event_binder binder = { h,e };
+		event_binder::pointer binder(new event_binder( h,e ));
 		get_io_service().post(binder);
 	}
 }
@@ -950,7 +983,7 @@ void socket::async_read(mutable_buffer const &buffer,io_handler const &h)
 {
 	if(!dont_block(h))
 		return;
-	reader_all r(this,buffer,h);
+	reader_all::pointer r(new reader_all(this,buffer,h));
 }
 
 
@@ -958,7 +991,7 @@ void socket::async_write(const_buffer const &buffer,io_handler const &h)
 {
 	if(!dont_block(h))
 		return;
-	writer_all r(this,buffer,h);
+	writer_all::pointer r(new writer_all(this,buffer,h));
 }
 
 bool socket::dont_block(io_handler const &h)
@@ -968,7 +1001,7 @@ bool socket::dont_block(io_handler const &h)
 	system::error_code e;
 	set_non_blocking(true,e);
 	if(e) {
-		io_binder b = { h, 0, e};
+		io_binder::pointer b(new io_binder( h, 0, e));
 		get_io_service().post(b);
 		return false;
 	}
@@ -983,7 +1016,7 @@ bool socket::dont_block(event_handler const &h)
 	system::error_code e;
 	set_non_blocking(true,e);
 	if(e) {
-		event_binder b = { h, e};
+		event_binder::pointer b(new event_binder( h, e));
 		get_io_service().post(b);
 		return false;
 	}

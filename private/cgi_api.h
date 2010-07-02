@@ -24,7 +24,6 @@
 #include <booster/enable_shared_from_this.h>
 #include <vector>
 #include <map>
-#include <booster/function.h>
 #include <booster/callback.h>
 #include <booster/system_error.h>
 

@@ -44,6 +44,25 @@ struct call_counter {
 	int operator()() { return ++counter; }
 };
 
+bool mycall_called = false;
+
+struct mycall : public booster::callable<void()> 
+{
+	void operator()()
+	{
+		mycall_called = true;
+	}
+};
+
+struct myicall : public booster::callable<void(int)> 
+{
+	void operator()(int /*x*/)
+	{
+		mycall_called = true;
+	}
+};
+
+
 
 int main()
 {
@@ -80,6 +99,61 @@ int main()
 		TEST(fcnt1()==2);
 		TEST(fcnt2()==3);
 		TEST(fcnt2()==4);
+		
+		{
+			std::auto_ptr<mycall> mc(new mycall());
+			callback<void()> f(mc);
+			f();
+			TEST(mycall_called); mycall_called=false;
+		}
+		{
+			booster::intrusive_ptr<mycall> mc(new mycall());
+			callback<void()> f(mc);
+			f();
+			TEST(mycall_called); mycall_called=false;
+		}
+		{
+			std::auto_ptr<mycall> mc(new mycall());
+			callback<void()> f;
+			f=mc;
+			f();
+			TEST(mycall_called); mycall_called=false;
+		}
+		{
+			booster::intrusive_ptr<mycall> mc(new mycall());
+			callback<void()> f;
+			f=mc;
+			f();
+			TEST(mycall_called); mycall_called=false;
+		}
+		{
+			std::auto_ptr<myicall> mc(new myicall());
+			callback<void(int)> f(mc);
+			f(2);
+			TEST(mycall_called); mycall_called=false;
+		}
+		{
+			booster::intrusive_ptr<myicall> mc(new myicall());
+			callback<void(int)> f(mc);
+			f(2);
+			TEST(mycall_called); mycall_called=false;
+		}
+		{
+			std::auto_ptr<myicall> mc(new myicall());
+			callback<void(int)> f;
+			f=mc;
+			f(2);
+			TEST(mycall_called); mycall_called=false;
+		}
+		{
+			booster::intrusive_ptr<myicall> mc(new myicall());
+			callback<void(int)> f;
+			f=mc;
+			f(2);
+			TEST(mycall_called); mycall_called=false;
+		}
+
+
 	}
 	catch(std::exception const &e)
 	{

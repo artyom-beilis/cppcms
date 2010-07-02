@@ -24,7 +24,7 @@
 #include <booster/intrusive_ptr.h>
 #include <booster/shared_ptr.h>
 #include <booster/enable_shared_from_this.h>
-#include <booster/function.h>
+#include <booster/callback.h>
 #include <locale>
 
 namespace cppcms {
@@ -135,7 +135,7 @@ namespace cppcms {
 				operation_aborted    ///< Asynchronous operation was canceled
 			} complition_type; 
 
-			typedef booster::function<void(complition_type)> handler;
+			typedef booster::callback<void(complition_type)> handler;
 
 			///
 			/// Send all pending output data to the client and
@@ -165,7 +165,7 @@ namespace cppcms {
 			/// -# If async_flush_output fails, this does not mean that 
 			///    this handler would be called as well, so you need to check both
 			///
-			void async_on_peer_reset(booster::function<void()> const &h);
+			void async_on_peer_reset(booster::callback<void()> const &h);
 		private:
 			void on_request_ready(bool error);
 			static void dispatch(booster::intrusive_ptr<application> app,std::string url,bool syncronous);

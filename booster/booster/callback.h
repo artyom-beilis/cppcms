@@ -9,12 +9,16 @@
 #define BOOSTER_CALLBACK_H
 
 #include <stdexcept>
+#include <memory>
 #include <booster/intrusive_ptr.h>
 #include <booster/refcounted.h>
 
 namespace booster {
 	template<typename Type>
 	class callback;
+
+	template<typename Type>
+	struct callable;
 
 	class bad_callback_call : public std::runtime_error {
 	public:
@@ -100,57 +104,88 @@ namespace booster {
 
 	#else
 
-	#define BOOSTER_CALLBACK							\
+	#define BOOSTER_CALLBACK						\
+	template<typename Result BOOSTER_TEMPLATE_PARAMS >			\
+	struct callable<Result(BOOSTER_TYPE_PARAMS)> : public refcounted {	\
+		virtual Result operator()(BOOSTER_TYPE_PARAMS) = 0;		\
+		virtual ~callable(){}						\
+	};									\
+										\
 	template<typename Result BOOSTER_TEMPLATE_PARAMS >			\
 	class callback<Result(BOOSTER_TYPE_PARAMS)>				\
 	{									\
 	public:									\
 		typedef Result result_type;					\
-		struct callable : public refcounted {				\
-			virtual Result call(BOOSTER_TYPE_PARAMS) =0;		\
-			virtual ~callable(){}					\
-		};								\
+										\
+		typedef callable<Result(BOOSTER_TYPE_PARAMS)> callable_type;	\
 										\
 		template<typename R,typename F>					\
-		struct callable_impl : public callable {			\
+		struct callable_impl : public callable_type {			\
 			F func;							\
 			callable_impl(F f) : func(f){}				\
-			virtual R call(BOOSTER_TYPE_PARAMS) 			\
+			virtual R operator()(BOOSTER_TYPE_PARAMS) 		\
 			{  return func(BOOSTER_CALL_PARAMS); }			\
 		};								\
+										\
 		template<typename F>						\
-		struct callable_impl<void,F> : public callable {		\
+		struct callable_impl<void,F> : public callable_type {		\
 			F func;							\
 			callable_impl(F f) : func(f){}				\
-			virtual void call(BOOSTER_TYPE_PARAMS) 			\
+			virtual void operator()(BOOSTER_TYPE_PARAMS) 		\
 			{  func(BOOSTER_CALL_PARAMS); }				\
 		};								\
+										\
 		callback(){}							\
+										\
+		template<typename Call>						\
+		callback(intrusive_ptr<Call> c) : call_ptr(c)			\
+		{}								\
+										\
+		template<typename Call>						\
+		callback(std::auto_ptr<Call> ptr) : call_ptr(ptr.release())	\
+		{}								\
+										\
+		template<typename Call>						\
+		callback const &operator=(intrusive_ptr<Call> c)		\
+		{ call_ptr = c; return *this; }					\
+										\
+		template<typename Call>						\
+		callback const &operator=(std::auto_ptr<Call> c)		\
+		{ call_ptr = 0; call_ptr = c.release(); return *this; }		\
+										\
 		template<typename F>						\
 		callback(F func) : call_ptr(new callable_impl<Result,F>(func)) 	\
 		{}								\
+										\
 		callback(callback const &other) : call_ptr(other.call_ptr) {}	\
+										\
 		template<typename F>						\
 		callback const &operator=(F func)				\
 		{ 								\
 			call_ptr = new callable_impl<Result,F>(func);		\
 			return *this;						\
 		}								\
+										\
 		callback const &operator=(callback const &other)		\
 		{ 								\
 			if(this != &other) { call_ptr=other.call_ptr; } 	\
 			return *this;						\
 		}								\
+										\
 		Result operator()(BOOSTER_TYPE_PARAMS) const			\
 		{ 								\
 			if(!call_ptr.get()) throw bad_callback_call();		\
-			return call_ptr->call(BOOSTER_CALL_PARAMS); 		\
+			return (*call_ptr)(BOOSTER_CALL_PARAMS); 		\
 		}								\
+										\
 		bool empty() const { return call_ptr.get()==0; }		\
+										\
 		operator bool() const { return !empty(); }			\
+										\
 		void swap(callback &other) { call_ptr.swap(other.call_ptr); }	\
+										\
 	private:								\
-		intrusive_ptr<callable> call_ptr;					\
+		intrusive_ptr<callable_type> call_ptr;				\
 	};									\
 
 	#define BOOSTER_TEMPLATE_PARAMS

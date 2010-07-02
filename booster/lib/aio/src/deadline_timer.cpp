@@ -78,10 +78,10 @@ void deadline_timer::wait()
 	ptime::sleep(diff);
 }
 
-struct deadline_timer::waiter {
+struct deadline_timer::waiter : public booster::callable<void(system::error_code const &e)> {
 	event_handler h;
 	deadline_timer *self;
-	void operator()(system::error_code const &e) const
+	void operator()(system::error_code const &e)
 	{
 		self->event_id_ = -1;
 		h(e);
@@ -90,7 +90,9 @@ struct deadline_timer::waiter {
 
 void deadline_timer::async_wait(event_handler const &h)
 {
-	waiter wt = { h, this };
+	std::auto_ptr<waiter> wt(new waiter);
+	wt->h=h;
+	wt->self = this;
 	event_id_ = get_io_service().set_timer_event(deadline_,wt);
 }
 
