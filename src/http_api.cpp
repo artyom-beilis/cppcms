@@ -75,8 +75,6 @@ namespace cgi {
 		}
 		~http()
 		{
-			booster::system::error_code e;
-			socket_.shutdown(io::socket::shut_rdwr,e);
 		}
 		struct binder {
 			void operator()(booster::system::error_code const &e,size_t n) const
@@ -203,6 +201,12 @@ namespace cgi {
 			booster::system::error_code e;
 			socket_.shutdown(io::socket::shut_wr,e);
 			socket_.get_io_service().post(boost::bind(h,booster::system::error_code()));
+		}
+		virtual void write_eof()
+		{
+			booster::system::error_code e;
+			socket_.shutdown(io::socket::shut_wr,e);
+			socket_.close(e);
 		}
 		virtual void async_write_some(void const *p,size_t s,io_handler const &h)
 		{

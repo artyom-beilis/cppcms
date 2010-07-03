@@ -271,6 +271,17 @@ private:
 	struct io_event_canceler {
 		native_type fd;
 		event_loop_impl *self_;
+		bool cancelation_is_needed_with_data_mutex_locked()
+		{
+			if(!self_->dispatch_queue_.empty())
+				return true;
+			io_data &cont=self_->map_[fd];
+			if(cont.current_event == 0 && !cont.readable && !cont.writeable) {
+				self_->map_.erase(fd);
+				return false;
+			}
+			return true;
+		}
 		void operator()() const
 		{
 			lock_guard l(self_->data_mutex_);
@@ -357,6 +368,20 @@ private:
 	void set_event(Functor &f)
 	{
 		lock_guard l(data_mutex_);
+		if(polling_ || !reactor_.get()) {
+			dispatch_queue_.push_back(f);
+			if(reactor_.get())
+				wake();
+		}
+		else {
+			f();
+		}
+	}
+	void set_event(io_event_canceler &f)
+	{
+		lock_guard l(data_mutex_);
+		if(!f.cancelation_is_needed_with_data_mutex_locked())
+			return;
 		if(polling_ || !reactor_.get()) {
 			dispatch_queue_.push_back(f);
 			if(reactor_.get())

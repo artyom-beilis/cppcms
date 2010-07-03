@@ -72,8 +72,6 @@ namespace cgi {
 		}
 		~fastcgi()
 		{
-			booster::system::error_code e;
-			socket_.shutdown(io::socket::shut_rdwr,e);
 		}
 		virtual void async_read_headers(handler const &h)
 		{
@@ -221,6 +219,28 @@ namespace cgi {
 		{
 			booster::system::error_code e;
 			socket_.close(e);
+		}
+		virtual void write_eof()
+		{
+			memset(&eof_,0,sizeof(eof_));
+			for(unsigned i=0;i<3;i++) {
+				eof_.headers_[i].version=fcgi_version_1;
+				eof_.headers_[i].request_id=request_id_;
+			}
+			eof_.headers_[0].type=fcgi_stdout;
+			eof_.headers_[1].type=fcgi_stderr;
+			eof_.headers_[2].type=fcgi_end_request;
+			eof_.headers_[2].content_length=8;
+			eof_.record_.protocol_status=fcgi_request_complete;
+			eof_.headers_[0].to_net();
+			eof_.headers_[1].to_net();
+			eof_.headers_[2].to_net();
+			eof_.record_.to_net();
+			
+			socket_.cancel();
+
+			booster::system::error_code e;
+			socket_.write(io::buffer(&eof_,sizeof(eof_)),e);
 		}
 		
 		virtual void async_write_eof(handler const &h)

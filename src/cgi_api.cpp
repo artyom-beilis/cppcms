@@ -393,6 +393,11 @@ void connection::async_complete_response(ehandler const &h)
 	request_in_progress_=false;
 }
 
+void connection::complete_response()
+{
+	write_eof();
+}
+
 void connection::on_eof_written(booster::system::error_code const &e,ehandler const &h)
 {
 	if(e) { set_error(h,e.message()); return; }

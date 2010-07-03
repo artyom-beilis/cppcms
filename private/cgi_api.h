@@ -86,6 +86,8 @@ namespace cgi {
 						ehandler const &on_response_written);
 
 		void async_complete_response(	ehandler const &on_response_complete);
+
+		void complete_response();
 		
 		void aync_wait_for_close_by_peer(callback const &on_eof);
 
@@ -113,6 +115,7 @@ namespace cgi {
 		virtual void async_read_eof(callback const &h) = 0;
 		virtual void async_write_some(void const *,size_t,io_handler const &h) = 0;
 		virtual void async_write_eof(handler const &h) = 0;
+		virtual void write_eof() = 0;
 		virtual size_t write_some(void const *,size_t) = 0;
 		virtual booster::aio::io_service &get_io_service() = 0;
 

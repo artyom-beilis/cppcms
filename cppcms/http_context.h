@@ -142,6 +142,13 @@ namespace cppcms {
 			/// finalize the connection. Note, you can't use this 
 			/// object for communication any more.
 			///
+			void complete_response();
+
+			///
+			/// Send all pending output data to the client and
+			/// finalize the connection. Note, you can't use this 
+			/// object for communication any more.
+			///
 			void async_complete_response();
 			
 			///

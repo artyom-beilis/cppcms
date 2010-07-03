@@ -116,6 +116,17 @@ void context::on_request_ready(bool error)
 		app->service().thread_pool().post(boost::bind(&context::dispatch,app,matched,true));
 	}
 }
+
+void context::complete_response()
+{
+	response().finalize();
+	conn_->complete_response();
+	if(conn_->is_reuseable()) {
+		booster::shared_ptr<context> cont(new context(conn_));
+		service().post(boost::bind(&context::run,cont));
+	}
+	conn_.reset();
+}
 // static 
 void context::dispatch(booster::intrusive_ptr<application> app,std::string url,bool syncronous)
 {
@@ -123,6 +134,7 @@ void context::dispatch(booster::intrusive_ptr<application> app,std::string url,b
 		if(syncronous)
 			app->context().session().load();
 		app->main(url);
+		app->context().complete_response();
 	}
 	catch(std::exception const &e){
 		if(app->get_context() && !app->response().some_output_was_written()) {

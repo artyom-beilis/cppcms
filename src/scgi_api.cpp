@@ -50,8 +50,6 @@ namespace cgi {
 		}
 		~scgi()
 		{
-			booster::system::error_code e;
-			socket_.shutdown(io::socket::shut_rdwr,e);
 		}
 		virtual void async_read_headers(handler const &h)
 		{
@@ -156,6 +154,12 @@ namespace cgi {
 			return false;
 		}
 
+		virtual void write_eof()
+		{
+			booster::system::error_code e;
+			socket_.shutdown(io::socket::shut_wr,e);
+			socket_.close(e);
+		}
 		virtual void async_write_eof(handler const &h)
 		{
 			booster::system::error_code e;

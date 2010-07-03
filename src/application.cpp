@@ -211,10 +211,6 @@ session_interface &application::session()
 
 void application::recycle()
 {
-	if(root()->d->conn) {
-		response().finalize();
-		context().async_complete_response();
-	}
 	assign_context(booster::shared_ptr<http::context>());
 }
 
