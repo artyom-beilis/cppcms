@@ -177,6 +177,8 @@ namespace booster {
 		int res = pcre_exec(d->re,0,begin,end-begin,0,PCRE_ANCHORED,&ovec.front(),ovec.size());
 		if(res < 0)
 			return false;
+		if(ovec[0]!=0 || ovec[1]!=end-begin)
+			return false;
 		for(int i=0;i<pat_size && i < res;i++) {
 			marks[i].first=ovec[i*2];
 			marks[i].second = ovec[i*2+1];

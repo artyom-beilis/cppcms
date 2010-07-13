@@ -38,6 +38,8 @@ public:
 		dispatcher().assign("/normal",&unit_test::normal,this);
 		dispatcher().assign("/throws",&unit_test::throws,this);
 		dispatcher().assign("/delayed",&unit_test::delayed,this);
+		dispatcher().assign("/delayed_with_response",&unit_test::delayed_with_response,this);
+		dispatcher().assign("/delayed_twice",&unit_test::delayed_twice,this);
 	}
 	void normal()
 	{
@@ -50,23 +52,62 @@ public:
 	{
 		context_ = release_context();
 		timer_.expires_from_now(booster::ptime::milliseconds(300));
-		timer_.async_wait(binder(this));
+		timer_.async_wait(binder(this,&unit_test::handle));
 	}
 	void handle()
 	{
 		context_->async_complete_response();
 		context_.reset();
 	}
+	void delayed_with_response()
+	{
+		context_ = release_context();
+		timer_.expires_from_now(booster::ptime::milliseconds(300));
+		timer_.async_wait(binder(this,&unit_test::handle2));
+	}
+	void handle2()
+	{
+		context_->response().out()<<"test message";
+		context_->async_complete_response();
+		context_.reset();
+	}
+	void delayed_twice()
+	{
+		context_ = release_context();
+		timer_.expires_from_now(booster::ptime::milliseconds(300));
+		timer_.async_wait(binder(this,&unit_test::handle3));
+	}
+	void handle3()
+	{
+		context_->response().out()<<"message1";
+		context_->async_flush_output(binder(this,&unit_test::handle35));
+	}
+	void handle35()
+	{
+		timer_.expires_from_now(booster::ptime::milliseconds(300));
+		timer_.async_wait(binder(this,&unit_test::handle4));
+	}
+	void handle4()
+	{
+		context_->response().out()<<"message2";
+		context_->async_complete_response();
+		context_.reset();
+	}
 private:
 	struct binder {
-		binder(booster::intrusive_ptr<unit_test> ptr) : self(ptr)
+		binder(booster::intrusive_ptr<unit_test> ptr,void (unit_test::*member)()) : self(ptr),m(member)
 		{
+		}
+		void operator()(cppcms::http::context::complition_type /*t*/) const
+		{
+			((*self).*m)();
 		}
 		void operator()(booster::system::error_code const &/*e*/) const
 		{
-			self->handle();
+			((*self).*m)();
 		}
 		booster::intrusive_ptr<unit_test> self;
+		void (unit_test::*m)();
 	};
 
 	booster::aio::deadline_timer timer_;
@@ -79,10 +120,12 @@ int main(int argc,char **argv)
 	try {
 		cppcms::service srv(argc,argv);
 		booster::intrusive_ptr<cppcms::application> app;
-		if(!srv.settings().get("test.async",false)) {
+		if(srv.settings().get("test.async","sync")=="sync") {
+			std::cerr << "Synchonous" << std::endl;
 			srv.applications_pool().mount( cppcms::applications_factory<unit_test>());
 		}
 		else {
+			std::cerr << "Asynchonous" << std::endl;
 			app=new unit_test(srv);
 			srv.applications_pool().mount(app);
 		}

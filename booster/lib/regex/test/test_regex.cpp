@@ -13,13 +13,21 @@
 bool search(std::string r,std::string t)
 {
 	booster::regex re(r);
-	return re.search(t.c_str(),t.c_str()+t.size());
+	bool v1 =  re.search(t.c_str(),t.c_str()+t.size());
+	std::vector<std::pair<int,int> > m;
+	bool v2 =  re.search(t.c_str(),t.c_str()+t.size(),m);
+	TEST(v1==v2);
+	return v1;
 }
 
 bool match(std::string r,std::string t)
 {
 	booster::regex re(r);
-	return re.match(t.c_str(),t.c_str()+t.size());
+	std::vector<std::pair<int,int> > m;
+	bool v1 = re.match(t.c_str(),t.c_str()+t.size());
+	bool v2 = re.match(t.c_str(),t.c_str()+t.size(),m);
+	TEST(v1==v2);
+	return v1;
 }
 
 template<typename Match,typename Other>

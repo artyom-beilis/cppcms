@@ -25,6 +25,9 @@
 #include <cppcms/json.h>
 #include <iostream>
 #include "client.h"
+#include "test.h"
+
+bool is_async;
 
 class unit_test : public cppcms::application {
 public:
@@ -34,8 +37,14 @@ public:
 	virtual void main(std::string /*unused*/)
 	{
 		response().set_plain_text_header();
-		if(!is_asynchronous())
+		TEST(is_async == is_asynchronous());
+		if(!is_asynchronous()) {
+			TEST(response().io_mode() == cppcms::http::response::normal);
 			response().io_mode(cppcms::http::response::nogzip);
+		}
+		else {
+			TEST(response().io_mode() == cppcms::http::response::asynchronous);
+		}
 		std::map<std::string,std::string> env=request().getenv();
 		std::ostream &out = response().out();
 		for(std::map<std::string,std::string>::const_iterator p=env.begin();p!=env.end();++p) {
@@ -59,10 +68,13 @@ int main(int argc,char **argv)
 	try {
 		cppcms::service srv(argc,argv);
 		booster::intrusive_ptr<cppcms::application> app;
-		if(!srv.settings().get("test.async",false)) {
+		if(srv.settings().get("test.async","sync")=="sync") {
+			std::cout << "Synchronous testing" << std::endl;
 			srv.applications_pool().mount( cppcms::applications_factory<unit_test>());
 		}
 		else {
+			is_async = true;
+			std::cout << "Asynchronous testing" << std::endl;
 			app=new unit_test(srv);
 			srv.applications_pool().mount(app);
 		}
