@@ -518,6 +518,7 @@ set(ALL_TESTS
 	cookie_test
 	multipart_parser_test
 	serialization_test
+	status_test
 	)
 foreach(TEST ${ALL_TESTS})
 	add_executable(${TEST} tests/${TEST}.cpp)
@@ -602,6 +603,14 @@ add_test(json_test json_test)
 add_test(multipart_parser_test multipart_parser_test "${CNF}")
 add_test(cache_backend_test cache_backend_test)
 add_test(serialization_test serialization_test)
+
+add_test(status_test
+	status_test "-c" "${CNF}/status_test.js" 
+	"--test-exec=${PYTHON} ${CNF}/status_test.py")
+
+add_test(async_status_test
+	status_test "-c" "${CNF}/status_test.js" "--test-async=async"
+	"--test-exec=${PYTHON} ${CNF}/status_test.py async")
 
 add_test(form_test
 	form_test "-c" "${CNF}/form_test.js" 

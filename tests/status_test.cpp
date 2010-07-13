@@ -22,37 +22,57 @@
 #include <cppcms/http_request.h>
 #include <cppcms/http_response.h>
 #include <cppcms/http_context.h>
+#include <cppcms/url_dispatcher.h>
+#include <booster/aio/deadline_timer.h>
+#include <booster/posix_time.h>
 #include <cppcms/json.h>
 #include <iostream>
 #include "client.h"
 
 class unit_test : public cppcms::application {
 public:
-	unit_test(cppcms::service &s) : cppcms::application(s)
+	unit_test(cppcms::service &s) : 
+		cppcms::application(s),
+		timer_(s.get_io_service())
+	{
+		dispatcher().assign("/normal",&unit_test::normal,this);
+		dispatcher().assign("/throws",&unit_test::throws,this);
+		dispatcher().assign("/delayed",&unit_test::delayed,this);
+	}
+	void normal()
 	{
 	}
-	virtual void main(std::string /*unused*/)
+	void throws()
 	{
-		response().set_plain_text_header();
-		if(!is_asynchronous())
-			response().io_mode(cppcms::http::response::nogzip);
-		std::map<std::string,std::string> env=request().getenv();
-		std::ostream &out = response().out();
-		for(std::map<std::string,std::string>::const_iterator p=env.begin();p!=env.end();++p) {
-			out << p->first <<':'<<p->second << '\n';
-		}
-		out << '\n';
-		typedef cppcms::http::request::form_type form_type;
-		form_type const &form=request().post();
-		for(form_type::const_iterator p=form.begin();p!=form.end();++p) {
-			out << p->first <<'='<<p->second << '\n';
-		}
+		throw std::runtime_error("Error");
 	}
+	void delayed()
+	{
+		context_ = release_context();
+		timer_.expires_from_now(booster::ptime::milliseconds(300));
+		timer_.async_wait(binder(this));
+	}
+	void handle()
+	{
+		context_->async_complete_response();
+		context_.reset();
+	}
+private:
+	struct binder {
+		binder(booster::intrusive_ptr<unit_test> ptr) : self(ptr)
+		{
+		}
+		void operator()(booster::system::error_code const &/*e*/) const
+		{
+			self->handle();
+		}
+		booster::intrusive_ptr<unit_test> self;
+	};
+
+	booster::aio::deadline_timer timer_;
+	booster::shared_ptr<cppcms::http::context> context_;
+
 };
-
-
-
-
 
 int main(int argc,char **argv)
 {

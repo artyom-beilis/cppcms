@@ -134,15 +134,22 @@ void context::dispatch(booster::intrusive_ptr<application> app,std::string url,b
 		if(syncronous)
 			app->context().session().load();
 		app->main(url);
-		if(app->get_context())
-			app->context().complete_response();
 	}
 	catch(std::exception const &e){
-		if(app->get_context() && !app->response().some_output_was_written()) {
-			app->response().make_error_response(http::response::internal_server_error,e.what());
+		BOOSTER_ERROR("cppcms") << "Catched excepion ["<<e.what()<<"]";
+		if(app->get_context()) {
+			if(!app->response().some_output_was_written()) {
+				app->response().make_error_response(http::response::internal_server_error,e.what());
+			}
 		}
-		else {
-			BOOSTER_ERROR("cppcms") << "Catched excepion ["<<e.what()<<"]";
+	}
+	
+	if(app->get_context()) {
+		if(syncronous) {
+			app->context().complete_response();
+		}
+		else  {
+			app->context().async_complete_response();
 		}
 	}
 }
@@ -168,6 +175,7 @@ void context::async_flush_output(context::handler const &h)
 
 void context::async_complete_response()
 {
+	response().finalize();
 	if(response().io_mode() == http::response::asynchronous || response().io_mode() == http::response::asynchronous_raw) {
 		conn_->async_write_response(
 			response(),
