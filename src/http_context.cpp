@@ -136,7 +136,7 @@ void context::dispatch(booster::intrusive_ptr<application> app,std::string url,b
 		app->main(url);
 	}
 	catch(std::exception const &e){
-		BOOSTER_ERROR("cppcms") << "Catched excepion ["<<e.what()<<"]";
+		BOOSTER_ERROR("cppcms") << "Caught exception ["<<e.what()<<"]";
 		if(app->get_context()) {
 			if(!app->response().some_output_was_written()) {
 				app->response().make_error_response(http::response::internal_server_error,e.what());
