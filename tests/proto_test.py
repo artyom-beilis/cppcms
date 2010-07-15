@@ -8,6 +8,7 @@ import os.path
 import traceback
 import random
 import toscgi
+import tofcgi
 
 def check(name,A,B):
     if A != B:
@@ -28,6 +29,9 @@ def check(name,A,B):
 class Nothing:
     pass
 
+def identity(x):
+    return x
+
 def load_file(file_name):
     file_name = os.path.dirname(sys.argv[0]) + "/" + file_name
     f=open(file_name,'rb')
@@ -35,7 +39,7 @@ def load_file(file_name):
     f.close()
     return input
 
-def test_io(name,method,input_f,output_f,seed=12,load=load_file):
+def test_io(name,method,input_f,output_f,seed=12,load=load_file,parse=identity):
     result=''
     try:
         input=load(input_f)
@@ -84,23 +88,39 @@ def test_io(name,method,input_f,output_f,seed=12,load=load_file):
         s.close()
     except socket.error:
         pass
-    check(name,result,output)
+    check(name,parse(result),output)
 
 
-def test_all(name,load=load_file):
+def test_all(name,load=load_file,parse=identity):
     input_f = 'proto_test_' + name + '.in'
     output_f = 'proto_test_' + name + '.out'
-    test_io(name+' normal','normal',input_f,output_f,0,load)
-    test_io(name+' random 1','random',input_f,output_f,1,load)
-    test_io(name+' random 2','random',input_f,output_f,15,load)
-    test_io(name+' random 3','random',input_f,output_f,215,load)
-    test_io(name+' shortest','shortest',input_f,output_f,0,load)
+    test_io(name+' normal','normal',input_f,output_f,0,load,parse)
+    test_io(name+' random 1','random',input_f,output_f,1,load,parse)
+    test_io(name+' random 2','random',input_f,output_f,15,load,parse)
+    test_io(name+' random 3','random',input_f,output_f,215,load,parse)
+    test_io(name+' shortest','shortest',input_f,output_f,0,load,parse)
+
+def test_normal(name,load=load_file,parse=identity):
+    input_f = 'proto_test_' + name + '.in'
+    output_f = 'proto_test_' + name + '.out'
+    test_io(name+' normal','normal',input_f,output_f,0,load,parse)
 
 def test_scgi(name):
     def load(name):
         file=load_file(name)
         return toscgi.toscgi(file)
     test_all(name,load)
+
+def test_fcgi(name,flags = 0):
+    def load(name):
+        file=load_file(name)
+        return tofcgi.to_fcgi_request(file,flags)
+    def parse(str):
+        return tofcgi.from_fcgi_response(str,flags)
+    if flags == 0:
+        test_all(name,load,parse)
+    else:
+        test_normal(name,load,parse)
 
 
 global target
@@ -114,6 +134,8 @@ if len(sys.argv) != 2:
     usege()
 
 test=sys.argv[1]
+
+
 
 if test=='http' or test=='fastcgi_tcp' or test=='scgi_tcp':
     target=('localhost',8080)
@@ -129,7 +151,17 @@ if test=='http':
     test_all('http_4')
     test_all('http_5')
 elif test=='fastcgi_tcp' or test=='fastcgi_unix':
-    test_all('fastcgi_1')
+    test_fcgi('scgi_1')
+    test_fcgi('scgi_2')
+    test_fcgi('scgi_3')
+    print "Testing big pairs"
+    test_fcgi('scgi_4')
+    test_fcgi('scgi_5')
+    print "Testing chunked pairs"
+    test_fcgi('scgi_4',tofcgi.TEST_RANDOM)
+    test_fcgi('scgi_5',tofcgi.TEST_RANDOM)
+    print "Testing GET_VALUES"
+    test_fcgi('scgi_1',tofcgi.TEST_GET_VALUES)
 elif test=='scgi_tcp' or test=='scgi_unix':
     test_scgi('scgi_1')
     test_scgi('scgi_2')

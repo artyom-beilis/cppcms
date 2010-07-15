@@ -644,11 +644,19 @@ foreach(TYPE async sync)
 		proto_test "-c" "${CNF}/proto_test.js" 
 		"--test-async=${TYPE}" "--service-api=scgi" "--service-port=8080" "--service-ip=127.0.0.1"
 		"--test-exec=${PYTHON} ${CNF}/proto_test.py scgi_tcp")
+	add_test(proto_test_${TYPE}_fastcgi 
+		proto_test "-c" "${CNF}/proto_test.js" 
+		"--test-async=${TYPE}" "--service-api=fastcgi" "--service-port=8080" "--service-ip=127.0.0.1"
+		"--test-exec=${PYTHON} ${CNF}/proto_test.py fastcgi_tcp")
 	if(NOT WIN32)
 		add_test(proto_test_${TYPE}_scgi_unix
 			proto_test "-c" "${CNF}/proto_test.js" 
 			"--test-async=${TYPE}" "--service-api=scgi" "--service-socket=/tmp/cppcms_test_socket"
 			"--test-exec=${PYTHON} ${CNF}/proto_test.py scgi_unix")
+		add_test(proto_test_${TYPE}_fastcgi_unix
+			proto_test "-c" "${CNF}/proto_test.js" 
+			"--test-async=${TYPE}" "--service-api=fastcgi" "--service-socket=/tmp/cppcms_test_socket"
+			"--test-exec=${PYTHON} ${CNF}/proto_test.py fastcgi_unix")
 	endif()
 endforeach()
 

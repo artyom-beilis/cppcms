@@ -183,7 +183,7 @@ namespace cgi {
 			header_.request_id=request_id_;
 			if(s > 65535) s=65535;
 			header_.content_length =s;
-			header_.padding_length =7 - (s % 8);
+			header_.padding_length =(8 - (s % 8)) % 8;
 			static char pad[8];
 			
 			header_.to_net();
@@ -220,52 +220,33 @@ namespace cgi {
 			booster::system::error_code e;
 			socket_.close(e);
 		}
-		virtual void write_eof()
+		void prepare_eof()
 		{
 			memset(&eof_,0,sizeof(eof_));
-			for(unsigned i=0;i<3;i++) {
+			for(unsigned i=0;i<2;i++) {
 				eof_.headers_[i].version=fcgi_version_1;
 				eof_.headers_[i].request_id=request_id_;
 			}
 			eof_.headers_[0].type=fcgi_stdout;
-			eof_.headers_[1].type=fcgi_stderr;
-			eof_.headers_[2].type=fcgi_end_request;
-			eof_.headers_[2].content_length=8;
+			eof_.headers_[1].type=fcgi_end_request;
+			eof_.headers_[1].content_length=8;
 			eof_.record_.protocol_status=fcgi_request_complete;
 			eof_.headers_[0].to_net();
 			eof_.headers_[1].to_net();
-			eof_.headers_[2].to_net();
 			eof_.record_.to_net();
-			
+		}
+		virtual void write_eof()
+		{
+			prepare_eof();	
 			socket_.cancel();
-
 			booster::system::error_code e;
 			socket_.write(io::buffer(&eof_,sizeof(eof_)),e);
 		}
 		
 		virtual void async_write_eof(handler const &h)
 		{
-			memset(&eof_,0,sizeof(eof_));
-			for(unsigned i=0;i<3;i++) {
-				eof_.headers_[i].version=fcgi_version_1;
-				eof_.headers_[i].request_id=request_id_;
-			}
-			eof_.headers_[0].type=fcgi_stdout;
-			eof_.headers_[1].type=fcgi_stderr;
-			eof_.headers_[2].type=fcgi_end_request;
-			eof_.headers_[2].content_length=8;
-			eof_.record_.protocol_status=fcgi_request_complete;
-			eof_.headers_[0].to_net();
-			eof_.headers_[1].to_net();
-			eof_.headers_[2].to_net();
-			eof_.record_.to_net();
-			
-			#if !defined(NO_CANCELIO)
-			// Stop reading EOF from socket
+			prepare_eof();	
 			socket_.cancel();
-			#endif
-
-
 			socket_.async_write(
 				io::buffer(&eof_,sizeof(eof_)),
 				boost::bind(	&fastcgi::on_written_eof,
@@ -278,25 +259,11 @@ namespace cgi {
 		{
 			if(e) { h(e); return; }
 
-			#if defined(NO_CANCELIO)
-			
-			// Windows XP and below not support CancelIO... So we just close
-			// socket, because we can't stop asyncronous EOF reading...
-
-			keep_alive_=false;
-			booster::system::error_code err;
-			socket_.shutdown(io::socket::shut_rdwr,err);
-			socket_.close(err);
-
-			#else
-
 			// Stop reading from socket
 			if(!keep_alive_) {
 				booster::system::error_code err;
 				socket_.shutdown(io::socket::shut_rdwr,err);
 			}
-
-			#endif
 
 			h(booster::system::error_code());
 		}
@@ -654,13 +621,14 @@ namespace cgi {
 				size=htonl(size);
 				char *p=(char*)&size;
 				body_.insert(body_.end(),p,p+sizeof(size));
-				body_.insert(body_.end(),value.begin(),value.end());
 			}
 		}
 		void add_pair(std::string const &name,std::string const &value)
 		{
 			add_value(name);
 			add_value(value);
+			body_.insert(body_.end(),name.begin(),name.end());
+			body_.insert(body_.end(),value.begin(),value.end());
 		}
 
 
@@ -687,7 +655,7 @@ namespace cgi {
 
 		std::map<std::string,std::string> env_;
 		struct eof_str {
-			fcgi_header headers_[3];
+			fcgi_header headers_[2];
 			fcgi_end_request_body record_;
 		} eof_;
 
