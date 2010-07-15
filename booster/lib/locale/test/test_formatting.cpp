@@ -162,7 +162,7 @@ void test_manip(std::string e_charset="UTF-8")
     TEST_FP2(as::currency,as::currency_iso,1345.34,"USD1,345.34",double,1345.34);
     #endif
     TEST_FP1(as::spellout,10,"ten",int,10);
-    #if U_ICU_VERSION_MAJOR_NUM >= 4
+    #if U_ICU_VERSION_MAJOR_NUM*100 + U_ICU_VERSION_MINOR_NUM >= 402
     if(e_charset=="UTF-8")
        TEST_FMT(as::ordinal,1,"1\xcb\xa2\xe1\xb5\x97"); // 1st with st as ligatures
     #else
@@ -294,7 +294,7 @@ void test_format(std::string charset="UTF-8")
     #endif
     FORMAT("{1,spell}",10,"ten");
     FORMAT("{1,spellout}",10,"ten");
-    #if U_ICU_VERSION_MAJOR_NUM >= 4
+    #if U_ICU_VERSION_MAJOR_NUM*100 + U_ICU_VERSION_MINOR_NUM >= 402
     if(charset=="UTF-8") {
         FORMAT("{1,ord}",1,"1\xcb\xa2\xe1\xb5\x97");
         FORMAT("{1,ordinal}",1,"1\xcb\xa2\xe1\xb5\x97");
