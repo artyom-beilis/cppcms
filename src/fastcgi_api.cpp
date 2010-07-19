@@ -26,6 +26,7 @@
 #include <cppcms/cstdint.h>
 #include <stdlib.h>
 #include <string.h>
+#include <algorithm>
 #include <iostream>
 #include <cppcms/config.h>
 
@@ -273,7 +274,7 @@ namespace cgi {
 		virtual void async_read_eof(callback const &h)
 		{
 			static char a;
-			socket_.async_read_some(io::buffer(&a,1),boost::bind(h));
+			async_read_from_socket(&a,1,boost::bind(h));
 		}
 	
 	private:
@@ -406,6 +407,7 @@ namespace cgi {
 			if(header_.type==fcgi_get_values) {
 				header_.type = fcgi_get_values_result;
 				std::vector<std::pair<std::string,std::string> > pairs;
+				pairs.reserve(4);
 				if(!parse_pairs(pairs)) {
 					h(booster::system::error_code(errc::protocol_violation,cppcms_category));
 					return;
@@ -455,7 +457,12 @@ namespace cgi {
 			request_id_=header_.request_id;
 			
 			body_.clear();
-			async_read_record(boost::bind(&fastcgi::params_record_expected,self(),_1,h));
+			if(non_blocking_read_record()) {
+				params_record_expected(booster::system::error_code(),h);
+			}
+			else {
+				async_read_record(boost::bind(&fastcgi::params_record_expected,self(),_1,h));
+			}
 		}
 
 		uint32_t read_len(unsigned char const *&p,unsigned char const *e)
@@ -476,6 +483,17 @@ namespace cgi {
 			}
 		}
 
+		void insert_to_container(std::map<std::string,std::string> &map,std::string &name,std::string &value)
+		{
+			map[name].swap(value);
+		}
+		void insert_to_container(std::vector<std::pair<std::string,std::string> > &v,std::string &name,std::string &value)
+		{
+			v.resize(v.size()+1);
+			v.back().first.swap(name);
+			v.back().second.swap(value);
+		}
+
 		template<typename Container>
 		bool parse_pairs(Container &container)
 		{
@@ -488,7 +506,7 @@ namespace cgi {
 					return false;
 				std::string name;
 				if(uint32_t(e - p) >= nlen) { // don't chage order -- prevent integer overflow
-					name.assign(p,p+nlen);
+					name.assign(reinterpret_cast<char const *>(p),nlen);
 					p+=nlen;
 				}
 				else {
@@ -496,32 +514,40 @@ namespace cgi {
 				}
 				std::string value;
 				if(uint32_t(e - p) >= vlen) { // don't chage order -- prevent integer overflow
-					value.assign(p,p+vlen);
+					value.assign(reinterpret_cast<char const *>(p),vlen);
 					p+=vlen;
 				}
 				else {
 					return false;
 				}
-				container.insert(container.end(),std::make_pair(name,value));
+				insert_to_container(container,name,value);
 			}
 			return true;
 		}
 
 		void params_record_expected(booster::system::error_code const &e,handler const &h)
 		{
-			if(header_.type!=fcgi_params || header_.request_id!=request_id_)
-				h(booster::system::error_code(errc::protocol_violation,cppcms_category));
-			if(header_.content_length!=0) { // eof
-				if(body_.size() < 16384) {
-					async_read_record(boost::bind(	&fastcgi::params_record_expected,
-									self(),
-									_1,
-									h));
-				}
-				else {
+			for(;;){
+				if(header_.type!=fcgi_params || header_.request_id!=request_id_)
 					h(booster::system::error_code(errc::protocol_violation,cppcms_category));
+				if(header_.content_length!=0) { // eof
+					if(body_.size() < 16384) { 
+						if(non_blocking_read_record()) {
+							continue;
+						}
+						else {
+							async_read_record(boost::bind(	&fastcgi::params_record_expected,
+											self(),
+											_1,
+											h));
+						}
+					}
+					else {
+						h(booster::system::error_code(errc::protocol_violation,cppcms_category));
+					}
+					return;
 				}
-				return;
+				break;
 			}
 
 
@@ -529,15 +555,20 @@ namespace cgi {
 
 			body_.clear();
 
-			std::string content_length=getenv("CONTENT_LENGTH");
-			if(content_length.empty() || (content_length_ =  atoll(content_length.c_str())) <=0)
+			std::map<std::string,std::string>::const_iterator p = env_.find("CONTENT_LENGTH");
+			if(p==env_.end() || p->second.empty() || (content_length_ =  atoll(p->second.c_str())) <=0)
 				content_length_=0;
 			if(content_length_==0) {
-				async_read_record(boost::bind(
-					&fastcgi::stdin_eof_expected,
-					self(),
-					_1,
-					h));
+				if(non_blocking_read_record()) {
+					stdin_eof_expected(booster::system::error_code(),h);
+				}
+				else {
+					async_read_record(boost::bind(
+						&fastcgi::stdin_eof_expected,
+						self(),
+						_1,
+						h));
+				}
 				return;
 			}
 			h(booster::system::error_code());
@@ -576,15 +607,50 @@ namespace cgi {
 
 		}
 
+		bool non_blocking_read_record()
+		{
+			fcgi_header hdr;
+			if(!peek_bytes(&hdr,sizeof(hdr)))
+				return false;
+			hdr.to_host();
+			size_t buffer_size = get_buffer_size();
+			
+			if(buffer_size < sizeof(hdr) + hdr.content_length + hdr.padding_length)
+				return false;
+			skip_bytes(sizeof(hdr));
+			header_ = hdr;
+			size_t cur_size=body_.size();
+			size_t rec_size=header_.content_length+header_.padding_length;
+			if(rec_size==0) {
+				return true;
+			}
+			body_.resize(cur_size + rec_size);
+			read_bytes(&body_[cur_size],rec_size);
+			body_.resize(cur_size + header_.content_length);
+			return true;
+		}
+			
 		void async_read_record(handler const &h)
 		{
-			socket_.async_read(	
-				io::buffer(&header_,sizeof(header_)),
+			async_read_from_socket(&header_,sizeof(header_),
 					boost::bind(	&fastcgi::on_header_read,
 							self(),
 							_1,
 							h));
 		}
+		
+		struct on_header_read_binder : public booster::callable<void(booster::system::error_code const &,size_t)> {
+			handler h;
+			booster::shared_ptr<fastcgi> self;
+			on_header_read_binder(handler const &_h,booster::shared_ptr<fastcgi> const &s) : h(_h),self(s)
+			{
+			}
+			virtual void operator()(booster::system::error_code const &e,size_t read)
+			{
+				self->on_body_read(e,h);
+			}
+		};
+
 		void on_header_read(booster::system::error_code const &e,handler const &h)
 		{
 			if(e) { h(e); return; }
@@ -596,12 +662,11 @@ namespace cgi {
 				return;
 			}
 			body_.resize(cur_size + rec_size);
-			socket_.async_read(
-				io::buffer(&body_[cur_size],rec_size),
-				boost::bind(	&fastcgi::on_body_read,
-						self(),
-						_1,
-						h));
+			std::auto_ptr<booster::callable<void(booster::system::error_code const &,size_t)> > cb;
+			cb.reset(new on_header_read_binder(h,self()));
+			async_read_from_socket(
+				&body_[cur_size],rec_size,
+				cb);
 		}
 		void on_body_read(booster::system::error_code const &e,handler const &h)
 		{
@@ -652,12 +717,14 @@ namespace cgi {
 		bool keep_alive_;
 		int cuncurrency_hint_;
 
-
 		std::map<std::string,std::string> env_;
 		struct eof_str {
 			fcgi_header headers_[2];
 			fcgi_end_request_body record_;
 		} eof_;
+
+		std::vector<char> cache_;
+		size_t cache_start_,cache_end_;
 
 		void reset_all()
 		{
@@ -669,6 +736,81 @@ namespace cgi {
 			keep_alive_=false;
 			env_.clear();
 			memset(&eof_,0,sizeof(eof_));
+			if(cache_.empty()) {
+				cache_start_ = 0;
+				cache_end_ = 0;
+			}
+		}
+
+		bool peek_bytes(void *ptr,size_t n)
+		{
+			if(cache_end_ - cache_start_ >= n) {
+				memcpy(ptr,&cache_[cache_start_],n);
+				return true;
+			}
+			return false;
+		}
+		size_t get_buffer_size()
+		{
+			return cache_end_ - cache_start_;
+		}
+		void skip_bytes(size_t n)
+		{
+			assert(cache_end_ - cache_start_ >= n);
+			cache_start_ +=n;
+		}
+		void read_bytes(void *ptr,size_t n)
+		{
+			assert(cache_end_ - cache_start_ >=n);
+			memcpy(ptr,&cache_[cache_start_],n);
+			cache_start_+=n;
+		}
+
+		void async_read_from_socket(void *ptr,size_t n,booster::callback<void(booster::system::error_code const &e,size_t read)> const &cb)
+		{
+			if(cache_end_ - cache_start_ >=n) {
+				memcpy(ptr,&cache_[cache_start_],n);
+				cache_start_+=n;
+				socket_.get_io_service().post(boost::bind(cb,booster::system::error_code(),n));
+				return;
+			}
+			if(cache_start_ == cache_end_) {
+				cache_start_ = cache_end_ = 0;
+			}
+			else if(cache_start_!=0) {
+				memmove(&cache_[0],&cache_[cache_start_],cache_end_ - cache_start_);
+				cache_end_ = cache_end_ - cache_start_;
+				cache_start_ = 0;
+			}
+
+			size_t min_size = std::max(n,size_t(16384));
+			if(cache_.size() < n) {
+				cache_.resize(min_size,0);
+			}
+			
+			socket_.async_read_some(
+				booster::aio::buffer(&cache_[cache_end_],cache_.size() - cache_end_),
+					boost::bind(
+						&fastcgi::on_some_read_from_socket,
+						self(),
+						_1,
+						_2,
+						cb,
+						ptr,
+						n));
+		}
+		void on_some_read_from_socket(	booster::system::error_code const &e,
+						size_t read_size, 
+						booster::callback<void(booster::system::error_code const &e,size_t read)> const &cb,
+						void *ptr,
+						size_t expected_read_size)
+		{
+			cache_end_ += read_size;
+			if(e) {
+				cb(e,0);
+				return;
+			}
+			async_read_from_socket(ptr,expected_read_size,cb);
 		}
 	};
 

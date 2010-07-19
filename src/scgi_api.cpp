@@ -113,7 +113,7 @@ namespace cgi {
 					break;
 				std::string value=p;
 				p+=value.size()+1;
-				env_.insert(std::pair<std::string,std::string>(key,value));
+				env_[key].swap(value);
 			}
 			buffer_.clear();
 
