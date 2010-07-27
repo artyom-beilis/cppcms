@@ -43,9 +43,12 @@
 
 
 #ifdef CPPCMS_WIN_NATIVE
-#include <winsock2.h>
+#  ifndef NOMINMAX 
+#    define NOMINMAX
+#  endif
+#  include <winsock2.h>
 #else
-#include <arpa/inet.h>
+#  include <arpa/inet.h>
 #endif
 
 namespace io = booster::aio;
