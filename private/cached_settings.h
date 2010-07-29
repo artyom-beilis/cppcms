@@ -6,10 +6,14 @@ namespace impl {
 		struct cached_security {
 			long long multipart_form_data_limit;
 			long long content_length_limit;
+			int file_in_memory_limit;
+			std::string uploads_path;
 			cached_security(json::value const &v) 
 			{
 				multipart_form_data_limit = v.get("security.multipart_form_data_limit",64*1024);
 				content_length_limit = v.get("security.content_length_limit",1024);
+				file_in_memory_limit = v.get("security.file_in_memory_limit",128*1024);
+				uploads_path = v.get("security.uploads_path","");
 			}
 		} security;
 		struct cached_fastcgi {

@@ -55,11 +55,17 @@ namespace cppcms {
 				position_ = 2; // First CRLF does not appear if first state
 				state_ = expecting_first_boundary;
 				file_.reset(new http::file());
+				file_->set_temporary_directory(temp_dir_);
+				if(memory_limit_ != -1) {
+					file_->set_memory_limit(memory_limit_);
+				}
 				return true;
 			}
-			multipart_parser() : 
+			multipart_parser(std::string const &temp_dir = std::string(),size_t memory_limit = -1) : 
 				state_ ( expecting_first_boundary ),
-				position_(0)
+				position_(0),
+				temp_dir_(temp_dir),
+				memory_limit_(memory_limit)
 			{
 			}
 			~multipart_parser()
@@ -153,8 +159,13 @@ namespace cppcms {
 						else if(position_ == boundary_.size()) {
 							state_ = expecting_one_crlf_or_eof;
 							position_ = 0;
+							file_->data().seekg(0);
 							files_.push_back(file_);
 							file_.reset(new http::file());
+							file_->set_temporary_directory(temp_dir_);
+							if(memory_limit_ != -1) {
+								file_->set_memory_limit(memory_limit_);
+							}
 						}
 						break;
 					}
@@ -286,6 +297,9 @@ namespace cppcms {
 			std::string header_;
 			std::string boundary_;
 			std::string crlfcrlf_;
+
+			std::string temp_dir_;
+			int memory_limit_;
 		};
 
 			#ifdef DEBUG_MULTIPART_PARSER

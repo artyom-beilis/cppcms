@@ -260,7 +260,9 @@ void connection::load_content(booster::system::error_code const &e,http::context
 					" REMOTE_ADDR = `" << getenv("REMOTE_ADDR") << "' REMOTE_HOST=`" << getenv("REMOTE_HOST") << "'";
 				return;
 			}
-			multipart_parser_.reset(new multipart_parser());
+			multipart_parser_.reset(new multipart_parser(
+				service().cached_settings().security.uploads_path,
+				service().cached_settings().security.file_in_memory_limit));
 			read_size_ = content_length;
 			if(!multipart_parser_->set_content_type(content_type)) {
 				set_error(h,"Invalid multipart/form-data request");
@@ -311,7 +313,7 @@ void connection::on_some_multipart_read(booster::system::error_code const &e,siz
 		}
 		content_.clear();
 		multipart_parser::files_type files = multipart_parser_->get_files();
-		size_t allowed=service().cached_settings().security.content_length_limit*1024;
+		long long allowed=service().cached_settings().security.content_length_limit*1024;
 		for(unsigned i=0;i<files.size();i++) {
 			if(files[i]->mime().empty() && files[i]->size() > allowed) {
 				set_error(h,"Conent Lengths to big");

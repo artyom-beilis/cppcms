@@ -133,84 +133,104 @@ int main(int argc,char **argv)
 	}
 	try {
 		int block_size[]={ 1, -1, 5, 3, 10 };
+		int max_mem_size[] = { 0, 3, 10000 };
 		for(unsigned i=0;i<sizeof(block_size)/sizeof(block_size[0]);i++) {
-			std::cout << "Testing for max-block-size = " << block_size[i] << std::endl;
-			{
-				cppcms::impl::multipart_parser parser;
-				TEST(parser.set_content_type(test_1_content));
-				cppcms::impl::multipart_parser::files_type files;
-				random_consumer c(block_size[i],parser,files);
-				TEST(c(test_1_file,strlen(test_1_file))==cppcms::impl::multipart_parser::eof);
-				TEST(files.size()==7);
-				TEST(files[0]->name()=="test1");
-				TEST(files[0]->filename()=="foo.txt");
-				TEST(files[0]->mime()=="text/plain");
-				std::string content = getcontent(files[0]->data());
-				TEST(content=="hello\r\n");
-				TEST(files[1]->name()=="test2");
-				TEST(files[1]->filename()=="");
-				TEST(files[1]->mime()=="");
-				TEST(getcontent(files[1]->data())=="שלום");
-				TEST(getcontent(files[2]->data())=="x\r");
-				TEST(getcontent(files[3]->data())=="x\r\n-");
-				TEST(getcontent(files[4]->data())=="x\r\n--");
-				TEST(getcontent(files[5]->data())=="x\r\n--x");
-				TEST(getcontent(files[6]->data())=="x\r\n--x-");
-			}
-			{
-				cppcms::impl::multipart_parser parser;
-				TEST(parser.set_content_type(test_2_content));
-				cppcms::impl::multipart_parser::files_type files;
-				random_consumer c(block_size[i],parser,files);
-				TEST(c(test_2_file,strlen(test_2_file))==cppcms::impl::multipart_parser::eof);
-				TEST(files.size()==1);
-				TEST(files[0]->name()=="test1");
-				TEST(files[0]->filename()=="");
-				TEST(files[0]->mime()=="");
-				std::string content = getcontent(files[0]->data());
-				TEST(content=="hello");
-			}
-			std::string boundaries[4]= { 
-				"multipart/form-data; boundary=---------------------------11395741071221114234100471568",
-				"multipart/form-data; boundary=----WebKitFormBoundaryuYwgZwieYHQ3+AR8",
-				"multipart/form-data; boundary=----------jrFLC4hxayof1KyJEgmmCw",
-				"multipart/form-data; boundary=---------------------------7da3a5810028"
-			};
-			std::string filenames[4] = {
-				"firefox",
-				"chrome",
-				"opera",
-				"ie" 
-			};
-			for(int i=0;i<4;i++) {
-				std::cout << "-- Browser " << filenames[i] << std::endl;
-				std::string file_name = std::string(argv[1])+"/multipart/" + filenames[i]+".txt";
-				std::ifstream file(file_name.c_str(),std::ifstream::binary);
-				if(!file) {
-					std::cerr << "Failed to open file " << file_name << std::endl;
-					return 1;
+			for(unsigned j=0;j<sizeof(max_mem_size)/sizeof(max_mem_size[0]);j++) {
+				std::cout << "Testing for max-block-size = " << block_size[i] << " mem file size = " << max_mem_size[j] << std::endl;
+				{
+					cppcms::impl::multipart_parser parser("",max_mem_size[j]);
+					TEST(parser.set_content_type(test_1_content));
+					cppcms::impl::multipart_parser::files_type files;
+					random_consumer c(block_size[i],parser,files);
+					TEST(c(test_1_file,strlen(test_1_file))==cppcms::impl::multipart_parser::eof);
+					TEST(files.size()==7);
+					TEST(files[0]->name()=="test1");
+					TEST(files[0]->filename()=="foo.txt");
+					TEST(files[0]->mime()=="text/plain");
+					std::string content = getcontent(files[0]->data());
+					TEST(content=="hello\r\n");
+					TEST(files[1]->name()=="test2");
+					TEST(files[1]->filename()=="");
+					TEST(files[1]->mime()=="");
+					TEST(getcontent(files[1]->data())=="שלום");
+					TEST(getcontent(files[2]->data())=="x\r");
+					TEST(getcontent(files[3]->data())=="x\r\n-");
+					TEST(getcontent(files[4]->data())=="x\r\n--");
+					TEST(getcontent(files[5]->data())=="x\r\n--x");
+					TEST(getcontent(files[6]->data())=="x\r\n--x-");
 				}
-				std::string content = getcontent(file);
-				cppcms::impl::multipart_parser parser;
-				TEST(parser.set_content_type(boundaries[i]));
-				cppcms::impl::multipart_parser::files_type files;
-				random_consumer c(block_size[i],parser,files);
-				TEST(c(content.c_str(),content.size())==cppcms::impl::multipart_parser::eof);
-				TEST(files.size()==3);
-				TEST(files[0]->name()=="submit-name");
-				TEST(files[0]->mime()=="" && files[0]->filename().empty());
-				TEST(getcontent(files[0]->data())=="שלום");
-				TEST(files[1]->name()=="file");
-				TEST(files[1]->mime()=="text/plain");
-				if(i==3) // IE
-					TEST(files[1]->filename()=="z:\\tmp\\שלום.txt" || files[1]->filename()=="z:tmpשלום.txt");
-				else
-					TEST(files[1]->filename()=="שלום.txt");
-				TEST(getcontent(files[1]->data())=="שלום עולם!\n");
-				TEST(files[2]->name()=="submit");
-				TEST(files[2]->mime().empty());
-				TEST(files[2]->filename().empty());
-				TEST(getcontent(files[2]->data())=="Send");
+				{
+					cppcms::impl::multipart_parser parser("",max_mem_size[j]);
+					TEST(parser.set_content_type(test_2_content));
+					cppcms::impl::multipart_parser::files_type files;
+					random_consumer c(block_size[i],parser,files);
+					TEST(c(test_2_file,strlen(test_2_file))==cppcms::impl::multipart_parser::eof);
+					TEST(files.size()==1);
+					TEST(files[0]->name()=="test1");
+					TEST(files[0]->filename()=="");
+					TEST(files[0]->mime()=="");
+					std::string content = getcontent(files[0]->data());
+					TEST(content=="hello");
+				}
+				std::string boundaries[4]= { 
+					"multipart/form-data; boundary=---------------------------11395741071221114234100471568",
+					"multipart/form-data; boundary=----WebKitFormBoundaryuYwgZwieYHQ3+AR8",
+					"multipart/form-data; boundary=----------jrFLC4hxayof1KyJEgmmCw",
+					"multipart/form-data; boundary=---------------------------7da3a5810028"
+				};
+				std::string filenames[4] = {
+					"firefox",
+					"chrome",
+					"opera",
+					"ie" 
+				};
+				std::string location[2] = {
+					".",
+					""
+				};
+				for(int loc=0;loc<2;loc++) {
+					std::cout << "- location [" << location[loc] <<']'<< std::endl;
+					for(int i=0;i<4;i++) {
+						std::cout << "-- Browser " << filenames[i] << std::endl;
+						std::string file_name = std::string(argv[1])+"/multipart/" + filenames[i]+".txt";
+						std::ifstream file(file_name.c_str(),std::ifstream::binary);
+						if(!file) {
+							std::cerr << "Failed to open file " << file_name << std::endl;
+							return 1;
+						}
+						std::string content = getcontent(file);
+						cppcms::impl::multipart_parser parser(location[loc],max_mem_size[j]);
+						TEST(parser.set_content_type(boundaries[i]));
+						cppcms::impl::multipart_parser::files_type files;
+						random_consumer c(block_size[i],parser,files);
+						TEST(c(content.c_str(),content.size())==cppcms::impl::multipart_parser::eof);
+						TEST(files.size()==3);
+						TEST(files[0]->name()=="submit-name");
+						TEST(files[0]->mime()=="" && files[0]->filename().empty());
+						TEST(getcontent(files[0]->data())=="שלום");
+						TEST(files[1]->name()=="file");
+						TEST(files[1]->mime()=="text/plain");
+						if(i==3) // IE
+							TEST(files[1]->filename()=="z:\\tmp\\שלום.txt" || files[1]->filename()=="z:tmpשלום.txt");
+						else
+							TEST(files[1]->filename()=="שלום.txt");
+						
+						TEST(getcontent(files[1]->data())=="שלום עולם!\n");
+						files[1]->save_to("test.txt");
+						{
+							std::ifstream tmp("test.txt");
+							TEST(tmp);
+							TEST(getcontent(tmp)=="שלום עולם!\n");
+							tmp.close();
+							std::remove("test.txt");
+						}
+
+						TEST(files[2]->name()=="submit");
+						TEST(files[2]->mime().empty());
+						TEST(files[2]->filename().empty());
+						TEST(getcontent(files[2]->data())=="Send");
+					}
+				}
 			}
 		}
 		

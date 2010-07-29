@@ -129,6 +129,11 @@
 			//	"port" : 5604
 			//},
 		]
+	},
+	"security" : {
+		// "multipart_form_data_limit" : 65536, // KB
+		// "content_length_limit" : 1024, // KB
+		// "uploads_path" : "" // temporary directory
 	}
 	
 }
