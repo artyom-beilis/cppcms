@@ -31,23 +31,23 @@ public:
         }
 
         if(session().is_set("name")) {
-        c.name=session()["name"];
-        if(session()["sex"]=="m") {
-            c.who="Mr";
-        }
-        else {
-            if(session()["state"]=="s") {
-                c.who="Miss";
+            c.name=session()["name"];
+            if(session()["sex"]=="m") {
+                c.who="Mr";
             }
             else {
-                c.who="Mrs";
+                if(session()["state"]=="s") {
+                    c.who="Miss";
+                }
+                else {
+                    c.who="Mrs";
+                }
             }
-        }
-        c.age=session().get<double>("age");
+            c.age=session().get<double>("age");
         }
         else {
-        c.name="Visitor";
-        c.age=-1;
+            c.name="Visitor";
+            c.age=-1;
         }
         render("message",c);
     }
