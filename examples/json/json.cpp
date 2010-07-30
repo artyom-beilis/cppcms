@@ -10,13 +10,25 @@ struct person {
 
 namespace cppcms {
     namespace json {
+
+        //
+        // We specilize cppcms::json::traits structure to convert
+        // objects to and from json values
+        //
+
         template<>
         struct traits<person> {
+            // this function should throw
+            // cppcms::json::bad_value_cast in case
+            // of invalid or impossible conversion, 
+            // this would give an easy way to substitute
+            // a default value in case of fault
             static person get(value const &v)
             {
                 person p;
-                if(v.object().size()!=4)
+                if(v.type()!=is_object)
                     throw bad_value_cast();
+                
                 p.name=v.get<std::string>("name");
                 p.salary=v.get<double>("salary");
                 p.kids_names=
@@ -40,10 +52,12 @@ int main()
     // Create object data
     my_object["name"]="Moshe";
     my_object["salary"]=1000.0;
-    my_object["data"]["weight"]=85;
-    my_object["data"]["height"]=1.80;
     my_object["kids_names"][0]="Yossi";
     my_object["kids_names"][1]="Yonni";
+    
+    // this is additional data
+    my_object["data"]["weight"]=85;
+    my_object["data"]["height"]=1.80;
 
     // Get values using path.
     std::string name=my_object.get<std::string>("name");
