@@ -1,0 +1,15 @@
+LIBS=-lcppcms -lbooster
+
+all: clean hello-tmpl libview.so
+
+view.cpp: first.tmpl
+	cppcms_tmpl_cc first.tmpl -o view.cpp
+
+libview.so: content.h view.cpp
+	g++ -shared -fPIC view.cpp -o libview.so ${LIBS}
+
+hello-tmpl: hello-tmpl.cpp 
+	g++ -Wall -rdynamic hello-tmpl.cpp -o hello-tmpl ${LIBS}
+
+clean:
+	rm -f *.fcgi *.exe view.cpp *.so hello-tmpl

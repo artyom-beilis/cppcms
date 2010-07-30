@@ -4,7 +4,7 @@
 		"port" : 8080
 	},
 	"http" : {
-		"script_names" : [ "/hello" ]
+		"script" : "/hello"
 	},
 	"session" : {
 		"expire" : "renew",

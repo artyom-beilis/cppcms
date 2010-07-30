@@ -7,4 +7,3 @@
 		"script" : "/hello"
 	}
 }
-

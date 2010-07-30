@@ -1,4 +1,4 @@
-LIBS=-lcppcms
+LIBS=-lcppcms -lbooster
 
 
 all: hello

@@ -5,6 +5,9 @@
 	},
 	"http" : {
 		"script" : "/hello"
+	},
+	"views" : {
+		"paths" : [ "." ],
+		"skins" : [ "view" ]
 	}
 }
-

@@ -1,12 +1,12 @@
-LIBS=-lcppcms
+LIBS=-lcppcms -lbooster
 
-all: clean hello.fcgi 
+all: clean hello
 
-hello.fcgi: hello.cpp view.cpp content.h
-	$(CXX) -Wall hello.cpp view.cpp -o hello.fcgi $(LIBS)
+hello: hello.cpp view.cpp content.h
+	$(CXX) -Wall hello.cpp view.cpp -o hello $(LIBS)
 
 view.cpp: view.tmpl content.h
 	cppcms_tmpl_cc view.tmpl -o view.cpp
 
 clean:
-	rm -fr *.fcgi *.exe *.so view.cpp cppcms_rundir
+	rm -fr hello *.exe *.so view.cpp cppcms_rundir
