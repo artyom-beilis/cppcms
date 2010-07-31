@@ -6,7 +6,7 @@
 
 namespace content  {
     struct message : public cppcms::base_content {
-        std::string message;
+        std::string text;
     };
 }
 

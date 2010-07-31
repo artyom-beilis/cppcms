@@ -12,17 +12,16 @@ public:
     my_hello_world(cppcms::service &s) :
        cppcms::application(s)
     {
-        dispatcher().assign(".*",&my_hello_world::main,this);
     }
-    void main();
+    virtual void main(std::string /*url*/)
+    {
+        content::message c;
+        c.text=">>>Hello<<<";
+        render("message",c);
+    }
 };
 
-void my_hello_world::main()
-{
-    content::message c;
-    c.message=">>>Hello<<<";
-    render("message",c);
-}
+
 
 int main(int argc,char ** argv)
 {

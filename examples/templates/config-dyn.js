@@ -8,6 +8,6 @@
 	},
 	"views" : {
 		"paths" : [ "." ],
-		"skins" : [ "view" ]
+		"skins" : [ "my_skin" ]
 	}
 }
