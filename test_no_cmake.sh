@@ -76,6 +76,8 @@ run_test ./multipart_parser_test   ../tests
 
 run_test ./form_test -c ../tests/form_test.js "--test-exec=$PYTHON ../tests/form_test.py"
 run_test ./cookie_test -c ../tests/cookie_test.js "--test-exec=$PYTHON ../tests/cookie_test.py"
+run_test ./status_test -c ../tests/status_test.js --test-async=async "--test-exec=$PYTHON ../tests/status_test.py async"
+run_test ./status_test -c ../tests/status_test.js "--test-exec=$PYTHON ../tests/status_test.py"
 run_test ./forwarder_test -c ../tests/forwarder_test.js --test-internal=true "--test-exec=$PYTHON ../tests/forwarder_test.py"
 run_test ./forwarder_test -c ../tests/forwarder_test.js --test-internal=false "--test-exec=$PYTHON ../tests/forwarder_test.py"
 run_test ./jsonrpc_test -c ../tests/jsonrpc_test.js "--test-exec=$PYTHON ../tests/jsonrpc_test.py"
@@ -83,11 +85,16 @@ run_test ./proto_test -c ../tests/proto_test.js --test-async=async --service-api
 run_test ./proto_test -c ../tests/proto_test.js --test-async=sync --service-api=http --service-port=8080 "--test-exec=$PYTHON ../tests/proto_test.py http"
 run_test ./proto_test -c ../tests/proto_test.js --test-async=async --service-api=scgi --service-port=8080 "--test-exec=$PYTHON ../tests/proto_test.py scgi_tcp"
 run_test ./proto_test -c ../tests/proto_test.js --test-async=sync --service-api=scgi --service-port=8080 "--test-exec=$PYTHON ../tests/proto_test.py scgi_tcp"
+run_test ./proto_test -c ../tests/proto_test.js --test-async=async --service-api=fastcgi --service-port=8080 "--test-exec=$PYTHON ../tests/proto_test.py fastcgi_tcp"
+run_test ./proto_test -c ../tests/proto_test.js --test-async=sync --service-api=fastcgi --service-port=8080 "--test-exec=$PYTHON ../tests/proto_test.py fastcgi_tcp"
+
 
 if test "x$NOUNIX" = "x"
 then
 	run_test ./proto_test -c ../tests/proto_test.js --test-async=async --service-api=scgi --service-socket=/tmp/cppcms_test_socket "--test-exec=$PYTHON ../tests/proto_test.py scgi_unix"
 	run_test ./proto_test -c ../tests/proto_test.js --test-async=sync --service-api=scgi --service-socket=/tmp/cppcms_test_socket "--test-exec=$PYTHON ../tests/proto_test.py scgi_unix"
+	run_test ./proto_test -c ../tests/proto_test.js --test-async=async --service-api=fastcgi --service-socket=/tmp/cppcms_test_socket "--test-exec=$PYTHON ../tests/proto_test.py fastcgi_unix"
+	run_test ./proto_test -c ../tests/proto_test.js --test-async=sync --service-api=fastcgi --service-socket=/tmp/cppcms_test_socket "--test-exec=$PYTHON ../tests/proto_test.py fastcgi_unix"
 fi
 
 if test -e fail.flag 

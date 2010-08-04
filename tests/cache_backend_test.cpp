@@ -73,7 +73,9 @@ void test_cache(booster::intrusive_ptr<cppcms::impl::base_cache> cache,bool test
 	TEST(cache->fetch("bee",tmp,0) && tmp=="bzzz");
 	cache->clear();
 	tags.clear();
-	cache->store("fu","fu",tags,time(0)+5);
+	cache->store("fu","fu",tags,time(0)+25); 
+	// 25 - make sure it works on slow platforms like
+	// ARM emulator
 	for(unsigned i=0;i<1000;i++) {
 		std::ostringstream key;
 		key << i;
