@@ -33,7 +33,7 @@ class thread_pool;
 class session_pool;
 
 namespace impl {
-	class cached_settings;
+	struct cached_settings;
 	class prefork_acceptor;
 	namespace cgi {
 		class acceptor;
