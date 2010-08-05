@@ -52,9 +52,14 @@ namespace sessions {
 		///
 		virtual bool load(session_interface &,std::string &data,time_t &timeout);
 		///
+		/// See session_api::is_blocking
+		///
+		virtual bool is_blocking();
+		///
 		/// See session_api::clear
 		///
 		virtual void clear(session_interface &);
+
 	private:
 
 		bool valid_sid(std::string const &cookie,std::string &id);

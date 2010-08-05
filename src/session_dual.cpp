@@ -76,5 +76,10 @@ void session_dual::clear(session_interface &session)
 	}
 }
 
+bool session_dual::is_blocking()
+{
+	return client_->is_blocking() || server_->is_blocking();
+}
+
 } // sessions
 } // cppcms

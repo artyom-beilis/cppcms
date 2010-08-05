@@ -38,6 +38,7 @@ namespace sessions {
 		virtual void save(std::string const &sid,time_t timeout,std::string const &in);
 		virtual bool load(std::string const &sid,time_t &timeout,std::string &out);
 		virtual void remove(std::string const &sid);
+		virtual bool is_blocking();
 	private:
 		struct locked_file;
 		struct _data;

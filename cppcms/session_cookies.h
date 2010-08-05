@@ -97,10 +97,17 @@ namespace sessions {
 		/// Save session to cookies, see session_api::save
 		///
 		virtual void save(session_interface &,std::string const &data,time_t timeout,bool newone ,bool on_server);
+		
 		/// 
 		/// Load session from cookies, see session_api::load
 		///
 		virtual bool load(session_interface &,std::string &data,time_t &timeout);
+		
+		///
+		/// See session_api::is_blocking
+		///
+		virtual bool is_blocking();
+		
 		/// 
 		/// Delete session, see session_api::clear
 		///

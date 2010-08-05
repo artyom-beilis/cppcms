@@ -155,6 +155,10 @@ void session_file_storage::remove(std::string const &sid)
 	::DeleteFile(file.name().c_str());
 }
 
+bool session_file_storage::is_blocking()
+{
+	return true; 
+}
 bool session_file_storage::read_timestamp(HANDLE h)
 {
 	int64_t stamp;

@@ -56,7 +56,13 @@ namespace sessions {
 		///
 		
 		virtual void remove(std::string const &sid) = 0;
-		
+
+		///
+		/// Return true of the save or load operations can be blocking
+		///
+		virtual bool is_blocking() = 0;	
+	
+
 		///
 		/// Destroy an object
 		///

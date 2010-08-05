@@ -302,6 +302,12 @@ void session_interface::clear_session_cookie()
 	if(get_session_cookie()!="")
 		set_session_cookie(-1,"");
 }
+
+bool session_interface::is_blocking()
+{
+	return storage_ && storage_->is_blocking();
+}
+
 void session_interface::set_session_cookie(int64_t age,string const &data,string const &key)
 {
 	if(data.empty())

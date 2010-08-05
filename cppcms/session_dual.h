@@ -62,6 +62,11 @@ public:
 	/// See session_api::clear
 	///
 	virtual void clear(session_interface &);
+
+	///
+	/// see session_api::is_blocking
+	///
+	virtual bool is_blocking();
 private:
 	struct _data;
 	booster::hold_ptr<_data> d;

@@ -267,6 +267,15 @@ public:
 	///
 	void save();
 
+	///
+	/// Returns true if the underlying session back-end uses blocking API so it is unsuitable to be called
+	/// from asynchronous event loop. This can be used to decide how to load session for specific connection.
+	///
+	/// If the API is blocking you probably should load and save session from thread pool rather then
+	/// from event loop when using asynchronous applications.
+	///
+	bool is_blocking();
+
 private:
 	friend class http::response;
 	friend class http::request;

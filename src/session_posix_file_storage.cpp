@@ -251,6 +251,11 @@ bool session_file_storage::read_timestamp(int fd)
 	return true;
 }
 
+bool session_file_storage::is_blocking()
+{
+	return file_lock_; 
+}
+
 bool session_file_storage::read_from_file(int fd,time_t &timeout,std::string &data)
 {
 	int64_t f_timeout;

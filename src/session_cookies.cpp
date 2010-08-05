@@ -70,6 +70,11 @@ void session_cookies::clear(session_interface &session)
 	session.clear_session_cookie();
 }
 
+bool session_cookies::is_blocking()
+{
+	return false;
+}
+
 
 } // sessions
 } // cppcms

@@ -70,6 +70,11 @@ public:
 	virtual void clear(session_interface &iface) = 0;
 
 	///
+	/// Return true if the session store or save operations are blocking or very cpu intensive
+	///
+	virtual bool is_blocking() = 0;
+
+	///
 	/// Destructor
 	///
 	virtual ~session_api() {}

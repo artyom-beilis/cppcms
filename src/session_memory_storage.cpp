@@ -102,6 +102,11 @@ public:
 		map_.erase(p);
 		gc();
 	}
+
+	bool is_blocking()
+	{
+		return false;
+	}
 };
 
 session_memory_storage_factory::session_memory_storage_factory() :

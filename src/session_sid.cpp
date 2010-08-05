@@ -175,5 +175,11 @@ void session_sid::clear(session_interface &session)
 		storage_->remove(id);
 }
 
+bool session_sid::is_blocking()
+{
+	return storage_->is_blocking();
+}
+
+
 } // sessions
 } // namespace cppcms
