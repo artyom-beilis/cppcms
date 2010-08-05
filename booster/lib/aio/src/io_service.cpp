@@ -44,6 +44,13 @@ typedef unique_lock<recursive_mutex> lock_guard;
 
 #ifndef BOOSTER_WIN32
 
+	///
+	/// This class is a simple mapping between file descriptor and its assosiated object.
+	///
+	/// Under posix platforms where file descriptors are kept as small numbers it uses vector
+	/// and under Windows it uses std::map for this purpose.
+	///
+
 	template<typename Cont>
 	class socket_map {
 	public:
