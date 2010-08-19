@@ -652,6 +652,17 @@ struct text::_data {};
 text::~text() {}
 text::text(): base_html_input("text"), size_(-1) {}
 text::text(std::string const &type): base_html_input(type), size_(-1) {}
+
+void text::size(int n) 
+{
+	size_ = n;
+}
+
+int text::size()
+{
+	return size_;
+}
+
 void text::render_value(form_context &context)
 {
 	if(set()) {
@@ -671,6 +682,7 @@ void text::render_attributes(form_context &context)
 		output << boost::format("maxlength=\"%1%\" ",std::locale::classic()) % lm.second;
 	}
 }
+
 
 struct base_html_input::_data{};
 
