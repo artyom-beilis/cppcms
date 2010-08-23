@@ -423,7 +423,12 @@ namespace cppcms {
 			std::string tz_;
 			booster::copy_ptr<_data> d;
 		};
-		
+
+		inline std::ostream &operator<<(std::ostream &out,datetime const &obj)
+		{
+			obj(out);
+			return out;
+		}
 		///
 		/// \brief Custom time formating filter
 		///
