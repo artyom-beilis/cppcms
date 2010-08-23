@@ -110,7 +110,8 @@ void context::on_request_ready(bool error)
 	
 	if(app->is_asynchronous()) {
 		response().io_mode(http::response::asynchronous);
-		app->service().post(boost::bind(&context::dispatch,app,matched,false));
+		// Don't post, as context may be reassigned 
+		dispatch(app,matched,false);
 	}
 	else {
 		app->service().thread_pool().post(boost::bind(&context::dispatch,app,matched,true));
