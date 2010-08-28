@@ -8,7 +8,7 @@
 	},
 	"file_server" : {
 		"enable" : true,
-		"doument_root" : "."
+		"document_root" : "."
 	},
 	"session" : {
 		"expire" : "renew",

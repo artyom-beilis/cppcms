@@ -36,7 +36,7 @@
 		<% item %><% include msg(message) %><% end %>
 		</dl>
 	<% empty %>
-		<h2><% gt "There is no comments" %></h2>
+		<h2><% gt "There are no comments." %></h2>
 	<% end %>
 <% end template %>
 
@@ -61,7 +61,7 @@
 
 <% template body() %>
 	<% if empty messages %>
-		<h2><% gt "There is no comments" %></h2>
+		<h2><% gt "There are no comments." %></h2>
 	<% else %>
 		<% include display(messages) %>
 	<% end %>

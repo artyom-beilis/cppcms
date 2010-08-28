@@ -19,11 +19,11 @@ public:
         if(request().request_method()=="POST") {
             c.info.load(context());
             if(c.info.validate()) {
-            c.name=c.info.name.value();
-            c.sex=c.info.sex.selected_id();
-            c.state=c.info.martial.selected_id();
-            c.age=c.info.age.value();
-            c.info.clear();
+            	c.name=c.info.name.value();
+            	c.sex=c.info.sex.selected_id();
+            	c.state=c.info.marital.selected_id();
+            	c.age=c.info.age.value();
+            	c.info.clear();
             }
         }
         render("message",c);

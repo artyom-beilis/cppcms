@@ -101,7 +101,7 @@
 	},
 	"file_server" : {
 		"enable" : true,
-		"doument_root" : "."
+		"document_root" : "."
 		// "mime_types" : "mime.type"
 	},
 	"logging" : {
