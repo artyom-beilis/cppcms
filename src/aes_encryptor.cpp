@@ -150,6 +150,7 @@ void aes_cipher::load()
 		char iv[16];
 		gcry_create_nonce(iv,sizeof(iv));
 		gcry_cipher_setiv(hd_out,iv,sizeof(iv));
+		loaded_ = true;
 		return;
 	}
 	catch(...) {
