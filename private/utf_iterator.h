@@ -65,6 +65,8 @@ namespace utf8 {
 		}
 		switch(len) {
 		case 1: // ASCII -- remove codes for HTML only
+			if(seq0 > 0x7F)
+				return utf::illegal;
 			if(!html || seq0==0x9 || seq0==0x0A || seq0==0x0D || (0x20<=seq0 && seq0<=0x7E))
 				break;
 			return utf::illegal;
