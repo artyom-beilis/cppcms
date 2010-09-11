@@ -13,15 +13,25 @@
 #  pragma warning(push)
 #  pragma warning(disable : 4275 4251 4231 4660)
 #endif
-#include <booster/locale/time_zone.h>
 #include <booster/cstdint.h>
+#include <booster/locale/date_time.h>
 #include <ostream>
 #include <istream>
 #include <string>
+#include <string.h>
+#include <typeinfo>
 
 namespace booster {
     namespace locale {
+        ///
+        /// This namespace holds additional formatting
+        /// flags that can be set using ios_info.
+        ///
         namespace flags {
+            ///
+            /// Formatting flags, each one of them has corresponding manipulation
+            /// in namespace \a as
+            ///
             typedef enum {
                 posix               = 0,
                 number              = 1,
@@ -60,68 +70,197 @@ namespace booster {
 
             } display_flags_type;
 
+            ///
+            /// Special string patters that can be used
+            /// for text formatting
+            ///
             typedef enum {
-                datetime_pattern,
-                time_zone_id
+                datetime_pattern,   ///< strftime like formatting
+                time_zone_id        ///< time zone name
             } pattern_type;
 
+            ///
+            /// Special integer values that can be used for formatting
+            ///
             typedef enum {
-                domain_id
+                domain_id           ///< Domain code - for message formatting
             } value_type;
 
             
         } // flags
 
-        /// \cond INTERNAL
+        ///
+        /// \brief This class holds an external data - beyond existing fmtflags that std::ios_base holds
+        ///
+        /// You almost never create this object directly, you rather access it via ios_info::get(stream_object)
+        /// static member function. It automatically creates default formatting data for that stream
+        ///
+        class BOOSTER_API ios_info {
+        public:
 
-        BOOSTER_API uint64_t ext_flags(std::ios_base &);
-        BOOSTER_API uint64_t ext_flags(std::ios_base &,flags::display_flags_type mask);
-        BOOSTER_API void ext_setf(std::ios_base &,flags::display_flags_type flags,flags::display_flags_type mask);
-        
-        BOOSTER_API int ext_value(std::ios_base &,flags::value_type id);
-        BOOSTER_API void ext_value(std::ios_base &,flags::value_type id,int value);
-       
-        template<typename CharType>
-        void ext_pattern(std::ios_base &,flags::pattern_type pat,std::basic_string<CharType> const &);
+            /// \cond INTERNAL
 
-        template<typename CharType>
-        std::basic_string<CharType> ext_pattern(std::ios_base &,flags::pattern_type pattern);
+            ios_info();
+            ios_info(ios_info const &);
+            ios_info const &operator=(ios_info const &);
+            ~ios_info();
 
-        /// Specializations
+            /// \endcond
 
-        template<>
-        BOOSTER_API void ext_pattern(std::ios_base &,flags::pattern_type pattern_id, std::string const &pattern);
-        
-        template<>
-        BOOSTER_API std::string ext_pattern(std::ios_base &,flags::pattern_type pattern_id);
+            ///
+            /// Get ios_info instance for specific stream object
+            ///
+            static ios_info &get(std::ios_base &ios);
 
-        #ifndef BOOSTER_NO_STD_WSTRING
-        
-        template<>
-        BOOSTER_API void ext_pattern(std::ios_base &,flags::pattern_type pattern_id, std::wstring const &pattern);
+            ///
+            /// Set a flags that define a way for format data like number, spell, currency etc.
+            ///
+            void display_flags(uint64_t flags);
+            
+            ///
+            /// Set a flags that define how to format currency
+            ///
+            void currency_flags(uint64_t flags);
+            
+            ///
+            /// Set a flags that define how to format date
+            ///
+            void date_flags(uint64_t flags);
+            
+            ///
+            /// Set a flags that define how to format time
+            ///
+            void time_flags(uint64_t flags);
+            
+            ///
+            /// Set a flags that define how to format both date and time
+            ///
+            void datetime_flags(uint64_t flags);
+            
+            ///
+            /// Set special message domain identification
+            ///
+            void domain_id(int);
+            
+            ///
+            /// Set time zone for formatting dates and time
+            ///
+            void time_zone(std::string const &);
+            
 
-        template<>
-        BOOSTER_API std::wstring ext_pattern(std::ios_base &,flags::pattern_type pattern_id);
+            ///
+            /// Set date/time pattern (strftime like)
+            ///
+            template<typename CharType>
+            void date_time_pattern(std::basic_string<CharType> const &str)
+            {
+                string_set &s = date_time_pattern_set();
+                s.set<CharType>(str.c_str());
+            }
 
-        #endif // BOOST_NO_STD_WSTRING
 
-        #ifdef BOOSTER_HAS_CHAR16_T
-        template<>
-        BOOSTER_API void ext_pattern(std::ios_base &,flags::pattern_type pattern_id, std::u16string const &pattern);
+            ///
+            /// Get a flags that define a way for format data like number, spell, currency etc.
+            ///
+            uint64_t display_flags() const;
+            
+            ///
+            /// Get a flags that define how to format currency
+            ///
+            uint64_t currency_flags() const;
 
-        template<>
-        BOOSTER_API std::u16string ext_pattern(std::ios_base &,flags::pattern_type pattern_id);
-        #endif // char16_t, u16string
+            
+            ///
+            /// Get a flags that define how to format date
+            ///
+            uint64_t date_flags() const;
+            
+            ///
+            /// Get a flags that define how to format time
+            ///
+            uint64_t time_flags() const;
 
-        #ifdef BOOSTER_HAS_CHAR32_T
-        template<>
-        BOOSTER_API void ext_pattern(std::ios_base &,flags::pattern_type pattern_id, std::u32string const &pattern);
+            ///
+            /// Get a flags that define how to format both date and time
+            ///
+            uint64_t datetime_flags() const;
+            
+            ///
+            /// Get special message domain identification
+            ///
+            int domain_id() const;
+            
+            ///
+            /// Get time zone for formatting dates and time
+            ///
+            std::string time_zone() const;
+            
+            ///
+            /// Get date/time pattern (strftime like)
+            ///
+            template<typename CharType>
+            std::basic_string<CharType> date_time_pattern() const
+            {
+                string_set const &s = date_time_pattern_set();
+                return s.get<CharType>();
+            }
+            
+            /// \cond INTERNAL
+            void on_imbue();
+            /// \endcond
+            
+        private:
 
-        template<>
-        BOOSTER_API std::u32string ext_pattern(std::ios_base &,flags::pattern_type pattern_id);
-        #endif // char32_t, u32string
+            class string_set;
 
-        /// \endcond
+            string_set const &date_time_pattern_set() const;
+            string_set &date_time_pattern_set();
+            
+            class BOOSTER_API string_set {
+            public:
+                string_set(); 
+                ~string_set();
+                string_set(string_set const &other);
+                string_set const &operator=(string_set const &other);
+                
+                template<typename Char>
+                void set(Char const *s)
+                {
+                    delete [] ptr;
+                    ptr = 0;
+                    type=&typeid(Char);
+                    Char const *end = s;
+                    while(*end!=0) end++;
+                    size = sizeof(Char)*(end - s+1);
+                    ptr = new char[size];
+                    memcpy(ptr,s,size);
+                }
+
+                template<typename Char>
+                std::basic_string<Char> get() const
+                {
+                    if(type==0 || *type!=typeid(Char))
+                        throw std::bad_cast();
+                    std::basic_string<Char> result = reinterpret_cast<Char const *>(ptr);
+                    return result;
+                }
+
+            private:
+                std::type_info const *type;
+                size_t size;
+                char *ptr;
+            };
+
+            uint64_t flags_;
+            int domain_id_;
+            std::string time_zone_;
+            string_set datetime_;
+
+            struct data;
+            data *d;
+
+        };
+
 
         ///
         /// \brief This namespace includes all manipulators that can be used on IO streams
@@ -140,7 +279,7 @@ namespace booster {
             
             inline std::ios_base & posix(std::ios_base & ios)
             {
-                ext_setf(ios, flags::posix, flags::display_flags_mask);
+                ios_info::get(ios).display_flags(flags::posix);
                 return ios;
             }
 
@@ -150,7 +289,7 @@ namespace booster {
             ///
             inline std::ios_base & number(std::ios_base & ios)
             {
-                ext_setf(ios, flags::number, flags::display_flags_mask);
+                ios_info::get(ios).display_flags(flags::number);
                 return ios;
             }
             
@@ -159,7 +298,7 @@ namespace booster {
             ///
             inline std::ios_base & currency(std::ios_base & ios)
             {
-                ext_setf(ios, flags::currency, flags::display_flags_mask);
+                ios_info::get(ios).display_flags(flags::currency);
                 return ios;
             }
             
@@ -168,7 +307,7 @@ namespace booster {
             ///
             inline std::ios_base & percent(std::ios_base & ios)
             {
-                ext_setf(ios, flags::percent, flags::display_flags_mask);
+                ios_info::get(ios).display_flags(flags::percent);
                 return ios;
             }
             
@@ -177,7 +316,7 @@ namespace booster {
             ///
             inline std::ios_base & date(std::ios_base & ios)
             {
-                ext_setf(ios, flags::date, flags::display_flags_mask);
+                ios_info::get(ios).display_flags(flags::date);
                 return ios;
             }
 
@@ -186,7 +325,7 @@ namespace booster {
             ///
             inline std::ios_base & time(std::ios_base & ios)
             {
-                ext_setf(ios, flags::time, flags::display_flags_mask);
+                ios_info::get(ios).display_flags(flags::time);
                 return ios;
             }
 
@@ -195,7 +334,7 @@ namespace booster {
             ///
             inline std::ios_base & datetime(std::ios_base & ios)
             {
-                ext_setf(ios, flags::datetime, flags::display_flags_mask);
+                ios_info::get(ios).display_flags(flags::datetime);
                 return ios;
             }
 
@@ -205,7 +344,7 @@ namespace booster {
             ///
             inline std::ios_base & strftime(std::ios_base & ios)
             {
-                ext_setf(ios, flags::strftime, flags::display_flags_mask);
+                ios_info::get(ios).display_flags(flags::strftime);
                 return ios;
             }
             
@@ -214,7 +353,7 @@ namespace booster {
             ///
             inline std::ios_base & spellout(std::ios_base & ios)
             {
-                ext_setf(ios, flags::spellout, flags::display_flags_mask);
+                ios_info::get(ios).display_flags(flags::spellout);
                 return ios;
             }
             
@@ -223,7 +362,7 @@ namespace booster {
             ///
             inline std::ios_base & ordinal(std::ios_base & ios)
             {
-                ext_setf(ios, flags::ordinal, flags::display_flags_mask);
+                ios_info::get(ios).display_flags(flags::ordinal);
                 return ios;
             }
 
@@ -232,7 +371,7 @@ namespace booster {
             ///
             inline std::ios_base & currency_default(std::ios_base & ios)
             {
-                ext_setf(ios, flags::currency_default, flags::currency_flags_mask);
+                ios_info::get(ios).currency_flags(flags::currency_default);
                 return ios;
             }
 
@@ -241,7 +380,7 @@ namespace booster {
             ///
             inline std::ios_base & currency_iso(std::ios_base & ios)
             {
-                ext_setf(ios, flags::currency_iso, flags::currency_flags_mask);
+                ios_info::get(ios).currency_flags(flags::currency_iso);
                 return ios;
             }
 
@@ -250,7 +389,7 @@ namespace booster {
             ///
             inline std::ios_base & currency_national(std::ios_base & ios)
             {
-                ext_setf(ios, flags::currency_national, flags::currency_flags_mask);
+                ios_info::get(ios).currency_flags(flags::currency_national);
                 return ios;
             }
 
@@ -259,7 +398,7 @@ namespace booster {
             ///
             inline std::ios_base & time_default(std::ios_base & ios)
             {
-                ext_setf(ios, flags::time_default, flags::time_flags_mask);
+                ios_info::get(ios).time_flags(flags::time_default);
                 return ios;
             }
 
@@ -268,7 +407,7 @@ namespace booster {
             ///
             inline std::ios_base & time_short(std::ios_base & ios)
             {
-                ext_setf(ios, flags::time_short, flags::time_flags_mask);
+                ios_info::get(ios).time_flags(flags::time_short);
                 return ios;
             }
 
@@ -277,7 +416,7 @@ namespace booster {
             ///
             inline std::ios_base & time_medium(std::ios_base & ios)
             {
-                ext_setf(ios, flags::time_medium, flags::time_flags_mask);
+                ios_info::get(ios).time_flags(flags::time_medium);
                 return ios;
             }
 
@@ -286,7 +425,7 @@ namespace booster {
             ///
             inline std::ios_base & time_long(std::ios_base & ios)
             {
-                ext_setf(ios, flags::time_long, flags::time_flags_mask);
+                ios_info::get(ios).time_flags(flags::time_long);
                 return ios;
             }
 
@@ -295,7 +434,7 @@ namespace booster {
             ///
             inline std::ios_base & time_full(std::ios_base & ios)
             {
-                ext_setf(ios, flags::time_full, flags::time_flags_mask);
+                ios_info::get(ios).time_flags(flags::time_full);
                 return ios;
             }
 
@@ -304,7 +443,7 @@ namespace booster {
             ///
             inline std::ios_base & date_default(std::ios_base & ios)
             {
-                ext_setf(ios, flags::date_default, flags::date_flags_mask);
+                ios_info::get(ios).date_flags(flags::date_default);
                 return ios;
             }
 
@@ -313,7 +452,7 @@ namespace booster {
             ///
             inline std::ios_base & date_short(std::ios_base & ios)
             {
-                ext_setf(ios, flags::date_short, flags::date_flags_mask);
+                ios_info::get(ios).date_flags(flags::date_short);
                 return ios;
             }
 
@@ -322,7 +461,7 @@ namespace booster {
             ///
             inline std::ios_base & date_medium(std::ios_base & ios)
             {
-                ext_setf(ios, flags::date_medium, flags::date_flags_mask);
+                ios_info::get(ios).date_flags(flags::date_medium);
                 return ios;
             }
 
@@ -331,7 +470,7 @@ namespace booster {
             ///
             inline std::ios_base & date_long(std::ios_base & ios)
             {
-                ext_setf(ios, flags::date_long, flags::date_flags_mask);
+                ios_info::get(ios).date_flags(flags::date_long);
                 return ios;
             }
 
@@ -340,7 +479,7 @@ namespace booster {
             ///
             inline std::ios_base & date_full(std::ios_base & ios)
             {
-                ext_setf(ios, flags::date_full, flags::date_flags_mask);
+                ios_info::get(ios).date_flags(flags::date_full);
                 return ios;
             }            
             
@@ -354,7 +493,7 @@ namespace booster {
 
                     void apply(std::basic_ios<CharType> &ios) const
                     {
-                        ext_pattern(ios,flags::datetime_pattern,ftime);
+                        ios_info::get(ios).date_time_pattern(ftime);
                         as::strftime(ios);
                     }
 
@@ -440,14 +579,14 @@ namespace booster {
                 template<typename CharType>
                 std::basic_ostream<CharType> &operator<<(std::basic_ostream<CharType> &out,set_timezone const &fmt)
                 {
-                    ext_pattern(out,flags::time_zone_id,fmt.id);
+                    ios_info::get(out).time_zone(fmt.id);
                     return out;
                 }
                 
                 template<typename CharType>
                 std::basic_istream<CharType> &operator>>(std::basic_istream<CharType> &in,set_timezone const &fmt)
                 {
-                    ext_pattern(in,flags::time_zone_id,fmt.id);
+                    ios_info::get(in).time_zone(fmt.id);
                     return in;
                 }
             }
@@ -458,7 +597,7 @@ namespace booster {
             /// 
             inline std::ios_base &gmt(std::ios_base &ios)
             {
-                ext_pattern<char>(ios,flags::time_zone_id,"GMT");
+                ios_info::get(ios).time_zone("GMT");
                 return ios;
             }
 
@@ -467,7 +606,7 @@ namespace booster {
             ///
             inline std::ios_base &local_time(std::ios_base &ios)
             {
-                ext_pattern(ios,flags::time_zone_id,std::string());
+                ios_info::get(ios).time_zone(time_zone::global());
                 return ios;
             }
 
@@ -488,16 +627,6 @@ namespace booster {
             {
                 details::set_timezone tz;
                 tz.id=id;
-                return tz;
-            }
-
-            ///
-            /// Set time zone using time_zone class \a id
-            ///
-            inline details::set_timezone time_zone(booster::locale::time_zone const &id) 
-            {
-                details::set_timezone tz;
-                tz.id=id.id();
                 return tz;
             }
 

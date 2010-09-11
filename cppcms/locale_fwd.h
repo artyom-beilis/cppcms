@@ -3,24 +3,15 @@
 
 #include <cppcms/config.h>
 
-#ifdef CPPCMS_HAVE_ICU
-	namespace booster {
-		namespace locale {
-			class generator;
-			class info;
-		}
+namespace booster {
+	namespace locale {
+		class generator;
+		class info;
 	}
-	namespace cppcms { 
-		namespace locale = ::booster::locale; 
-	}
+}
+namespace cppcms { 
+	namespace locale = ::booster::locale; 
+}
 
-#else
-	namespace cppcms {
-		namespace locale {
-			class generator;
-			class info;
-		}
-	}
-#endif
 
 #endif

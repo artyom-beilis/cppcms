@@ -10,28 +10,17 @@
 #include <cassert>
 #include <ctime>
 
-int main(int argc,char **argv)
+int main()
 {
     using namespace booster::locale;
     using namespace std;
 
     generator gen;
-    locale::global(locale(""));
-    locale loc;
-    if(argc == 1)
-        loc=gen(""); 
-    else if(argc == 2)
-        loc=gen(argv[1]);
-    else
-        loc=gen(argv[1],argv[2]);
-
-    // Create system default locale
-
+    // Make system default locale global
+    std::locale loc = gen("");
     locale::global(loc); 
-    // Make it system global
-    
     cout.imbue(loc);
-    // Set as default locale for output
+    
 
     string text="Hello World! あにま! Linux2.6 and Windows7 is word and number. שָלוֹם עוֹלָם!";
 

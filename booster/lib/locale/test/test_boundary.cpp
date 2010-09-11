@@ -12,8 +12,6 @@
 #include "test_locale_tools.h"
 #include <list>
 
-//#define BOOST_NO_STD_WSTRING
-
 namespace lb = booster::locale::boundary;
 
 template<typename Char,typename Iterator>
@@ -198,10 +196,8 @@ void test_boundaries(std::string *all,int *first,int *second,lb::boundary_type t
     run_word<char>(all,first,second,0,0,0,g("he_IL.UTF-8"),t);
     std::cout << " char CP1255" << std::endl;
     run_word<char>(all,first,second,0,0,0,g("he_IL.cp1255"),t);
-    #ifndef BOOSTER_NO_STD_WSTRING
     std::cout << " wchar_t"<<std::endl;
     run_word<wchar_t>(all,first,second,0,0,0,g("he_IL.UTF-8"),t);
-    #endif
     #ifdef BOOSTER_HAS_CHAR16_T
     std::cout << " char16_t"<<std::endl;
     run_word<char16_t>(all,first,second,0,0,0,g("he_IL.UTF-8"),t);
@@ -242,12 +238,10 @@ void word_boundary()
     run_word<char>(all2,zero,zero,zero,zero,zero,g("ja_JP.Shift-JIS"));
     run_word<char>(all3,none3,zero,word3,zero,zero,g("ja_JP.Shift-JIS"));
 
-    #ifndef BOOSTER_NO_STD_WSTRING
     std::cout << " wchar_t"<<std::endl;
     run_word<wchar_t>(all1,none1,num1,word1,kana1,ideo1,g("ja_JP.UTF-8"));
     run_word<wchar_t>(all2,zero,zero,zero,zero,zero,g("en_US.UTF-8"));
     run_word<wchar_t>(all3,none3,zero,word3,zero,zero,g("en_US.UTF-8"));
-    #endif 
 
     #ifdef BOOSTER_HAS_CHAR16_T
     std::cout << " char16_t"<<std::endl;

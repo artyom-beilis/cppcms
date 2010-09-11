@@ -1,7 +1,7 @@
 HTTP/1.0 200 Ok
 Server: CppCMS-Embedded/0.99.3
 Connection: close
-Content-Type: text/plain; charset=UTF-8
+Content-Type: text/plain; charset=utf-8
 X-Powered-By: CppCMS/0.99.3
 
 CONTENT_LENGTH:11

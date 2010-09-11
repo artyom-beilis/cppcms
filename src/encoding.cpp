@@ -28,184 +28,10 @@
 #include <stdexcept>
 #include <iostream>
 
-#if defined CPPCMS_HAVE_ICONV
-#include <iconv.h>
-#elif defined(CPPCMS_HAVE_ICU)
-#include <unicode/ucnv.h> // For Win32
-#endif
-
-
-
 namespace cppcms {
 namespace encoding {
 
 namespace impl{ 
-#ifdef CPPCMS_HAVE_ICONV
-	typedef size_t (*posix_iconv_type)(iconv_t cd,char **, size_t *t,char **,size_t *);
-	typedef size_t (*gnu_iconv_type)(iconv_t cd,char const **, size_t *t,char **,size_t *);
-
-	size_t do_iconv(posix_iconv_type cv,iconv_t cd,char const **inbuf, size_t *inbytesleft,char **outbuf,size_t *outbytesleft)
-	{
-		return cv(cd,const_cast<char **>(inbuf),inbytesleft,outbuf,outbytesleft);
-	}
-	size_t do_iconv(gnu_iconv_type cv,iconv_t cd,char const **inbuf, size_t *inbytesleft,char **outbuf,size_t *outbytesleft)
-	{
-		return cv(cd,inbuf,inbytesleft,outbuf,outbytesleft);
-	}
-
-	char const *native_utf32_encoding()
-	{
-		char const *le="UTF-32LE";
-		char const *be="UTF-32BE";
-		uint16_t v=0x0a0b;
-		char const *utf=*(char*)&v== 0x0a ? be : le;
-		return utf;
-	}
-	
-	char const *native_utf16_encoding()
-	{
-		char const *le="UTF-16LE";
-		char const *be="UTF-16BE";
-		uint16_t v=0x0a0b;
-		char const *utf=*(char*)&v== 0x0a ? be : le;
-		return utf;
-	}
-
-	char const *native_wchar_encoding()
-	{
-		if(sizeof(wchar_t)==4)
-			return native_utf32_encoding();
-		if(sizeof(wchar_t)==2)
-			return native_utf16_encoding();
-		throw std::runtime_error("wchar_t does not support unicode!");
-	}
-	
-	class iconv_validator {
-	public:
-		iconv_validator(std::string const &charset) :
-			descriptor_((iconv_t)(-1))
-		{
-			descriptor_=iconv_open(native_utf32_encoding(),charset.c_str());
-			if(descriptor_==(iconv_t)(-1)) {
-				throw std::runtime_error("Failed to load iconv tables for:" + charset);
-			}
-		}
-
-		~iconv_validator()
-		{
-			if(descriptor_!=(iconv_t)(-1))
-				iconv_close(descriptor_);
-		}
-
-		bool valid(char const *begin,char const *end,size_t &count)
-		{
-			iconv(descriptor_,0,0,0,0); // reset
-			uint32_t buffer[64];
-			size_t input=end-begin;
-			while(begin!=end) {
-				uint32_t *output=buffer;
-				size_t outsize=sizeof(buffer);
-
-				size_t res=do_iconv(::iconv,descriptor_,&begin,&input,(char**)&output,&outsize);
-
-				if(res==(size_t)(-1) && errno==E2BIG)  {
-					if(!check_symbols(buffer,output,count))
-						return false;
-					continue;
-				}
-				if(res!=(size_t)(-1) && input==0)
-					return check_symbols(buffer,output,count);
-				return false;
-			}
-			return true;
-		}
-	private:
-		iconv_t descriptor_;
-
-		iconv_validator(iconv_validator const &other);
-		iconv_validator const &operator=(iconv_validator const &);
-
-		bool check_symbols(uint32_t const *begin,uint32_t const *end,size_t &count)
-		{
-			while(begin!=end) {
-				uint32_t c=*begin++;
-				count++;
-				if(c==0x09 || c==0xA || c==0xD)
-					continue;
-				if(c<0x20 || (0x7F<=c && c<=0x9F))
-					return false;
-			}
-			return true;
-		}
-	};
-
-
-	typedef iconv_validator validator;
-#elif defined(CPPCMS_HAVE_ICU)
-	class uconv_validator {
-	public:
-		uconv_validator(std::string const &charset) :
-			uconv_(0)
-		{
-			UErrorCode err=U_ZERO_ERROR;
-			uconv_=ucnv_open(charset.c_str(),&err);
-			if(!uconv_)
-				throw cppcms_error("Invalid encoding:" + charset + u_errorName(err));
-			err=U_ZERO_ERROR;
-			ucnv_setToUCallBack(uconv_,UCNV_TO_U_CALLBACK_STOP,0,0,0,&err);
-			if(U_FAILURE(err)) {
-				ucnv_close(uconv_);
-				throw cppcms_error("Invalid encoding:" + charset + u_errorName(err));
-			}
-		}
-
-		~uconv_validator()
-		{
-			if(uconv_) ucnv_close(uconv_);
-		}
-
-		bool valid(char const *begin,char const *end,size_t &count)
-		{
-			UChar buffer[64];
-			UChar *ubegin=buffer;
-			UChar *uend=ubegin+64;
-			count = 0;
-			while(begin!=end) {
-				UErrorCode err=U_ZERO_ERROR;
-				ucnv_toUnicode(uconv_,&ubegin,uend,&begin,end,0,1,&err);
-				if(err==U_BUFFER_OVERFLOW_ERROR) {
-					if(!check_symbols(buffer,ubegin,count))
-						return false;
-				}
-				else if(U_FAILURE(err))
-					return false;
-			}
-			return true;
-		}
-
-	private:
-		UConverter *uconv_;
-
-		uconv_validator(uconv_validator const &other);
-		void operator=(uconv_validator const &);
-		
-		bool check_symbols(UChar const *begin,UChar const *end,size_t &count)
-		{
-			while(begin!=end) {
-				UChar c=*begin++;
-				if(!U_IS_SURROGATE(c) || U_IS_SURROGATE_LEAD(c))
-					count++;
-				if(c==0x09 || c==0xA || c==0xD)
-					continue;
-				if(c<0x20 || (0x7F<=c && c<=0x9F))
-					return false;
-			}
-			return true;
-		}
-	};
-
-	typedef uconv_validator validator;
-#endif
 	struct validators_set {
 		
 		typedef bool (*encoding_tester_type)(char const *begin,char const *end,size_t &count);
@@ -374,20 +200,14 @@ bool CPPCMS_API valid(char const *encoding,char const *begin,char const *end,siz
 	impl::validators_set::encoding_tester_type tester = impl::all_validators.get(encoding);
 	if(tester)
 		return tester(begin,end,count);
-	#if defined(CPPCMS_HAVE_ICU) || defined(CPPCMS_HAVE_ICONV)
 	try {
-		impl::validator vtester(encoding);
-		return vtester.valid(begin,end,count);
+		std::string utf8_string = booster::locale::conv::between(begin,end,"UTF-8",encoding,booster::locale::conv::stop);
+		return impl::all_validators.get("utf-8")(utf8_string.c_str(),utf8_string.c_str()+utf8_string.size(),count);
 	}
 	catch(std::runtime_error const &e) {
 		return false;
 	}
-	#else
-	return false;
-	#endif
 }
-
-#if defined(CPPCMS_HAVE_ICONV) || defined(CPPCMS_HAVE_ICU)
 
 inline bool is_utf8(char const *c_encoding)
 {
@@ -397,47 +217,6 @@ inline bool is_utf8(char const *c_encoding)
 		|| strcmp(c_encoding,"utf-8")==0;
 }
 
-
-#ifdef CPPCMS_HAVE_ICONV
-namespace impl {
-	std::string iconv_convert_to(char const *to,char const *from,char const *begin,char const *end)
-	{
-		iconv_t d=iconv_open(to,from);
-		if(d==(iconv_t)(-1)) 
-			throw cppcms_error("Unsupported encoding "+std::string(to));
-		
-		std::string result;
-		try {
-			char buffer[256];
-			size_t input=end-begin;
-			while(begin!=end) {
-				char *output=buffer;
-				size_t outsize=sizeof(buffer);
-
-				size_t res=do_iconv(::iconv,d,&begin,&input,(char**)&output,&outsize);
-
-				if(res==(size_t)(-1) && errno==E2BIG)  {
-					result.append(buffer,output);
-					continue;
-				}
-				if(res!=(size_t)(-1) && input==0) {
-					result.append(buffer,output);
-					break;
-				}
-				break;
-			}
-			
-		}
-		catch(...) {
-			iconv_close(d);
-		}
-		iconv_close(d);
-		return result;
-	}
-} // impl
-#endif
-
-
 std::string CPPCMS_API to_utf8(char const *c_encoding,char const *begin,char const *end)
 {
 	std::string result;
@@ -445,11 +224,7 @@ std::string CPPCMS_API to_utf8(char const *c_encoding,char const *begin,char con
 		result.assign(begin,end-begin);
 		return result;
 	}
-#ifdef CPPCMS_HAVE_ICONV
-	return impl::iconv_convert_to("UTF-8",c_encoding,begin,end);
-#else // USE ICU
 	return locale::conv::to_utf<char>(begin,end,c_encoding);
-#endif
 }
 
 
@@ -490,11 +265,7 @@ std::string CPPCMS_API from_utf8(char const *c_encoding,char const *begin,char c
 		result.assign(begin,end-begin);
 		return result;
 	}
-#ifdef CPPCMS_HAVE_ICONV
-	return impl::iconv_convert_to(c_encoding,"UTF-8",begin,end);
-#else // USE ICU
 	return locale::conv::from_utf<char>(begin,end,c_encoding);
-#endif
 }
 
 
@@ -524,8 +295,5 @@ std::string CPPCMS_API from_utf8(std::locale const &loc,std::string const &str)
 	else
 		return from_utf8(inf.encoding().c_str(),str);
 }
-
-#endif // CPPCMS_HAVE_ICONV || CPPCMS_HAVE_ICU
-	
 	
 } } // cppcms::encoding

@@ -37,21 +37,21 @@
 #include <ctime>
 
 
-#ifndef BOOSTER_NO_SWPRINTF    
 int main()
 {
     using namespace booster::locale;
     using namespace std;
-    generator gen;
-    locale::global(locale(""));
-    locale loc=gen(""); 
     // Create system default locale
-
-    locale::global(loc); 
-    // Make it system global
-    
+    generator gen;
+    locale loc=gen(""); 
+    locale::global(loc);
     wcout.imbue(loc);
-    // Set as default locale for output
+
+    // This is needed to prevent C library to
+    // convert strings to narrow 
+    // instead of C++ on some platforms
+    std::ios_base::sync_with_stdio(false);
+
     
     wcout<<L"Correct case conversion can't be done by simple, character by character conversion"<<endl;
     wcout<<L"because case conversion is context sensitive and not 1-to-1 conversion"<<endl;
@@ -67,11 +67,5 @@ int main()
     wcout<<L"behavoir to BMP or ASCII only"<<endl;
    
 }
-#else
-int main()
-{
-    std::cout<<"This platform does not support wcout"<<std::endl;
-}
-#endif
 
 // vim: tabstop=4 expandtab shiftwidth=4 softtabstop=4

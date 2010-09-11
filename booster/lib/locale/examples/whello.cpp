@@ -10,22 +10,22 @@
 
 #include <ctime>
 
-#ifndef BOOSTER_NO_SWPRINTF    
 int main()
 {
     using namespace booster::locale;
     using namespace std;
     
-    generator gen;
-    locale::global(locale(""));
-    locale loc=gen(""); 
     // Create system default locale
-
-    locale::global(loc); 
-    // Make it system global
-    
+    generator gen;
+    locale loc=gen(""); 
+    locale::global(loc);
     wcout.imbue(loc);
-    // Set as default locale for output
+    
+    // This is needed to prevent C library to
+    // convert strings to narrow 
+    // instead of C++ on some platforms
+    std::ios_base::sync_with_stdio(false);
+
     
     wcout <<wformat(L"Today {1,date} at {1,time} we had run our first localization example") % time(0) 
           <<endl;
@@ -40,12 +40,6 @@ int main()
     wcout<<L"This is fold case "<<fold_case(L"Hello World!")<<endl;
    
 }
-#else
-int main()
-{
-    std::cout<<"This platform does not support wcout"<<std::endl;
-}
-#endif
 
 
 // vim: tabstop=4 expandtab shiftwidth=4 softtabstop=4

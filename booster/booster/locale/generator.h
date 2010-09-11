@@ -17,34 +17,51 @@
 #include <memory>
 
 namespace booster {
+
+    template<typename Type>
+    class shared_ptr;
+
     ///
     /// \brief This is the main namespace that encloses all localization classes 
     ///
     namespace locale {
 
-        ///
-        /// a enum type that specifies the character type that locales can be generated for
-        /// 
-        typedef enum {
-            char_facet      = 1 << 0,   ///< 8-bit character facets
-            wchar_t_facet   = 1 << 1,   ///< wide character facets
-            char16_t_facet  = 1 << 2,   ///< C++0x char16_t facets
-            char32_t_facet  = 1 << 3,   ///< C++0x char32_t facets
+        class localization_backend;
+        class localization_backend_manager;
 
-            all_characters = 0xFFFF     ///< Special mask -- generate all
-        } character_facet_type;
+        static const unsigned nochar_facet    = 0;        ///< Unspecified character category for character independed facets
+        static const unsigned char_facet      = 1 << 0;   ///< 8-bit character facets
+        static const unsigned wchar_t_facet   = 1 << 1;   ///< wide character facets
+        static const unsigned char16_t_facet  = 1 << 2;   ///< C++0x char16_t facets
+        static const unsigned char32_t_facet  = 1 << 3;   ///< C++0x char32_t facets
 
-        ///
-        /// a special enum used for more fine grained generation of facets
-        ///
-        typedef enum {
-            collation_facet = 1 << 0,   ///< Generate collation facets
-            formatting_facet= 1 << 1,   ///< Generate numbers, currency, date-time formatting facets
-            message_facet   = 1 << 2,   ///< Generate message facets
-            codepage_facet=   1 << 3,   ///< Generate codepage conversion facets (derived from std::codecvt)
+        static const unsigned character_first_facet = char_facet;  ///< First facet specific for character type
+        static const unsigned character_last_facet = char32_t_facet; ///< Last facet specific for character typr
+        static const unsigned all_characters = 0xFFFF;     ///< Special mask -- generate all
+        
+        typedef unsigned character_facet_type; ///<type that specifies the character type that locales can be generated for
+
+        static const unsigned     convert_facet   = 1 << 0;   ///< Generate convertsion facets
+        static const unsigned     collation_facet = 1 << 1;   ///< Generate collation facets
+        static const unsigned     formatting_facet= 1 << 2;   ///< Generate numbers, currency, date-time formatting facets
+        static const unsigned     parsing_facet   = 1 << 3;   ///< Generate numbers, currency, date-time formatting facets
+        static const unsigned     message_facet   = 1 << 4;   ///< Generate message facets
+        static const unsigned     codepage_facet  = 1 << 5;   ///< Generate codepage conversion facets (derived from std::codecvt)
+        static const unsigned     boundary_facet  = 1 << 6;   ///< Generate boundary analysis facet
             
-            all_categories  = 0xFFFFFFFFu   ///< Generate all of them
-        } locale_category_type;
+        static const unsigned     per_character_facet_first = convert_facet; ///< First facet specific for character
+        static const unsigned     per_character_facet_last = boundary_facet; ///< Last facet specific for character
+
+        static const unsigned     calendar_facet  = 1 << 16;   ///< Generate boundary analysis facet
+        static const unsigned     information_facet = 1 << 17;   ///< Generate general locale information facet
+
+        static const unsigned    non_character_facet_first = calendar_facet; ///< First character independed facet 
+        static const unsigned    non_character_facet_last = information_facet;///< Last character independed facet 
+
+            
+        static const unsigned    all_categories  = 0xFFFFFFFFu;   ///< Generate all of them
+        
+        typedef unsigned locale_category_type; ///< a type used for more fine grained generation of facets
 
         ///
         /// \brief the major class used for locale generation
@@ -56,7 +73,15 @@ namespace booster {
         class BOOSTER_API generator {
         public:
 
+            ///
+            /// Create new generator using global localization_backend_manager 
+            ///
             generator();
+            ///
+            /// Create new generator using specific localization_backend_manager 
+            ///
+            generator(localization_backend_manager const &);
+
             ~generator();
 
             ///
@@ -77,16 +102,6 @@ namespace booster {
             ///
             unsigned characters() const;
 
-            ///
-            /// Set encoding used for 8-bit character encoding. Default is system default encoding
-            ///
-            void octet_encoding(std::string const &encoding);
-            ///
-            /// Get encoding used for 8-bit character encoding. Default is system default encoding
-            ///
-            std::string octet_encoding() const;
-
-            
             ///
             /// Add a new domain of messages that would be generated. It should be set in order to enable
             /// messages support.
@@ -128,74 +143,45 @@ namespace booster {
             void clear_cache();
 
             ///
-            /// Generate a locale with id \a id and put it in cache
+            /// Turn locale caching ON
             ///
-            void preload(std::string const &id);
-            ///
-            /// Generate a locale with id \a id, encoding \a encoding and put it in cache
-            ///
-            void preload(std::string const &id,std::string const &encoding);
+            void locale_cache_enabled(bool on);
 
             ///
-            /// Generate a locale with id \a id and put it in cache, use \a base as a locale for which all facets are added,
-            /// instead of global one
+            /// Get locale cache option
             ///
-            void preload(std::locale const &base,std::string const &id);
-            ///
-            /// Generate a locale with id \a id, encoding \a encoding and put it in cache, use \a base as a locale for which all facets are added,
-            /// instead of global one
-            ///
-            void preload(std::locale const &base,std::string const &id,std::string const &encoding);
+            bool locale_cache_enabled() const;
 
             ///
             /// Generate a locale with id \a id
             ///
             std::locale generate(std::string const &id) const;
             ///
-            /// Generate a locale with id \a id, encoding \a encoding 
-            ///
-            std::locale generate(std::string const &id,std::string const &encoding) const;
-
-            ///
             /// Generate a locale with id \a id, use \a base as a locale for which all facets are added,
-            /// instead of global one
+            /// instead of std::locale::classic() one
             ///
             std::locale generate(std::locale const &base,std::string const &id) const;
             ///
-            /// Generate a locale with id \a id, encoding \a encoding, use \a base as a locale for which all facets are added,
-            /// instead of global one
-            ///
-            std::locale generate(std::locale const &base,std::string const &id,std::string const &encoding) const;
-
-            ///
-            /// Get a locale with id \a id from cache, if not found, generate one
-            ///
-            std::locale get(std::string const &id) const;
-            ///
-            /// Get a locale with id \a id and encoding \a encoding from cache, if not found, generate one
-            ///
-            std::locale get(std::string const &id,std::string const &encoding) const;
-
-            ///
-            /// Shortcut to get(id)
+            /// Shortcut to generate(id)
             ///
             std::locale operator()(std::string const &id) const
             {
-                return get(id);
+                return generate(id);
             }
+            
             ///
-            /// Shortcut to get(id,encoding)
+            /// Set backend specific option
             ///
-            std::locale operator()(std::string const &id,std::string const &encoding) const
-            {
-                return get(id,encoding);
-            }
+            void set_option(std::string const &name,std::string const &value);
+
+            ///
+            /// Clear backend specific options
+            ///
+            void clear_options();
 
         private:
 
-            template<typename CharType>
-            std::locale generate_for(std::locale const &source) const;
-            std::locale complete_generation(std::locale const &source) const;
+            void set_all_options(shared_ptr<localization_backend> backend,std::string const &id) const;
 
             generator(generator const &);
             void operator=(generator const &);

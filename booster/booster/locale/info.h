@@ -21,8 +21,6 @@
 namespace booster {
     namespace locale {
 
-        struct info_impl;
-
         ///
         /// \brief a facet that holds general information about locale
         ///
@@ -32,69 +30,89 @@ namespace booster {
         {
         public:
             static std::locale::id id; ///< This member defines uniquely this facet, required by STL 
-            
-            ///
-            /// Creates locale using general locale id that includes encoding
-            /// If encoding is not found, default system encoding is taken, if the string is empty
-            /// default system locale is used.
-            ///
-            info(std::string posix_id,size_t refs = 0);
-            
-            ///
-            /// Creates locale using general locale id and cherset encoding
-            /// if posix_id is empty default system locale is used.
-            ///
-            info(std::string posix_id,std::string encoding,size_t refs = 0);
 
+            ///
+            /// String information about the locale
+            ///
+            typedef enum {
+                language_property,  ///< ISO 639 language id
+                country_property,   ///< ISO 3166 country id
+                variant_property,   ///< Variant for locale
+                encoding_property,   ///< encoding name
+                name_property       ///< locale name
+            } string_propery;
 
-            
+            ///
+            /// Integer information about locale
+            ///
+            typedef enum {
+                utf8_property       ///< Non zero value if uses UTF-8 encoding
+            } integer_property;
+
+          
+            ///
+            /// Standard facet's constructor
+            /// 
+            info(size_t refs = 0) : std::locale::facet(refs)
+            {
+            }
             ///
             /// Get language name
             ///
-            std::string language() const;
+            std::string language() const 
+            {
+                return get_string_property(language_property);
+            }
             ///
             /// Get country name
             ///
-            std::string country() const;
+            std::string country() const
+            {
+                return get_string_property(country_property);
+            }
             ///
             /// Get locale variant
             ///
-            std::string variant() const;
+            std::string variant() const
+            {
+                return get_string_property(variant_property);
+            }
             ///
             /// Get encoding
             ///
-            std::string encoding() const;
+            std::string encoding() const
+            {
+                return get_string_property(encoding_property);
+            }
+
+            ///
+            /// Get the name of the locale, like en_US.UTF-8
+            ///
+            std::string name() const
+            {
+                return get_string_property(name_property);
+            }
 
             ///
             /// Is underlying encoding is UTF-8 (for char streams and strings)
             ///
             bool utf8() const
             {
-                return utf8_;
+                return get_ineger_property(utf8_property) != 0;
             }
             
-
-            /// \cond INTERNAL
-            
-            // 
-            // Internal function, do not use it
-            //
-            info_impl const *impl() const
-            {
-                return impl_.get();
-            }
-
 #if defined (__SUNPRO_CC) && defined (_RWSTD_VER)
             std::locale::id& __get_id (void) const { return id; }
 #endif
-            /// \endcond
-    protected:
-            
-            virtual ~info();
-
-        private:
-            std::auto_ptr<info_impl> impl_;
-            bool utf8_;
+        protected:
+            ///
+            /// Get string property by its id \a v
+            ///
+            virtual std::string get_string_property(string_propery v) const = 0;
+            ///
+            /// Get integer property by its id \a v
+            ///
+            virtual int get_ineger_property(integer_property v) const = 0;
         };
 
     }

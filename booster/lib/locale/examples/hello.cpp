@@ -15,7 +15,6 @@ int main()
     using namespace booster::locale;
     using namespace std;
     generator gen;
-    locale::global(locale(""));
     locale loc=gen(""); 
     // Create system default locale
 

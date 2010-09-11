@@ -13,16 +13,112 @@ include(CheckCXXSourceCompiles)
 include(CheckLibraryExists)
 include(CPack)
 enable_testing()
-
-option(DISABLE_SHARED	"Disable shared libraries build" OFF)
-option(DISABLE_STATIC	"Disable static libraries build" OFF)
-option(DISABLE_ICU_LOCALIZATION "Disable locale library" OFF)
-
+#
+# Most important includes
+#
 
 include_directories(${CMAKE_BINARY_DIR})
 include_directories(${CMAKE_CURRENT_BINARY_DIR})
 include_directories(.)
 include_directories(lib/test)
+
+# Options
+
+option(DISABLE_SHARED	"Disable shared libraries build" OFF)
+option(DISABLE_STATIC	"Disable static libraries build" OFF)
+option(DISABLE_ICU_LOCALE	"Disable icu locale backend" OFF)
+option(DISABLE_STD_LOCALE	"Disable std locale backend" OFF)
+
+if("${CMAKE_SYSTEM_NAME}" STREQUAL "Linux" OR APPLE)
+	option(DISABLE_POSIX_LOCALE	"Disable POSIX locale backend" OFF)
+else()
+	option(DISABLE_POSIX_LOCALE	"Disable POSIX locale backend" ON)
+endif()
+
+if(WIN32 OR CYGWIN) 
+	option(DISABLE_WINAPI_LOCALE	"Disable Win32API locale backend" OFF)
+else()
+	option(DISABLE_WINAPI_LOCALE	"Disable Win32API locale backend" ON)
+endif()
+
+if(WIN32 AND NOT CYGWIN)
+	option(DISABLE_ICONV	"Disable iconv library (default On on Windows)" ON)
+else()
+	if(CMAKE_SYSTEM_NAME STREQUAL "SunOS")
+		option(DISABLE_ICONV	"Disable iconv library (default On on Windows)" ON)
+	else()
+		option(DISABLE_ICONV	"Disable iconv library (default On on Windows)" OFF)
+	endif()
+endif()
+
+# Fixing options if libraries are not found
+
+if(NOT DISABLE_ICU_LOCALE)
+	message("-- Looking for ICU libraries")
+
+	if("${CMAKE_BUILD_TYPE}" STREQUAL "Debug")
+		if(MSVC)
+			set(ICU_SUFFIX "d")
+		endif()
+	endif()
+
+	find_library(ICU_UC icuuc${ICU_SUFFIX})
+	find_library(ICU_DATA icudt NAMES icudata)
+	find_library(ICU_I18N icuin${ICU_SUFFIX} NAMES icui18n${ICU_SUFFIX})
+	find_path(ICU_INCLUDE_DIR unicode/unistr.h)
+
+	if(ICU_UC AND ICU_DATA AND ICU_I18N AND ICU_INCLUDE_DIR)
+		message("-- ICU Found, building booster locale")
+		include_directories(${ICU_INCLUDE_DIR})
+	else()
+		message("-- ICU not found, disabling ICU localization backend")
+		set(DISABLE_ICU_LOCALE ON)
+	endif()
+endif()
+
+
+if(NOT DISABLE_ICU_LOCALE)
+	add_definitions(-DBOOSTER_LOCALE_WITH_ICU)
+endif()
+
+# Checking for iconv
+
+if(NOT DISABLE_ICONV) 
+	check_cxx_source_compiles(
+		"#include <iconv.h> 
+		 int main() { iconv_t v=iconv_open((char *)0,(char *)0); }"
+		 LIBC_ICONV)
+	if(NOT LIBC_ICONV)
+		find_path(ICONV_INCLUDE_DIR iconv.h)
+		find_library(ICONV_LIB iconv)
+		if(ICONV_LIB AND ICONV_INCLUDE_DIR)
+			set(BOOSTER_LOCALE_HAVE_ICONV 1)
+			include_directories(${ICONV_INCLUDE_DIR})
+		endif()
+	else()
+		set(BOOSTER_LOCALE_HAVE_ICONV 1)
+	endif()
+
+	if(BOOSTER_LOCALE_HAVE_ICONV)
+		add_definitions(-DBOOSTER_LOCALE_WITH_ICONV)
+	else()
+		add_definitions(-DBOOSTER_LOCALE_NO_ICONV)
+	endif()
+else()
+	add_definitions(-DBOOSTER_LOCALE_NO_ICONV)
+endif(NOT DISABLE_ICONV)
+
+if(DISABLE_STD_LOCALE) 
+	add_definitions(-DBOOSTER_LOCALE_NO_STD_BACKEND)
+endif()
+
+if(DISABLE_POSIX_LOCALE) 
+	add_definitions(-DBOOSTER_LOCALE_NO_POSIX_BACKEND)
+endif()
+
+if(DISABLE_WINAPI_LOCALE) 
+	add_definitions(-DBOOSTER_LOCALE_NO_WINAPI_BACKEND)
+endif()
 
 
 #############################################################################
@@ -30,11 +126,6 @@ include_directories(lib/test)
 # Setup various build flags for different supported compilers and systems
 #
 #############################################################################
-
-if(DISABLE_ICU_LOCALIZATION)
-	set(BOOSTER_SUFFIX "-c")
-endif()
-
 
 if(CMAKE_COMPILER_IS_GNUCXX)
 	check_cxx_source_compiles(
@@ -218,49 +309,64 @@ set(BOOSTER_SRC
 	lib/log/src/log.cpp
 	lib/iostreams/src/streambuf.cpp
 	lib/nowide/src/convert.cpp
+	lib/locale/src/encoding/codepage.cpp
+	lib/locale/src/shared/date_time.cpp
+	lib/locale/src/shared/format.cpp
+	lib/locale/src/shared/formatting.cpp
+	lib/locale/src/shared/generator.cpp
+	lib/locale/src/shared/ids.cpp
+	lib/locale/src/shared/localization_backend.cpp
+	lib/locale/src/shared/message.cpp
+	lib/locale/src/shared/mo_lambda.cpp
+	lib/locale/src/util/codecvt_converter.cpp
+	lib/locale/src/util/default_locale.cpp
+	lib/locale/src/util/info.cpp
+	lib/locale/src/util/locale_data.cpp
 )
 
-if(NOT DISABLE_ICU_LOCALIZATION)
-	message("-- Looking for ICU libraries")
-
-	if("${CMAKE_BUILD_TYPE}" STREQUAL "Debug")
-		if(MSVC)
-			set(ICU_SUFFIX "d")
-		endif()
-	endif()
-
-	find_library(ICU_UC icuuc${ICU_SUFFIX})
-	find_library(ICU_DATA icudt NAMES icudata)
-	find_library(ICU_I18N icuin${ICU_SUFFIX} NAMES icui18n${ICU_SUFFIX})
-	find_path(ICU_INCLUDE_DIR unicode/unistr.h)
-
-	if(ICU_UC AND ICU_DATA AND ICU_I18N AND ICU_INCLUDE_DIR)
-		message("-- ICU Found, building booster locale")
-		set(WITH_BOOSTER_LOCALE ON)
-		include_directories(${ICU_INCLUDE_DIR})
-		set(BOOSTER_SRC ${BOOSTER_SRC}
-			lib/locale/src/boundary.cpp
-			lib/locale/src/codepage.cpp
-			lib/locale/src/collator.cpp
-			lib/locale/src/conversion.cpp
-			lib/locale/src/date_time.cpp
-			lib/locale/src/format.cpp
-			lib/locale/src/formatter.cpp
-			lib/locale/src/formatting.cpp
-			lib/locale/src/generator.cpp
-			lib/locale/src/info.cpp
-			lib/locale/src/message.cpp
-			lib/locale/src/mo_lambda.cpp
-			lib/locale/src/time_zone.cpp)
-
-	endif()
+if(NOT DISABLE_ICU_LOCALE)
+	set(BOOSTER_SRC ${BOOSTER_SRC}
+		lib/locale/src/icu/boundary.cpp
+		lib/locale/src/icu/codecvt.cpp
+		lib/locale/src/icu/collator.cpp
+		lib/locale/src/icu/conversion.cpp
+		lib/locale/src/icu/date_time.cpp
+		lib/locale/src/icu/formatter.cpp
+		lib/locale/src/icu/icu_backend.cpp
+		lib/locale/src/icu/numeric.cpp
+		)
 endif()
 
 
+if(NOT DISABLE_POSIX_LOCALE)
+	set(BOOSTER_SRC ${BOOSTER_SRC}
+		lib/locale/src/posix/codecvt.cpp
+		lib/locale/src/posix/collate.cpp
+		lib/locale/src/posix/converter.cpp
+		lib/locale/src/posix/numeric.cpp
+		lib/locale/src/posix/posix_backend.cpp
+		)
+endif()
 
+if(NOT DISABLE_WINAPI_LOCALE)
+	set(BOOSTER_SRC ${BOOSTER_SRC}
+		lib/locale/src/win32/collate.cpp
+		lib/locale/src/win32/converter.cpp
+		lib/locale/src/win32/lcid.cpp
+		lib/locale/src/win32/numeric.cpp
+		lib/locale/src/win32/win_backend.cpp
+		)
+endif()
 
-
-
+if(NOT DISABLE_STD_LOCALE)
+	set(BOOSTER_SRC ${BOOSTER_SRC}
+		lib/locale/src/std/codecvt.cpp
+		lib/locale/src/std/collate.cpp
+		lib/locale/src/std/converter.cpp
+		lib/locale/src/std/numeric.cpp
+		lib/locale/src/std/std_backend.cpp
+	)
+endif()
 
 
 if(NOT HAVE_PTHREAD)
@@ -335,11 +441,17 @@ foreach(ALIB ${LINK_LIBS})
 		target_link_libraries(${ALIB} ${WS2_32})
 	endif()
 	target_link_libraries(${ALIB} ${PCRE_LIB})
-	if(WITH_BOOSTER_LOCALE)
+
+	if(NOT DISABLE_ICU_LOCALE)
 		target_link_libraries(${ALIB} ${ICU_UC})
 		target_link_libraries(${ALIB} ${ICU_I18N})
 		target_link_libraries(${ALIB} ${ICU_DATA})
 	endif()
+
+	if(ICONV_LIB)
+		target_link_libraries(${ALIB} ${ICONV_LIB})
+	endif()
+
 	if(${CMAKE_MAJOR_VERSION}.${CMAKE_MINOR_VERSION} GREATER 2.6)
 		set_target_properties(${ALIB} PROPERTIES PUBLIC_HEADER "${CMAKE_CURRENT_BINARY_DIR}/booster/build_config.h")
 	else()
@@ -411,20 +523,45 @@ if(NOT WIN32)
 	add_booster_test(aio prefork)
 endif()
 
-if(WITH_BOOSTER_LOCALE)
-	add_booster_test(locale boundary)
-	add_booster_test(locale codepage)
+add_booster_test(locale codepage)
+add_booster_param_test(locale message "${CMAKE_CURRENT_SOURCE_DIR}/lib/locale/test")
+add_booster_test(locale ios_prop)
+add_booster_test(locale codepage_converter)
+
+if(NOT DISABLE_ICU_LOCALE)
 	add_booster_test(locale collate)
 	add_booster_test(locale convert)
-	add_booster_test(locale date_time)
+	add_booster_test(locale boundary)
 	add_booster_test(locale formatting)
+	add_booster_test(locale date_time)
 	add_booster_test(locale generator)
-	add_booster_test(locale ios_prop)
 	add_booster_test(locale icu_vs_os_timezone)
-	add_booster_param_test(locale message "${CMAKE_CURRENT_SOURCE_DIR}/lib/locale/test")
+	if(CMAKE_COMPILER_IS_GNUCXX)
+		set_target_properties(test_locale_formatting PROPERTIES COMPILE_FLAGS "-O0")
+	endif()
+endif()
+
+if(NOT DISABLE_STD_LOCALE)
+	add_booster_test(locale std_convert)
+	add_booster_test(locale std_formatting)
+	add_booster_test(locale std_collate)
+endif()
+
+if(NOT DISABLE_POSIX_LOCALE)
+	add_booster_test(locale posix_collate)
+	add_booster_test(locale posix_convert)
+	add_booster_test(locale posix_formatting)
+endif()
+
+
+if(NOT DISABLE_WINAPI_LOCALE)
+	add_booster_test(locale winapi_formatting)
+	add_booster_test(locale winapi_collate)
+	add_booster_test(locale winapi_convert)
 endif()
 
 configure_file(lib/booster_build_config.cmake.h booster/build_config.h)
+
 install(TARGETS ${LINK_LIBS}
 	RUNTIME DESTINATION bin
 	LIBRARY DESTINATION lib

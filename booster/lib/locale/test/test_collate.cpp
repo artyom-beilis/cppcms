@@ -18,7 +18,7 @@ void test_comp(std::locale l,std::basic_string<Char> left,std::basic_string<Char
     typedef std::basic_string<Char> string_type;
     booster::locale::collator_base::level_type level = static_cast<booster::locale::collator_base::level_type>(ilevel);
     TEST(booster::locale::comparator<Char>(l,level)(left,right) == (expected < 0));
-    if(ilevel==0) {
+    if(ilevel==4) {
         std::collate<Char> const &coll=std::use_facet<std::collate<Char> >(l);
         string_type lt=coll.transform(left.c_str(),left.c_str()+left.size());
         string_type rt=coll.transform(right.c_str(),right.c_str()+right.size());
@@ -65,20 +65,18 @@ void compare(std::string left,std::string right,int level,int expected)
 {
     booster::locale::generator gen;
     std::locale l=gen("en_US.UTF-8");
-    if(level == 0)
+    if(level == 4)
         TEST(l(left,right) == (expected < 0));
     TEST_COMP(char,left,right);
-    #ifndef BOOSTER_NO_STD_WSTRING
     TEST_COMP(wchar_t,to<wchar_t>(left),to<wchar_t>(right));
-    #endif
     #ifdef BOOSTER_HAS_CHAR16_T
     TEST_COMP(char16_t,to<char16_t>(left),to<char16_t>(right));
     #endif
     #ifdef BOOSTER_HAS_CHAR32_T
     TEST_COMP(char32_t,to<char32_t>(left),to<char32_t>(right));
     #endif
-    l=gen("en_US.ISO-8859-1");
-    if(level == 0)
+    l=gen("en_US.ISO8859-1");
+    if(level == 4)
         TEST(l(to<char>(left),to<char>(right)) == (expected < 0));
     TEST_COMP(char,to<char>(left),to<char>(right));
 }

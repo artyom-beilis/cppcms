@@ -54,7 +54,7 @@
 			"paths" : [ "./transtext/locale" ],
 			"domains" : [ "test", "app" ]
 		},
-		"locales" : [ "he_IL", "en_US", "he_IL@calendar=hebrew" ],
+		//"locales" : [ "he_IL.UTF-8", "en_US.UTF-8", "he_IL.UTF-8@calendar=hebrew" ],
 		"disable_charset_in_content_type" : false	// Disable 
 	},
 	"session" : {

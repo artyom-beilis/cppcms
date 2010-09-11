@@ -17,16 +17,12 @@ int main()
 {
     using namespace booster::locale;
     using namespace std;
-    generator gen;
-    locale::global(locale(""));
-    locale loc=gen(""); 
     // Create system default locale
-
+    generator gen;
+    locale loc=gen(""); 
     locale::global(loc); 
-    // Make it system global
-    
     cout.imbue(loc);
-    // Set as default locale for output
+
     
     cout<<"Correct case conversion can't be done by simple, character by character conversion"<<endl;
     cout<<"because case conversion is context sensitive and not 1-to-1 conversion"<<endl;

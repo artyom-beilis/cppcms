@@ -12,7 +12,7 @@
 
 #include <booster/locale/formatting.h>
 #include <booster/locale/format.h>
-#include <booster/locale/time_zone.h>
+#include <booster/locale/date_time.h>
 #include <booster/locale/generator.h>
 #include "test_locale.h"
 #include "test_locale_tools.h"
@@ -30,7 +30,6 @@ using namespace booster::locale;
 #endif
 
 #ifdef TEST_DEBUG
-#define BOOSTER_NO_STD_WSTRING
 #undef BOOSTER_HAS_CHAR16_T
 #undef BOOSTER_HAS_CHAR32_T
 #define TESTEQ(x,y) do { std::cerr << "["<<x << "]!=\n[" << y <<"]"<< std::endl; TEST((x)==(y)); } while(0)
@@ -162,7 +161,7 @@ void test_manip(std::string e_charset="UTF-8")
     TEST_FP2(as::currency,as::currency_iso,1345.34,"USD1,345.34",double,1345.34);
     #endif
     TEST_FP1(as::spellout,10,"ten",int,10);
-    #if U_ICU_VERSION_MAJOR_NUM*100 + U_ICU_VERSION_MINOR_NUM >= 402
+    #if U_ICU_VERSION_MAJOR_NUM >= 4
     if(e_charset=="UTF-8")
        TEST_FMT(as::ordinal,1,"1\xcb\xa2\xe1\xb5\x97"); // 1st with st as ligatures
     #else
@@ -294,7 +293,7 @@ void test_format(std::string charset="UTF-8")
     #endif
     FORMAT("{1,spell}",10,"ten");
     FORMAT("{1,spellout}",10,"ten");
-    #if U_ICU_VERSION_MAJOR_NUM*100 + U_ICU_VERSION_MINOR_NUM >= 402
+    #if U_ICU_VERSION_MAJOR_NUM >= 4
     if(charset=="UTF-8") {
         FORMAT("{1,ord}",1,"1\xcb\xa2\xe1\xb5\x97");
         FORMAT("{1,ordinal}",1,"1\xcb\xa2\xe1\xb5\x97");
@@ -337,19 +336,17 @@ void test_format(std::string charset="UTF-8")
 int main()
 {
     try {
-        booster::locale::time_zone::global(booster::locale::time_zone("GMT+4:00"));
+        booster::locale::time_zone::global("GMT+4:00");
         std::cout << "Testing char, UTF-8" << std::endl;
         test_manip<char>();
         test_format<char>();
-        std::cout << "Testing char, ISO-8859-1" << std::endl;
-        test_manip<char>("ISO-8859-1");
-        test_format<char>("ISO-8859-1");
+        std::cout << "Testing char, ISO8859-1" << std::endl;
+        test_manip<char>("ISO8859-1");
+        test_format<char>("ISO8859-1");
 
-        #ifndef BOOSTER_NO_STD_WSTRING
         std::cout << "Testing wchar_t" << std::endl;
         test_manip<wchar_t>();
         test_format<wchar_t>();
-        #endif
 
         #ifdef BOOSTER_HAS_CHAR16_T
         std::cout << "Testing char16_t" << std::endl;

@@ -35,31 +35,22 @@
 #include <cassert>
 #include <ctime>
 
-#ifndef BOOSTER_NO_SWPRINTF    
-int main(int argc,char **argv)
+int main()
 {
     using namespace booster::locale;
     using namespace std;
 
+    // Create system default locale
+    generator gen;
+    locale loc=gen("");
+    locale::global(loc); 
+    wcout.imbue(loc);
+    
+    // This is needed to prevent C library to
+    // convert strings to narrow 
+    // instead of C++ on some platforms
     std::ios_base::sync_with_stdio(false);
 
-    generator gen;
-    locale::global(locale(""));
-    locale loc;
-    if(argc == 1)
-        loc=gen(""); 
-    else if(argc == 2)
-        loc=gen(argv[1]);
-    else
-        loc=gen(argv[1],argv[2]);
-
-    // Create system default locale
-
-    locale::global(loc); 
-    // Make it system global
-    
-    wcout.imbue(loc);
-    // Set as default locale for output
 
     wstring text=L"Hello World! あにま! Linux2.6 and Windows7 is word and number. שָלוֹם עוֹלָם!";
 
@@ -105,12 +96,6 @@ int main(int argc,char **argv)
     wcout<<"|\n\n";
     
 }
-#else
-int main()
-{
-    std::cout<<"This platform does not support wcout"<<std::endl;
-}
-#endif
 
 
 // vim: tabstop=4 expandtab shiftwidth=4 softtabstop=4

@@ -778,13 +778,8 @@ locale::generator const &service::generator()
 	typedef std::vector<std::string> vstr_type;
 	impl_->locale_generator_.reset(new locale::generator());
 	locale::generator &gen= *impl_->locale_generator_;
-	#ifndef CPPCMS_DISABLE_ICU_LOCALIZATION
 	gen.characters(locale::char_facet);
-	#endif
 	std::string enc = settings().get("localization.encoding","");
-
-	if(!enc.empty())
-		gen.octet_encoding(enc);
 
 	vstr_type paths= settings().get("localization.messages.paths",vstr_type());
 	vstr_type domains = settings().get("localization.messages.domains",vstr_type());
@@ -792,7 +787,7 @@ locale::generator const &service::generator()
 	if(!paths.empty() && !domains.empty()) {
 		unsigned i;
 		for(i=0;i<paths.size();i++) {
-			#if defined(CPPCMS_WIN_NATIVE) && !defined(CPPCMS_DISABLE_ICU_LOCALIZATION)
+			#if defined(CPPCMS_WIN_NATIVE)
 			// No ICU localization use booster::nowide library for file interface
 			// so path's already assumed UTF-8... Just use ordinary variant
 			gen.add_messages_path(booster::nowide::convert(paths[i]));
@@ -805,14 +800,15 @@ locale::generator const &service::generator()
 	}
 
 	vstr_type locales = settings().get("localization.locales",vstr_type());
+	gen.locale_cache_enabled(true);
 
 	if(locales.empty()) {
-		gen.preload("");
+		gen("");
 		impl_->default_locale_=gen("");
 	}
 	else {
 		for(unsigned i=0;i<locales.size();i++)
-			gen.preload(locales[i]);
+			gen(locales[i]);
 		impl_->default_locale_=gen(locales[0]);
 	}
 
@@ -827,7 +823,7 @@ std::locale service::locale()
 }
 std::locale service::locale(std::string const &name)
 {
-	return generator().get(name);
+	return generator().generate(name);
 }
 
 booster::aio::io_service &service::get_io_service()

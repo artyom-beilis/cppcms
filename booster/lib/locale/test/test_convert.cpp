@@ -16,17 +16,16 @@
 template<typename Char>
 void test_normc(std::basic_string<Char> orig,std::basic_string<Char> normal,booster::locale::norm_type type)
 {
-    TEST(normalize(orig,type)==normal);
-    TEST(normalize(orig.c_str(),type)==normal);
-    TEST(normalize(orig.c_str(),orig.c_str()+orig.size(),type)==normal);
+    std::locale l = booster::locale::generator().generate("en_US.UTF-8");
+    TEST(normalize(orig,type,l)==normal);
+    TEST(normalize(orig.c_str(),type,l)==normal);
+    TEST(normalize(orig.c_str(),orig.c_str()+orig.size(),type,l)==normal);
 }
 
 void test_norm(std::string orig,std::string normal,booster::locale::norm_type type)
 {
     test_normc<char>(orig,normal,type);
-    #ifndef BOOSTER_NO_STD_WSTRING
     test_normc<wchar_t>(to<wchar_t>(orig),to<wchar_t>(normal),type);
-    #endif
     #ifdef BOOSTER_HAS_CHAR16_T
     test_normc<char16_t>(to<char16_t>(orig),to<char16_t>(normal),type);
     #endif
@@ -84,7 +83,7 @@ int main()
             TEST_A(char,how,source_s,dest_s);                                \
             if(eight_bit) {                                                    \
                 std::locale tmp=std::locale();                                \
-                std::locale::global(gen("en_US.ISO-8859-1"));                \
+                std::locale::global(gen("en_US.ISO8859-1"));                \
                 TEST_A(char,how,to<char>(source_s),to<char>(dest_s));        \
                 std::locale::global(tmp);                                    \
             }                                                                \
@@ -93,11 +92,9 @@ int main()
         TEST_ALL_CASES;
         #undef TEST_V
 
-        #ifndef BOOSTER_NO_STD_WSTRING
         #define TEST_V(how,source_s,dest_s) TEST_A(wchar_t,how,to<wchar_t>(source_s),to<wchar_t>(dest_s))
         TEST_ALL_CASES;
         #undef TEST_V
-        #endif
 
         #ifdef BOOSTER_HAS_CHAR16_T
         #define TEST_V(how,source_s,dest_s) TEST_A(char16_t,how,to<char16_t>(source_s),to<char16_t>(dest_s))

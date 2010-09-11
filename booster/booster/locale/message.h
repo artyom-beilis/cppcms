@@ -32,47 +32,74 @@ namespace booster {
         /// @{
         /// 
 
-        class info;
+        /// \cond INTERNAL 
 
-        ///
-        /// \cond INTERNAL
-        ///
         template<typename CharType>
         struct base_message_format: public std::locale::facet
         {
         };
        
+        /// \endcond
        
+        ///
+        /// \brief This facet provides message formatting abilities
+        ///
         template<typename CharType>
         class message_format : public base_message_format<CharType>
         {
         public:
 
+            ///
+            /// Character type
+            ///
             typedef CharType char_type;
+            ///
+            /// String type
+            ///
             typedef std::basic_string<CharType> string_type;
 
+            ///
+            /// Default constructor
+            ///
             message_format(size_t refs = 0) : 
                 base_message_format<CharType>(refs)
             {
             }
 
+            ///
+            /// This function returns a pointer to string for a message defined by a \a context
+            /// and identification string \a id, both create a single key for message lookup in
+            /// a domain defined by \a domain_id.
+            ///
+            /// If translated string is found, it is returned, otherwise NULL is returned
+            /// 
+            ///
             virtual char_type const *get(int domain_id,char const *context,char const *id) const = 0;
+            ///
+            /// This function returns a pointer to string for a plural message defined by a \a context
+            /// and identification string \a single_id, both create a single key for message lookup in
+            /// a domain defined \a domain_id. \a n used to pick a correct translation string for specific
+            /// number.
+            ///
+            /// If translated string is found, it is returned, otherwise NULL is returned
+            /// 
+            ///
             virtual char_type const *get(int domain_id,char const *context,char const *single_id,int n) const = 0;
+
+            ///
+            /// Convert a string that defines \a domain to the integer id used by \a get functions
+            ///
             virtual int domain(std::string const &domain) const = 0;
 
 #if defined (__SUNPRO_CC) && defined (_RWSTD_VER)
             std::locale::id& __get_id (void) const { return id; }
 #endif
-            static message_format<CharType> *create(info const &,std::vector<std::string> const &paths,std::vector<std::string> const &domains);
-
         protected:
             virtual ~message_format()
             {
             }
 
         };
-
-        /// \endcond
 
         ///
         /// \brief This class represents a message that can be converted to specific locale message
@@ -284,7 +311,7 @@ namespace booster {
             void write(std::basic_ostream<CharType> &out) const
             {
                 std::locale const &loc = out.getloc();
-                int id = ext_value(out,flags::domain_id);
+                int id = ios_info::get(out).domain_id();
                 std::basic_string<CharType> buffer;
                 out << write(loc,id,buffer);
             }
@@ -471,8 +498,6 @@ namespace booster {
             return message(context,s,p,n).str<char>(loc,domain);
         }
 
-        #ifndef BOOSTER_NO_STD_WSTRING
-
         ///
         /// Translate message \a id according to locale \a loc
         ///
@@ -530,8 +555,6 @@ namespace booster {
         {
             return message(context,s,p,n).str<wchar_t>(loc,domain);
         }
-
-        #endif
 
         #ifdef BOOSTER_HAS_CHAR16_T
         ///
@@ -674,12 +697,6 @@ namespace booster {
         };
         
         template<>
-        BOOSTER_API message_format<char> *message_format<char>::create(   info const &,
-                                                                                std::vector<std::string> const &domains,
-                                                                                std::vector<std::string> const &paths);
-        #ifndef BOOSTER_NO_STD_WSTRING
-        
-        template<>
         struct BOOSTER_API base_message_format<wchar_t> : public std::locale::facet 
         {
             base_message_format(size_t refs = 0) : std::locale::facet(refs)
@@ -687,13 +704,7 @@ namespace booster {
             }
             static std::locale::id id;
         };
-        template<>
-        BOOSTER_API message_format<wchar_t> *message_format<wchar_t>::create( info const &,
-                                                                                    std::vector<std::string> const &domains,
-                                                                                    std::vector<std::string> const &paths);
-
-        #endif
-
+        
         #ifdef BOOSTER_HAS_CHAR16_T
 
         template<>
@@ -704,10 +715,6 @@ namespace booster {
             }
             static std::locale::id id;
         };
-        template<>
-        BOOSTER_API message_format<char16_t> *message_format<char16_t>::create(   info const &,
-                                                                                        std::vector<std::string> const &domains,
-                                                                                        std::vector<std::string> const &paths);
 
         #endif
 
@@ -722,11 +729,6 @@ namespace booster {
             static std::locale::id id;
         };
         
-        template<>
-        BOOSTER_API message_format<char32_t> *message_format<char32_t>::create(   info const &,
-                                                                                        std::vector<std::string> const &domains,
-                                                                                        std::vector<std::string> const &paths);
-
         #endif
 
         /// \endcond
@@ -745,7 +747,7 @@ namespace booster {
                 std::basic_ostream<CharType> &operator<<(std::basic_ostream<CharType> &out, set_domain const &dom)
                 {
                     int id = std::use_facet<message_format<CharType> >(out.getloc()).domain(dom.domain_id);
-                    ext_value(out,flags::domain_id,id);
+                    ios_info::get(out).domain_id(id);
                     return out;
                 }
             } // details

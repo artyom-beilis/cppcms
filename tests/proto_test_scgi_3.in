@@ -1,5 +1,5 @@
 GATEWAY_INTERFACE:CGI/1.0
-Content-Type:application/x-www-form-urlencoded; charset=UTF-8
+Content-Type:application/x-www-form-urlencoded; charset=utf-8
 PATH_INFO:
 REMOTE_ADDR:
 REMOTE_HOST:

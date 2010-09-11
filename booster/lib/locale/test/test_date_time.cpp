@@ -33,14 +33,14 @@ int main()
 
         std::locale::global(loc);
         
-        time_zone tz("GMT");
+        std::string tz("GMT");
         time_zone::global(tz);
         calendar cal(loc,tz); 
 
         TEST(calendar() == cal);
         TEST(calendar(loc) == cal);
         TEST(calendar(tz) == cal);
-        TEST(calendar(loc,time_zone("GMT+01:00")) != cal);
+        TEST(calendar(loc,"GMT+01:00") != cal);
         TEST(calendar(g("ru_RU.UTF-8")) != cal);
 
         TEST(cal.minimum(month)==0);
@@ -57,17 +57,18 @@ int main()
         std::ostringstream ss;
         ss.imbue(loc);
         ss<<booster::locale::as::time_zone(tz);
-
-
+        
         date_time time_point;
         
         time_point=year * 1970 + february + 5 * day;
 
         ss << as::date << time_point;
+
         TEST(ss.str() == "Feb 5, 1970");
         time_point = 3 * hour_12 + 1 * am_pm + 33 * minute + 13 * second; 
         ss.str("");
         ss << as::datetime << time_point;
+        std::cerr << ss.str() << std::endl;
         TEST( ss.str() == "Feb 5, 1970 3:33:13 PM"); ss.str("");
 
         time_t a_date = 3600*24*(31+4); // Feb 5th
@@ -153,7 +154,7 @@ int main()
         TEST(time_point.get(day_of_week_local) == 4);
         RESET();
         TEST(time_point.get(hour) == 15);
-        TEST(date_time(a_datetime,calendar(time_zone("GMT+01:00"))).get(hour) ==16);
+        TEST(date_time(a_datetime,calendar("GMT+01:00")).get(hour) ==16);
         TEST(time_point.get(hour_12) == 3);
         TEST(time_point.get(am_pm) == 1);
         TEST(time_point.get(minute) == 33);

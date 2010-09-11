@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # 
-# svn export https://cppcms.svn.sourceforge.net/svnroot/cppcms/boost_locale/trunk
+#svn export https://cppcms.svn.sourceforge.net/svnroot/cppcms/boost_locale/branches/rework trunk
 # 
 
 rm -fr boost_locale
@@ -12,12 +12,12 @@ cp -a trunk boost_locale
 #
 # Linux version
 # 
-#find boost_locale -name '*.hpp' -exec rename 's/\.hpp/\.h/' '{}' \;
+find boost_locale -name '*.hpp' -exec rename 's/\.hpp/\.h/' '{}' \;
 #
 
 # Cygwin version
 # 
-find boost_locale -name '*.hpp' -exec rename .hpp .h '{}' \;
+# find boost_locale -name '*.hpp' -exec rename .hpp .h '{}' \;
 #
 
 find boost_locale -regextype posix-extended -regex '.*\.(cpp|h)' -exec sed -i 's/_HPP_INCLUDED/_H_INCLUDED/' '{}' \;
@@ -28,7 +28,7 @@ find boost_locale -regextype posix-extended -regex '.*\.(cpp|h)' -exec sed -i 's
 find boost_locale -regextype posix-extended -regex '.*\.(cpp|h)' -exec sed -i 's/BOOSTER_LOCALE_SOURCE/BOOSTER_SOURCE/' '{}' \;
 find boost_locale -regextype posix-extended -regex '.*\.(cpp|h)' -exec sed -i 's/BOOSTER_WINDOWS/BOOSTER_WIN_NATIVE/' '{}' \;
 
-sed -i 's/BOOST_VERSION >= 103600/0/' boost_locale/libs/locale/src/message.cpp
+sed -i 's/BOOST_VERSION >= 103600/0/' boost_locale/libs/locale/src/shared/message.cpp
 
 rm -fr booster
 mkdir -p booster/lib/locale

@@ -14,7 +14,8 @@
 #  pragma warning(disable : 4275 4251 4231 4660)
 #endif
 
-#include <booster/locale/time_zone.h>
+#include <booster/locale/hold_ptr.h>
+#include <booster/locale/date_time_facet.h>
 #include <locale>
 #include <vector>
 #include <stdexcept>
@@ -41,35 +42,6 @@ namespace booster {
             date_time_error(std::string const &e) : std::runtime_error(e) {}
         };
 
-        ///
-        /// \brief Namespace that contains a enum that defines various periods like years, days
-        ///
-        namespace period {
-            ///
-            ///
-            /// This enum provides the list of various time periods that can be used for manipulation over date and time
-            /// Operators like +, - * defined for these period allowing to perform easy calculations over them
-            ///
-            typedef enum {
-                invalid,                    ///< Special invalid value, should not be used directs
-                era,                        ///< Era i.e. AC, BC in Gregorian and Julian calendar, range [0,1]
-                year,                       ///< Year, it is calendar specific
-                extended_year,              ///< Extended year for Gregorian/Julian calendars, where 1 BC == 0, 2 BC == -1.
-                month,                      ///< The month of year, calendar specific, in Gregorian [0..11]
-                day,                        ///< The day of month, calendar specific, in Gregorian [1..31]
-                day_of_year,                ///< The number of day in year, starting from 1
-                day_of_week,                ///< Day of week, starting from Sunday, [1..7]
-                day_of_week_in_month,       ///< Original number of the day of the week in month.
-                day_of_week_local,          ///< Local day of week, for example in France Monday is 1, in US Sunday is 1, [1..7]
-                hour,                       ///< 24 clock hour [0..23]
-                hour_12,                    ///< 12 clock hour [0..11]
-                am_pm,                      ///< am or pm marker, [0..1]
-                minute,                     ///< minute [0..59]
-                second,                     ///< second [0..59]
-                week_of_year,               ///< The week number in the year
-                week_of_month,              ///< The week number withing current month
-            } period_type;
-        } // period
 
         ///
         /// \brief This structure provides a pair period_type and amount.
@@ -570,7 +542,7 @@ namespace booster {
             ///
             /// Create calendar with locale \a l and time_zone \a zone
             ///
-            calendar(std::locale const &l,time_zone const &zone);
+            calendar(std::locale const &l,std::string const &zone);
             ///
             /// Create calendar with locale \a l and default timezone
             ///
@@ -578,7 +550,7 @@ namespace booster {
             ///
             /// Create calendar with default locale and timezone \a zone
             ///
-            calendar(time_zone const &zone);
+            calendar(std::string const &zone);
             ///
             /// Create calendar with default locale and timezone 
             ///
@@ -622,7 +594,7 @@ namespace booster {
             ///
             /// get calendar's time zone
             ///
-            time_zone get_time_zone() const;
+            std::string get_time_zone() const;
 
             ///
             /// Check if the calendar is Gregorian
@@ -641,8 +613,8 @@ namespace booster {
         private:
             friend class date_time;
             std::locale locale_;
-            booster::locale::time_zone tz_;
-            void *impl_;
+            std::string tz_;
+            hold_ptr<abstract_calendar> impl_;
         };
 
         ///
@@ -912,11 +884,6 @@ namespace booster {
             int difference(date_time const &other,period::period_type f) const;
 
             ///
-            /// calculate the distance from this date_time to \a other in terms of perios \a f
-            ///
-            int difference(date_time const &other,period::period_type f);
-
-            ///
             /// Get minimal possible value for current time point for a period \a f.
             ///
             int minimum(period::period_type f) const;
@@ -927,7 +894,7 @@ namespace booster {
             int maximum(period::period_type f) const;
 
         private:
-            void *impl_;
+            hold_ptr<abstract_calendar> impl_;
         };
 
         ///
@@ -1015,7 +982,24 @@ namespace booster {
             return date_time_duration(earlier,later);
         }
 
+
+        ///
+        /// \brief namespace that holds function for operating global time zone identifier
+        ///
+        namespace time_zone {
+            ///
+            /// Get global time zone identifier. If empty, system time zone is used
+            ///
+            BOOSTER_API std::string global();
+            ///
+            /// Set global time zone identifier returing pervious one. If empty, system time zone is used
+            ///
+            BOOSTER_API std::string global(std::string const &new_tz);
+        }
+
         /// @}
+
+
 
     } // locale
 } // boost

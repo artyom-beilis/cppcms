@@ -20,16 +20,11 @@ option(DISABLE_ICU_LOCALIZATION
 			"Use standard std::locales instead of ICU" OFF)
 option(DISABLE_SHARED	"Disable shared libraries build" OFF)
 option(DISABLE_STATIC	"Disable static libraries build" OFF)
-option(DISABLE_ICONV	"Disable usage iconv library - use ICU for conversion" OFF)
 option(DISABLE_GCRYPT	"Disable usage of gcrypt library, no AES cookies encryption would be available" OFF)
 option(DISABLE_FCGI	"Disable fastcgi web server api" OFF)
 option(DISABLE_SCGI	"Disable scgi web server api" OFF)
 option(DISABLE_HTTP	"Disable http web server" OFF)
 
-
-if(DISABLE_ICU_LOCALIZATION)
-	set(CPPCMS_SUFFIX "-c")
-endif()
 
 add_subdirectory(booster)
 
@@ -41,14 +36,6 @@ include_directories(${CMAKE_BINARY_DIR})
 include_directories(${CMAKE_CURRENT_BINARY_DIR})
 include_directories(${CMAKE_CURRENT_BINARY_DIR}/booster)
 include_directories(${CMAKE_SOURCE_DIR})
-
-if(DISABLE_ICU_LOCALIZATION)
-	include_directories(noicu)
-else()
-	include_directories(localization)
-endif()
-
-
 
 
 
@@ -129,21 +116,6 @@ if("${CMAKE_BUILD_TYPE}" STREQUAL "Debug")
 	endif()
 endif()
 
-
-if(NOT DISABLE_ICU_LOCALIZATION)
-	find_library(ICU_UC icuuc${ICU_SUFFIX})
-	find_library(ICU_DATA icudata NAMES icudt)
-	find_library(ICU_I18N icui18n${ICU_SUFFIX} NAMES icuin${ICU_SUFFIX})
-	find_path(ICU_INCLUDE_DIR unicode/unistr.h)
-
-	if(NOT ICU_UC OR NOT ICU_DATA OR NOT ICU_I18N OR NOT ICU_INCLUDE_DIR)
-		message(FATAL " Failed to find ICU library, can't continue")
-	endif()
-	set(CPPCMS_HAVE_ICU 1)
-else()
-	set(CPPCMS_DISABLE_ICU_LOCALIZATION 1)
-endif()
-
 check_cxx_source_compiles(
 	"#include <stdint.h> 
 	int main(){int32_t x; int64_t y; return 0; }"
@@ -160,30 +132,6 @@ check_function_exists(snprintf CPPCMS_HAVE_SNPRINTF)
 check_function_exists(stat CPPCMS_HAVE_STAT)
 check_function_exists(_stat CPPCMS_HAVE__STAT)
 include_directories(${ICU_INCLUDE_DIR})
-
-
-if(NOT DISABLE_ICONV) 
-
-	check_cxx_source_compiles(
-		"#include <iconv.h> 
-		 int main() { iconv_t v=iconv_open((char *)0,(char *)0); }"
-		 LIBC_ICONV)
-	if(NOT LIBC_ICONV)
-		find_path(ICONV_INCLUDE_DIR iconv.h)
-		find_library(ICONV_LIB iconv)
-		if(ICONV_LIB AND ICONV_INCLUDE_DIR)
-			set(CPPCMS_HAVE_ICONV 1)
-			include_directories(${ICONV_INCLUDE_DIR})
-		endif()
-	else(NOT LIBC_ICONV)
-		set(CPPCMS_HAVE_ICONV 1)
-	endif(NOT LIBC_ICONV)
-
-	if(NOT CPPCMS_HAVE_ICONV)
-		message(STATUS " iconv not found, falling back to ICU")
-	endif(NOT CPPCMS_HAVE_ICONV)
-endif(NOT DISABLE_ICONV)
-
 
 set(CPPCMS_LIBRARY_SUFFIX ${CMAKE_SHARED_LIBRARY_SUFFIX})
 set(CPPCMS_LIBRARY_PREFIX ${CMAKE_SHARED_LIBRARY_PREFIX})
@@ -328,20 +276,6 @@ set(CPPCMS_SOURCES
 	cppcms_boost/src/gzip.cpp
 )
 
-if(DISABLE_ICU_LOCALIZATION)
-
-	set(CPPCMS_SOURCES ${CPPCMS_SOURCES}
-		noicu/src/locale_src_conversion.cpp
-		noicu/src/locale_src_format.cpp
-		noicu/src/locale_src_formatting.cpp
-		noicu/src/locale_src_generator.cpp
-		noicu/src/locale_src_info.cpp
-		noicu/src/locale_src_message.cpp
-		noicu/src/locale_src_mo_lambda.cpp
-		noicu/src/locale_src_numeric.cpp)
-
-endif(DISABLE_ICU_LOCALIZATION)
-
 if(NOT DISABLE_GCRYPT)
 	find_path(GCRYPT_INCLUDE_DIR gcrypt.h)
 	find_library(LIB_GCRYPT gcrypt)
@@ -410,10 +344,6 @@ foreach(ALIB ${CPPCMS_LIBS})
 		target_link_libraries(${ALIB} ${LIB_GCRYPT})
 	endif(LIB_GCRYPT)
 	
-	if(ICONV_LIB)
-		target_link_libraries(${ALIB} ${ICONV_LIB})
-	endif(ICONV_LIB)
-
 	if(WS2_32 AND WSOCK32)
 		target_link_libraries(${ALIB} ${WS2_32})
 		target_link_libraries(${ALIB} ${WSOCK32})

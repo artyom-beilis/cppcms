@@ -111,77 +111,151 @@ namespace booster {
                 }
             }
             
-            /// \cond INTERNAL 
-            namespace impl {
+            ///
+            /// This structure is used for representing boundary point
+            /// that follows the offset.
+            ///
+            struct break_info {
 
-                struct break_info {
-
-                    break_info() : 
-                        offset(0),
-                        mark(0)
-                    {
-                    }
-                    break_info(unsigned v) :
-                        offset(v),
-                        mark(0)
-                    {
-                    }
-
-                    uint32_t offset;
-                    uint32_t mark;
-                   
-                    bool operator<(break_info const &other) const
-                    {
-                        return offset < other.offset;
-                    }
-                };
-               
-                typedef std::vector<break_info> index_type;
-
-                template<typename CharType>
-                index_type map(boundary_type t,CharType const *begin,CharType const *end,std::locale const &loc=std::locale());
-                
-                template<typename CharType>
-                static index_type map(
-                                boundary_type t,
-                                std::basic_string<CharType> const &str,
-                                std::locale const &loc=std::locale())
+                ///
+                /// Create empty break point at beginning
+                ///
+                break_info() : 
+                    offset(0),
+                    mark(0)
                 {
-                    return booster::locale::boundary::impl::map<CharType>(t,str.data(),str.data()+str.size(),loc);
                 }
-                
-                template<>
-                BOOSTER_API index_type 
-                map(boundary_type t,char const *begin,char const *end,std::locale const &loc);
+                ///
+                /// Create empty break point at offset v.
+                /// it is useful for order comparison with other points.
+                ///
+                break_info(unsigned v) :
+                    offset(v),
+                    mark(0)
+                {
+                }
 
-                #ifndef BOOSTER_NO_STD_WSTRING
-                template<>
-                BOOSTER_API index_type 
-                map(boundary_type t,wchar_t const *begin,wchar_t const *end,std::locale const &loc);
-                #endif
+                ///
+                /// Offset from the begging of the text where a break occurs.
+                ///
+                uint32_t offset;
+                ///
+                /// The identification of this break point according to 
+                /// various break types
+                ///
+                uint32_t mark;
+               
+                ///
+                /// Compare two break points' offset. Allows to search with
+                /// standard algorithms over the index.
+                ///
+                bool operator<(break_info const &other) const
+                {
+                    return offset < other.offset;
+                }
+            };
+            
+            ///
+            /// This type holds the alalisys of the text - all its break points
+            /// with marks
+            ///
+            typedef std::vector<break_info> index_type;
 
-                #ifdef BOOSTER_HAS_CHAR16_T
-                template<>
-                BOOSTER_API index_type 
-                map(boundary_type t,char16_t const *begin,char16_t const *end,std::locale const &loc);
-                #endif
 
-                #ifdef BOOSTER_HAS_CHAR32_T
-                template<>
-                BOOSTER_API index_type 
-                map(boundary_type t,char32_t const *begin,char32_t const *end,std::locale const &loc);
+            template<typename CharType>
+            class boundary_indexing;
+
+            ///
+            /// The facet that allows us to create an index for boundary analisys
+            /// of the text.
+            ///
+            template<>
+            class BOOSTER_API boundary_indexing<char> : public std::locale::facet {
+            public:
+                ///
+                /// Default constructor typical for facets
+                ///
+                boundary_indexing(size_t refs=0) : std::locale::facet(refs)
+                {
+                }
+                ///
+                /// Create index for boundary type \a t for text in range [begin,end)
+                ///
+                virtual index_type map(boundary_type t,char const *begin,char const *end) const = 0;
+                /// Identification of this facet
+                static std::locale::id id;
+                #if defined (__SUNPRO_CC) && defined (_RWSTD_VER)
+                std::locale::id& __get_id (void) const { return id; }
                 #endif
-            } // impl
+            };
+            
+            ///
+            /// The facet that allows us to create an index for boundary analisys
+            /// of the text.
+            ///
+            template<>
+            class BOOSTER_API boundary_indexing<wchar_t> : public std::locale::facet {
+            public:
+                ///
+                /// Default constructor typical for facets
+                ///
+                boundary_indexing(size_t refs=0) : std::locale::facet(refs)
+                {
+                }
+                ///
+                /// Create index for boundary type \a t for text in range [begin,end)
+                ///
+                virtual index_type map(boundary_type t,wchar_t const *begin,wchar_t const *end) const = 0;
+
+                /// Identification of this facet
+                static std::locale::id id;
+                #if defined (__SUNPRO_CC) && defined (_RWSTD_VER)
+                std::locale::id& __get_id (void) const { return id; }
+                #endif
+            };
+            
+            #ifdef BOOSTER_HAS_CHAR16_T
+            template<>
+            class BOOSTER_API boundary_indexing<char16_t> : public std::locale::facet {
+            public:
+                boundary_indexing(size_t refs=0) : std::locale::facet(refs)
+                {
+                }
+                virtual index_type map(boundary_type t,char16_t const *begin,char16_t const *end) const = 0;
+                static std::locale::id id;
+                #if defined (__SUNPRO_CC) && defined (_RWSTD_VER)
+                std::locale::id& __get_id (void) const { return id; }
+                #endif
+            };
+            #endif
+            
+            #ifdef BOOSTER_HAS_CHAR32_T
+            template<>
+            class BOOSTER_API boundary_indexing<char32_t> : public std::locale::facet {
+            public:
+                boundary_indexing(size_t refs=0) : std::locale::facet(refs)
+                {
+                }
+                virtual index_type map(boundary_type t,char32_t const *begin,char32_t const *end) const = 0;
+                static std::locale::id id;
+                #if defined (__SUNPRO_CC) && defined (_RWSTD_VER)
+                std::locale::id& __get_id (void) const { return id; }
+                #endif
+            };
+            #endif
+
+
+            /// \cond INTERNAL
 
             namespace details {
 
                 template<typename IteratorType,typename CategoryType = typename std::iterator_traits<IteratorType>::iterator_category>
                 struct mapping_traits {
                     typedef typename std::iterator_traits<IteratorType>::value_type char_type;
-                    static impl::index_type map(boundary_type t,IteratorType b,IteratorType e,std::locale const &l)
+                    static index_type map(boundary_type t,IteratorType b,IteratorType e,std::locale const &l)
                     {
                         std::basic_string<char_type> str(b,e);
-                        return impl::map(t,str,l);
+                        return std::use_facet<boundary_indexing<char_type> >(l).map(t,str.c_str(),str.c_str()+str.size());
                     }
                 };
 
@@ -189,9 +263,9 @@ namespace booster {
                 struct mapping_traits<IteratorType,std::random_access_iterator_tag> {
                     typedef typename std::iterator_traits<IteratorType>::value_type char_type;
 
-                    static impl::index_type map(boundary_type t,IteratorType b,IteratorType e,std::locale const &l)
+                    static index_type map(boundary_type t,IteratorType b,IteratorType e,std::locale const &l)
                     {
-                        impl::index_type result;
+                        index_type result;
                         //
                         // Optimize for most common cases
                         //
@@ -214,12 +288,12 @@ namespace booster {
                         {
                             char_type const *begin = &*b;
                             char_type const *end = begin + (e-b);
-                            impl::index_type tmp=impl::map(t,begin,end,l);
+                            index_type tmp=std::use_facet<boundary_indexing<char_type> >(l).map(t,begin,end);
                             result.swap(tmp);
                         }
                         else{
                             std::basic_string<char_type> str(b,e);
-                            impl::index_type tmp=impl::map(t,str,l);
+                            index_type tmp = std::use_facet<boundary_indexing<char_type> >(l).map(t,str.c_str(),str.c_str()+str.size());
                             result.swap(tmp);
                         }
                         return result;
@@ -400,7 +474,7 @@ namespace booster {
             private:
                 void create_mapping(boundary_type type,base_iterator begin,base_iterator end,std::locale const &loc,unsigned mask)
                 {
-                    impl::index_type idx=details::mapping_traits<base_iterator>::map(type,begin,end,loc);
+                    index_type idx=details::mapping_traits<base_iterator>::map(type,begin,end,loc);
                     index_.swap(idx);
                     begin_ = begin;
                     end_ = end;
@@ -414,7 +488,7 @@ namespace booster {
                 friend class mapping;
 
                 base_iterator begin_,end_;
-                impl::index_type index_;
+                index_type index_;
                 unsigned mask_;
             };
 
@@ -479,9 +553,9 @@ namespace booster {
                 token_iterator const &operator=(IteratorType p)
                 {
                     unsigned dist=std::distance(map_->begin_,p);
-                    impl::index_type::const_iterator b=map_->index_.begin(),e=map_->index_.end();
-                    impl::index_type::const_iterator 
-                        bound=std::upper_bound(b,e,impl::break_info(dist));
+                    index_type::const_iterator b=map_->index_.begin(),e=map_->index_.end();
+                    index_type::const_iterator 
+                        bound=std::upper_bound(b,e,break_info(dist));
                     while(bound != e && (bound->mark & mask_)==0)
                         bound++;
                     offset_ = bound - b;
@@ -883,9 +957,9 @@ namespace booster {
                 {
                     unsigned diff =  std::distance(map_->begin_,p);
 
-                    impl::index_type::const_iterator b=map_->index_.begin();
-                    impl::index_type::const_iterator e=map_->index_.end();
-                    impl::index_type::const_iterator ptr = std::lower_bound(b,e,impl::break_info(diff));
+                    index_type::const_iterator b=map_->index_.begin();
+                    index_type::const_iterator e=map_->index_.end();
+                    index_type::const_iterator ptr = std::lower_bound(b,e,break_info(diff));
 
                     if(ptr==map_->index_.end())
                         offset_=map_->index_.size()-1;

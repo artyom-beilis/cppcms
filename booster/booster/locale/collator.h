@@ -118,11 +118,6 @@ namespace locale {
         {
             return do_transform(level,s.data(),s.data()+s.size());
         }
-
-        ///
-        /// A static member used for creation of collator instances, generally called by a generator class.
-        /// 
-        static collator<CharType> *create(info const &inf);
         
     protected:
 
@@ -144,7 +139,7 @@ namespace locale {
         virtual int do_compare( char_type const *b1,char_type const *e1,
                                 char_type const *b2,char_type const *e2) const
         {
-            return do_compare(primary,b1,e1,b2,e2);
+            return do_compare(identical,b1,e1,b2,e2);
         }
         ///
         /// This function is used to override default collation function that does not take in account collation level.
@@ -152,7 +147,7 @@ namespace locale {
         ///
         virtual string_type do_transform(char_type const *b,char_type const *e) const
         {
-            return do_transform(primary,b,e);
+            return do_transform(identical,b,e);
         }
         ///
         /// This function is used to override default collation function that does not take in account collation level.
@@ -160,7 +155,7 @@ namespace locale {
         ///
         virtual long do_hash(char_type const *b,char_type const *e) const
         {
-            return do_hash(primary,b,e);
+            return do_hash(identical,b,e);
         }
 
         ///
@@ -181,26 +176,6 @@ namespace locale {
 
     };
 
-    /// \cond INTERNAL 
-
-    template<>
-    BOOSTER_API collator<char> *collator<char>::create(info const &inf);
-    #ifndef BOOSTER_NO_STD_WSTRING
-    template<>
-    BOOSTER_API collator<wchar_t> *collator<wchar_t>::create(info const &inf);
-    #endif
-    
-    #ifdef BOOSTER_HAS_CHAR16_T
-    template<>
-    BOOSTER_API collator<char16_t> *collator<char16_t>::create(info const &inf);
-    #endif
-    
-    #ifdef BOOSTER_HAS_CHAR32_T
-    template<>
-    BOOSTER_API collator<char32_t> *collator<char32_t>::create(info const &inf);
-    #endif
-    /// \endcond
-
     ///
     /// \brief This class can be used in STL algorithms and containers for comparison of strings
     /// with different level then primary
@@ -213,7 +188,7 @@ namespace locale {
     /// 
     /// Would create a map the keys of which are sorted using secondary collation level
     ///
-    template<typename CharType,collator_base::level_type default_level = collator_base::primary>
+    template<typename CharType,collator_base::level_type default_level = collator_base::identical>
     struct comparator
     {
     public:

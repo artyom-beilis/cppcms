@@ -14,19 +14,15 @@
 using namespace std;
 using namespace booster::locale;
 
-int main(int argc,char **argv)
+int main()
 {
-     if(argc!=3) {
-          cerr<<"Usage collate Locale-ID Encoding"<<endl;
-          return 1;
-     }
      generator gen;
-
+     std::locale::global(gen(""));
      /// Set global locale to requested
-     std::locale::global(gen.generate(argv[1],argv[2]));
 
-     /// Create a set that includes all strings sorted with primary collation level
-     typedef std::set<std::string,comparator<char> > set_type;
+     /// Create a set that includes all strings sorted according to ABC order
+     /// std::locale can be used as object for comparison
+     typedef std::set<std::string,std::locale> set_type;
      set_type all_strings;
 
      /// Read all strings into the set

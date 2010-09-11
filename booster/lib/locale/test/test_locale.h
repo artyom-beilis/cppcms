@@ -13,7 +13,6 @@
 #include <iostream>
 #include <iomanip>
 #include <cstdlib>
-#include <unicode/utf8.h>
 
 
 int error_counter=0;
@@ -58,6 +57,34 @@ do {                                \
     }while(0)
 
 
+inline unsigned utf8_next(std::string const &s,unsigned &pos)
+{
+    unsigned c=(unsigned char)s[pos++];
+    if( (unsigned char)(c - 0xc0) >= 0x35)
+        return c;
+    unsigned l;
+    if(c < 192)
+        l = 0;
+    else if(c < 224)
+        l = 1;
+    else if(c < 240)
+        l = 2;
+    else
+        l = 3;
+    
+    c&=(1<<(6-l))-1;
+    
+    switch(l) {
+    case 3:
+        c = (c << 6) | (((unsigned char)s[pos++]) & 0x3F);
+    case 2:
+        c = (c << 6) | (((unsigned char)s[pos++]) & 0x3F);
+    case 1:
+        c = (c << 6) | (((unsigned char)s[pos++]) & 0x3F);
+    }
+    return c;
+}
+
 template<typename Char>
 std::basic_string<Char> to(std::string const &utf8)
 {
@@ -66,7 +93,7 @@ std::basic_string<Char> to(std::string const &utf8)
     while(i<utf8.size()) {
         unsigned point;
         unsigned prev=i;
-        U8_NEXT_UNSAFE(utf8,i,point);
+        point = utf8_next(utf8,i);
         if(sizeof(Char)==1 && point > 255) {
             std::ostringstream ss;
             ss << "Can't convert codepoint U" << std::hex << point <<"(" <<std::string(utf8.begin()+prev,utf8.begin()+i)<<") to Latin1";
