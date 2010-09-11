@@ -776,7 +776,15 @@ locale::generator const &service::generator()
 		return *impl_->locale_generator_.get();
 
 	typedef std::vector<std::string> vstr_type;
-	impl_->locale_generator_.reset(new locale::generator());
+	
+	std::string default_backend = settings().get("localization.backend","");
+	if(default_backend.empty())
+		impl_->locale_generator_.reset(new locale::generator());
+	else {
+		locale::localization_backend_manager mgr = locale::localization_backend_manager::global();
+		mgr.select(default_backend);
+		impl_->locale_generator_.reset(new locale::generator(mgr));
+	}
 	locale::generator &gen= *impl_->locale_generator_;
 	gen.characters(locale::char_facet);
 	std::string enc = settings().get("localization.encoding","");
