@@ -1544,6 +1544,15 @@ bool file::validate()
 
 }
 
+booster::regex file::filename()
+{
+	return filename_regex_;
+}
+
+void file::filename(booster::regex const &fn)
+{
+	filename_regex_ = fn;
+}
 
 
 } // widgets 
