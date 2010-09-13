@@ -279,6 +279,7 @@ namespace util {
             "iso88599",
             "koi8r",
             "koi8u",
+            "usascii",
             "windows1250",
             "windows1251",
             "windows1252",

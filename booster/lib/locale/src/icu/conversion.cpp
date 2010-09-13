@@ -12,7 +12,7 @@
 #include <unicode/ustring.h>
 #include <unicode/locid.h>
 #include <unicode/uversion.h>
-#if U_ICU_VERSION_MAJOR_NUM*300 + U_ICU_VERSION_MINOR_NUM >= 308
+#if U_ICU_VERSION_MAJOR_NUM*100 + U_ICU_VERSION_MINOR_NUM >= 308
 #include <unicode/ucasemap.h>
 #define WITH_CASE_MAPS
 #endif

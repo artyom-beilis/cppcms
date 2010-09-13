@@ -32,8 +32,11 @@ namespace impl_icu {
         {
             UErrorCode err=U_ZERO_ERROR;
             cvt_ = ucnv_open(encoding.c_str(),&err);
-            if(!cvt_)
-                throw_icu_error(err);
+            if(!cvt_ || U_FAILURE(err)) {
+                if(cvt_)
+                    ucnv_close(cvt_);
+                throw conv::invalid_charset_error(encoding);
+            }
             
             err=U_ZERO_ERROR;
 
@@ -136,8 +139,15 @@ namespace impl_icu {
             cvt = util::create_utf8_converter(); 
         else {
             cvt = util::create_simple_converter(encoding);
-            if(!cvt.get())
-                cvt = create_uconv_converter(encoding);
+            if(!cvt.get()) {
+                try {
+                    cvt = create_uconv_converter(encoding);
+                }
+                catch(std::exception const &/*e*/)
+                {
+                    // not too much we can do
+                }
+            }
         }
         return util::create_codecvt(in,cvt,type);
     }

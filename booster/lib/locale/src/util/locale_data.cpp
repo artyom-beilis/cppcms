@@ -18,7 +18,7 @@ namespace util {
         language = "C";
         country.clear();
         variant.clear();
-        encoding.clear();
+        encoding = "us-ascii";
         utf8=false;
         parse_from_lang(locale_name);
     }

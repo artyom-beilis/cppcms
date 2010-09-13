@@ -69,6 +69,7 @@ namespace impl {
         { "koi8u",      21866 },
         { "shiftjis",   932 },
         { "sjis",       932 },
+        { "usascii",    20127 },
         { "utf8",       65001 },
         { "windows1250",        1250 },
         { "windows1251",        1251 },

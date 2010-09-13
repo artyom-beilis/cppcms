@@ -11,6 +11,8 @@
 #include <unicode/ucnv.h>
 #include <unicode/ustring.h>
 
+#include <booster/locale/encoding.h>
+
 #include <string>
 #include "icu_util.h"
 
@@ -84,8 +86,11 @@ namespace impl_icu {
             {
                 UErrorCode err=U_ZERO_ERROR;
                 cvt_ = ucnv_open(charset.c_str(),&err);
-                if(!cvt_)
-                    throw_icu_error(err);
+                if(!cvt_ || U_FAILURE(err)) {
+                    if(cvt_)
+                        ucnv_close(cvt_);
+                    throw conv::invalid_charset_error(charset);
+                }
                 
                 try {
                     if(cvt_type==cvt_skip) {

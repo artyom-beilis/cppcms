@@ -813,10 +813,28 @@ locale::generator const &service::generator()
 	if(locales.empty()) {
 		gen("");
 		impl_->default_locale_=gen("");
+		if(std::use_facet<locale::info>(impl_->default_locale_).name()=="C")
+			BOOSTER_WARNING("cppcms") 
+				<< "The default system locale is 'C', the encoding is set to US-ASCII. "
+				<< "It is recommended to specify the locale name explicitly";
 	}
 	else {
-		for(unsigned i=0;i<locales.size();i++)
-			gen(locales[i]);
+		for(unsigned i=0;i<locales.size();i++) {
+			std::locale tmp = gen(locales[i]);
+			locale::info const &inf = std::use_facet<locale::info>(tmp);
+			if(std::use_facet<locale::info>(tmp).name()=="C" || inf.encoding()=="us-ascii") {
+				if(locales[i].empty()) {
+					BOOSTER_WARNING("cppcms") 
+						<< "The default system locale is 'C', the encoding is set to US-ASCII. "
+						<< "It is recommended to specify the locale name explicitly";
+				}
+				else if(locales[i].find('.')==std::string::npos) {
+					BOOSTER_WARNING("cppcms") 
+						<< "The encoding for locale `" << locales[i] << "' is not specified "
+						<< "the encoding is set to US-ASCII. It is recommended to specify the locale name explicitly";
+				}
+			}
+		}
 		impl_->default_locale_=gen(locales[0]);
 	}
 
