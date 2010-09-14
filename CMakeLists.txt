@@ -272,6 +272,7 @@ set(CPPCMS_SOURCES
 	src/rpc_json.cpp
 	src/mount_point.cpp
 	src/archive.cpp
+	src/crypto.cpp
 	cppcms_boost/src/zlib.cpp
 	cppcms_boost/src/gzip.cpp
 )

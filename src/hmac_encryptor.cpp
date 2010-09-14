@@ -22,6 +22,8 @@
 #include <time.h>
 #include <stdlib.h>
 
+#include <cppcms/crypto.h>
+
 using namespace std;
 
 namespace cppcms {
@@ -32,26 +34,15 @@ namespace impl {
 booster::thread_specific_ptr<hmac_cipher::block> hmac_cipher::seed;
 
 hmac_cipher::hmac_cipher(string key) :
-	base_encryptor(key)
+	key_(key)
 {
 }
 
 void hmac_cipher::hash(unsigned char const *data,size_t size,unsigned char md5[16])
 {
-	vector<unsigned char> ipad(16,0),opad(32,0);
-	for(unsigned i=0;i<16;i++) {
-		ipad[i]=0x36 ^ key[i];
-		opad[i]=0x5c ^ key[i];
-	}
-	using namespace cppcms::impl;
-	md5_state_t state;
-	md5_init(&state);
-	md5_append(&state,&ipad.front(),16);
-	md5_append(&state,data,size);
-	md5_finish(&state,&opad.front()+16);
-	md5_init(&state);
-	md5_append(&state,&opad.front(),32);
-	md5_finish(&state,md5);
+	hmac md(message_digest::md5(),key_);
+	md.append(data,size);
+	md.readout(md5);
 }
 
 string hmac_cipher::encrypt(string const &plain,time_t timeout)

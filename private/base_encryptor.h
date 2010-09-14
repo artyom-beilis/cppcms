@@ -34,10 +34,8 @@ class CPPCMS_API base_encryptor : public cppcms::sessions::encryptor {
 public:
 	virtual std::string encrypt(std::string const &plain,time_t timeout) = 0;
 	virtual bool decrypt(std::string const &cipher,std::string &plain,time_t *timeout=NULL) = 0;
-	base_encryptor(std::string key);
 	virtual ~base_encryptor();
 protected:
-	std::vector<unsigned char> key;
 	std::string base64_enc(std::vector<unsigned char> const &data);
 	void base64_dec(std::string const &,std::vector<unsigned char> &data);
 	struct info {

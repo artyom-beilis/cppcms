@@ -27,8 +27,8 @@ namespace sessions {
 namespace impl {
 
 class CPPCMS_API hmac_cipher : public base_encryptor {
-	void hash(unsigned char const *,size_t,unsigned char md5[16]);
 public:
+	void hash(unsigned char const *,size_t,unsigned char md5[16]);
 	virtual std::string encrypt(std::string const &plain,time_t timeout);
 	virtual bool decrypt(std::string const &cipher,std::string &plain,time_t *timeout=NULL);
 	hmac_cipher(std::string key);
@@ -43,6 +43,7 @@ public:
 private:
 	static booster::thread_specific_ptr<block> seed;
 	void salt(char *s,int n);
+	std::string key_;
 };
 
 } // impl

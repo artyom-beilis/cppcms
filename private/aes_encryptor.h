@@ -36,6 +36,7 @@ class CPPCMS_API aes_cipher : public base_encryptor {
 		char md5[16];
 	};
 	void load();
+	std::vector<unsigned char> key;
 public:
 	virtual std::string encrypt(std::string const &plain,time_t timeout);
 	virtual bool decrypt(std::string const &cipher,std::string &plain,time_t *timeout=NULL) ;

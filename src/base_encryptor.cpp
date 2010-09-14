@@ -33,28 +33,6 @@ base_encryptor::~base_encryptor()
 {
 }
 
-base_encryptor::base_encryptor(string key_):
-	key(16,0)
-
-{
-	if(key_.size()!=32) {
-		throw cppcms_error("Incorrect key length (32 expected)\n");
-	}
-	for(unsigned i=0;i<32;i+=2) {
-		char buf[3];
-		if(!isxdigit(key_[i]) || !isxdigit(key_[i+1])) {
-			throw cppcms_error("Cipher should be encoded as hexadecimal 32 digits number");
-		}
-		buf[0]=key_[i];
-		buf[1]=key_[i+1];
-		buf[2]=0;
-		unsigned v;
-		sscanf(buf,"%x",&v);
-		key[i/2]=v;
-	}
-}
-
-
 string base_encryptor::base64_enc(vector<unsigned char> const &data)
 {
 	size_t size=b64url::encoded_size(data.size());
