@@ -14,18 +14,24 @@ cipher::cipher(string key) :
 
 void cipher::hash(unsigned char const *data,size_t size,unsigned char md5[16])
 {
-	vector<unsigned char> ipad(16,0),opad(32,0);
-	for(unsigned i=0;i<16;i++) {
-		ipad[i]=0x36 ^ key[i];
-		opad[i]=0x5c ^ key[i];
+	static unsigned const digest_size = 16;
+	static unsigned const block_size = 64;
+	vector<unsigned char> ipad(block_size,0),opad(block_size + digest_size,0);
+	for(unsigned i=0;i<block_size;i++) {
+		ipad[i]=0x36;
+		opad[i]=0x5c;
+	}
+	for(unsigned i=0;i<digest_size;i++) {
+		ipad[i] ^= key[i];
+		opad[i] ^= key[i];
 	}
 	md5_state_t state;
 	md5_init(&state);
-	md5_append(&state,&ipad.front(),16);
+	md5_append(&state,&ipad.front(),block_size);
 	md5_append(&state,data,size);
-	md5_finish(&state,&opad.front()+16);
+	md5_finish(&state,&opad.front()+block_size);
 	md5_init(&state);
-	md5_append(&state,&opad.front(),32);
+	md5_append(&state,&opad.front(),block_size + digest_size);
 	md5_finish(&state,md5);
 }
 
