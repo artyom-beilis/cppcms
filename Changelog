@@ -1,3 +1,10 @@
+Version 0.0.7, 2010-09-15
+=========================
+
+Security Bug:
+
+- Fixed: generation of hmac with too small block size
+
 Version 0.0.6, 2010-04-17
 =========================
 
