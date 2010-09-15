@@ -36,6 +36,7 @@ public:
 	virtual bool decrypt(std::string const &cipher,std::string &plain,time_t *timeout=NULL) = 0;
 	virtual ~base_encryptor();
 protected:
+	static std::string to_binary(std::string const &hex);
 	std::string base64_enc(std::vector<unsigned char> const &data);
 	void base64_dec(std::string const &,std::vector<unsigned char> &data);
 	struct info {

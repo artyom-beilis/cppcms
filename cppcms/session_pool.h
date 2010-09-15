@@ -75,6 +75,8 @@ namespace cppcms {
 		class gc_job; 
 		template<typename Encryptor>
 		struct enc_factory;
+		template<typename Encryptor>
+		struct enc_factory_param;
 		
 		struct _data;
 

@@ -161,25 +161,14 @@ void aes_cipher::load()
 }
 
 aes_cipher::aes_cipher(string k) :
-	loaded_(false),
-	key(16,0)
+	loaded_(false)
 {
-	
 	if(k.size()!=32) {
-		throw cppcms_error("Incorrect key length (32 expected)\n");
+		throw cppcms_error("AES requires key length of 16 bytes (32 hexadecimal digits)");
 	}
-	for(unsigned i=0;i<32;i+=2) {
-		char buf[3];
-		if(!isxdigit(k[i]) || !isxdigit(k[i+1])) {
-			throw cppcms_error("Cipher should be encoded as hexadecimal 32 digits number");
-		}
-		buf[0]=k[i];
-		buf[1]=k[i+1];
-		buf[2]=0;
-		unsigned v;
-		sscanf(buf,"%x",&v);
-		key[i/2]=v;
-	}
+
+	std::string skey = to_binary(k);
+	key.assign(skey.c_str(),skey.c_str()+skey.size());
 }
 
 aes_cipher::~aes_cipher()

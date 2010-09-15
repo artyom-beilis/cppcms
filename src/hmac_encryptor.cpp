@@ -21,92 +21,98 @@
 #include "md5.h"
 #include <time.h>
 #include <stdlib.h>
-
+#include <string.h>
 #include <cppcms/crypto.h>
-
-using namespace std;
+#include <cppcms/cppcms_error.h>
 
 namespace cppcms {
 namespace sessions {
 namespace impl {
 
+/*******************************************
+ * The layout of the message is following:
+ *  Signed Content
+ *             8 bytes timeout;
+ *             4 bytes message_size;
+ *  message_size bytes content
+ *  Signature
+ *             N bytes - signature
+ *******************************************/
 
-booster::thread_specific_ptr<hmac_cipher::block> hmac_cipher::seed;
-
-hmac_cipher::hmac_cipher(string key) :
-	key_(key)
+hmac_cipher::hmac_cipher(std::string key,std::string hash_name) :
+	key_(to_binary(key)),
+	hash_(hash_name)
 {
+	if(key_.size() < 16) {
+		throw cppcms_error("The key legth is too small, use at leaset the key of 16 bytes/32 hexadecimal digits");
+	}
 }
 
-void hmac_cipher::hash(unsigned char const *data,size_t size,unsigned char md5[16])
+std::string hmac_cipher::encrypt(std::string const &plain,time_t timeout)
 {
-	hmac md(message_digest::md5(),key_);
-	md.append(data,size);
-	md.readout(md5);
-}
-
-string hmac_cipher::encrypt(string const &plain,time_t timeout)
-{
-	vector<unsigned char> data(16+sizeof(info)+plain.size(),0);
-	info &header=*(info *)(&data.front()+16);
-	header.timeout=timeout;
-	header.size=plain.size();
-	salt(header.salt,sizeof(header.salt));
-	copy(plain.begin(),plain.end(),data.begin()+16+sizeof(info));
-	hash(&data.front()+16,data.size()-16,&data.front());
+	hmac md(hash_,key_);
+	
+	int64_t real_timeout = timeout;
+	uint32_t message_size = plain.size();
+	const unsigned digest_size = md.digest_size();
+	unsigned const content_size = sizeof(real_timeout) + sizeof(message_size) + message_size;
+	std::vector<unsigned char> data(content_size + digest_size);
+	unsigned char *signed_content = &data[0];
+	unsigned char *time_content   = &data[0];
+	unsigned char *size_content   = &data[0+8];
+	unsigned char *plain_content  = &data[0+8+4];
+	unsigned char *digest         = &data[0+8+4+message_size];
+	memcpy(time_content,&real_timeout,8);
+	memcpy(size_content,&message_size,4);
+	memcpy(plain_content,plain.c_str(),message_size);
+	md.append(signed_content,content_size);
+	md.readout(digest);
+	
 	return base64_enc(data);
 }
 
-bool hmac_cipher::decrypt(string const &cipher,string &plain,time_t *timeout)
+bool hmac_cipher::decrypt(std::string const &cipher,std::string &plain,time_t *timeout)
 {
-	vector<unsigned char> data;
+	std::vector<unsigned char> data;
 	base64_dec(cipher,data);
-	const unsigned offset=16+sizeof(info);
-	if(data.size()<offset)
+
+	hmac md(hash_,key_);
+
+	//
+	// validation
+	//
+	
+	// basic size
+	const int64_t digest_size = md.digest_size();
+	int64_t calculated_content_size = int64_t(data.size()) - int64_t(digest_size) - 8 - 4;
+	if(calculated_content_size < 0)
 		return false;
-	info &header=*(info *)(&data.front()+16);
-	if(header.size!=data.size()-offset)
+	// time and size 
+	unsigned char *signed_body  = &data[0];
+	unsigned char *time_stamp   = &data[0];
+	unsigned char *size_stamp   = &data[0+8];
+	int64_t time_in;
+	uint32_t size;
+	memcpy(&time_in,time_stamp,sizeof(time_in));
+	memcpy(&size,size_stamp,sizeof(size));
+
+	if(time_in < time(0) || size != calculated_content_size)
 		return false;
-	unsigned char md5[16];
-	hash(&data.front()+16,data.size()-16,md5);
-	if(!equal(data.begin(),data.begin()+16,md5))
+	// check signature
+	unsigned char *given_signature = &data[0+8+4 + size];
+	std::vector<char> real_signature(digest_size,0);
+	md.append(signed_body,8+4+size);
+	md.readout(&real_signature[0]);
+	if(memcmp(given_signature,&real_signature[0],digest_size)!=0)
 		return false;
-	time_t now;
-	time(&now);
-	if(now>header.timeout)
-		return false;
+	
+	// return valid data
+	unsigned char *real_content = &data[0+8+4];
+	plain.assign(reinterpret_cast<char*>(real_content),size);
 	if(timeout)
-		*timeout=header.timeout;
-	plain.assign(data.begin()+offset,data.end());
+		*timeout = time_in;
 	return true;
 }
-
-
-void hmac_cipher::salt(char *salt,int n)
-{
-	if(!seed.get()) {
-		block tmp;
-		urandom_device rnd;
-		rnd.generate(&tmp,16);
-		tmp.left=0;
-		seed.reset(new block(tmp));
-	}
-	block &b=*seed;
-	while(n > 0) {
-		if(b.left == 0) {
-			using namespace cppcms::impl;
-			b.seed.counter++;
-			md5_state_t md5;
-			md5_init(&md5);
-			md5_append(&md5,reinterpret_cast<md5_byte_t *>(&b.seed),sizeof(b.seed));
-			md5_finish(&md5,reinterpret_cast<md5_byte_t *>(b.buf));
-			b.left=sizeof(b.buf);
-		}
-		*salt++ = b.buf[--b.left];
-		n--;
-	}
-}
-
 
 } // impl
 } // sessions

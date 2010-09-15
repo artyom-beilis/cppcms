@@ -30,7 +30,7 @@
 
 
 template<typename Encryptor>
-void run_test() 
+void run_test(bool is_signature = false) 
 {
 	std::string key="261965ba80a79c034c9ae366a19a2627";
 	char c1=key[0];
@@ -78,7 +78,9 @@ void run_test()
 	enc.reset(new Encryptor(key));
 	TEST(enc->decrypt(cipher,plain,&time) && plain=="test" && time==now);
 	// Salt works
-	TEST(enc->encrypt(plain,now)!=enc->encrypt(plain,now));
+	if(!is_signature) {
+		TEST(enc->encrypt(plain,now)!=enc->encrypt(plain,now));
+	}
 }
 
 
@@ -106,6 +108,7 @@ std::string get_diget(MD &d,std::string const &source)
 void test_crypto()
 {
 	using namespace cppcms;
+	std::cout << "- testing sha1/md5" << std::endl;
 	TEST(message_digest::md5().get());
 	TEST(message_digest::sha1().get());
 	TEST(message_digest::md5()->name() == std::string("md5"));
@@ -126,6 +129,7 @@ void test_crypto()
 		TEST(get_diget(*d,"")=="da39a3ee5e6b4b0d3255bfef95601890afd80709");
 		TEST(get_diget(*d,"Hello World!")=="2ef7bde608ce5404e97d5f042f95f89f1c232871");
 	}
+	std::cout << "- testing hmac-sha1/md5" << std::endl;
 	{
 		hmac d("md5","Jefe");
 		TEST(get_diget(d,"what do ya want for nothing?") == "750c783e6ab0b503eaa86e310a5db738");
@@ -134,6 +138,20 @@ void test_crypto()
 		hmac d(message_digest::md5(),"xxxxxxxxxxxxxxddddddddddddddddddffffffffffffffffffffffffffffffffffffffffffffffdddddddddddddddddddd");
 		TEST(get_diget(d,"what do ya want for nothing?") == "4891f8cf6a4641897159756847369d1a");
 	}
+
+	#ifdef CPPCMS_HAVE_GCRYPT
+	std::cout << "- testing shaXXX " << std::endl;
+	{
+		std::auto_ptr<message_digest> d(message_digest::create_by_name("sha256"));
+		TEST(d->name() == std::string("sha256"));
+		TEST(d->block_size() == 64);
+		TEST(get_diget(*d,"Hello World")=="a591a6d40bf420404a011733cfb7b190d62c65bf0bcda32b57b277d9ad9f146e");
+		d = message_digest::create_by_name("sha512");
+		TEST(d->name() == std::string("sha512"));
+		TEST(d->digest_size() == 64);
+		TEST(d->block_size() == 128);
+	}
+	#endif
 
 }
 
@@ -144,10 +162,10 @@ int main()
 
 		test_crypto();
 
-		std::cout << "Testing hmac" << std::endl;
-		run_test<cppcms::sessions::impl::hmac_cipher>();
+		std::cout << "Testing hmac cookies signature" << std::endl;
+		run_test<cppcms::sessions::impl::hmac_cipher>(true);
 		#ifdef CPPCMS_HAVE_GCRYPT
-		std::cout << "Testing aes" << std::endl;
+		std::cout << "Testing aes cookies encryptor" << std::endl;
 		run_test<cppcms::sessions::impl::aes_cipher>();
 		#endif
 	}

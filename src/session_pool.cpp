@@ -70,6 +70,18 @@ struct session_pool::enc_factory : public encryptor_factory {
 private:
 	std::string key_;
 };
+template<typename Encryptor>
+struct session_pool::enc_factory_param : public encryptor_factory {
+	enc_factory_param(std::string const &key,std::string const &algo) : key_(key),algo_(algo) {}
+	virtual std::auto_ptr<cppcms::sessions::encryptor> get() 
+	{
+		std::auto_ptr<cppcms::sessions::encryptor> tmp(new Encryptor(key_,algo_));
+		return tmp;
+	}
+private:
+	std::string key_;
+	std::string algo_;
+};
 
 struct session_pool::sid_factory : public session_api_factory
 {
@@ -182,6 +194,11 @@ void session_pool::init()
 		if(enc=="hmac") {
 			std::string key = srv.settings().get<std::string>("session.client.key");
 			factory.reset(new enc_factory<cppcms::sessions::impl::hmac_cipher>(key));
+		}
+		else if(enc.compare(0,5,"hmac-") == 0) {
+			std::string algo = enc.substr(5);
+			std::string key = srv.settings().get<std::string>("session.client.key");
+			factory.reset(new enc_factory_param<cppcms::sessions::impl::hmac_cipher>(key,algo));
 		}
 		#ifdef CPPCMS_HAVE_GCRYPT
 		else if(enc=="aes") {

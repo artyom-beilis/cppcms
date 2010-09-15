@@ -28,22 +28,13 @@ namespace impl {
 
 class CPPCMS_API hmac_cipher : public base_encryptor {
 public:
-	void hash(unsigned char const *,size_t,unsigned char md5[16]);
+	hmac_cipher(std::string key,std::string hash_name = "sha1");
+	
 	virtual std::string encrypt(std::string const &plain,time_t timeout);
 	virtual bool decrypt(std::string const &cipher,std::string &plain,time_t *timeout=NULL);
-	hmac_cipher(std::string key);
-	struct block {
-		union {
-			char data[16];
-			uint64_t counter;
-		} seed;
-		char buf[16];
-		unsigned left;
-	};
 private:
-	static booster::thread_specific_ptr<block> seed;
-	void salt(char *s,int n);
 	std::string key_;
+	std::string hash_;
 };
 
 } // impl

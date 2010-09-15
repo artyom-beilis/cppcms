@@ -17,6 +17,10 @@
 //
 ///////////////////////////////////////////////////////////////////////////////
 #include <cppcms/crypto.h>
+#include <cppcms/config.h>
+#ifdef CPPCMS_HAVE_GCRYPT
+#  include <gcrypt.h>
+#endif
 #include <vector>
 #include <stdexcept>
 #include "md5.h"
@@ -111,6 +115,66 @@ namespace cppcms {
 		private:
 			impl::sha1 state_;
 		};
+
+		#ifdef CPPCMS_HAVE_GCRYPT
+		class gcrypt_digets : public message_digest {
+		public:
+			gcrypt_digets(int algorithm)
+			{
+				if(gcry_md_open(&state_,algorithm,0)!=0)
+					throw std::invalid_argument("gcrypt_digets - faled to create md");
+				algo_ = algorithm;
+			}
+			virtual unsigned digest_size() const
+			{
+				return gcry_md_get_algo_dlen(algo_);
+			}
+			virtual unsigned block_size() const
+			{
+				if(algo_ == GCRY_MD_SHA384 || algo_ == GCRY_MD_SHA512)
+					return 128;
+				else
+					return 64;
+			}
+			virtual void append(void const *ptr,size_t size) 
+			{
+				gcry_md_write(state_,ptr,size);
+			}
+			virtual void readout(void *ptr)
+			{
+				memcpy(ptr,gcry_md_read(state_,0),digest_size());
+				gcry_md_reset(state_);
+			}
+			virtual char const *name() const
+			{
+				switch(algo_) {
+				case GCRY_MD_SHA224:
+					return "sha224";
+				case GCRY_MD_SHA256:
+					return "sha256";
+				case GCRY_MD_SHA384:
+					return "sha384";
+				case GCRY_MD_SHA512:
+					return "sha512";
+				default:
+					return "unknown";
+				}
+			}
+			virtual gcrypt_digets *clone() const
+			{
+				return new gcrypt_digets(algo_);
+			}
+			virtual ~gcrypt_digets()
+			{
+				gcry_md_close(state_);
+				state_ = 0;
+			}
+		private:
+			gcry_md_hd_t state_;
+			int algo_;
+		};
+
+		#endif
 	} // anon
 	
 	std::auto_ptr<message_digest> message_digest::md5()
@@ -125,13 +189,27 @@ namespace cppcms {
 		return d;
 	}
 
-	std::auto_ptr<message_digest> message_digest::create_by_name(std::string const &name)
+	std::auto_ptr<message_digest> message_digest::create_by_name(std::string const &namein)
 	{
 		std::auto_ptr<message_digest> d;
-		if(name=="md5" || name=="MD5")
+		std::string name = namein;
+		for(unsigned i=0;i<name.size();i++)
+			if('A' <= name[i] && name[i]<='Z')
+				name[i] = name[i] - 'A' + 'a';
+		if(name=="md5")
 			d = md5();
-		else if(name == "sha1" || name=="SHA1")
+		else if(name == "sha1")
 			d = sha1();
+		#ifdef CPPCMS_HAVE_GCRYPT
+		else if(name == "sha224")
+			d.reset(new gcrypt_digets(GCRY_MD_SHA224));
+		else if(name == "sha256")
+			d.reset(new gcrypt_digets(GCRY_MD_SHA256));
+		else if(name == "sha384")
+			d.reset(new gcrypt_digets(GCRY_MD_SHA384));
+		else if(name == "sha512")
+			d.reset(new gcrypt_digets(GCRY_MD_SHA512));
+		#endif
 		return d;
 	}
 

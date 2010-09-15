@@ -66,13 +66,13 @@
 			"path" : "/",
 			"secure" : false
 		},
-		//"location" : "client",
+		"location" : "client",
 	//	"location" : "server",
 	//	"location" : "both",
 		"client_size_limit" : 1000,
 		"gc" : 10,
 		"client" : { 
-			"encryptor" : "hmac", 
+			"encryptor" : "hmac-sha1",  // "hmac" = "hmac-sha1", "hmac-md5", "hmac-sha224", "hmac-sha384", "hmac-sha256", "hmac-sha512"
 			//"encryptor" : "aes", 
 			// aes or hmac -- hmac -- signature only, aes -- encryption and signature
 			"key" : "261965ba80a79c034c9ae366a19a2627"

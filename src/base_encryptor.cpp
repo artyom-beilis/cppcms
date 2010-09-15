@@ -33,6 +33,27 @@ base_encryptor::~base_encryptor()
 {
 }
 
+std::string base_encryptor::to_binary(std::string const &k)
+{
+	if(k.size() % 2 != 0) {
+		throw cppcms_error("Cipher should be encoded as hexadecimal number with even number of digits");
+	}
+	std::string key(k.size()/2,0);
+	for(unsigned i=0;i<k.size();i+=2) {
+		char buf[3];
+		if(!isxdigit(k[i]) || !isxdigit(k[i+1])) {
+			throw cppcms_error("Cipher should be encoded as hexadecimal 32 digits number");
+		}
+		buf[0]=k[i];
+		buf[1]=k[i+1];
+		buf[2]=0;
+		unsigned v;
+		sscanf(buf,"%x",&v);
+		key[i/2]=v;
+	}
+	return key;
+}
+
 string base_encryptor::base64_enc(vector<unsigned char> const &data)
 {
 	size_t size=b64url::encoded_size(data.size());
