@@ -22,45 +22,66 @@
 
 #ifdef CPPCMS_WIN_NATIVE
 
+#include <sstream>
+#include <booster/thread.h>
+
+#ifndef NOMINMAX
+#define NOMINMAX
+#endif
 #include "windows.h"
 #include "wincrypt.h"
-#include <sstream>
 
 namespace cppcms {
 
-	struct urandom_device::_data {
-		HCRYPTPROV provider;
-		_data() : provider(0) {}
-	};
 
-	urandom_device::urandom_device() :
-		d(new _data())
-	{
-		if(CryptAcquireContext(&d->provider,0,0,PROV_RSA_FULL,0)) 
-			return;
-		if(GetLastError() == NTE_BAD_KEYSET) {
-			if(CryptAcquireContext(&d->provider,0,0,PROV_RSA_FULL,CRYPT_NEWKEYSET))
+	class urandom_device_impl {
+	public:
+		urandom_device_impl() {
+			if(CryptAcquireContext(&provider_,0,0,PROV_RSA_FULL,0)) 
 				return;
+			if(GetLastError() == NTE_BAD_KEYSET) {
+				if(CryptAcquireContext(&provider_,0,0,PROV_RSA_FULL,CRYPT_NEWKEYSET))
+					return;
+			}
+			
+			std::ostringstream ss;
+			ss<<"CryptAcquireContext failed with code 0x"<<std::hex<<GetLastError();
+			throw cppcms_error(ss.str());
 		}
-		
-		std::ostringstream ss;
-		ss<<"CryptAcquireContext failed with code 0x"<<std::hex<<GetLastError();
-		throw cppcms_error(ss.str());
 
+		~urandom_device_impl()
+		{
+			CryptReleaseContext(provider_,0);
+		}
+		void generate(void *ptr,unsigned len)
+		{
+			if(CryptGenRandom(provider_,len,static_cast<BYTE *>(ptr)))
+				return;
+			std::ostringstream ss;
+			ss<<"CryptGenRandom failed with code 0x"<<std::hex<<GetLastError();
+			throw cppcms_error(ss.str());
+		}
+	private:
+		HCRYPTPROV provider_;
+	};
+	
+	booster::thread_specific_ptr<urandom_device_impl>  urandom_device_impl_ptr;
+
+	struct urandom_device::_data {};
+
+	urandom_device::urandom_device() 
+	{
 	}
 	urandom_device::~urandom_device()
 	{
-		CryptReleaseContext(d->provider,0);
 	}
 	void urandom_device::generate(void *ptr,unsigned len)
 	{
-		if(CryptGenRandom(d->provider,len,static_cast<BYTE *>(ptr)))
-			return;
-		std::ostringstream ss;
-		ss<<"CryptGenRandom failed with code 0x"<<std::hex<<GetLastError();
-		throw cppcms_error(ss.str());
+		if(!urandom_device_impl_ptr.get())
+			urandom_device_impl_ptr.reset(new urandom_device_impl());
+		urandom_device_impl_ptr->generate(ptr,len);
 	}
-}
+} // cppcms
 
 
 #else
