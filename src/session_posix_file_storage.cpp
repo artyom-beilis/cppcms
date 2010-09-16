@@ -374,6 +374,7 @@ void session_file_storage::gc()
 		delete [] entry_st;
 		throw;
 	}
+	delete [] entry_st;
 }
 
 struct session_file_storage_factory::_data {};
