@@ -38,7 +38,7 @@ namespace impl_posix {
             iconv_t d = (iconv_t)(-1);
             std::vector<uint32_t> first_byte_table;
             try {
-                iconv_t d = iconv_open(utf32_encoding(),encoding.c_str());
+                d = iconv_open(utf32_encoding(),encoding.c_str());
                 if(d == (iconv_t)(-1)) {
                     throw std::runtime_error("Unsupported encoding" + encoding);
                 }
