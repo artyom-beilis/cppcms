@@ -18,7 +18,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 #define CPPCMS_SOURCE
 #include <cppcms/session_sid.h>
-#include "md5.h"
 #include <cppcms/session_storage.h>
 #include <cppcms/session_interface.h>
 #include <fstream>
@@ -28,85 +27,9 @@
 #include <time.h>
 
 #include <cppcms/config.h>
-#include <booster/thread.h>
-
-#ifndef CPPCMS_WIN_NATIVE
-#include <sys/time.h>
-#else
-#include <windows.h>
-#endif
-
-using namespace std;
 
 namespace cppcms {
 namespace sessions {
-namespace impl {
-	using namespace cppcms::impl;
-
-	class sid_generator : public booster::noncopyable {
-	public:
-		sid_generator()
-		{
-		}
-		
-		void check_hash_ptr()
-		{
-			if(!hash_ptr.get()) {
-				for_hash hashed;
-				hashed.session_counter=0;
-				urandom_device urand;
-				urand.generate(hashed.uid,16);
-				urand.generate(hashed.uid2,16);
-				hash_ptr.reset(new for_hash(hashed));
-			}
-		}
-
-		std::string get()
-		{
-			check_hash_ptr();
-			for_hash &hashed = *hash_ptr;
-			hashed.session_counter++;
-			#ifndef CPPCMS_WIN_NATIVE
-			gettimeofday(&hashed.tv,NULL);
-			#else
-			hashed.tv = GetTickCount();
-			#endif
-			
-			md5_byte_t md5[16];
-			char res[33];
-			md5_state_t st;
-			md5_init(&st);
-			md5_append(&st,(md5_byte_t*)&hashed,sizeof(hashed));
-			md5_finish(&st,md5);
-
-			for(int i=0;i<16;i++) {
-			#ifdef CPPCMS_HAVE_SNPRINTF
-				snprintf(res+i*2,3,"%02x",md5[i]);
-			#else
-				sprintf(res+i*2,"%02x",md5[i]);
-			#endif
-			}
-			return std::string(res);
-		}
-		struct for_hash {
-			char uid[16];
-			uint64_t session_counter;
-			#ifndef CPPCMS_WIN_NATIVE
-			struct timeval tv;
-			#else
-			uint64_t tv;
-			#endif
-			char uid2[16];
-		};
-	private:
-		static booster::thread_specific_ptr<for_hash> hash_ptr;
-	};
-	
-	booster::thread_specific_ptr<sid_generator::for_hash> sid_generator::hash_ptr;
-
-
-} // namespace impl
-
 
 
 struct session_sid::_data {};
@@ -120,6 +43,22 @@ session_sid::~session_sid()
 {
 }
 
+std::string session_sid::get_new_sid()
+{
+	unsigned char sid[16];			
+	char res[33];
+	urandom_device rnd;
+	rnd.generate(sid,sizeof(sid));
+
+	for(int i=0;i<16;i++) {
+		#ifdef CPPCMS_HAVE_SNPRINTF
+		snprintf(res+i*2,3,"%02x",sid[i]);
+		#else
+		sprintf(res+i*2,"%02x",sid[i]);
+		#endif
+	}
+	return std::string(res);
+}
 
 bool session_sid::valid_sid(std::string const &cookie,std::string &id)
 {
@@ -137,16 +76,14 @@ bool session_sid::valid_sid(std::string const &cookie,std::string &id)
 
 void session_sid::save(session_interface &session,std::string const &data,time_t timeout,bool new_data,bool unused)
 {
-	string id;
+	std::string id;
 	if(!new_data) {
 		if(!valid_sid(session.get_session_cookie(),id)) {
-			impl::sid_generator generator;
-			id=generator.get(); // if id not valid create new one
+			id=get_new_sid(); // if id not valid create new one
 		}
 	}
 	else {
-		impl::sid_generator generator;
-		id=generator.get(); 
+		id=get_new_sid(); 
 	}
 
 	storage_->save(id,timeout,data);
@@ -155,7 +92,7 @@ void session_sid::save(session_interface &session,std::string const &data,time_t
 
 bool session_sid::load(session_interface &session,std::string &data,time_t &timeout)
 {
-	string id;
+	std::string id;
 	if(!valid_sid(session.get_session_cookie(),id))
 		return false;
 	std::string tmp_data;
@@ -170,7 +107,7 @@ bool session_sid::load(session_interface &session,std::string &data,time_t &time
 
 void session_sid::clear(session_interface &session)
 {
-	string id;
+	std::string id;
 	if(valid_sid(session.get_session_cookie(),id))
 		storage_->remove(id);
 }
