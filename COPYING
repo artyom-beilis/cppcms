@@ -25,4 +25,10 @@
     -  noicu, localization pars of CppCMS are licenses under Boost software license.
     -  base64.cpp - MIT license (see file for copyright notices)
     -  md5.cpp/md5.h - see copyright notices in files (permissive license)
+    -  sha1.h - Boost software license, see copiright notices in the file.
 
+    Note:
+    -----------
+
+    This software is released under the LGPL with the additional exemption that
+    compiling, linking, and/or using OpenSSL is allowed.

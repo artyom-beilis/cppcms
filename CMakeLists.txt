@@ -20,7 +20,8 @@ option(DISABLE_ICU_LOCALIZATION
 			"Use standard std::locales instead of ICU" OFF)
 option(DISABLE_SHARED	"Disable shared libraries build" OFF)
 option(DISABLE_STATIC	"Disable static libraries build" OFF)
-option(DISABLE_GCRYPT	"Disable usage of gcrypt library, no AES cookies encryption would be available" OFF)
+option(DISABLE_GCRYPT	"Disable usage of gcrypt library" OFF)
+option(DISABLE_OPENSSL	"Disable usage of openssl library" OFF)
 option(DISABLE_FCGI	"Disable fastcgi web server api" OFF)
 option(DISABLE_SCGI	"Disable scgi web server api" OFF)
 option(DISABLE_HTTP	"Disable http web server" OFF)
@@ -280,10 +281,33 @@ set(CPPCMS_SOURCES
 if(NOT DISABLE_GCRYPT)
 	find_path(GCRYPT_INCLUDE_DIR gcrypt.h)
 	find_library(LIB_GCRYPT gcrypt)
-	if(LIB_GCRYPT AND GCRYPT_INCLUDE_DIR)
-		include_directories(${GCRYPT_INCLUDE_DIR})
-	endif()
-endif(NOT DISABLE_GCRYPT)
+endif()
+
+if(NOT DISABLE_OPENSSL)
+	find_path(OPENSSL_INCLUDE_DIR openssl/aes.h)
+	find_library(LIB_OPENSSL crypto)
+endif()
+
+if(GCRYPT_INCLUDE_DIR AND LIB_GCRYPT)
+	set(LIB_CRYPT ${LIB_GCRYPT})
+	set(CPPCMS_HAVE_GCRYPT 1)
+	include_directories(${GCRYPT_INCLUDE_DIR})
+elseif (OPENSSL_INCLUDE_DIR AND LIB_OPENSSL)
+	set(LIB_CRYPT ${LIB_OPENSSL})
+	set(CPPCMS_HAVE_OPENSSL 1)
+	include_directories(${OPENSSL_INCLUDE_DIR})
+endif()
+
+
+if(LIB_CRYPT)
+	set(CPPCMS_SOURCES ${CPPCMS_SOURCES} 
+		src/aes_encryptor.cpp
+		src/aes.cpp)
+else()
+	message("GNU Gcrypt or OpenSSL librarys are not found, disabling aes_encryptor")
+endif()
+
+
 
 if(NOT DISABLE_FCGI)
 	set(CPPCMS_SOURCES ${CPPCMS_SOURCES} src/fastcgi_api.cpp)
@@ -301,15 +325,6 @@ if(NOT DISABLE_HTTP)
 	set(CPPCMS_HAS_HTTP 1)
 endif()
 	
-
-
-if(LIB_GCRYPT)
-	set(CPPCMS_SOURCES ${CPPCMS_SOURCES} src/aes_encryptor.cpp)
-	set(CPPCMS_HAVE_GCRYPT 1)
-else(LIB_GCRYPT)
-	message("GNU Gcrypt library not found, disabling aes_encryptor")
-endif(LIB_GCRYPT)
-
 
 if(WIN32 AND NOT CYGWIN)
 	set(CPPCMS_SOURCES ${CPPCMS_SOURCES} src/session_win32_file_storage.cpp)
@@ -341,9 +356,9 @@ foreach(ALIB ${CPPCMS_LIBS})
 	else(DISABLE_SHARED)
 		target_link_libraries(${ALIB} booster)
 	endif(DISABLE_SHARED)
-	if(LIB_GCRYPT)
-		target_link_libraries(${ALIB} ${LIB_GCRYPT})
-	endif(LIB_GCRYPT)
+	if(LIB_CRYPT)
+		target_link_libraries(${ALIB} ${LIB_CRYPT})
+	endif(LIB_CRYPT)
 	
 	if(WS2_32 AND WSOCK32)
 		target_link_libraries(${ALIB} ${WS2_32})

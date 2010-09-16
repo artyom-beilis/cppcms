@@ -23,93 +23,14 @@
 #include <string>
 #include <vector>
 #include <algorithm>
+#include <sstream>
 #include <cppcms/cppcms_error.h>
 #include "aes_encryptor.h"
 
 #include <cppcms/base64.h>
-
-#ifdef CPPCMS_WIN_NATIVE
-#define CPPCMS_GCRYPT_USE_BOOSTER_THREADS
-#endif
-
-#ifdef CPPCMS_GCRYPT_USE_BOOSTER_THREADS
-
-#include <booster/thread.h>
-
-static int nt_mutex_init(void **p)
-{
-	try {
-		*p=new booster::mutex();
-		return 0;
-	}
-	catch(...)
-	{
-		return 1;
-	}
-}
-static int nt_mutex_destroy(void **p)
-{
-	booster::mutex **m=reinterpret_cast<booster::mutex **>(p);
-	delete *m;
-	*m=0;
-	return 0;
-}
-
-static int nt_mutex_lock(void **p)
-{
-	booster::mutex *m=reinterpret_cast<booster::mutex *>(*p);
-	try {
-		m->lock();
-		return 0;
-	}
-	catch(...)
-	{
-		return 1;
-	}
-}
-
-static int nt_mutex_unlock(void **p)
-{
-	booster::mutex *m=reinterpret_cast<booster::mutex *>(*p);
-	try {
-		m->unlock();
-		return 0;
-	}
-	catch(...)
-	{
-		return 1;
-	}
-}
-
-static struct gcry_thread_cbs threads_nt = { 
-	GCRY_THREAD_OPTION_USER,
-	0,
-	nt_mutex_init,
-	nt_mutex_destroy,
-	nt_mutex_lock,
-	nt_mutex_unlock,
-	0,0,0,0,
-	0,0,0,0 
-};
-
-static void set_gcrypt_cbs()
-{
-	gcry_control (GCRYCTL_SET_THREAD_CBS, &threads_nt);
-}
-						
-#else
-
-#include <pthread.h>
-#include <errno.h>
-
-GCRY_THREAD_OPTION_PTHREAD_IMPL;
-
-static void set_gcrypt_cbs()
-{
-	gcry_control (GCRYCTL_SET_THREAD_CBS, &gcry_threads_pthread);
-}
-
-#endif
+#include <cppcms/crypto.h>
+#include <string.h>
+#include <time.h>
 
 
 using namespace std;
@@ -118,73 +39,49 @@ namespace cppcms {
 namespace sessions {
 namespace impl {
 
-namespace {
-class load {
-	public:
-	load() {
-		set_gcrypt_cbs();
-		gcry_check_version(NULL);
-	}
-} loader;
-
-} // anon namespace
-
-void aes_cipher::load()
+aes_cipher::aes_cipher(std::string k,std::string name) 
 {
-	if(loaded_)
-		return;;
-	bool in=false,out=false;
-	try {
-		in=gcry_cipher_open(&hd_in,GCRY_CIPHER_AES,GCRY_CIPHER_MODE_CBC,0) == 0;
-		out=gcry_cipher_open(&hd_out,GCRY_CIPHER_AES,GCRY_CIPHER_MODE_CBC,0) == 0;
-		if(!in || !out){
-			throw cppcms_error("AES cipher initialization failed");
-		}
-	
-		if( gcry_cipher_setkey(hd_in,&key.front(),16) != 0) {
-			throw cppcms_error("AES cipher initialization failed");
-		}
-		if( gcry_cipher_setkey(hd_out,&key.front(),16) != 0) {
-			throw cppcms_error("AES cipher initialization failed");
-		}
-		char iv[16];
-		gcry_create_nonce(iv,sizeof(iv));
-		gcry_cipher_setiv(hd_out,iv,sizeof(iv));
-		loaded_ = true;
-		return;
+	using cppcms::impl::aes_api;
+	if(name == "aes" || name == "aes-128" || name == "aes128") {
+		type_ = aes_api::aes128;
 	}
-	catch(...) {
-		if(in) gcry_cipher_close(hd_in);
-		if(out) gcry_cipher_close(hd_out);
-		throw;
+	else if(name == "aes-192" || name == "aes192")  {
+		type_ = aes_api::aes192;
 	}
-}
-
-aes_cipher::aes_cipher(string k) :
-	loaded_(false)
-{
-	if(k.size()!=32) {
-		throw cppcms_error("AES requires key length of 16 bytes (32 hexadecimal digits)");
+	else if(name == "aes-256" || name == "aes256") {
+		type_ = aes_api::aes256;
+	}
+	else {
+		throw cppcms_error("Unsupported AES algorithm `" + name + "', supported are aes,aes-128, aes-192, aes-256");
 	}
 
-	std::string skey = to_binary(k);
-	key.assign(skey.c_str(),skey.c_str()+skey.size());
+	if(k.size() != unsigned(type_ / 4) ) {
+		std::ostringstream ss;
+		ss << "AES: requires key length for algorithm " << name << " is " << type_/8
+		   << " bytes (" << type_/4 << "hexadecimal digits)";
+		throw cppcms_error(ss.str());
+	}
+
+	key_ = to_binary(k);
 }
 
 aes_cipher::~aes_cipher()
 {
-	if(loaded_) {
-		gcry_cipher_close(hd_in);
-		gcry_cipher_close(hd_out);
-	}
 }
 
-string aes_cipher::encrypt(string const &plain,time_t timeout)
+void aes_cipher::load()
+{
+	if(!api_.get())
+		api_ = cppcms::impl::aes_api::create(type_,key_);
+}
+
+std::string aes_cipher::encrypt(string const &plain,time_t timeout)
 {
 	load();
+
 	size_t block_size=(plain.size() + 15) / 16 * 16;
 
-	vector<unsigned char> data(sizeof(aes_hdr)+sizeof(info)+block_size,0);
+	std::vector<unsigned char> data(sizeof(aes_hdr)+sizeof(info)+block_size,0);
 	copy(plain.begin(),plain.end(),data.begin() + sizeof(aes_hdr)+sizeof(info));
 	aes_hdr &aes_header=*(aes_hdr*)(&data.front());
 	info &header=*(info *)(&data.front()+sizeof(aes_hdr));
@@ -192,27 +89,35 @@ string aes_cipher::encrypt(string const &plain,time_t timeout)
 	header.size=plain.size();
 	memset(&aes_header,0,16);
 
-	gcry_md_hash_buffer(GCRY_MD_MD5,&aes_header.md5,&header,block_size+sizeof(info));
-	gcry_cipher_encrypt(hd_out,&data.front(),data.size(),NULL,0);
+	std::auto_ptr<message_digest> md(message_digest::md5());
+	md->append(&header,block_size+sizeof(info));
+	md->readout(&aes_header.md5);
 
-	return base64_enc(data);
+	std::vector<unsigned char> odata(data.size(),0);
+	api_->encrypt(&data.front(),&odata.front(),data.size());
+
+	return base64_enc(odata);
 }
 
 bool aes_cipher::decrypt(string const &cipher,string &plain,time_t *timeout)
 {
 	load();
-	vector<unsigned char> data;
-	base64_dec(cipher,data);
+	vector<unsigned char> idata;
+	base64_dec(cipher,idata);
 	size_t norm_size=b64url::decoded_size(cipher.size());
 	if(norm_size<sizeof(info)+sizeof(aes_hdr) || norm_size % 16 !=0)
 		return false;
 
-	gcry_cipher_decrypt(hd_in,&data.front(),data.size(),NULL,0);
-	gcry_cipher_reset(hd_in);
-	vector<char> md5(16,0);
-	gcry_md_hash_buffer(GCRY_MD_MD5,&md5.front(),&data.front()+sizeof(aes_hdr),data.size()-sizeof(aes_hdr));
+	vector<unsigned char> data(idata.size(),0);
+	api_->decrypt(&idata.front(),&data.front(),data.size());
+	
+	char md5[16];
+	std::auto_ptr<message_digest> md(message_digest::md5());
+	md->append(&data.front()+sizeof(aes_hdr),data.size()-sizeof(aes_hdr));
+	md->readout(md5);
+	
 	aes_hdr &aes_header = *(aes_hdr*)&data.front();
-	if(!std::equal(md5.begin(),md5.end(),aes_header.md5)) {
+	if(memcmp(md5,aes_header.md5,16)!=0) {
 		return false;
 	}
 	info &header=*(info *)(&data.front()+sizeof(aes_hdr));

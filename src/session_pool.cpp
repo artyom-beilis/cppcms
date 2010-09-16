@@ -36,7 +36,7 @@
     namespace boost = cppcms_boost;
 #endif
 
-#ifdef CPPCMS_HAVE_GCRYPT
+#if defined(CPPCMS_HAVE_GCRYPT) || defined(CPPCMS_HAVE_OPENSSL)
 #include "aes_encryptor.h"
 #endif
 
@@ -200,10 +200,10 @@ void session_pool::init()
 			std::string key = srv.settings().get<std::string>("session.client.key");
 			factory.reset(new enc_factory_param<cppcms::sessions::impl::hmac_cipher>(key,algo));
 		}
-		#ifdef CPPCMS_HAVE_GCRYPT
-		else if(enc=="aes") {
+		#if defined(CPPCMS_HAVE_GCRYPT) || defined(CPPCMS_HAVE_OPENSSL)
+		else if(enc.compare(0,3,"aes") == 0) {
 			std::string key = srv.settings().get<std::string>("session.client.key");
-			factory.reset(new enc_factory<cppcms::sessions::impl::aes_cipher>(key));
+			factory.reset(new enc_factory_param<cppcms::sessions::impl::aes_cipher>(key,enc));
 		}
 		#endif
 		else

@@ -16,39 +16,36 @@
 //  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 ///////////////////////////////////////////////////////////////////////////////
-#ifndef CPPCMS_AES_ENCRYPTOR_H
-#define CPPCMS_AES_ENCRYPTOR_H
+#ifndef CPPCMS_PRIVATE_AES_H
+#define CPPCMS_PRIVATE_AES_H
 
+#include <memory>
 #include <string>
-#include "base_encryptor.h"
-#include "aes.h"
+
 
 namespace cppcms {
-namespace sessions {
 namespace impl {
 
-class CPPCMS_API aes_cipher : public base_encryptor {
-public:
-	aes_cipher(std::string key,std::string name);
-	~aes_cipher();
-	virtual std::string encrypt(std::string const &plain,time_t timeout);
-	virtual bool decrypt(std::string const &cipher,std::string &plain,time_t *timeout=NULL) ;
-private:
-	struct aes_hdr {
-		char salt[16];
-		char md5[16];
-	};
-	void load();
-	std::auto_ptr<cppcms::impl::aes_api> api_;
-	cppcms::impl::aes_api::aes_type type_;
-	std::string key_;
+	struct aes_api {
+		typedef enum { 
+			aes128 = 128,
+			aes192 = 192,
+			aes256 = 256 
+		} aes_type;
+	
+		virtual ~aes_api()
+		{
+		}
+		virtual aes_api *clone() const = 0;
+		virtual void encrypt(void const *in,void *out,unsigned len) = 0;
+		virtual void decrypt(void const *in,void *out,unsigned len) = 0;
 
-};
+		static std::auto_ptr<aes_api> create(aes_type type,std::string const &key);
+	};
 
 } // impl
-} // sessions
-} // cppcms
+	
+} //cppcms
 
 
 #endif
-

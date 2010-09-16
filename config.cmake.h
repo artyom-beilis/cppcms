@@ -80,6 +80,9 @@
 /* "Enable GNU GCrypt library */
 #cmakedefine CPPCMS_HAVE_GCRYPT
 
+/* "Enable OpenSSL library */
+#cmakedefine CPPCMS_HAVE_OPENSSL
+
 /* "Have std::wstring" */
 #cmakedefine CPPCMS_HAVE_STD_WSTRING
 

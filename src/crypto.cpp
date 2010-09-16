@@ -16,10 +16,14 @@
 //  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 ///////////////////////////////////////////////////////////////////////////////
+#define CPPCMS_SOURCE
 #include <cppcms/crypto.h>
 #include <cppcms/config.h>
 #ifdef CPPCMS_HAVE_GCRYPT
 #  include <gcrypt.h>
+#endif
+#ifdef CPPCMS_HAVE_OPENSSL
+#  include <openssl/sha.h>
 #endif
 #include <vector>
 #include <stdexcept>
@@ -175,6 +179,62 @@ namespace cppcms {
 		};
 
 		#endif
+
+		#ifdef CPPCMS_HAVE_OPENSSL
+		
+		#define CPPCMS_SSL_MD(len,base_len)				\
+		class ssl_sha##len : public message_digest {			\
+		public:								\
+			ssl_sha##len() 						\
+			{							\
+				SHA ## len ## _Init(&state_);			\
+			}							\
+			virtual message_digest *clone() const			\
+			{							\
+				return new ssl_sha##len();			\
+			}							\
+			virtual ~ssl_sha##len()					\
+			{							\
+				memset(&state_,0,sizeof(state_));		\
+			}							\
+			virtual void append(void const *ptr,size_t size) 	\
+			{							\
+				SHA ## len ## _Update(&state_,ptr,size);	\
+			}							\
+			virtual void readout(void *ptr)				\
+			{							\
+				SHA ## len ## _Final(				\
+					(unsigned char *)(ptr),			\
+					&state_					\
+					);					\
+				SHA ## len ## _Init(&state_);			\
+			}							\
+			virtual char const *name() const			\
+			{							\
+				return "sha" #len;				\
+			}							\
+			virtual unsigned digest_size() const			\
+			{							\
+				return len / 8;					\
+			}							\
+			virtual unsigned block_size() const			\
+			{							\
+				if (len >= 384)					\
+					return 128;				\
+				else						\
+					return 64;				\
+			}							\
+		private:							\
+			SHA ## base_len ##	_CTX state_;			\
+		};
+
+		CPPCMS_SSL_MD(224,256)
+		CPPCMS_SSL_MD(256,256)
+		CPPCMS_SSL_MD(384,512)
+		CPPCMS_SSL_MD(512,512)
+
+		#endif
+
 	} // anon
 	
 	std::auto_ptr<message_digest> message_digest::md5()
@@ -210,6 +270,18 @@ namespace cppcms {
 		else if(name == "sha512")
 			d.reset(new gcrypt_digets(GCRY_MD_SHA512));
 		#endif
+
+		#ifdef CPPCMS_HAVE_OPENSSL
+		else if(name == "sha224")
+			d.reset(new ssl_sha224());
+		else if(name == "sha256")
+			d.reset(new ssl_sha256());
+		else if(name == "sha384")
+			d.reset(new ssl_sha384());
+		else if(name == "sha512")
+			d.reset(new ssl_sha512());
+		#endif
+		
 		return d;
 	}
 

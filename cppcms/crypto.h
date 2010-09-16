@@ -26,34 +26,97 @@
 #include <string>
 
 namespace cppcms {
+	///
+	/// \brief this class provides an API to calculate various cryptographic hash functions
+	///
 	class CPPCMS_API message_digest : public booster::noncopyable {
-	public:
+	protected:
+		/// It should be implemented in derived classes
 		message_digest()
 		{
 		}
+	public:
 		virtual ~message_digest()
 		{
 		}
 		
+		///
+		/// Get the size of message digest, for example for MD5 it is 16, for SHA1 it is 20
+		///
 		virtual unsigned digest_size() const = 0;
+		///
+		/// Get processing block size, returns 64 or 128, used mostly for correct HMAC calculations
+		///
 		virtual unsigned block_size() const = 0;
+
+		///
+		/// Add more data of size bytes for processing
+		///
 		virtual void append(void const *ptr,size_t size) = 0;
+		///
+		/// Read the message digest for the data and reset it into initial state,
+		/// provided buffer must be digest_size() bytes
+		///
 		virtual void readout(void *ptr) = 0;
+
+		///
+		/// Make a polymorphic copy of this object, note the state of copied object is reset to 
+		/// initial
+		///
 		virtual message_digest *clone() const = 0;
+
+		///
+		/// Get the name of the hash function
+		///
 		virtual char const *name() const = 0;
 
+		///
+		/// Create MD5 message digest
+		///
 		static std::auto_ptr<message_digest> md5();
+		///
+		/// Create SHA1 message digest
+		///
 		static std::auto_ptr<message_digest> sha1();
+		///
+		/// Create message digest by name, more then sha1 and md5 may be supported,
+		/// if CppCMS is compiled with cryptography library like libgcrypt or openssl
+		///
 		static std::auto_ptr<message_digest> create_by_name(std::string const &name);
 	};
 	
+	///
+	/// This object calculates the HMAC signature for the input data
+	///
 	class CPPCMS_API hmac : public booster::noncopyable  {
 	public:
+		///
+		/// Create hmac that uses given \a digest algorithm and a binary key - \a key
+		///
 		hmac(std::auto_ptr<message_digest> digest,std::string const &key);
+		///
+		/// Create hmac that uses message digest algorithm called \a name and use a binary key - \a key
+		///
 		hmac(std::string const &name,std::string const &key);
 		~hmac();
+
+		///
+		/// Get the size of the signtature
+		///
 		unsigned digest_size() const;
+
+		///
+		/// Add data for signing
+		///
 		void append(void const *ptr,size_t size);
+
+		///
+		/// Get the signature for all the data, after calling this function
+		/// the state of the hmac is reset and it can't be used again for
+		/// signing the data.
+		///
+		/// Note: provided buffer must be digest_size() bytes long.
+		///
 		void readout(void *ptr);
 	private:
 		void init(std::string const &);	

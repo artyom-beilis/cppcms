@@ -20,7 +20,7 @@
 #include <cppcms/session_cookies.h>
 #include <cppcms/crypto.h>
 #include "hmac_encryptor.h"
-#ifdef CPPCMS_HAVE_GCRYPT
+#if defined(CPPCMS_HAVE_GCRYPT) || defined(CPPCMS_HAVE_OPENSSL)
 #include "aes_encryptor.h"
 #endif
 #include "test.h"
@@ -30,12 +30,11 @@
 
 
 template<typename Encryptor>
-void run_test(bool is_signature = false) 
+void run_test(std::string name,std::string key,bool is_signature = false) 
 {
-	std::string key="261965ba80a79c034c9ae366a19a2627";
 	char c1=key[0];
 	char c2=key[31];
-	std::auto_ptr<cppcms::sessions::encryptor> enc(new Encryptor(key));
+	std::auto_ptr<cppcms::sessions::encryptor> enc(new Encryptor(key,name));
 	time_t now=time(0)+5;
 	std::string cipher=enc->encrypt("Hello World",now);
 	std::string plain;
@@ -68,14 +67,14 @@ void run_test(bool is_signature = false)
 	TEST(!enc->decrypt(cipher,plain,&time));
 	cipher=enc->encrypt("test",now);
 	key[0]=c1+1;
-	enc.reset(new Encryptor(key));
+	enc.reset(new Encryptor(key,name));
 	TEST(!enc->decrypt(cipher,plain,&time));
 	key[0]=c1;
 	key[31]=c2+1;
-	enc.reset(new Encryptor(key));
+	enc.reset(new Encryptor(key,name));
 	TEST(!enc->decrypt(cipher,plain,&time));
 	key[31]=c2;
-	enc.reset(new Encryptor(key));
+	enc.reset(new Encryptor(key,name));
 	TEST(enc->decrypt(cipher,plain,&time) && plain=="test" && time==now);
 	// Salt works
 	if(!is_signature) {
@@ -108,7 +107,7 @@ std::string get_diget(MD &d,std::string const &source)
 void test_crypto()
 {
 	using namespace cppcms;
-	std::cout << "- testing sha1/md5" << std::endl;
+	std::cout << "-- testing sha1/md5" << std::endl;
 	TEST(message_digest::md5().get());
 	TEST(message_digest::sha1().get());
 	TEST(message_digest::md5()->name() == std::string("md5"));
@@ -129,7 +128,7 @@ void test_crypto()
 		TEST(get_diget(*d,"")=="da39a3ee5e6b4b0d3255bfef95601890afd80709");
 		TEST(get_diget(*d,"Hello World!")=="2ef7bde608ce5404e97d5f042f95f89f1c232871");
 	}
-	std::cout << "- testing hmac-sha1/md5" << std::endl;
+	std::cout << "-- testing hmac-sha1/md5" << std::endl;
 	{
 		hmac d("md5","Jefe");
 		TEST(get_diget(d,"what do ya want for nothing?") == "750c783e6ab0b503eaa86e310a5db738");
@@ -139,8 +138,8 @@ void test_crypto()
 		TEST(get_diget(d,"what do ya want for nothing?") == "4891f8cf6a4641897159756847369d1a");
 	}
 
-	#ifdef CPPCMS_HAVE_GCRYPT
-	std::cout << "- testing shaXXX " << std::endl;
+	#if defined(CPPCMS_HAVE_GCRYPT) || defined(CPPCMS_HAVE_OPENSSL)
+	std::cout << "-- testing shaXXX " << std::endl;
 	{
 		std::auto_ptr<message_digest> d(message_digest::create_by_name("sha256"));
 		TEST(d->name() == std::string("sha256"));
@@ -158,15 +157,36 @@ void test_crypto()
 int main()
 {
 	try {
-		std::cout << "Testing basic cryptography" << std::endl;
+		std::cout << "- Testing basic cryptography functions" << std::endl;
 
 		test_crypto();
 
-		std::cout << "Testing hmac cookies signature" << std::endl;
-		run_test<cppcms::sessions::impl::hmac_cipher>(true);
-		#ifdef CPPCMS_HAVE_GCRYPT
-		std::cout << "Testing aes cookies encryptor" << std::endl;
-		run_test<cppcms::sessions::impl::aes_cipher>();
+		std::string key="261965ba80a79c034c9ae366a19a2627";
+
+		std::cout << "- Testing internal cryptography library" << std::endl;
+		std::cout << "-- Testing hmac cookies signature" << std::endl;
+		run_test<cppcms::sessions::impl::hmac_cipher>("sha1",key,true);
+		run_test<cppcms::sessions::impl::hmac_cipher>("md5",key,true);
+		#if defined(CPPCMS_HAVE_GCRYPT) || defined(CPPCMS_HAVE_OPENSSL)
+		std::cout << "- Testing external cryptography library" << std::endl;
+		std::cout << "-- Testing hmac cookies signature" << std::endl;
+		std::cout << "--- hmac-sha224" << std::endl;
+		run_test<cppcms::sessions::impl::hmac_cipher>("sha224",key,true);
+		std::cout << "--- hmac-sha256" << std::endl;
+		run_test<cppcms::sessions::impl::hmac_cipher>("sha256",key,true);
+		std::cout << "--- hmac-sha384" << std::endl;
+		run_test<cppcms::sessions::impl::hmac_cipher>("sha384",key,true);
+		std::cout << "--- hmac-sha512" << std::endl;
+		run_test<cppcms::sessions::impl::hmac_cipher>("sha512",key,true);
+		std::cout << "-- Testing aes cookies encryption" << std::endl;
+		std::cout << "--- aes" << std::endl;
+		run_test<cppcms::sessions::impl::aes_cipher>("aes",key);
+		std::cout << "--- aes128" << std::endl;
+		run_test<cppcms::sessions::impl::aes_cipher>("aes128",key);
+		std::cout << "--- aes192" << std::endl;
+		run_test<cppcms::sessions::impl::aes_cipher>("aes192",key + key.substr(16));
+		std::cout << "--- aes256" << std::endl;
+		run_test<cppcms::sessions::impl::aes_cipher>("aes256",key + key);
 		#endif
 	}
 	catch(std::exception const &e) {

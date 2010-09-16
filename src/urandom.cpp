@@ -65,7 +65,11 @@ namespace cppcms {
 
 #else
 
-#include <fstream>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <fcntl.h>
+#include <unistd.h>
+
 
 namespace cppcms {
 	struct urandom_device::_data {};
@@ -78,10 +82,15 @@ namespace cppcms {
 	}
 	void urandom_device::generate(void *ptr,unsigned len)
 	{
-		std::ifstream u("/dev/urandom");
-		if(u.good() && !u.read(reinterpret_cast<char *>(ptr),len).fail() && u.gcount()==int(len))
+		if(len == 0)
 			return;
-		throw cppcms_error("Failed to read /dev/urandom");
+		int fd = open("/dev/urandom",O_RDONLY);
+		if(!fd) 
+			throw cppcms_error("Failed to open /dev/urandom");
+		int n = read(fd,ptr,len);
+		close(fd);
+		if(n!=int(len))
+			throw cppcms_error("Failed to read /dev/urandom");
 	}
 }
 

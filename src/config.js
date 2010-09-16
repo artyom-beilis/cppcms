@@ -1,4 +1,4 @@
-// CppCMS Configuration file
+/// CppCMS Configuration file
 // Extended JSON format, "//" like comments are allowed
 
 {
@@ -49,17 +49,17 @@
 		// "buffer" : 4096
 	},
 	"localization" : {
-		"encoding" : "UTF-8",
+		"backend" : "winapi",
 		"messages" : {
 			"paths" : [ "./transtext/locale" ],
 			"domains" : [ "test", "app" ]
 		},
-		//"locales" : [ "he_IL.UTF-8", "en_US.UTF-8", "he_IL.UTF-8@calendar=hebrew" ],
+		"locales" : [ "en_US.UTF-8", "en_US.UTF-8", "he_IL.UTF-8@calendar=hebrew" ],
 		"disable_charset_in_content_type" : false	// Disable 
 	},
 	"session" : {
 		"expire" : "browser",
-		"timeout" : 10, // seconds
+		"timeout" : 600, // seconds
 		"cookies" : {
 			"prefix" : "cppcms_session",
 			"domain" : "",
@@ -72,11 +72,11 @@
 		"client_size_limit" : 1000,
 		"gc" : 10,
 		"client" : { 
-			"encryptor" : "hmac-sha1",  // "hmac" = "hmac-sha1", "hmac-md5", "hmac-sha224", "hmac-sha384", "hmac-sha256", "hmac-sha512"
-			//"encryptor" : "aes", 
+			//"encryptor" : "hmac-sha1",  // "hmac" = "hmac-sha1", "hmac-md5", "hmac-sha224", "hmac-sha384", "hmac-sha256", "hmac-sha512"
+			//"encryptor" : "hmac-sha512",  // "hmac" = "hmac-sha1", "hmac-md5", "hmac-sha224", "hmac-sha384", "hmac-sha256", "hmac-sha512"
+			"encryptor" : "aes", 
 			// aes or hmac -- hmac -- signature only, aes -- encryption and signature
 			"key" : "261965ba80a79c034c9ae366a19a2627"
-			// 32 digit hexadecimal secret number
 		},
 		"server" : {
 			"storage" : "files",
