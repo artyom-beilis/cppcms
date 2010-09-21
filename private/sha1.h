@@ -18,7 +18,6 @@
 #ifndef CPPCMS_PRIVATE_SHA1_H
 #define CPPCMS_PRIVATE_SHA1_H
 
-#include <boost/static_assert.hpp>
 #include <cstddef>
 
 namespace cppcms {
