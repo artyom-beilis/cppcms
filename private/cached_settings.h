@@ -8,12 +8,14 @@ namespace impl {
 			long long content_length_limit;
 			int file_in_memory_limit;
 			std::string uploads_path;
+			bool display_error_message;
 			cached_security(json::value const &v) 
 			{
 				multipart_form_data_limit = v.get("security.multipart_form_data_limit",64*1024);
 				content_length_limit = v.get("security.content_length_limit",1024);
 				file_in_memory_limit = v.get("security.file_in_memory_limit",128*1024);
 				uploads_path = v.get("security.uploads_path","");
+				display_error_message = v.get("security.display_error_message",false);
 			}
 		} security;
 		struct cached_fastcgi {

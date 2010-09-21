@@ -31,6 +31,8 @@
 #include <cppcms/cppcms_error.h>
 #include <booster/log.h>
 
+#include "cached_settings.h"
+
 #include <cppcms/config.h>
 #ifdef CPPCMS_USE_EXTERNAL_BOOST
 #   include <boost/bind.hpp>
@@ -38,6 +40,8 @@
 #   include <cppcms_boost/bind.hpp>
     namespace boost = cppcms_boost;
 #endif
+
+
 
 
 namespace cppcms {
@@ -140,7 +144,10 @@ void context::dispatch(booster::intrusive_ptr<application> app,std::string url,b
 		BOOSTER_ERROR("cppcms") << "Caught exception ["<<e.what()<<"]";
 		if(app->get_context()) {
 			if(!app->response().some_output_was_written()) {
-				app->response().make_error_response(http::response::internal_server_error,e.what());
+				if(app->service().cached_settings().security.display_error_message)
+					app->response().make_error_response(http::response::internal_server_error,e.what());
+				else
+					app->response().make_error_response(http::response::internal_server_error);
 			}
 		}
 	}

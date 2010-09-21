@@ -254,11 +254,17 @@ public:
 		dispatcher().assign("^/forward$",&hello::forward,this);
 		dispatcher().assign("^/form$",&hello::form,this);
 		dispatcher().assign("^/cache/?$",&hello::cached,this);
+		dispatcher().assign("^/throw/?$",&hello::throw_it,this);
 		dispatcher().assign("^/session/?$",&hello::session_test,this);
 		dispatcher().assign(".*",&hello::hello_world,this);
 	}
 	~hello()
 	{
+	}
+
+	void throw_it()
+	{
+		throw std::runtime_error("This is my secret error message");
 	}
 
 	void session_test()
