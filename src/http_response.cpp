@@ -73,14 +73,18 @@ namespace {
 
 namespace  {
 	class output_device : public boost::iostreams::sink {
-		impl::cgi::connection *conn_;
+		booster::weak_ptr<impl::cgi::connection> conn_;
 	public:
-		output_device(impl::cgi::connection *conn) : conn_(conn) {}
+		output_device(impl::cgi::connection *conn) : conn_(conn->shared_from_this()) {}
 		std::streamsize write(char const *data,std::streamsize n)
 		{
 			if(n==0)
 				return 0;
-			return conn_->write(data,n);
+			booster::shared_ptr<impl::cgi::connection> c = conn_.lock();
+			if(c) {
+				return c->write(data,n);
+			}
+			return 0;
 		}
 	};
 }
