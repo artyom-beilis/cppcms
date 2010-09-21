@@ -10,21 +10,51 @@
 
 namespace booster {
 
+	///
+	/// \brief This class is a base class of generic I/O device that can be
+	/// used in very simple manner with booster::streambuf allowing to create
+	/// iostreams easily
+	///
+
 	class io_device {
 	public:
+		///
+		/// Seek reference 
+		///
 		typedef enum {
-			set,
-			cur,
-			end
+			set, //!< Set actual position (i.e. SEEK_CUR)
+			cur, //!< Set relatively to current position (i.e. SEEK_CUR)
+			end  //!< Set relatively to end of file (i.e. SEEK_END)
 		} pos_type;
+
+		///
+		/// Read \a length bytes from the stream to buffer \a pos, return number of bytes
+		/// actually read. If return value is less then length, it is considered end of file
+		///
+		/// If the stream is write only, do not implement (returns EOF by default)
+		///
 		virtual size_t read(char *pos,size_t length)
 		{
 			return 0;
 		}
+		///
+		/// Write \a length bytes to the devise from buffer \a pos, return number of bytes
+		/// actually written, if the result is less then \a length, considered as EOF.
+		///
+		/// If the stream is read only, do not implement (returns EOF by default)
+		///
 		virtual size_t write(char const *pos,size_t length)
 		{
 			return 0;
 		}
+		///
+		/// Seek the device to \a position relatively to \a pos. Return current position
+		/// in file.
+		///
+		/// If error occurs return -1.
+		///
+		/// If the stream is not seekable do not reimplement, returns -1 by default.
+		///
 		virtual long long seek(long long position,pos_type pos = set)
 		{
 			return -1;
@@ -34,6 +64,9 @@ namespace booster {
 		}
 	};
 
+	///
+	/// \brief this is an implementation of generic streambuffer
+	///
 	class BOOSTER_API streambuf : public std::streambuf {
 	public:
 
@@ -61,6 +94,7 @@ namespace booster {
 		// Get
 		
 		virtual int underflow();
+		virtual int pbackfail(int c = EOF);
 
 		// Put
 		

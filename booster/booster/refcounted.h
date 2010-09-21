@@ -27,6 +27,11 @@ namespace booster {
 	void intrusive_ptr_add_ref(refcounted *ptr);
 	void intrusive_ptr_release(refcounted *ptr);
 
+	///
+	/// \brief This class is used as base class for reference counted
+	/// objects that use intrusive_ptr. Deriving from this class
+	/// allows simple way to manage reference counting for single object
+	///
 	class refcounted {
 	public:
 		refcounted() :
@@ -46,11 +51,17 @@ namespace booster {
 		refcounted const &operator=(refcounted const &other);
 		atomic_counter refs_;
 	};
-	
+
+	///
+	/// Increase reference count
+	///	
 	inline void intrusive_ptr_add_ref(refcounted *p)
 	{
 		++p->refs_;
 	}
+	///
+	/// Decrease reference count, if it goes to 0, destroy the object
+	///
 	inline void intrusive_ptr_release(refcounted *p)
 	{
 		if(p && --p->refs_ == 0)

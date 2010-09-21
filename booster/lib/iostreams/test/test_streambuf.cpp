@@ -130,6 +130,48 @@ int main()
 			TEST(in.eof());
 		}
 		{
+			std::cout << "Testing input device, putback" << std::endl;
+			std::string test("Hello World\ndone");
+			input id(&test);
+			booster::streambuf buf;
+			buf.set_buffer_size(2);
+			buf.device(id);
+			std::istream in(&buf);
+			std::string s;
+			TEST(in.get() == 'H');
+			TEST(in.get() == 'e');
+			TEST(in.get() == 'l');
+			TEST(in.get() == 'l');
+			TEST(in.putback('l'));
+			TEST(in.putback('l'));
+			TEST(in.putback('e'));
+			TEST(in.get() == 'e');
+			TEST(in.get() == 'l');
+			TEST(in.get() == 'l');
+			TEST(in.get() == 'o');
+			TEST(in.putback('o'));
+			TEST(in.get() == 'o');
+			TEST(in.get() == ' ');
+			TEST(in.unget());
+			TEST(in.get() == ' ');
+			TEST(!in.putback('x'));
+		}
+		{
+			std::cout << "Testing input device, putback fail" << std::endl;
+			std::string test("Hello World\ndone");
+			input id(&test);
+			booster::streambuf buf;
+			buf.set_buffer_size(2);
+			buf.device(id);
+			std::istream in(&buf);
+			std::string s;
+			TEST(in.get() == 'H');
+			TEST(in.get() == 'e');
+			TEST(in.get() == 'l');
+			TEST(in.get() == 'l');
+			TEST(!in.unget() || !in.unget() || !in.unget());
+		}
+		{
 			std::cout << "Testing output device" << std::endl;
 			std::string test;
 			output id(&test,5);

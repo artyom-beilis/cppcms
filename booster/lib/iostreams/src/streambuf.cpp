@@ -43,7 +43,7 @@ namespace booster {
 
 	int streambuf::underflow()
 	{
-		if(buffer_in_.empty())
+		if(buffer_in_.empty() || buffer_in_.size() > buffer_size_)
 			buffer_in_.resize(buffer_size_);
 		char *buf_ptr = &buffer_in_.front();
 		std::streamsize n=device().read(buf_ptr,buffer_in_.size());
@@ -51,6 +51,27 @@ namespace booster {
 		if(n==0)
 			return EOF;
 		return *buf_ptr;
+	}
+
+	int streambuf::pbackfail(int c)
+	{
+		if(buffer_in_.empty()) {
+			return EOF;
+		}
+		if(gptr()!=eback()) {
+			gbump(-1);
+			if(c!=EOF && *gptr()!=c) {
+				return EOF;
+			}
+			return 0;
+		}
+		if(c==EOF)
+			return EOF;
+		int len = egptr() - eback();
+		buffer_in_.insert(buffer_in_.begin(),char(c));
+		char *buf_ptr = &buffer_in_.front();
+		setg(buf_ptr,buf_ptr,buf_ptr+len + 1);
+		return 0;
 	}
 
 	io_device &streambuf::device()
