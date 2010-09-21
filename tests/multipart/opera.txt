@@ -1,0 +1,15 @@
+------------jrFLC4hxayof1KyJEgmmCw
+Content-Disposition: form-data; name="submit-name"
+
+שלום
+------------jrFLC4hxayof1KyJEgmmCw
+Content-Disposition: form-data; name="file"; filename="שלום.txt"
+Content-Type: text/plain
+
+שלום עולם!
+
+------------jrFLC4hxayof1KyJEgmmCw
+Content-Disposition: form-data; name="submit"
+
+Send
+------------jrFLC4hxayof1KyJEgmmCw--

@@ -1,51 +1,11 @@
-Version 0.0.7, 2010-09-15
-=========================
-
-Security Bug:
-
-- Fixed: generation of hmac with too small block size
-
-Version 0.0.6, 2010-04-17
-=========================
-
-Bugs:
-
-- Fixed: crashes when using aes cookies encryption on multi-core systems.
-
-Version 0.0.5, 2010-01-11
-=========================
-
-Security Bug:
-
-- Workaround of CgiCC bug that may cause process shutdown in case of
-  huge POST requests - DoS.
-- Fixed generation of session ids that could create session ids
-  with very low entropy -- guessable SID.
-
-Bugs:
-
-- Fixed: incorrect update of "exposed" session values, when
-  renewing session life time.
-- Fixed: bug that prevent using FastCGI/SCGI over TCP.
-- Fixed: build fault when using --boost-suffix configure option
-- Fixed: incorrect generation of status headers in case of errors.
-- Fixed: build issues with gcc-4.4.1
-- Fixed: various issues with for Intel Compiler support.
-
-Improvements:
-
-------------
-- Removed all unnecessary classes from views -- compilation
-  time speedup up to 3.2 times (of views)
-
-Version 0.0.4, 2009-02-20
-=========================
+Version 0.0.4
+=============
 
 - Embedded system configuration support
-- Identifiers like "$1" are deprecated
+- Identifiers like "$1" are depricated
 
-Version 0.0.3, 2009-02-09
-=========================
+Version 0.0.3
+=============
 
 - Forms API cleanup
 - Fixed configuration with latest autoconf/automake
@@ -61,4 +21,6 @@ Version 0.0.3, 2009-02-09
 - Added "notriggers" to store cache functions as well
 - Fixed incorrect triggers behavior in cache_iface.
 
+Version 0.0.2
+=============
 

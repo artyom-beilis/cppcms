@@ -1,0 +1,41 @@
+# Architecture of CppCMS framework
+
+Application flow:
+
+   - Several forked processes listen on the socket of cgi-like protocol: scgi, fcgi, http;
+   - One of the processes accepts new connection and starts reading headers of the request.
+
+
+
+Classes
+
+  - http::request
+  - http::context
+    - Owns
+	- session
+	- cache
+	- locale
+  - cgi::api (shared_from_this)
+    - Owns
+    	- http::request
+	- http::response
+    	- http::context
+	- application
+  - app::application
+  - app::pool
+  - thread::pool
+
+
+  cgi::io created withing accept.
+  once accepted:
+  	async read headers
+	request object from pool
+	async read post data and create request
+	create context and response
+	do 
+		proceed handler
+	while incomplete handlers exist
+	write data to output
+
+		
+		

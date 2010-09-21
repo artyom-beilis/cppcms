@@ -1,0 +1,15 @@
+- Unit Testing:
+  - Templates
+  - Templates dynamic reloading?
+  - Cache **Interface**
+  - Sessions **Interface**  
+  - Encoding Validators
+  - Url Dispatcher
+- File upload:
+  - create better pre-upload validation
+  - create saving file to file
+- Reintergrate Sessions over TCP/IP
+- Forwarding management
+- Prefork-support
+- form.*
+	Date-Time

@@ -1,0 +1,696 @@
+#!/usr/bin/env bash
+
+
+
+locate_server()
+{
+	NAME=$1
+	if [ "$WEB_SERVER" != "" ] ; then
+		return
+	fi
+	WEB_SERVER="`which $NAME 2>/dev/null`"
+	if [ "$WEB_SERVER" != "" ] ; then
+		return
+	fi
+	for p in /usr/bin /usr/sbin /usr/local/bin /usr/local/sbin \
+		/sbin /bin /opt/sbin /opt/bin /usr/$NAME/bin /usr/$NAME/sbin /usr/local/$NAME/sbin /usr/local/$NAME/bin ;
+	do
+		if [ -x "$p/$NAME" ] ; then
+			WEB_SERVER="$p/$NAME"
+			return
+		elif [ -x "$p/$NAME.exe" ] ; then
+			WEB_SERVER="$p/$NAME.exe"
+			return
+		fi
+	done
+	if [ "$2" == "exit" ] ; then
+		echo "Failed to locate server $NAME, exitting"
+		echo "Try providing PATH valiable"
+		exit 1
+	fi
+}
+
+lighttpd() {
+
+locate_server lighttpd $1
+[ "$WEB_SERVER" == "" ] && return
+
+CONFIG_FILE=$DIR/lighty.conf
+
+case $API in
+	fastcgi) ;;
+	scgi) ;;
+	http)	if [ "$SOCKET" != "" ]; then
+			if [ "$1" == "exit" ]; then
+				echo "http is supported over TCP/IP only" ; exit 1 
+			else
+				WEB_SERVER=""
+				return
+			fi
+		fi
+
+		;;
+	*) 
+		if [ "$1" == "exit" ]; then
+			echo "Mod $API is not supported by lightppd" ; exit 1 
+		else
+			WEB_SERVER=""
+			return
+		fi
+	;;
+esac
+
+if [ "$API" == "http" ]; then
+	LIGHTTPD_MODULE=proxy
+else
+	LIGHTTPD_MODULE=$API
+fi
+
+
+cat > $CONFIG_FILE << EOF
+
+server.modules              = ("mod_$LIGHTTPD_MODULE")
+server.document-root        = "$ROOT"
+server.pid-file		    = "$PID_FILE"
+# mimetype mapping
+mimetype.assign             = (
+  ".pdf"          =>      "application/pdf",
+  ".sig"          =>      "application/pgp-signature",
+  ".spl"          =>      "application/futuresplash",
+  ".class"        =>      "application/octet-stream",
+  ".ps"           =>      "application/postscript",
+  ".torrent"      =>      "application/x-bittorrent",
+  ".dvi"          =>      "application/x-dvi",
+  ".gz"           =>      "application/x-gzip",
+  ".pac"          =>      "application/x-ns-proxy-autoconfig",
+  ".swf"          =>      "application/x-shockwave-flash",
+  ".tar.gz"       =>      "application/x-tgz",
+  ".tgz"          =>      "application/x-tgz",
+  ".tar"          =>      "application/x-tar",
+  ".zip"          =>      "application/zip",
+  ".mp3"          =>      "audio/mpeg",
+  ".m3u"          =>      "audio/x-mpegurl",
+  ".wma"          =>      "audio/x-ms-wma",
+  ".wax"          =>      "audio/x-ms-wax",
+  ".ogg"          =>      "application/ogg",
+  ".wav"          =>      "audio/x-wav",
+  ".gif"          =>      "image/gif",
+  ".jpg"          =>      "image/jpeg",
+  ".jpeg"         =>      "image/jpeg",
+  ".png"          =>      "image/png",
+  ".xbm"          =>      "image/x-xbitmap",
+  ".xpm"          =>      "image/x-xpixmap",
+  ".xwd"          =>      "image/x-xwindowdump",
+  ".css"          =>      "text/css",
+  ".html"         =>      "text/html",
+  ".htm"          =>      "text/html",
+  ".js"           =>      "text/javascript",
+  ".asc"          =>      "text/plain",
+  ".c"            =>      "text/plain",
+  ".cpp"          =>      "text/plain",
+  ".log"          =>      "text/plain",
+  ".conf"         =>      "text/plain",
+  ".text"         =>      "text/plain",
+  ".txt"          =>      "text/plain",
+  ".dtd"          =>      "text/xml",
+  ".xml"          =>      "text/xml",
+  ".mpeg"         =>      "video/mpeg",
+  ".mpg"          =>      "video/mpeg",
+  ".mov"          =>      "video/quicktime",
+  ".qt"           =>      "video/quicktime",
+  ".avi"          =>      "video/x-msvideo",
+  ".asf"          =>      "video/x-ms-asf",
+  ".asx"          =>      "video/x-ms-asf",
+  ".wmv"          =>      "video/x-ms-wmv",
+  ".bz2"          =>      "application/x-bzip",
+  ".tbz"          =>      "application/x-bzip-compressed-tar",
+  ".tar.bz2"      =>      "application/x-bzip-compressed-tar",
+  # default mime type
+  ""              =>      "application/octet-stream",
+ )
+
+server.port = $PORT
+server.bind = "$HOST"
+
+
+$LIGHTTPD_MODULE.server = ( "$SCRIPT" => ( "localhost" => (
+EOF
+
+if [ "$LIGHTTPD_MODULE" != "http" ]; then
+cat >> $CONFIG_FILE << EOF
+  "check-local" => "disable",
+EOF
+fi
+
+if [ "$SOCKET" != "" ]; then
+cat >> $CONFIG_FILE << EOF
+  "socket" => "$SOCKET"
+EOF
+else
+
+cat >> $CONFIG_FILE << EOF
+  "host" => "$SERVICE_IP",
+  "port" => $SERVICE_PORT
+EOF
+
+fi
+
+cat >> $CONFIG_FILE << EOF
+  )))
+
+EOF
+
+WEB_SERVER="$WEB_SERVER -f $CONFIG_FILE"
+
+}
+
+nginx()
+{
+
+locate_server nginx $1
+
+[ "$WEB_SERVER" == "" ] && return
+
+case $API in
+	fastcgi) ;;
+	http)	if [ "$SOCKET" != "" ]; then
+			if [ "$1" == "exit" ]; then
+				echo "http is supported over TCP/IP only" ; exit 1 
+			else
+				WEB_SERVER=""
+				return
+			fi
+		fi
+
+		;;
+	*) 
+		if [ "$1" == "exit" ]; then
+			echo "Mod $API is not supported by lightppd" ; exit 1 
+		else
+			WEB_SERVER=""
+			return
+		fi
+	;;
+esac
+
+CONFIG_FILE=$DIR/cppcms-nginx.conf 
+
+# This is fix for cygwin specific issue
+# of select
+
+case `uname` in 
+	*CYGWIN*) EVENT="use poll;" ;;
+esac
+
+if [ "$SOCKET" != "" ]; then
+	SERVICE_POINT="unix:$SOCKET"
+else
+	SERVICE_POINT="$SERVICE_IP:$SERVICE_PORT"
+fi
+
+
+cat >$CONFIG_FILE <<EOF
+
+worker_processes  1;
+
+pid $PID_FILE;
+error_log  $DIR/nginx.log;
+
+events {
+    worker_connections  1024;
+    $EVENT
+}
+
+http {
+    	access_log off;
+	types {
+	    text/html                             html htm shtml;
+	    text/css                              css;
+	    text/xml                              xml rss;
+	    image/gif                             gif;
+	    image/jpeg                            jpeg jpg;
+	    application/x-javascript              js;
+
+	    text/plain                            txt;
+	    text/x-component                      htc;
+	    text/mathml                           mml;
+	
+	    image/png                             png;
+	    image/x-icon                          ico;
+	    image/x-jng                           jng;
+	    image/vnd.wap.wbmp                    wbmp;
+	
+	    application/pdf                       pdf;
+	    application/zip                       zip;
+	
+	    audio/mpeg                            mp3;
+	    audio/x-realaudio                     ra;
+	
+	    video/mpeg                            mpeg mpg;
+	    video/quicktime                       mov;
+	    video/x-flv                           flv;
+	    video/x-msvideo                       avi;
+	    video/x-ms-wmv                        wmv;
+	    video/x-ms-asf                        asx asf;
+	    video/x-mng                           mng;
+	} 
+    	default_type  application/octet-stream;
+
+    sendfile        on;
+    keepalive_timeout  65;
+    tcp_nodelay        on;
+
+    gzip  off;
+
+    server {
+        listen       $HOST:$PORT;
+        server_name  localhost;
+
+        root   $ROOT;
+
+        location / {
+            index  index.html index.htm;
+        }
+EOF
+
+if [ "$API" != "http" ]; then 
+
+cat >>$CONFIG_FILE <<EOF
+
+	set \$path_info "";
+	if ( \$fastcgi_script_name ~ ^$SCRIPT(.*)\$ ) {
+		set \$path_info \$1;
+	}
+
+	location ~ ^$SCRIPT.*$ {
+		fastcgi_pass $SERVICE_POINT;
+		fastcgi_param  QUERY_STRING       \$query_string;
+		fastcgi_param  REQUEST_METHOD     \$request_method;
+		fastcgi_param  CONTENT_TYPE       \$content_type;
+		fastcgi_param  CONTENT_LENGTH     \$content_length;
+
+		fastcgi_param  SCRIPT_NAME        $SCRIPT;
+		fastcgi_param  PATH_INFO	  \$path_info;
+		fastcgi_param  REQUEST_URI        \$request_uri;
+		fastcgi_param  DOCUMENT_URI       \$document_uri;
+		fastcgi_param  DOCUMENT_ROOT      \$document_root;
+		fastcgi_param  SERVER_PROTOCOL    \$server_protocol;
+		
+		fastcgi_param  GATEWAY_INTERFACE  CGI/1.1;
+		fastcgi_param  SERVER_SOFTWARE    nginx;
+
+		fastcgi_param  REMOTE_ADDR        \$remote_addr;
+		fastcgi_param  REMOTE_PORT        \$remote_port;
+		fastcgi_param  SERVER_ADDR        \$server_addr;
+		fastcgi_param  SERVER_PORT        \$server_port;
+		fastcgi_param  SERVER_NAME        \$server_name;
+	}
+EOF
+
+else # http
+
+cat >>$CONFIG_FILE <<EOF
+	location ~ ^$SCRIPT.*$ {
+		proxy_pass http://$SERVICE_IP:$SERVICE_PORT;
+		proxy_set_header  X-Forwarded-For \$remote_addr;
+	}
+EOF
+fi
+
+
+cat >>$CONFIG_FILE <<EOF
+    }
+}
+EOF
+
+
+WEB_SERVER="$WEB_SERVER -c $CONFIG_FILE"
+
+}
+
+
+apache()
+{
+
+locate_server apache2
+locate_server httpd2 
+locate_server apache
+locate_server httpd $1
+
+
+[ "$WEB_SERVER" == "" ] && return
+if [ "$APACHE_MOD_DIR" == "" ] ; then
+	for p in /usr/lib/apache2/modules \
+		 /usr/local/lib/apache2/modules \
+		 /opt/lib/apache2/modules \
+		 /usr/lib/httpd2/modules \
+		 /usr/local/lib/httpd2/modules \
+		 /opt/lib/httpd2/modules \
+		 /usr/lib/apache/modules \
+		 /usr/local/lib/apache/modules \
+		 /opt/lib/apache/modules \
+		 /usr/lib/httpd/modules \
+		 /usr/local/lib/httpd/modules \
+		 /opt/lib/httpd/modules \
+		 /usr/lib/apache2 \
+		 /usr/local/lib/apache2 \
+		 /opt/lib/apache2 \
+		 /usr/lib/httpd2 \
+		 /usr/local/lib/httpd2 \
+		 /opt/lib/httpd2 \
+		 /usr/lib/apache \
+		 /usr/local/lib/apache \
+		 /opt/lib/apache \
+		 /usr/lib/httpd \
+		 /usr/local/lib/httpd \
+		 /opt/lib/httpd
+ 
+	do
+		if [ -f $p/mod_alias.so ]; then
+			APACHE_MOD_DIR="$p"
+			APACHE_MOD_EXT=so
+			break;
+		elif [ -f $p/mod_alias.dll ]; then
+			APACHE_MOD_DIR="$p"
+			APACHE_MOD_EXT=dll
+			break;
+		fi
+	done
+fi
+
+if [ "$APACHE_MOD_DIR" == "" ] ; then
+	if [ "$1" == "exit" ] ; then
+		echo "Can't find apache modules directory try specifing APACHE_MOD_DIR"
+		exit 1;
+	else
+		WEB_SERVER=""
+		return
+	fi
+fi
+
+
+if ! [ -f "$APACHE_MOD_DIR/mod_fastcgi.$APACHE_MOD_EXT" ] && [ "$API" == "fastcgi" ]; then
+	if [ "$1" == "exit" ] ; then 
+		echo "Can't find apache fastcgi modue"
+		exit 1
+	else
+		WEB_SERVER=""
+	fi
+fi
+
+if ! [ -f "$APACHE_MOD_DIR/mod_scgi.$APACHE_MOD_EXT" ] && [ "$API" == "scgi" ]; then
+	if [ "$1" == "exit" ] ; then 
+		echo "Can't find apache scgi modue"
+		exit 1
+	else
+		WEB_SERVER=""
+	fi
+fi
+
+if ! [ -f "$APACHE_MOD_DIR/mod_proxy_http.$APACHE_MOD_EXT" ] && [ "$API" == "http" ]; then
+	if [ "$1" == "exit" ] ; then 
+		echo "Can't find apache proxy_http modue"
+		exit 1
+	else
+		WEB_SERVER=""
+	fi
+fi
+
+if [ "$API" == "scgi" ] && [ "$SOCKET" != "" ]; then
+	if [ "$1" == "exit" ] ; then 
+		echo "Apache2 supports scgi over tcp sockets only"
+		exit 1
+	else
+		WEB_SERVER=""
+		return
+	fi
+fi
+
+cat >$DIR/mime.types <<EOF
+	    text/html                             html htm shtml
+	    text/css                              css
+	    text/xml                              xml rss
+	    image/gif                             gif
+	    image/jpeg                            jpeg jpg
+	    application/x-javascript              js
+	    text/plain                            txt
+	    text/x-component                      htc
+	    text/mathml                           mml
+	    image/png                             png
+	    image/x-icon                          ico
+	    image/x-jng                           jng
+	    image/vnd.wap.wbmp                    wbmp
+	    application/pdf                       pdf
+	    application/zip                       zip
+	    audio/mpeg                            mp3
+	    audio/x-realaudio                     ra
+	    video/mpeg                            mpeg mpg
+	    video/quicktime                       mov
+	    video/x-flv                           flv
+	    video/x-msvideo                       avi
+	    video/x-ms-wmv                        wmv
+	    video/x-ms-asf                        asx asf
+	    video/x-mng                           mng
+EOF
+
+if [ "$SOCKET" != "" ]; then
+	SERVICE_POINT="-socket $SOCKET"
+else
+	SERVICE_POINT="-host $SERVICE_IP:$SERVICE_PORT"
+fi
+
+cat >$DIR/apache.conf << EOF
+	Listen $HOST:$PORT
+	PidFile $PID_FILE
+	ErrorLog $DIR/apache.log
+
+	TypesConfig $DIR/mime.types
+	<VirtualHost *>
+		DocumentRoot $ROOT
+	</VirtualHost>
+
+	LoadModule alias_module $APACHE_MOD_DIR/mod_alias.$APACHE_MOD_EXT
+	LoadModule mime_module $APACHE_MOD_DIR/mod_mime.$APACHE_MOD_EXT
+EOF
+
+if [ "$API" == "fastcgi" ];
+then
+
+
+cat >>$DIR/apache.conf <<EOF
+	LoadModule fastcgi_module $APACHE_MOD_DIR/mod_fastcgi.$APACHE_MOD_EXT
+
+	FastCgiIpcDir $DIR/ipc
+	FastCgiExternalServer $DIR/myapp.fcgi $SERVICE_POINT
+
+	ScriptAliasMatch ^$SCRIPT(.*)$ $DIR/myapp.fcgi\$1
+	AddHandler fastcgi-script .fcgi
+EOF
+
+
+elif [ "$API" == "scgi" ];
+then
+
+
+cat >>$DIR/apache.conf <<EOF
+	LoadModule scgi_module $APACHE_MOD_DIR/mod_scgi.$APACHE_MOD_EXT
+	SCGIMount $SCRIPT $SERVICE_IP:$SERVICE_PORT
+EOF
+
+elif [ "$API" == "http" ]; 
+then
+
+
+cat >>$DIR/apache.conf <<EOF
+	LoadModule proxy_module $APACHE_MOD_DIR/mod_proxy.$APACHE_MOD_EXT
+	LoadModule proxy_http_module $APACHE_MOD_DIR/mod_proxy_http.$APACHE_MOD_EXT
+	ProxyPass $SCRIPT http://$SERVICE_IP:$SERVICE_PORT$SCRIPT
+EOF
+
+
+else
+	echo "$API is not supported by apache"
+	exit 1;
+
+fi
+
+WEB_SERVER="$WEB_SERVER -f $DIR/apache.conf"
+
+}
+
+find_param()
+{
+	if [ -e ./cppcms_config_find_param ]; then
+		./cppcms_config_find_param $2 $1
+	else
+		cppcms_config_find_param $2 $1
+	fi
+}
+
+help()
+{
+	echo "Usage cppcms_run [-e] [ -S server ] [-p port] [-h host] \\"
+	echo "                 [-r /document/root ] [-s /script ]"
+	echo "                 program -c config.txt [ additional parameters ]"
+	echo "      -c configuration file of cppcms executable"
+	echo "      -p port to start the server on, default 8080"
+	echo "      -s fastcgi script name, default '/'+your program name"
+	echo "      -h host to bind, default 127.0.0.1 "
+	echo "      -r document root (default .)"
+	echo "      -S (lighttpd|nginx|apache2) - web server you want to run"
+	echo "      -e Do not start application, started externaly (for debugging)" 
+	exit 1
+}
+
+## Inital configuration
+#  Try to find what sever exists
+
+# Default parameters
+
+HOST=127.0.0.1
+PORT=8080
+ROOT=`pwd`
+
+while ! [ -e "$1" ] ; do
+	if [ "$1" == "-s" ] ;  then
+		SCRIPT="$2"
+		shift
+	elif [ "$1" == "-S" ] ; then
+		TRY_SETUP="$2"
+		shift
+	elif [ "$1" == "-h" ]; then
+		HOST="$2"
+		shift
+	elif [ "$1" == "-p" ]; then
+		PORT="$2";
+		shift
+	elif [ "$1" == "-e" ]; then
+		NO_APP=yes
+	elif [ "$1" == "-r" ]; then
+		ROOT="$2"
+		shift
+	else
+		help
+	fi
+	shift
+done
+
+PROGRAM="$1"
+
+if [ "$2" != "-c" ] || [ "$3" == "" ] ; then
+	help
+fi
+
+APP_CONFIG_FILE="$3"
+
+if [ "$SCRIPT" == "" ] ; then
+	SCRIPT="/$PROGRAM"
+fi
+
+# Setup runtime parameters
+
+SOCKET=`find_param $APP_CONFIG_FILE service.socket`
+SERVICE_IP=`find_param $APP_CONFIG_FILE service.ip`
+SERVICE_PORT=`find_param $APP_CONFIG_FILE service.port`
+API=`find_param $APP_CONFIG_FILE service.api`
+
+if [ "$API" == "" ] ; then
+	echo "Can't find service.api or service.socket in $APP_CONFIG_FILE"
+	echo "Aborting"
+	exit 1
+fi
+
+if [ "$SERVICE_IP" == "" ]; then
+	SERVICE_IP=127.0.0.1
+fi
+
+if [ "$SOCKET" == "" ] && [ "$SERVICE_PORT" == "" ] ; then
+	echo "Can't find service.socket or service.ip and service.port in $APP_CONFIG_FILE"
+	echo "Aborting"
+	exit 1
+fi
+
+
+DIR="`pwd`/cppcms_rundir"
+PID_FILE="$DIR/srv.pid"
+
+mkdir -p $DIR
+
+echo "Web Server Host:$HOST"
+echo "Web Server Port:$PORT"
+echo "Document Root:$ROOT"
+echo "Script:$SCRIPT"
+echo "Api:$API"
+if [ "$SOCKET" != "" ]; then
+	echo "Socket:$SOCKET"
+else
+	echo "Service IP:$SERVICE_IP"
+	echo "Service Port:$SERVICE_PORT"
+fi
+
+
+# Configure web server
+if [ "$TRY_SETUP" != "" ]; then
+	case "$TRY_SETUP" in
+	lighttpd) lighttpd exit ;;
+	nginx) nginx exit ;;
+	apache2) apache exit ;;
+	apache) apache exit ;;
+	*) help
+	esac
+else
+	lighttpd 
+	[ "$WEB_SERVER" == "" ] && nginx
+	[ "$WEB_SERVER" == "" ] && apache 
+	if [ "$WEB_SERVER" == "" ]; then
+		echo "Can't find sutiable web server (nginx/lighttpd/apache)"
+		echo "You may try to change PATH variable. In case of Apache2"
+		echo "You may want to define APACHE_MOD_DIR variable"
+		exit 1
+	fi
+fi
+
+echo "Server:$WEB_SERVER"
+if [ "$NO_APP" != "yes" ]; then
+	echo "Starting Application Server:/$PROGRAM"
+	shift
+	./$PROGRAM $* &
+	FASTCGI_SERVER=$!
+	echo "Application Server PID:$FASTCGI_SERVER"
+fi
+
+echo "Starting Web Server"
+$WEB_SERVER
+sleep 1
+if ! [ -f "$PID_FILE" ]; then
+	echo "No web server pid... sleeping 2 more seconds"
+	sleep 2
+fi
+
+if [ -f "$PID_FILE" ] ; then
+	echo "Web Server PID:`cat $PID_FILE`"
+	trap "echo peress any key to stop" SIGHUP SIGINT SIGTERM
+	echo 
+	echo "------------------------------------"
+	echo "- Press Any Key To Stop The Server -"
+	echo "------------------------------------"
+	read
+else
+	echo "Seems that web server had not started"
+	if [ "$NO_APP" != "yes" ]; then
+		echo "Stopping FastCGI application"
+		kill $FASTCGI_SERVER
+	fi
+	echo "Aborting"
+	exit 1
+fi
+
+
+if [ "$NO_APP" != "yes" ]; then
+	echo Killing Application pid=$FASTCGI_SERVER
+	kill $FASTCGI_SERVER 
+fi
+echo Killing Web Server pid=`cat $PID_FILE`
+kill `cat $PID_FILE`
+
+

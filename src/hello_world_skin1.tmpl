@@ -1,0 +1,22 @@
+<% c++ #include "hello_world_view.h" %>
+<% skin %>
+	<% view master uses view::master %>
+	<% template test(std::string &v,int p) %>
+	<% foreach c as std::string::iterator in v %>
+		<% item %><% c %><% end %>
+	<% end %>
+	<% end %>
+	<% template render() %>
+		<html>
+		<title>Skin1 :: <% title %></title>
+		<body>
+		<h1>That is cool</h1>
+		<% include body() %>
+		</body>
+		</html>
+	<% end template %>
+	<% template body() %>
+	<% end template %>
+	<% end view %>
+<% end skin %>
+

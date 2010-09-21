@@ -1,0 +1,15 @@
+LIBS=-lcppcms -lbooster
+
+all: clean hello-tmpl libmy_skin.so
+
+my_skin.cpp: first.tmpl
+	cppcms_tmpl_cc first.tmpl -o my_skin.cpp
+
+libmy_skin.so: content.h my_skin.cpp
+	g++ -shared -fPIC my_skin.cpp -o libmy_skin.so ${LIBS}
+
+hello-tmpl: hello-tmpl.cpp 
+	g++ -Wall -rdynamic hello-tmpl.cpp -o hello-tmpl ${LIBS}
+
+clean:
+	rm -f *.fcgi *.exe my_skin.cpp *.so hello-tmpl

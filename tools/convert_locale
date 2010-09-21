@@ -1,0 +1,38 @@
+#!/bin/bash 
+
+svn export https://cppcms.svn.sourceforge.net/svnroot/cppcms/boost_locale/trunk boost_locale
+
+rm -fr root
+mkdir root
+cp boost_locale/boost/locale.hpp root/localization.h
+cd boost_locale/boost/locale/
+for x in *.hpp
+do
+
+	cp $x ../../../root/locale_${x%.hpp}.h
+done
+
+cd ../../libs/locale/src
+
+for x in *.cpp *.hpp
+do
+	cp $x ../../../../root/locale_src_$x
+done
+
+cd ../test/
+
+for x in *.cpp *.hpp
+do
+	cp $x ../../../../root/locale_src_$x
+done
+
+cd ../../../../root
+
+for x in *.h *.cpp *.hpp
+do
+	cat $x | ../rename_locale.py | ../conv.py >tmp.txt
+	cp tmp.txt $x;
+	rm tmp.txt
+done
+
+rm locale_config.h

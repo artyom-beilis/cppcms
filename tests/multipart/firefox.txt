@@ -1,0 +1,15 @@
+-----------------------------11395741071221114234100471568
+Content-Disposition: form-data; name="submit-name"
+
+שלום
+-----------------------------11395741071221114234100471568
+Content-Disposition: form-data; name="file"; filename="שלום.txt"
+Content-Type: text/plain
+
+שלום עולם!
+
+-----------------------------11395741071221114234100471568
+Content-Disposition: form-data; name="submit"
+
+Send
+-----------------------------11395741071221114234100471568--

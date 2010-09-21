@@ -1,0 +1,3 @@
+GET /test HTTP/1.0
+Accept-Encoding: gzip
+
