@@ -27,6 +27,7 @@
 #include <iostream>
 #include <string.h>
 #include <time.h>
+#include <stdio.h>
 
 
 template<typename Encryptor>
