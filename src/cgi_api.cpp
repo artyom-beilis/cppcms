@@ -240,7 +240,7 @@ void connection::load_content(booster::system::error_code const &e,http::context
 		return;
 	}
 
-	std::string content_type = getenv("CONTENT_TYPE");
+	http::content_type content_type = context->request().content_type_parsed();
 	std::string s_content_length=getenv("CONTENT_LENGTH");
 
 	long long content_length = s_content_length.empty() ? 0 : atoll(s_content_length.c_str());
@@ -251,7 +251,7 @@ void connection::load_content(booster::system::error_code const &e,http::context
 	}
 	
 	if(content_length > 0) {
-		if(http::protocol::is_prefix_of("multipart/form-data",content_type)) {
+		if(content_type.media_type()=="multipart/form-data") {
 			// 64 MB
 			long long allowed=service().cached_settings().security.multipart_form_data_limit*1024;
 			if(content_length > allowed) { 

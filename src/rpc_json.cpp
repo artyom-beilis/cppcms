@@ -21,6 +21,7 @@
 #include <cppcms/http_context.h>
 #include <cppcms/http_request.h>
 #include <cppcms/http_response.h>
+#include <cppcms/http_content_type.h>
 
 #include <sstream>
 #include <booster/nowide/fstream.h>
@@ -34,7 +35,10 @@ namespace rpc {
 
 	json_call::json_call(http::context &c) 
 	{
-		if(c.request().content_type()!="application/json")
+		http::content_type ct = c.request().content_type_parsed();
+		std::string type = ct.type();
+		std::string subtype = ct.subtype();
+		if(type != "application" || (subtype!="json" && subtype!="jsonrequest" && subtype!="json-rpc"))
 			throw call_error("Invalid content type"); 
 		if(c.request().request_method()!="POST")
 			throw call_error("Invalid request method"); 

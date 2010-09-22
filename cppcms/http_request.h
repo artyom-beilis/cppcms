@@ -23,6 +23,7 @@
 #include <booster/noncopyable.h>
 #include <booster/hold_ptr.h>
 #include <booster/shared_ptr.h>
+#include <cppcms/http_content_type.h>
 
 #include <string>
 #include <map>
@@ -58,6 +59,10 @@ namespace http {
 		/// CGI CONTENT_TYPE environment variable
 		///
 		std::string content_type();
+		///
+		/// Parsed CGI CONTENT_TYPE environment variable
+		///
+		cppcms::http::content_type content_type_parsed();
 		///
 		/// CGI GATEWAY_INTERFACE environment variable
 		///
@@ -302,6 +307,7 @@ namespace http {
 		form_type post_;
 		files_type files_;
 		cookies_type cookies_;
+		cppcms::http::content_type content_type_;
 		booster::hold_ptr<_data> d;
 		impl::cgi::connection *conn_;
 	};

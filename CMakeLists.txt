@@ -242,6 +242,7 @@ set(CPPCMS_SOURCES
 	src/url_dispatcher.cpp 
 	src/http_cookie.cpp  
 	src/http_file.cpp  
+	src/http_content_type.cpp
 	src/util.cpp 
 	src/base64.cpp 
 	src/base_view.cpp 
@@ -463,6 +464,7 @@ set(ALL_TESTS
 	jsonrpc_test
 	cookie_test
 	multipart_parser_test
+	content_type_parser_test
 	serialization_test
 	status_test
 	)
@@ -547,6 +549,7 @@ add_test(encryptor_test encryptor_test)
 add_test(storage_test storage_test)
 add_test(json_test json_test)
 add_test(multipart_parser_test multipart_parser_test "${CNF}")
+add_test(content_type_parser_test content_type_parser_test)
 add_test(cache_backend_test cache_backend_test)
 add_test(serialization_test serialization_test)
 

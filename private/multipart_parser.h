@@ -23,6 +23,7 @@
 #include <booster/noncopyable.h>
 #include <booster/shared_ptr.h>
 #include <cppcms/http_file.h>
+#include <cppcms/http_content_type.h>
 #include <vector>
 
 #include "http_protocol.h"
@@ -41,16 +42,17 @@ namespace cppcms {
 				result.swap(files_);
 				return result;
 			}
-			
-			bool set_content_type(std::string const &content_type)
+			bool set_content_type(std::string const &ct)
 			{
-				size_t boundary_pos = content_type.find("boundary=");
-				if(boundary_pos==std::string::npos)
+				http::content_type t(ct);
+				return set_content_type(t);
+			}
+			bool set_content_type(http::content_type const &content_type)
+			{
+				std::string bkey = content_type.parameter_by_key("boundary");
+				if(bkey.empty())
 					return false;
-				std::string::const_iterator end=content_type.begin()+boundary_pos + 9; 
-				std::string::const_iterator start = end;
-				end = http::protocol::tocken(end,content_type.end());
-				boundary_ = "\r\n--" + std::string(start,end);
+				boundary_ = "\r\n--" + bkey;
 				crlfcrlf_ = "\r\n\r\n";
 				position_ = 2; // First CRLF does not appear if first state
 				state_ = expecting_first_boundary;
@@ -61,6 +63,7 @@ namespace cppcms {
 				}
 				return true;
 			}
+			
 			multipart_parser(std::string const &temp_dir = std::string(),size_t memory_limit = -1) : 
 				state_ ( expecting_first_boundary ),
 				position_(0),
@@ -211,7 +214,8 @@ namespace cppcms {
 							return false;
 					}
 					else if(http::protocol::compare(header_name,"Content-Type")==0) {
-						file_->mime(std::string(p,e));
+						http::content_type ct(std::string(p,e));
+						file_->mime(ct.media_type());
 					}
 				}
 				return false;

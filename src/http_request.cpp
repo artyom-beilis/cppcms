@@ -142,7 +142,7 @@ void request::set_post_data(std::vector<char> &post_data)
 	d->post_data.clear();
 	d->post_data.swap(post_data);
 
-	if(http::protocol::is_prefix_of("application/x-www-form-urlencoded",content_type())) {
+	if(content_type_.media_type() == "application/x-www-form-urlencoded") {
 		if(!d->post_data.empty()) {
 			char const *pdata=&d->post_data.front();
 			parse_form_urlencoded(pdata,pdata+d->post_data.size(),post_);
@@ -199,6 +199,7 @@ bool request::prepare()
 		get_.clear();
 	}
 	parse_cookies();
+	content_type_ = cppcms::http::content_type(conn_->getenv("CONTENT_TYPE"));
 	return true;
 }
 
@@ -232,6 +233,11 @@ request::~request()
 //
 //
 
+
+cppcms::http::content_type request::content_type_parsed()
+{
+	return content_type_;
+}
 
 std::string request::auth_type() { return conn_->getenv("AUTH_TYPE"); }
 unsigned long long request::content_length() { return atoll(conn_->getenv("CONTENT_LENGTH").c_str()); }
