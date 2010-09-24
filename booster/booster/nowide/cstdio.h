@@ -17,6 +17,9 @@ namespace booster {
 
 	#if defined(BOOSTER_WIN_NATIVE) || defined(BOOSTER_DOXYGEN_DOCS)
 
+		///
+		/// Same as C fopen, but accepts UTF-8 string as file name under Windows
+		///
 		inline FILE *fopen(char const *file_name,char const *mode)
 		{
 			try {
@@ -26,6 +29,9 @@ namespace booster {
 				return 0;
 			}
 		}
+		///
+		/// Same as C freopen, but accepts UTF-8 string as file name under Windows
+		///
 		inline FILE *freopen(char const *file_name,char const *mode,FILE *stream)
 		{
 			try {
@@ -35,6 +41,9 @@ namespace booster {
 				return 0;
 			}
 		}
+		///
+		/// Same as C rename, but accepts UTF-8 strings as file names under Windows
+		///
 		inline int rename(char const *old_name,char const *new_name)
 		{
 			try {
@@ -44,6 +53,9 @@ namespace booster {
 				return -1;
 			}
 		}
+		///
+		/// Same as C remove, but accepts UTF-8 string as file name under Windows
+		///
 		inline int remove(char const *name)
 		{
 			try {

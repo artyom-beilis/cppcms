@@ -16,8 +16,6 @@ enable_testing()
 #
 #############################################################################
 
-option(DISABLE_ICU_LOCALIZATION
-			"Use standard std::locales instead of ICU" OFF)
 option(DISABLE_SHARED	"Disable shared libraries build" OFF)
 option(DISABLE_STATIC	"Disable static libraries build" OFF)
 option(DISABLE_GCRYPT	"Disable usage of gcrypt library" OFF)
@@ -107,7 +105,6 @@ endif(NOT CMAKE_BUILD_TYPE)
 
 if("${CMAKE_BUILD_TYPE}" STREQUAL "Debug")
 	if(MSVC)
-		set(ICU_SUFFIX "d")
 		set(ZLIB_SUFFIX "d")
 		if(NOT CPPCMS_SUFFIX)
 			set(CPPCMS_SUFFIX "-d")
@@ -132,7 +129,6 @@ check_function_exists(_atoi64 CPPCMS_HAVE_ATOI64)
 check_function_exists(snprintf CPPCMS_HAVE_SNPRINTF)
 check_function_exists(stat CPPCMS_HAVE_STAT)
 check_function_exists(_stat CPPCMS_HAVE__STAT)
-include_directories(${ICU_INCLUDE_DIR})
 
 set(CPPCMS_LIBRARY_SUFFIX ${CMAKE_SHARED_LIBRARY_SUFFIX})
 set(CPPCMS_LIBRARY_PREFIX ${CMAKE_SHARED_LIBRARY_PREFIX})
@@ -473,10 +469,6 @@ foreach(TEST ${ALL_TESTS})
 	target_link_libraries(${TEST} ${CPPCMS_LIB})
 endforeach()
 
-if(DISABLE_ICU_LOCALIZATION)
-	file(GLOB LOCALE_TEST_SOURCES "noicu/src/locale_src_test_*.cpp")
-endif()
-
 foreach(LFILE ${LOCALE_TEST_SOURCES})
 	string(REGEX REPLACE ".*noicu/src/(.*)\\.cpp" "\\1" TEST_NAME ${LFILE})
 	add_executable(${TEST_NAME} ${LFILE})
@@ -529,11 +521,6 @@ install(PROGRAMS bin/cppcms_tmpl_cc bin/cppcms_run
 
 install(DIRECTORY cppcms DESTINATION include
         PATTERN ".svn" EXCLUDE)
-
-if(DISABLE_ICU_LOCALIZATION)
-	install(DIRECTORY noicu/cppcms DESTINATION include
-        	PATTERN ".svn" EXCLUDE)
-endif()
 
 
 #############

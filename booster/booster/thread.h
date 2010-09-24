@@ -18,12 +18,21 @@
 namespace booster {
 
 	extern "C" void *booster_thread_func(void *);
-
+	
+	///
+	/// \brief the class that allows to start an execution thread
+	///
 	class BOOSTER_API thread : public noncopyable {
 	public:
+		///
+		/// Run a function \a cb in separate thread
+		///
 		thread(function<void()> const &cb);
 		~thread();
 
+		///
+		/// Join existing thread
+		///
 		void join();
 	private:
 		friend void *booster_thread_func(void *);

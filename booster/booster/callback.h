@@ -20,6 +20,10 @@ namespace booster {
 	template<typename Type>
 	struct callable;
 
+	///
+	/// \brief this exception is thrown in case of calling unassigned/empty
+	/// function
+	///
 	class bad_callback_call : public std::runtime_error {
 	public:
 		bad_callback_call() : 

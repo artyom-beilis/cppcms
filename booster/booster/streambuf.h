@@ -70,15 +70,34 @@ namespace booster {
 	class BOOSTER_API streambuf : public std::streambuf {
 	public:
 
+		///
+		/// Create a new stream buffer - without a stream
+		///
 		streambuf();
 		~streambuf();
 		
+		///
+		/// Assign an io_device to the streambuf transferring an ownership on it
+		///
 		void device(std::auto_ptr<io_device> d);
+		///
+		/// Assign an existing io_device to the streambuf.
+		///
 		void device(io_device &d);
 
+		///
+		/// Detach currently attached io_device from the streambuf. If it is owned, it is destroyed.
+		///
 		void reset_device();
 
+		///
+		/// Get the io_device that is in use 
+		///
 		io_device &device();
+		///
+		/// Set the size of the internal buffer that is used for read and write operations. Default
+		/// is 1024 bytes for each direction
+		///
 		void set_buffer_size(size_t n);
 
 	protected:

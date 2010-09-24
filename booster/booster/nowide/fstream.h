@@ -53,7 +53,7 @@ namespace nowide {
 	};
 
 	#else  // not msvc
-
+	/// \cont INTERNAL
 	namespace details {
 		class stdio_iodev : public booster::io_device {
 			stdio_iodev(stdio_iodev const &);
@@ -100,9 +100,15 @@ namespace nowide {
 		};
 	} // details
 
+	/// \endcond
+
 	template<typename CharType,typename Traits = std::char_traits<CharType> >
 	class basic_filebuf;
-	
+
+	///
+	/// Same as std::basic_filebuf<char> but accepts UTF-8 strings under Windows
+	///
+
 	template<>
 	class basic_filebuf<char> : public booster::streambuf {
 	public:
@@ -175,6 +181,9 @@ namespace nowide {
 
 	#endif
 
+	///
+	/// Same as std::basic_ifstream<char> but accepts UTF-8 strings under Windows
+	///
 	template<typename CharType,typename Traits = std::char_traits<CharType> >
 	class basic_ifstream : public std::basic_istream<CharType,Traits>
 	{
@@ -231,6 +240,9 @@ namespace nowide {
 		std::auto_ptr<internal_buffer_type> buf_;
 	};
 
+	///
+	/// Same as std::basic_ofstream<char> but accepts UTF-8 strings under Windows
+	///
 
 	template<typename CharType,typename Traits = std::char_traits<CharType> >
 	class basic_ofstream : public std::basic_ostream<CharType,Traits>
@@ -287,6 +299,10 @@ namespace nowide {
 	private:
 		std::auto_ptr<internal_buffer_type> buf_;
 	};
+
+	///
+	/// Same as std::basic_fstream<char> but accepts UTF-8 strings under Windows
+	///
 
 	template<typename CharType,typename Traits = std::char_traits<CharType> >
 	class basic_fstream : public std::basic_iostream<CharType,Traits>
@@ -345,9 +361,21 @@ namespace nowide {
 	};
 
 
+	///
+	/// Same as std::filebuf but accepts UTF-8 strings under Windows
+	///
 	typedef basic_filebuf<char> filebuf;
+	///
+	/// Same as std::ifstream but accepts UTF-8 strings under Windows
+	///
 	typedef basic_ifstream<char> ifstream;
+	///
+	/// Same as std::ofstream but accepts UTF-8 strings under Windows
+	///
 	typedef basic_ofstream<char> ofstream;
+	///
+	/// Same as std::fstream but accepts UTF-8 strings under Windows
+	///
 	typedef basic_fstream<char> fstream;
 
 #endif
