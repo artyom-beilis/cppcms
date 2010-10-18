@@ -345,39 +345,32 @@ namespace cgi {
 				return;
 			}
 			
-
+			std::string path;
+			size_t pos=request_uri_.find('?');
+			if(pos==std::string::npos) {
+				path=request_uri_;
+			}
+			else {
+				path=request_uri_.substr(0,pos);
+				env_["QUERY_STRING"]=request_uri_.substr(pos+1);
+			}
+			
 			std::vector<std::string> const &script_names = 
 				service().cached_settings().http.script_names;
 
 			for(unsigned i=0;i<script_names.size();i++) {
-
 				std::string const &name=script_names[i];
-
-				if(	request_uri_.size() >= name.size() 
-					&& memcmp(request_uri_.c_str(),name.c_str(),name.size())==0)
+				size_t name_size = name.size();
+				if(path.compare(0,name_size,name) == 0 
+				   && (path.size() <= name_size || path.compare(name_size,1,"/") == 0))
 				{
-					env_["SCRIPT_NAME"]=name;
-					size_t pos=request_uri_.find('?');
-					if(pos==std::string::npos) {
-						env_["PATH_INFO"]=util::urldecode(request_uri_.substr(name.size()));
-					}
-					else {
-						env_["PATH_INFO"]=util::urldecode(request_uri_.substr(name.size(),pos-name.size()));
-						env_["QUERY_STRING"]=request_uri_.substr(pos+1);
-					}
-					h(booster::system::error_code());
-					return;
+					env_["SCRIPT_NAME"] = name;
+					path = path.substr(name_size);
+					break;
 				}
 			}
 			
-			size_t pos=request_uri_.find('?');
-			if(pos==std::string::npos)
-				env_["PATH_INFO"]=request_uri_;
-			else {
-				env_["PATH_INFO"]=request_uri_.substr(0,pos);
-				env_["QUERY_STRING"]=request_uri_.substr(pos+1);
-			}
-			
+			env_["PATH_INFO"] = util::urldecode(path);
 			h(booster::system::error_code());
 
 		}
