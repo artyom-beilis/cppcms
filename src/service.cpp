@@ -84,7 +84,11 @@
     namespace boost = cppcms_boost;
 #endif
 
+#include "daemonize.h"
+
 #include <booster/regex.h>
+
+
 
 
 #include <booster/aio/io_service.h>
@@ -442,6 +446,8 @@ void service::run()
 	session_pool().init();
 	start_acceptor();
 
+	impl::daemonizer godaemon(settings());
+	
 	if(prefork()) {
 		return;
 	}
