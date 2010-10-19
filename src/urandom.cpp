@@ -86,6 +86,9 @@ namespace cppcms {
 
 #else
 
+#ifndef CPPCMS_WIN32
+#include "daemonize.h"
+#endif
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>
@@ -105,11 +108,20 @@ namespace cppcms {
 	{
 		if(len == 0)
 			return;
-		int fd = open("/dev/urandom",O_RDONLY);
-		if(!fd) 
-			throw cppcms_error("Failed to open /dev/urandom");
-		int n = read(fd,ptr,len);
-		close(fd);
+		int n = 0;
+		#ifndef CPPCMS_WIN32
+		if(impl::daemonizer::global_urandom_fd!=-1) {
+			n = read(impl::daemonizer::global_urandom_fd,ptr,len);
+		}
+		else 
+		#endif
+		{
+			int fd = open("/dev/urandom",O_RDONLY);
+			if(!fd) 
+				throw cppcms_error("Failed to open /dev/urandom");
+			n = read(fd,ptr,len);
+			close(fd);
+		}
 		if(n!=int(len))
 			throw cppcms_error("Failed to read /dev/urandom");
 	}

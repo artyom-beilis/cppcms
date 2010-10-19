@@ -37,6 +37,7 @@ namespace impl {
 	public:
 		daemonizer(json::value const &conf);
 		~daemonizer();
+		static int global_urandom_fd;
 	private:
 		int real_pid;
 		std::string unlink_file;

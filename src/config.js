@@ -5,7 +5,7 @@
 	"id" : 1,
 	// Service description
 	"service" : {
-		//"worker_processes" : 5,
+		"worker_processes" : 5,
 		"worker_threads" : 5,
 		//"worker_threads" : 25,
 	//	"api" : "fastcgi",
@@ -29,6 +29,14 @@
 				"control_ports" : [ 8032 ]  //
 			}
 		]
+	},
+	"daemon" : {
+		//"enable" : true,
+		"lock" : "lock.pid",
+		"user" : "artik",
+		"group" : "nobody",
+		"chroot" : "/tmp",
+		"fdlimit" : 16384
 	},
 	"http" : {
 		"proxy" : {
@@ -93,8 +101,8 @@
 		 //"auto_reload" : true
 	},
 	"cache" : {
-		"backend" : "thread_shared", 
-		//"backend" : "process_shared",
+		//"backend" : "thread_shared", 
+		"backend" : "process_shared",
 		"limit" : 100, // items - thread cache
 		"memory" : 1024,  // KBs - process cache
 //		"tcp" : {"ips" : [ "127.0.0.1" ],"ports" : [ 6001 ]}
@@ -106,10 +114,10 @@
 	},
 	"logging" : {
 		//"level" : "info", // "debug",
-		"level" : "error", // "debug",
+		"level" : "debug",
 		"stderr" : true,
 		"file" : {
-			"name" : "", // "cppcms.log" ,
+			"name" : "cppcms.log" ,
 			"max_files" : 3,
 			"append" : true
 		},

@@ -116,6 +116,9 @@ private:
 						return;
 					}
 
+					if(stop_)
+						break;
+
 					if(FD_ISSET(read_interrupter_,&r)) {
 						static char buf[32];
 						::read(read_interrupter_,buf,32);

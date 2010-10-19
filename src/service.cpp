@@ -520,6 +520,8 @@ bool service::prefork()
 			int err=errno;
 			for(int j=0;j<i;j++) {
 				::kill(pids[j],SIGTERM);
+			}
+			for(int j=0;j<i;j++) {
 				int stat;
 				::waitpid(pids[j],&stat,0);
 			}
@@ -553,6 +555,7 @@ bool service::prefork()
 	do {
 		sig=0;
 		sigwait(&set,&sig);
+		BOOSTER_INFO("cppcms") << "Catched signal " << sig;
 		if(sig==SIGCHLD) {
 			int status;
 			int pid = ::waitpid(0,&status,WNOHANG);
@@ -598,14 +601,23 @@ bool service::prefork()
 	}while(sig!=SIGINT && sig!=SIGTERM && sig!=SIGQUIT);
 
 	sigprocmask(SIG_SETMASK,&prev,NULL);
+	
+	BOOSTER_INFO("cppcms") << "Shutting down";
 
+	BOOSTER_DEBUG("cppcms") << "Killing Children";
 	for(int i=0;i<procs;i++) {
 		if(pids[i]<0)
 			continue;
 		::kill(pids[i],SIGTERM);
+	}
+
+	for(int i=0;i<procs;i++) {
+		if(pids[i]<0)
+			continue;
 		int stat;
 		::waitpid(pids[i],&stat,0);
 	}
+	BOOSTER_DEBUG("cppcms") << "Children are dead";
 	return true;
 }
 
