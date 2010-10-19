@@ -271,6 +271,7 @@ set(CPPCMS_SOURCES
 	src/mount_point.cpp
 	src/archive.cpp
 	src/crypto.cpp
+	src/daemonize.cpp
 	cppcms_boost/src/zlib.cpp
 	cppcms_boost/src/gzip.cpp
 )
