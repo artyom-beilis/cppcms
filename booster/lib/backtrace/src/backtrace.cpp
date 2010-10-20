@@ -35,9 +35,7 @@
 #include <sstream>
 #include <iomanip>
 
-#include <iostream>
-
-#if defined(BOOSTER_MSVC) && defined(COMPILED_WITH_NO_OMIT_FRAME_POINTERS)
+#if defined(BOOSTER_MSVC)
 #include <windows.h>
 #include <stdlib.h>
 #include <dbghelp.h>
@@ -54,41 +52,13 @@ namespace booster {
             return :: backtrace(array,n);
         }
         
-        #elif defined(BOOSTER_MSVC) && defined(_M_IX86) && defined(COMPILED_WITH_NO_OMIT_FRAME_POINTERS)
-        namespace {
-            struct stack_frame {
-                struct stack_frame* next;
-                void* ret;
-            };
-        }
+        #elif defined(BOOSTER_MSVC)
 
-        namespace {
-            #pragma optimize( "", off )
-            //
-            // This does now work when copiled with Ommiting frame pointers
-            // need to do something better :-( for now
-            //
-            int real_trace(void **array,int n)
-            {
-                stack_frame *frame = 0;
-                #ifdef _M_X64
-                __asm mov frame,rbp;
-                #else
-                __asm mov frame,ebp;
-                #endif
-                int i=0;
-                while(i<n && frame!=0) {
-                    std::cerr << frame << std::endl;
-                    array[i++]=frame->ret;
-                    frame = frame->next;
-                }
-                return i;
-            }
-            #pragma optimize( "", on )
-        }
         int trace(void **array,int n)
         {
-            return real_trace(array,n);
+            if(n>=63)
+                n=62;
+            return RtlCaptureStackBackTrace(0,n,array,0);
         }
 
         #else
@@ -219,8 +189,8 @@ namespace booster {
             }
         }
         
-        #elif defined(BOOSTER_MSVC) && defined(COMPILED_WITH_NO_OMIT_FRAME_POINTERS)
-
+        #elif defined(BOOSTER_MSVC)
+        
         namespace {
             HANDLE hProcess = 0;
             bool syms_ready = false;
@@ -238,6 +208,7 @@ namespace booster {
                 }
             }
         }
+        
         std::string get_symbol(void *ptr)
         {
             if(ptr==0)
