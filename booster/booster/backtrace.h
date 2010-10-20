@@ -25,7 +25,7 @@ namespace booster {
     class backtrace {
     public:
         
-        static size_t const default_stack_size = 256;
+        static size_t const default_stack_size = 32;
 
         backtrace(size_t frames_no = default_stack_size) 
         {

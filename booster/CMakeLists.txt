@@ -172,6 +172,13 @@ elseif(CMAKE_CXX_COMPILER_ID STREQUAL "SunPro")
 	endif()
 endif()
 
+if(NOT ${CMAKE_HOST_WIN32})
+	check_function_exists(dlopen BOOSTER_HAVE_DLOPEN)
+	if(NOT BOOSTER_HAVE_DLOPEN)
+		find_library(LIB_DL dl)
+	endif()
+endif()
+
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${CXX_FLAGS}")
 
 #############################################################################
@@ -309,6 +316,7 @@ set(BOOSTER_SRC
 	lib/log/src/log.cpp
 	lib/iostreams/src/streambuf.cpp
 	lib/nowide/src/convert.cpp
+	lib/backtrace/src/backtrace.cpp
 	lib/locale/src/encoding/codepage.cpp
 	lib/locale/src/shared/date_time.cpp
 	lib/locale/src/shared/format.cpp
@@ -448,6 +456,10 @@ foreach(ALIB ${LINK_LIBS})
 		target_link_libraries(${ALIB} ${ICU_DATA})
 	endif()
 
+	if(LIB_DL)
+		target_link_libraries(${ALIB} ${LIB_DL})
+	endif()
+
 	if(ICONV_LIB)
 		target_link_libraries(${ALIB} ${ICONV_LIB})
 	endif()
@@ -519,6 +531,7 @@ add_booster_test(aio timer)
 add_booster_test(aio event_loop)
 add_booster_test(aio socket)
 add_booster_test(aio endpoint)
+add_booster_test(backtrace backtrace)
 if(NOT WIN32)
 	add_booster_test(aio prefork)
 endif()
