@@ -117,11 +117,11 @@ std::auto_ptr<icu::BreakIterator> get_iterator(boundary_type t,icu::Locale const
         bi.reset(icu::BreakIterator::createLineInstance(loc,err));
         break;
     default:
-        throw std::runtime_error("Invalid iteration type");
+        throw booster::runtime_error("Invalid iteration type");
     }
     check_and_throw_icu_error(err);
     if(!bi.get())
-        throw std::runtime_error("Failed to create break iterator");
+        throw booster::runtime_error("Failed to create break iterator");
     return bi;
 }
 
@@ -145,7 +145,7 @@ index_type do_map(boundary_type t,CharType const *begin,CharType const *end,icu:
 
             check_and_throw_icu_error(err);
             err=U_ZERO_ERROR;
-            if(!ut) throw std::runtime_error("Failed to create UText");
+            if(!ut) throw booster::runtime_error("Failed to create UText");
             bi->setText(ut,err);
             check_and_throw_icu_error(err);
             index_type res=map_direct(t,bi.get(),end-begin);

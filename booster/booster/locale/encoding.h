@@ -15,7 +15,7 @@
 #endif
 #include <booster/locale/info.h>
 #include <booster/cstdint.h>
-#include <stdexcept>
+#include <booster/backtrace.h>
 
 
 
@@ -34,21 +34,21 @@ namespace booster {
             ///
             /// \brief The excepton that is thrown in case of conversion error
             ///
-            class conversion_error : public std::runtime_error {
+            class conversion_error : public booster::runtime_error {
             public:
-                conversion_error() : std::runtime_error("Conversion failed") {}
+                conversion_error() : booster::runtime_error("Conversion failed") {}
             };
             
             ///
             /// \brief This exception is thrown in case of use of unsupported
             /// or invalid character set
             ///
-            class invalid_charset_error : public std::runtime_error {
+            class invalid_charset_error : public booster::runtime_error {
             public:
 
                 /// Create an error for charset \a charset
                 invalid_charset_error(std::string charset) : 
-                    std::runtime_error("Invalid or unsupported charset:" + charset)
+                    booster::runtime_error("Invalid or unsupported charset:" + charset)
                 {
                 }
             };

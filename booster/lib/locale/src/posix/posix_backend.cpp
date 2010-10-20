@@ -78,7 +78,7 @@ namespace impl_posix {
                 tmp=newlocale(LC_ALL_MASK,"C",0);
             }
             if(!tmp) {
-                throw std::runtime_error("newlocale failed");
+                throw booster::runtime_error("newlocale failed");
             }
             locale_t *tmp_p = new locale_t();
             *tmp_p = tmp;

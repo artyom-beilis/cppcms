@@ -105,7 +105,7 @@ namespace locale {
             void test(UErrorCode err)
             {
                 if(U_FAILURE(err))
-                    throw std::runtime_error("Failed to create a formatter");
+                    throw booster::runtime_error("Failed to create a formatter");
             }
 
             std::auto_ptr<icu::NumberFormat>    number_format_;

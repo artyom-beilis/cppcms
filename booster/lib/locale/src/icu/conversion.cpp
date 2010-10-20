@@ -110,7 +110,7 @@ namespace impl_icu {
             map_ = ucasemap_open(locale_id.c_str(),0,&err);
             check_and_throw_icu_error(err);
             if(!map_)
-                throw std::runtime_error("Failed to create UCaseMap");
+                throw booster::runtime_error("Failed to create UCaseMap");
         }
         template<typename Conv>
         std::string convert(Conv func,char const *begin,char const *end) const

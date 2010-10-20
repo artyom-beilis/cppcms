@@ -22,7 +22,7 @@
 #include <cppcms/defs.h>
 #include <booster/copy_ptr.h>
 #include <string>
-#include <stdexcept>
+#include <booster/backtrace.h>
 
 #include <booster/traits/enable_if.h>
 #include <booster/traits/is_base_of.h>
@@ -57,9 +57,9 @@ namespace cppcms {
 	///
 	/// Error thrown in case of serialization error
 	///
-	class archive_error : public std::runtime_error {
+	class archive_error : public booster::runtime_error {
 	public:
-		archive_error(std::string const &e) : std::runtime_error("cppcms::archive_error: " + e)
+		archive_error(std::string const &e) : booster::runtime_error("cppcms::archive_error: " + e)
 		{
 		}
 	};

@@ -8,17 +8,17 @@
 #ifndef BOOSTER_FUNCTION_H
 #define BOOSTER_FUNCTION_H
 
-#include <stdexcept>
+#include <booster/backtrace.h>
 #include <booster/clone_ptr.h>
 
 namespace booster {
 	template<typename Type>
 	class function;
 
-	class bad_function_call : public std::runtime_error {
+	class bad_function_call : public booster::runtime_error {
 	public:
 		bad_function_call() : 
-			std::runtime_error("bad_function_call")
+			booster::runtime_error("bad_function_call")
 		{
 		}
 	};

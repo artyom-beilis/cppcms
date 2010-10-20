@@ -9,7 +9,7 @@
 #define BOOSTER_SYSTEM_ERROR_H
 
 #include <string>
-#include <stdexcept>
+#include <booster/backtrace.h>
 #include <functional>
 
 #include <booster/config.h>
@@ -99,15 +99,15 @@ namespace system {
 		return !(left==right);
 	}
 
-	class system_error : public std::runtime_error {
+	class system_error : public booster::runtime_error {
 	public:
 		system_error(error_code const &e) :
-			std::runtime_error(e.message()),
+			booster::runtime_error(e.message()),
 			error_(e)
 		{
 		}
 		system_error(error_code const &e,std::string const &message) :
-			std::runtime_error(e.message()+": " + message),
+			booster::runtime_error(e.message()+": " + message),
 			error_(e)
 		{
 		}

@@ -30,7 +30,7 @@ using namespace std;
 namespace cppcms {
 
 cppcms_error::cppcms_error(int err,std::string const &error) :
-	std::runtime_error(error+":" + strerror(err))	
+	booster::runtime_error(error+":" + strerror(err))	
 {
 }
 

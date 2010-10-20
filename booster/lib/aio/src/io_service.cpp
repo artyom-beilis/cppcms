@@ -118,7 +118,7 @@ public:
 	void set_io_event(native_type fd,int event,event_handler const &h)
 	{
 		if(event != in && event !=out)
-			throw std::invalid_argument("Invalid argument to set_io_event");
+			throw booster::invalid_argument("Invalid argument to set_io_event");
 		io_event_setter setter = { fd,event,h,this };
 		set_event(setter);
 	}

@@ -21,7 +21,7 @@
 #include <algorithm>
 #include <typeinfo>
 #include <iterator>
-#include <stdexcept>
+#include <booster/backtrace.h>
 
 
 
@@ -607,14 +607,14 @@ namespace booster {
 
                 ///
                 /// Return the token the iterator points it. Iterator must not point to the
-                /// end of the range. Throws std::out_of_range exception
+                /// end of the range. Throws booster::out_of_range exception
                 ///
                 /// Note, returned value is not lvalue, you can't use this iterator to assign new values to text.
                 /// 
                 ValueType operator*() const
                 {
                     if(offset_ < 1 || offset_ >= map_->index_.size())
-                        throw std::out_of_range("Invalid token iterator location");
+                        throw booster::out_of_range("Invalid token iterator location");
                     unsigned pos=offset_-1;
                     if(full_select_)
                         while(!valid_offset(pos))
@@ -872,14 +872,14 @@ namespace booster {
                 
                 ///
                 /// Return the underlying iterator that break_iterator points it. Iterator must not point to the
-                /// end of the range, otherwise throws std::out_of_range exception
+                /// end of the range, otherwise throws booster::out_of_range exception
                 ///
                 /// Note, returned value is not lvalue, you can't use this iterator to change underlying iterators.
                 /// 
                 base_iterator operator*() const
                 {
                     if(offset_ >=map_->index_.size())
-                        throw std::out_of_range("Invalid position of break iterator");
+                        throw booster::out_of_range("Invalid position of break iterator");
                     base_iterator p = map_->begin_;
                     std::advance(p, map_->index_[offset_].offset);
                     return p;

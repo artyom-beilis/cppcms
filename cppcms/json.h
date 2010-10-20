@@ -21,12 +21,11 @@
 
 #include <cppcms/defs.h>
 #include <booster/copy_ptr.h>
-
+#include <booster/backtrace.h>
 #include <vector>
 #include <map>
 #include <string>
 #include <iostream>
-#include <typeinfo>
 #include <limits>
 
 namespace cppcms {
@@ -114,7 +113,7 @@ namespace json {
 	/// When implementing json::traits for complex classes you are expected to throw this exception
 	/// in case of invalid formatting
 	///
-	class CPPCMS_API bad_value_cast : public std::bad_cast {
+	class CPPCMS_API bad_value_cast : public booster::bad_cast {
 	public:
 		bad_value_cast(); 
 		bad_value_cast(std::string const &s);

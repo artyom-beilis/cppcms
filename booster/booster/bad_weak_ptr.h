@@ -11,7 +11,7 @@
 // http://www.boost.org/LICENSE_1_0.txt)
 //
 
-#include <exception>
+#include <booster/backtrace.h>
 
 #ifdef __BORLANDC__
 # pragma warn -8026     // Functions with excep. spec. are not expanded inline
@@ -33,7 +33,7 @@ namespace booster
 ///
 /// An exeption that is throws in case of creating of shared_ptr from expired weak_ptr
 ///
-class bad_weak_ptr: public std::exception
+class bad_weak_ptr: public booster::exception
 {
 public:
 

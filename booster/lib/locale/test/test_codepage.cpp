@@ -14,6 +14,14 @@
 #include "test_locale.h"
 #include "test_locale_tools.h"
 
+
+#ifndef BOOSTER_LOCALE_NO_POSIX_BACKEND
+# ifdef __APPLE__
+#  include <xlocale.h>
+#  endif
+# include <locale.h>
+#endif
+
 bool test_iso;
 bool test_utf;
 bool test_sjis;
@@ -253,19 +261,29 @@ void test_to()
 int main()
 {
     try {
-        std::string def[2] = { "icu" , "std" };
+        std::vector<std::string> def;
         #ifdef BOOSTER_LOCALE_WITH_ICU
-        int start = 0;
-        #else
-        int start = 1;
+        def.push_back("icu");
+        #endif
+        #ifndef BOOSTER_LOCALE_NO_STD_BACKEND
+        def.push_back("std");
+        #endif
+        #ifndef BOOSTER_LOCALE_NO_WINAPI_BACKEND
+        def.push_back("winapi");
+        #endif
+        #ifndef BOOSTER_LOCALE_NO_POSIX_BACKEND
+        def.push_back("posix");
         #endif
         
-        for(int type = start ; type < 2; type ++ ) {
+        
+        for(int type = 0; type < int(def.size()); type ++ ) {
             booster::locale::localization_backend_manager tmp_backend = booster::locale::localization_backend_manager::global();
             tmp_backend.select(def[type]);
             booster::locale::localization_backend_manager::global(tmp_backend);
             
-            if(def[type]=="std") {
+            std::string bname = def[type];
+            
+            if(bname=="std") { 
                 en_us_8bit = get_std_name("en_US.ISO8859-1");
                 he_il_8bit = get_std_name("he_IL.ISO8859-8");
                 ja_jp_shiftjis = get_std_name("ja_JP.SJIS");
@@ -279,15 +297,47 @@ int main()
             std::cout << "Testing for backend " << def[type] << std::endl;
 
             test_iso = true;
-            if(def[type]=="std" && (he_il_8bit.empty() || en_us_8bit.empty())) {
+            if(bname=="std" && (he_il_8bit.empty() || en_us_8bit.empty())) {
                 std::cout << "no iso locales availible, passing" << std::endl;
                 test_iso = false;
             }
             test_sjis = true;
-            if(def[type]=="std" && ja_jp_shiftjis.empty()) {
-                std::cout << "no ShiftJIS locales availible, passing" << std::endl;
+            if(bname=="std" && ja_jp_shiftjis.empty()) {
                 test_sjis = false;
             }
+            if(bname=="winapi") {
+                test_iso = false;
+                test_sjis = false;
+            }
+            #ifndef BOOSTER_LOCALE_NO_POSIX_BACKEND
+            if(bname=="posix") {
+                {
+                    locale_t l = newlocale(LC_ALL_MASK,he_il_8bit.c_str(),0);
+                    if(!l)
+                        test_iso = false;
+                    else
+                        freelocale(l);
+                }
+                {
+                    locale_t l = newlocale(LC_ALL_MASK,en_us_8bit.c_str(),0);
+                    if(!l)
+                        test_iso = false;
+                    else
+                        freelocale(l);
+                }
+                #ifdef BOOSTER_LOCALE_WITH_ICONV
+                {
+                    locale_t l = newlocale(LC_ALL_MASK,ja_jp_shiftjis.c_str(),0);
+                    if(!l)
+                        test_sjis = false;
+                    else
+                        freelocale(l);
+                }
+                #else
+                test_sjis = false;
+                #endif
+            }
+            #endif
 
             test_utf = def[type]!="std" || (!get_std_name("en_US.UTF-8").empty() && !get_std_name("he_IL.UTF-8").empty());
             
@@ -299,12 +349,16 @@ int main()
             std::cout << "  wchar_t" << std::endl;
             test_to<wchar_t>();
             #ifdef BOOSTER_HAS_CHAR16_T
-            std::cout << "  char16_t" << std::endl;
-            test_to<char16_t>();
+            if(bname == "icu" || bname == "std") {
+                std::cout << "  char16_t" << std::endl;
+                test_to<char16_t>();
+            }
             #endif
             #ifdef BOOSTER_HAS_CHAR32_T
-            std::cout << "  char32_t" << std::endl;
-            test_to<char32_t>();
+            if(bname == "icu" || bname == "std") {
+                std::cout << "  char32_t" << std::endl;
+                test_to<char32_t>();
+            }
             #endif
         }
     }

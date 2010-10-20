@@ -171,6 +171,7 @@ private:
             *out++ = fill;
             on_right--;
         }
+        ios.width(0);
         return out;
 
     }

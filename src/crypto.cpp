@@ -26,7 +26,7 @@
 #  include <openssl/sha.h>
 #endif
 #include <vector>
-#include <stdexcept>
+#include <booster/backtrace.h>
 #include "md5.h"
 #include "sha1.h"
 
@@ -126,7 +126,7 @@ namespace cppcms {
 			gcrypt_digets(int algorithm)
 			{
 				if(gcry_md_open(&state_,algorithm,0)!=0)
-					throw std::invalid_argument("gcrypt_digets - faled to create md");
+					throw booster::invalid_argument("gcrypt_digets - faled to create md");
 				algo_ = algorithm;
 			}
 			virtual unsigned digest_size() const
@@ -290,7 +290,7 @@ namespace cppcms {
 	hmac::hmac(std::auto_ptr<message_digest> digest,std::string const &key)
 	{
 		if(!digest.get())
-			throw std::invalid_argument("Has algorithm is not provided");
+			throw booster::invalid_argument("Has algorithm is not provided");
 		md_ = digest;
 		md_opad_.reset(md_->clone());
 		init(key);
@@ -299,7 +299,7 @@ namespace cppcms {
 	{
 		md_ = message_digest::create_by_name(name);
 		if(!md_.get()) {
-			throw std::invalid_argument("Invalid or unsupported hash function:" + name);
+			throw booster::invalid_argument("Invalid or unsupported hash function:" + name);
 		}
 		md_opad_.reset(md_->clone());
 		init(key);
@@ -333,14 +333,14 @@ namespace cppcms {
 	unsigned hmac::digest_size() const
 	{
 		if(!md_.get()){
-			throw std::runtime_error("Hmac can be used only once");
+			throw booster::runtime_error("Hmac can be used only once");
 		}
 		return md_->digest_size();
 	}
 	void hmac::append(void const *ptr,size_t size)
 	{
 		if(!md_.get()){
-			throw std::runtime_error("Hmac can be used only once");
+			throw booster::runtime_error("Hmac can be used only once");
 		}
 		md_->append(ptr,size);
 	}

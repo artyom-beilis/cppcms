@@ -18,7 +18,7 @@
 #include <booster/locale/date_time_facet.h>
 #include <locale>
 #include <vector>
-#include <stdexcept>
+#include <booster/backtrace.h>
 
 
 namespace booster {
@@ -34,12 +34,12 @@ namespace booster {
         ///
         /// \brief This error is thrown in case of invalid state that occurred
         ///
-        class date_time_error : public std::runtime_error {
+        class date_time_error : public booster::runtime_error {
         public:
             ///
             /// Constructor of date_time_error class
             /// 
-            date_time_error(std::string const &e) : std::runtime_error(e) {}
+            date_time_error(std::string const &e) : booster::runtime_error(e) {}
         };
 
 
@@ -490,7 +490,7 @@ namespace booster {
             date_time_period const &operator[](unsigned n) const 
             {
                 if(n >= size())
-                    throw std::out_of_range("Invalid index to date_time_period");
+                    throw booster::out_of_range("Invalid index to date_time_period");
                 if(n < 4)
                     return basic_[n];
                 else

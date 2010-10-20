@@ -179,17 +179,17 @@ namespace booster {
                     else if(magic == 0xde120495)
                         native_byteorder_ = false;
                     else
-                        throw std::runtime_error("Invalid file format");
+                        throw booster::runtime_error("Invalid file format");
                     
                     fseek(file,0,SEEK_END);
                     long len=ftell(file);
                     if(len < 0) {
-                        throw std::runtime_error("Wrong file object");
+                        throw booster::runtime_error("Wrong file object");
                     }
                     fseek(file,0,SEEK_SET);
                     vdata_.resize(len+1,0); // +1 to make sure the vector is not empty
                     if(fread(&vdata_.front(),1,len,file)!=unsigned(len))
-                        throw std::runtime_error("Failed to read file");
+                        throw booster::runtime_error("Failed to read file");
                     data_ = &vdata_[0];
                     file_size_ = len;
                 }
@@ -203,7 +203,7 @@ namespace booster {
                 {
                     uint32_t tmp;
                     if(offset > file_size_ - 4) {
-                        throw std::runtime_error("Bad file format");
+                        throw booster::runtime_error("Bad file format");
                     }
                     memcpy(&tmp,data_ + offset,4);
                     convert(tmp);
@@ -411,7 +411,7 @@ namespace booster {
                     std::string mo_encoding = extract(mo->value(0).first,"charset="," \r\n;");
 
                     if(mo_encoding.empty())
-                        throw std::runtime_error("Invalid mo-format, encoding is not specified");
+                        throw booster::runtime_error("Invalid mo-format, encoding is not specified");
 
                     if(!plural.empty()) {
                         std::auto_ptr<lambda::plural> ptr=lambda::compile(plural.c_str());

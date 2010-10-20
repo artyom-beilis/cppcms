@@ -10,6 +10,7 @@
 
 #include <booster/config.h>
 #include <stdexcept>
+#include <typeinfo>
 #include <vector>
 #include <iosfwd>
 
@@ -86,23 +87,70 @@ namespace booster {
     class exception : public std::exception, public backtrace {
     public:
     };
+    
+    class bad_cast : public std::bad_cast, public backtrace {
+    public:
+    };
 
     class runtime_error: public std::runtime_error, public backtrace {
     public:
-        runtime_error(std::string const &s) : std::runtime_error(s) 
+        explicit runtime_error(std::string const &s) : std::runtime_error(s) 
+        {
+        }
+    };
+
+    class range_error: public std::range_error, public backtrace {
+    public:
+        explicit range_error(std::string const &s) : std::range_error(s) 
+        {
+        }
+    };
+
+    class overflow_error: public std::overflow_error, public backtrace {
+    public:
+        explicit overflow_error(std::string const &s) : std::overflow_error(s) 
+        {
+        }
+    };
+
+    class underflow_error: public std::underflow_error, public backtrace {
+    public:
+        explicit underflow_error(std::string const &s) : std::underflow_error(s) 
         {
         }
     };
 
     class logic_error: public std::logic_error, public backtrace {
     public:
-        logic_error(std::string const &s) : std::logic_error(s) 
+        explicit logic_error(std::string const &s) : std::logic_error(s) 
         {
         }
     };
+
+    class domain_error: public std::domain_error, public backtrace {
+    public:
+        explicit domain_error(std::string const &s) : std::domain_error(s) 
+        {
+        }
+    };
+
+    class length_error: public std::length_error, public backtrace {
+    public:
+        explicit length_error(std::string const &s) : std::length_error(s) 
+        {
+        }
+    };
+
     class invalid_argument : public std::invalid_argument, public backtrace {
     public:
-        invalid_argument(std::string const &s) : std::invalid_argument(s)
+        explicit invalid_argument(std::string const &s) : std::invalid_argument(s)
+        {
+        }
+    };
+    
+    class out_of_range : public std::out_of_range, public backtrace {
+    public:
+        explicit out_of_range(std::string const &s) : std::out_of_range(s)
         {
         }
     };

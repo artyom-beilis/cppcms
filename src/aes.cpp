@@ -20,7 +20,7 @@
 #include "aes.h"
 #include <cppcms/urandom.h>
 #include <cppcms/config.h>
-#include <stdexcept>
+#include <booster/backtrace.h>
 #include <string.h>
 
 
@@ -162,26 +162,26 @@ namespace impl {
 		virtual void encrypt(void const *in,void *out,unsigned len)
 		{
 			if(len % 16 != 0) {
-				throw std::invalid_argument("Invalid block size");
+				throw booster::invalid_argument("Invalid block size");
 			}
 			if(gcry_cipher_encrypt(enc_,out,len,in,len)!=0) {
-				throw std::runtime_error("Encryption failed");
+				throw booster::runtime_error("Encryption failed");
 			}
 		}
 		virtual void decrypt(void const *in,void *out,unsigned len)
 		{
 			if(len % 16 != 0) {
-				throw std::invalid_argument("Invalid block size");
+				throw booster::invalid_argument("Invalid block size");
 			}
 			if(gcry_cipher_decrypt(enc_,out,len,in,len)!=0) {
-				throw std::runtime_error("Decryption failed");
+				throw booster::runtime_error("Decryption failed");
 			}
 		}
 	private:
 		void init(aes_type type,std::string const &key)
 		{
 			if(key.size()*8!=unsigned(type)) {
-				throw std::invalid_argument("Invalid key size");
+				throw booster::invalid_argument("Invalid key size");
 			}
 			key_ = key;
 			type_ = type;
@@ -197,7 +197,7 @@ namespace impl {
 				algo = GCRY_CIPHER_AES256;
 				break;
 			default:
-				throw std::invalid_argument("Invalid encryption method");
+				throw booster::invalid_argument("Invalid encryption method");
 			}
 
 			enc_ = 0;
@@ -219,7 +219,7 @@ namespace impl {
 					gcry_cipher_close(enc_);
 				if(dec_)
 					gcry_cipher_close(dec_);
-				throw std::runtime_error("Failed to create AES encryptor");
+				throw booster::runtime_error("Failed to create AES encryptor");
 			}
 
 		}
@@ -247,7 +247,7 @@ namespace impl {
 		openssl_aes_encryptor(aes_type type,std::string const &key)
 		{
 			if(key.size()*8!=unsigned(type)) {
-				throw std::invalid_argument("Invalid key size");
+				throw booster::invalid_argument("Invalid key size");
 			}
 			AES_set_encrypt_key(reinterpret_cast<unsigned char const *>(key.c_str()), type, &key_enc_);
 			AES_set_decrypt_key(reinterpret_cast<unsigned char const *>(key.c_str()), type, &key_dec_);
@@ -261,7 +261,7 @@ namespace impl {
 		virtual void encrypt(void const *in,void *out,unsigned len)
 		{
 			if(len % 16 != 0) {
-				throw std::invalid_argument("Invalid block size");
+				throw booster::invalid_argument("Invalid block size");
 			}
 			AES_cbc_encrypt(reinterpret_cast<unsigned char const *>(in),
 					reinterpret_cast<unsigned char *>(out), len,
@@ -272,7 +272,7 @@ namespace impl {
 		virtual void decrypt(void const *in,void *out,unsigned len)
 		{
 			if(len % 16 != 0) {
-				throw std::invalid_argument("Invalid block size");
+				throw booster::invalid_argument("Invalid block size");
 			}
 			AES_cbc_encrypt(reinterpret_cast<unsigned char const *>(in),
 					reinterpret_cast<unsigned char *>(out), len,

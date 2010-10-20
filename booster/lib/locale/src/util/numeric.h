@@ -76,9 +76,15 @@ private:
         switch(info.display_flags()) {
         case flags::posix:
             {
-                std::stringstream ss;
+                typedef std::basic_ostringstream<char_type> sstream_type;
+                sstream_type ss;
                 ss.imbue(std::locale::classic());
-                return super::do_put(out,ss,fill,val);
+                ss.flags(ios.flags());
+                ss.precision(ios.precision());
+                ss.width(ios.width());
+                iter_type ret_ptr = super::do_put(out,ss,fill,val);
+                ios.width(0);
+                return ret_ptr;
             }
         case flags::date:
             return format_time(out,ios,fill,static_cast<time_t>(val),'x');
@@ -284,6 +290,8 @@ private:
             {
                 std::stringstream ss;
                 ss.imbue(std::locale::classic());
+                ss.flags(ios.flags());
+                ss.precision(ios.precision());
                 return super::do_get(in,end,ss,err,val);
             }
         case flags::currency:

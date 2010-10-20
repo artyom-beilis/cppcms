@@ -14,7 +14,7 @@
 
 #include <errno.h>
 #include <algorithm>
-#include <stdexcept>
+#include <booster/backtrace.h>
 #include <vector>
 #include "codecvt.h"
 
@@ -40,7 +40,7 @@ namespace impl_posix {
             try {
                 d = iconv_open(utf32_encoding(),encoding.c_str());
                 if(d == (iconv_t)(-1)) {
-                    throw std::runtime_error("Unsupported encoding" + encoding);
+                    throw booster::runtime_error("Unsupported encoding" + encoding);
                 }
                 for(unsigned c=0;c<256;c++) {
                     char ibuf[2] = { char(c) , 0 };

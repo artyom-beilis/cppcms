@@ -477,6 +477,7 @@ int main(int argc,char **argv)
 	}
 	catch(std::exception const &e) {
 		std::cerr<<"Catched exception: "<<e.what()<<std::endl;
+		std::cerr<<booster::trace(e) << std::endl;
 		return 1;
 	}
 	return 0;

@@ -204,12 +204,17 @@ namespace util {
                 to_unicode_tbl_[i]=i;
             for(unsigned i=128;i<256;i++) {
                 char buf[2] = { char(i) , 0 };
-                std::wstring const tmp = conv::to_utf<wchar_t>(buf,buf+1,encoding);
-                if(tmp.size() != 1) {
-                    to_unicode_tbl_[i] = illegal;
+                try {
+                    std::wstring const tmp = conv::to_utf<wchar_t>(buf,buf+1,encoding,conv::stop);
+                    if(tmp.size() == 1) {
+                        to_unicode_tbl_[i] = tmp[0];
+                    }
+                    else {
+                        to_unicode_tbl_[i] = illegal;
+                    }
                 }
-                else {
-                    to_unicode_tbl_[i] = tmp[0];
+                catch(conv::conversion_error const &e) {
+                    to_unicode_tbl_[i] = illegal;
                 }
             }
             from_unicode_tbl_.resize(256);
@@ -301,7 +306,7 @@ namespace util {
     {
         std::auto_ptr<base_converter> res;
         std::string norm = conv::impl::normalize_encoding(encoding.c_str());
-       if(std::binary_search<char const **>( simple_encoding_table,
+        if(std::binary_search<char const **>( simple_encoding_table,
                         simple_encoding_table + sizeof(simple_encoding_table)/sizeof(char const *),
                         norm.c_str(),
                         compare_strings))

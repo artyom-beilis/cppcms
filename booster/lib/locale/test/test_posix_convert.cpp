@@ -53,7 +53,10 @@ void test_char()
         std::cout << "Testing " << name << std::endl;
         std::locale l=gen(name);
         test_one<CharType>(l,"Hello World","hello world","HELLO WORLD");
-        test_one<CharType>(l,"Façade","façade","FAÇADE");
+        #ifdef __APPLE__
+        if(sizeof(CharType)!=1)
+        #endif
+            test_one<CharType>(l,"Façade","façade","FAÇADE");
     }
     else {
         std::cout << "- en_US.ISO8859-1 is not supported, skipping" << std::endl;

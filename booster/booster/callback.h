@@ -8,7 +8,7 @@
 #ifndef BOOSTER_CALLBACK_H
 #define BOOSTER_CALLBACK_H
 
-#include <stdexcept>
+#include <booster/backtrace.h>
 #include <memory>
 #include <booster/intrusive_ptr.h>
 #include <booster/refcounted.h>
@@ -24,10 +24,10 @@ namespace booster {
 	/// \brief this exception is thrown in case of calling unassigned/empty
 	/// function
 	///
-	class bad_callback_call : public std::runtime_error {
+	class bad_callback_call : public booster::runtime_error {
 	public:
 		bad_callback_call() : 
-			std::runtime_error("bad_callback_call")
+			booster::runtime_error("bad_callback_call")
 		{
 		}
 	};

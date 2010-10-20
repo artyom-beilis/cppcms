@@ -21,7 +21,7 @@
 
 #include <stdio.h>
 
-#include <stdexcept>
+#include <booster/backtrace.h>
 
 #ifdef BOOSTER_POSIX
 #include <syslog.h>
@@ -242,7 +242,7 @@ namespace log {
 		if(l=="notice") return notice;
 		if(l=="info") return info;
 		if(l=="debug") return debug;
-		throw std::invalid_argument("Invalig logging level :" + l);
+		throw booster::invalid_argument("Invalig logging level :" + l);
 	}
 
 	namespace sinks {
@@ -306,7 +306,7 @@ namespace log {
 				d->stream.open(file_name.c_str(),std::fstream::out);
 
 			if(!d->stream)
-				throw std::runtime_error("Failed to open file " + file_name);
+				throw booster::runtime_error("Failed to open file " + file_name);
 		}
 		std::string file::format_file(std::string const &base,int n)
 		{

@@ -9,7 +9,7 @@
 #define BOOSTER_LOCLAE_GNU_GETTEXT_HPP
 
 #include <booster/locale/message.h>
-#include <stdexcept>
+#include <booster/backtrace.h>
 
 namespace booster {
 namespace locale {

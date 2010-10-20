@@ -2,7 +2,7 @@
 #define BOOSTER_NOWIDE_CONVERT_H
 
 #include <booster/config.h>
-#include <stdexcept>
+#include <booster/backtrace.h>
 
 #if defined(BOOSTER_WIN_NATIVE) || defined(BOOSTER_DOXYGEN_DOCS)
 namespace booster {
@@ -11,7 +11,7 @@ namespace booster {
 		///
 		/// \brief This exception is thrown if invalid UTF-8 or UTF-16 is given as input
 		///
-		class BOOSTER_API bad_utf : public std::runtime_error {
+		class BOOSTER_API bad_utf : public booster::runtime_error {
 		public:
 			bad_utf();
 		};

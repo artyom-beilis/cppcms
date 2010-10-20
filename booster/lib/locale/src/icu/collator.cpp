@@ -83,7 +83,7 @@ namespace booster {
                     int res = do_real_compare(collate,level,b1,e1,b2,e2,status);
                     
                     if(U_FAILURE(status))
-                            throw std::runtime_error(std::string("Collation failed:") + u_errorName(status));
+                            throw booster::runtime_error(std::string("Collation failed:") + u_errorName(status));
                     if(res < 0)
                         return -1;
                     else if(res > 0)
@@ -138,7 +138,7 @@ namespace booster {
                         collates_[i].reset(icu::Collator::createInstance(d.locale,status));
 
                         if(U_FAILURE(status))
-                            throw std::runtime_error(std::string("Creation of collate failed:") + u_errorName(status));
+                            throw booster::runtime_error(std::string("Creation of collate failed:") + u_errorName(status));
 
                         collates_[i]->setStrength(levels[i]);
                     }

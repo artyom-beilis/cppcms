@@ -8,7 +8,7 @@
 #ifndef BOOSTER_SRC_ICU_UTIL_HPP
 #define BOOSTER_SRC_ICU_UTIL_HPP
 #include <unicode/utypes.h>
-#include <stdexcept>
+#include <booster/backtrace.h>
 
 namespace booster {
 namespace locale {
@@ -16,7 +16,7 @@ namespace impl_icu {
 
     inline void throw_icu_error(UErrorCode err)
     {
-        throw std::runtime_error(u_errorName(err));
+        throw booster::runtime_error(u_errorName(err));
     }
 
     inline void check_and_throw_icu_error(UErrorCode err)

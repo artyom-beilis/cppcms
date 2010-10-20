@@ -11,7 +11,7 @@
 #include <string.h>
 #include <wchar.h>
 #include <string>
-#include <stdexcept>
+#include <booster/backtrace.h>
 #include <ios>
 #include <vector>
 #include <booster/locale/generator.h>

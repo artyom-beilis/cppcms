@@ -30,6 +30,7 @@
 #include <cppcms/session_interface.h>
 #include <cppcms/cppcms_error.h>
 #include <booster/log.h>
+#include <booster/backtrace.h>
 
 #include "cached_settings.h"
 
@@ -141,11 +142,15 @@ void context::dispatch(booster::intrusive_ptr<application> app,std::string url,b
 		app->main(url);
 	}
 	catch(std::exception const &e){
-		BOOSTER_ERROR("cppcms") << "Caught exception ["<<e.what()<<"]";
+		BOOSTER_ERROR("cppcms") << "Caught exception ["<<e.what()<<"]\n" << booster::trace(e)  ;
 		if(app->get_context()) {
 			if(!app->response().some_output_was_written()) {
-				if(app->service().cached_settings().security.display_error_message)
-					app->response().make_error_response(http::response::internal_server_error,e.what());
+				if(app->service().cached_settings().security.display_error_message) {
+					std::ostringstream ss;
+					ss << e.what() << '\n';
+					ss << booster::trace(e);
+					app->response().make_error_response(http::response::internal_server_error,ss.str());
+				}
 				else
 					app->response().make_error_response(http::response::internal_server_error);
 			}

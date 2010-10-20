@@ -21,8 +21,7 @@
 
 #include <cppcms/defs.h>
 #include <string>
-#include <stdexcept>
-
+#include <booster/backtrace.h>
 namespace cppcms {
 
 ///
@@ -31,7 +30,7 @@ namespace cppcms {
 /// Every exception that is thrown from CppCMS modules derived from this exception.
 ///
 
-class CPPCMS_API cppcms_error : public std::runtime_error {
+class CPPCMS_API cppcms_error : public booster::runtime_error {
 	std::string strerror(int err);
 public:
 	///
@@ -41,7 +40,7 @@ public:
 	///
 	/// Create an object with message \a error
 	///
-	cppcms_error(std::string const &error) : std::runtime_error(error) {};
+	cppcms_error(std::string const &error) : booster::runtime_error(error) {};
 };
 
 }

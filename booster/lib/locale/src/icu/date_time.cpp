@@ -56,7 +56,7 @@ namespace impl_icu {
         case week_of_year: return UCAL_WEEK_OF_YEAR;
         case week_of_month: return UCAL_WEEK_OF_MONTH;
         default:
-            throw std::invalid_argument("Invalid date_time period type");
+            throw booster::invalid_argument("Invalid date_time period type");
         }
     }
 
@@ -154,13 +154,13 @@ namespace impl_icu {
         }
         virtual void set_option(calendar_option_type opt,int v) 
         {
-            throw std::invalid_argument("There is no settable options for calendar");
+            throw booster::invalid_argument("There is no settable options for calendar");
         }
         virtual int get_option(calendar_option_type opt) const
         {
             if(opt==is_gregorian)
                 return dynamic_cast<icu::GregorianCalendar const *>(calendar_.get())!=0;
-            throw std::invalid_argument("Invalid option");
+            throw booster::invalid_argument("Invalid option");
         }
         virtual void adjust_value(period_type p,update_type u,int difference)
         {

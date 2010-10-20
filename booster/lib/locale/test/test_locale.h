@@ -8,7 +8,7 @@
 
 #ifndef BOOSTER_LOCALE_TEST_H
 #define BOOSTER_LOCALE_TEST_H
-#include <stdexcept>
+#include <booster/backtrace.h>
 #include <sstream>
 #include <iostream>
 #include <iomanip>
@@ -22,7 +22,7 @@ int test_counter=0;
 #define THROW_IF_TOO_BIG(X)         \
 do {                                \
     if((X) > 20)                    \
-        throw std::runtime_error("Error limits reached, stopping unit test");   \
+        throw booster::runtime_error("Error limits reached, stopping unit test");   \
 }while(0)
 
 #define TEST(X)                                                         \
@@ -97,7 +97,7 @@ std::basic_string<Char> to(std::string const &utf8)
         if(sizeof(Char)==1 && point > 255) {
             std::ostringstream ss;
             ss << "Can't convert codepoint U" << std::hex << point <<"(" <<std::string(utf8.begin()+prev,utf8.begin()+i)<<") to Latin1";
-            throw std::runtime_error(ss.str());
+            throw booster::runtime_error(ss.str());
         }
         else if(sizeof(Char)==2 && point >0xFFFF) { // Deal with surragates
             point-=0x10000;

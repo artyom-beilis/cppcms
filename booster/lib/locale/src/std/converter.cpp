@@ -8,7 +8,7 @@
 #define BOOSTER_SOURCE
 
 #include <locale>
-#include <stdexcept>
+#include <booster/backtrace.h>
 #include <booster/locale/generator.h>
 #include <booster/locale/conversion.h>
 #include <booster/locale/encoding.h>

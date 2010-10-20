@@ -12,15 +12,15 @@
 #include <booster/copy_ptr.h>
 #include <string>
 #include <vector>
-#include <stdexcept>
+#include <booster/backtrace.h>
 
 namespace booster {
 	///
 	/// \brief Exception that is thrown in case of creation of invalid regex
 	/// 
-	class regex_error : public std::runtime_error {
+	class regex_error : public booster::runtime_error {
 	public:
-		regex_error(std::string const &s) : std::runtime_error(s)
+		regex_error(std::string const &s) : booster::runtime_error(s)
 		{
 		}
 	};

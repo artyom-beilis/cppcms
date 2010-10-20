@@ -692,7 +692,7 @@ namespace aio {
 				WORD ver=MAKEWORD(2, 2);
 				WSADATA data;
 				if(WSAStartup(ver,&data) < 0) {
-					throw std::runtime_error("Failed to init winsock");
+					throw booster::runtime_error("Failed to init winsock");
 				}
 			}
 		} instance;
@@ -759,7 +759,7 @@ namespace aio {
 				if(hint!=default_poll)
 					hint=default_poll;
 				else
-					throw std::runtime_error("Internal error - no poller found");
+					throw booster::runtime_error("Internal error - no poller found");
 			}
 		}
 

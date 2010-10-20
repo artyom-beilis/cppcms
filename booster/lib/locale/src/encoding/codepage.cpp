@@ -7,11 +7,6 @@
 //
 #define BOOSTER_SOURCE
 #include <booster/config.h>
-#if (!defined(BOOSTER_WIN_NATIVE) && !defined(BOOSTER_LOCALE_NO_ICONV))
-#  ifndef BOOSTER_LOCALE_WITH_ICONV
-#    define BOOSTER_LOCALE_WITH_ICONV
-#  endif
-#endif
 
 #if defined(BOOSTER_WIN_NATIVE) || defined(__CYGWIN__)
 #define BOOSTER_LOCALE_WITH_WCONV

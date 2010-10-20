@@ -18,6 +18,7 @@
 
 #include <memory>
 #include <cassert>
+#include <booster/backtrace.h>
 #include <booster/checked_delete.h>
 #include <booster/smart_ptr/shared_count.h>
 #include <booster/smart_ptr/sp_convertible.h>
@@ -215,7 +216,7 @@ public:
     {
         if(px == 0)
         {
-            throw std::bad_cast();
+            throw booster::bad_cast();
         }
     }
 
