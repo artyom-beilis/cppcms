@@ -35,6 +35,14 @@
 #include <sstream>
 #include <iomanip>
 
+#include <iostream>
+
+#if defined(BOOSTER_MSVC) && defined(COMPILED_WITH_NO_OMIT_FRAME_POINTERS)
+#include <windows.h>
+#include <stdlib.h>
+#include <dbghelp.h>
+#endif
+
 
 namespace booster {
 
@@ -46,7 +54,7 @@ namespace booster {
             return :: backtrace(array,n);
         }
         
-        #elif defined(BOOSTER_MSVC) && ( defined(BOOSTER_IS_X86) || defined(BOOSTER_IS_X86_64) )
+        #elif defined(BOOSTER_MSVC) && defined(_M_IX86) && defined(COMPILED_WITH_NO_OMIT_FRAME_POINTERS)
         namespace {
             struct stack_frame {
                 struct stack_frame* next;
@@ -54,20 +62,33 @@ namespace booster {
             };
         }
 
+        namespace {
+            #pragma optimize( "", off )
+            //
+            // This does now work when copiled with Ommiting frame pointers
+            // need to do something better :-( for now
+            //
+            int real_trace(void **array,int n)
+            {
+                stack_frame *frame = 0;
+                #ifdef _M_X64
+                __asm mov frame,rbp;
+                #else
+                __asm mov frame,ebp;
+                #endif
+                int i=0;
+                while(i<n && frame!=0) {
+                    std::cerr << frame << std::endl;
+                    array[i++]=frame->ret;
+                    frame = frame->next;
+                }
+                return i;
+            }
+            #pragma optimize( "", on )
+        }
         int trace(void **array,int n)
         {
-            stack_frame *start = 0;
-            #ifdef BOOSTER_IS_X86
-            __asm mov start,ebp;
-            #elif defined(BOOSTER_IS_X86_64)
-            __asm mov start,rbp;
-            #endif
-            int i=0;
-            while(i<n && frame!=0) {
-                array[i++]=frame->ret;
-                frame = frame->next;
-            }
-            return i;
+            return real_trace(array,n);
         }
 
         #else
@@ -197,7 +218,78 @@ namespace booster {
                 throw;
             }
         }
+        
+        #elif defined(BOOSTER_MSVC) && defined(COMPILED_WITH_NO_OMIT_FRAME_POINTERS)
 
+        namespace {
+            HANDLE hProcess = 0;
+            bool syms_ready = false;
+            
+            void init()
+            {
+                if(hProcess == 0) {
+                    hProcess = GetCurrentProcess();
+                    SymSetOptions(SYMOPT_DEFERRED_LOADS);
+
+                    if (SymInitialize(hProcess, NULL, TRUE))
+                    {
+                        syms_ready = true;
+                    }
+                }
+            }
+        }
+        std::string get_symbol(void *ptr)
+        {
+            if(ptr==0)
+                return std::string();
+            init();
+            std::ostringstream ss;
+            ss << ptr;
+            if(syms_ready) {
+                DWORD64  dwDisplacement = 0;
+                DWORD64  dwAddress = (DWORD64)ptr;
+
+                std::vector<char> buffer(sizeof(SYMBOL_INFO) + MAX_SYM_NAME);
+                PSYMBOL_INFO pSymbol = (PSYMBOL_INFO)&buffer.front();
+
+                pSymbol->SizeOfStruct = sizeof(SYMBOL_INFO);
+                pSymbol->MaxNameLen = MAX_SYM_NAME;
+
+                if (SymFromAddr(hProcess, dwAddress, &dwDisplacement, pSymbol))
+                {
+                    ss <<": " << pSymbol->Name << std::hex << " +0x" << dwDisplacement;
+                }
+                else
+                {
+                    ss << ": ???";
+                }
+            }
+            return ss.str();
+        }
+
+        std::string get_symbols(void *const *addresses,int size)
+        {
+            std::string res;
+            for(int i=0;i<size;i++) {
+                std::string tmp = get_symbol(addresses[i]);
+                if(!tmp.empty()) {
+                    res+=tmp;
+                    res+='\n';
+                }
+            }
+            return res;
+        }
+        void write_symbols(void *const *addresses,int size,std::ostream &out)
+        {
+            for(int i=0;i<size;i++) {
+                std::string tmp = get_symbol(addresses[i]);
+                if(!tmp.empty()) {
+                    out << tmp << '\n';
+                }
+            }
+            out << std::flush;
+        }
+        
         #else
 
         std::string get_symbol(void *ptr)
