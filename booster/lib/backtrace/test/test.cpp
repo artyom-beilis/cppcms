@@ -15,12 +15,14 @@ int bar()
 
 int main()
 {
-	try {
-		std::cout << bar() << std::endl;
-	}
-	catch(std::exception const &e)
-	{
-		std::cerr << e.what() << std::endl;
-		std::cerr << booster::trace(e);
+	for(int i=0;i<12;i++) {
+		try {
+			std::cout << bar() << std::endl;
+		}
+		catch(std::exception const &e)
+		{
+			std::cerr << e.what() << std::endl;
+			std::cerr << booster::trace(e);
+		}
 	}
 }
