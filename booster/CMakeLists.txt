@@ -468,6 +468,10 @@ foreach(ALIB ${LINK_LIBS})
 		target_link_libraries(${ALIB} dbghelp)
 	endif()
 
+  	if(WIN32)
+		target_link_libraries(${ALIB} psapi)
+	endif()
+
     
 	if(${CMAKE_MAJOR_VERSION}.${CMAKE_MINOR_VERSION} GREATER 2.6)
 		set_target_properties(${ALIB} PROPERTIES PUBLIC_HEADER "${CMAKE_CURRENT_BINARY_DIR}/booster/build_config.h")

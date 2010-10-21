@@ -35,11 +35,16 @@
 #include <sstream>
 #include <iomanip>
 
-#if defined(BOOSTER_MSVC)
+#if defined(BOOSTER_WIN32)
 #include <windows.h>
+#include <psapi.h>
+#endif
+
+#if defined(BOOSTER_MSVC)
 #include <stdlib.h>
 #include <dbghelp.h>
 #endif
+
 
 
 namespace booster {
@@ -59,6 +64,37 @@ namespace booster {
             if(n>=63)
                 n=62;
             return RtlCaptureStackBackTrace(0,n,array,0);
+        }
+        
+        #elif defined(BOOSTER_WIN32)
+
+        extern "C" {
+            typedef unsigned short (*capture_func_type)(unsigned long, unsigned long ,void **,unsigned long *);
+            static capture_func_type capture_stack_trace;
+            static bool capture_stack_trace_loaded;
+        }
+
+        int trace(void **array,int n)
+        {
+            if(capture_stack_trace_loaded && !capture_stack_trace)
+                return 0;
+            if(!capture_stack_trace_loaded) {
+                HMODULE h = GetModuleHandle("kernel32.dll");
+                if(!h) {
+                    capture_stack_trace_loaded = true;
+                    return 0;
+                }
+                capture_stack_trace = (capture_func_type)GetProcAddress(h,"RtlCaptureStackBackTrace");
+                capture_stack_trace_loaded = true;
+            }
+            
+            if(!capture_stack_trace)
+                return 0;
+            
+            if(n>=63)
+                n=62;
+
+            return capture_stack_trace(0,n,array,0);
         }
 
         #else
@@ -260,7 +296,81 @@ namespace booster {
             }
             out << std::flush;
         }
+
+        #elif defined(BOOSTER_WIN32)
+        namespace {
+            struct module_info {
+                void *ptr;
+                void *mptr;
+                std::string name;
+            };
+
+            void get_modules_info(void *const *addrs,int n,module_info *inf)
+            {
+                std::vector<HMODULE> mods(1024);
+                
+                HANDLE hProc = GetCurrentProcess();
+                DWORD size=0;
+                EnumProcessModules(hProc,&mods[0],sizeof(HMODULE)*mods.size(),&size);
+                size /= sizeof(HMODULE);
+
+                std::vector<MODULEINFO> info(size,MODULEINFO());
+                std::vector<std::string> names(size);
+
+                for(unsigned i=0;i<size;i++) {
+                    GetModuleInformation(hProc,mods[i],&info[i],sizeof(MODULEINFO));
+                }
+                for(int i=0;i<n;i++) {
+                    inf[i].ptr=addrs[i];
+                    inf[i].mptr = 0;
+                    for(unsigned j=0;j<size;j++) {
+                        char *addr = (char*)(addrs[i]);
+                        char *maddr = (char*)(info[j].lpBaseOfDll);
+                        if(maddr <= addr && addr < maddr + info[j].SizeOfImage) {
+                            inf[i].mptr = maddr;
+                            if(names[j].empty()) {
+                                char module_name[256];
+                                GetModuleBaseNameA(hProc,mods[j],module_name,sizeof(module_name));
+                                names[j]=module_name;
+                            }
+                            inf[i].name=names[j];
+                            break;
+                        }
+                    }
+                    if(inf[i].name.empty())
+                        inf[i].name="???";
+                }
+            };
+        } // anon
         
+        std::string get_symbol(void *ptr)
+        {
+            module_info inf;
+            get_modules_info(&ptr,1,&inf);
+            std::ostringstream ss;
+            ss<< inf.ptr<<" in "<<inf.name << " at " << inf.mptr;
+            return ss.str();
+        }
+        
+        std::string get_symbols(void *const *ptrs,int size)
+        {
+            std::ostringstream ss;
+            write_symbols(ptrs,size,ss);
+            ss.str();
+        }
+        
+        void write_symbols(void *const *addresses,int size,std::ostream &out)
+        {
+            if(size==0)
+                return;
+            std::vector<module_info> inf(size);
+            get_modules_info(addresses,size,&inf.front());
+            for(int i=0;i<size;i++) {
+                out << inf[i].ptr<<" in "<<inf[i].name << " at " << inf[i].mptr << '\n';
+            }
+            out << std::flush;
+        }
+
         #else
 
         std::string get_symbol(void *ptr)
