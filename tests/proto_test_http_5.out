@@ -1,8 +1,8 @@
 HTTP/1.0 200 Ok
-Server: CppCMS-Embedded/0.99.3
+Server: CppCMS-Embedded/0.99.4
 Connection: close
 Content-Type: text/plain; charset=utf-8
-X-Powered-By: CppCMS/0.99.3
+X-Powered-By: CppCMS/0.99.4
 
 CONTENT_LENGTH:11
 CONTENT_TYPE:application/x-www-form-urlencoded; charset=utf-8
@@ -15,7 +15,7 @@ SCRIPT_NAME:/test
 SERVER_NAME:127.0.0.1
 SERVER_PORT:8080
 SERVER_PROTOCOL:HTTP/1.0
-SERVER_SOFTWARE:CppCMS/0.99.3
+SERVER_SOFTWARE:CppCMS/0.99.4
 
 1=2
 foo=bar
