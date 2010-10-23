@@ -166,15 +166,16 @@ namespace cgi {
 	public:	
 		virtual void async_write_some(void const *p,size_t s,io_handler const &h)
 		{
-			do_write_some(p,s,h,true);
+			booster::system::error_code dummy;
+			do_write_some(p,s,h,true,dummy);
 		}
 		
-		virtual size_t write_some(void const *buffer,size_t n)
+		virtual size_t write_some(void const *buffer,size_t n,booster::system::error_code &e)
 		{
-			return do_write_some(buffer,n,io_handler(),false);
+			return do_write_some(buffer,n,io_handler(),false,e);
 		}
 		
-		virtual size_t do_write_some(void const *p,size_t s,io_handler const &h,bool async)
+		virtual size_t do_write_some(void const *p,size_t s,io_handler const &h,bool async,booster::system::error_code &e)
 		{
 			if(s==0) {
 				if(async)
@@ -205,9 +206,22 @@ namespace cgi {
 							s));
 				return s;
 			}
-			
-			socket_.write(packet);
-			return s;
+			else {
+				booster::system::error_code err;
+				size_t res = socket_.write(packet,err);
+				if(err && io::socket::would_block(err)) {
+					socket_.set_non_blocking(false);
+					packet+=res;
+					socket_.write(packet,e);
+					return s;
+				}
+				else if(err) {
+					e=err;
+					return 0;
+				}
+				else
+					return s;
+			}
 		}
 		virtual booster::aio::io_service &get_io_service()
 		{

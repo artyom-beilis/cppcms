@@ -50,6 +50,7 @@
 #include <booster/callback.h>
 #include <booster/posix_time.h>
 #include <booster/system_error.h>
+#include <booster/log.h>
 
 
 class chat : public cppcms::application {
@@ -256,10 +257,22 @@ public:
 		dispatcher().assign("^/cache/?$",&hello::cached,this);
 		dispatcher().assign("^/throw/?$",&hello::throw_it,this);
 		dispatcher().assign("^/session/?$",&hello::session_test,this);
+		dispatcher().assign("^/verylong/?$",&hello::verylong,this);
 		dispatcher().assign(".*",&hello::hello_world,this);
 	}
 	~hello()
 	{
+	}
+
+	void verylong()
+	{
+		for(int i=0;i<10000000;i++) {
+			if(!(response().out() << i << '\n')) {
+				BOOSTER_DEBUG("hello") << "Bad output!";
+				return;
+			}
+		}
+		
 	}
 
 	void throw_it()

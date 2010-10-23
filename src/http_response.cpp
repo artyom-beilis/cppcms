@@ -32,6 +32,7 @@
 #include <cppcms/util.h>
 #include <cppcms/session_interface.h>
 
+#include <booster/log.h>
 #include <booster/posix_time.h>
 #include <iostream>
 #include <sstream>
@@ -75,16 +76,27 @@ namespace  {
 	class output_device : public boost::iostreams::sink {
 		booster::weak_ptr<impl::cgi::connection> conn_;
 	public:
-		output_device(impl::cgi::connection *conn) : conn_(conn->shared_from_this()) {}
+		output_device(impl::cgi::connection *conn) : 
+			conn_(conn->shared_from_this())
+		{
+		}
 		std::streamsize write(char const *data,std::streamsize n)
 		{
 			if(n==0)
 				return 0;
 			booster::shared_ptr<impl::cgi::connection> c = conn_.lock();
-			if(c) {
-				return c->write(data,n);
+			if(!c) {
+				throw std::runtime_error("no writer");
 			}
-			return 0;
+			
+			booster::system::error_code e;
+
+			size_t res = c->write(data,n,e);
+			if(e) {
+				BOOSTER_WARNING("cppcms") << "Failed to write response:" << e.message();
+				conn_.reset();
+			}
+			return res;
 		}
 	};
 }
@@ -171,7 +183,12 @@ void response::finalize()
 {
 	if(!finalized_) {
 		out()<<std::flush;
-		d->filter.reset();
+		try {
+			d->filter.reset();
+		}
+		catch(...) {
+			// device may throw!
+		}
 		finalized_=1;
 	}
 }

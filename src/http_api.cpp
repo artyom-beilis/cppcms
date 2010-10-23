@@ -215,10 +215,21 @@ namespace cgi {
 			else
 				process_output_headers(p,s,h);
 		}
-		virtual size_t write_some(void const *buffer,size_t n)
+		virtual size_t write_some(void const *buffer,size_t n,booster::system::error_code &e)
 		{
-			if(headers_done_)
-				return socket_.write_some(io::buffer(buffer,n));
+			if(headers_done_) {
+				booster::system::error_code err;
+				size_t res = socket_.write_some(io::buffer(buffer,n),err);
+				if(err) {
+					if(io::socket::would_block(err)) {
+						socket_.set_non_blocking(false);
+						return socket_.write_some(io::buffer(buffer,n),e);
+					}
+					e = err;
+					return res;
+				}
+				return res;
+			}
 			return process_output_headers(buffer,n);
 		}
 		virtual booster::aio::io_service &get_io_service()

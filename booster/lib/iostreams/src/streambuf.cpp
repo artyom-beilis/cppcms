@@ -14,12 +14,16 @@ namespace booster {
 	streambuf::~streambuf()
 	{
 	}
-
+	
 	int streambuf::overflow(int c)
 	{
-		if(pptr()==0) {
+		if(pptr()==pbase()) {
 			buffer_out_.resize(buffer_size_+1,0);
 			setp(&buffer_out_.front(),&buffer_out_.front()+buffer_size_);
+			if(c!=EOF) {
+				sputc(c);
+			}
+			return 0;
 		}
 		
 		std::streamsize n=pptr() - pbase();
@@ -29,15 +33,26 @@ namespace booster {
 			*pptr()=c;
 			real_size++;
 		}
-		if(real_size > 0 && std::streamsize(device().write(pbase(),real_size))!=real_size)
-			return EOF;
+		if(real_size > 0) {
+			size_t res = device().write(pbase(),real_size);
+			if(std::streamsize(res) != real_size) {
+				pbump(res);
+				return EOF;
+			}
+		}
 		pbump(-n);
 		return 0;
 	}
 	int streambuf::sync()
 	{
-		if(pptr()!=pbase())
-			return overflow(EOF);
+		if(pptr()!=pbase()) {
+			std::streamsize n=pptr() - pbase();
+			size_t res = device().write(pbase(),n);
+			pbump(-res);
+			if(std::streamsize(res)!=n)
+				return EOF;
+			return 0;
+		}
 		return 0;
 	}
 

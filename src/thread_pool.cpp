@@ -18,6 +18,9 @@
 ///////////////////////////////////////////////////////////////////////////////
 #define CPPCMS_SOURCE
 #include <cppcms/thread_pool.h>
+#include <booster/backtrace.h>
+#include <booster/log.h>
+#include <ostream>
 #include <list>
 #include <vector>
 #include <cppcms/config.h>
@@ -123,8 +126,19 @@ namespace impl {
 					}
 				}
 
-				if(job)
-					job();
+				if(job) {
+					try {
+						job();
+					}
+					catch(std::exception const &e) {
+						BOOSTER_ERROR("cppcms") << "Catched exception in thread pool" << e.what() <<'\n'
+									<< booster::trace(e);
+
+					}
+					catch(...) {
+						BOOSTER_ERROR("cppcms") << "Catched unknown exception in thread pool";
+					}
+				}
 			} 	
 		}
 

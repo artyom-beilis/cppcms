@@ -93,7 +93,7 @@ namespace cgi {
 
 		virtual std::string getenv(std::string const &key) = 0;
 		virtual std::map<std::string,std::string> const &getenv() = 0;
-		size_t write(void const *data,size_t n);
+		size_t write(void const *data,size_t n,booster::system::error_code &e);
 		bool is_reuseable();
 	
 		std::string last_error();
@@ -116,7 +116,7 @@ namespace cgi {
 		virtual void async_write_some(void const *,size_t,io_handler const &h) = 0;
 		virtual void async_write_eof(handler const &h) = 0;
 		virtual void write_eof() = 0;
-		virtual size_t write_some(void const *,size_t) = 0;
+		virtual size_t write_some(void const *,size_t,booster::system::error_code &e) = 0;
 		virtual booster::aio::io_service &get_io_service() = 0;
 
 		/****************************************************************************/

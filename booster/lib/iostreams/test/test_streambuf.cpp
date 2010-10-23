@@ -179,7 +179,7 @@ int main()
 			buf.device(id);
 			std::ostream out(&buf);
 			out << "test";
-			TEST(test=="t");
+			TEST(test=="");
 			out << std::flush;
 			TEST(test=="test");
 			TEST(out);

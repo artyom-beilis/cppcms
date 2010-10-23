@@ -468,17 +468,19 @@ void connection::async_write(void const *p,size_t s,io_handler const &h)
 	w();
 }
 
-size_t connection::write(void const *data,size_t n)
+size_t connection::write(void const *data,size_t n,booster::system::error_code &e)
 {
 	char const *p=reinterpret_cast<char const *>(data);
 	size_t wr=0;
 	while(n > 0) {
-		size_t d=write_some(p,n);
+		size_t d=write_some(p,n,e);
 		if(d == 0)
 			return wr;
 		p+=d;
 		wr+=d;
 		n-=d;
+		if(e)
+			return wr;
 	}
 	return wr;
 }

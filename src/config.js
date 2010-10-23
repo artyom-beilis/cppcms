@@ -5,13 +5,13 @@
 	"id" : 1,
 	// Service description
 	"service" : {
-		"worker_processes" : 5,
+		//"worker_processes" : 5,
 		"worker_threads" : 5,
 		//"worker_threads" : 25,
-	//	"api" : "fastcgi",
-		"api" : "http",
-		"port" : 8080,
-	//	"port" : 8081,
+		"api" : "scgi",
+	//	"api" : "http",
+	//	"port" : 8080,
+		"port" : 8081,
 		"ip" : "0.0.0.0",
 	//	"ip" : "127.0.0.1",
 	//	 "socket" : "/tmp/scgi.socket",
@@ -28,7 +28,8 @@
 				"ip" : "127.0.0.1",
 				"control_ports" : [ 8032 ]  //
 			}
-		]
+		],
+		//"output_buffer_size" : 16384
 	},
 	"daemon" : {
 		//"enable" : true,
