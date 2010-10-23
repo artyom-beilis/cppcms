@@ -172,10 +172,10 @@ elseif(CMAKE_CXX_COMPILER_ID STREQUAL "SunPro")
 	endif()
 endif()
 
-if(NOT ${CMAKE_HOST_WIN32})
+if(NOT WIN32)
 	check_function_exists(dlopen BOOSTER_HAVE_DLOPEN)
 	if(NOT BOOSTER_HAVE_DLOPEN)
-		find_library(LIB_DL dl)
+		find_library(BOOSTER_LIB_DL dl)
 	endif()
 endif()
 
@@ -456,8 +456,8 @@ foreach(ALIB ${LINK_LIBS})
 		target_link_libraries(${ALIB} ${ICU_DATA})
 	endif()
 
-	if(LIB_DL)
-		target_link_libraries(${ALIB} ${LIB_DL})
+	if(BOOSTER_LIB_DL)
+		target_link_libraries(${ALIB} ${BOOSTER_LIB_DL})
 	endif()
 
 	if(ICONV_LIB)

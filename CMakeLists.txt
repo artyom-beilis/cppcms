@@ -443,8 +443,7 @@ target_link_libraries(hello_world ${CPPCMS_LIB})
 add_executable(cppcms_scale src/cache_server_main.cpp)
 target_link_libraries(cppcms_scale ${CPPCMS_LIB})
 
-add_executable(cppcms_config_find_param src/cppcms_config_find_param.cpp src/json.cpp
-)
+add_executable(cppcms_config_find_param src/cppcms_config_find_param.cpp src/json.cpp)
 if(DISABLE_SHARED)
 	target_link_libraries(cppcms_config_find_param booster-static)
 else(DISABLE_SHARED)
