@@ -457,6 +457,7 @@ endif(DISABLE_SHARED)
 set(ALL_TESTS 
 	form_test
 	proto_test
+	disco_test
 	encryptor_test
 	storage_test
 	cache_backend_test
@@ -576,6 +577,33 @@ add_test(forwarder_test
 add_test(jsonrpc_test
 	jsonrpc_test "-c" "${CNF}/jsonrpc_test.js"
 	"--test-exec=${PYTHON} ${CNF}/jsonrpc_test.py")
+
+add_test(disco_test_http 
+	disco_test "-c" "${CNF}/proto_test.js" 
+	"--service-api=http" "--service-port=8080" "--service-ip=127.0.0.1"
+	"--test-exec=${PYTHON} ${CNF}/disco_test.py http")
+
+add_test(disco_test_fastcgi_tcp 
+	disco_test "-c" "${CNF}/proto_test.js" 
+	"--service-api=fastcgi" "--service-port=8080" "--service-ip=127.0.0.1"
+	"--test-exec=${PYTHON} ${CNF}/disco_test.py fastcgi_tcp")
+
+add_test(disco_test_scgi_tcp 
+	disco_test "-c" "${CNF}/proto_test.js" 
+	"--service-api=scgi" "--service-port=8080" "--service-ip=127.0.0.1"
+	"--test-exec=${PYTHON} ${CNF}/disco_test.py scgi_tcp")
+
+if(NOT WIN32)
+	add_test(disco_test_fastcgi_unix 
+		disco_test "-c" "${CNF}/proto_test.js" 
+		"--service-api=fastcgi" "--service-socket=/tmp/cppcms_test_socket"
+		"--test-exec=${PYTHON} ${CNF}/disco_test.py fastcgi_unix")
+
+	add_test(disco_test_scgi_unix 
+		disco_test "-c" "${CNF}/proto_test.js" 
+		"--service-api=scgi" "--service-socket=/tmp/cppcms_test_socket"
+		"--test-exec=${PYTHON} ${CNF}/disco_test.py scgi_unix")
+endif()
 
 foreach(TYPE async sync)
 	add_test(proto_test_${TYPE}_http 
