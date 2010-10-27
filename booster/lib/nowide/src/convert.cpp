@@ -13,7 +13,7 @@
 namespace booster {
 namespace nowide {
 
-bad_utf::bad_utf() : std::runtime_error("Bad utf-8 or utf-16 sequence")
+bad_utf::bad_utf() : booster::runtime_error("Bad utf-8 or utf-16 sequence")
 {
 }
 
