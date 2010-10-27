@@ -49,7 +49,7 @@ for key,value in dic.items():
 	status = 'not tested'
 	if key in all:
 		status = all[key]
-		link='<a href="./nightly-builds-status/' + key +'.txt">' + status + '</a>'
+		link='<a href="./nightly-build-report/' + key +'.txt">' + status + '</a>'
 	else:
 		link=status
 	print '<tr>', value, '<td>', link, '</td></tr>'
