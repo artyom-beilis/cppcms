@@ -56,7 +56,8 @@ namespace cppcms {
 
 session_interface::session_interface(http::context &context) :
 	context_(&context),
-	loaded_(0)
+	loaded_(0),
+	reset_(0)
 {
 	timeout_val_def_=context.service().cached_settings().session.timeout;
 	string s_how=context.service().cached_settings().session.expire;
@@ -215,8 +216,8 @@ void session_interface::save()
 	if(storage_.get()==NULL || !loaded_ || saved_)
 		return;
 	check();
-	new_session_  = data_copy_.empty() && !data_.empty();
-	if(data_.empty()) {
+	new_session_  = (data_copy_.empty() && !data_.empty()) || reset_;
+	if(data_.empty() || reset_) {
 		if(get_session_cookie()!="")
 			storage_->clear(*this);
 		update_exposed(true);
@@ -420,6 +421,11 @@ bool session_interface::on_server()
 {
 	check();
 	return on_server_;
+}
+
+void session_interface::reset_session()
+{
+	reset_ = 1;
 }
 
 

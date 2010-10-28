@@ -276,6 +276,12 @@ public:
 	///
 	bool is_blocking();
 
+	///
+	/// When using session id based session - force generation of new session id to prevent session
+	/// fixation attacks
+	///
+	void reset_session();
+
 private:
 	friend class http::response;
 	friend class http::request;
@@ -303,7 +309,8 @@ private:
 	uint32_t saved_ : 1;
 	uint32_t on_server_ : 1;
 	uint32_t loaded_ : 1;
-	uint32_t reserved_ : 28;
+	uint32_t reset_ : 1;
+	uint32_t reserved_ : 27;
 
 	std::string temp_cookie_;
 
