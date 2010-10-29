@@ -309,6 +309,7 @@ int main()
                 test_iso = false;
                 test_sjis = false;
             }
+            test_utf = true;
             #ifndef BOOSTER_LOCALE_NO_POSIX_BACKEND
             if(bname=="posix") {
                 {
@@ -322,6 +323,13 @@ int main()
                     locale_t l = newlocale(LC_ALL_MASK,en_us_8bit.c_str(),0);
                     if(!l)
                         test_iso = false;
+                    else
+                        freelocale(l);
+                }
+                {
+                    locale_t l = newlocale(LC_ALL_MASK,"en_US.UTF-8",0);
+                    if(!l)
+                        test_utf = false;
                     else
                         freelocale(l);
                 }
@@ -339,7 +347,10 @@ int main()
             }
             #endif
 
-            test_utf = def[type]!="std" || (!get_std_name("en_US.UTF-8").empty() && !get_std_name("he_IL.UTF-8").empty());
+            if(def[type]=="std" && (get_std_name("en_US.UTF-8").empty() || get_std_name("he_IL.UTF-8").empty())) 
+            {
+                test_utf = false;
+            }
             
             std::cout << "Testing wide I/O" << std::endl;
             test_wide_io();
