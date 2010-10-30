@@ -22,23 +22,10 @@ rm -fr $DIRNAME
 
 tar -xjf $DIRNAME.tar.bz2
 cd $DIRNAME
-mkdir build
-cd build
-if cmake -DCMAKE_BUILD_TYPE=Debug -DDISABLE_STATIC=ON .. && make && make test
-then
-	cd ..
-	rm -fr build
-	echo "Done ok"
-	DOCFILE=cppcms_ref_v`printf $VERSION | sed 's/\./_/g'`
-	cp -a doc/doxygen/html/  /home/artik/vserver-www/www/$DOCFILE
-	cd /home/artik/vserver-www/www
-	rm cppcms_ref_v0_99
-	ln -s $DOCFILE cppcms_ref_v0_99
-else
-	echo Failed!
-fi
-
-
-
+DOCFILE=cppcms_ref_v`printf $VERSION | sed 's/\./_/g'`
+cp -a doc/doxygen/html/  /home/artik/vserver-www/www/$DOCFILE
+cd /home/artik/vserver-www/www
+rm cppcms_ref_v0_99
+ln -s $DOCFILE cppcms_ref_v0_99
 
 

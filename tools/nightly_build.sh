@@ -152,7 +152,7 @@ wait $PID
 
 VBoxHeadless -s Solaris &
 PID=$!
-sleep 180
+sleep 300
 
 scp -P 2222 $SOLARIS_PATH artik@localhost:/tmp
 ssh -p 2222 artik@localhost /tmp/solaris-build.sh
