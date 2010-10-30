@@ -217,7 +217,7 @@ void session_interface::save()
 		return;
 	check();
 	new_session_  = (data_copy_.empty() && !data_.empty()) || reset_;
-	if(data_.empty() || reset_) {
+	if(data_.empty()) {
 		if(get_session_cookie()!="")
 			storage_->clear(*this);
 		update_exposed(true);

@@ -77,15 +77,15 @@ bool session_sid::valid_sid(std::string const &cookie,std::string &id)
 void session_sid::save(session_interface &session,std::string const &data,time_t timeout,bool new_data,bool unused)
 {
 	std::string id;
-	if(!new_data) {
-		if(!valid_sid(session.get_session_cookie(),id)) {
-			id=get_new_sid(); // if id not valid create new one
+	if(valid_sid(session.get_session_cookie(),id)) {
+		if(new_data) {
+			storage_->remove(id);
+			id = get_new_sid();
 		}
 	}
 	else {
-		id=get_new_sid(); 
+		id = get_new_sid();
 	}
-
 	storage_->save(id,timeout,data);
 	session.set_session_cookie("I"+id); // Renew cookie or set new one
 }
