@@ -382,6 +382,11 @@ void connection::async_write_response(	http::response &response,
 
 void connection::on_async_write_written(booster::system::error_code const &e,bool complete_response,ehandler const &h)
 {
+	if(e) {	
+		BOOSTER_WARNING("cppcms") << "Writing response failed:" << e.message();
+		service().impl().get_io_service().post(boost::bind(h,true));
+		return;
+	}
 	if(complete_response) {
 		async_write_eof(boost::bind(&connection::on_eof_written,self(),_1,h));
 		request_in_progress_=false;
@@ -421,6 +426,7 @@ struct connection::reader {
 	{
 		if(e) {
 			h(e,done+read);
+			return;
 		}
 		s-=read;
 		p+=read;
@@ -445,6 +451,7 @@ struct connection::writer {
 	{
 		if(e) {
 			h(e,done+wr);
+			return;
 		}
 		s-=wr;
 		p+=wr;
