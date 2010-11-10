@@ -20,7 +20,7 @@ namespace aio_error {
 		switch(cat) {
 		case ok: return "ok";
 		case canceled: return "canceled";
-		case select_failed: return "select failed";
+		case select_failed: return "connection hang-up or invalid discriptor tested";
 		case eof: return "eof";
 		case invalid_endpoint: return "invalid endpoint";
 		case no_service_provided: return "no io_service provided";
