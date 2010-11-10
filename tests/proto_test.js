@@ -1,7 +1,7 @@
 
 {
 	"http" : {
-		"script" : "/test"
+		"script_names" : [ "/test" , "/async" , "/sync" ]
 	},
 	"localization" : {
 		"messages" : {
@@ -9,6 +9,5 @@
 			"domains" : [ "test" ]
 		},
 		"locales" : [ "he_IL.UTF-8" ],
-	},
-	
+	}
 }

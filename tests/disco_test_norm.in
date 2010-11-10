@@ -1,2 +1,2 @@
-GET /test HTTP/1.0
+GET /sync HTTP/1.0
 
