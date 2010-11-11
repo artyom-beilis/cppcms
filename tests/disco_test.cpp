@@ -93,7 +93,7 @@ public:
 		calls ++;
 		binder call;
 		call.context = release_context();
-		call.counter = 1000;
+		call.counter = 10000;
 		call(cppcms::http::context::operation_completed);
 
 	}
