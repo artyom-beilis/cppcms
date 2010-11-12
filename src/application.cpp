@@ -157,7 +157,7 @@ void application::add(application &app)
 void application::add(application &app,std::string regex,int part)
 {
 	add(app);
-	url_dispatcher().mount(regex,app,part);
+	dispatcher().mount(regex,app,part);
 }
 void application::attach(application *app)
 {

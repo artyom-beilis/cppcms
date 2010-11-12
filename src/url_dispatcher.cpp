@@ -56,8 +56,10 @@ namespace cppcms {
 
 			virtual bool dispatch(std::string url)
 			{
-				if(matches(url))
-					return app_->dispatcher().dispatch(match_[select_]);
+				if(matches(url)) {
+					app_->main(match_[select_]);
+					return true;
+				}
 				return false;
 			}
 		private:
