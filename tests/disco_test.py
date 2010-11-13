@@ -73,3 +73,5 @@ elif test=='scgi_tcp' or test=='scgi_unix':
     test_io(input,socket_type,target);
 else:
     usege()
+
+time.sleep(0.5);
