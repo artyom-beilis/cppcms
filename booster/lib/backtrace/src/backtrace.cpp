@@ -9,7 +9,7 @@
 
 #include <booster/backtrace.h>
 
-#if defined(__linux) || defined(__APPLE__) || defined(__sun)
+#if (defined(__linux) && !defined(__UCLIBC__)) || defined(__APPLE__) || defined(__sun)
 #define BOOSTER_HAVE_EXECINFO
 #define BOOSTER_HAVE_DLADDR
 #endif
@@ -356,7 +356,7 @@ namespace booster {
         {
             std::ostringstream ss;
             write_symbols(ptrs,size,ss);
-            ss.str();
+            return ss.str();
         }
         
         void write_symbols(void *const *addresses,int size,std::ostream &out)
