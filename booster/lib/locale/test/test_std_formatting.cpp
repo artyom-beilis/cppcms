@@ -337,7 +337,7 @@ int main()
                     ss.imbue(l1);
                     ss << std::setprecision(10) ;
                     ss << booster::locale::as::number << 12345.45;
-                    TEST(ss.str() == "12 345,45");
+                    TEST(ss.str() == "12 345,45" || ss.str()=="12345,45");
                 }
             }
         }
