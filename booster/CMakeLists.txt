@@ -28,6 +28,7 @@ option(DISABLE_SHARED	"Disable shared libraries build" OFF)
 option(DISABLE_STATIC	"Disable static libraries build" OFF)
 option(DISABLE_ICU_LOCALE	"Disable icu locale backend" OFF)
 option(DISABLE_STD_LOCALE	"Disable std locale backend" OFF)
+option(USE_WINDOWS6_API		"Use Windows 6 API (Vista, 7)" ON)
 
 if("${CMAKE_SYSTEM_NAME}" STREQUAL "Linux" OR APPLE)
 	option(DISABLE_POSIX_LOCALE	"Disable POSIX locale backend" OFF)
@@ -299,7 +300,6 @@ endif()
 
 
 set(BOOSTER_SRC	
-	lib/thread/src/thread.cpp
 	lib/ptime/src/posix_time.cpp
 	lib/regex/src/pcre_regex.cpp
 	lib/system/src/posix_error.cpp
@@ -376,20 +376,28 @@ if(NOT DISABLE_STD_LOCALE)
 	)
 endif()
 
+if(USE_WINDOWS6_API)
+	check_cxx_source_compiles(
+		"#include <windows.h>
+		int main(){ SRWLOCK l; InitializeSRWLock(&l); }"
+		HAVE_WINDOWS6_API
+		)
+endif()
 
-if(NOT HAVE_PTHREAD)
+if(NOT HAVE_WINDOWS6_API)
+	find_path(PTHREAD_INC pthread.h)
+	include_directories(${PTHREAD_INC})
 	if(MSVC)
 		find_library(LIB_PTHREAD pthreadVC2)
 	else()
 		find_library(LIB_PTHREAD pthread NAMES thr kse pthreadGC2)
 	endif()
-endif(NOT HAVE_PTHREAD)
+	set(BOOSTER_SRC ${BOOSTER_SRC} lib/thread/src/pthread.cpp)
+else()
+	set(BOOSTER_SRC ${BOOSTER_SRC} lib/thread/src/thread_win6.cpp)
+endif()
 
 
-
-
-find_path(PTHREAD_INC pthread.h)
-include_directories(${PTHREAD_INC})
 
 find_path(PCRE_INCLUDE pcre.h)
 if(PCRE_INCLUDE)
