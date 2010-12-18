@@ -34,6 +34,11 @@ namespace booster {
 		/// Join existing thread
 		///
 		void join();
+
+		///
+		/// Get number of CPUS, returns 0 if the number is unknown
+		///
+		static unsigned hardware_concurrency();
 	private:
 		friend void *booster_thread_func(void *);
 		struct data;

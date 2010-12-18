@@ -1,5 +1,8 @@
 
 {
+	"service" : {
+		"worker_threads" : 5
+	},
 	"http" : {
 		"script_names" : [ "/test" , "/async" , "/sync" ]
 	},

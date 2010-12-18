@@ -1,5 +1,5 @@
 #include <cppcms/json.h>
-
+#include <booster/thread.h>
 namespace cppcms {
 namespace impl {
 	struct cached_settings {
@@ -38,7 +38,10 @@ namespace impl {
 				port = v.get("service.port",8080);
 				output_buffer_size = v.get("service.output_buffer_size",16384);
 				disable_xpowered_by = v.get("service.disable_xpowered_by",false);
-				worker_threads = v.get("service.worker_threads",5);
+				unsigned cpus = booster::thread::hardware_concurrency();
+				if(cpus == 0)
+					cpus = 1;
+				worker_threads = v.get("service.worker_threads",5 * cpus);
 				worker_processes = v.get("service.worker_processes",0);
 			}
 		} service;

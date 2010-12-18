@@ -62,6 +62,12 @@ namespace booster {
 	{
 		WaitForSingleObject(d->h,INFINITE);
 	}
+	unsigned thread::hardware_concurrency()
+	{
+		SYSTEM_INFO info=SYSTEM_INFO();
+		GetSystemInfo(&info);
+		return info.dwNumberOfProcessors;
+	}
 
 	struct mutex::data {
 		/// There is no - non - recursive mutex, so we can't do it without this

@@ -18,6 +18,15 @@
 #include <stdio.h>
 #endif
 
+#ifdef BOOSTER_WIN32
+#  ifndef NOMINMAX
+#    define NOMINMAX
+#  endif
+#  include <windows.h>
+#else
+#  include <unistd.h>
+#endif
+
 namespace booster {
 
 
@@ -53,6 +62,24 @@ namespace booster {
 	void thread::join()
 	{
 		pthread_join(d->p,0);
+	}
+
+	unsigned thread::hardware_concurrency()
+	{
+		#ifdef BOOSTER_WIN32
+			SYSTEM_INFO info=SYSTEM_INFO();
+			GetSystemInfo(&info);
+			return info.dwNumberOfProcessors;
+		#else
+			#ifdef _SC_NPROCESSORS_ONLN
+				long procs = sysconf(_SC_NPROCESSORS_ONLN);
+				if(procs < 0)
+					return 0;
+				return procs;
+			#else
+				return 0;
+			#endif
+		#endif
 	}
 
 	struct mutex::data { pthread_mutex_t m; };
