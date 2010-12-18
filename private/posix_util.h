@@ -140,25 +140,23 @@ namespace impl {
 	class mutex : public booster::noncopyable {
 	public:
 		class guard;
-		mutex(bool pshared = false) :
+		mutex() :
 			plock_(0),
 			flock_(0)
 		{
 			bool use_pthread=test_pthread_mutex_pshared();
 			if(use_pthread) {
 				plock_ =reinterpret_cast<pthread_mutex_t *>(mmap_anonymous(sizeof(pthread_mutex_t)));
-				create_mutex(plock_,pshared);
+				create_mutex(plock_,true);
 			}
 			else {
 				plock_=&normal_;
-				create_mutex(plock_);
-				if(pshared) {
-					flock_=tmpfile();
-					if(!flock_) {
-						int err=errno;
-						destroy_mutex(plock_);
-						throw cppcms_error(err,"Failed to create temporary file");
-					}
+				create_mutex(plock_,false);
+				flock_=tmpfile();
+				if(!flock_) {
+					int err=errno;
+					destroy_mutex(plock_);
+					throw cppcms_error(err,"Failed to create temporary file");
 				}
 			}
 		}
@@ -220,25 +218,23 @@ namespace impl {
 	public:
 		class shared_guard;
 		class unique_guard;
-		shared_mutex(bool pshared = false) :
+		shared_mutex() :
 			plock_(0),
 			flock_(0)
 		{
 			bool use_pthread=test_pthread_mutex_pshared();
 			if(use_pthread) {
 				plock_ =reinterpret_cast<pthread_rwlock_t *>(mmap_anonymous(sizeof(pthread_rwlock_t)));
-				create_rwlock(plock_,pshared);
+				create_rwlock(plock_,true);
 			}
 			else {
 				plock_=&normal_;
-				create_rwlock(plock_);
-				if(pshared) {
-					flock_=tmpfile();
-					if(!flock_) {
-						int err=errno;
-						destroy_rwlock(plock_);
-						throw cppcms_error(err,"Failed to create temporary file");
-					}
+				create_rwlock(plock_,false);
+				flock_=tmpfile();
+				if(!flock_) {
+					int err=errno;
+					destroy_rwlock(plock_);
+					throw cppcms_error(err,"Failed to create temporary file");
 				}
 			}
 		}

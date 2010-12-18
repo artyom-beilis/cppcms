@@ -784,6 +784,9 @@ void service::stop()
 		if(impl_->acceptors_[i])
 			impl_->acceptors_[i]->stop();
 	}
+	#ifndef CPPCMS_WIN32
+	impl_->prefork_acceptor_.reset();
+	#endif
 	thread_pool().stop();
 	impl_->get_io_service().stop();
 }
