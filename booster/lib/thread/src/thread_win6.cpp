@@ -63,23 +63,23 @@ namespace booster {
 		WaitForSingleObject(d->h,INFINITE);
 	}
 
-	struct mutex::data { 
-		SRWLOCK m;
-		bool locked;
+	struct mutex::data {
+		/// There is no - non - recursive mutex, so we can't do it without this
+		CRITICAL_SECTION m;
 	};
 
 	mutex::mutex() : d(new data)
 	{
-		InitializeSRWLock(&d->m);
+		InitializeCriticalSection(&d->m);
 	}
 	mutex::~mutex()
 	{
 	}
 	void mutex::lock() { 
-		AcquireSRWLockExclusive(&d->m);
+		EnterCriticalSection(&d->m);
 	}
 	void mutex::unlock() { 
-		ReleaseSRWLockExclusive(&d->m);
+		LeaveCriticalSection(&d->m);
 	}
 
 	struct recursive_mutex::data { CRITICAL_SECTION m; };
@@ -140,7 +140,7 @@ namespace booster {
 	}
 	void condition_variable::wait(unique_lock<mutex> &m)
 	{
-		SleepConditionVariableSRW(&d->c,&(m.mutex()->d->m),INFINITE,0);
+		SleepConditionVariableCS(&d->c,&(m.mutex()->d->m),INFINITE);
 	}
 
 	namespace details {

@@ -173,7 +173,7 @@ check_cxx_source_compiles(
 	int main(){std::list<int> l; __typeof__(l.begin()) p=l.begin();}"
 	CPPCMS_HAVE_UNDERSCORE_TYPEOF)
 
-find_library(ZLIB z NAMES zdll zlib${ZLIB_SUFFIX} zlib)
+find_library(ZLIB NAMES z zdll zlib${ZLIB_SUFFIX} zlib)
 find_path(ZLIB_INCLUDE_DIR zlib.h)
 include_directories(${ZLIB_INCLUDE_DIR})
 
@@ -378,9 +378,7 @@ foreach(ALIB ${CPPCMS_LIBS})
 		target_link_libraries(${ALIB} ${LIB_DL})
 	endif(LIB_DL)
 
-	if(ZLIB)
-		target_link_libraries(${ALIB} ${ZLIB})
-	endif(ZLIB)
+	target_link_libraries(${ALIB} ${ZLIB})
 endforeach(ALIB)
 
 
