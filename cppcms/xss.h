@@ -54,6 +54,7 @@ namespace cppcms {
 			/// The type of tag
 			///
 			typedef enum {
+				invalid_tag		= 0, ///< This tag is invalid (returned by validate)
 				opening_and_closing 	= 1, ///< This tag should be opened and closed (a, or strong
 				stand_alone 		= 2, ///< This tag should stand alone (like hr or br)
 				any_tag  		= 3, ///< This tag can be used in both roles (like input)
@@ -145,7 +146,7 @@ namespace cppcms {
 			/// Test if the tag is valid.
 			/// \a tag should be lower case for HTML or unchanged for XHTML
 			///
-			bool valid_tag(std::string const &tag,tag_type type) const;
+			tag_type valid_tag(std::string const &tag) const;
 		
 			///
 			/// Test if the property is valid (without value) or unchanged for XHTML 
@@ -158,6 +159,11 @@ namespace cppcms {
 			/// \a tag and \a property should be lower case for HTML or unchanged for XHTML
 			///	
 			bool valid_property(std::string const &tag,std::string const &property,char const *begin,char const *end) const;
+
+			///
+			/// Test if specific html entity is valid
+			///
+			bool valid_entity(char const *begin,char const *end) const
 
 
 		private:
@@ -173,52 +179,15 @@ namespace cppcms {
 
 		};
 
-		///
-		/// \brief The class that filters or validates the text based on given rules.
-		///
-		class CPPCMS_API filter {
-		public:
-			///
-			/// \brief Create a filter that given rules \a set.
-			///
-			filter(rules const &set = rules());
-			filter(filter const &);
-			filter const &operator=(rules const &);
-			~filter();
+		CPPCMS_API bool validate(char const *begin,char const *end,rules const &r);
+		CPPCMS_API bool validate_and_filter_if_invalid(	char const *begin,
+								char const *end,
+								rules const &r,
+								std::string &filtered);
 
-			///
-			/// Perform validation of the text only, don't fix anything.
-			///
-			/// Validates the input text in range [begin,end) and returns true if it
-			/// is valid
-			///
-			bool validate(char const *begin,char const *end) const;
-			///
-			/// Perform validation of the text in range [begin,end), and if it is not valid creates a valid version
-			/// in \a output  only fixing it.
-			///
-			/// If the text is valid, validate_or_filter returns true and output remains unchanged, otherwise
-			/// it 
-			///
-			///
-			bool validate_or_filter(char const *begin,char const *end,std::string &output) const;
+		CPPCMS_API std::string filter(char const *begin,char const *end,rules const &r);
+		CPPCMS_API std::string filter(std::string const &input,rules const &r);
 
-			///
-			/// Filter the input according to the rules, such that output is always remains the valid
-			/// HTML
-			///
-			std::string operator()(std::string const &input) const
-			{
-				char const *begin = input.c_str();
-				char const *end = begin+input.size();
-				std::string filtered_result;
-				if(validate_or_filter(begin,end,filtered_result))
-					return input;
-				else
-					return filtered_result;
-				
-			}
-		};
 	} // xss
 }
 #endif
