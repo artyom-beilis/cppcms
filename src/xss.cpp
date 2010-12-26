@@ -43,7 +43,7 @@ namespace cppcms { namespace xss {
 			return l.icompare(r);
 		}
 	};
-	
+
 	
 	struct basic_rules_holder {
 		
@@ -276,6 +276,108 @@ namespace cppcms { namespace xss {
 	{
 		return impl().valid_entity(val);
 	}
+
+
+	booster::regex rules::uri_matcher()
+	{
+		return uri_matcher("(http|https|ftp|mailto|news|nntp)");
+	}
+
+	booster::regex rules::uri_matcher(std::string const &scheme)
+	{
+		std::string sub_delims="(['!,;=\\$\\(\\)\\*\\+]|&amp;|&apos;)";
+		std::string gen_delims="[\\:\\/\\?\\#\\[\\]\\@]";
+		std::string reserverd="(" + gen_delims + "|" + sub_delims + ")";
+		std::string unreserved="[a-zA-Z_0-9\\.~]";
+		std::string pct_encoded="%[0-9a-fA-F][0-9a-fA-F]";
+		std::string pchar="(" + unreserved + "|" + pct_encoded + "|" + sub_delims + "|:|\\@)";
+		std::string query="(" + pchar + "|/|\\?)*";
+		std::string fragment="(" + pchar + "|/|\\?)*";
+		std::string segment="(" + pchar + ")*";
+		std::string segment_nz="(" + pchar + ")+";
+		std::string segment_nz_nc="(" + unreserved + "|" + pct_encoded + "|" + sub_delims + "|" + "\\@)+";
+		std::string path_rootless = "(" + segment_nz + "(/" + segment + ")*)";
+		std::string path_noscheme = "(" + segment_nz_nc + "(/"+ segment +")*)";
+		std::string path_absolute = "/("+ segment_nz + "(/"+ segment +")*)?";
+		std::string path_abempty  = "(/" + segment+")*";
+		std::string path="(" + path_abempty + "|" + path_absolute + "|" + path_noscheme + "|" + path_rootless +")?";
+		std::string reg_name = "(" + unreserved + "|" + pct_encoded + "|" + sub_delims + ")*";
+		std::string dec_octet = "([0-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0-5])";
+		std::string ipv4addr = "(" + dec_octet + "\\." + dec_octet + "\\." + dec_octet + "\\." + dec_octet +")";
+		std::string port = "([0-9]*)";
+		std::string host = "(" + ipv4addr + "|" + reg_name + ")";
+		std::string userinfo= "(" + unreserved + "|" + pct_encoded + "|" + sub_delims +"|\\:)*";
+		std::string authority = "((" + userinfo +"\\@)?" + host + "(\\:"+port+")?)";
+		std::string relative_part = "(//" + authority + path_abempty 
+						+"|"+path_absolute
+						+"|"+path_noscheme
+						+")?";
+		std::string relative_ref = "(" + relative_part + "(\\?" + query + ")?(#" + segment +")?)";
+
+
+		std::string hier_part = "(//" + authority + path_abempty 
+						+"|"+path_absolute
+						+"|"+path_rootless
+						+")?";
+
+		std::string uri = "(" + scheme +":" +  hier_part + "(\\?" + query + ")?(#" + segment +")?)";
+
+		std::string uri_reference = "(" + uri + "|" + relative_ref +")";
+
+#ifdef DEBUG_XSS_REGEXS
+
+		std::string strings[] = {
+			sub_delims,
+			gen_delims,
+			reserverd,
+			unreserved,
+			pct_encoded,
+			pchar,
+			query,
+			fragment,
+			segment,
+			segment_nz,
+			segment_nz_nc,
+			path_rootless,
+			path_noscheme,
+			path_absolute,
+			path_abempty,
+			path,
+			reg_name,
+			dec_octet,
+			ipv4addr,
+			port,
+			host,
+			userinfo,
+			authority,
+			relative_part,
+			relative_ref,
+			hier_part,
+			uri,
+			uri_reference
+		};
+
+		for(unsigned i=0;i<sizeof(strings)/(sizeof(strings[0]));i++) {
+			std::cout << i << " " << strings[i] << std::endl;
+			booster::regex r(strings[i]);
+		}
+#endif // DEBUG_XSS_REGEXS
+
+		return booster::regex(uri_reference);
+	}
+
+	void rules::add_uri_property(std::string const &tag_name,std::string const &property)
+	{
+		add_property(tag_name,property,uri_matcher());
+	}
+
+	void rules::add_uri_property(std::string const &tag_name,std::string const &property,std::string const &schema)
+	{
+		add_property(tag_name,property,uri_matcher(schema));
+	}
+	
+
+
 	
 	namespace {
 
@@ -310,9 +412,15 @@ namespace cppcms { namespace xss {
 		};
 
 		struct tag_data {
-			tag_data() : tag_begin(0), tag_end(0) {}
+			tag_data() : 
+				tag_begin(0),
+				tag_end(0),
+				pair(-1) 
+			{
+			}
 			char const *tag_begin;
 			char const *tag_end;
+			int pair;
 			std::vector<property_data> properties;
 		};
 
@@ -394,9 +502,8 @@ namespace cppcms { namespace xss {
 		bool validate_property_value(char const *begin,char const *end)
 		{
 			while(begin!=end) {
-				switch(*begin) {
-				case '\'':
-				case '\"':
+				char c=*begin;
+				switch(c) {
 				case '<':
 				case '>':
 					return false;
@@ -525,6 +632,7 @@ namespace cppcms { namespace xss {
 					code_point=strtol(begin,&endptr,10);
 				}
 
+
 				if(	!endptr 
 					|| *endptr!=';'
 					|| code_point>0x10FFFF
@@ -561,27 +669,6 @@ namespace cppcms { namespace xss {
 				part.type = invalid_data;
 				return;
 			}
-			if(*begin=='!') {
-				if(	end-begin <5 
-					|| memcmp(begin+1,"--",2)!=0
-					|| memcmp(end-2,"--",2)!=0
-				)
-				{
-					part.type = invalid_data;
-					return;
-				}
-				begin+=3;
-				end-=2;
-				for(char const *p=begin;p!=end;++p) {
-					if(*p=='-' && *(p+1)=='-') {
-						part.type = invalid_data;
-						return;
-					}
-				}
-				part.type=html_comment;
-				return; // we are ok there
-			}
-
 			if(*begin=='/') {
 				begin++;
 				if(!ascii_isalpha(*begin)) {
@@ -683,7 +770,25 @@ namespace cppcms { namespace xss {
 					break;
 
 				case '<':
-					{
+
+					if(p+4 < end && memcmp(p,"<!--",4)==0) {
+						char const *e =p + 4;
+						while(e<end-1) {
+							if(e[0]=='-' && e[1]=='-') 
+								break;
+							e++;
+						}
+						if(e+2<end && e[2]=='>') {
+							tags.push_back(entry(p,e+3,html_comment));
+							p=e+3;
+						}
+						else {
+							tags.push_back(entry(p,end,invalid_data));
+							p=end;
+						}
+
+					}
+					else {
 						char const *e=0;
 						for(e=p+1;e!=end;e++) {
 							if(*e=='>')
@@ -697,8 +802,8 @@ namespace cppcms { namespace xss {
 							tags.push_back(entry(p,e+1,html_tag));
 							p=e+1;
 						}
-
 					}
+
 					break;
 
 				case '>':
@@ -725,7 +830,6 @@ namespace cppcms { namespace xss {
 						tags.push_back(entry(p,e,plain_text));
 						p=e;
 					}
-					
 				} 
 			} // while 
 		} // split to parts
@@ -748,7 +852,11 @@ namespace cppcms { namespace xss {
 						char const *pop_end   = parsed[top_index].tag.tag_end;
 						char const *cur_begin = cur.tag.tag_begin;
 						char const *cur_end   = cur.tag.tag_end;
-						if(!ascii_streq(pop_begin,pop_end,cur_begin,cur_end,xhtml)) {
+						if(ascii_streq(pop_begin,pop_end,cur_begin,cur_end,xhtml)) {
+							cur.tag.pair = top_index;
+							parsed[top_index].tag.pair = i;
+						}
+						else {
 							cur.type = invalid_data;
 						}
 					}
@@ -764,8 +872,11 @@ namespace cppcms { namespace xss {
 							char const *pop_end   = parsed[top_index].tag.tag_end;
 							char const *cur_begin = cur.tag.tag_begin;
 							char const *cur_end   = cur.tag.tag_end;
-							if(ascii_streq(pop_begin,pop_end,cur_begin,cur_end,xhtml))
+							if(ascii_streq(pop_begin,pop_end,cur_begin,cur_end,xhtml)) {
+								cur.tag.pair = top_index;
+								parsed[top_index].tag.pair = i;
 								break;
+							}
 							parsed[top_index].type = open_and_close_tag_without_slash;
 						}
 					}
@@ -805,6 +916,7 @@ namespace cppcms { namespace xss {
 			case html_numeric_entity:
 				if(!r.numeric_entities_allowed()) 
 					return false;
+				break;
 			case open_tag:
 			case close_tag:
 			case open_and_close_tag:
@@ -930,6 +1042,9 @@ namespace cppcms { namespace xss {
 		for(unsigned i=0;i<size;i++) {
 			if(!validate_entry_by_rules(parsed[i],r)) {
 				valid = false;
+				int pair = parsed[i].tag.pair;
+				if(pair!=-1)
+					parsed[pair].type = invalid_data;
 				parsed[i].type = invalid_data;
 			}
 		}
@@ -958,7 +1073,7 @@ namespace cppcms { namespace xss {
 						filtered+="&amp;";
 						break;
 					case '"':
-						filtered+='"';
+						filtered+="&quot;";
 						break;
 					default:
 						filtered+=c;

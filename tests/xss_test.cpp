@@ -52,7 +52,7 @@ void test_rules()
 		r.add_entity("foo");
 		TEST(r.valid_entity(details::c_string("foo")));
 		TEST(!r.valid_entity(details::c_string("bar")));
-		
+
 	}
 	{
 		std::cout <<"-- Testing tags" << std::endl;
@@ -142,6 +142,42 @@ void test_rules()
 			TEST(!r.valid_property("a","border","1.3"));
 			TEST(!r.valid_property("a","border",""));
 		}
+		std::cout <<"--- URI-Filter" << std::endl;
+		{
+			rules r;
+			r.add_tag("a",rules::opening_and_closing);
+			r.add_tag("img",rules::stand_alone);
+			r.add_uri_property("a","href");
+			r.add_uri_property("img","src","(http|https)");
+			TEST(!r.valid_property("a","href","javascript:alert('XSS')"));
+			TEST(!r.valid_property("a","href","javascript:alert(&quot;XSS&quot;)"));
+			TEST(!r.valid_property("a","href","&#106;&#97;&#118;&#97;&#115;&#99;&#114;&#105;&#112;&#116;&#58;&#97;&#108;&#101;&#114;&#116;&#40;&#39;&#88;&#83;&#83;&#39;&#41;"));
+			TEST(!r.valid_property("a","href","&#x6A&#x61&#x76&#x61&#x73&#x63&#x72&#x69&#x70&#x74&#x3A&#x61&#x6C&#x65&#x72&#x74&#x28&#x27&#x58&#x53&#x53&#x27&#x29"));
+			TEST(!r.valid_property("a","href","jav&#x61;script:alert('XSS');"));
+			
+			TEST(!r.valid_property("a","href","javascript:alert(\"XSS\")"));
+			TEST(!r.valid_property("a","href","javascript:test()"));
+			TEST(!r.valid_property("a","href","http://thisisatest.com/@\"onmouseover=\"alert('test xss')\"/"));
+
+			TEST(r.valid_property("a","href","test.html"));
+			TEST(r.valid_property("a","href","/foo/test.html"));
+			TEST(r.valid_property("a","href","https://127.0.0.1/foo/test.html"));
+			TEST(r.valid_property("a","href","http://localhost/foo/test.html"));
+			TEST(r.valid_property("a","href","http://foo:bar@localhost/foo/test.html"));
+			TEST(r.valid_property("a","href","https://example.com/foo/test.html"));
+			TEST(r.valid_property("a","href","https://example.com/foo/test.html#There"));
+			TEST(r.valid_property("a","href","https://example.com/foo/test.html?x=a&amp;y=b#There"));
+			TEST(!r.valid_property("a","href","https://example.com/foo/test.html?x=a&y=b#There"));
+			TEST(r.valid_property("a","href","http://en.wikipedia.org/wiki/I'm"));
+			TEST(r.valid_property("a","href","http://en.wikipedia.org/wiki/I&apos;m"));
+			TEST(!r.valid_property("a","href","jav&#x0A;ascript:alert('XSS');"));
+			TEST(r.valid_property("a","href","http://he.wikipedia.org/wiki/%D7%A9%D7%9C%D7%95%D7%9D?x=%D7#x"));
+			TEST(r.valid_property("a","href","/wiki/%D7%A9%D7%9C%D7%95%D7%9D?x=%D7#x"));
+			TEST(r.valid_property("a","href","http://en.wikipedia.org/wiki/C_(programming_language)"));
+			TEST(r.valid_property("a","href","ftp://myftp/"));
+			TEST(!r.valid_property("img","src","ftp://myftp/"));
+			TEST(r.valid_property("img","src","http://myftp/"));
+		}
 	}
 
 	
@@ -151,11 +187,22 @@ void test_rules()
 bool validate_simple(char const *s,cppcms::xss::rules const &r)
 {
 	bool res = cppcms::xss::validate(s,s+strlen(s),r);
-	std::string tmp;
-	bool res2 = cppcms::xss::validate_and_filter_if_invalid(s,s+strlen(s),r,tmp);
+	std::string tmp1,tmp2;
+	bool res2 = cppcms::xss::validate_and_filter_if_invalid(s,s+strlen(s),r,tmp1,cppcms::xss::remove_invalid);
+	bool res3 = cppcms::xss::validate_and_filter_if_invalid(s,s+strlen(s),r,tmp2,cppcms::xss::escape_invalid);
 	TEST(res==res2);
+	TEST(res==res3);
 	if(!res) {
-		TEST(tmp!=s);
+		TEST(tmp1!=s);
+		TEST(tmp2!=s);
+		TEST(tmp1!=tmp2);
+		TEST(tmp1.size() < strlen(s));
+		if(!(strlen(s) < tmp2.size())) {
+			std::cerr << "[" << s << "]->["<<tmp2<<"]" << std::endl;
+		}
+		TEST(strlen(s) < tmp2.size());
+		TEST(cppcms::xss::validate(tmp1.c_str(),tmp1.c_str()+tmp1.size(),r));
+		TEST(cppcms::xss::validate(tmp2.c_str(),tmp2.c_str()+tmp2.size(),r));
 	}
 	return res;
 }
@@ -178,6 +225,23 @@ void test_validation()
 		TEST(validate_simple("to be &or; not to be",r));
 		TEST(validate_simple("&or; not to be",r));
 		TEST(validate_simple("to be &or;",r));
+
+		TEST(!validate_simple("&#64;",r));
+		TEST(!validate_simple("&#x3c;",r));
+		TEST(!validate_simple("&#X3c;",r));
+		r.numeric_entities_allowed(true);
+		TEST(validate_simple("&#64;",r));
+		TEST(validate_simple("&#x3c;",r));
+		TEST(validate_simple("&#X3c;",r));
+		TEST(!validate_simple("&#x3;",r));
+		TEST(validate_simple("&#x0A;",r));
+		TEST(!validate_simple("&#xFFFF;",r));
+		TEST(!validate_simple("&#xFFFE;",r));
+		TEST(!validate_simple("&#xDB01;",r));
+		TEST(validate_simple("&#x10FFFF;",r));
+		TEST(!validate_simple("&#x110000;",r));
+		TEST(!validate_simple("&#10000000000000;",r));
+		TEST(!validate_simple("&#-45;",r));
 	}
 	{
 		rules r;
@@ -186,6 +250,10 @@ void test_validation()
 		r.add_tag("hr",rules::stand_alone);
 		TEST(validate_simple("<hr />",r));
 		TEST(validate_simple("<hr/>",r));
+		TEST(!validate_simple("< hr/>",r));
+		TEST(!validate_simple("<hr / >",r));
+		TEST(!validate_simple("<hr/ >",r));
+
 		TEST(validate_simple("xxx<hr/>xxx",r));
 		TEST(!validate_simple("<hr>",r));
 		TEST(!validate_simple("</hr>",r));
@@ -204,9 +272,11 @@ void test_validation()
 		std::cout << "-- Testing properties" << std::endl;
 		rules r;
 		r.add_tag("hr",rules::stand_alone);
+		r.add_tag("a",rules::opening_and_closing);
 		TEST(!validate_simple("<hr test='test' />",r));
 		r.add_boolean_property("hr","test");
 		r.add_integer_property("hr","size");
+		r.add_uri_property("a","href");
 		TEST(validate_simple("<hr size='1' />",r));
 		TEST(validate_simple("<hr test='test' />",r));
 		TEST(validate_simple("<hr test='test' size=\"1\" />",r));
@@ -219,6 +289,32 @@ void test_validation()
 		TEST(!validate_simple("<hr size ='10'  />",r));
 		TEST(!validate_simple("<hr size= '10'  />",r));
 		TEST(!validate_simple("<hr size='10'test='test'  />",r));
+		TEST(validate_simple("<a href='http://google.com'>x</a>",r));
+		TEST(!validate_simple("<a href='javascript:xss()'>x</a>",r));
+		TEST(!validate_simple("<a>x</a href='http://google.com'>",r));
+	}
+	{
+		std::cout << "-- Testing comments" << std::endl;
+		rules r;
+		TEST(!validate_simple("Hello <!-- test --> world",r));
+		r.comments_allowed(true);
+		TEST(validate_simple("Hello <!-- test --> world",r));
+		TEST(!validate_simple("Hello < !-- test --> world",r));
+		TEST(!validate_simple("Hello <!- - test --> world",r));
+		TEST(!validate_simple("Hello <!-- ---> world",r));
+		TEST(!validate_simple("Hello <!-- -- -> world",r));
+		TEST(validate_simple("Hello <!-- - --> world",r));
+		TEST(!validate_simple("Hello <!-- -- --> world",r));
+		TEST(validate_simple("Hello <!-- <test /> --> world",r));
+		TEST(validate_simple("Hello <!-- < --> world",r));
+		TEST(validate_simple("Hello <!-- > --> world",r));
+		TEST(validate_simple("Hello <!----> world",r));
+		TEST(validate_simple("<!-- test -->",r));
+		TEST(validate_simple("<!-- test -->x",r));
+		TEST(validate_simple("x<!-- test -->",r));
+		TEST(!validate_simple("<!-- test --",r));
+		TEST(!validate_simple("<!-- test -",r));
+		TEST(!validate_simple("< !-- test -->",r));
 	}
 	
 }

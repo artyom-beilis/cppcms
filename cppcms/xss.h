@@ -216,6 +216,44 @@ namespace cppcms {
 			void add_integer_property(std::string const &tag_name,std::string const &property);
 
 			///
+			/// Add URI property.
+			/// It should be used for properties like like "href" or "src".
+			/// It is very good idea to use it in order to prevent urls like javascript:alert('XSS')
+			/// 
+			/// It's behavior is same as add_property(tag_name,property,rules::uri_matcher());
+			///
+			void add_uri_property(std::string const &tag_name,std::string const &property);
+			///
+			/// Add URI property, using regular expression that matches allowed schemas.
+			/// It should be used for properties like like "href" or "src".
+			/// It is very good idea to use it in order to prevent urls like javascript:alert('XSS')
+			/// 
+			/// It's behavior is same as add_property(tag_name,property,rules::uri_matcher(schema));
+			///
+			void add_uri_property(std::string const &tag_name,std::string const &property,std::string const &schema);
+
+			///
+			/// Create a regular expression that checks URI for safe inclusion in the property. 
+			/// By default it allows only: http, https, ftp, mailto, news, nntp.
+			///
+			/// If you need finer control over allowed schemas, use uri_matcher(std::string const&).
+			///
+			static booster::regex uri_matcher();
+			///
+			/// Create a regular expression that checks URI for safe inclusion in the text, where
+			/// schema is a regular expression that matches specific protocols that can be used.
+			///
+			/// \note Don't add "^" or "$" tags as this expression would be used in construction of regular
+			/// other expression.
+			///
+			/// For example:
+			/// \code
+			/// booster::regex uri = uri_matcher("(http|https)");
+			/// \endcode
+			///
+			static booster::regex uri_matcher(std::string const &schema);
+
+			///
 			/// Check if the comments are allowed in the text
 			///
 			bool comments_allowed() const;
