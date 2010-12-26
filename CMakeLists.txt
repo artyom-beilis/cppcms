@@ -272,6 +272,7 @@ set(CPPCMS_SOURCES
 	src/archive.cpp
 	src/crypto.cpp
 	src/daemonize.cpp
+	src/xss.cpp
 	cppcms_boost/src/zlib.cpp
 	cppcms_boost/src/gzip.cpp
 )
@@ -468,6 +469,7 @@ set(ALL_TESTS
 	content_type_parser_test
 	serialization_test
 	status_test
+	xss_test
 	)
 foreach(TEST ${ALL_TESTS})
 	add_executable(${TEST} tests/${TEST}.cpp)
@@ -544,6 +546,7 @@ add_test(multipart_parser_test multipart_parser_test "${CNF}")
 add_test(content_type_parser_test content_type_parser_test)
 add_test(cache_backend_test cache_backend_test)
 add_test(serialization_test serialization_test)
+add_test(xss_test xss_test)
 
 add_test(status_test
 	status_test "-c" "${CNF}/status_test.js" 

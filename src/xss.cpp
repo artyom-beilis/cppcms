@@ -18,154 +18,265 @@
 ///////////////////////////////////////////////////////////////////////////////
 #define CPPCMS_SOURCE
 #include <cppcms/xss.h>
+#include <booster/regex.h>
+#include <stack>
+#include <map>
+#include <set>
+#include <stdlib.h>
+
+#include <iostream>
 
 namespace cppcms { namespace xss { 
 
-	struct rules::data {
-		typedef std::map<std::string,booster::regex> properties_type;
+	using namespace details;
+	
+	struct compare_c_string {
+		bool operator()(details::c_string const &l,details::c_string const &r) const
+		{
+			return l.compare(r);
+		}
+	};
+
+	struct icompare_c_string {
+		bool operator()(details::c_string const &l,details::c_string const &r) const
+		{
+			return l.icompare(r);
+		}
+	};
+	
+	
+	struct basic_rules_holder {
+		
+		typedef std::set<details::c_string,compare_c_string> entities_type;
+		entities_type entities;
+		
+		bool valid_entity(c_string const &name) const
+		{
+			return entities.find(name)!=entities.end();
+		}
+		void add_entity(std::string const &name)
+		{
+			entities.insert(c_string(name));
+		}
+		virtual void add_tag(std::string const &name,rules::tag_type type) = 0;
+		virtual void add_property(std::string const &tname,std::string const &pname,booster::regex const &r) = 0;
+		virtual rules::tag_type valid_tag(c_string const &t) const = 0;
+		virtual bool valid_boolean_property(c_string const &tname,c_string const &pname) const = 0;
+		virtual bool valid_property(c_string const &tname,c_string const &pname,c_string const &value) const = 0;
+		virtual ~basic_rules_holder(){}
+	};
+	
+	template<typename Comp,bool IsXHTML>
+	struct rules_holder: public basic_rules_holder {
+		
+		rules_holder()
+		{
+			add_entity("lt");
+			add_entity("gt");
+			add_entity("amp");
+			add_entity("quot");
+		}
+		
+		typedef std::map<details::c_string,booster::regex,Comp> properties_type;
 		struct tag {
 			properties_type properties;
-			tag_type type;
+			rules::tag_type type;
 		};
-		typedef std::map<std::string,tag> tags_type;
+		typedef std::map<details::c_string,tag,Comp> tags_type;
 		tags_type tags;
-		std::map<std::string,std::string> entities;
-		html_type html;
+		
+		void add_tag(std::string const &name,rules::tag_type type)
+		{
+			tags[c_string(name)].type=type;
+		}
+		void add_property(std::string const &tname,std::string const &pname,booster::regex const &r)
+		{
+			c_string cname(tname);
+			if(tags.find(cname)==tags.end())
+				tags[cname].type=rules::invalid_tag;
+			
+			tags[c_string(tname)].properties[c_string(pname)]=r;
+		}
+		rules::tag_type valid_tag(c_string const &t) const
+		{
+			typename tags_type::const_iterator p = tags.find(t);
+			if(p==tags.end())
+				return rules::invalid_tag;
+			return p->second.type;
+		}
+		
+		bool valid_boolean_property(c_string const &tname,c_string const &pname) const
+		{
+			if(IsXHTML) 
+				return false;
+			typename tags_type::const_iterator pt = tags.find(tname);
+			if(pt==tags.end())
+				return false;
+			typename properties_type::const_iterator pp = pt->second.properties.find(pname);
+			if(pp == pt->second.properties.end())
+				return false;
+			if(pp->second.empty())
+				return true;
+			return false;
+		}
+		
+		bool valid_property(c_string const &tname,c_string const &pname,c_string const &value) const
+		{
+			typename tags_type::const_iterator pt = tags.find(tname);
+			if(pt==tags.end())
+				return false;
+			typename properties_type::const_iterator pp = pt->second.properties.find(pname);
+			if(pp == pt->second.properties.end())
+				return false;
+			if(pp->second.empty()) {
+				if(IsXHTML) {
+					Comp cmp;
+					if(!cmp(pname,value) && !cmp(value,pname))
+						return true;
+					return false;
+				}
+				else {
+					return false; // Should be boolean in HTML
+				}
+			}
+			if(booster::regex_match(value.begin(),value.end(),pp->second))
+				return true;
+			return false;
+		}
+		
+		
+	};
+	
+	struct rules::data {
+		
+		rules_holder<compare_c_string,true> xhtml_rules;
+		rules_holder<icompare_c_string,false> html_rules;
+		
+		bool is_xhtml;
+		bool comments_allowed;
+		bool numeric_entities_allowed;
+		
+		data() :
+			is_xhtml(true),
+			comments_allowed(false),
+			numeric_entities_allowed(false)
+		{
+		}
 	};
 
-
-	class c_string {
-		static bool ilt(char left,char right)
-		{
-			unsigned char l = ascii_tolower(left);
-			unsigned char r = ascii_tolower(right);
-			return l < r;
-		}
-	public:
-		c_string(char const *s) 
-		{
-			begin_=s;
-			end_=s+strlen(s);
-		}
-
-		c_string(char const *b,char const *e) : begin_(b), end_(e) {}
-
-		c_string() : begin_(0),end_(0) {}
-
-		bool compare(c_string const &other) const
-		{
-			return std::lexicographical_compare(begin_,end_,other.begin_,other.end_,std::char_traits<char>::lt);
-		}
-
-		bool icompare(c_string const &other) const
-		{
-			return std::lexicographical_compare(begin_,end_,other.begin_,other.end_,ilt);
-		}
-
-		explicit c_string(std::string const &other)
-		{
-			container_ = other;
-			begin_ = container_.c_str();
-			end_ = begin_ + container_.size();
-		}
-		c_string(c_string const &other)
-		{
-			if(other.begin_ == other.end_) {
-				begin_ = end_ = 0;
-			}
-			else if(other.container_.empty()) {
-				begin_ = other.begin_;
-				end_ = other.end_;
-			}
-			else {
-				container = other.container_;
-				begin_ = container_.c_str();
-				end_ = begin_ + container_.size();
-			}
-		}
-		c_string const &operator=(c_string const &other)
-		{
-			if(other.begin_ == other.end_) {
-				begin_ = end_ = 0;
-			}
-			else if(other.container_.empty()) {
-				begin_ = other.begin_;
-				end_ = other.end_;
-			}
-			else {
-				container = other.container_;
-				begin_ = container_.c_str();
-				end_ = begin_ + container_.size();
-			}
-			return *this;
-		}
-
-	private:
-		char const *begin_;
-		char const *end_;
-		std::string container;
-	};
-
-	bool compare_c_string(c_string const &l,c_string const &r)
+	basic_rules_holder &rules::impl() 
 	{
-		return l.compare(r);
+		if(d->is_xhtml)
+			return d->xhtml_rules;
+		else
+			return d->html_rules;
 	}
-
-	bool icompare_c_string(c_string const &l,c_string const &r)
+	basic_rules_holder const &rules::impl()  const
 	{
-		return l.icompare(r);
-	}
-
-
-	booster::shared_ptr<rules::data> rules::impl() const
-	{
-		return impl_;
+		if(d->is_xhtml)
+			return d->xhtml_rules;
+		else
+			return d->html_rules;
 	}
 	
-	booster::shared_ptr<rules::data> rules::impl()
+	rules::rules() : d(new data())
 	{
-		// COW semantics 
-		if(impl_.use_count()==1)
-			return impl_;
-
-		pimpl tmp(new data(*impl_));
-		impl_.reset();
-		impl_ = tmp;
-
-		return impl_;
+	}
+	rules::rules(rules const &other) : d(other.d)
+	{
+	}
+	rules const &rules::operator=(rules const &other)
+	{
+		d=other.d;
+		return *this;
+	}
+	rules::~rules()
+	{
+	}
+	
+	rules::html_type rules::html() const
+	{
+		if(d->is_xhtml)
+			return xhtml_input;
+		else
+			return html_input;
+	}
+	
+	void rules::html(rules::html_type t)
+	{
+		switch(t) {
+		case html_input:
+			d->is_xhtml=false;
+			break;
+		case xhtml_input:
+			d->is_xhtml=true;
+			break;
+		}
+	}
+	
+	void rules::add_tag(std::string const &tag_name,rules::tag_type t)
+	{
+		impl().add_tag(tag_name,t);
+	}
+	
+	void rules::add_entity(std::string const &entity)
+	{
+		impl().add_entity(entity);
+	}
+	
+	bool rules::numeric_entities_allowed() const
+	{
+		return d->numeric_entities_allowed;
+	}
+	void rules::numeric_entities_allowed(bool v)
+	{
+		d->numeric_entities_allowed=v;
+	}
+	
+	void rules::add_boolean_property(std::string const &tag_name,std::string const &property)
+	{
+		add_property(tag_name,property,booster::regex());
+	}
+	void rules::add_property(std::string const &tag_name,std::string const &property,booster::regex const &r)
+	{
+		impl().add_property(tag_name,property,r);
+	}
+	void rules::add_integer_property(std::string const &tag_name,std::string const &property)
+	{
+		booster::regex r("-?[0-9]+");
+		add_property(tag_name,property,r);
+	}
+	
+	bool rules::comments_allowed() const
+	{
+		return d->comments_allowed;
+	}
+	
+	void rules::comments_allowed(bool v)
+	{
+		d->comments_allowed=v;
+	}
+	
+	rules::tag_type rules::valid_tag(c_string const &t) const
+	{
+		return impl().valid_tag(t);
+	}
+	
+	bool rules::valid_boolean_property(details::c_string const &tag,details::c_string const &property) const
+	{
+		return impl().valid_boolean_property(tag,property);
+	}
+	
+	bool rules::valid_property(details::c_string const &tag,details::c_string const &property,details::c_string const &value) const
+	{
+		return impl().valid_property(tag,property,value);
 	}
 
-	bool rules::valid_tag(std::string const &tag,tag_type type) const
+	bool rules::valid_entity(details::c_string const &val) const
 	{
-		pimpl dp=impl();
-		data const *d=dp.get();
-		data::tags_type::const_iterator p = d->tags.find(tag);
-		if(p==d->tags.end())
-			return false;
-		switch(type) {
-		case opening_and_closing:
-			switch(p->type) {
-			case opening_and_closing:
-			case any_tag:
-				return true;
-			default:
-				return false;
-			}
-			break;
-		case stand_alone:
-			switch(p->type) {
-			case stand_alone:
-			case any_tag:
-				return true;
-			default:
-				return false;
-			}
-			break;
-		default:
-			return false;
-		};
+		return impl().valid_entity(val);
 	}
-
+	
 	namespace {
 
 		typedef enum {
@@ -271,7 +382,7 @@ namespace cppcms { namespace xss {
 		bool ends_with(char const *&begin,char const *end,char const *value)
 		{
 			size_t len=strlen(value);
-			if(end - begin < len)
+			if(begin >= end || size_t(end - begin) < len)
 				return false;
 			if(memcmp(begin,value,len)==0) {
 				begin+=len;
@@ -309,15 +420,22 @@ namespace cppcms { namespace xss {
 					begin++;					
 				};
 			}
+			return true;
 		}
 
 		void parse_properties(entry &part,char const *begin,char const *end)
 		{
+			bool space_found = true;
 			while(begin<end) {
 				char c=*begin;
 				if(ascii_isspace(c)) {
 					begin++;
+					space_found=true;
 					continue;
+				}
+				else if(!space_found) {
+					part.type=invalid_data;
+					return;
 				}
 				if(!ascii_isalpha(c)) {
 					part.type=invalid_data;
@@ -337,7 +455,7 @@ namespace cppcms { namespace xss {
 					return;
 				}
 				char quote = *begin;
-				if(quote!='\'' || quote!='\"')  {
+				if(quote!='\'' && quote!='\"')  {
 					part.type=invalid_data;
 					return;
 				}
@@ -348,7 +466,7 @@ namespace cppcms { namespace xss {
 					if(c==quote)
 						break;
 				}
-				if(c==end) {
+				if(vbegin==end) {
 					part.type=invalid_data;
 					return;
 				}
@@ -361,6 +479,7 @@ namespace cppcms { namespace xss {
 				part.tag.properties.back().value_end=vbegin;
 
 				begin=vbegin+1;
+				space_found = false;
 
 			}
 		}
@@ -388,34 +507,34 @@ namespace cppcms { namespace xss {
 						part.type = invalid_data;
 						return;
 					}
-					for(char *p=begin;p!=end;p++) {
+					for(char const *p=begin;p!=end;p++) {
 						if(!ascii_isxdigit(*p)) {
 							part.type = invalid_data;
 							return;
 						}
 					}
-					code_point=strtol(begin,&endptr,16)
+					code_point=strtol(begin,&endptr,16);
 				}
 				else {
-					for(char *p=begin;p!=end;p++) {
+					for(char const *p=begin;p!=end;p++) {
 						if(!ascii_isdigit(*p)) {
 							part.type = invalid_data;
 							return;
 						}
 					}
-					code_point=strtol(begin,&endptr,10)
+					code_point=strtol(begin,&endptr,10);
 				}
 
-				if(	!end_ptr 
-						|| *endptr!=';'
-						|| code_point>0x10FFFF
-						|| (0xD800 <= code_point  && code_point<= 0xDBFF)
-						|| code_point == 0xFFFF 
-						|| code_point == 0xFFFE
-						|| (0x7F <= code_point && code_point <= 0x9F)
-						|| (code_point < 0x20 
-							&& !( (0x9 <= code_point && code_point<=0xA) || code_point=0xD))
-						|| code_point <= 0x08)
+				if(	!endptr 
+					|| *endptr!=';'
+					|| code_point>0x10FFFF
+					|| (0xD800 <= code_point  && code_point<= 0xDBFF)
+					|| code_point == 0xFFFF 
+					|| code_point == 0xFFFE
+					|| (0x7F <= code_point && code_point <= 0x9F)
+					|| (code_point < 0x20 
+						&& !( (0x9 <= code_point && code_point<=0xA) || code_point==0xD))
+					|| code_point <= 0x08)
 				{
 
 					part.type = invalid_data;
@@ -434,7 +553,7 @@ namespace cppcms { namespace xss {
 			}
 		}
 
-		void parse_html_part(entry &part)
+		void parse_html_tag(entry &part)
 		{
 			char const *begin = part.begin+1;
 			char const *end = part.end-1;
@@ -448,18 +567,18 @@ namespace cppcms { namespace xss {
 					|| memcmp(end-2,"--",2)!=0
 				)
 				{
-					part.type == invalid_data;
+					part.type = invalid_data;
 					return;
 				}
 				begin+=3;
 				end-=2;
 				for(char const *p=begin;p!=end;++p) {
 					if(*p=='-' && *(p+1)=='-') {
-						part.type == invalid_data;
+						part.type = invalid_data;
 						return;
 					}
 				}
-				part=html_comment;
+				part.type=html_comment;
 				return; // we are ok there
 			}
 
@@ -469,18 +588,22 @@ namespace cppcms { namespace xss {
 					part.type = invalid_data;
 					return;
 				}
+				char const *rbegin = begin;
 				begin++;
 				while(begin!=end) {
 					if(!ascii_isalnum(*begin))
 						break;
 					begin++;
 				}
+				char const *rend=begin;
 				while(ascii_isspace(*begin))
 					begin++;
 				if(begin!=end) {
 					part.type = invalid_data;
 					return;
 				}
+				part.tag.tag_begin=rbegin;
+				part.tag.tag_end=rend;
 				part.type = close_tag;
 				return; // done with colsing tah
 			}
@@ -490,10 +613,10 @@ namespace cppcms { namespace xss {
 				part.type = invalid_data;
 				return;
 			}
-			part.tag.begin = begin++;
+			part.tag.tag_begin = begin++;
 			while(ascii_isalnum(*begin))
 				begin++;
-			part.tag.end = begin;
+			part.tag.tag_end = begin;
 
 			if(*(end-1)=='/') {
 				part.type = open_and_close_tag;
@@ -503,7 +626,7 @@ namespace cppcms { namespace xss {
 				part.type = open_tag;
 			}
 
-			parse_properties(part,begin,end)
+			parse_properties(part,begin,end);
 			return;
 
 		}
@@ -511,15 +634,14 @@ namespace cppcms { namespace xss {
 		void parse_part(entry &part)
 		{
 			switch(part.type) {
-			case plain_text:
-			case invalid_data:
-				break;
 			case html_entity:
 				parse_html_entity(part);
 				break;
 			case html_tag:
 				parse_html_tag(part);
 				break;
+			default:
+				/* Nothing to do in other cases */ ;
 			}
 		}
 
@@ -528,7 +650,7 @@ namespace cppcms { namespace xss {
 		{
 			unsigned count = 0;
 
-			for(char const *tmp = begin;tmp!=end) {
+			for(char const *tmp = begin;tmp!=end;tmp++) {
 				if(*tmp == '<')
 					count++;
 			}
@@ -577,6 +699,7 @@ namespace cppcms { namespace xss {
 						}
 
 					}
+					break;
 
 				case '>':
 					{
@@ -589,6 +712,7 @@ namespace cppcms { namespace xss {
 						tags.push_back(entry(p,p+1,invalid_data));
 						p++;
 					}
+					break;
 
 				default:
 					{
@@ -611,7 +735,7 @@ namespace cppcms { namespace xss {
 			std::stack<unsigned> st;
 			for(unsigned i=0;i<parsed.size();i++) {
 				entry &cur = parsed[i];
-				switch(c.type) {
+				switch(cur.type) {
 				case close_tag:
 					if(xhtml) {
 						if(st.empty()) {
@@ -624,8 +748,9 @@ namespace cppcms { namespace xss {
 						char const *pop_end   = parsed[top_index].tag.tag_end;
 						char const *cur_begin = cur.tag.tag_begin;
 						char const *cur_end   = cur.tag.tag_end;
-						if(!ascii_streq(pop_begin,pop_end,cur_begin,cur_end,xhtml))
+						if(!ascii_streq(pop_begin,pop_end,cur_begin,cur_end,xhtml)) {
 							cur.type = invalid_data;
+						}
 					}
 					else {
 						for(;;) {
@@ -653,13 +778,15 @@ namespace cppcms { namespace xss {
 				}
 			}
 			while(!st.empty()) {
-				parsed[st.top()].tag = xhtml ? invalid_data : open_and_close_tag_without_slash;
+				parsed[st.top()].type = xhtml ? invalid_data : open_and_close_tag_without_slash;
 				st.pop();
 			}
 		}
 
 		bool validate_entry_by_rules(entry &part,rules const &r)
 		{
+			using details::c_string;
+			
 			switch(part.type) {
 			case invalid_data:
 				return false;
@@ -668,57 +795,8 @@ namespace cppcms { namespace xss {
 			case html_tag:
 				return false;
 			case html_entity:
-				if(!r.valid_entity(part.tag.tag_begin,part.tag.tag_end))
+				if(!r.valid_entity(c_string(part.tag.tag_begin,part.tag.tag_end)))
 					return false;
-				break;
-
-			case open_tag:
-			case close_tag:
-			case open_and_close_tag:
-			case open_and_close_tag_without_slash:
-				{
-					std::string name(part.tag.tag_begin,part.tag.tag_end);
-
-					rules::tag_type t = r.valid_tag(name);
-
-					switch(t) {
-					case rules::invalid_tag:
-						return false;
-					case stand_alone:
-						if(part.type!=open_and_close_tag_without_slash && type!=open_and_close_tag)
-							return false;
-						break;
-					case opening_and_closing:
-						if(part.type!=open_tag && part.type!=close_tag)
-							return false;
-						break;
-					case any_tag:
-						break;
-					}
-
-					if(part.type == close_tag)
-						break;
-
-					std::set<std::string> properies_found;
-
-					for(unsigned i=0;i<part.tag.properties.size();i++) {
-						property_data &prop = part.tag.properties[i];
-						std::string pname(prop.property_begin,prop.property_end);
-						if(properties_found.find(pname)!=properties_found.end())
-							return false;
-						if(prop.value_begin == 0) {
-							if(r.html()==rules::xhtml_input)
-								return false;
-							if(!r.validate_property_value(name,pname))
-								return false;
-						}
-						else {
-							if(!r.validate_property_value(name,pname,prop.value_begin,prop.value_end))
-								return false;
-						}
-						properties_found.insert(pname);
-					}
-				}
 				break;
 			case html_comment:
 				if(!r.comments_allowed())
@@ -727,6 +805,61 @@ namespace cppcms { namespace xss {
 			case html_numeric_entity:
 				if(!r.numeric_entities_allowed()) 
 					return false;
+			case open_tag:
+			case close_tag:
+			case open_and_close_tag:
+			case open_and_close_tag_without_slash:
+				{
+					c_string name(part.tag.tag_begin,part.tag.tag_end);
+					rules::tag_type t = r.valid_tag(name);
+
+					switch(t) {
+					case rules::invalid_tag:
+						return false;
+					case rules::stand_alone:
+						if(part.type!=open_and_close_tag_without_slash && part.type!=open_and_close_tag)
+							return false;
+						break;
+					case rules::opening_and_closing:
+						if(part.type!=open_tag && part.type!=close_tag)
+							return false;
+						break;
+					case rules::any_tag:
+						break;
+					}
+
+					if(part.type == close_tag)
+						break;
+					
+					bool xhtml = r.html()==rules::xhtml_input;
+// 	
+					std::set<c_string,compare_c_string> xhtml_properties_found;
+					std::set<c_string,icompare_c_string> html_properties_found;
+
+					for(unsigned i=0;i<part.tag.properties.size();i++) {
+						property_data &prop = part.tag.properties[i];
+						c_string pname(prop.property_begin,prop.property_end);
+						if(xhtml) {
+							if(xhtml_properties_found.find(pname)!=xhtml_properties_found.end())
+								return false;
+							xhtml_properties_found.insert(pname);
+						}
+						else {
+							if(html_properties_found.find(pname)!=html_properties_found.end())
+								return false;
+							html_properties_found.insert(pname);
+						}
+						if(prop.value_begin == 0) {
+							if(!r.valid_boolean_property(name,pname))
+								return false;
+						}
+						else {
+							if(!r.valid_property(name,pname,c_string(prop.value_begin,prop.value_end)))
+								return false;
+						}
+					}
+				}
+				break;
 			default:
 				return false;
 			}
@@ -751,7 +884,7 @@ namespace cppcms { namespace xss {
 			if(parsed[i].type == invalid_data)
 				return false;
 		}
-
+		
 		validate_nesting(parsed,r.html() == rules::xhtml_input);
 
 		for(unsigned i=0;i<size;i++)
@@ -759,7 +892,7 @@ namespace cppcms { namespace xss {
 				return false;
 
 		for(unsigned i=0;i<size;i++) {
-			if(!validate_entry_by_rules(parsed[i],rules))
+			if(!validate_entry_by_rules(parsed[i],r))
 				return false;
 		}
 
@@ -767,8 +900,102 @@ namespace cppcms { namespace xss {
 
 	}
 	
+	bool validate_and_filter_if_invalid(	char const *begin,
+						char const *end,
+						rules const &r,
+						std::string &filtered,
+						filtering_method_type method)
+	{
+		bool valid = true;
+		std::vector<entry> parsed;
+		
+		split_to_parts(begin,end,parsed);
 
+		size_t size = parsed.size();
+
+		for(unsigned i=0;i<size;i++) {
+			if(parsed[i].type == invalid_data)
+				valid = false;
+			parse_part(parsed[i]);
+			if(parsed[i].type == invalid_data)
+				valid = false;
+		}
+
+		validate_nesting(parsed,r.html() == rules::xhtml_input);
+
+		for(unsigned i=0;i<size;i++)
+			if(parsed[i].type == invalid_data)
+				valid = false;
+
+		for(unsigned i=0;i<size;i++) {
+			if(!validate_entry_by_rules(parsed[i],r)) {
+				valid = false;
+				parsed[i].type = invalid_data;
+			}
+		}
+		if(valid)
+			return true;
+		
+		filtered.clear();
+		filtered.reserve(end-begin);
+		
+		for(unsigned i=0;i<size;i++) {
+			char const *b=parsed[i].begin;
+			char const *e=parsed[i].end;
+			if(parsed[i].type == invalid_data) {
+				if(method == remove_invalid)
+					continue;
+				for(char const *p=b;p!=e;p++) {
+					char c=*p;
+					switch(c) {
+					case '<':
+						filtered+="&lt;";
+						break;
+					case '>':
+						filtered+="&gt;";
+						break;
+					case '&':
+						filtered+="&amp;";
+						break;
+					case '"':
+						filtered+='"';
+						break;
+					default:
+						filtered+=c;
+					}
+				}
+			}
+			else {
+				filtered.append(b,e-b);
+			}
+		}
+		return false;
+	}
 	
+	std::string filter(	char const *begin,
+				char const *end,
+				rules const &r,
+				filtering_method_type method)
+	{
+		std::string res;
+		if(validate_and_filter_if_invalid(begin,end,r,res,method)) {
+			res.assign(begin,end-begin);
+		}
+		return res;
+	}
+	std::string filter(	std::string const &input,
+				rules const &r,
+				filtering_method_type method)
+	{
+		char const *begin = input.c_str();
+		char const *end = begin + input.size();
+		std::string res;
+		if(validate_and_filter_if_invalid(begin,end,r,res,method)) {
+			return input;
+		}
+		else
+			return res;
+	}
 
 
-} } // xss
+} } // cppcms::xss
