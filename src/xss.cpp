@@ -858,6 +858,7 @@ namespace cppcms { namespace xss {
 						}
 						else {
 							cur.type = invalid_data;
+							parsed[top_index].type = invalid_data;
 						}
 					}
 					else {
