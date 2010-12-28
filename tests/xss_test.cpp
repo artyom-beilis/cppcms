@@ -183,7 +183,6 @@ void test_rules()
 	}
 
 	
-	
 }
 
 bool validate_simple(char const *s,cppcms::xss::rules const &r,char const *rm=0,char const *esc=0)
@@ -310,9 +309,9 @@ void test_validation()
 		TEST(!validate_simple("Hello <!-- -- -> world",r));
 		TEST(validate_simple("Hello <!-- - --> world",r));
 		TEST(!validate_simple("Hello <!-- -- --> world",r));
-		TEST(validate_simple("Hello <!-- <test /> --> world",r));
-		TEST(validate_simple("Hello <!-- < --> world",r));
-		TEST(validate_simple("Hello <!-- > --> world",r));
+		TEST(!validate_simple("Hello <!-- <test /> --> world",r,"Hello  world"));
+		TEST(!validate_simple("Hello <!-- < --> world",r,"Hello  world"));
+		TEST(!validate_simple("Hello <!-- > --> world",r,"Hello  world"));
 		TEST(validate_simple("Hello <!----> world",r));
 		TEST(validate_simple("<!-- test -->",r));
 		TEST(validate_simple("<!-- test -->x",r));
@@ -320,6 +319,7 @@ void test_validation()
 		TEST(!validate_simple("<!-- test --",r,""));
 		TEST(!validate_simple("<!-- test -",r,""));
 		TEST(!validate_simple("< !-- test -->",r,""));
+		TEST(!validate_simple("a<!--[if gte IE 4]><SCRIPT>alert('XSS');</SCRIPT><![endif]-->b",r,"ab"));
 	}
 	{
 		std::cout << "-- Test nesting" << std::endl;

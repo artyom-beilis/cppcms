@@ -324,7 +324,7 @@ namespace cppcms { namespace xss {
 
 		std::string uri_reference = "(" + uri + "|" + relative_ref +")";
 
-#ifdef DEBUG_XSS_REGEXS
+#ifdef DEBUG_XSS_URI_REGEXS
 
 		std::string strings[] = {
 			sub_delims,
@@ -376,7 +376,6 @@ namespace cppcms { namespace xss {
 		add_property(tag_name,property,uri_matcher(schema));
 	}
 	
-
 
 	
 	namespace {
@@ -779,7 +778,21 @@ namespace cppcms { namespace xss {
 							e++;
 						}
 						if(e+2<end && e[2]=='>') {
-							tags.push_back(entry(p,e+3,html_comment));
+							
+							html_data_type type = html_comment;
+							
+							for(char const *tmp = p+4;tmp<e;tmp++) {
+								char c=*tmp;
+								///
+								/// Prevent IE conditionals
+								///
+								if(c=='>' || c=='<' || c=='&') {
+									type = invalid_data;
+									break;
+								}
+							}
+
+							tags.push_back(entry(p,e+3,type));
 							p=e+3;
 						}
 						else {
