@@ -195,8 +195,6 @@ bool validate_simple(char const *s,cppcms::xss::rules const &r,char const *rm=0,
 	TEST(res==res3);
 	if(!res) {
 		if(rm) {
-			if(tmp1!=rm)
-				std::cerr <<"[" << s <<"]->[" << tmp1 << "]!=["<<rm<<"]" << std::endl;
 			TEST(tmp1==rm);
 		}
 		if(esc)
@@ -363,11 +361,97 @@ void test_validation()
 	}	
 }
 
+bool valenc(char const *s,cppcms::xss::rules const &r,char const *rm=0,char const *esc=0)
+{
+	bool res = cppcms::xss::validate(s,s+strlen(s),r);
+	std::string tmp1,tmp2;
+	bool res2 = cppcms::xss::validate_and_filter_if_invalid(s,s+strlen(s),r,tmp1,cppcms::xss::remove_invalid);
+	bool res3 = cppcms::xss::validate_and_filter_if_invalid(s,s+strlen(s),r,tmp2,cppcms::xss::escape_invalid,'?');
+	TEST(res == res2);
+	TEST(res == res3);
+	if(!res) {
+		if(rm)
+			TEST(tmp1==rm);
+		if(esc)
+			TEST(tmp2==esc);
+		TEST(tmp1!=s);
+		TEST(tmp2!=s);
+		if(rm && esc && strcmp(rm,esc)!=0) {
+			// encoding sometimes always remove
+			TEST(tmp1!=tmp2);
+			TEST(tmp1.size() < strlen(s));
+		}
+		TEST(cppcms::xss::validate(tmp1.c_str(),tmp1.c_str()+tmp1.size(),r));
+		TEST(cppcms::xss::validate(tmp2.c_str(),tmp2.c_str()+tmp2.size(),r));
+	}
+	return res;
+
+}
+
+
+void test_encoding()
+{
+	std::cout << "- Testing encoding validation" << std::endl;
+	using namespace cppcms::xss;
+	{
+		rules r;
+		r.encoding("UTF-8");
+		std::cout << "-- Testing UTF-8" << std::endl;
+		TEST(valenc("שלום עולם",r));
+		TEST(!valenc("שלום \xFFעולם",r,"שלום עולם","שלום ?עולם"));
+		TEST(!valenc("שלום \4עולם",r,"שלום עולם","שלום ?עולם"));
+		TEST(!valenc("\xFFעולם",r,"עולם","?עולם"));
+		TEST(!valenc("\4עולם",r,"עולם","?עולם"));
+		TEST(!valenc("שלום \xFF",r,"שלום ","שלום ?"));
+		TEST(!valenc("שלום \4",r,"שלום ","שלום ?"));
+	}
+	{
+		rules r;
+		r.encoding("ISO-8859-8");
+		std::cout << "-- Testing ISO-8859-8" << std::endl;
+		TEST(valenc("\xf9\xec\xe5\xed \xf2\xe5\xec\xed",r));
+		TEST(!valenc("\xf9\xec\xe5\xed \xc8\xf2\xe5\xec\xed",r,"\xf9\xec\xe5\xed \xf2\xe5\xec\xed","\xf9\xec\xe5\xed ?\xf2\xe5\xec\xed"));
+		TEST(!valenc("\xf9\xec\xe5\xed \4\xf2\xe5\xec\xed",r,"\xf9\xec\xe5\xed \xf2\xe5\xec\xed","\xf9\xec\xe5\xed ?\xf2\xe5\xec\xed"));
+		TEST(!valenc("\xc8\xf9\xec\xe5\xed \xf2\xe5\xec\xed",r,"\xf9\xec\xe5\xed \xf2\xe5\xec\xed","?\xf9\xec\xe5\xed \xf2\xe5\xec\xed"));
+		TEST(!valenc("\4\xf9\xec\xe5\xed \xf2\xe5\xec\xed",r,"\xf9\xec\xe5\xed \xf2\xe5\xec\xed","?\xf9\xec\xe5\xed \xf2\xe5\xec\xed"));
+		TEST(!valenc("\xf9\xec\xe5\xed \xc8",r,"\xf9\xec\xe5\xed ","\xf9\xec\xe5\xed ?"));
+		TEST(!valenc("\xf9\xec\xe5\xed \4",r,"\xf9\xec\xe5\xed ","\xf9\xec\xe5\xed ?"));
+	}
+{
+		rules r;
+		r.encoding("Shift-JIS");
+		std::cout << "-- Testing Shift-JIS" << std::endl;
+		TEST(valenc("aX\xCB\x83\x71\x82\xd0",r));
+		// Only remove
+		// single invalid code point in the middle 0xa0
+		TEST(!valenc("aX\xCB\x83\x71\xa0\x82\xd0",r,"aX\xCB\x83\x71\x82\xd0","aX\xCB\x83\x71\x82\xd0"));
+		// single invalid code point in the end 0xa0
+		TEST(!valenc("aX\xCB\x83\x71\xa0",r,"aX\xCB\x83\x71","aX\xCB\x83\x71"));
+		// single invalid code point in the begin 0xa0
+		TEST(!valenc("\xa0\x82\xd0",r,"\x82\xd0","\x82\xd0"));
+		// incompete code point in the end 0x82xd0
+		TEST(!valenc("aX\xCB\x83\x71\x82\xd0\x82",r,"aX\xCB\x83\x71\x82\xd0","aX\xCB\x83\x71\x82\xd0"));
+		// single invalid code point in the middle 4
+		TEST(!valenc("aX\xCB\x83\x71\4\x82\xd0",r,"aX\xCB\x83\x71\x82\xd0","aX\xCB\x83\x71\x82\xd0"));
+		// single invalid code point in the end 4
+		TEST(!valenc("aX\xCB\x83\x71\4",r,"aX\xCB\x83\x71","aX\xCB\x83\x71"));
+		// single invalid code point in the begin 4
+		TEST(!valenc("\4\x82\xd0",r,"\x82\xd0","\x82\xd0"));
+		// single invalid code point in the middle 83 f0
+		TEST(!valenc("aX\xCB\x83\x71\x83\xf0\x82\xd0",r,"aX\xCB\x83\x71\x82\xd0","aX\xCB\x83\x71\x82\xd0"));
+		// single invalid code point in the end 83 f0
+		TEST(!valenc("aX\xCB\x83\x71\x83\xf0",r,"aX\xCB\x83\x71","aX\xCB\x83\x71"));
+		// single invalid code point in the begin 83 f0
+		TEST(!valenc("\x83\xf0\x82\xd0",r,"\x82\xd0","\x82\xd0"));
+	}
+}
+
 int main()
 {
 	try {
 		test_rules();
 		test_validation();
+		test_encoding();
 	}
 	catch(std::exception const &e){
 		std::cerr << "Fail " << e.what() << std::endl;

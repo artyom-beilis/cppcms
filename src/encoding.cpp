@@ -18,6 +18,7 @@
 ///////////////////////////////////////////////////////////////////////////////
 #define CPPCMS_SOURCE
 #include "encoding_validators.h"
+#include "http_protocol.h"
 #include <cppcms/encoding.h>
 #include "utf_iterator.h"
 #include <cppcms/cppcms_error.h>
@@ -295,5 +296,109 @@ std::string CPPCMS_API from_utf8(std::locale const &loc,std::string const &str)
 	else
 		return from_utf8(inf.encoding().c_str(),str);
 }
-	
+
+
+namespace {
+	bool validate_or_filter_utf8(char const *begin,char const *end,std::string &output,char replace)
+	{
+		bool valid = true;
+		char const *ptr = begin;
+		char const *prev = ptr;
+		while(ptr < end) {
+			prev = ptr;
+			if(utf8::next(ptr,end,true,false) == utf::illegal) {
+				valid = false;
+				break;
+			}
+		}
+		if(valid)
+			return true;
+		output.clear();
+		output.reserve(end - begin);
+		output.append(begin,prev);
+		ptr = prev;
+		while(ptr < end) {
+			prev = ptr;
+			if(utf8::next(ptr,end,true,false)!=utf::illegal) {
+				output.append(prev,ptr);
+				continue;
+			}
+			ptr = prev;
+			if(utf8::next(ptr,end,false,false) == utf::illegal) {
+				if(replace)
+					output+=replace;
+				ptr = prev + 1;
+			}
+			else {
+				if(replace)
+					output+=replace;
+			}
+		}
+		return false;
+	}
+
+	bool validate_or_filter_single_byte_charset(
+			impl::validators_set::encoding_tester_type tester,
+			char const *begin,
+			char const *end,
+			std::string &output,
+			char repl)
+	{
+		size_t count = 0;
+		if(tester(begin,end,count))
+			return true;
+		output.clear();
+		output.reserve(end - begin);
+		for(char const *p=begin;p<end;p++) {
+			size_t n = 0;
+			char const *ptr=p;
+			if(tester(ptr,ptr+1,n))
+				output+=*p;
+			else if(repl)
+				output+=repl;
+		}
+		return false;
+	}
+} // anonymous
+
+bool CPPCMS_API validate_or_filter(	std::string const &encoding,
+					char const *begin,char const *end,
+					std::string &output,
+					char replace)
+{
+	/// UTF-8 Case
+	if(http::protocol::compare(encoding,"utf8")==0 || http::protocol::compare(encoding,"utf-8")==0)
+		return validate_or_filter_utf8(begin,end,output,replace);
+
+	/// 8bit case
+	impl::validators_set::encoding_tester_type tester = impl::all_validators.get(encoding.c_str());
+	if(tester)
+		return validate_or_filter_single_byte_charset(tester,begin,end,output,replace);
+
+	size_t tmp_count = 0;
+	/// Most common case
+	if(valid(encoding,begin,end,tmp_count))
+		return true;
+
+	std::string utf8_string = booster::locale::conv::between(
+			begin,end,
+			"UTF-8",encoding,
+			booster::locale::conv::skip);
+
+	std::string tmp_out;
+
+	if(validate_or_filter_utf8(utf8_string.c_str(),utf8_string.c_str() + utf8_string.size(),tmp_out,0)) {
+		tmp_out.swap(utf8_string);
+	}
+
+	output = booster::locale::conv::between(
+			tmp_out.c_str(),
+			tmp_out.c_str()+tmp_out.size(),
+			encoding,
+			"UTF-8",
+			booster::locale::conv::skip);
+	return false;
+}
+
+
 } } // cppcms::encoding

@@ -263,6 +263,26 @@ namespace cppcms {
 			void comments_allowed(bool comments);
 
 			///
+			/// Set the character encoding of the source, otherwise encoding is not checked and
+			/// assumed valid all invalid characters are removed from the text or replaced with default character
+			///
+			/// It is very important to specify this option. You may skip it if you are sure that the
+			/// the input encoding was already validated using cppcms::form::text widget that handles
+			/// character encoding validation by default.
+			///
+			/// In any case it is generally better to always specify this option.
+			///
+			/// 
+			/// \note the replace functionality is not supported for all encoding, only UTF-8, ISO-8859-* and single byte windows-12XX
+			/// encodings support such replacement with default character, for all other encodings like Shift-JIS, the invalid
+			/// characters or characters that are invalid for use in HTML are removed.
+			///
+			void encoding(std::string const &enc);
+
+
+			/// \cond INTERNAL
+
+			///
 			/// Test if the tag is valid.
 			/// \a tag should be lower case for HTML or unchanged for XHTML
 			///
@@ -284,6 +304,14 @@ namespace cppcms {
 			/// Test if specific html entity is valid
 			///
 			bool valid_entity(details::c_string const &val) const;
+
+			///
+			/// Get the encoding, returns empty string if not encoding testing
+			/// is required
+			///
+			std::string encoding() const;
+
+			/// \endcond
 
 
 		private:
@@ -321,7 +349,8 @@ namespace cppcms {
 								char const *end,
 								rules const &r,
 								std::string &filtered,
-								filtering_method_type method=remove_invalid);
+								filtering_method_type method=remove_invalid,
+								char replacement_char = 0);
 
 		///
 		/// \brief Filter the input in range [\a begin, \a end) according to the rules \a r using filtering 
@@ -330,13 +359,15 @@ namespace cppcms {
 		CPPCMS_API std::string filter(char const *begin,
 					      char const *end,
 					      rules const &r,
-					      filtering_method_type method=remove_invalid);
+					      filtering_method_type method=remove_invalid,
+					      char replacement_char = 0);
 		///
 		/// \brief Filter the input text \a input according to the rules \a r using filtering method \a method
 		///
 		CPPCMS_API std::string filter(std::string const &input,
 					      rules const &r,
-					      filtering_method_type method=remove_invalid);
+					      filtering_method_type method=remove_invalid,
+					      char replacement_char = 0);
 
 	} // xss
 }

@@ -19,6 +19,8 @@
 #ifndef CPPCMS_HTTP_PROTOCOL_H
 #define CPPCMS_HTTP_PROTOCOL_H
 
+#include <string>
+
 namespace cppcms {
 namespace http { 
 namespace protocol {

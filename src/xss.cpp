@@ -18,6 +18,7 @@
 ///////////////////////////////////////////////////////////////////////////////
 #define CPPCMS_SOURCE
 #include <cppcms/xss.h>
+#include <cppcms/encoding.h>
 #include <booster/regex.h>
 #include <stack>
 #include <map>
@@ -155,6 +156,7 @@ namespace cppcms { namespace xss {
 		bool is_xhtml;
 		bool comments_allowed;
 		bool numeric_entities_allowed;
+		std::string encoding;
 		
 		data() :
 			is_xhtml(true),
@@ -212,6 +214,15 @@ namespace cppcms { namespace xss {
 			d->is_xhtml=true;
 			break;
 		}
+	}
+
+	void rules::encoding(std::string const &enc)
+	{
+		d->encoding = enc;
+	}
+	std::string rules::encoding() const
+	{
+		return d->encoding;
 	}
 	
 	void rules::add_tag(std::string const &tag_name,rules::tag_type t)
@@ -997,6 +1008,12 @@ namespace cppcms { namespace xss {
 
 	bool validate(char const *begin,char const *end,rules const &r)
 	{
+		std::string enc = r.encoding();
+		size_t dummy_count = 0;
+		if(!enc.empty() && !encoding::valid(enc,begin,end,dummy_count)) {
+			return false;
+		}
+		
 		std::vector<entry> parsed;
 		
 		split_to_parts(begin,end,parsed);
@@ -1030,9 +1047,19 @@ namespace cppcms { namespace xss {
 						char const *end,
 						rules const &r,
 						std::string &filtered,
-						filtering_method_type method)
+						filtering_method_type method,
+						char repl_ch)
 	{
 		bool valid = true;
+		std::string enc = r.encoding();
+		std::string filtered_input;
+
+		if(!enc.empty() && !encoding::validate_or_filter(enc,begin,end,filtered_input,repl_ch)) {
+			valid = false;
+			begin = filtered_input.c_str();
+			end = begin + filtered_input.size();
+		}
+
 		std::vector<entry> parsed;
 		
 		split_to_parts(begin,end,parsed);
@@ -1104,22 +1131,24 @@ namespace cppcms { namespace xss {
 	std::string filter(	char const *begin,
 				char const *end,
 				rules const &r,
-				filtering_method_type method)
+				filtering_method_type method,
+				char repl_ch)
 	{
 		std::string res;
-		if(validate_and_filter_if_invalid(begin,end,r,res,method)) {
+		if(validate_and_filter_if_invalid(begin,end,r,res,method,repl_ch)) {
 			res.assign(begin,end-begin);
 		}
 		return res;
 	}
 	std::string filter(	std::string const &input,
 				rules const &r,
-				filtering_method_type method)
+				filtering_method_type method,
+				char repl_ch)
 	{
 		char const *begin = input.c_str();
 		char const *end = begin + input.size();
 		std::string res;
-		if(validate_and_filter_if_invalid(begin,end,r,res,method)) {
+		if(validate_and_filter_if_invalid(begin,end,r,res,method,repl_ch)) {
 			return input;
 		}
 		else
