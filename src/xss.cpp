@@ -299,7 +299,7 @@ namespace cppcms { namespace xss {
 		std::string sub_delims="(['!,;=\\$\\(\\)\\*\\+]|&amp;|&apos;)";
 		std::string gen_delims="[\\:\\/\\?\\#\\[\\]\\@]";
 		std::string reserverd="(" + gen_delims + "|" + sub_delims + ")";
-		std::string unreserved="[a-zA-Z_0-9\\.~]";
+		std::string unreserved="[a-zA-Z_0-9\\-\\.~]";
 		std::string pct_encoded="%[0-9a-fA-F][0-9a-fA-F]";
 		std::string pchar="(" + unreserved + "|" + pct_encoded + "|" + sub_delims + "|:|\\@)";
 		std::string query="(" + pchar + "|/|\\?)*";
@@ -323,7 +323,7 @@ namespace cppcms { namespace xss {
 						+"|"+path_absolute
 						+"|"+path_noscheme
 						+")?";
-		std::string relative_ref = "(" + relative_part + "(\\?" + query + ")?(#" + segment +")?)";
+		std::string relative_ref = "(" + relative_part + "(\\?" + query + ")?(#" + fragment +")?)";
 
 
 		std::string hier_part = "(//" + authority + path_abempty 
@@ -331,7 +331,7 @@ namespace cppcms { namespace xss {
 						+"|"+path_rootless
 						+")?";
 
-		std::string uri = "(" + scheme +":" +  hier_part + "(\\?" + query + ")?(#" + segment +")?)";
+		std::string uri = "(" + scheme +":" +  hier_part + "(\\?" + query + ")?(#" + fragment +")?)";
 
 		std::string uri_reference = "(" + uri + "|" + relative_ref +")";
 
@@ -836,13 +836,6 @@ namespace cppcms { namespace xss {
 						p++;
 					}
 					break;
-				case '"':
-					{
-						tags.push_back(entry(p,p+1,invalid_data));
-						p++;
-					}
-					break;
-
 				default:
 					{
 						char const *e=0;

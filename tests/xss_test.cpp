@@ -294,6 +294,9 @@ void test_validation()
 		TEST(validate_simple("<a href='http://google.com'>x</a>",r));
 		TEST(!validate_simple("<a href='javascript:xss()'>x</a>",r,"x"));
 		TEST(!validate_simple("<a>x</a href='http://google.com'>",r,"x"));
+		TEST(validate_simple("<a href='http://google.com/foo?x=y&amp;bar=x'>x</a>",r));
+		TEST(validate_simple("<a href=\"http://cppcms.sourceforge.net/banner-small.png\">x</a>",r));
+		TEST(validate_simple("<a href=\"#Are+you+crazy+or+masochist?\">x</a>",r));
 	}
 	{
 		std::cout << "-- Testing comments" << std::endl;
