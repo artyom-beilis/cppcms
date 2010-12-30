@@ -139,6 +139,53 @@ namespace cppcms {
 		///
 		/// \brief The class that holds XSS filter rules
 		///
+		/// This is the major class the defines the white list rules to handle the 
+		/// Correct HTML input.
+		///
+		/// When using these rules you should be very strict about what you need and what you
+		/// allow.
+		/// 
+		/// Basically you need to specify:
+		///
+		/// -#  The XHTML or HTML parsing rules - should be done first
+		/// -#  The encoding of the text. If you do not specify the encoding
+		///     it would be assumed that it is ASCII compatible. 
+		///     You may not specify encoding only if you know that it was validated
+		///     for example by using widgets::text, otherwise \b always specify 
+		///     encoding
+		/// -#  Provide the list of tags that should be used. Specify only thous you need.
+		///     .
+		///     Never allow tags like style, object, embed or of course script as they can be easily
+		///     used for XSS attacks 
+		/// -#  Provide essential HTML attributes - properties for tags you need. 
+		///     Use add_uri_property for links like src for img or href for a.
+		///     It would check correctness of URI syntax and ensure that only white-listed 
+		///     schemas are allowed (i.e. no javascript would be allowed).
+		///     .
+		///     Never allow style tags unless you specify very strict white list of really used
+		///     styles. Styles can be easily exploited for both XSS and click-jacking. For example
+		///     \code
+		///     <p style="width: expression(alert('XSS'));"></p>
+		///     \endcode
+		///     .
+		///     If you want to use styles specify very strict list of things you need like:
+		///     \code
+		///     add_property("p","style",booster::regex("text-align:(left|right|center)"));
+		///     \endcode
+		/// -#  Do not allow comments unless you need them. Note not all comments are allowed. Comments
+		///     containing "<", ">" or "&" would be considered invalid as some exploits use them.
+		///
+		/// Remember more strict you are it is harder to make attack. Read about XSS, see existing
+		/// attacks to understand how they work and then decide what you allow.
+		///
+		/// rules class can be treated as value for thread safe access, i.e. you can safely use
+		/// const reference and const member functions as long as you don't change the rules 
+		/// under the hood.
+		///
+		/// The simplest way: define at application startup some global rules object configure
+		/// it and use it for filtering and validation - and make your attackers cry :-).
+		///
+		///
 		class CPPCMS_API rules {
 		public:
 			rules();
