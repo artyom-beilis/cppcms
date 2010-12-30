@@ -364,7 +364,8 @@ void test_validation()
 	}	
 }
 
-bool valenc(char const *s,cppcms::xss::rules const &r,char const *rm=0,char const *esc=0)
+
+bool valenc(char const *s,cppcms::xss::rules const &r,char const *rm=0,char const *esc=0,char const *rmalt=0)
 {
 	bool res = cppcms::xss::validate(s,s+strlen(s),r);
 	std::string tmp1,tmp2;
@@ -373,12 +374,17 @@ bool valenc(char const *s,cppcms::xss::rules const &r,char const *rm=0,char cons
 	TEST(res == res2);
 	TEST(res == res3);
 	if(!res) {
-		if(rm)
+		if(rm && rmalt) {
+			TEST(tmp1==rm || tmp1==rmalt);
+		}
+		else if(rm) {
 			TEST(tmp1==rm);
+		}
 		if(esc)
 			TEST(tmp2==esc);
 		TEST(tmp1!=s);
 		TEST(tmp2!=s);
+
 		if(rm && esc && strcmp(rm,esc)!=0) {
 			// encoding sometimes always remove
 			TEST(tmp1!=tmp2);
@@ -441,11 +447,17 @@ void test_encoding()
 		// single invalid code point in the begin 4
 		TEST(!valenc("\4\x82\xd0",r,"\x82\xd0","\x82\xd0"));
 		// single invalid code point in the middle 83 f0
-		TEST(!valenc("aX\xCB\x83\x71\x83\xf0\x82\xd0",r,"aX\xCB\x83\x71\x82\xd0","aX\xCB\x83\x71\x82\xd0"));
+		TEST(!valenc(	"aX\xCB\x83\x71\x83\xf0\x82\xd0",r,
+				"aX\xCB\x83\x71\x82\xd0",
+				0, // both are legal ways to interpret as xf0x82 + d0 and x82xd0 are valid code points
+				"aX\xCB\x83\x71\xf0\x82\xd0"));
 		// single invalid code point in the end 83 f0
 		TEST(!valenc("aX\xCB\x83\x71\x83\xf0",r,"aX\xCB\x83\x71","aX\xCB\x83\x71"));
 		// single invalid code point in the begin 83 f0
-		TEST(!valenc("\x83\xf0\x82\xd0",r,"\x82\xd0","\x82\xd0"));
+		TEST(!valenc(	"\x83\xf0\x82\xd0",r,
+				"\xf0\x82\xd0", 
+				0, // both are legal ways to interpret as xf0x82 + d0 and x82xd0 are valid code points
+				"\xf0\x82\xd0"));
 	}
 }
 

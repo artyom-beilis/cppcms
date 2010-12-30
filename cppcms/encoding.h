@@ -56,22 +56,31 @@ namespace cppcms {
 		/// HTML illegal characters. Number of codepoints is stored in \a count
 		///
 		bool CPPCMS_API valid(std::string const &encoding,char const *begin,char const *end,size_t &count);
-		
+	
+		///
+		/// Returns true if ASCII is strict subset of the encoding, i.e. All non-ASCII characters
+		/// encoding using bytes >= 0x80.
+		///
+		/// This is very important for XML or HTML parsing to prevent invlaid detenction of HTML specific
+		/// characters. So filters that work with encodings that are not ASCII compatible should convert
+		/// the text to UTF-8 and then convert them back.
+		///
+		/// These are UTF-8, ISO-8859-*, windows-12* and koi encodings families.
+		///
+		///
+		bool CPPCMS_API is_ascii_compatible(std::string const &encoding);
 		///
 		/// Check if the \a encoding is valid for the text in range [\a begin, \a end) , if it is valid,
 		/// returns true otherwise removes all invalid characters (if replace == 0) or replaces them with \a replace
 		/// and saves the result to \a output returning false.
 		///
-		/// \note the replace functionality is not supported for all encoding, only UTF-8, ISO-8859-* and single byte windows-12XX
-		/// encodings support such replacement with default character, for all other encodings like Shift-JIS, the invalid
-		/// characters or characters that are invalid for use in HTML are removed.
+		/// \note the replace functionality is not supported for all encoding, only UTF-8, ISO-8859-* 
+		/// and single byte windows-12XX, and koi family
 		///
 		bool CPPCMS_API validate_or_filter(	std::string const &encoding,
 							char const *begin,char const *end,
 							std::string &output,
 							char replace = 0);
-
-		#if defined(CPPCMS_HAVE_ICU) || defined(CPPCMS_HAVE_ICONV)
 
 		///
 		/// Convert string in range [begin,end) from local 8 bit encoding according to locale \a loc to UTF-8
@@ -114,8 +123,6 @@ namespace cppcms {
 		/// If non-convertable characters found, the conversion is aborted and only sucessefully converted part is returned.
 		///
 		std::string CPPCMS_API from_utf8(char const *encoding,std::string const &str);
-
-		#endif
 
 	}  // encoding
 } // cppcms

@@ -19,6 +19,7 @@
 #define CPPCMS_SOURCE
 #include <cppcms/xss.h>
 #include <cppcms/encoding.h>
+#include <booster/locale/encoding.h>
 #include <booster/regex.h>
 #include <stack>
 #include <map>
@@ -1003,8 +1004,29 @@ namespace cppcms { namespace xss {
 	{
 		std::string enc = r.encoding();
 		size_t dummy_count = 0;
-		if(!enc.empty() && !encoding::valid(enc,begin,end,dummy_count)) {
-			return false;
+		
+		std::string temp_input;
+
+		if(!enc.empty()) {
+			if(encoding::is_ascii_compatible(enc)) {
+				if(!encoding::valid(enc,begin,end,dummy_count))
+					return false;
+			}
+			else {
+				try {
+					std::string tmp = 
+						booster::locale::conv::to_utf<char>(
+							begin,end,enc,booster::locale::conv::stop);
+					temp_input.swap(tmp);
+					begin = temp_input.c_str();
+					end = begin + temp_input.size();
+				}
+				catch(...) {
+					return false;
+				}
+				if(!encoding::valid("UTF-8",begin,end,dummy_count))
+					return false;
+			}
 		}
 		
 		std::vector<entry> parsed;
@@ -1039,18 +1061,53 @@ namespace cppcms { namespace xss {
 	bool validate_and_filter_if_invalid(	char const *begin,
 						char const *end,
 						rules const &r,
-						std::string &filtered,
+						std::string &output,
 						filtering_method_type method,
 						char repl_ch)
 	{
 		bool valid = true;
-		std::string enc = r.encoding();
-		std::string filtered_input;
+		
+		std::string real_encoding = r.encoding();
+		std::string work_encoding = real_encoding;
 
-		if(!enc.empty() && !encoding::validate_or_filter(enc,begin,end,filtered_input,repl_ch)) {
-			valid = false;
-			begin = filtered_input.c_str();
-			end = begin + filtered_input.size();
+		std::string work_input;
+		std::string filtered_input;
+		std::string filtered;
+
+		if(!real_encoding.empty()) {
+			if(!encoding::is_ascii_compatible(real_encoding)) { 
+				work_encoding = "UTF-8";
+				repl_ch = 0;
+				try {
+					std::string tmp = 
+						booster::locale::conv::to_utf<char>(
+							begin,
+							end,
+							real_encoding,
+							booster::locale::conv::stop
+							);
+					work_input.swap(tmp);
+				}
+				catch(...) {
+					valid = false;
+					std::string tmp = 
+						booster::locale::conv::to_utf<char>(
+							begin,
+							end,
+							real_encoding,
+							booster::locale::conv::skip
+							);
+					work_input.swap(tmp);
+				}
+				begin = work_input.c_str();
+				end = begin + work_input.size();
+			}
+
+			if(!encoding::validate_or_filter(work_encoding,begin,end,filtered_input,repl_ch)) {
+				valid = false;
+				begin = filtered_input.c_str();
+				end = begin + filtered_input.size();
+			}
 		}
 
 		std::vector<entry> parsed;
@@ -1116,6 +1173,22 @@ namespace cppcms { namespace xss {
 			}
 			else {
 				filtered.append(b,e-b);
+			}
+		}
+
+		if(work_encoding == real_encoding) {
+			output.swap(filtered);
+		}
+		else {
+			try {
+				std::string tmp = booster::locale::conv::from_utf<char>(
+						filtered,
+						real_encoding,
+						booster::locale::conv::stop);
+				output.swap(tmp);
+			}
+			catch(...) {
+				// Nothing to do
 			}
 		}
 		return false;

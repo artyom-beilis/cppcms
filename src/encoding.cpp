@@ -33,18 +33,69 @@ namespace cppcms {
 namespace encoding {
 
 namespace impl{ 
-	struct validators_set {
-		
-		typedef bool (*encoding_tester_type)(char const *begin,char const *end,size_t &count);
-
-		encoding_tester_type get(char const *str) const
+	struct encodings_comparator {
+	public:
+		bool operator()(std::string const &l,std::string const &r) const
 		{
-			std::string name=str;
-			for(unsigned i=0;i<name.size();i++)
-				if('A' <= name[i]  && name[i] <= 'Z')
-					name[i]-=('A'-'a');
-			std::map<std::string,encoding_tester_type>::const_iterator p;
-			p=predefined_.find(name);
+			char const *lp=l.c_str();
+			char const *rp=r.c_str();
+			return (*this)(lp,rp);
+		}
+
+		bool operator()(std::string const &l,char const &rp) const
+		{
+			char const *lp=l.c_str();
+			return (*this)(lp,rp);
+		}
+
+		bool operator()(char const *lp,std::string const &r) const
+		{
+			char const *rp=r.c_str();
+			return (*this)(lp,rp);
+		}
+
+		bool operator()(char const *lp,char const *rp) const
+		{
+			for(;;) {
+				char left = next(lp);
+				char right = next(rp);
+				if(left < right)
+					return true;
+				if(left > right)
+					return false;
+				if(left==right) {
+					if(left == 0)
+						return false;
+				}
+			}
+		}
+
+	private:
+		static char next(char const *&p)
+		{
+			while(*p!=0) {
+				char c = *p++;
+				if('0' <= c && c<= '9')
+					return c;
+				if('a' <=c && c <='z')
+					return c;
+				else if('A' <=c && c <='Z')
+					return char(c-'A'+'a');
+			}
+			return 0;
+		}
+	};
+
+	class validators_set {
+	public:
+
+		typedef bool (*encoding_tester_type)(char const *begin,char const *end,size_t &count);
+		typedef std::map<std::string,encoding_tester_type,encodings_comparator> predefined_type;
+		
+
+		encoding_tester_type get(std::string const &name) const
+		{
+			predefined_type::const_iterator p = predefined_.find(name);
 			if(p==predefined_.end())
 				return 0;
 			return p->second;			
@@ -69,88 +120,20 @@ namespace impl{
 			predefined_["iso885915"]=iso_tester;
 			predefined_["iso885916"]=iso_tester;
 
-			predefined_["8859_1"]=iso_tester;
-			predefined_["8859_2"]=iso_tester;
-			predefined_["8859_4"]=iso_tester;
-			predefined_["8859_5"]=iso_tester;
-			predefined_["8859_9"]=iso_tester;
-			predefined_["8859_10"]=iso_tester;
-			predefined_["8859_13"]=iso_tester;
-			predefined_["8859_14"]=iso_tester;
-			predefined_["8859_15"]=iso_tester;
-			predefined_["8859_16"]=iso_tester;
-
-			predefined_["iso8859-1"]=iso_tester;
-			predefined_["iso8859-2"]=iso_tester;
-			predefined_["iso8859-4"]=iso_tester;
-			predefined_["iso8859-5"]=iso_tester;
-			predefined_["iso8859-9"]=iso_tester;
-			predefined_["iso8859-10"]=iso_tester;
-			predefined_["iso8859-13"]=iso_tester;
-			predefined_["iso8859-14"]=iso_tester;
-			predefined_["iso8859-15"]=iso_tester;
-			predefined_["iso8859-16"]=iso_tester;
-			
-			predefined_["iso_8859-1"]=iso_tester;
-			predefined_["iso_8859-2"]=iso_tester;
-			predefined_["iso_8859-4"]=iso_tester;
-			predefined_["iso_8859-5"]=iso_tester;
-			predefined_["iso_8859-9"]=iso_tester;
-			predefined_["iso_8859-10"]=iso_tester;
-			predefined_["iso_8859-13"]=iso_tester;
-			predefined_["iso_8859-14"]=iso_tester;
-			predefined_["iso_8859-15"]=iso_tester;
-			predefined_["iso_8859-16"]=iso_tester;
-
-			predefined_["iso-8859-1"]=iso_tester;
-			predefined_["iso-8859-2"]=iso_tester;
-			predefined_["iso-8859-4"]=iso_tester;
-			predefined_["iso-8859-5"]=iso_tester;
-			predefined_["iso-8859-9"]=iso_tester;
-			predefined_["iso-8859-10"]=iso_tester;
-			predefined_["iso-8859-13"]=iso_tester;
-			predefined_["iso-8859-14"]=iso_tester;
-			predefined_["iso-8859-15"]=iso_tester;
-			predefined_["iso-8859-16"]=iso_tester;
-
 			predefined_["iso88593"]=&iso_8859_3_valid<char const *>;
 			predefined_["iso88596"]=&iso_8859_6_valid<char const *>;
 			predefined_["iso88597"]=&iso_8859_7_valid<char const *>;
 			predefined_["iso88598"]=&iso_8859_8_valid<char const *>;
 			predefined_["iso885911"]=&iso_8859_11_valid<char const *>;
 
-			predefined_["iso8859-3"]=&iso_8859_3_valid<char const *>;
-			predefined_["iso8859-6"]=&iso_8859_6_valid<char const *>;
-			predefined_["iso8859-7"]=&iso_8859_7_valid<char const *>;
-			predefined_["iso8859-8"]=&iso_8859_8_valid<char const *>;
-			predefined_["iso8859-11"]=&iso_8859_11_valid<char const *>;
-			
-			predefined_["8859_3"]=&iso_8859_3_valid<char const *>;
-			predefined_["8859_6"]=&iso_8859_6_valid<char const *>;
-			predefined_["8859_7"]=&iso_8859_7_valid<char const *>;
-			predefined_["8859_8"]=&iso_8859_8_valid<char const *>;
-			predefined_["8859_11"]=&iso_8859_11_valid<char const *>;
-
-			predefined_["iso_8859-3"]=&iso_8859_3_valid<char const *>;
-			predefined_["iso_8859-6"]=&iso_8859_6_valid<char const *>;
-			predefined_["iso_8859-7"]=&iso_8859_7_valid<char const *>;
-			predefined_["iso_8859-8"]=&iso_8859_8_valid<char const *>;
-			predefined_["iso_8859-11"]=&iso_8859_11_valid<char const *>;
-		
-			predefined_["iso-8859-3"]=&iso_8859_3_valid<char const *>;
-			predefined_["iso-8859-6"]=&iso_8859_6_valid<char const *>;
-			predefined_["iso-8859-7"]=&iso_8859_7_valid<char const *>;
-			predefined_["iso-8859-8"]=&iso_8859_8_valid<char const *>;
-			predefined_["iso-8859-11"]=&iso_8859_11_valid<char const *>;
-
-			predefined_["windows-1250"]=&windows_1250_valid<char const *>;
-			predefined_["windows-1251"]=&windows_1251_valid<char const *>;
-			predefined_["windows-1252"]=&windows_1252_valid<char const *>;
-			predefined_["windows-1253"]=&windows_1253_valid<char const *>;
-			predefined_["windows-1255"]=&windows_1255_valid<char const *>;
-			predefined_["windows-1256"]=&windows_1256_valid<char const *>;
-			predefined_["windows-1257"]=&windows_1257_valid<char const *>;
-			predefined_["windows-1258"]=&windows_1258_valid<char const *>;
+			predefined_["windows1250"]=&windows_1250_valid<char const *>;
+			predefined_["windows1251"]=&windows_1251_valid<char const *>;
+			predefined_["windows1252"]=&windows_1252_valid<char const *>;
+			predefined_["windows1253"]=&windows_1253_valid<char const *>;
+			predefined_["windows1255"]=&windows_1255_valid<char const *>;
+			predefined_["windows1256"]=&windows_1256_valid<char const *>;
+			predefined_["windows1257"]=&windows_1257_valid<char const *>;
+			predefined_["windows1258"]=&windows_1258_valid<char const *>;
 
 			predefined_["cp1250"]=&windows_1250_valid<char const *>;
 			predefined_["cp1251"]=&windows_1251_valid<char const *>;
@@ -161,23 +144,14 @@ namespace impl{
 			predefined_["cp1257"]=&windows_1257_valid<char const *>;
 			predefined_["cp1258"]=&windows_1258_valid<char const *>;
 
-			predefined_["1250"]=&windows_1250_valid<char const *>;
-			predefined_["1251"]=&windows_1251_valid<char const *>;
-			predefined_["1252"]=&windows_1252_valid<char const *>;
-			predefined_["1253"]=&windows_1253_valid<char const *>;
-			predefined_["1255"]=&windows_1255_valid<char const *>;
-			predefined_["1256"]=&windows_1256_valid<char const *>;
-			predefined_["1257"]=&windows_1257_valid<char const *>;
-			predefined_["1258"]=&windows_1258_valid<char const *>;
-
-			predefined_["koi8r"]=predefined_["koi8-r"]=&koi8_valid<char const *>;
-			predefined_["koi8u"]=predefined_["koi8-u"]=&koi8_valid<char const *>;
+			predefined_["koi8r"]=&koi8_valid<char const *>;
+			predefined_["koi8u"]=&koi8_valid<char const *>;
 			
-			predefined_["utf8"]=predefined_["utf-8"]=&utf8_valid<char const *>;
-			predefined_["us-ascii"]=predefined_["ascii"]=&ascii_valid<char const *>;
+			predefined_["utf8"]=&utf8_valid<char const *>;
+			predefined_["usascii"]=predefined_["ascii"]=&ascii_valid<char const *>;
 		}
 	private:
-		std::map<std::string,encoding_tester_type> predefined_;
+		predefined_type predefined_;
 	} all_validators;
 } // impl
 
@@ -186,17 +160,17 @@ bool CPPCMS_API valid_utf8(char const *begin,char const *end,size_t &count)
 	return utf8_valid(begin,end,count);
 }
 
-bool CPPCMS_API valid(std::string const &encoding,char const *begin,char const *end,size_t &count)
+bool CPPCMS_API valid(char const *encoding,char const *begin,char const *end,size_t &count)
 {
-	return valid(encoding.c_str(),begin,end,count);
+	return valid(std::string(encoding),begin,end,count);
 }
 
 bool CPPCMS_API valid(std::locale const &loc,char const *begin,char const *end,size_t &count)
 {
-	return valid(std::use_facet<locale::info>(loc).encoding().c_str(),begin,end,count);
+	return valid(std::use_facet<locale::info>(loc).encoding(),begin,end,count);
 }
 
-bool CPPCMS_API valid(char const *encoding,char const *begin,char const *end,size_t &count)
+bool CPPCMS_API valid(std::string const &encoding,char const *begin,char const *end,size_t &count)
 {
 	impl::validators_set::encoding_tester_type tester = impl::all_validators.get(encoding);
 	if(tester)
@@ -212,10 +186,8 @@ bool CPPCMS_API valid(char const *encoding,char const *begin,char const *end,siz
 
 inline bool is_utf8(char const *c_encoding)
 {
-	return 	strcmp(c_encoding,"UTF8")==0 
-		|| strcmp(c_encoding,"UTF-8")==0
-		|| strcmp(c_encoding,"utf8")==0
-		|| strcmp(c_encoding,"utf-8")==0;
+	impl::encodings_comparator cmp;
+	return !cmp(c_encoding,"utf8") && !cmp("utf8",c_encoding);
 }
 
 std::string CPPCMS_API to_utf8(char const *c_encoding,char const *begin,char const *end)
@@ -361,17 +333,22 @@ namespace {
 	}
 } // anonymous
 
+bool CPPCMS_API is_ascii_compatible(std::string const &encoding)
+{
+	return impl::all_validators.get(encoding)!=0;
+}
+
 bool CPPCMS_API validate_or_filter(	std::string const &encoding,
 					char const *begin,char const *end,
 					std::string &output,
 					char replace)
 {
 	/// UTF-8 Case
-	if(http::protocol::compare(encoding,"utf8")==0 || http::protocol::compare(encoding,"utf-8")==0)
+	if(is_utf8(encoding.c_str()))
 		return validate_or_filter_utf8(begin,end,output,replace);
 
 	/// 8bit case
-	impl::validators_set::encoding_tester_type tester = impl::all_validators.get(encoding.c_str());
+	impl::validators_set::encoding_tester_type tester = impl::all_validators.get(encoding);
 	if(tester)
 		return validate_or_filter_single_byte_charset(tester,begin,end,output,replace);
 
