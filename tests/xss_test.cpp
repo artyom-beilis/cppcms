@@ -364,6 +364,14 @@ void test_validation()
 	}	
 }
 
+void printhex(std::string const &s)
+{
+	for(unsigned i=0;i<s.size();i++) {
+		unsigned char c=s[i];
+		std::cout << std::hex << "\\x" << unsigned(c);
+	}
+	std::cout << std::endl;
+}
 
 bool valenc(char const *s,cppcms::xss::rules const &r,char const *rm=0,char const *esc=0,char const *rmalt=0)
 {
@@ -428,8 +436,8 @@ void test_encoding()
 	}
 {
 		rules r;
-		r.encoding("Shift-JIS");
-		std::cout << "-- Testing Shift-JIS" << std::endl;
+		r.encoding("windows-932");
+		std::cout << "-- Testing windows-932" << std::endl;
 		TEST(valenc("aX\xCB\x83\x71\x82\xd0",r));
 		// Only remove
 		// single invalid code point in the middle 0xa0
@@ -455,7 +463,7 @@ void test_encoding()
 		TEST(!valenc("aX\xCB\x83\x71\x83\xf0",r,"aX\xCB\x83\x71","aX\xCB\x83\x71"));
 		// single invalid code point in the begin 83 f0
 		TEST(!valenc(	"\x83\xf0\x82\xd0",r,
-				"\xf0\x82\xd0", 
+				"\x82\xd0", 
 				0, // both are legal ways to interpret as xf0x82 + d0 and x82xd0 are valid code points
 				"\xf0\x82\xd0"));
 	}
