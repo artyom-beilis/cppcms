@@ -48,13 +48,13 @@ namespace sessions {
 		/// Encrypt or sign the plain text \a plain together with \a timeout and return the encrypted value for a cookie.
 		/// Don't forget to use base64 encoding in order to create a string that is valid for cookie
 		///
-		virtual std::string encrypt(std::string const &plain,time_t timeout) = 0;
+		virtual std::string encrypt(std::string const &plain) = 0;
 		///
 		/// Decrypt the \a cipher text or check the signature and return the \a plain text and the session expiration value: \a timeout.
 		///
 		/// If signature checks or decryption failed return false.
 		///	
-		virtual bool decrypt(std::string const &cipher,std::string &plain,time_t *timeout = 0) = 0;
+		virtual bool decrypt(std::string const &cipher,std::string &plain) = 0;
 		///
 		/// Destructor
 		///

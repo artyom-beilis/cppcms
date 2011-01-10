@@ -258,10 +258,11 @@ set(CPPCMS_SOURCES
 	src/tcp_cache_server.cpp
 	src/forwarder.cpp
 	src/session_pool.cpp
-	src/base_encryptor.cpp
 	src/hmac_encryptor.cpp
+	src/aes_encryptor.cpp
 	src/md5.cpp
 	src/urandom.cpp
+	src/aes.cpp
 	src/session_cookies.cpp
 	src/session_dual.cpp
 	src/session_sid.cpp
@@ -298,12 +299,8 @@ elseif (OPENSSL_INCLUDE_DIR AND LIB_OPENSSL)
 endif()
 
 
-if(LIB_CRYPT)
-	set(CPPCMS_SOURCES ${CPPCMS_SOURCES} 
-		src/aes_encryptor.cpp
-		src/aes.cpp)
-else()
-	message("GNU Gcrypt or OpenSSL librarys are not found, disabling aes_encryptor")
+if(NOT LIB_CRYPT)
+	message("GNU-TLS Gcrypt or OpenSSL librarys are not found, disabling AES encryption support")
 endif()
 
 

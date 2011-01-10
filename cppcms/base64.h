@@ -59,6 +59,19 @@ namespace b64url {
 	///
 	///
 	unsigned char CPPCMS_API *decode(unsigned char const *begin,unsigned char const *end,unsigned char *target);
+
+	///
+	/// Perform base64 URL decoding of the textual data \a input, and store it to \a output.
+	///
+	/// If the source is invalid returns false
+	///
+	///
+	bool CPPCMS_API decode(std::string const &input,std::string &output);
+	///
+	/// Perform base64 URL encoding of the binary data \a input, and return it
+	///
+	///
+	std::string CPPCMS_API encode(std::string const &input);
 }
 }
 

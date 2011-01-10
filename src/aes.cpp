@@ -17,8 +17,8 @@
 //
 ///////////////////////////////////////////////////////////////////////////////
 #define CPPCMS_SOURCE
-#include "aes.h"
 #include <cppcms/urandom.h>
+#include <cppcms/crypto.h>
 #include <cppcms/config.h>
 #include <booster/backtrace.h>
 #include <string.h>
@@ -26,10 +26,12 @@
 
 #if defined(CPPCMS_HAVE_OPENSSL)
 	#include <openssl/aes.h>
+	#define CPPCMS_HAVE_AES
 #endif
 
 #if defined(CPPCMS_HAVE_GCRYPT)
 	#include <gcrypt.h>
+	#define CPPCMS_HAVE_AES
 
 	#ifdef CPPCMS_WIN_NATIVE
 	#	define CPPCMS_GCRYPT_USE_BOOSTER_THREADS
@@ -135,133 +137,214 @@
 
 
 namespace cppcms {
-namespace impl {
+namespace crypto {
 
 #if defined CPPCMS_HAVE_GCRYPT
 
-	class gcrypt_aes_encryptor : public aes_api {
-		void operator=(gcrypt_aes_encryptor const &);
+	class gcrypt_aes_encryptor : public cbc {
 	public:
-		gcrypt_aes_encryptor(gcrypt_aes_encryptor const &other)
+		gcrypt_aes_encryptor(unsigned type) : 
+			enc_(0),
+			dec_(0),
+			iv_initialized_(false)
 		{
-			init(other.type_,other.key_);
+			memset(iv_,0,sizeof(iv_));
+			type_ = type;
 		}
-		gcrypt_aes_encryptor(aes_type type,std::string const &key)
+
+		void check()
 		{
-			init(type,key);
+			if(key_.size() == 0)
+				throw booster::runtime_error("cppcms::crypto::aes: attempt to use cbc without key");
+			if(!iv_initialized_)
+				throw booster::runtime_error("cppcms::crypto::aes: attempt to use cbc without initial vector set");
 		}
+		unsigned block_size() const
+		{
+			return 16;
+		}
+		unsigned key_size() const
+		{
+			return type_ / 8;
+		}
+		void set_key(key const &k)
+		{
+			if(key_.size()!=0)
+				booster::runtime_error("cppcms::crypto::aes can't set key more then once");
+			if(k.size() != key_size())
+				throw booster::invalid_argument("cppcms::crypto::aes Invalid key size");
+			key_ = k;
+		}
+		void set_iv(void const *ptr,size_t size)
+		{
+			if(size != sizeof(iv_))
+				throw booster::invalid_argument("cppcms::crypto::aes: Invalid IV size");
+			memcpy(iv_,ptr,size);
+			iv_initialized_ = true;
+			reset_iv();
+		}
+		void set_nonce_iv()
+		{
+			urandom_device rnd;
+			rnd.generate(iv_,sizeof(iv_));
+			iv_initialized_ = true;
+			reset_iv();
+		}
+
+		void reset_iv()
+		{
+			if(enc_) {
+				if(gcry_cipher_setiv(enc_,iv_,16)) {
+					throw booster::runtime_error("cppcms::crypto::aes: failed to reset iv");
+				}
+			}
+			if(dec_) {
+				if(gcry_cipher_setiv(dec_,iv_,16)) {
+					throw booster::runtime_error("cppcms::crypto::aes: failed to reset iv");
+				}
+			}
+		}
+
+
 		virtual ~gcrypt_aes_encryptor()
 		{
-			gcry_cipher_close(enc_);
-			gcry_cipher_close(dec_);
-		}
-		virtual gcrypt_aes_encryptor *clone() const
-		{
-			return new gcrypt_aes_encryptor(*this);
+			if(enc_)
+				gcry_cipher_close(enc_);
+			if(dec_)
+				gcry_cipher_close(dec_);
+			memset(iv_,0,sizeof(iv_));
 		}
 		virtual void encrypt(void const *in,void *out,unsigned len)
 		{
-			if(len % 16 != 0) {
-				throw booster::invalid_argument("Invalid block size");
-			}
+			init(enc_);
 			if(gcry_cipher_encrypt(enc_,out,len,in,len)!=0) {
 				throw booster::runtime_error("Encryption failed");
 			}
 		}
 		virtual void decrypt(void const *in,void *out,unsigned len)
 		{
-			if(len % 16 != 0) {
-				throw booster::invalid_argument("Invalid block size");
-			}
-			if(gcry_cipher_decrypt(enc_,out,len,in,len)!=0) {
+			init(dec_);
+			if(gcry_cipher_decrypt(dec_,out,len,in,len)!=0) {
 				throw booster::runtime_error("Decryption failed");
 			}
 		}
 	private:
-		void init(aes_type type,std::string const &key)
+		void init(gcry_cipher_hd_t &h)
 		{
-			if(key.size()*8!=unsigned(type)) {
-				throw booster::invalid_argument("Invalid key size");
-			}
-			key_ = key;
-			type_ = type;
+			if(h)
+				return;
+			check();
+
 			int algo=0;
-			switch(type) {
-			case aes128:
+			switch(type_) {
+			case 128:
 				algo = GCRY_CIPHER_AES128;
 				break;
-			case aes192:
+			case 192:
 				algo = GCRY_CIPHER_AES192;
 				break;
-			case aes256:
+			case 256:
 				algo = GCRY_CIPHER_AES256;
 				break;
 			default:
 				throw booster::invalid_argument("Invalid encryption method");
 			}
 
-			enc_ = 0;
-			dec_ = 0;
-			char iv_enc[16];
-			char iv_dec[16]={0};
-			urandom_device rnd;
-			rnd.generate(iv_enc,sizeof(iv_enc));
-
-			if(	gcry_cipher_open(&enc_,algo,GCRY_CIPHER_MODE_CBC,0)
-				|| gcry_cipher_open(&dec_,algo,GCRY_CIPHER_MODE_CBC,0)
-				|| gcry_cipher_setkey(enc_,key_.c_str(),key.size())
-				|| gcry_cipher_setkey(dec_,key_.c_str(),key.size())
-				|| gcry_cipher_setiv(enc_,iv_enc,16)
-				|| gcry_cipher_setiv(dec_,iv_dec,16)
+			if(	gcry_cipher_open(&h,algo,GCRY_CIPHER_MODE_CBC,0)
+				|| gcry_cipher_setkey(h,key_.data(),key_.size())
+				|| gcry_cipher_setiv(h,iv_,16)
 			  )
 			{
-				if(enc_)
-					gcry_cipher_close(enc_);
-				if(dec_)
-					gcry_cipher_close(dec_);
+				if(h) {
+					gcry_cipher_close(h);
+					h=0;
+				}
 				throw booster::runtime_error("Failed to create AES encryptor");
 			}
-
 		}
 
 		gcry_cipher_hd_t enc_;
 		gcry_cipher_hd_t dec_;
-		std::string key_;
-		aes_type type_;
-
+		key key_;
+		char iv_[16];
+		bool iv_initialized_;
+		unsigned type_;
 	};
+
 	typedef gcrypt_aes_encryptor aes_encryption_provider;
 
 #elif defined CPPCMS_HAVE_OPENSSL
 
-	class openssl_aes_encryptor : public aes_api {
-		void operator=(openssl_aes_encryptor const &);
+	class openssl_aes_encryptor : public cbc {
 	public:
-		openssl_aes_encryptor(openssl_aes_encryptor const &other) :
-			key_enc_(other.key_enc_),
-			key_dec_(other.key_dec_)
+		openssl_aes_encryptor(unsigned bits)
 		{
-			reset();
-		}
-
-		openssl_aes_encryptor(aes_type type,std::string const &key)
-		{
-			if(key.size()*8!=unsigned(type)) {
-				throw booster::invalid_argument("Invalid key size");
+			switch(bits) {
+			case 128:
+			case 192:
+			case 256:
+				type_  = bits;
+				break;
+			default:
+				throw booster::invalid_argument("cppcms::crypto::aes invalid algorithm");
 			}
-			AES_set_encrypt_key(reinterpret_cast<unsigned char const *>(key.c_str()), type, &key_enc_);
-			AES_set_decrypt_key(reinterpret_cast<unsigned char const *>(key.c_str()), type, &key_dec_);
-			
 			reset();
 		}
-		virtual openssl_aes_encryptor *clone() const
+		void reset()
 		{
-			return new openssl_aes_encryptor(*this);
+			key_.reset();
+			memset(&key_enc_,0,sizeof(key_enc_));
+			memset(&key_dec_,0,sizeof(key_dec_));
+			memset(iv_dec_,0,sizeof(iv_dec_));
+			memset(iv_enc_,0,sizeof(iv_dec_));
+			encryption_initialized_ = false;
+			decryption_initialized_ = false;
+			iv_initialized_ = false;
+		}
+		void check()
+		{
+			if(key_.size() == 0)
+				throw booster::runtime_error("cppcms::crypto::aes: attempt to use cbc without key");
+			if(!iv_initialized_)
+				throw booster::runtime_error("cppcms::crypto::aes: attempt to use cbc without initial vector set");
+		}
+		unsigned block_size() const
+		{
+			return 16;
+		}
+		unsigned key_size() const
+		{
+			return type_ / 8;
+		}
+		void set_key(key const &k)
+		{
+			if(key_.size()!=0)
+				booster::runtime_error("cppcms::crypto::aes can't set key more then once");
+			if(k.size() != key_size())
+				throw booster::invalid_argument("cppcms::crypto::aes Invalid key size");
+			key_ = k;
+		}
+		void set_iv(void const *ptr,size_t size)
+		{
+			if(size != sizeof(iv_enc_))
+				throw booster::invalid_argument("cppcms::crypto::aes: Invalid IV size");
+			memcpy(iv_enc_,ptr,size);
+			memcpy(iv_dec_,ptr,size);
+			iv_initialized_ = true;
+		}
+		void set_nonce_iv()
+		{
+			urandom_device rnd;
+			rnd.generate(iv_enc_,sizeof(iv_enc_));
+			rnd.generate(iv_dec_,sizeof(iv_dec_));
+			iv_initialized_ = true;
 		}
 		virtual void encrypt(void const *in,void *out,unsigned len)
 		{
-			if(len % 16 != 0) {
-				throw booster::invalid_argument("Invalid block size");
+			check();
+			if(!encryption_initialized_) {
+				AES_set_encrypt_key(reinterpret_cast<unsigned char const *>(key_.data()), type_, &key_enc_);
+				encryption_initialized_ = true;
 			}
 			AES_cbc_encrypt(reinterpret_cast<unsigned char const *>(in),
 					reinterpret_cast<unsigned char *>(out), len,
@@ -271,9 +354,12 @@ namespace impl {
 		}
 		virtual void decrypt(void const *in,void *out,unsigned len)
 		{
-			if(len % 16 != 0) {
-				throw booster::invalid_argument("Invalid block size");
+			check();
+			if(!decryption_initialized_) {
+				AES_set_decrypt_key(reinterpret_cast<unsigned char const *>(key_.data()), type_, &key_dec_);
+				decryption_initialized_ = true;
 			}
+
 			AES_cbc_encrypt(reinterpret_cast<unsigned char const *>(in),
 					reinterpret_cast<unsigned char *>(out), len,
 					&key_dec_,
@@ -282,39 +368,60 @@ namespace impl {
 		}
 		virtual ~openssl_aes_encryptor()
 		{
-			memset(&key_enc_,0,sizeof(key_enc_));
-			memset(&key_dec_,0,sizeof(key_dec_));
-			memset(iv_dec_,0,sizeof(iv_dec_));
-			memset(iv_enc_,0,sizeof(iv_dec_));
+			reset();
 		}
 	private:
-		void reset()
-		{
-			memset(iv_dec_,0,sizeof(iv_dec_));
-			urandom_device rnd;
-			rnd.generate(iv_enc_,sizeof(iv_enc_));
-		}
-
+		key key_;
+		unsigned type_;
 		AES_KEY key_enc_;
 		AES_KEY key_dec_;
 		unsigned char iv_enc_[16];
 		unsigned char iv_dec_[16];
+		bool encryption_initialized_;
+		bool decryption_initialized_;
+		bool iv_initialized_;
 	};
 
 	typedef openssl_aes_encryptor aes_encryption_provider;
 
-#else
-# error "Invalid conditions"
 #endif
 
-std::auto_ptr<aes_api> aes_api::create(aes_api::aes_type type,std::string const &key)
+std::auto_ptr<cbc> cbc::create(std::string const &name)
 {
-	std::auto_ptr<aes_api> res(new aes_encryption_provider(type,key));
+	std::auto_ptr<cbc> res;
+	if(name=="aes" || name=="AES" || name=="aes128" || name=="aes-128" || name=="AES128" || name=="AES-128")
+		res = cbc::create(aes128);
+	else if(name=="aes192" || name=="aes-192" || name=="AES192" || name=="AES-192")
+		res = cbc::create(aes192);
+	else if(name=="aes256" || name=="aes-256" || name=="AES256" || name=="AES-256")
+		res = cbc::create(aes256);
+
+	return res;
+}
+
+std::auto_ptr<cbc> cbc::create(cbc::cbc_type type)
+{
+	std::auto_ptr<cbc> res;
+	switch(type) {
+#ifdef CPPCMS_HAVE_AES
+	case aes128:
+		res.reset(new aes_encryption_provider(128));
+		break;
+	case aes192:
+		res.reset(new aes_encryption_provider(192));
+		break;
+	case aes256:
+		res.reset(new aes_encryption_provider(256));
+		break;
+#endif
+	default:
+		;
+	}
 	return res;
 }
 
 
-} // impl
+} // crypto
 } //cppcms
 
 

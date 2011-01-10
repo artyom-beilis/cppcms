@@ -8,6 +8,7 @@
 
 #define CPPCMS_SOURCE
 #include <cppcms/base64.h>
+#include <vector>
 
 
 namespace {
@@ -121,6 +122,40 @@ unsigned char *decode(unsigned char const *begin,unsigned char const *end,unsign
 	if(end!=begin)
 		target+=bdecode(begin,target,end-begin);
 	return target;
+}
+
+bool CPPCMS_API decode(std::string const &input,std::string &output)
+{
+	int ds = decoded_size(input.size());
+	if(ds < 0)
+		return false;
+	if(ds == 0)
+		return true;
+	unsigned char const *begin = reinterpret_cast<unsigned char const *>(input.c_str());
+	unsigned char const *end = begin + input.size();
+	std::vector<char> buf(ds,0);
+	unsigned char *outbuf =  reinterpret_cast<unsigned char *>(&buf[0]);
+	decode(begin,end,outbuf);
+	output.assign(&buf[0],ds);
+	return true;
+}
+///
+/// Perform base64 URL encoding of the binary data \a input, and return it
+///
+///
+std::string CPPCMS_API encode(std::string const &input)
+{
+	std::string result;
+	size_t enc_size = encoded_size(input.size());
+	if(enc_size == 0)
+		return result;
+	unsigned char const *begin = reinterpret_cast<unsigned char const *>(input.c_str());
+	unsigned char const *end = begin + input.size();
+	std::vector<char> buf(enc_size,0);
+	unsigned char *outbuf =  reinterpret_cast<unsigned char *>(&buf[0]);
+	encode(begin,end,outbuf);
+	result.assign(&buf[0],enc_size);
+	return result;
 }
 
 

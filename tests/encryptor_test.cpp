@@ -29,57 +29,67 @@
 #include <time.h>
 #include <stdio.h>
 
+template<typename EncryptorFactory>
+std::auto_ptr<cppcms::sessions::encryptor> gen(std::string const &name,cppcms::crypto::key const &k)
+{
+	std::auto_ptr<cppcms::sessions::encryptor_factory> fact(new EncryptorFactory(name,k));
+	return fact->get();
+}
 
 template<typename Encryptor>
-void run_test(std::string name,std::string key,bool is_signature = false) 
+void run_test(std::string name,std::string k,bool is_signature = false) 
 {
-	char c1=key[0];
-	char c2=key[31];
-	std::auto_ptr<cppcms::sessions::encryptor> enc(new Encryptor(key,name));
-	time_t now=time(0)+5;
-	std::string cipher=enc->encrypt("Hello World",now);
+	using cppcms::crypto::key;
+	char c1=k[0];
+	char c2=k[31];
+	std::auto_ptr<cppcms::sessions::encryptor> enc = gen<Encryptor>(name,key(k));
+	std::string cipher=enc->encrypt("Hello World");
 	std::string plain;
-	time_t time;
-	TEST(enc->decrypt(cipher,plain,&time));
+	TEST(enc->decrypt(cipher,plain));
 	TEST(plain=="Hello World");
-	TEST(time==now);
 
 	std::string orig_text[2]= { "", "x" };
 	for(unsigned t=0;t<2;t++) {
-		cipher=enc->encrypt(orig_text[t],now+3);
-		TEST(enc->decrypt(cipher,plain,&time));
+		cipher=enc->encrypt(orig_text[t]);
+		TEST(enc->decrypt(cipher,plain));
 		TEST(plain==orig_text[t]);
-		TEST(time==now+3);
 
 		for(unsigned i=0;i<cipher.size();i++) {
 			cipher[i]--;
-			TEST(!enc->decrypt(cipher,plain,&time) || plain==orig_text[t]);
+			TEST(!enc->decrypt(cipher,plain));
 			cipher[i]+=2;
-			TEST(!enc->decrypt(cipher,plain,&time) || plain==orig_text[t]);
+			TEST(!enc->decrypt(cipher,plain));
 			cipher[i]--;
 		}
 	}
-	TEST(!enc->decrypt("",plain,&time));
+	TEST(!enc->decrypt("",plain));
 	std::string a(0,64);
-	TEST(!enc->decrypt(a,plain,&time));
+	TEST(!enc->decrypt(a,plain));
 	std::string b(0xFF,64);
-	TEST(!enc->decrypt(b,plain,&time));
-	cipher=enc->encrypt("",now-6);
-	TEST(!enc->decrypt(cipher,plain,&time));
-	cipher=enc->encrypt("test",now);
-	key[0]=c1+1;
-	enc.reset(new Encryptor(key,name));
-	TEST(!enc->decrypt(cipher,plain,&time));
-	key[0]=c1;
-	key[31]=c2+1;
-	enc.reset(new Encryptor(key,name));
-	TEST(!enc->decrypt(cipher,plain,&time));
-	key[31]=c2;
-	enc.reset(new Encryptor(key,name));
-	TEST(enc->decrypt(cipher,plain,&time) && plain=="test" && time==now);
+	TEST(!enc->decrypt(b,plain));
+	cipher=enc->encrypt("");
+	TEST(enc->decrypt(cipher,plain) && plain=="");
+	cipher=enc->encrypt("test");
+	k[0]=c1+1;
+	enc = gen<Encryptor>(name,key(k));
+	TEST(!enc->decrypt(cipher,plain));
+	k[0]=c1;
+	k[31]=c2+1;
+	enc = gen<Encryptor>(name,key(k));
+	TEST(!enc->decrypt(cipher,plain));
+	k[31]=c2;
+	enc = gen<Encryptor>(name,key(k));
+	TEST(enc->decrypt(cipher,plain) && plain=="test");
 	// Salt works
 	if(!is_signature) {
-		TEST(enc->encrypt(plain,now)!=enc->encrypt(plain,now));
+		TEST(enc->encrypt(plain)!=enc->encrypt(plain));
+		enc = gen<Encryptor>(name,key(k));
+		std::string a=enc->encrypt(plain);
+		enc = gen<Encryptor>(name,key(k));
+		std::string b=enc->encrypt(plain);
+		TEST(a!=b);
+		plain="XX";
+		TEST(enc->decrypt(a,plain) && plain == "test");
 	}
 }
 
@@ -108,6 +118,7 @@ std::string get_diget(MD &d,std::string const &source)
 void test_crypto()
 {
 	using namespace cppcms;
+	using namespace cppcms::crypto;
 	std::cout << "-- testing sha1/md5" << std::endl;
 	TEST(message_digest::md5().get());
 	TEST(message_digest::sha1().get());
@@ -131,11 +142,12 @@ void test_crypto()
 	}
 	std::cout << "-- testing hmac-sha1/md5" << std::endl;
 	{
-		hmac d("md5","Jefe");
+		hmac d("md5",key("Jefe",4));
 		TEST(get_diget(d,"what do ya want for nothing?") == "750c783e6ab0b503eaa86e310a5db738");
 	}
 	{
-		hmac d(message_digest::md5(),"xxxxxxxxxxxxxxddddddddddddddddddffffffffffffffffffffffffffffffffffffffffffffffdddddddddddddddddddd");
+		char const *bk = "xxxxxxxxxxxxxxddddddddddddddddddffffffffffffffffffffffffffffffffffffffffffffffdddddddddddddddddddd";
+		hmac d(message_digest::md5(),key(bk,strlen(bk)));
 		TEST(get_diget(d,"what do ya want for nothing?") == "4891f8cf6a4641897159756847369d1a");
 	}
 
@@ -166,28 +178,28 @@ int main()
 
 		std::cout << "- Testing internal cryptography library" << std::endl;
 		std::cout << "-- Testing hmac cookies signature" << std::endl;
-		run_test<cppcms::sessions::impl::hmac_cipher>("sha1",key,true);
-		run_test<cppcms::sessions::impl::hmac_cipher>("md5",key,true);
+		run_test<cppcms::sessions::impl::hmac_factory>("sha1",key,true);
+		run_test<cppcms::sessions::impl::hmac_factory>("md5",key,true);
 		#if defined(CPPCMS_HAVE_GCRYPT) || defined(CPPCMS_HAVE_OPENSSL)
 		std::cout << "- Testing external cryptography library" << std::endl;
 		std::cout << "-- Testing hmac cookies signature" << std::endl;
 		std::cout << "--- hmac-sha224" << std::endl;
-		run_test<cppcms::sessions::impl::hmac_cipher>("sha224",key,true);
+		run_test<cppcms::sessions::impl::hmac_factory>("sha224",key,true);
 		std::cout << "--- hmac-sha256" << std::endl;
-		run_test<cppcms::sessions::impl::hmac_cipher>("sha256",key,true);
+		run_test<cppcms::sessions::impl::hmac_factory>("sha256",key,true);
 		std::cout << "--- hmac-sha384" << std::endl;
-		run_test<cppcms::sessions::impl::hmac_cipher>("sha384",key,true);
+		run_test<cppcms::sessions::impl::hmac_factory>("sha384",key,true);
 		std::cout << "--- hmac-sha512" << std::endl;
-		run_test<cppcms::sessions::impl::hmac_cipher>("sha512",key,true);
+		run_test<cppcms::sessions::impl::hmac_factory>("sha512",key,true);
 		std::cout << "-- Testing aes cookies encryption" << std::endl;
 		std::cout << "--- aes" << std::endl;
-		run_test<cppcms::sessions::impl::aes_cipher>("aes",key);
+		run_test<cppcms::sessions::impl::aes_factory>("aes",key);
 		std::cout << "--- aes128" << std::endl;
-		run_test<cppcms::sessions::impl::aes_cipher>("aes128",key);
+		run_test<cppcms::sessions::impl::aes_factory>("aes128",key);
 		std::cout << "--- aes192" << std::endl;
-		run_test<cppcms::sessions::impl::aes_cipher>("aes192",key + key.substr(16));
+		run_test<cppcms::sessions::impl::aes_factory>("aes192",key + key.substr(16));
 		std::cout << "--- aes256" << std::endl;
-		run_test<cppcms::sessions::impl::aes_cipher>("aes256",key + key);
+		run_test<cppcms::sessions::impl::aes_factory>("aes256",key + key);
 		#endif
 	}
 	catch(std::exception const &e) {

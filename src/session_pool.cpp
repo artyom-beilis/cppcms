@@ -36,9 +36,7 @@
     namespace boost = cppcms_boost;
 #endif
 
-#if defined(CPPCMS_HAVE_GCRYPT) || defined(CPPCMS_HAVE_OPENSSL)
 #include "aes_encryptor.h"
-#endif
 
 #ifdef CPPCMS_WIN_NATIVE
 #include "session_win32_file_storage.h"
@@ -58,30 +56,6 @@ struct session_pool::_data
 };
 
 using namespace cppcms::sessions;
-
-template<typename Encryptor>
-struct session_pool::enc_factory : public encryptor_factory {
-	enc_factory(std::string const &key) : key_(key) {}
-	virtual std::auto_ptr<cppcms::sessions::encryptor> get() 
-	{
-		std::auto_ptr<cppcms::sessions::encryptor> tmp(new Encryptor(key_));
-		return tmp;
-	}
-private:
-	std::string key_;
-};
-template<typename Encryptor>
-struct session_pool::enc_factory_param : public encryptor_factory {
-	enc_factory_param(std::string const &key,std::string const &algo) : key_(key),algo_(algo) {}
-	virtual std::auto_ptr<cppcms::sessions::encryptor> get() 
-	{
-		std::auto_ptr<cppcms::sessions::encryptor> tmp(new Encryptor(key_,algo_));
-		return tmp;
-	}
-private:
-	std::string key_;
-	std::string algo_;
-};
 
 struct session_pool::sid_factory : public session_api_factory
 {
@@ -189,25 +163,50 @@ void session_pool::init()
 	std::string location=srv.settings().get("session.location","none");
 
 	if(location == "client" || (location=="both" && !encryptor_.get())) {
-		std::string enc=srv.settings().get<std::string>("session.client.encryptor");
+		using namespace cppcms::sessions::impl;
+		std::string enc=srv.settings().get("session.client.encryptor","");
+		std::string mac=srv.settings().get("session.client.hmac","");
+		std::string cbc=srv.settings().get("session.client.cbc","");
+		
+		if(enc.empty() &&  mac.empty() && cbc.empty()) {
+			throw cppcms_error("Using clinet session storage without encryption method");
+		}
+		if(!enc.empty() && (!mac.empty() || !cbc.empty())) {
+			throw cppcms_error("Can't specify both session.client.encryptor and session.client.hmac or session.client.cbc");
+		}
+		if(!cbc.empty() && mac.empty()) {
+			throw cppcms_error("Can't use session encryption without MAC");
+		}
+
 		std::auto_ptr<cppcms::sessions::encryptor_factory> factory;
-		if(enc=="hmac") {
-			std::string key = srv.settings().get<std::string>("session.client.key");
-			factory.reset(new enc_factory<cppcms::sessions::impl::hmac_cipher>(key));
+		if(!enc.empty()) {
+			if(enc=="hmac") {
+				crypto::key k(srv.settings().get<std::string>("session.client.key"));
+				factory.reset(new hmac_factory("sha1",k));
+			}
+			else if(enc.compare(0,5,"hmac-") == 0) {
+				std::string algo = enc.substr(5);
+				crypto::key  k(srv.settings().get<std::string>("session.client.key"));
+				factory.reset(new hmac_factory(algo,k));
+			}
+			else if(enc.compare(0,3,"aes") == 0) {
+				crypto::key  k(srv.settings().get<std::string>("session.client.key"));
+				factory.reset(new aes_factory(enc,k));
+			}
+			else
+				throw cppcms_error("Unknown encryptor: "+enc);
 		}
-		else if(enc.compare(0,5,"hmac-") == 0) {
-			std::string algo = enc.substr(5);
-			std::string key = srv.settings().get<std::string>("session.client.key");
-			factory.reset(new enc_factory_param<cppcms::sessions::impl::hmac_cipher>(key,algo));
+		else {
+			crypto::key hmac_key(srv.settings().get<std::string>("session.client.hmac_key"));
+			if(cbc.empty()) {
+				factory.reset(new hmac_factory(mac,hmac_key));
+			}
+			else {
+				crypto::key cbc_key(srv.settings().get<std::string>("session.client.cbc_key"));
+				factory.reset(new aes_factory(cbc,cbc_key,mac,hmac_key));
+			}
 		}
-		#if defined(CPPCMS_HAVE_GCRYPT) || defined(CPPCMS_HAVE_OPENSSL)
-		else if(enc.compare(0,3,"aes") == 0) {
-			std::string key = srv.settings().get<std::string>("session.client.key");
-			factory.reset(new enc_factory_param<cppcms::sessions::impl::aes_cipher>(key,enc));
-		}
-		#endif
-		else
-			throw cppcms_error("Unknown encryptor: "+enc);
+
 		encryptor(factory);
 	}
 	if(location == "server" || (location == "both" && !storage_.get())) {

@@ -8,10 +8,10 @@
 		//"worker_processes" : 5,
 		"worker_threads" : 5,
 		//"worker_threads" : 25,
-		"api" : "scgi",
-	//	"api" : "http",
-	//	"port" : 8080,
-		"port" : 8081,
+	//	"api" : "scgi",
+		"api" : "http",
+		"port" : 8080,
+	//	"port" : 8081,
 		"ip" : "0.0.0.0",
 	//	"ip" : "127.0.0.1",
 	//	 "socket" : "/tmp/scgi.socket",
@@ -85,7 +85,11 @@
 			//"encryptor" : "hmac-sha512",  // "hmac" = "hmac-sha1", "hmac-md5", "hmac-sha224", "hmac-sha384", "hmac-sha256", "hmac-sha512"
 			"encryptor" : "aes", 
 			// aes or hmac -- hmac -- signature only, aes -- encryption and signature
-			"key" : "261965ba80a79c034c9ae366a19a2627"
+			"key" : "261965ba80a79c034c9ae366a19a2627261965ba80a79c034c9ae366a19a2626"
+			//"cbc" : "aes",
+			//"hmac" : "md5",
+			//"cbc_key" : "261965ba80a79c034c9ae366a19a2627",
+			//"hmac_key" : "261965ba80a79c034c9ee366a19a2628"
 		},
 		"server" : {
 			"storage" : "files",

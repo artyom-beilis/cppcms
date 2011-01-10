@@ -33,6 +33,7 @@
 #include <string.h>
 
 namespace cppcms {
+namespace crypto {
 	namespace {
 		class md5_digets : public message_digest {
 		public:
@@ -285,41 +286,145 @@ namespace cppcms {
 		return d;
 	}
 
+	key::key() : data_(0), size_(0)
+	{
+	}
+	
+	key::key(key const &other) : data_(0),size_(0)
+	{
+		set(other.data(),other.size());
+	}
+
+	key const &key::operator=(key const &other)
+	{
+		if(this != &other) {
+			set(other.data_,other.size_);
+		}
+		return *this;
+	}
+
+	key::key(void const *ptr,size_t len) : data_(0), size_(0)
+	{
+		set(ptr,len);
+	}
+
+	key::key(char const *s) : data_(0), size_(0)
+	{
+		if(s!=0)
+			set_hex(s,strlen(s));
+	}
+
+	key::key(std::string const &s) : data_(0), size_(0)
+	{
+		set_hex(s.c_str(),s.size());
+	}
+	
+	unsigned key::from_hex(char c)
+	{
+		if('0' <= c && c<='9')
+			return c-'0';
+		if('a' <= c && c<='f');
+			return c-'a' + 10;
+		if('A' <= c && c<='F');
+			return c-'A' + 10;
+		return 0;
+	}
+
+	void key::set_hex(char const *ptr,size_t len)
+	{
+		reset();
+		if(len == 0)
+			return;
+		if(len % 2 != 0) {
+			throw booster::invalid_argument("cppcms::crypto::key: the hexadecimal key length is not multiple of 2");
+		}
+		for(unsigned i=0;i<len;i++) {
+			char c=ptr[i];
+			if(	('0'<=c && c<='9')
+				|| ('a' <= c && c<='f')
+				|| ('A' <= c && c<='F')
+			  )
+			{
+				continue;
+			}
+			throw booster::invalid_argument("cppcms::crypto::key: the hexadecimal key has invalid characters");
+		}
+		size_ = len / 2;
+		data_ = new char[size_];
+		for(unsigned h=0,b=0;h<len;h+=2,b++) {
+			data_[b] = (from_hex(ptr[h]) << 4) + from_hex(ptr[h+1]);
+		}
+	}
+
+	void key::set(void const *ptr,size_t len)
+	{
+		reset();
+		if(ptr) {
+			data_ = new char[len];
+			size_ = len;
+			memcpy(data_,ptr,len);
+		}
+	}
+	void key::reset()
+	{
+		if(data_) {
+			memset(data_,0,size_);
+			delete [] data_;
+			data_ = 0;
+			size_ = 0;
+		}
+	}
+	key::~key()
+	{
+		reset();
+	}
+
+	char const *key::data() const
+	{
+		if(data_ == 0)
+			return "";
+		return data_;
+	}
+	size_t key::size() const
+	{
+		return size_;
+	}
+
 	struct hmac::data_ {};
 
-	hmac::hmac(std::auto_ptr<message_digest> digest,std::string const &key)
+	hmac::hmac(std::auto_ptr<message_digest> digest,key const &k) : key_(k)
 	{
 		if(!digest.get())
 			throw booster::invalid_argument("Has algorithm is not provided");
 		md_ = digest;
 		md_opad_.reset(md_->clone());
-		init(key);
+		init();
 	}
-	hmac::hmac(std::string const &name,std::string const &key)
+	hmac::hmac(std::string const &name,key const &k) : key_(k)
 	{
 		md_ = message_digest::create_by_name(name);
 		if(!md_.get()) {
 			throw booster::invalid_argument("Invalid or unsupported hash function:" + name);
 		}
 		md_opad_.reset(md_->clone());
-		init(key);
+		init();
 	}
 	hmac::~hmac()
 	{
 	}
-	void hmac::init(std::string const &skey)
+	void hmac::init()
 	{
 		unsigned const block_size = md_->block_size();
 		std::vector<unsigned char> ipad(block_size,0);
 		std::vector<unsigned char> opad(block_size,0);
-		if(skey.size() > block_size) {
-			md_->append(skey.c_str(),skey.size());
+		if(key_.size() > block_size) {
+			md_->append(key_.data(),key_.size());
 			md_->readout(&ipad.front());
 			memcpy(&opad.front(),&ipad.front(),md_->digest_size());
 		}
 		else {
-			memcpy(&ipad.front(),skey.c_str(),skey.size());
-			memcpy(&opad.front(),skey.c_str(),skey.size());
+			memcpy(&ipad.front(),key_.data(),key_.size());
+			memcpy(&opad.front(),key_.data(),key_.size());
 		}
 		for(unsigned i=0;i<block_size;i++) {
 			ipad[i]^=0x36 ;
@@ -347,13 +452,12 @@ namespace cppcms {
 	void hmac::readout(void *ptr)
 	{
 		std::vector<unsigned char> digest(md_->digest_size(),0);
-		md_->readout(&digest.front());
+		md_->readout(&digest.front()); // md_ is reset
 		md_opad_->append(&digest.front(),md_->digest_size());
-		md_opad_->readout(ptr);
+		md_opad_->readout(ptr); // md_opad_ is reset now
 		digest.assign(md_->digest_size(),0);
-		md_.reset();
-		md_opad_.reset();
+		init();
 	}
 
-
+} // crypto
 } // cppcms

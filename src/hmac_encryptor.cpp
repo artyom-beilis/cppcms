@@ -29,18 +29,22 @@ namespace cppcms {
 namespace sessions {
 namespace impl {
 
-/*******************************************
- * The layout of the message is following:
- *  Signed Content
- *             8 bytes timeout;
- *             4 bytes message_size;
- *  message_size bytes content
- *  Signature
- *             N bytes - signature
- *******************************************/
+hmac_factory::hmac_factory(std::string const &algo,crypto::key const &k) :
+	algo_(algo),
+	key_(k)
+{
+}
 
-hmac_cipher::hmac_cipher(std::string key,std::string hash_name) :
-	key_(to_binary(key)),
+std::auto_ptr<encryptor> hmac_factory::get()
+{
+	std::auto_ptr<encryptor> ptr;
+	ptr.reset(new hmac_cipher(algo_,key_));
+	return ptr;
+}
+
+
+hmac_cipher::hmac_cipher(std::string const &hash_name,crypto::key const &k) :
+	key_(k),
 	hash_(hash_name)
 {
 	if(key_.size() < 16) {
@@ -48,70 +52,40 @@ hmac_cipher::hmac_cipher(std::string key,std::string hash_name) :
 	}
 }
 
-std::string hmac_cipher::encrypt(std::string const &plain,time_t timeout)
+std::string hmac_cipher::encrypt(std::string const &plain)
 {
-	hmac md(hash_,key_);
+	crypto::hmac md(hash_,key_);
 	
-	int64_t real_timeout = timeout;
-	uint32_t message_size = plain.size();
-	const unsigned digest_size = md.digest_size();
-	unsigned const content_size = sizeof(real_timeout) + sizeof(message_size) + message_size;
-	std::vector<unsigned char> data(content_size + digest_size);
-	unsigned char *signed_content = &data[0];
-	unsigned char *time_content   = &data[0];
-	unsigned char *size_content   = &data[0+8];
-	unsigned char *plain_content  = &data[0+8+4];
-	unsigned char *digest         = &data[0+8+4+message_size];
-	memcpy(time_content,&real_timeout,8);
-	memcpy(size_content,&message_size,4);
-	memcpy(plain_content,plain.c_str(),message_size);
-	md.append(signed_content,content_size);
-	md.readout(digest);
+	size_t message_size = plain.size();
+	size_t digest_size = md.digest_size();
+	size_t cipher_size = message_size + digest_size;
+	std::vector<char> data(cipher_size,0);
+	md.append(plain.c_str(),plain.size());
+	memcpy(&data[0],plain.c_str(),plain.size());
+	md.readout(&data[message_size]);
 	
-	return base64_enc(data);
+	return std::string(&data[0],cipher_size);
 }
 
-bool hmac_cipher::decrypt(std::string const &cipher,std::string &plain,time_t *timeout)
+bool hmac_cipher::decrypt(std::string const &cipher,std::string &plain)
 {
-	std::vector<unsigned char> data;
-	base64_dec(cipher,data);
-
-	hmac md(hash_,key_);
-
-	//
-	// validation
-	//
+	crypto::hmac md(hash_,key_);
 	
-	// basic size
-	const int64_t digest_size = md.digest_size();
-	int64_t calculated_content_size = int64_t(data.size()) - int64_t(digest_size) - 8 - 4;
-	if(calculated_content_size < 0)
+	size_t cipher_size = cipher.size();
+	size_t digest_size = md.digest_size();
+	if(cipher_size < digest_size)
 		return false;
-	// time and size 
-	unsigned char *signed_body  = &data[0];
-	unsigned char *time_stamp   = &data[0];
-	unsigned char *size_stamp   = &data[0+8];
-	int64_t time_in;
-	uint32_t size;
-	memcpy(&time_in,time_stamp,sizeof(time_in));
-	memcpy(&size,size_stamp,sizeof(size));
-
-	if(time_in < time(0) || size != calculated_content_size)
-		return false;
-	// check signature
-	unsigned char *given_signature = &data[0+8+4 + size];
-	std::vector<char> real_signature(digest_size,0);
-	md.append(signed_body,8+4+size);
-	md.readout(&real_signature[0]);
-	if(memcmp(given_signature,&real_signature[0],digest_size)!=0)
-		return false;
-	
-	// return valid data
-	unsigned char *real_content = &data[0+8+4];
-	plain.assign(reinterpret_cast<char*>(real_content),size);
-	if(timeout)
-		*timeout = time_in;
-	return true;
+	size_t message_size = cipher_size - digest_size;
+	md.append(cipher.c_str(),message_size);
+	std::vector<char> mac(digest_size,0);
+	md.readout(&mac[0]);
+	bool ok = memcmp(&mac[0],cipher.c_str() + message_size,digest_size) == 0;
+	memset(&mac[0],0,digest_size);
+	if(ok) {
+		plain = cipher.substr(0,message_size);
+		return true;
+	}
+	return false;
 }
 
 } // impl

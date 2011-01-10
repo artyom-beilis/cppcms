@@ -32,6 +32,7 @@
 #include <string.h>
 #include <time.h>
 
+#include <cppcms/cstdint.h>
 
 using namespace std;
 
@@ -39,30 +40,71 @@ namespace cppcms {
 namespace sessions {
 namespace impl {
 
-aes_cipher::aes_cipher(std::string k,std::string name) 
+aes_factory::aes_factory(std::string const &cbc,crypto::key const &cbc_key,std::string const &hmac,crypto::key const &hmac_key) :
+	cbc_(cbc),
+	cbc_key_(cbc_key),
+	hmac_(hmac),
+	hmac_key_(hmac_key_)
 {
-	using cppcms::impl::aes_api;
-	if(name == "aes" || name == "aes-128" || name == "aes128") {
-		type_ = aes_api::aes128;
+}
+aes_factory::aes_factory(std::string const &algo,crypto::key const &k) :
+	cbc_(algo),
+	hmac_("sha1")
+{
+	std::auto_ptr<crypto::message_digest> md_ptr(crypto::message_digest::create_by_name(hmac_));
+	std::auto_ptr<crypto::cbc> cbc_ptr(crypto::cbc::create(algo));
+	if(!cbc_ptr.get()) {
+		throw booster::invalid_argument("cppcms::sessions::aes_factory: the algorithm " + algo + " is not supported,"
+						" or the cppcms library was compiled without OpenSSL/GNU-TLS support");
 	}
-	else if(name == "aes-192" || name == "aes192")  {
-		type_ = aes_api::aes192;
+	size_t digest_size = md_ptr->digest_size();
+	size_t cbc_key_size = cbc_ptr->key_size();
+	size_t expected_size = digest_size + cbc_key_size;
+
+	if(k.size() == cbc_key_size + digest_size) {
+		cbc_key_.set(k.data(),cbc_key_size);
+		hmac_key_.set(k.data() + cbc_key_size,digest_size);
 	}
-	else if(name == "aes-256" || name == "aes256") {
-		type_ = aes_api::aes256;
+	else if(k.size() >= cbc_key_size && cbc_key_size * 8 < 512) {
+		std::string name = k.size() * 8 <= 256 ? "sha256" : "sha512";
+		crypto::hmac mac(name,k);
+		std::vector<char> k1(mac.digest_size(),0);		
+		std::vector<char> k2(mac.digest_size(),0);
+		mac.append("0",1);
+		mac.readout(&k1[0]);
+		mac.append("\1",1);
+		mac.readout(&k2[0]);
+		cbc_key_.set(&k1[0],cbc_key_size);
+		hmac_key_.set(&k2[0],digest_size);
+		memset(&k1[0],0,k1.size());
+		memset(&k2[0],0,k2.size());
 	}
 	else {
-		throw cppcms_error("Unsupported AES algorithm `" + name + "', supported are aes,aes-128, aes-192, aes-256");
-	}
-
-	if(k.size() != unsigned(type_ / 4) ) {
 		std::ostringstream ss;
-		ss << "AES: requires key length for algorithm " << name << " is " << type_/8
-		   << " bytes (" << type_/4 << "hexadecimal digits)";
-		throw cppcms_error(ss.str());
+		ss	<<"cppcms::sessions::aes_factory: invalid key length: " << k.size() << " bytes; " 
+			<<"expected " << expected_size << " or at least: " << cbc_key_size << " bytes";
+		throw booster::invalid_argument(ss.str());
 	}
+}
 
-	key_ = to_binary(k);
+
+std::auto_ptr<encryptor> aes_factory::get()
+{
+	std::auto_ptr<encryptor> ptr;
+	ptr.reset(new aes_cipher(cbc_,hmac_,cbc_key_,hmac_key_));
+	return ptr;
+}
+
+
+
+
+
+aes_cipher::aes_cipher(std::string const &cbc_name,std::string const &md_name,crypto::key const &cbc_key,crypto::key const &md_key) :
+	cbc_name_(cbc_name),
+	md_name_(md_name),
+	cbc_key_(cbc_key),
+	mac_key_(md_key)
+{
 }
 
 aes_cipher::~aes_cipher()
@@ -71,64 +113,87 @@ aes_cipher::~aes_cipher()
 
 void aes_cipher::load()
 {
-	if(!api_.get())
-		api_ = cppcms::impl::aes_api::create(type_,key_);
+	if(!cbc_.get()) {
+		cbc_ = crypto::cbc::create(cbc_name_);
+		if(!cbc_.get()) {
+			throw booster::invalid_argument("cppcms::sessions::aes_cipher: the algorithm " + cbc_name_ + " is not supported,"
+							" or the cppcms library was compiled without OpenSSL/GNU-TLS support");
+		}
+		cbc_->set_nonce_iv();
+		cbc_->set_key(cbc_key_);
+	}
+	if(!digest_.get()) {
+		digest_ = crypto::message_digest::create_by_name(md_name_);
+		if(!digest_.get()) {
+			throw booster::invalid_argument("cppcms::sessions::aes_cipher: the hash algorithm " + cbc_name_ + " is not supported,"
+							" or the cppcms library was compiled without OpenSSL/GNU-TLS support");
+		}
+	}
 }
 
-std::string aes_cipher::encrypt(string const &plain,time_t timeout)
+std::string aes_cipher::encrypt(string const &plain)
 {
 	load();
+	
+	std::auto_ptr<crypto::message_digest> digest(digest_->clone());
 
-	size_t block_size=(plain.size() + 15) / 16 * 16;
+	unsigned digest_size = digest->digest_size();
+	uint32_t size = plain.size();
+	size_t cbc_block_size = cbc_->block_size();
 
-	std::vector<unsigned char> data(sizeof(aes_hdr)+sizeof(info)+block_size,0);
-	copy(plain.begin(),plain.end(),data.begin() + sizeof(aes_hdr)+sizeof(info));
-	aes_hdr &aes_header=*(aes_hdr*)(&data.front());
-	info &header=*(info *)(&data.front()+sizeof(aes_hdr));
-	header.timeout=timeout;
-	header.size=plain.size();
-	memset(&aes_header,0,16);
+	size_t block_size=(size + sizeof(size) + (cbc_block_size-1)) / cbc_block_size*cbc_block_size 
+		+ cbc_block_size;
+		// 1st block is not in use due to iv
+		// message length  bytes
 
-	std::auto_ptr<message_digest> md(message_digest::md5());
-	md->append(&header,block_size+sizeof(info));
-	md->readout(&aes_header.md5);
+	std::vector<char> input(block_size,0);
+	std::vector<char> output(block_size + digest_size,0); // add sha1 hmac
+	memcpy(&input[cbc_block_size],&size,sizeof(size));
+	memcpy(&input[cbc_block_size + sizeof(size)],plain.c_str(),plain.size());
+	
+	cbc_->encrypt(&input.front(),&output.front(),block_size);
+	crypto::hmac signature(digest,mac_key_);
+	signature.append(&output[0],block_size);
+	signature.readout(&output[block_size]);
 
-	std::vector<unsigned char> odata(data.size(),0);
-	api_->encrypt(&data.front(),&odata.front(),data.size());
-
-	return base64_enc(odata);
+	return std::string(&output[0],output.size());
 }
 
-bool aes_cipher::decrypt(string const &cipher,string &plain,time_t *timeout)
+bool aes_cipher::decrypt(std::string const &cipher,std::string &plain)
 {
 	load();
-	vector<unsigned char> idata;
-	base64_dec(cipher,idata);
-	size_t norm_size=b64url::decoded_size(cipher.size());
-	if(norm_size<sizeof(info)+sizeof(aes_hdr) || norm_size % 16 !=0)
-		return false;
-
-	vector<unsigned char> data(idata.size(),0);
-	api_->decrypt(&idata.front(),&data.front(),data.size());
-	
-	char md5[16];
-	std::auto_ptr<message_digest> md(message_digest::md5());
-	md->append(&data.front()+sizeof(aes_hdr),data.size()-sizeof(aes_hdr));
-	md->readout(md5);
-	
-	aes_hdr &aes_header = *(aes_hdr*)&data.front();
-	if(memcmp(md5,aes_header.md5,16)!=0) {
+	size_t digest_size = digest_->digest_size();
+	size_t block_size = cbc_->block_size();
+	if(cipher.size() < digest_size + block_size) {
 		return false;
 	}
-	info &header=*(info *)(&data.front()+sizeof(aes_hdr));
-	if(time(NULL)>header.timeout)
+	size_t real_size = cipher.size() - digest_size;
+	if(real_size % block_size != 0) {
 		return false;
-	if(timeout) *timeout=header.timeout;
+	}
+	if(real_size / block_size < 2) {
+		return false;
+	}
+	
+	crypto::hmac signature(std::auto_ptr<crypto::message_digest>(digest_->clone()),mac_key_);
+	signature.append(cipher.c_str(),real_size);
+	std::vector<char> verify(digest_size,0);
+	signature.readout(&verify[0]);
 
-	vector<unsigned char>::iterator data_start=data.begin()+sizeof(aes_hdr)+sizeof(info),
-			data_end=data_start+header.size;
-
-	plain.assign(data_start,data_end);
+	if(memcmp(&verify[0],cipher.c_str() + real_size,digest_size)!=0) {
+		memset(&verify[0],0,digest_size);
+		return false;
+	}
+	
+	std::vector<char> full_plain(real_size);
+	cbc_->decrypt(cipher.c_str(),&full_plain[0],real_size);
+	
+	uint32_t size = 0;
+	memcpy(&size,&full_plain[block_size],sizeof(size));
+	if(size > real_size - block_size - sizeof(size)) {
+		return false;
+	}
+	plain.assign(&full_plain[0] + block_size + sizeof(size),size);
 	return true;
 }
 
