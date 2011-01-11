@@ -42,7 +42,7 @@ namespace cppcms {
 		/// When the key is destroyed it zeros all the memory it uses to prevent accidental
 		/// leaks of the highly confidential data
 		///
-		class key {
+		class CPPCMS_API key {
 		public:
 			///
 			/// Create an empty key on 0 length
