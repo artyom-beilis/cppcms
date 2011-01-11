@@ -89,9 +89,9 @@ void test_cache(booster::intrusive_ptr<cppcms::impl::base_cache> cache,bool test
 	tags.clear();
 	if(test_generators) {
 		cache->store("test","test",tags,time(0)+5);
-		uint64_t my_gen=2;
+		cppcms::uint64_t my_gen=2;
 		cache->store("test2","x",tags,time(0)+5,&my_gen);
-		uint64_t g1=0,g2=0,g3=0;
+		cppcms::uint64_t g1=0,g2=0,g3=0;
 		TEST(cache->fetch("test",0,0,0,&g1));
 		cache->store("test","test2",tags,time(0)+5);
 		TEST(cache->fetch("test",&tmp,0,0,&g2));

@@ -18,22 +18,18 @@
 ///////////////////////////////////////////////////////////////////////////////
 #ifndef CPPCMS_CSTDINT_H
 #define CPPCMS_CSTDINT_H
-#include <cppcms/config.h>
-#if defined(CPPCMS_HAVE_STDINT_H)
-#include <stdint.h>
-#elif defined(CPPCMS_HAVE_INTTYPES_H)
-#include <inttypes.h>
-#else 
+#include <booster/cstdint.h>
+
 namespace cppcms {
-	// Generally only for broken MSVC
-	typedef unsigned short uint16_t;
-	typedef short int16_t;
-	typedef unsigned int uint32_t;
-	typedef int int32_t;
-	typedef unsigned long long uint64_t;
-	typedef long long int64_t;
+	using booster::int8_t;
+	using booster::uint8_t;
+	using booster::uint16_t;
+	using booster::int16_t;
+	using booster::uint32_t;
+	using booster::int32_t;
+	using booster::uint64_t;
+	using booster::int64_t;
 }
-#endif
 
 #endif // CPPCMS_CSTDINT_H
 
