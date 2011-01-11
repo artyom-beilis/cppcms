@@ -536,7 +536,7 @@ install(DIRECTORY cppcms DESTINATION include
 set(CNF "${CMAKE_CURRENT_SOURCE_DIR}/tests")
 
 add_test(base64_test base64_test)
-add_test(encryptor_test encryptor_test)
+add_test(encryptor_test encryptor_test "${CNF}")
 add_test(storage_test storage_test)
 add_test(json_test json_test)
 add_test(multipart_parser_test multipart_parser_test "${CNF}")

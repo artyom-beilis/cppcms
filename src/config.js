@@ -85,9 +85,15 @@
 			//"encryptor" : "hmac-sha512",  // "hmac" = "hmac-sha1", "hmac-md5", "hmac-sha224", "hmac-sha384", "hmac-sha256", "hmac-sha512"
 			"encryptor" : "aes", 
 			// aes or hmac -- hmac -- signature only, aes -- encryption and signature
+			//"key_file" : "key.txt", //261965ba80a79c034c9ae366a19a2627261965ba80a79c034c9ae366a19a2626"
 			"key" : "261965ba80a79c034c9ae366a19a2627261965ba80a79c034c9ae366a19a2626"
+			//"key_file" : "261965ba80a79c034c9ae366a19a2627261965ba80a79c034c9ae366a19a2626"
 			//"cbc" : "aes",
-			//"hmac" : "md5",
+			//"hmac" : "sha1",
+			//"hmac_key_file": "key.txt",
+			//"cbc_key_file": "key.txt",
+			//"cbc_key_file" : "261965ba80a79c034c9ae366a19a2627",
+			//"hmac_key_file" : "261965ba80a79c034c9ee366a19a2628"
 			//"cbc_key" : "261965ba80a79c034c9ae366a19a2627",
 			//"hmac_key" : "261965ba80a79c034c9ee366a19a2628"
 		},
@@ -106,8 +112,8 @@
 		 //"auto_reload" : true
 	},
 	"cache" : {
-		//"backend" : "thread_shared", 
-		"backend" : "process_shared",
+		"backend" : "thread_shared", 
+		//"backend" : "process_shared",
 		"limit" : 100, // items - thread cache
 		"memory" : 1024,  // KBs - process cache
 //		"tcp" : {"ips" : [ "127.0.0.1" ],"ports" : [ 6001 ]}

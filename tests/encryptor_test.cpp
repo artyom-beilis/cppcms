@@ -167,12 +167,41 @@ void test_crypto()
 
 }
 
-int main()
+void test_key(std::string test_dir)
 {
-	try {
-		std::cout << "- Testing basic cryptography functions" << std::endl;
+	std::cout << "- Testing key" << std::endl;
+	cppcms::crypto::key k;
+	k.set_hex("aabb",4);
+	TEST(k.size()==2);
+	TEST(memcmp(k.data(),"\xaa\xbb",2)==0);
+	k.set("aabb",4);
+	TEST(k.size()==4);
+	TEST(memcmp(k.data(),"aabb",4)==0);
+	k=cppcms::crypto::key(std::string("ab"));
+	TEST(k.size()==1);
+	TEST(*k.data()=='\xAB');
+	cppcms::crypto::key k2(k);
+	TEST(k2.size()==1);
+	TEST(*k2.data()=='\xAB');
+	cppcms::crypto::key k3;
+	TEST(k3.size()==0);
+	k3=k;
+	TEST(k3.size()==1);
+	TEST(*k3.data()=='\xAB');
+	k.read_from_file(test_dir+"/sample_key.txt");
+	TEST(k.size()==4);
+	TEST(memcmp(k.data(),"\xab\x01\xcc\xdd",4)==0);
+}
 
-		test_crypto();
+int main(int argc,char **argv)
+{
+	if(argc!=2) {
+		std::cerr << "usage: provide test directory " << std::endl;
+		return 1;
+	}
+	try {
+		test_key(argv[1]);
+		std::cout << "- Testing basic cryptography functions" << std::endl;
 
 		std::string key="261965ba80a79c034c9ae366a19a2627";
 

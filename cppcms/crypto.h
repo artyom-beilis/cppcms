@@ -94,6 +94,12 @@ namespace cppcms {
 			/// Set the value for the key using hexadecimal representation 
 			///
 			void set_hex(char const *ptr,size_t len);
+			
+			///
+			/// Read the key from file. Under windows file_name should be UTF-8 encoded
+			/// string.
+			///
+			void read_from_file(std::string const &file_name);
 
 		private:
 			static unsigned from_hex(char c);

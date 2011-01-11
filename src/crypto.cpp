@@ -27,6 +27,7 @@
 #endif
 #include <vector>
 #include <booster/backtrace.h>
+#include <booster/nowide/cstdio.h>
 #include "md5.h"
 #include "sha1.h"
 
@@ -328,6 +329,67 @@ namespace crypto {
 		if('A' <= c && c<='F');
 			return c-'A' + 10;
 		return 0;
+	}
+	void key::read_from_file(std::string const &file_name)
+	{
+		reset();
+
+		FILE *f = 0;
+		char *buf = 0;
+		size_t buf_size = 0;
+		
+		try {
+			f = booster::nowide::fopen(file_name.c_str(),"rb");
+			if(!f) {
+				throw booster::runtime_error("cppcms::crypto::key Failed to open file:" + file_name);
+			}
+			setbuf(f,0);
+			fseek(f,0,SEEK_END);
+			long size = ftell(f);
+			if(size < 0) {
+				throw booster::runtime_error("cppcms::crypto::key failed to get file size:" + file_name);
+			}
+			if(size == 0) {
+				throw booster::runtime_error("cppcms::crypto::key file " + file_name + " is empty");
+			}
+			fseek(f,0,SEEK_SET);
+			buf = new char[size]();
+			buf_size = size;
+			if(fread(buf,1,buf_size,f)!=buf_size) {
+				throw booster::runtime_error("cppcms::crypto::key failed reading file " + file_name);
+			}
+			fclose(f);
+			f=0;
+			int i;
+			for(i=buf_size-1;i>=0;i--) {
+				if(buf[i]==' ' || buf[i]=='\n' || buf[i]=='\r' || buf[i]=='\t')
+					continue;
+				break;
+			}
+			size_t real_size = i + 1;
+			set_hex(buf,real_size);
+		}
+		catch(...) {
+			if(f) { 
+				fclose(f);
+				f=0;
+			}
+			if(buf) {
+				memset(buf,0,buf_size);
+				delete [] buf;
+				buf = 0;
+			}
+			throw;
+		}
+		if(f) {
+			fclose(f);
+			f=0;
+		}
+		if(buf) {
+			memset(buf,0,buf_size);
+			delete [] buf;
+			buf = 0;
+		}
 	}
 
 	void key::set_hex(char const *ptr,size_t len)

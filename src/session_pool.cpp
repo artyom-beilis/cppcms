@@ -180,29 +180,48 @@ void session_pool::init()
 
 		std::auto_ptr<cppcms::sessions::encryptor_factory> factory;
 		if(!enc.empty()) {
+			crypto::key k;
+
+			std::string key_file = srv.settings().get("session.client.key_file","");
+
+			if(key_file.empty())
+				k=crypto::key(srv.settings().get<std::string>("session.client.key"));
+			else
+				k.read_from_file(key_file);
+
 			if(enc=="hmac") {
-				crypto::key k(srv.settings().get<std::string>("session.client.key"));
 				factory.reset(new hmac_factory("sha1",k));
 			}
 			else if(enc.compare(0,5,"hmac-") == 0) {
 				std::string algo = enc.substr(5);
-				crypto::key  k(srv.settings().get<std::string>("session.client.key"));
 				factory.reset(new hmac_factory(algo,k));
 			}
 			else if(enc.compare(0,3,"aes") == 0) {
-				crypto::key  k(srv.settings().get<std::string>("session.client.key"));
 				factory.reset(new aes_factory(enc,k));
 			}
 			else
 				throw cppcms_error("Unknown encryptor: "+enc);
 		}
 		else {
-			crypto::key hmac_key(srv.settings().get<std::string>("session.client.hmac_key"));
+			crypto::key hmac_key;
+			std::string hmac_key_file = srv.settings().get("session.client.hmac_key_file","");
+			if(hmac_key_file.empty())
+				hmac_key = crypto::key(srv.settings().get<std::string>("session.client.hmac_key"));
+			else
+				hmac_key.read_from_file(hmac_key_file);
+
 			if(cbc.empty()) {
 				factory.reset(new hmac_factory(mac,hmac_key));
 			}
 			else {
-				crypto::key cbc_key(srv.settings().get<std::string>("session.client.cbc_key"));
+				crypto::key cbc_key;
+				std::string cbc_key_file = srv.settings().get("session.client.cbc_key_file","");
+
+				if(cbc_key_file.empty())
+					cbc_key = crypto::key(srv.settings().get<std::string>("session.client.cbc_key"));
+				else
+					cbc_key.read_from_file(cbc_key_file);
+
 				factory.reset(new aes_factory(cbc,cbc_key,mac,hmac_key));
 			}
 		}
