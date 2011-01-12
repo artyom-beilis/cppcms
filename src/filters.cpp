@@ -175,7 +175,7 @@ namespace cppcms { namespace filters {
 		std::vector<unsigned char> out(encoded_size(s.size())+1);
 		encode(begin,end,&out.front());
 		out.back()=0;
-		char const *buf=reinterpret_cast<char const *>(out.front());
+		char const *buf=reinterpret_cast<char const *>(&out.front());
 		os<<buf;
 	}
 
