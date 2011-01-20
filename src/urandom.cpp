@@ -37,7 +37,7 @@ namespace cppcms {
 	class urandom_device_impl {
 	public:
 		urandom_device_impl() {
-			if(CryptAcquireContext(&provider_,0,0,PROV_RSA_FULL,0)) 
+			if(CryptAcquireContext(&provider_,0,0,PROV_RSA_FULL,CRYPT_VERIFYCONTEXT)) 
 				return;
 			if(GetLastError() == NTE_BAD_KEYSET) {
 				if(CryptAcquireContext(&provider_,0,0,PROV_RSA_FULL,CRYPT_NEWKEYSET))
