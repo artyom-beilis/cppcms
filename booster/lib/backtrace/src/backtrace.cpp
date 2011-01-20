@@ -57,7 +57,7 @@ namespace booster {
             return :: backtrace(array,n);
         }
         
-        #elif defined(BOOSTER_MSVC)
+        #elif defined(BOOSTER_MSVC) && _MSC_VER > 1500 
 
         int trace(void **array,int n)
         {
@@ -69,7 +69,7 @@ namespace booster {
         #elif defined(BOOSTER_WIN32)
 
         extern "C" {
-            typedef unsigned short (*capture_func_type)(unsigned long, unsigned long ,void **,unsigned long *);
+            typedef unsigned short (WINAPI *capture_func_type)(unsigned long, unsigned long ,void **,unsigned long *);
             static capture_func_type capture_stack_trace;
             static bool capture_stack_trace_loaded;
         }
