@@ -154,7 +154,7 @@ namespace {
 	std::string read_file(std::istream &in)
 	{
 		std::string res;
-		while(!in.eof()) {
+		while(in.good() && !in.eof()) {
 			char buf[256];
 			in.read(buf,256);
 			res.append(buf,in.gcount());
