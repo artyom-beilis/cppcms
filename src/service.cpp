@@ -22,6 +22,7 @@
 #define NOMINMAX
 #include <winsock2.h>
 #include <windows.h>
+#include <process.h>
 #else
 #include <errno.h>
 #endif
@@ -76,6 +77,7 @@
 #include <stdlib.h>
 #include <iostream>
 #include <booster/nowide/fstream.h>
+#include <booster/thread.h>
 #include <cppcms/config.h>
 #ifdef CPPCMS_USE_EXTERNAL_BOOST
 #   include <boost/bind.hpp>
@@ -344,6 +346,23 @@ namespace {
 		}
 	}
 
+	class apache_event_handler {
+	public:
+		apache_event_handler(HANLDE h=0) : handle_(h)
+		{
+		}
+		void operator()() const
+		{
+			if( ::WaitForSingleObject(handle_,INFINITE) == WAIT_OBJECT_0 ) {
+				if(the_service) {
+					the_service->shutdown();
+				}
+			}
+		}
+	private:
+		HANLDE handle_;
+	};
+
 #else
 
 	void handler(int nothing)
@@ -374,6 +393,11 @@ void service::setup_exit_handling()
 
 	#ifdef CPPCMS_WIN32
 	SetConsoleCtrlHandler(handler, TRUE);
+	char *event = getenv("_FCGI_SHUTDOWN_EVENT_");
+	if(event) {
+		apache_event_handler handler((HANLDE)atoi(event));
+		booster::thread wait_for_event(handler);
+	}
 	#else
 	struct sigaction sa;
 
