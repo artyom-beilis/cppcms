@@ -348,7 +348,7 @@ namespace {
 
 	class apache_event_handler {
 	public:
-		apache_event_handler(HANLDE h=0) : handle_(h)
+		apache_event_handler(HANDLE h=0) : handle_(h)
 		{
 		}
 		void operator()() const
@@ -360,7 +360,7 @@ namespace {
 			}
 		}
 	private:
-		HANLDE handle_;
+		HANDLE handle_;
 	};
 
 #else
@@ -395,7 +395,7 @@ void service::setup_exit_handling()
 	SetConsoleCtrlHandler(handler, TRUE);
 	char *event = getenv("_FCGI_SHUTDOWN_EVENT_");
 	if(event) {
-		apache_event_handler handler((HANLDE)atoi(event));
+		apache_event_handler handler((HANDLE)(atoi(event)));
 		booster::thread wait_for_event(handler);
 	}
 	#else
