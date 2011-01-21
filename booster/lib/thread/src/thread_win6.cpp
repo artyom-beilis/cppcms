@@ -45,7 +45,7 @@ namespace booster {
 			}
 
 			if(h) {
-				CloseHandle(h)
+				CloseHandle(h);
 			}
 		}
 		void run()
@@ -117,9 +117,9 @@ namespace booster {
 	void thread::detach()
 	{
 		if(d->h && d->shared) {
-			d->shared->transfer_handle_ownership(h);
+			d->shared->transfer_handle_ownership(d->h);
 			d->h = 0;
-			d->shared.reset();
+			d->shared = 0;
 		}
 	}
 	thread::~thread()
@@ -133,9 +133,9 @@ namespace booster {
 	void thread::join()
 	{
 		if(d->h) {
-			WaitForSingleObject(h,INFINITE);
-			h = 0;
-			d->shared.reset();
+			WaitForSingleObject(d->h,INFINITE);
+			d->h = 0;
+			d->shared = 0;
 		}
 	}
 
