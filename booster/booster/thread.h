@@ -36,6 +36,11 @@ namespace booster {
 		void join();
 
 		///
+		/// Detach from the thread
+		///
+		void detach();
+
+		///
 		/// Get number of CPUS, returns 0 if the number is unknown
 		///
 		static unsigned hardware_concurrency();

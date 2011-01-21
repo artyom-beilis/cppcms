@@ -13,6 +13,8 @@
 #include <process.h>
 #include <booster/thread.h>
 #include <booster/system_error.h>
+#include <booster/refcounted.h>
+#include <booster/intrusive_ptr.h>
 #include <errno.h>
 #include <string.h>
 
@@ -23,24 +25,75 @@
 
 namespace booster {
 
-	struct thread::data {
-		HANDLE h;
-		function<void()> cb;
+	class win_thread_data : public refcounted {
+	public:
+		win_thread_data(function<void()> const &cb) :
+			handle_(0),
+			is_complete_(false),
+			callback_(cb)
+		{
+		}
+
+		void transfer_handle_ownership(HANDLE h)
+		{
+			{
+				unique_lock<mutex> guard(lock_);
+				if(!is_complete_) {
+					handle_ = h;
+					h = 0;
+				}
+			}
+
+			if(h) {
+				CloseHandle(h)
+			}
+		}
+		void run()
+		{
+			try {
+				callback_();
+				callback_ = function<void()>();
+			}
+			catch(...) {}
+			
+			unique_lock<mutex> guard(lock_);
+			is_complete_ = true;
+		}
+		~win_thread_data()
+		{
+			try {
+				unique_lock<mutex> guard(lock_);
+				if(handle_) {
+					CloseHandle(handle_);
+					handle_ = 0;
+				}
+			}
+			catch(...) {}
+		}
+	private:
+		mutex lock_;
+		HANDLE handle_;
+		bool is_complete_;
+		function<void()> callback_;
 	};
+	
+	struct thread::data {
+		intrusive_ptr<win_thread_data> shared;
+		HANDLE h;
+	};
+
 
 	extern "C" void *booster_thread_func(void *p)
 	{
-		thread::data *d=reinterpret_cast<thread::data *>(p);
+		// Do not add reference count as it was added upon sucesseful thread creation
+		intrusive_ptr<win_thread_data> d(reinterpret_cast<win_thread_data *>(p),false);
 		try {
-			d->cb();
-		}
-		catch(std::exception const &/*e*/) {
-			/// TODO
+			d->run();
 		}
 		catch(...) {
-			/// TODO
 		}
 		_endthreadex(0);
+		
 		return 0;
 	}
 	unsigned WINAPI booster_real_thread_func(void *p) { booster_thread_func(p); return 0; }
@@ -48,20 +101,44 @@ namespace booster {
 	thread::thread(function<void()> const &cb) :
 		d(new thread::data)
 	{
-		d->cb=cb;
-		uintptr_t p=_beginthreadex(0,0,booster_real_thread_func,d.get(),0,0);
-		if(p==0)
+		d->shared=new win_thread_data(cb);
+
+		uintptr_t p=_beginthreadex(0,0,booster_real_thread_func,d->shared.get(),0,0);
+		if(p!=0) {
+			// we want to transfer ownership to the thread explicitly
+			intrusive_ptr_add_ref(d->shared.get());
+		}
+		else {
 			throw system::system_error(system::error_code(errno,system::system_category));
+		}
+		
 		d->h=(HANDLE)(p);
+	}
+	void thread::detach()
+	{
+		if(d->h && d->shared) {
+			d->shared->transfer_handle_ownership(h);
+			d->h = 0;
+			d->shared.reset();
+		}
 	}
 	thread::~thread()
 	{
-		CloseHandle(d->h);
+		try {
+			detach();
+		}
+		catch(...){}
 	}
+
 	void thread::join()
 	{
-		WaitForSingleObject(d->h,INFINITE);
+		if(d->h) {
+			WaitForSingleObject(h,INFINITE);
+			h = 0;
+			d->shared.reset();
+		}
 	}
+
 	unsigned thread::hardware_concurrency()
 	{
 		SYSTEM_INFO info=SYSTEM_INFO();

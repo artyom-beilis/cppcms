@@ -11,6 +11,7 @@
 #include <booster/system_error.h>
 #include <errno.h>
 #include <string.h>
+#include <memory>
 
 #ifdef BOOSTER_POSIX
 #include <unistd.h>
@@ -29,17 +30,20 @@
 
 namespace booster {
 
+	typedef function<void()> thread_function_type;
 
 	struct thread::data {
 		pthread_t p;
-		function<void()> cb;
+		bool released;
+		data() : released(false) {}
 	};
 
 	extern "C" void *booster_thread_func(void *p)
 	{
-		thread::data *d=reinterpret_cast<thread::data *>(p);
+		std::auto_ptr<thread_function_type> caller(reinterpret_cast<thread_function_type *>(p));
 		try {
-			d->cb();
+			thread_function_type &func = *caller;
+			func();
 		}
 		catch(std::exception const &/*e*/) {
 			/// TODO
@@ -53,15 +57,36 @@ namespace booster {
 	thread::thread(function<void()> const &cb) :
 		d(new thread::data)
 	{
-		d->cb=cb;
-		::pthread_create(&d->p,0,booster_thread_func,d.get());
+		thread_function_type *ptr = new thread_function_type(cb);
+		if( ::pthread_create(&d->p,0,booster_thread_func,reinterpret_cast<void *>(ptr)) == 0 ) {
+			// passed pointer - ownership lost
+			ptr = 0;
+			return;
+		}
+		else {
+			// failed to create - delete the object
+			delete ptr;
+			ptr = 0;
+			throw runtime_error("booster::thread: failed to create a thread");
+		}
 	}
 	thread::~thread()
 	{
+		detach();
 	}
 	void thread::join()
 	{
-		pthread_join(d->p,0);
+		if(!d->released) {
+			pthread_join(d->p,0);
+			d->released = true;
+		}
+	}
+	void thread::detach()
+	{
+		if(!d->released) {
+			pthread_detach(d->p);
+			d->released = true;
+		}
 	}
 
 	unsigned thread::hardware_concurrency()
