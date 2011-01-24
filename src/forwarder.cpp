@@ -68,7 +68,7 @@ namespace cppcms {
 			{
 				data_.swap(data);
 				io::endpoint ep(ip_,port_);
-				socket_.open(ep.family(),io::sock_stream);
+				socket_.open(ep.family());
 				socket_.async_connect(ep,
 					boost::bind(
 						&tcp_pipe::on_connected,
@@ -111,7 +111,7 @@ namespace cppcms {
 			{
 				booster::system::error_code ec;
 				socket_.cancel();
-				socket_.shutdown(io::socket::shut_rdwr,ec);
+				socket_.shutdown(io::stream_socket::shut_rdwr,ec);
 				socket_.close(ec);
 				return;
 			}
@@ -136,7 +136,7 @@ namespace cppcms {
 			std::string ip_;
 			int port_;
 			std::string data_;
-			io::socket socket_;
+			io::stream_socket socket_;
 			std::vector<char> input_;
 		};
 

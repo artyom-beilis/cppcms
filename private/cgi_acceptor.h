@@ -45,8 +45,8 @@ namespace impl {
 				tcp_(true)
 			{
 				io::endpoint ep(ip,port);
-				acceptor_.open(ep.family(),io::sock_stream);
-				acceptor_.set_option(io::socket::reuse_address,true);
+				acceptor_.open(ep.family());
+				acceptor_.set_option(io::basic_socket::reuse_address,true);
 				acceptor_.bind(ep);
 				acceptor_.listen(backlog);
 			}
@@ -68,8 +68,8 @@ namespace impl {
 				tcp_(false)
 			{
 				io::endpoint ep(path);
-				acceptor_.open(io::pf_unix,io::sock_stream);
-				acceptor_.set_option(io::socket::reuse_address,true);
+				acceptor_.open(io::pf_unix);
+				acceptor_.set_option(io::basic_socket::reuse_address,true);
 				::unlink(path.c_str());
 				acceptor_.bind(ep);
 				acceptor_.listen(backlog);
@@ -99,12 +99,12 @@ namespace impl {
 					throw;
 				}
 				if(tcp_)
-					api->socket_.set_option(io::socket::tcp_no_delay,true);
+					api->socket_.set_option(io::basic_socket::tcp_no_delay,true);
 				booster::shared_ptr< ::cppcms::http::context> cnt(new ::cppcms::http::context(api));
 				return cnt;
 			}
 			#endif
-			virtual booster::aio::socket &socket() 
+			virtual booster::aio::acceptor &socket() 
 			{
 				return acceptor_;
 			}
@@ -129,7 +129,7 @@ namespace impl {
 			{
 				if(!e) {
 					if(tcp_)
-						asio_socket_->set_option(io::socket::tcp_no_delay,true);
+						asio_socket_->set_option(io::basic_socket::tcp_no_delay,true);
 					booster::shared_ptr< ::cppcms::http::context> cnt(new ::cppcms::http::context(api_));
 					api_.reset();
 					cnt->run();	
@@ -139,7 +139,8 @@ namespace impl {
 
 			cppcms::service &srv_;
 			booster::shared_ptr<connection> api_;
-			booster::aio::socket *asio_socket_,acceptor_;
+			booster::aio::stream_socket *asio_socket_;
+			booster::aio::acceptor acceptor_;
 			bool stopped_;
 			bool tcp_;
 		};

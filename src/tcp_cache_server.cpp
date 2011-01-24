@@ -63,7 +63,7 @@ class tcp_cache_service::session : public booster::enable_shared_from_this<tcp_c
 	cppcms::impl::tcp_operation_header hin;
 
 public:
-	io::socket socket_;
+	io::stream_socket socket_;
 	cppcms::impl::base_cache &cache;
 	//cppcms::session_storage &sessions;
 	session(io::io_service &srv,cppcms::impl::base_cache &c): //,session_server_storage &s) : 
@@ -275,13 +275,13 @@ public:
 };
 
 class tcp_cache_service::server  {
-	io::socket acceptor_;
+	io::acceptor acceptor_;
 	cppcms::impl::base_cache &cache;
 	//session_server_storage &sessions;
 	void on_accept(booster::system::error_code const &e,booster::shared_ptr<tcp_cache_service::session> s)
 	{
 		if(!e) {
-			s->socket_.set_option(io::socket::tcp_no_delay,true);
+			s->socket_.set_option(io::stream_socket::tcp_no_delay,true);
 			s->run();
 			start_accept();
 		}
@@ -304,8 +304,8 @@ public:
 	//	,sessions(s)
 	{
 		io::endpoint ep(ip,port);
-		acceptor_.open(ep.family(),io::sock_stream);
-		acceptor_.set_option(io::socket::reuse_address,true);
+		acceptor_.open(ep.family());
+		acceptor_.set_option(io::basic_socket::reuse_address,true);
 		acceptor_.bind(ep);
 		acceptor_.listen(10);
 		start_accept();

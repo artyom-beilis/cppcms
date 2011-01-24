@@ -25,7 +25,7 @@
 namespace cppcms {
 namespace impl {
 class messenger : public booster::noncopyable {
-	booster::aio::socket socket_;
+	booster::aio::stream_socket socket_;
 	std::string ip_;
 	int port_;
 public:

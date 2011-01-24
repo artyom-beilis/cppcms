@@ -35,12 +35,12 @@ void messenger::connect(std::string ip,int port)
 	booster::system::error_code e;
 	
 	booster::aio::endpoint ep(ip,port);
-	socket_.open(ep.family(),booster::aio::sock_stream,e);
+	socket_.open(ep.family(),e);
 	if(!e)
 		socket_.connect(ep,e);
 	if(e) 
 		throw cppcms_error("connect:"+e.message());
-	socket_.set_option(booster::aio::socket::tcp_no_delay,true);
+	socket_.set_option(booster::aio::stream_socket::tcp_no_delay,true);
 }
 
 messenger::messenger(std::string ip,int port) :
@@ -79,7 +79,7 @@ void messenger::transmit(tcp_operation_header &h,std::string &data)
 			socket_.close();
 			booster::aio::endpoint ep(ip_,port_);
 			booster::system::error_code er;
-			socket_.open(ep.family(),booster::aio::sock_stream,er);
+			socket_.open(ep.family(),er);
 			if(!er)
 				socket_.connect(ep,er);
 			if(er) throw cppcms_error("reconnect:"+er.message());

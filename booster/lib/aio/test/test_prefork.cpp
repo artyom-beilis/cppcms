@@ -28,8 +28,8 @@ namespace io = booster::aio;
 namespace sys = booster::system;
 
 io::io_service *the_service;
-io::socket *the_socket;
-io::socket *accepted_socket;
+io::acceptor *the_socket;
+io::stream_socket *accepted_socket;
 
 void socket_canceler(sys::error_code const &e)
 {
@@ -57,8 +57,8 @@ void thread_socket_connector()
 {
 	try {
 		booster::ptime::millisleep(100);
-		io::socket s;
-		s.open(io::pf_inet,io::sock_stream);
+		io::stream_socket s;
+		s.open(io::pf_inet);
 		s.connect(io::endpoint("127.0.0.1",8080));
 		char c;
 		s.read(io::buffer(&c,1));
@@ -91,7 +91,7 @@ void async_pid_writer(sys::error_code const &e)
 
 void child()
 {
-	io::socket s(*the_service);
+	io::stream_socket s(*the_service);
 	accepted_socket=&s;
 	the_socket->async_accept(s,async_pid_writer);
 	the_service->run();
@@ -105,14 +105,14 @@ int main()
 		std::cout << "Cancel before" << std::endl;
 		io::io_service srv;
 		the_service = &srv;
-		io::socket ac(srv);
+		io::acceptor ac(srv);
 		the_socket = &ac;
-		ac.open(io::pf_inet,io::sock_stream);
-		ac.set_option(io::socket::reuse_address,true);
+		ac.open(io::pf_inet);
+		ac.set_option(io::basic_socket::reuse_address,true);
 		io::endpoint ep("127.0.0.1",8080);
 		ac.bind(ep);
 		ac.listen(5);
-		io::socket s1(srv);
+		io::stream_socket s1(srv);
 		ac.async_accept(s1,socket_accept_failer);
 		ac.cancel();
 		srv.run();
@@ -159,12 +159,12 @@ int main()
 		}
 
 		booster::ptime::millisleep(100);
-		s1.open(io::pf_inet,io::sock_stream);
+		s1.open(io::pf_inet);
 		s1.connect(ep);
 		int in_pid1=0;
 		s1.read(io::buffer(&in_pid1,sizeof(int)));
 		s1.close();
-		s1.open(io::pf_inet,io::sock_stream);
+		s1.open(io::pf_inet);
 		s1.connect(ep);
 		int in_pid2=0;
 		s1.read(io::buffer(&in_pid2,sizeof(int)));

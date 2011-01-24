@@ -29,20 +29,20 @@ namespace sys=booster::system;
 
 using booster::ptime;
 
-void make_pair(io::socket &s1,io::socket &s2)
+void make_pair(io::stream_socket &s1,io::stream_socket &s2)
 {
-	io::socket a;
-	a.open(io::pf_inet,io::sock_stream);
-	a.set_option(io::socket::reuse_address,true);
+	io::acceptor a;
+	a.open(io::pf_inet);
+	a.set_option(io::stream_socket::reuse_address,true);
 	a.bind(io::endpoint("127.0.0.1",0));
 	a.listen(1);
-	s1.open(io::pf_inet,io::sock_stream);
+	s1.open(io::pf_inet);
 	s1.connect(a.local_endpoint());
 	a.accept(s2);
 	a.close();
 }
 
-void test_connected(io::socket &s1,io::socket &s2)
+void test_connected(io::stream_socket &s1,io::stream_socket &s2)
 {
 	TEST(s1.write_some(io::buffer("x",1))==1);
 	char c;
@@ -149,7 +149,7 @@ void basic_io()
 {
 	std::cout << "Test basic io" << std::endl;
 	std::string str1="hello";
-	io::socket s1,s2;
+	io::stream_socket s1,s2;
 	make_pair(s1,s2);
 	TEST(s1.write_some(booster::aio::buffer(str1))==5);
 	char buf[16] = {0};
@@ -158,12 +158,12 @@ void basic_io()
 	str1="x";
 	TEST(s2.write_some(io::buffer(str1))==1);
 	TEST(s1.read_some(io::buffer(buf,sizeof(buf)))==1 && buf[0]=='x');
-	s1.shutdown(io::socket::shut_wr);
+	s1.shutdown(io::stream_socket::shut_wr);
 	sys::error_code e;
 	TEST(s2.read_some(io::buffer(buf,1),e)==0 && e.value()==io::aio_error::eof);
 	char c='y';
 	TEST(s2.write_some(io::buffer(&c,1))==1);
-	s2.shutdown(io::socket::shut_wr);
+	s2.shutdown(io::stream_socket::shut_wr);
 	c=0;
 	TEST(s1.read_some(io::buffer(&c,1))==1 && c=='y');
 	e=sys::error_code();
@@ -174,15 +174,15 @@ void test_unix()
 {
 #if !defined(BOOSTER_AIO_NO_PF_UNIX)
 	std::cout << "Testing Unix Sockets" << std::endl;
-	io::socket acc;
-	acc.open(io::pf_unix,io::sock_stream);
+	io::acceptor acc;
+	acc.open(io::pf_unix);
 	io::endpoint ep("booster_unix_test_socket");
 	::unlink(ep.path().c_str());
 	acc.bind(ep);
 	acc.listen(1);
-	io::socket s1;
-	io::socket s2;
-	s1.open(io::pf_unix,io::sock_stream);
+	io::stream_socket s1;
+	io::stream_socket s2;
+	s1.open(io::pf_unix);
 	s1.connect(ep);
 	acc.accept(s2);
 	test_connected(s1,s2);
@@ -197,9 +197,9 @@ void test_ipv6()
 {
 #if !defined(BOOSTER_AIO_NO_PF_INET6)
 	std::cout << "Testing IPv6" << std::endl;
-	io::socket acc;
+	io::acceptor acc;
 	sys::error_code err;
-	acc.open(io::pf_inet6,io::sock_stream,err);
+	acc.open(io::pf_inet6,err);
 	if(err) {
 		std::cerr << "-- Looks like IPv6 is not supported on this host" << std::endl;
 		return;
@@ -207,9 +207,9 @@ void test_ipv6()
 	io::endpoint ep("::1",8080);
 	acc.bind(ep);
 	acc.listen(1);
-	io::socket s1;
-	io::socket s2;
-	s1.open(io::pf_inet6,io::sock_stream);
+	io::stream_socket s1;
+	io::stream_socket s2;
+	s1.open(io::pf_inet6);
 	s1.connect(ep);
 	acc.accept(s2);
 	test_connected(s1,s2);
@@ -225,8 +225,8 @@ void readv_writev()
 {
 	return;
 	std::cout << "Test writev/readv " << std::endl;
-	io::socket s1;
-	io::socket s2;
+	io::stream_socket s1;
+	io::stream_socket s2;
 	std::string str1="hello ";
 	std::string str2="world";
 	std::string str=str1+str2;
@@ -245,14 +245,14 @@ void get_set_srv()
 {
 	std::cout << "Test get/set io_service" << std::endl;
 	io::io_service srv;
-	io::socket s1(srv);
+	io::stream_socket s1(srv);
 	TEST(s1.has_io_service());
 	TEST(&s1.get_io_service() == &srv);
 	s1.reset_io_service();
 	TEST(!s1.has_io_service());
 	try {s1.get_io_service(); TEST(!"Shoud throw"); }
 	catch(sys::system_error const &e) {}
-	io::socket s2;
+	io::stream_socket s2;
 	TEST(!s2.has_io_service());
 	try {s2.get_io_service(); TEST(!"Shoud throw"); }
 	catch(sys::system_error const &e) {}
@@ -291,15 +291,15 @@ void test_async_connect()
 	std::cout << "Test async connect" << std::endl;
 	io::io_service srv;
 	reset_glb(srv);
-	io::socket acc(srv);
-	io::socket s1(srv);
-	acc.open(io::pf_inet,io::sock_stream);
-	acc.set_option(io::socket::reuse_address,true);
+	io::acceptor acc(srv);
+	io::stream_socket s1(srv);
+	acc.open(io::pf_inet);
+	acc.set_option(io::stream_socket::reuse_address,true);
 	acc.bind(io::endpoint("127.0.0.1",8080));
 	acc.listen(1);
 	acc.async_accept(s1,async_accept_handler);
-	io::socket s2(srv);
-	s2.open(io::pf_inet,io::sock_stream);
+	io::stream_socket s2(srv);
+	s2.open(io::pf_inet);
 	s2.async_connect(io::endpoint("127.0.0.1",8080),async_connect_handler);
 	srv.run();
 	TEST(calls_no == 6);
@@ -311,15 +311,15 @@ void test_async_connect()
 void test_pair()
 {
 	std::cout << "Testing socket_pair" << std::endl;
-	io::socket s1,s2;
-	io::socket_pair(io::sock_stream,s1,s2);
+	io::stream_socket s1,s2;
+	io::socket_pair(s1,s2);
 	test_connected(s1,s2);
 }
 
 
 struct async_reader {
 	int counter;
-	io::socket *sock;
+	io::stream_socket *sock;
 	std::vector<char> *buf;
 	void run()
 	{
@@ -348,7 +348,7 @@ struct async_reader {
 
 struct async_writer {
 	int counter;
-	io::socket *sock;
+	io::stream_socket *sock;
 	std::vector<char> *buf;
 	void run()
 	{
@@ -368,7 +368,7 @@ struct async_writer {
 		TEST(counter <= 100000);
 		
 		if(counter == 100000) {
-			sock->shutdown(io::socket::shut_rdwr);
+			sock->shutdown(io::stream_socket::shut_rdwr);
 			calls_no*=3;
 			if(calls_no == 6)
 				the_service->stop();
@@ -384,7 +384,7 @@ void test_async_send_recv()
 {
 	std::cout << "Test async send/recv" << std::endl;
 	io::io_service srv;
-	io::socket s1(srv),s2(srv);
+	io::stream_socket s1(srv),s2(srv);
 	reset_glb(srv);
 	make_pair(s1,s2);
 	std::vector<char> in(151,0),out(190,0);
@@ -399,7 +399,7 @@ void test_async_send_recv()
 bool cancel_op = false;
 
 struct canceler {
-	io::socket *s;
+	io::stream_socket *s;
 	void operator()(sys::error_code const &e)
 	{
 		TEST(!e);
@@ -409,11 +409,11 @@ struct canceler {
 };
 
 struct cancel_once {
-	cancel_once(io::socket *s=0,bool b1=false,bool b2=false) : sock(s),write(b1),both(b2)
+	cancel_once(io::stream_socket *s=0,bool b1=false,bool b2=false) : sock(s),write(b1),both(b2)
 	{
 	}
 	
-	io::socket *sock;
+	io::stream_socket *sock;
 	bool write;
 	bool both;
 	void operator()(sys::error_code const &e,size_t n)
@@ -460,7 +460,7 @@ void test_cancel_operations()
 		io::io_service srv;
 		reset_glb(srv);
 		cancel_op = false;
-		io::socket s1(srv),s2(srv);
+		io::stream_socket s1(srv),s2(srv);
 		make_pair(s1,s2);
 
 		cancel_once co(&s1,true ,false);
@@ -479,7 +479,7 @@ void test_cancel_operations()
 		io::io_service srv;
 		reset_glb(srv);
 		cancel_op = false;
-		io::socket s1(srv),s2(srv);
+		io::stream_socket s1(srv),s2(srv);
 		make_pair(s1,s2);
 		io::deadline_timer t(srv);
 		t.expires_from_now(ptime::milliseconds(100));
@@ -497,7 +497,7 @@ void test_cancel_operations()
 		io::io_service srv;
 		reset_glb(srv);
 		cancel_op = false;
-		io::socket s1(srv),s2(srv);
+		io::stream_socket s1(srv),s2(srv);
 		make_pair(s1,s2);
 		s2.write_some(io::buffer(std::string("To be or not to be")));
 		io::deadline_timer t(srv);
@@ -533,7 +533,7 @@ void test_in_out()
 bool thread_failed = false;
 
 struct syn_ioer {
-	io::socket *self;
+	io::stream_socket *self;
 	char *ptr;
 	size_t size;
 	bool reading;
@@ -575,7 +575,7 @@ void after_async_write(sys::error_code const &e,size_t n)
 void test_full_read_write()
 {
 	std::cout << "Testing socket::read, socket::write" << std::endl;
-	io::socket s1,s2;
+	io::stream_socket s1,s2;
 	make_pair(s1,s2);
 	prepare_in_out();
 	syn_ioer reader = {&s1,out,sizeof(out),true };
@@ -593,7 +593,7 @@ void test_full_async_read_write()
 {
 	std::cout << "Testing socket::async_read, socket::aync_write" << std::endl;
 	io::io_service srv;
-	io::socket s1(srv),s2(srv);
+	io::stream_socket s1(srv),s2(srv);
 	reset_glb(srv);
 	make_pair(s1,s2);
 	prepare_in_out();
@@ -611,7 +611,7 @@ void got_erro_handler(sys::error_code const &e,size_t n)
 }
 
 struct socket_closer {
-	io::socket *s_;
+	io::stream_socket *s_;
 	void operator()() const
 	{
 		sys::error_code e;
@@ -639,7 +639,7 @@ void test_close()
 		{
 			std::cout << "-- Cancel invalid/after close" << std::endl;
 			reset_glb(srv);
-			io::socket s1(srv),s2(srv);
+			io::stream_socket s1(srv),s2(srv);
 			make_pair(s1,s2);
 			s1.close();
 			char c;
@@ -651,7 +651,7 @@ void test_close()
 		{
 			std::cout << "-- Cancel close outside poll" << std::endl;
 			reset_glb(srv);
-			io::socket s1(srv),s2(srv);
+			io::stream_socket s1(srv),s2(srv);
 			make_pair(s1,s2);
 			char c;
 			s1.async_read_some(io::buffer(&c,1),got_erro_handler);
@@ -663,7 +663,7 @@ void test_close()
 		{
 			std::cout << "-- Cancel close during poll" << std::endl;
 			reset_glb(srv);
-			io::socket s1(srv),s2(srv);
+			io::stream_socket s1(srv),s2(srv);
 			make_pair(s1,s2);
 			char c;
 			s1.async_read_some(io::buffer(&c,1),got_erro_handler);

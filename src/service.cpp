@@ -230,8 +230,8 @@ void service::setup()
 	impl_->id_=0;
 	int reactor=reactor_type(settings().get("service.reactor","default"));
 	impl_->io_service_.reset(new io::io_service(reactor));
-	impl_->sig_.reset(new io::socket(*impl_->io_service_));
-	impl_->breaker_.reset(new io::socket(*impl_->io_service_));
+	impl_->sig_.reset(new io::stream_socket(*impl_->io_service_));
+	impl_->breaker_.reset(new io::stream_socket(*impl_->io_service_));
 
 	int apps=settings().get("service.applications_pool_size",threads_no()*2);
 	impl_->applications_pool_.reset(new cppcms::applications_pool(*this,apps));
@@ -377,7 +377,7 @@ namespace {
 
 void service::setup_exit_handling()
 {
-	io::socket_pair(io::sock_stream,*impl_->sig_,*impl_->breaker_);
+	io::socket_pair(*impl_->sig_,*impl_->breaker_);
 
 	static char c;
 

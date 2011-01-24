@@ -310,7 +310,10 @@ set(BOOSTER_SRC
 	lib/aio/src/io_service.cpp
 	lib/aio/src/reactor.cpp
 	lib/aio/src/select_iterrupter.cpp
-	lib/aio/src/socket.cpp
+	lib/aio/src/basic_io_device.cpp
+	lib/aio/src/basic_socket.cpp
+	lib/aio/src/acceptor.cpp
+	lib/aio/src/stream_socket.cpp
 	lib/smart_ptr/src/sp_counted_base.cpp
 	lib/smart_ptr/src/atomic_counter.cpp
 	lib/log/src/log.cpp

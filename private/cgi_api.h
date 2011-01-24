@@ -33,7 +33,8 @@
 namespace booster {
 	namespace aio { 
 		class io_service;
-		class socket;
+		class acceptor;
+		class stream_socket;
 	}
 }
 
@@ -61,7 +62,7 @@ namespace cgi {
 	class acceptor : public booster::noncopyable {
 	public:
 		virtual void async_accept() = 0;
-		virtual booster::aio::socket &socket() = 0;
+		virtual booster::aio::acceptor &socket() = 0;
 		#ifndef CPPCMS_WIN32
 		virtual booster::shared_ptr<cppcms::http::context> accept(int fd) = 0;
 		#endif

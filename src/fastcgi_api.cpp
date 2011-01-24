@@ -209,7 +209,7 @@ namespace cgi {
 			else {
 				booster::system::error_code err;
 				size_t res = socket_.write(packet,err);
-				if(err && io::socket::would_block(err)) {
+				if(err && io::basic_socket::would_block(err)) {
 					socket_.set_non_blocking(false);
 					packet+=res;
 					socket_.write(packet,e);
@@ -280,7 +280,7 @@ namespace cgi {
 			// Stop reading from socket
 			if(!keep_alive_) {
 				booster::system::error_code err;
-				socket_.shutdown(io::socket::shut_rdwr,err);
+				socket_.shutdown(io::stream_socket::shut_rdwr,err);
 			}
 
 			h(booster::system::error_code());
@@ -721,7 +721,7 @@ namespace cgi {
 		
 		
 		friend class socket_acceptor<fastcgi>;
-		io::socket socket_;
+		io::stream_socket socket_;
 
 		fcgi_header header_;
 		std::vector<char> body_;

@@ -28,16 +28,16 @@ int main()
 		TEST(ep.family()==io::pf_unix);
 		#endif
 		ep=io::endpoint("127.0.0.1",8080);	
-		io::socket a;
-		a.open(io::pf_inet,io::sock_stream);
-		a.set_option(io::socket::reuse_address,true);
+		io::acceptor a;
+		a.open(io::pf_inet);
+		a.set_option(io::basic_socket::reuse_address,true);
 		a.bind(ep);
 		a.listen(1);
 
-		io::socket s1;
-		s1.open(io::pf_inet,io::sock_stream);
+		io::stream_socket s1;
+		s1.open(io::pf_inet);
 		s1.connect(ep);
-		io::socket s2;
+		io::stream_socket s2;
 		a.accept(s2);
 		io::endpoint rep = s2.remote_endpoint();
 		TEST(rep.family()==io::pf_inet);

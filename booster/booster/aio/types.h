@@ -25,7 +25,6 @@ namespace booster {
 	///
 	namespace aio {
 		class endpoint;
-		class socket;
 		class io_service;
 
 		#ifdef BOOSTER_WIN32

@@ -121,7 +121,11 @@ private:
 
 					if(FD_ISSET(read_interrupter_,&r)) {
 						static char buf[32];
-						::read(read_interrupter_,buf,32);
+						int n = ::read(read_interrupter_,buf,32);
+						if(n < 0 && errno!=EINTR && errno!=EAGAIN) {
+							BOOSTER_CRITICAL("cppcms") << "failed to read interrupter";
+							break;
+						}
 					}
 					for(unsigned i=0;i<acceptors_.size();i++) {
 						int fd = acceptors_[i]->socket().native();

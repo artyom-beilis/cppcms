@@ -145,7 +145,7 @@ namespace cgi {
 		{
 			booster::system::error_code err;
 			size_t res = socket_.write_some(io::buffer(buffer,n),err);
-			if(err && io::socket::would_block(err)) {
+			if(err && io::basic_socket::would_block(err)) {
 				socket_.set_non_blocking(false);
 				return socket_.write_some(io::buffer(buffer,n),e);
 			}
@@ -168,20 +168,20 @@ namespace cgi {
 		virtual void write_eof()
 		{
 			booster::system::error_code e;
-			socket_.shutdown(io::socket::shut_wr,e);
+			socket_.shutdown(io::stream_socket::shut_wr,e);
 			socket_.close(e);
 		}
 		virtual void async_write_eof(handler const &h)
 		{
 			booster::system::error_code e;
-			socket_.shutdown(io::socket::shut_wr,e);
+			socket_.shutdown(io::stream_socket::shut_wr,e);
 			socket_.get_io_service().post(boost::bind(h,booster::system::error_code()));
 		}
 
 		virtual void close()
 		{
 			booster::system::error_code e;
-			socket_.shutdown(io::socket::shut_rd,e);
+			socket_.shutdown(io::stream_socket::shut_rd,e);
 			socket_.close(e);
 		}
 		
@@ -198,7 +198,7 @@ namespace cgi {
 			return booster::static_pointer_cast<scgi>(shared_from_this());
 		}
 		friend class socket_acceptor<scgi>;
-		io::socket socket_;
+		io::stream_socket socket_;
 		std::vector<char> buffer_;
 		std::map<std::string,std::string> env_;
 	};

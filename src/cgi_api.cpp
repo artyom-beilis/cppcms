@@ -61,7 +61,7 @@ namespace cppcms { namespace impl { namespace cgi {
 		{
 			booster::aio::endpoint ep(ip,port);
 			booster::system::error_code e;
-			scgi_.open(ep.family(),booster::aio::sock_stream,e);
+			scgi_.open(ep.family(),e);
 			if(e) {	return;	}
 		}
 		void async_run()
@@ -148,12 +148,12 @@ namespace cppcms { namespace impl { namespace cgi {
 		void cleanup()
 		{
 			booster::system::error_code e;
-			scgi_.shutdown(booster::aio::socket::shut_rdwr,e);
+			scgi_.shutdown(booster::aio::stream_socket::shut_rdwr,e);
 			scgi_.close(e);
 		}
 
 		booster::shared_ptr<connection> conn_;
-		booster::aio::socket scgi_;
+		booster::aio::stream_socket scgi_;
 		booster::aio::endpoint ep_;
 		long long int content_length_;
 		std::string header_;
