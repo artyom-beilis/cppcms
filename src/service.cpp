@@ -757,7 +757,7 @@ void service::start_acceptor(bool after_fork)
 		}
 	}
 	if(settings().find("service.list").type()!=json::is_undefined) {
-		json::array list=settings()["service.list"].array();
+		json::array list=settings()["service"]["list"].array();
 		if(list.empty())
 			throw cppcms_error("At least one service should be provided in service.list");
 		for(unsigned i=0;i<list.size();i++) {
