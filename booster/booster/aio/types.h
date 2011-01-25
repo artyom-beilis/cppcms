@@ -9,7 +9,7 @@
 #define BOOSTER_AIO_TYPES_H
 
 #include <booster/config.h>
-#include <string.h>
+#include <stddef.h>
 
 namespace booster {
 	template<typename F>

@@ -22,6 +22,7 @@
 #include "tcp_cache_protocol.h"
 
 #include <time.h>
+#include <string.h>
 
 namespace cppcms {
 namespace impl {

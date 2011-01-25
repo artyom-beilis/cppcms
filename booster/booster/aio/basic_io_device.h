@@ -9,10 +9,8 @@
 #define BOOSTER_AIO_BASIC_IO_DEVICE_H
 
 #include <booster/aio/types.h>
-#include <booster/callback.h>
 #include <booster/hold_ptr.h>
 #include <booster/noncopyable.h>
-#include <booster/aio/endpoint.h>
 
 namespace booster {
 namespace aio {

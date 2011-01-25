@@ -6,8 +6,8 @@
 //  http://www.boost.org/LICENSE_1_0.txt)
 //
 #define BOOSTER_SOURCE
-#include <booster/aio/socket.h>
 #include "socket_details.h"
+#include <booster/aio/socket.h>
 
 //#define BOOSTER_AIO_FORCE_POLL
 

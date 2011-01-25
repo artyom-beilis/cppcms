@@ -27,7 +27,6 @@
 typedef int socklen_t;
 #endif
 
-#include <booster/aio/basic_io_device.h>
 #include <booster/aio/endpoint.h>
 #include <booster/aio/io_service.h>
 #include <booster/aio/aio_category.h>

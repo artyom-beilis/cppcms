@@ -6,8 +6,8 @@
 //  http://www.boost.org/LICENSE_1_0.txt)
 //
 #define BOOSTER_SOURCE
-#include <booster/aio/socket.h>
 #include "socket_details.h"
+#include <booster/aio/socket.h>
 
 //#define BOOSTER_AIO_FORCE_POLL
 
@@ -548,8 +548,8 @@ void socket_pair(stream_socket &s1,stream_socket &s2)
 {
 #ifdef BOOSTER_AIO_NO_PF_UNIX
 	acceptor a;
-	a.open(pf_inet,t);
-	a.set_option(socket::reuse_address,true);
+	a.open(pf_inet);
+	a.set_option(acceptor::reuse_address,true);
 	a.bind(endpoint("127.0.0.1",0));
 	a.listen(1);
 	s1.open(pf_inet);

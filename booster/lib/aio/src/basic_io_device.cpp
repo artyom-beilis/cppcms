@@ -7,15 +7,11 @@
 //
 #define BOOSTER_SOURCE
 #include <booster/aio/basic_io_device.h>
+
 #include "socket_details.h"
 
-#include <booster/aio/endpoint.h>
 #include <booster/aio/io_service.h>
 #include <booster/aio/aio_category.h>
-#include <booster/aio/buffer.h>
-
-
-#include <iostream>
 
 #include "category.h"
 

@@ -6,8 +6,8 @@
 //  http://www.boost.org/LICENSE_1_0.txt)
 //
 #define BOOSTER_SOURCE
-#include <booster/aio/socket.h>
 #include "socket_details.h"
+#include <booster/aio/socket.h>
 
 //#define BOOSTER_AIO_FORCE_POLL
 
@@ -47,7 +47,7 @@ void basic_socket::open(family_type d,socket_type t,system::error_code &e)
 		system::error_code etmp;
 		close(etmp);
 	}
-	int fd = ::socket(domain,type,0);
+	native_type fd = ::socket(domain,type,0);
 	if(fd == invalid_socket) {
 		e=geterror();
 		return;
