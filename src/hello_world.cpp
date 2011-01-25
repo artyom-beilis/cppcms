@@ -36,6 +36,7 @@
 #include <stdlib.h>
 #include <set>
 #include <cppcms/config.h>
+#include <cppcms/mem_bind.h>
 #ifdef CPPCMS_USE_EXTERNAL_BOOST
 #   include <boost/bind.hpp>
 #else // Internal Boost
@@ -241,6 +242,10 @@ public:
 	}
 };
 
+struct foo {
+	void bar() {}
+} foo_instance;
+
 
 class hello : public cppcms::application {
 public:
@@ -256,6 +261,7 @@ public:
 		dispatcher().assign("^/form$",&hello::form,this);
 		dispatcher().assign("^/cache/?$",&hello::cached,this);
 		dispatcher().assign("^/throw/?$",&hello::throw_it,this);
+		dispatcher().assign("^/foo$",&foo::bar,&foo_instance);
 		dispatcher().assign("^/session/?$",&hello::session_test,this);
 		dispatcher().assign("^/verylong/?$",&hello::verylong,this);
 		dispatcher().assign(".*",&hello::hello_world,this);
@@ -423,6 +429,10 @@ public:
 		response().out()
 			<<"<body></html>\n";
 
+	}
+	void init()
+	{
+		std::cout << "There" << std::endl;
 	}
 	void num(std::string s)
 	{

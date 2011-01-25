@@ -165,6 +165,14 @@ void application::attach(application *app)
 	add(*app);
 }
 
+void application::init()
+{
+}
+
+void application::clean()
+{
+}
+
 void application::main(std::string url)
 {
 	if(!dispatcher().dispatch(url)) {

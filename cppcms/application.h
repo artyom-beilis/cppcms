@@ -263,6 +263,17 @@ namespace cppcms {
 		/// 
 		virtual void main(std::string url);
 
+		///
+		/// This member function called when URL is dispatched to this application, it is 
+		/// useful when member functions of applications are called, by default does nothing
+		///
+		virtual void init();
+
+		///
+		/// This function is used for cleanup unused stuff, it should not throw
+		///
+		virtual void clean();
+
 	private:
 
 		void recycle();

@@ -23,7 +23,8 @@
 #include <cppcms/defs.h>
 #include <booster/function.h>
 #include <booster/hold_ptr.h>
-#include <cppcms/mem_bind.h>
+#include <booster/traits/enable_if.h>
+#include <booster/traits/is_base_of.h>
 #include <string>
 #include <list>
 
@@ -112,49 +113,174 @@ namespace cppcms {
 		/// assignment of \a member function of an \a object with signature void handler()
 		/// as simple as assign(expr,&bar::foo,this);
 		///
+		/// In addition to calling \a member function it calls object->init() before call
+		/// and object->clean() after the call of the C is derived from cppcms::application
+		///
 		template<typename C>
 		void assign(std::string regex,void (C::*member)(),C *object)
 		{
-			assign(regex,util::mem_bind(member,object));
+			assign(regex,binder0<C>(member,object));
 		}
 		///
 		/// This template function is a shortcut to assign(regex,callback,int). It allows
 		/// assignment of \a member function of an \a object with signature void handler(string)
 		///
+		/// In addition to calling \a member function it calls object->init() before call
+		/// and object->clean() after the call of the C is derived from cppcms::application
+		///
 		template<typename C>
 		void assign(std::string regex,void (C::*member)(std::string),C *object,int e1)
 		{
-			assign(regex,util::mem_bind(member,object),e1);
+			assign(regex,binder1<C>(member,object),e1);
 		}
 		///
 		/// This template function is a shortcut to assign(regex,callback,int,int). It allows
 		/// assignment of \a member function of an \a object with signature void handler(string,string)
 		///
+		/// In addition to calling \a member function it calls object->init() before call
+		/// and object->clean() after the call of the C is derived from cppcms::application
+		///
 		template<typename C>
 		void assign(std::string regex,void (C::*member)(std::string,std::string),C *object,int e1,int e2)
 		{
-			assign(regex,util::mem_bind(member,object),e1,e2);
+			assign(regex,binder2<C>(member,object),e1,e2);
 		}
 		template<typename C>
 		///
 		/// This template function is a shortcut to assign(regex,callback,int,int,int). It allows
 		/// assignment of \a member function of an \a object with signature void handler(string,string,string)
 		///
+		/// In addition to calling \a member function it calls object->init() before call
+		/// and object->clean() after the call of the C is derived from cppcms::application
+		///
 		void assign(std::string regex,void (C::*member)(std::string,std::string,std::string),C *object,int e1,int e2,int e3)
 		{
-			assign(regex,util::mem_bind(member,object),e1,e2,e3);
+			assign(regex,binder3<C>(member,object),e1,e2,e3);
 		}
 		///
 		/// This template function is a shortcut to assign(regex,callback,int,int,int,int). It allows
 		/// assignment of \a member function of an \a object with signature void handler(string,string,string,string)
 		///
+		/// In addition to calling \a member function it calls object->init() before call
+		/// and object->clean() after the call of the C is derived from cppcms::application
+		///
 		template<typename C>
 		void assign(std::string regex,void (C::*member)(std::string,std::string,std::string,std::string),C *object,int e1,int e2,int e3,int e4)
 		{
-			assign(regex,util::mem_bind(member,object),e1,e2,e3,e4);
+			assign(regex,binder4<C>(member,object),e1,e2,e3,e4);
 		}
 
 	private:
+
+		template<typename C,typename Enable = void>
+		class page_guard {
+		public:
+			page_guard(C *o) {}
+		};
+
+		template<typename C>
+		class page_guard<C,typename booster::enable_if<booster::is_base_of< cppcms::application,C> >::type > {
+		public:
+			page_guard(C *o) : 
+				object_(o)
+			{
+				object_->init();
+			}
+			~page_guard()
+			{
+				object_->clean();
+			}
+		private:
+			C *object_;
+		};
+
+		template<typename C>						
+		struct binder0{
+			typedef void (C::*member_type)();
+			member_type member;
+			C *object;
+			
+			binder0(member_type m,C *o) :
+				member(m),
+				object(o)
+			{
+			}
+			void operator()() const
+			{
+				page_guard<C> guard(object);
+				(object->*member)();
+			}
+		};
+		
+		template<typename C>						
+		struct binder1{
+			typedef void (C::*member_type)(std::string);
+			member_type member;
+			C *object;
+			
+			binder1(member_type m,C *o) :
+				member(m),
+				object(o)
+			{
+			}
+			void operator()(std::string p1) const
+			{
+				page_guard<C> guard(object);
+				(object->*member)(p1);
+			}
+		};
+
+		template<typename C>						
+		struct binder2{
+			typedef void (C::*member_type)(std::string,std::string);
+			member_type member;
+			C *object;
+			
+			binder2(member_type m,C *o) :
+				member(m),
+				object(o)
+			{
+			}
+			void operator()(std::string p1,std::string p2) const
+			{
+				page_guard<C> guard(object);
+				(object->*member)(p1,p2);
+			}
+		};
+		template<typename C>						
+		struct binder3{
+			typedef void (C::*member_type)(std::string,std::string,std::string);
+			member_type member;
+			C *object;
+			
+			binder3(member_type m,C *o) :
+				member(m),
+				object(o)
+			{
+			}
+			void operator()(std::string p1,std::string p2,std::string p3) const
+			{
+				page_guard<C> guard(object);
+				(object->*member)(p1,p2,p3);
+			}
+		};
+		template<typename C>						
+		struct binder4{
+			typedef void (C::*member_type)(std::string,std::string,std::string,std::string);
+			member_type member;
+			C *object;
+			
+			binder4(member_type m,C *o) :
+				member(m),
+				object(o)
+			{
+			}
+			void operator()(std::string p1,std::string p2,std::string p3,std::string p4) const
+			{
+				page_guard<C> guard(object);
+				(object->*member)(p1,p2,p3,p4);
+			}
+		};
 		
 		friend class application;
 		void mount(std::string match,application &app,int part);
