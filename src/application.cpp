@@ -169,7 +169,7 @@ void application::init()
 {
 }
 
-void application::clean()
+void application::clear()
 {
 }
 

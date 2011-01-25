@@ -188,7 +188,7 @@ namespace cppcms {
 			}
 			~page_guard()
 			{
-				object_->clean();
+				object_->clear();
 			}
 		private:
 			C *object_;

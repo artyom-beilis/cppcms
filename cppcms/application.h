@@ -272,7 +272,7 @@ namespace cppcms {
 		///
 		/// This function is used for cleanup unused stuff, it should not throw
 		///
-		virtual void clean();
+		virtual void clear();
 
 	private:
 
