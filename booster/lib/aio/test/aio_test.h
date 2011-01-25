@@ -23,6 +23,7 @@
 #endif
 #include <iostream>
 #include <sstream>
+#include <string.h>
 
 #include <booster/aio/aio_config.h>
 #include <booster/aio/types.h>
