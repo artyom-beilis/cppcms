@@ -80,7 +80,7 @@ class html_type:
 
 
 class view_block:
-    pattern=r'^<%\s*view\s+(\w+)\s+(uses\s+(:?:?\w+(::\w+)?))?\s+(extends\s+(:?:?\w+(::\w+)?))?\s*%>$'
+    pattern=r'^<%\s*view\s+(\w+)\s+uses\s+(:?:?\w+(::\w+)?)(\s+extends\s+(:?:?\w+(::\w+)?))?\s*%>$'
     type='view'
     topmost = 0
     def declare(self):
@@ -105,12 +105,9 @@ class view_block:
 
     def use(self,m):
         self.class_name=m.group(1)
-        if m.group(2):
-            self.uses=m.group(3)
-        else:
-            self.uses=''
-        if m.group(5):
-            self.extends=m.group(6)
+        self.uses=m.group(2)
+        if m.group(4):
+            self.extends=m.group(5)
         else:
             self.extends=''
         self.declare();
