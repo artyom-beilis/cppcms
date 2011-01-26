@@ -80,7 +80,7 @@ class html_type:
 
 
 class view_block:
-    pattern=r'^<%\s*view\s+(\w+)\s+uses\s+(:?:?\w+(::\w+)?)(\s+extends\s+(:?:?\w+(::\w+)?))?\s*%>$'
+    pattern=r'^<%\s*view\s+(\w+)\s+uses\s+(:?:?\w+(::\w+)*)(\s+extends\s+(:?:?\w+(::\w+)?))?\s*%>$'
     type='view'
     topmost = 0
     def declare(self):
@@ -539,6 +539,18 @@ class gettext_block:
         else:
             output( "out()<<cppcms::locale::format(cppcms::locale::translate(%s)) %% (%s);" % (s , ') % ('.join(params)))
 
+class url_block:
+    pattern=r'^<%\s*url\s*('+str_match+')\s*(using(.*))?\s*%>$'
+    def use(self,m):
+        s=m.group(1)
+        params=[]
+        if m.group(3):
+            params=make_format_params(m.group(4))
+        if not params:
+            output( "out()<<content.url(%s);" % s)
+        else:
+            output( "out()<<content.url(%s, %s);" % (s , ', '.join(params)))
+
 
 class include_block:
     pattern=r'^<%\s*include\s+([a-zA_Z]\w*(::\w+)?)\s*\(\s*(.*)\)\s*%>$';
@@ -648,6 +660,7 @@ def main():
                     skin_block(), view_block(), if_block(), template_block(), end_block(), else_block(), \
                     cpp_include_block(), \
                     gettext_block(),ngettext_block(), \
+                    url_block(), \
                     foreach_block(), item_block(), empty_block(),separator_block(), \
                     include_block(), \
                     html_type(), form_block(), \

@@ -236,6 +236,7 @@ set(CPPCMS_SOURCES
 	src/applications_pool.cpp 
 	src/application.cpp 
 	src/url_dispatcher.cpp 
+	src/url_mapper.cpp 
 	src/http_cookie.cpp  
 	src/http_file.cpp  
 	src/http_content_type.cpp
@@ -467,6 +468,7 @@ set(ALL_TESTS
 	serialization_test
 	status_test
 	xss_test
+	url_mapper_test
 	)
 foreach(TEST ${ALL_TESTS})
 	add_executable(${TEST} tests/${TEST}.cpp)
@@ -544,6 +546,7 @@ add_test(content_type_parser_test content_type_parser_test)
 add_test(cache_backend_test cache_backend_test)
 add_test(serialization_test serialization_test)
 add_test(xss_test xss_test)
+add_test(url_mapper_test url_mapper_test)
 
 add_test(status_test
 	status_test "-c" "${CNF}/status_test.js" 

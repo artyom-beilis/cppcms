@@ -41,6 +41,7 @@ namespace cppcms {
 
 	class service;
 	class url_dispatcher;
+	class url_mapper;
 	class applications_pool;
 	class application;
 	class base_content;
@@ -54,6 +55,9 @@ namespace cppcms {
 	}
 	namespace json {
 		class value;
+	}
+	namespace filters {
+		class streamable;
 	}
 
 
@@ -124,10 +128,21 @@ namespace cppcms {
 
 		///
 		/// Get a dispatched class -- class that responsible on mapping between URLs and a member
-		/// functions of application class. This member function is application specific and not
+		/// functions of application class. 
+		///
+		/// This member function is application specific and not
 		/// Connection specific. 
 		///
 		url_dispatcher &dispatcher();
+
+		///
+		/// Get a url_mapper class -- class that responsible on mapping between real objects and 
+		/// urls displayer on the page.
+		///
+		/// This member function is application specific and not
+		/// Connection specific. 
+		///
+		url_mapper &mapper();
 
 		///
 		/// Get a cache_interface instance. Same as context().cache();
@@ -169,6 +184,25 @@ namespace cppcms {
 		/// You should use context().locale() or service().generator() to create such locales.
 		///
 		void render(std::string skin,std::string template_name,std::ostream &out,base_content &content);
+
+
+		///
+		/// Render a template \a template_name of default skin using this application as content.
+		///
+		/// Side effect requires: output stream for response class, causes all updated session
+		/// data be saved and all headers be written. You can't change headers after calling this function.
+		///
+		void render(std::string template_name);
+		///
+		/// Render a template \a template_name of \a skin skin using this application as content
+		///
+		/// Side effect requires: output stream for response class, causes all updated session
+		/// data be saved and all headers be written. You can't change headers after calling this function.
+		///
+		void render(std::string skin,std::string template_name);
+
+
+
 
 		///
 		/// Register an application \a app as child. Ownership of app is not transfered to parent, however
@@ -274,7 +308,101 @@ namespace cppcms {
 		///
 		virtual void clear();
 
+		///
+		/// Translate a message in current locale for given \a message in \a context
+		///
+		std::string translate(char const *context,char const *message);
+		///
+		/// Translate a message in current locale for given \a message
+		///
+		std::string translate(char const *message);
+		///
+		/// Translate a message in current locale for given \a single and \a plural form for number \a n in \a context.
+		///
+		std::string translate(char const *context,char const *single,char const *plural,int n);
+		///
+		/// Translate a message in current locale for given \a single and \a plural form for number \a n
+		///
+		std::string translate(char const *single,char const *plural,int n);
+
+
+		///
+		/// Map url-key \a key to actual URL, with parameters 
+		///
+		/// Key format is (/|(../)+)?real_key, where real key is the value that is defined
+		/// in the mapper.
+		///
+		/// - If the ket does not start with "/" or "../" then current dispatcher is used
+		/// - If it starts with /  then the actual mapper being used is root()->mapper()
+		/// - If it starts with ../  then the actual mapper being used is parent()->mapper()
+		/// - If it starts with ../../  then the actual mapper being used is parent()->parent()->mapper() and so on
+		///
+		std::string url(std::string const &key);
+
+		///
+		/// Map url-key \a key to actual URL, with parameter p1
+		///
+		/// Key format is (/|(../)+)?real_key, where real key is the value that is defined
+		/// in the mapper.
+		///
+		/// - If the ket does not start with "/" or "../" then current dispatcher is used
+		/// - If it starts with /  then the actual mapper being used is root()->mapper()
+		/// - If it starts with ../  then the actual mapper being used is parent()->mapper()
+		/// - If it starts with ../../  then the actual mapper being used is parent()->parent()->mapper() and so on
+		///
+		std::string url(std::string const &key,
+				filters::streamable const &p1);
+
+		///
+		/// Map url-key \a key to actual URL, with parameters p1, p2 
+		///
+		/// Key format is (/|(../)+)?real_key, where real key is the value that is defined
+		/// in the mapper.
+		///
+		/// - If the ket does not start with "/" or "../" then current dispatcher is used
+		/// - If it starts with /  then the actual mapper being used is root()->mapper()
+		/// - If it starts with ../  then the actual mapper being used is parent()->mapper()
+		/// - If it starts with ../../  then the actual mapper being used is parent()->parent()->mapper() and so on
+		///
+		std::string url(std::string const &key,
+				filters::streamable const &p1,
+				filters::streamable const &p2);
+
+		///
+		/// Map url-key \a key to actual URL, with parameters p1, p2, p3
+		///
+		/// Key format is (/|(../)+)?real_key, where real key is the value that is defined
+		/// in the mapper.
+		///
+		/// - If the ket does not start with "/" or "../" then current dispatcher is used
+		/// - If it starts with /  then the actual mapper being used is root()->mapper()
+		/// - If it starts with ../  then the actual mapper being used is parent()->mapper()
+		/// - If it starts with ../../  then the actual mapper being used is parent()->parent()->mapper() and so on
+		///
+		std::string url(std::string const &key,
+				filters::streamable const &p1,
+				filters::streamable const &p2,
+				filters::streamable const &p3);
+
+		///
+		/// Map url-key \a key to actual URL, with parameters p1, p2, p3, p4
+		///
+		/// Key format is (/|(../)+)?real_key, where real key is the value that is defined
+		/// in the mapper.
+		///
+		/// - If the ket does not start with "/" or "../" then current dispatcher is used
+		/// - If it starts with /  then the actual mapper being used is root()->mapper()
+		/// - If it starts with ../  then the actual mapper being used is parent()->mapper()
+		/// - If it starts with ../../  then the actual mapper being used is parent()->parent()->mapper() and so on
+		///
+		std::string url(std::string const &key,
+				filters::streamable const &p1,
+				filters::streamable const &p2,
+				filters::streamable const &p3,
+				filters::streamable const &p4);
+
 	private:
+		url_mapper &get_mapper_for_key(std::string const &key,std::string &real_key);
 
 		void recycle();
 		void parent(application *parent);

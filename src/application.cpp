@@ -21,14 +21,19 @@
 #include <cppcms/application.h>
 #include <cppcms/http_context.h>
 #include <cppcms/service.h>
+#include <cppcms/filters.h>
 #include <cppcms/cppcms_error.h>
 #include <cppcms/url_dispatcher.h>
+#include <cppcms/url_mapper.h>
 #include <cppcms/applications_pool.h>
 #include <cppcms/http_response.h>
 #include <cppcms/views_pool.h>
 
 #include <set>
 #include <vector>
+#include <sstream>
+
+#include <booster/locale/message.h>
 
 #include <cppcms/config.h>
 #ifdef CPPCMS_USE_EXTERNAL_BOOST
@@ -50,6 +55,7 @@ struct application::_data {
 	booster::shared_ptr<http::context> conn;
 	int pool_id;
 	url_dispatcher url;
+	url_mapper url_map;
 	std::vector<application *> managed_children;
 };
 
@@ -90,6 +96,11 @@ http::response &application::response()
 url_dispatcher &application::dispatcher()
 {
 	return d->url;
+}
+
+url_mapper &application::mapper()
+{
+	return d->url_map;
 }
 
 booster::shared_ptr<http::context> application::get_context()
@@ -196,6 +207,29 @@ void application::render(std::string skin,std::string template_name,base_content
 	service().views_pool().render(skin,template_name,response().out(),content);
 }
 
+void application::render(std::string template_name)
+{
+	base_content *cnt = dynamic_cast<base_content *>(this);
+	if(!cnt) {
+		throw cppcms_error(	"Can't use application::render(std::string) when the application "
+					"is not derived from base_content");
+	}
+	render(template_name,*cnt);
+}
+
+void application::render(std::string skin,std::string template_name)
+{
+	base_content *cnt = dynamic_cast<base_content *>(this);
+	if(!cnt) {
+		throw cppcms_error(	"Can't use application::render(std::string,std::string) when the application "
+					"is not derived from base_content");
+	}
+	render(skin,template_name,*cnt);
+}
+
+
+
+
 void application::render(std::string template_name,std::ostream &out,base_content &content)
 {
 	service().views_pool().render(context().skin(),template_name,out,content);
@@ -221,6 +255,103 @@ void application::recycle()
 {
 	assign_context(booster::shared_ptr<http::context>());
 }
+
+std::string application::translate(char const *ctx,char const *message)
+{
+	return booster::locale::translate(ctx,message).str<char>(context().locale());
+}
+std::string application::translate(char const *message)
+{
+	return booster::locale::translate(message).str<char>(context().locale());
+}
+std::string application::translate(char const *ctx,char const *single,char const *plural,int n)
+{
+	return booster::locale::translate(ctx,single,plural,n).str<char>(context().locale());
+}
+std::string application::translate(char const *single,char const *plural,int n)
+{
+	return booster::locale::translate(single,plural,n).str<char>(context().locale());
+}
+
+
+url_mapper &application::get_mapper_for_key(std::string const &key,std::string &real_key)
+{
+	if(!key.empty() && key[0]=='/') {
+		real_key = key.substr(1);
+		return root()->mapper();
+	}
+	unsigned index = 0;
+	application *app = this;
+	while(key.size() >= index+3 && memcmp(key.c_str()+index,"../",3)==0) {
+		index+=3;
+		app = app->parent();
+	}
+	real_key = key.substr(index);
+	return app->mapper();
+}
+
+
+std::string application::url(std::string const &key)
+{
+	std::ostringstream ss;
+	ss.imbue(context().locale());
+	std::string real_key;
+	url_mapper &mp = get_mapper_for_key(key,real_key);
+	mp.map(ss,real_key);
+	return ss.str();
+}
+
+std::string application::url(	std::string const &key,
+				filters::streamable const &p1)
+{
+	std::ostringstream ss;
+	ss.imbue(context().locale());
+	std::string real_key;
+	url_mapper &mp = get_mapper_for_key(key,real_key);
+	mp.map(ss,real_key,p1);
+	return ss.str();
+}
+
+std::string application::url(	std::string const &key,
+				filters::streamable const &p1,
+				filters::streamable const &p2)
+{
+	std::ostringstream ss;
+	ss.imbue(context().locale());
+	std::string real_key;
+	url_mapper &mp = get_mapper_for_key(key,real_key);
+	mp.map(ss,real_key,p1,p2);
+	return ss.str();
+}
+
+std::string application::url(	std::string const &key,
+				filters::streamable const &p1,
+				filters::streamable const &p2,
+				filters::streamable const &p3)
+{
+	std::ostringstream ss;
+	ss.imbue(context().locale());
+	std::string real_key;
+	url_mapper &mp = get_mapper_for_key(key,real_key);
+	mp.map(ss,real_key,p1,p2,p3);
+	return ss.str();
+}
+
+std::string application::url(	std::string const &key,
+				filters::streamable const &p1,
+				filters::streamable const &p2,
+				filters::streamable const &p3,
+				filters::streamable const &p4)
+{
+	std::ostringstream ss;
+	ss.imbue(context().locale());
+	std::string real_key;
+	url_mapper &mp = get_mapper_for_key(key,real_key);
+	mp.map(ss,real_key,p1,p2,p3,p4);
+	return ss.str();
+}
+
+
 
 
 
