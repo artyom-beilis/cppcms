@@ -1,0 +1,111 @@
+<% skin %>
+
+<% view base_thread uses apps::thread_shared  extends master %>
+
+<% template msg_header(apps::msg &m) %>
+	<% m.author %>, <a href="<% url "/comment" using m.msg_id %>"><% gt "reply" %></a>
+<% end %>
+
+<% template msg_cnt(apps::msg  &m) %>
+<p><% m.content | ext text2html %></p>
+<% end %>
+
+<% template msg(apps::msg &m) %>
+<dt><% include msg_header(m) %></dt>
+<dd><% include msg_cnt(m) %></dd>
+<% end %>
+
+<% template title() %><% gt "Disussion: {1}" using title %><% end template %>
+
+<% template links() %>
+<% include master::links() %>
+	<p>
+		<a href="<% url "/flat_thread" using thread_id %>"><% gt "Flat View"%></a>
+		| <a href="<% url "/tree_thread" using thread_id %>"><% gt "Tree View" %></a>
+	</p>
+<% end %>
+
+<% end view %>
+
+
+<% view flat_thread uses apps::flat_thread  extends base_thread %>
+
+<% template body() %>
+	<% foreach message in messages %>
+		<dl>
+		<% item %><% include msg(message) %><% end %>
+		</dl>
+	<% empty %>
+		<h2><% gt "There are no comments." %></h2>
+	<% end %>
+<% end template %>
+
+<% end view %>
+
+
+<% view tree_thread uses apps::tree_thread  extends base_thread %>
+
+<% template display(apps::tree_t &tree) %>
+	<% foreach message in tree %>
+		<dl>
+		<% item %>
+			<dt><% include msg_header(message.second) %></dt>
+			<dd>
+				<% include msg_cnt(message.second) %>
+				<% include display(message.second.repl) %>
+			</dd>
+		<% end %>
+		</dl>
+	<% end %>
+<% end template %>
+
+<% template body() %>
+	<% if empty messages %>
+		<h2><% gt "There are no comments." %></h2>
+	<% else %>
+		<% include display(messages) %>
+	<% end %>
+<% end template %>
+
+<% end view %>
+
+
+<% view reply uses apps::reply extends master %>
+
+<% template title() %><% gt "Comment to thread: {1}" using title %><% end %>
+
+<% template links() %>
+	<% include master::links() %>
+	<p><a href="<% url "/user_thread" using msg_id %>"><% gt "Back to thread" %></a></p>
+<% end %>
+
+<% template body() %>
+	<% if not empty content %>
+		<dl>
+			<dt><% author %></dt>
+			<dd><% content | ext text2html %></dd>
+		</dl>
+	<% end %>
+	<form action="" method="post" >
+	<table>
+		<% form as_table form.author %>
+		<tr>
+			<th>
+			<% form.comment.message() %>: 
+			<% if form.comment.valid() %>
+				<% form.comment.error_message() %>
+			<% end %>
+			</th>
+			<td>
+			<% form begin form.comment %> rows="24" cols="80" <% form end form.comment %> 
+			</td>
+		</tr>
+		<% form as_table form.send %>
+	</table>
+	</form>
+<% end template %>
+
+<% end view %>
+
+<% end skin %>
+

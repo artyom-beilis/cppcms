@@ -1,0 +1,33 @@
+<% skin %>
+<% view forums uses apps::forums  extends master %>
+<% template body() %>
+	<% foreach topic in topics %>
+		<ul>
+		<% item %>
+		<li><a href="<% url "/user_thread" using topic.id %>"><% topic.title %></a></li>
+		<% end %>
+		</ul>
+	<% empty %>
+		<h2><% gt "No Topics" %></h2>
+	<% end %>
+	<h2><% gt "Create New Disussion" %></h2>
+	<form action="" method="post" >
+	<% form as_p form %>
+	</form>
+<% end template %>
+
+<% template links() %>
+	<% include master::links() %>
+	<p>
+	<% if next %>
+	<a href="<% url "/forums" using next %>"><% gt "Next Page" %></a>
+	<% end %>
+	<% if prev %>
+	<a href="<% url "/formus" using prev  %>"><% gt "Prev Page" %></a>
+	<% end %>
+	</p>
+<% end template %>
+
+
+<% end view %>
+<% end skin %>
