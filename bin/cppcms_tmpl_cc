@@ -412,6 +412,8 @@ class cpp_include_block:
 class base_show:
     mark='('+variable_match+r')\s*(\|(.*))?'
     base_pattern='^\s*'+mark + '$'
+    def __init__(self,default_filter='escape'):
+        self.default_filter=default_filter
     def get_params(self,s):
         pattern='^\s*(('+variable_match+')|('+str_match+')|(\-?\d+(\.\d*)?))\s*(,(.*))?$'
         res=[]
@@ -437,7 +439,7 @@ class base_show:
             return [];
         var=make_ident(m.group(1))
         if not m.group(8):
-            return "cppcms::filters::escape(%s)" % var
+            return "cppcms::filters::%s(%s)" % (self.default_filter, var)
         filters=m.group(8)
         expr='^\s*(ext\s+)?(\w+)\s*(\((([^"\)]|'+str_match + ')*)\))?\s*(\|(.*))?$'
         m=re.match(expr,filters)
@@ -496,13 +498,13 @@ class filters_show_block(base_show):
         if expr!="":
             output('out()<<%s;' % expr)
 
-def make_format_params(s):
+def make_format_params(s,default_filter = 'escape'):
     pattern=r'^(([^,\("]|'+str_match+'|\(([^"\)]|'+str_match+')*\))+)(,(.*))?$'
     params=[]
     m=re.match(pattern,s)
     s_orig=s
     while m.group(1):
-        res=base_show().prepare(m.group(1))
+        res=base_show(default_filter).prepare(m.group(1))
         if res:
             params.append(res)
         if not m.group(6):
@@ -545,7 +547,7 @@ class url_block:
         s=m.group(1)
         params=[]
         if m.group(3):
-            params=make_format_params(m.group(4))
+            params=make_format_params(m.group(4),'urlencode')
         if not params:
             output( "out()<<content.url(%s);" % s)
         else:
