@@ -1,7 +1,8 @@
 {
 	"mb" : {
 		"media" : "/media",
-		"root" : "/mb"
+		"root" : "/mb",
+		"connection_string" : "sqlite3:db=mb.db;@pool_size=10"
 	},
 	"service" : {
 		"api" : "http",

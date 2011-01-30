@@ -17,6 +17,8 @@ public:
 protected:
 	void prepare(data::master &c);
 	cppdb::session sql;
+private:
+	std::string conn_str_;
 };
 
 

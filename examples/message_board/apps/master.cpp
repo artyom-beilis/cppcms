@@ -9,11 +9,12 @@ namespace apps {
 
 master::master(cppcms::service &srv) : cppcms::application(srv)
 {	
+	conn_str_ = settings().get<std::string>("mb.connection_string");
 }
 
 void master::init()
 {
-	sql.open("sqlite3:db=mb.db");
+	sql.open(conn_str_);
 	if(!session().is_set("view") || session()["view"]=="tree") {
 		parent()->mapper().set_value("method","tree");
 	}
