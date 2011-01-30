@@ -20,8 +20,12 @@
 #define CPPCMS_BASE_CONTENT_H
 
 #include <cppcms/defs.h>
+#include <booster/copy_ptr.h>
 
 namespace cppcms {
+
+	class application;
+
 	///
 	/// \brief This is a simple polymorphic class that every content for templates rendering should be derided from it.
 	/// It does not carry much information with exception of RTTI that allows type-safe casting of user provided
@@ -29,7 +33,33 @@ namespace cppcms {
 	///
 	class CPPCMS_API base_content {
 	public:
-		virtual ~base_content() {};
+
+		base_content();
+		base_content(base_content const &);
+		base_content const &operator=(base_content const &);
+		virtual ~base_content();
+
+		///
+		/// Get the application that renders current
+		/// content, throw cppcms_error if the application was not set
+		///
+		application &rendering_application();
+		///
+		/// Set the application that renders current
+		///
+		/// Called automatically by application::render
+		///
+		void rendering_application(application &app);
+
+		///
+		/// Resets the application 
+		///
+		void reset_rendering_application();
+
+	private:
+		struct _data;
+		booster::copy_ptr<_data> d;
+		application *app_;
 	};
 
 }

@@ -184,6 +184,22 @@ void application::clear()
 {
 }
 
+namespace {
+	class rnd_guard {
+	public:
+		rnd_guard(base_content &cnt,application *app) : cnt_(&cnt)
+		{
+			cnt_->rendering_application(*app);
+		}
+		~rnd_guard()
+		{
+			cnt_->reset_rendering_application();
+		}
+	private:
+		base_content *cnt_;
+	};
+}
+
 void application::main(std::string url)
 {
 	if(!dispatcher().dispatch(url)) {
@@ -199,11 +215,13 @@ void application::attach(application *app,std::string regex,int part)
 
 void application::render(std::string template_name,base_content &content)
 {
+	rnd_guard g(content,this);
 	service().views_pool().render(context().skin(),template_name,response().out(),content);
 }
 
 void application::render(std::string skin,std::string template_name,base_content &content)
 {
+	rnd_guard g(content,this);
 	service().views_pool().render(skin,template_name,response().out(),content);
 }
 
@@ -232,11 +250,13 @@ void application::render(std::string skin,std::string template_name)
 
 void application::render(std::string template_name,std::ostream &out,base_content &content)
 {
+	rnd_guard g(content,this);
 	service().views_pool().render(context().skin(),template_name,out,content);
 }
 
 void application::render(std::string skin,std::string template_name,std::ostream &out,base_content &content)
 {
+	rnd_guard g(content,this);
 	service().views_pool().render(skin,template_name,out,content);
 }
 

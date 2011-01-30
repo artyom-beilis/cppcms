@@ -16,12 +16,53 @@
 //  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 ///////////////////////////////////////////////////////////////////////////////
-#ifndef CPPCMS_VIEW_H
-#define CPPCMS_VIEW_H
-#include <cppcms/form.h>
-#include <cppcms/filters.h>
-#include <cppcms/base_view.h>
-#include <cppcms/views_pool.h>
-#include <cppcms/application.h>
-#endif
+#define CPPCMS_SOURCE
+#include <cppcms/base_content.h>
+#include <cppcms/cppcms_error.h>
 
+namespace cppcms {
+
+struct base_content::_data {};
+
+base_content::base_content() : 
+	app_(0)
+{
+}
+
+base_content::base_content(base_content const &other) :
+	d(other.d),
+	app_(other.app_)
+{
+}
+
+base_content::~base_content()
+{
+}
+
+base_content const &base_content::operator=(base_content const &other)
+{
+	d = other.d; 
+	app_ = other.app_;
+	return *this;
+}
+
+void base_content::rendering_application(application &app)
+{
+	app_ = &app;
+}
+
+application &base_content::rendering_application()
+{
+	if(!app_) {
+		throw cppcms_error("Attempt to access to application that wasn't set");
+	}
+	return *app_;
+}
+
+void base_content::reset_rendering_application()
+{
+	app_ = 0;
+}
+
+
+}// cppcms

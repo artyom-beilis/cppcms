@@ -243,6 +243,7 @@ set(CPPCMS_SOURCES
 	src/util.cpp 
 	src/base64.cpp 
 	src/base_view.cpp 
+	src/base_content.cpp 
 	src/views_pool.cpp
 	src/internal_file_server.cpp 
 	src/json.cpp 
