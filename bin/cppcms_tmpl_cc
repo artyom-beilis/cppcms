@@ -50,16 +50,20 @@ class skin_block:
         output( "} // end of namespace %s" % namespace_name)
 
 
-def write_class_loader():
+def write_class_loader(unsafe = False):
     global class_list
     global namespace_name
     output("namespace {")
     output(" struct loader { ")
     output("  loader() { ")
     output("    cppcms::views_pool::mapping_type mapping;" )
+    if  unsafe:
+        builder = 'unsafe_view_builder'
+    else:
+        builder = 'view_builder'
     for class_def in class_list:
-        output( '   mapping["%s"]=&cppcms::views_pool::view_builder<%s::%s,%s>;' \
-                % (class_def.name,class_def.namespace,class_def.name,class_def.content_name))
+        output( '   mapping["%s"]=&cppcms::views_pool::%s<%s::%s,%s>;' \
+                % (class_def.name,builder,class_def.namespace,class_def.name,class_def.content_name))
     output('    cppcms::views_pool::static_instance().add_view("%s",mapping); ' % namespace_name)
     output(' }')
     output(' ~loader() {  cppcms::views_pool::static_instance().remove_view("%s"); }' % namespace_name)
@@ -584,6 +588,7 @@ def help():
         "      -o filename.cpp     file name that implements this template\n" \
         "      -s skin             define skin name\n" \
         "      -d domain           setup gettext domain for this template\n" \
+        "      -u                  use unsafe static casting instead of dynamic casing for dlls\n" \
         "      -h/--help           show this help message\n"
 
 
@@ -596,6 +601,7 @@ def main():
     global namespace_name
     global output_file
     global exit_flag
+    unsafe_build = False
     while indx < len(os.sys.argv):
         if os.sys.argv[indx]=='-s' or os.sys.argv[indx]=='-n':
             if indx+1>=len(os.sys.argv):
@@ -625,7 +631,8 @@ def main():
                 global spec_gettext
                 spec_gettext=os.sys.argv[indx+1]
                 indx+=1
-
+        elif os.sys.argv[indx]=='-u':
+            unsafe_build = True
         elif os.sys.argv[indx]=='--help' or os.sys.argv[indx]=='-h':
             help()
             exit_flag=1
@@ -680,7 +687,7 @@ def main():
             error_exit("Unexpected end of file %s" % file)
     global class_list
     if class_list and exit_flag==0:
-        write_class_loader()
+        write_class_loader(unsafe_build)
 
 #######################
 # MAIN

@@ -45,6 +45,13 @@ namespace cppcms {
 			std::auto_ptr<base_view> p(new View(stream,dynamic_cast<Content &>(*c)));
 			return p;
 		};
+		
+		template<typename View,typename Content>
+		static std::auto_ptr<base_view> unsafe_view_builder(std::ostream &stream,base_content *c) 
+		{
+			std::auto_ptr<base_view> p(new View(stream,static_cast<Content &>(*c)));
+			return p;
+		};
 
 		views_pool();
 		views_pool(json::value const &settings);
