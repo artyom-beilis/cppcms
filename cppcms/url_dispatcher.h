@@ -25,6 +25,7 @@
 #include <booster/hold_ptr.h>
 #include <booster/traits/enable_if.h>
 #include <booster/traits/is_base_of.h>
+#include <cppcms/application.h>
 #include <string>
 #include <list>
 
@@ -191,7 +192,7 @@ namespace cppcms {
 				object_->clear();
 			}
 		private:
-			C *object_;
+			application *object_;
 		};
 
 		template<typename C>						
