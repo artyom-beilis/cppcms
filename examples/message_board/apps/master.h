@@ -1,20 +1,21 @@
-#ifndef MASTER_H
-#define MASTER_H
+#ifndef APPS_MASTER_H
+#define APPS_MASTER_H
 #include <cppcms/application.h>
-#include <cppcms/view.h>
 #include <cppdb/frontend.h>
+
+#include <data/master.h>
 
 namespace apps {
 
-class master: public cppcms::application, public cppcms::base_content {
+class master: public cppcms::application {
 public:
-	std::string media;
 
 	master(cppcms::service &w);
 	virtual void init();
 	virtual void clear();
+
 protected:
-	void prepare();
+	void prepare(data::master &c);
 	cppdb::session sql;
 };
 

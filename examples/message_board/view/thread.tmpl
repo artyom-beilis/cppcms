@@ -1,16 +1,16 @@
 <% skin %>
 
-<% view base_thread uses apps::thread_shared  extends master %>
+<% view base_thread uses data::thread_shared  extends master %>
 
-<% template msg_header(apps::msg &m) %>
+<% template msg_header(data::msg &m) %>
 	<% m.author %>, <a href="<% url "/comment" using m.msg_id %>"><% gt "reply" %></a>
 <% end %>
 
-<% template msg_cnt(apps::msg  &m) %>
+<% template msg_cnt(data::msg  &m) %>
 <p><% m.content | ext text2html %></p>
 <% end %>
 
-<% template msg(apps::msg &m) %>
+<% template msg(data::msg &m) %>
 <dt><% include msg_header(m) %></dt>
 <dd><% include msg_cnt(m) %></dd>
 <% end %>
@@ -28,7 +28,7 @@
 <% end view %>
 
 
-<% view flat_thread uses apps::flat_thread  extends base_thread %>
+<% view flat_thread uses data::flat_thread  extends base_thread %>
 
 <% template body() %>
 	<% foreach message in messages %>
@@ -43,9 +43,9 @@
 <% end view %>
 
 
-<% view tree_thread uses apps::tree_thread  extends base_thread %>
+<% view tree_thread uses data::tree_thread  extends base_thread %>
 
-<% template display(apps::tree_t &tree) %>
+<% template display(data::tree_t &tree) %>
 	<% foreach message in tree %>
 		<dl>
 		<% item %>
@@ -70,7 +70,7 @@
 <% end view %>
 
 
-<% view reply uses apps::reply extends master %>
+<% view reply uses data::reply extends master %>
 
 <% template title() %><% gt "Comment to thread: {1}" using title %><% end %>
 

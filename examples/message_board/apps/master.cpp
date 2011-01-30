@@ -1,7 +1,5 @@
 #include "master.h"
 
-#include "forums.h"
-#include "thread.h"
 #include <cppcms/json.h>
 #include <cppcms/session_interface.h>
 #include <cppcms/url_mapper.h>
@@ -11,7 +9,6 @@ namespace apps {
 
 master::master(cppcms::service &srv) : cppcms::application(srv)
 {	
-	media=settings().get<std::string>("mb.media");
 }
 
 void master::init()
@@ -29,8 +26,9 @@ void master::clear()
 	sql.close();
 }
 
-void master::prepare()
+void master::prepare(data::master &c)
 {
+	c.media=settings().get<std::string>("mb.media");
 }
 
 

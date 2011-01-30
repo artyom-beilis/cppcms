@@ -4,7 +4,7 @@
 #include <cppcms/session_interface.h>
 #include <boost/lexical_cast.hpp>
 
-namespace apps {
+namespace data {
 
 new_topic_form::new_topic_form() 
 {
@@ -19,37 +19,34 @@ new_topic_form::new_topic_form()
 	comment.limits(1,256);
 }
 
+} // data
+
+namespace apps {
+
 forums::forums(cppcms::service &srv) : master(srv)
 {
 }
 
 
-void forums::clear()
-{
-	topics.clear();
-	next = 0;
-	prev = 0;
-	form.clear();	
-	master::clear();
-}
 
 void forums::prepare(std::string page)
 {
 	const unsigned topics_per_page=10;
-	master::prepare();
+	data::forums c;
+	master::prepare(c);
 	if(request().request_method()=="POST") {
-		form.load(context());
-		if(form.validate()) {
+		c.form.load(context());
+		if(c.form.validate()) {
 			cppdb::transaction tr(sql);
 			cppdb::statement st;
 			st= sql	<<"INSERT INTO threads(title) VALUES(?)" 
-				<< form.title.value() << cppdb::exec;
+				<< c.form.title.value() << cppdb::exec;
 			int id=st.last_insert_id();
 			sql<<	"INSERT INTO messages(thread_id,reply_to,content,author) "
 				"VALUES (?,0,?,?)"
-				<< id << form.comment.value() << form.author.value() << cppdb::exec;
+				<< id << c.form.comment.value() << c.form.author.value() << cppdb::exec;
 			tr.commit();
-			session()["author"]=form.author.value();
+			session()["author"]=c.form.author.value();
 			response().set_redirect_header(url("/user_thread",id));
 			return;
 		}
@@ -60,27 +57,27 @@ void forums::prepare(std::string page)
 		"FROM threads "
 		"ORDER BY id DESC "
 		"LIMIT ?,?" << offset*topics_per_page << topics_per_page;
-	topics.reserve(topics_per_page);	
+	c.topics.reserve(topics_per_page);	
 	for(int i=0;r.next();i++) {
-		topics.resize(topics.size()+1);
-		r>>topics[i].id>>topics[i].title;
+		c.topics.resize(c.topics.size()+1);
+		r>>c.topics[i].id>>c.topics[i].title;
 	}
-	if(topics.size()==topics_per_page) {
-		next=offset+1;
+	if(c.topics.size()==topics_per_page) {
+		c.next=offset+1;
 	}
 	else {
-		next = 0;
+		c.next = 0;
 	}
 	if(offset>0) {
-		prev=offset-1;
+		c.prev=offset-1;
 	}
 	else {
-		prev = 0;
+		c.prev = 0;
 	}
 	if(session().is_set("author")) {
-		form.author.value(session()["author"]);
+		c.form.author.value(session()["author"]);
 	}
-	render("forums",*this);
+	render("forums",c);
 }
 
 

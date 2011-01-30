@@ -1,4 +1,4 @@
-#include "mb.h"
+#include <apps/mb.h>
 #include <cppcms/service.h>
 #include <cppcms/applications_pool.h>
 

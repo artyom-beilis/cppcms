@@ -11,12 +11,12 @@
 		"script" : "/mb" 
 	},
 	"views" : {
-		 "paths" : [ "./build" ],
+		 "paths" : [ "./" ],
 		 "skins" : [ "simple" ],
 	},
 	"file_server" : {
 		"enable" : true,
-		"document_root" : "."
+		"document_root" : "../"
 	},
 	"session" : {
 		"expire" : "renew",
@@ -34,7 +34,7 @@
 		},
 		"locales" : [ 
 			"en_US.UTF-8",
-			"he_IL.UTF-8" 
+			"he_IL.UTF-8"
 		]
 	}
 }

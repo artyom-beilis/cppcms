@@ -1,6 +1,6 @@
-#include "mb.h"
-#include "forums.h"
-#include "thread.h"
+#include <apps/mb.h>
+#include <apps/forums.h>
+#include <apps/thread.h>
 #include <cppcms/url_dispatcher.h>
 #include <cppcms/url_mapper.h>
 #include <cppcms/json.h>
