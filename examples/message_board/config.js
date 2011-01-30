@@ -10,6 +10,10 @@
 	"http" : {
 		"script" : "/mb" 
 	},
+	"views" : {
+		 "paths" : [ "./build" ],
+		 "skins" : [ "simple" ],
+	},
 	"file_server" : {
 		"enable" : true,
 		"document_root" : "."

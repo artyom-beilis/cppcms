@@ -4,18 +4,31 @@ TARGET=simple
 NAMESPACE=simple
 
 
-all: .deps $(TARGET).o
+
+#
+# For Cygwin
+#
+# TARGET_NAME = cyg$(TARGET).dll
+#
+# For Windows/GCC
+# TMPL_CC_FLAGS = -u 
+#
+
+TARGET_NAME = lib$(TARGET).so
+TMPL_CC_FLAGS = 
+
+all: .deps $(TARGET_NAME)
 
 .deps:
 	mkdir .deps
 
-$(TARGET).o: $(TARGET).cpp
-	$(CXX) -c -MD -MF .deps/$@.deps $(VIEW_CXXFLAGS) -o $@ $<
+$(TARGET_NAME): $(TARGET).cpp 
+	$(CXX) $(CXXFLAGS) -shared -MD -MF .deps/$@.deps $< -o $@ $(LIBS)
 
 $(TARGET).cpp: $(TEMPLATES)
-	$(CTMPL) -o $@ -d $(GETTEXT_DOMAIN) -s $(NAMESPACE) $(TEMPLATES)
+	$(CTMPL) -o $@ $(TMPL_CC_FLAGS) -d $(GETTEXT_DOMAIN) -s $(NAMESPACE) $(TEMPLATES)
 
 clean:
-	rm -fr *.cpp $(DLL) .deps *.o
+	rm -fr *.cpp $(TARGET_NAME) .deps *.o
 
 -include .deps/$(DLL).deps

@@ -29,7 +29,7 @@ public:
 	int thread_id;
 	std::string title;
 
-	std::string text2html(std::string const &s);
+	virtual std::string text2html(std::string const &s);
 
 	thread_shared(cppcms::service &s);
 	bool prepare(int id);

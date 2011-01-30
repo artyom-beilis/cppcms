@@ -1,6 +1,6 @@
 LDFLAGS=-rdynamic
 SRC=forums.cpp mb.cpp thread.cpp main.cpp master.cpp
-OBJ=$(patsubst %.cpp,%.o,$(SRC)) ../view/simple.o
+OBJ=$(patsubst %.cpp,%.o,$(SRC))
 DEPS=$(patsubst %.o,.deps/%.o.dep,$(OBJ))
 
 TARGET=../mb
