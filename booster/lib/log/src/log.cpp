@@ -95,7 +95,22 @@ namespace log {
 	}
 	char const *message::file_name() const
 	{
-		return file_name_;
+		char const *begin = file_name_;
+		char const *p = begin + strlen(file_name_);
+		for(;;) {
+			switch(*p) {
+			case '/':	// posix directory separator
+			case '\\':	// windows directory separator 
+			case ':':	// windows and vms disk separator
+			case ']':	// vms directory separator
+				return p+1;
+			default:
+				if(p == begin)
+					return p;
+				else
+					p--;
+			}
+		} 
 	}
 	int message::file_line() const
 	{
