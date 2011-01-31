@@ -11,6 +11,7 @@
 #include <string>
 #include <memory>
 #include <booster/cstdint.h>
+#include <booster/thread.h>
 #include <booster/config.h>
 
 #include <unicode/locid.h>
@@ -29,32 +30,9 @@ namespace locale {
 
             static std::locale::id id;
 
-            icu_formatters_cache(icu::Locale const &locale)
+            icu_formatters_cache(icu::Locale const &locale) :
+                locale_(locale)
             {
-                UErrorCode err=U_ZERO_ERROR;
-                number_format_.reset(icu::NumberFormat::createInstance(locale,err));
-                test(err);
-                number_format_scientific_.reset(icu::NumberFormat::createScientificInstance(locale,err));
-                test(err);
-                #if U_ICU_VERSION_MAJOR_NUM*100 + U_ICU_VERSION_MINOR_NUM >= 402
-                number_format_currency_national_.reset(
-                    icu::NumberFormat::createInstance(locale,icu::NumberFormat::kCurrencyStyle,err));
-                test(err);
-                number_format_currency_iso_.reset(
-                    icu::NumberFormat::createInstance(locale,icu::NumberFormat::kIsoCurrencyStyle,err));
-                test(err);
-                #else
-                number_format_currency_national_.reset(icu::NumberFormat::createCurrencyInstance(locale,err));
-                test(err);
-                number_format_currency_iso_.reset(icu::NumberFormat::createCurrencyInstance(locale,err));
-                test(err);
-                #endif
-                number_format_percent_.reset(icu::NumberFormat::createPercentInstance(locale,err));
-                test(err);
-                number_format_spellout_.reset(new icu::RuleBasedNumberFormat(URBNF_SPELLOUT,locale,err));
-                test(err);
-                number_format_ordinal_.reset(new icu::RuleBasedNumberFormat(URBNF_ORDINAL,locale,err));
-                test(err);
 
                 static const icu::DateFormat::EStyle styles[4] = { 
                     icu::DateFormat::kShort,
@@ -63,14 +41,6 @@ namespace locale {
                     icu::DateFormat::kFull
                 };
 
-                std::auto_ptr<icu::DateFormat> fmt(icu::DateFormat::createDateTimeInstance(
-                    icu::DateFormat::kMedium,
-                    icu::DateFormat::kMedium,
-                    locale));
-                
-                if(dynamic_cast<icu::SimpleDateFormat *>(fmt.get())) {
-                    date_formatter_.reset(static_cast<icu::SimpleDateFormat *>(fmt.release()));
-                }
 
                 for(int i=0;i<4;i++) {
                     std::auto_ptr<icu::DateFormat> fmt(icu::DateFormat::createDateInstance(styles[i],locale));
@@ -102,24 +72,97 @@ namespace locale {
 
             }
 
-            void test(UErrorCode err)
+            typedef enum {
+                fmt_number,
+                fmt_sci,
+                fmt_curr_nat,
+                fmt_curr_iso,
+                fmt_per,
+                fmt_spell,
+                fmt_ord,
+                fmt_count
+            } fmt_type;
+
+            icu::NumberFormat *number_format(fmt_type type) const
+            {
+                icu::NumberFormat *ptr = number_format_[type].get();
+                if(ptr)
+                    return ptr;
+                UErrorCode err=U_ZERO_ERROR;
+                std::auto_ptr<icu::NumberFormat> ap;
+
+                switch(type) {
+                case fmt_number:
+                    ap.reset(icu::NumberFormat::createInstance(locale_,err));
+                    break;
+                case fmt_sci:
+                    ap.reset(icu::NumberFormat::createScientificInstance(locale_,err));
+                    break;
+                #if U_ICU_VERSION_MAJOR_NUM*100 + U_ICU_VERSION_MINOR_NUM >= 402
+                case fmt_curr_nat:
+                    ap.reset(icu::NumberFormat::createInstance(locale_,icu::NumberFormat::kCurrencyStyle,err));
+                    break;
+                case fmt_curr_iso:
+                    ap.reset(icu::NumberFormat::createInstance(locale_,icu::NumberFormat::kIsoCurrencyStyle,err));
+                    break;
+                #else
+                case fmt_curr_nat:
+                case fmt_curr_iso:
+                    ap.reset(icu::NumberFormat::createCurrencyInstance(locale_,err));
+                    break;
+                #endif
+                case fmt_per:
+                    ap.reset(icu::NumberFormat::createPercentInstance(locale_,err));
+                    break;
+                case fmt_spell:
+                    ap.reset(new icu::RuleBasedNumberFormat(URBNF_SPELLOUT,locale_,err));
+                    break;
+                case fmt_ord:
+                    ap.reset(new icu::RuleBasedNumberFormat(URBNF_ORDINAL,locale_,err));
+                    break;
+                default:
+                    throw booster::runtime_error("locale::internal error should not get there");
+                }
+
+                test(err);
+                ptr = ap.get();
+                number_format_[type].reset(ap.release());
+                return ptr;
+            }
+
+            void test(UErrorCode err) const
             {
                 if(U_FAILURE(err))
                     throw booster::runtime_error("Failed to create a formatter");
             }
-
-            std::auto_ptr<icu::NumberFormat>    number_format_;
-            std::auto_ptr<icu::NumberFormat>    number_format_scientific_;
-            std::auto_ptr<icu::NumberFormat>    number_format_currency_national_;
-            std::auto_ptr<icu::NumberFormat>    number_format_currency_iso_;
-            std::auto_ptr<icu::NumberFormat>    number_format_percent_;
-            std::auto_ptr<icu::NumberFormat>    number_format_spellout_;
-            std::auto_ptr<icu::NumberFormat>    number_format_ordinal_;
-
-            std::auto_ptr<icu::SimpleDateFormat> date_formatter_;
+            
             icu::UnicodeString date_format_[4];
             icu::UnicodeString time_format_[4];
             icu::UnicodeString date_time_format_[4][4];
+
+            icu::SimpleDateFormat *date_formatter() const
+            {
+                icu::SimpleDateFormat *p=date_formatter_.get();
+                if(p)
+                    return p;
+
+                std::auto_ptr<icu::DateFormat> fmt(icu::DateFormat::createDateTimeInstance(
+                    icu::DateFormat::kMedium,
+                    icu::DateFormat::kMedium,
+                    locale_));
+                
+                if(dynamic_cast<icu::SimpleDateFormat *>(fmt.get())) {
+                    p = static_cast<icu::SimpleDateFormat *>(fmt.release());
+                    date_formatter_.reset(p);
+                }
+                return p;
+            }
+        
+        private:
+
+            mutable booster::thread_specific_ptr<icu::NumberFormat>    number_format_[fmt_count];
+            mutable booster::thread_specific_ptr<icu::SimpleDateFormat> date_formatter_;
+            icu::Locale locale_;
         };
 
 

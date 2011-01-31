@@ -74,7 +74,7 @@ std::locale create_collate( std::locale const &in,
     switch(type) {
     case char_facet:
         {
-            if(utf == utf8_native_with_wide || utf == utf8_from_wide) {
+            if(utf == utf8_from_wide) {
                 std::locale base=
                     std::locale(std::locale::classic(),
                                 new std::collate_byname<wchar_t>(locale_name.c_str()));

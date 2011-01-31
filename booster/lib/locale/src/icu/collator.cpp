@@ -8,6 +8,7 @@
 #define BOOSTER_SOURCE
 #include <booster/locale/collator.h>
 #include <booster/locale/generator.h>
+#include <booster/thread.h>
 #include <vector>
 #include <limits>
 
@@ -39,37 +40,34 @@ namespace booster {
                 }
 
                 #if U_ICU_VERSION_MAJOR_NUM*100 + U_ICU_VERSION_MINOR_NUM >= 402
-                int do_utf8_compare(    std::auto_ptr<icu::Collator> collate,
-                                        level_type level,
+                int do_utf8_compare(    level_type level,
                                         char const *b1,char const *e1,
                                         char const *b2,char const *e2,
                                         UErrorCode &status) const
                 {
                     icu::StringPiece left (b1,e1-b1);
                     icu::StringPiece right(b2,e2-b2);
-                    return collate->compareUTF8(left,right,status);
+                    return get_collator(level)->compareUTF8(left,right,status);
 
                 }
                 #endif
         
-                int do_ustring_compare( std::auto_ptr<icu::Collator> collate,
-                                        level_type level,
+                int do_ustring_compare( level_type level,
                                         CharType const *b1,CharType const *e1,
                                         CharType const *b2,CharType const *e2,
                                         UErrorCode &status) const
                 {
                     icu::UnicodeString left=cvt_.icu(b1,e1);
                     icu::UnicodeString right=cvt_.icu(b2,e2);
-                    return collate->compare(left,right,status);
+                    return get_collator(level)->compare(left,right,status);
                 }
                 
-                int do_real_compare(std::auto_ptr<icu::Collator> collate,
-                                    level_type level,
+                int do_real_compare(level_type level,
                                     CharType const *b1,CharType const *e1,
                                     CharType const *b2,CharType const *e2,
                                     UErrorCode &status) const
                 {
-                    return do_ustring_compare(collate,level,b1,e1,b2,e2,status);
+                    return do_ustring_compare(level,b1,e1,b2,e2,status);
                 }
 
                 virtual int do_compare( level_type level,
@@ -78,9 +76,7 @@ namespace booster {
                 {
                     UErrorCode status=U_ZERO_ERROR;
                     
-                    std::auto_ptr<icu::Collator> collate(collates_[limit(level)]->safeClone());
-            
-                    int res = do_real_compare(collate,level,b1,e1,b2,e2,status);
+                    int res = do_real_compare(level,b1,e1,b2,e2,status);
                     
                     if(U_FAILURE(status))
                             throw booster::runtime_error(std::string("Collation failed:") + u_errorName(status));
@@ -96,7 +92,7 @@ namespace booster {
                     icu::UnicodeString str=cvt_.icu(b,e);
                     std::vector<uint8_t> tmp;
                     tmp.resize(str.length());
-                    std::auto_ptr<icu::Collator> collate(collates_[limit(level)]->safeClone());
+                    icu::Collator *collate = get_collator(level);
                     int len = collate->getSortKey(str,&tmp[0],tmp.size());
                     if(len > int(tmp.size())) {
                         tmp.resize(len);
@@ -119,9 +115,16 @@ namespace booster {
                     return gnu_gettext::pj_winberger_hash_function(reinterpret_cast<char *>(&tmp.front()));
                 }
 
-                collate_impl(cdata const &d) : cvt_(d.encoding),is_utf8_(d.utf8)
+                collate_impl(cdata const &d) : 
+                    cvt_(d.encoding),
+                    locale_(d.locale),
+                    is_utf8_(d.utf8)
                 {
                 
+                }
+                icu::Collator *get_collator(level_type ilevel) const
+                {
+                    int l = limit(ilevel);
                     static const icu::Collator::ECollationStrength levels[level_count] = 
                     { 
                         icu::Collator::PRIMARY,
@@ -131,23 +134,26 @@ namespace booster {
                         icu::Collator::IDENTICAL
                     };
                     
-                    for(int i=0;i<level_count;i++) {
+                    icu::Collator *col = collates_[l].get();
+                    if(col)
+                        return col;
 
-                        UErrorCode status=U_ZERO_ERROR;
+                    UErrorCode status=U_ZERO_ERROR;
 
-                        collates_[i].reset(icu::Collator::createInstance(d.locale,status));
+                    collates_[l].reset(icu::Collator::createInstance(locale_,status));
 
-                        if(U_FAILURE(status))
-                            throw booster::runtime_error(std::string("Creation of collate failed:") + u_errorName(status));
+                    if(U_FAILURE(status))
+                        throw booster::runtime_error(std::string("Creation of collate failed:") + u_errorName(status));
 
-                        collates_[i]->setStrength(levels[i]);
-                    }
+                    collates_[l]->setStrength(levels[l]);
+                    return collates_[l].get();
                 }
 
             private:
                 static const int level_count = 5;
                 icu_std_converter<CharType>  cvt_;
-                std::auto_ptr<icu::Collator> collates_[level_count];
+                icu::Locale locale_;
+                mutable booster::thread_specific_ptr<icu::Collator> collates_[level_count];
                 bool is_utf8_;
             };
 
@@ -155,16 +161,15 @@ namespace booster {
             #if U_ICU_VERSION_MAJOR_NUM*100 + U_ICU_VERSION_MINOR_NUM >= 402
             template<>
             int collate_impl<char>::do_real_compare(    
-                                    std::auto_ptr<icu::Collator> collate,
                                     level_type level,
                                     char const *b1,char const *e1,
                                     char const *b2,char const *e2,
                                     UErrorCode &status) const
             {
                 if(is_utf8_)
-                    return do_utf8_compare(collate,level,b1,e1,b2,e2,status);
+                    return do_utf8_compare(level,b1,e1,b2,e2,status);
                 else
-                    return do_ustring_compare(collate,level,b1,e1,b2,e2,status);
+                    return do_ustring_compare(level,b1,e1,b2,e2,status);
             }
             #endif
         
