@@ -13,6 +13,8 @@ namespace apps {
 		
 		forums(cppcms::service &s);
 		void prepare(std::string page);
+	private:
+		void prepare_content(data::forums &c,std::string const &page);
 	};
 
 }

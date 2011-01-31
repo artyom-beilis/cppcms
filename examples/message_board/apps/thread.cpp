@@ -3,6 +3,7 @@
 #include <cppcms/url_dispatcher.h>
 #include <cppcms/url_mapper.h>
 #include <cppcms/session_interface.h>
+#include <cppcms/cache_interface.h>
 
 
 
@@ -73,6 +74,13 @@ flat_thread::flat_thread(cppcms::service &s) : thread_shared(s)
 
 void flat_thread::prepare(std::string sid)
 {
+	std::string key = "flat_thread_" + sid;
+	
+	if(cache().fetch_page(key))
+		return;
+
+	cache().add_trigger("thread_" + sid);
+	
 	data::flat_thread c;
 	int id = atoi(sid.c_str());
 	if(!thread_shared::prepare(c,id))
@@ -89,6 +97,8 @@ void flat_thread::prepare(std::string sid)
 	}
 	session()["view"]="flat";
 	render("flat_thread",c);
+
+	cache().store_page(key);
 }
 
 typedef std::map<int,std::map<int,data::msg> > msg_ord_t;
@@ -121,6 +131,13 @@ tree_thread::tree_thread(cppcms::service &s) : thread_shared(s)
 
 void tree_thread::prepare(std::string sid)
 {
+	std::string key = "tree_thread_" + sid;
+	
+	if(cache().fetch_page(key))
+		return;
+
+	cache().add_trigger("thread_" + sid);
+
 	int id = atoi(sid.c_str());
 	data::tree_thread c;
 	if(!thread_shared::prepare(c,id))
@@ -143,6 +160,8 @@ void tree_thread::prepare(std::string sid)
 
 	session()["view"]="tree";
 	render("tree_thread",c);
+
+	cache().store_page(key);
 }
 
 reply::reply(cppcms::service &srv) : thread_shared(srv)
@@ -166,25 +185,23 @@ void reply::prepare(std::string smid)
 				response().make_error_response(404);
 				return;
 			}
-			int tid;
-			r>>tid;
+			int tid = r.get<int>(0);
+			// we want this as string for trigger
+			std::string stid = r.get<std::string>(0);
 			r.clear();
 			sql<<	"INSERT INTO messages(reply_to,thread_id,author,content) "
 				"VALUES(?,?,?,?) " 
 				<< mid << tid << c.form.author.value() << c.form.comment.value() 
 				<< cppdb::exec;
-			tr.commit();
 
-			session()["author"]=c.form.author.value();
+			cache().rise("thread_" + stid);
+			tr.commit();
 
 			response().set_redirect_header(url("/user_thread",tid));
 			return;
 		}
 	}
 
-	if(session().is_set("author")) {
-		c.form.author.value(session()["author"]);
-	}
 	cppdb::result r;
 	r=sql<<	"SELECT threads.id,author,content,title "
 		"FROM messages "
@@ -198,6 +215,8 @@ void reply::prepare(std::string smid)
 	int tid;
 
 	r>>tid>>c.author>>c.content>>c.title;
+	c.thread_id = tid;
+	c.msg_id = mid;
 	
 	if(!thread_shared::prepare(c,tid))
 		return;

@@ -1,8 +1,10 @@
 {
+	
 	"mb" : {
 		"media" : "/media",
 		"root" : "/mb",
-		"connection_string" : "sqlite3:db=mb.db;@pool_size=10"
+		//"connection_string" : "sqlite3:db=mb.db;@pool_size=10"
+		"connection_string" : "mysql:database=test;user=root;password=root;@pool_size=10"
 	},
 	"service" : {
 		"api" : "http",
@@ -27,6 +29,10 @@
 			"hmac" : "sha1",
 			"hmac_key" : "232074faa0fd37de20858bf8cd0a7d04"
 		}
+	},
+	"cache" : {
+		"backend" : "thread_shared",
+		"limit" : 100,
 	},
 	"localization" : {
 		"messages" : {

@@ -10,6 +10,7 @@ namespace apps {
 master::master(cppcms::service &srv) : cppcms::application(srv)
 {	
 	conn_str_ = settings().get<std::string>("mb.connection_string");
+	media_=settings().get<std::string>("mb.media");
 }
 
 void master::init()
@@ -29,7 +30,7 @@ void master::clear()
 
 void master::prepare(data::master &c)
 {
-	c.media=settings().get<std::string>("mb.media");
+	c.media=media_;
 }
 
 

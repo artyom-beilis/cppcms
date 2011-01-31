@@ -19,6 +19,7 @@ struct msg {
 	std::string author;
 	std::string content;
 	int msg_id;
+	msg() : msg_id(0) {}
 };
 
 

@@ -19,6 +19,7 @@ protected:
 	cppdb::session sql;
 private:
 	std::string conn_str_;
+	std::string media_;
 };
 
 
