@@ -3,8 +3,8 @@
 	"mb" : {
 		"media" : "/media",
 		"root" : "/mb",
-		//"connection_string" : "sqlite3:db=mb.db;@pool_size=10"
-		"connection_string" : "mysql:database=test;user=root;password=root;@pool_size=10"
+		"connection_string" : "sqlite3:db=mb.db;@pool_size=10"
+		//"connection_string" : "mysql:database=test;user=root;password=root;@pool_size=10"
 	},
 	"service" : {
 		"api" : "http",
