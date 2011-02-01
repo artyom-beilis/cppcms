@@ -147,34 +147,34 @@ namespace cppcms {
 		return false;
 	}
 
-	void url_dispatcher::mount(std::string match,application &app,int select)
+	void url_dispatcher::mount(std::string const &match,application &app,int select)
 	{
 		d->options.push_back(booster::shared_ptr<option>(new mounted(match,select,&app)));
 	}
 
 
 
-	void url_dispatcher::assign(std::string expr,handler h)
+	void url_dispatcher::assign(std::string const &expr,handler h)
 	{
 		d->options.push_back(make_handler(expr,h));
 	}
 
-	void url_dispatcher::assign(std::string expr,handler1 h,int p1)
+	void url_dispatcher::assign(std::string const &expr,handler1 h,int p1)
 	{
 		d->options.push_back(make_handler(expr,h,p1));
 	}
 
-	void url_dispatcher::assign(std::string expr,handler2 h,int p1,int p2)
+	void url_dispatcher::assign(std::string const &expr,handler2 h,int p1,int p2)
 	{
 		d->options.push_back(make_handler(expr,h,p1,p2));
 	}
 
-	void url_dispatcher::assign(std::string expr,handler3 h,int p1,int p2,int p3)
+	void url_dispatcher::assign(std::string const &expr,handler3 h,int p1,int p2,int p3)
 	{
 		d->options.push_back(make_handler(expr,h,p1,p2,p3));
 	}
 
-	void url_dispatcher::assign(std::string expr,handler4 h,int p1,int p2,int p3,int p4)
+	void url_dispatcher::assign(std::string const &expr,handler4 h,int p1,int p2,int p3,int p4)
 	{
 		d->options.push_back(make_handler(expr,h,p1,p2,p3,p4));
 	}

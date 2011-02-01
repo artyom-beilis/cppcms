@@ -402,7 +402,6 @@ namespace cppcms {
 				filters::streamable const &p4);
 
 	private:
-		url_mapper &get_mapper_for_key(std::string const &key,std::string &real_key);
 
 		void recycle();
 		void parent(application *parent);

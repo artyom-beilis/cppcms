@@ -28,13 +28,17 @@
 
 
 namespace cppcms {
+	class application;
+
 	///
 	/// \brief class for mapping URLs - oposite of dispatch
 	///
 	class CPPCMS_API url_mapper : public booster::noncopyable {
 	public:
-		url_mapper();
+		/// \cond INTERNAL
+		url_mapper(application *app);
 		~url_mapper();
+		/// \endcond
 		
 		std::string root();
 		void root(std::string const &r);
@@ -68,8 +72,37 @@ namespace cppcms {
 				filters::streamable const &p2,
 				filters::streamable const &p3,
 				filters::streamable const &p4);
+
+		///
+		/// Mount sub application \a app using name \a name to a \url.
+		///
+		/// The URL format as in assign but it requires a single parameter {1}
+		/// which would be substituted with the mapping of the URL of subapplication
+		/// instead of using "root" patch
+		///
+		void mount(std::string const &name,std::string const &url,application &app);
+		///
+		/// Get a mapper of mounted application by its name
+		///
+		url_mapper &child(std::string const &name);
+
+		///
+		/// Get a parent mapper, if not exists throws
+		///
+		url_mapper &parent();
+		///
+		/// Get a topmost mapper
+		///
+		url_mapper &topmost();
+
 	private:
-		std::string real_map(std::string const &key,std::vector<std::string> const &params);
+		void real_assign(std::string const &key,std::string const &url,application *child = 0);
+		url_mapper &get_mapper_for_key(std::string const &key,std::string &real_key);
+		url_mapper *root_mapper();
+		void real_map(	std::string const key,
+				filters::streamable const *const *params,
+				size_t params_no,
+				std::ostream &output);
 
 		struct data;
 		booster::hold_ptr<data> d;

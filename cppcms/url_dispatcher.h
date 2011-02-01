@@ -66,7 +66,7 @@ namespace cppcms {
 		/// Assign \a handler to pattern \a regex thus if URL that matches
 		/// this pattern requested, \a handler is called
 		///
-		void assign(std::string regex,handler handler);
+		void assign(std::string const &regex,handler handler);
 		///
 		/// Assign \a handler to pattern \a regex thus if URL that matches
 		/// this pattern requested, \a handler is called with first parameters
@@ -77,25 +77,25 @@ namespace cppcms {
 		/// "/page/13/to_be_or_not", then handler would be called with "to_be_or_not"
 		/// as its first parameter
 		///
-		void assign(std::string regex,handler1 handler,int exp1);
+		void assign(std::string const &regex,handler1 handler,int exp1);
 		///
 		/// Assign \a handler to pattern \a regex thus if URL that matches
 		/// this pattern requested, \a handler is called with 1st and 2nd  parameters
 		/// the string that was matched at position \a exp1 and \a exp2
 		///
-		void assign(std::string regex,handler2 handler,int exp1,int exp2);
+		void assign(std::string const &regex,handler2 handler,int exp1,int exp2);
 		///
 		/// Assign \a handler to pattern \a regex thus if URL that matches
 		/// this pattern requested, \a handler is called with 1st, 2nd and 3rd parameters
 		/// the string that was matched at position \a exp1, \a exp2 and \a exp2
 		///
-		void assign(std::string regex,handler3 handler,int exp1,int exp2,int exp3);
+		void assign(std::string const &regex,handler3 handler,int exp1,int exp2,int exp3);
 		///
 		/// Assign \a handler to pattern \a regex thus if URL that matches
 		/// this pattern requested, \a handler is called with 1st, 2nd, 3rd and 4th parameters
 		/// the string that was matched at position \a exp1, \a exp2, \a exp3 and \a exp4
 		///
-		void assign(std::string regex,handler4 handler,int exp1,int exp2,int exp3,int exp4);
+		void assign(std::string const &regex,handler4 handler,int exp1,int exp2,int exp3,int exp4);
 
 		///
 		/// Try to find match between \a url and registered handlers and applications.
@@ -118,7 +118,7 @@ namespace cppcms {
 		/// and object->clean() after the call of the C is derived from cppcms::application
 		///
 		template<typename C>
-		void assign(std::string regex,void (C::*member)(),C *object)
+		void assign(std::string const &regex,void (C::*member)(),C *object)
 		{
 			assign(regex,binder0<C>(member,object));
 		}
@@ -130,7 +130,7 @@ namespace cppcms {
 		/// and object->clean() after the call of the C is derived from cppcms::application
 		///
 		template<typename C>
-		void assign(std::string regex,void (C::*member)(std::string),C *object,int e1)
+		void assign(std::string const &regex,void (C::*member)(std::string),C *object,int e1)
 		{
 			assign(regex,binder1<C>(member,object),e1);
 		}
@@ -142,7 +142,7 @@ namespace cppcms {
 		/// and object->clean() after the call of the C is derived from cppcms::application
 		///
 		template<typename C>
-		void assign(std::string regex,void (C::*member)(std::string,std::string),C *object,int e1,int e2)
+		void assign(std::string const &regex,void (C::*member)(std::string,std::string),C *object,int e1,int e2)
 		{
 			assign(regex,binder2<C>(member,object),e1,e2);
 		}
@@ -154,7 +154,7 @@ namespace cppcms {
 		/// In addition to calling \a member function it calls object->init() before call
 		/// and object->clean() after the call of the C is derived from cppcms::application
 		///
-		void assign(std::string regex,void (C::*member)(std::string,std::string,std::string),C *object,int e1,int e2,int e3)
+		void assign(std::string const &regex,void (C::*member)(std::string,std::string,std::string),C *object,int e1,int e2,int e3)
 		{
 			assign(regex,binder3<C>(member,object),e1,e2,e3);
 		}
@@ -166,10 +166,24 @@ namespace cppcms {
 		/// and object->clean() after the call of the C is derived from cppcms::application
 		///
 		template<typename C>
-		void assign(std::string regex,void (C::*member)(std::string,std::string,std::string,std::string),C *object,int e1,int e2,int e3,int e4)
+		void assign(std::string const &regex,void (C::*member)(std::string,std::string,std::string,std::string),C *object,int e1,int e2,int e3,int e4)
 		{
 			assign(regex,binder4<C>(member,object),e1,e2,e3,e4);
 		}
+
+		/// 
+		/// Mount a sub application \a app to the URL dispatcher, using regular expression match.
+		///
+		/// When mounted the URL is checked against match expression and then calls app.main(substr) where
+		/// substr is the matched subexpression part. For example:
+		///
+		/// \code
+		///  dispatcher().mount("/formums((/.*)?)",forums,1);
+		/// \endcode
+		///
+		/// For example: for url /forums/page/3 it would call \c forums::main with value "/page/3"
+		///
+		void mount(std::string const &match,application &app,int part);
 
 	private:
 
@@ -283,8 +297,6 @@ namespace cppcms {
 			}
 		};
 		
-		friend class application;
-		void mount(std::string match,application &app,int part);
 
 		struct _data;
 		booster::hold_ptr<_data> d;

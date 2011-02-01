@@ -46,9 +46,10 @@
 namespace cppcms {
 
 struct application::_data {
-	_data(cppcms::service *s):
+	_data(cppcms::service *s,application *app):
 		service(s),
-		pool_id(-1)
+		pool_id(-1),
+		url_map(app)
 	{
 	}
 	cppcms::service *service;
@@ -60,7 +61,7 @@ struct application::_data {
 };
 
 application::application(cppcms::service &srv) :
-	d(new _data(&srv)),
+	d(new _data(&srv,this)),
 	refs_(0)
 {
 	parent_=root_=this;
@@ -293,31 +294,11 @@ std::string application::translate(char const *single,char const *plural,int n)
 	return booster::locale::translate(single,plural,n).str<char>(context().locale());
 }
 
-
-url_mapper &application::get_mapper_for_key(std::string const &key,std::string &real_key)
-{
-	if(!key.empty() && key[0]=='/') {
-		real_key = key.substr(1);
-		return root()->mapper();
-	}
-	unsigned index = 0;
-	application *app = this;
-	while(key.size() >= index+3 && memcmp(key.c_str()+index,"../",3)==0) {
-		index+=3;
-		app = app->parent();
-	}
-	real_key = key.substr(index);
-	return app->mapper();
-}
-
-
 std::string application::url(std::string const &key)
 {
 	std::ostringstream ss;
 	ss.imbue(context().locale());
-	std::string real_key;
-	url_mapper &mp = get_mapper_for_key(key,real_key);
-	mp.map(ss,real_key);
+	mapper().map(ss,key);
 	return ss.str();
 }
 
@@ -326,9 +307,7 @@ std::string application::url(	std::string const &key,
 {
 	std::ostringstream ss;
 	ss.imbue(context().locale());
-	std::string real_key;
-	url_mapper &mp = get_mapper_for_key(key,real_key);
-	mp.map(ss,real_key,p1);
+	mapper().map(ss,key,p1);
 	return ss.str();
 }
 
@@ -338,9 +317,7 @@ std::string application::url(	std::string const &key,
 {
 	std::ostringstream ss;
 	ss.imbue(context().locale());
-	std::string real_key;
-	url_mapper &mp = get_mapper_for_key(key,real_key);
-	mp.map(ss,real_key,p1,p2);
+	mapper().map(ss,key,p1,p2);
 	return ss.str();
 }
 
@@ -351,9 +328,7 @@ std::string application::url(	std::string const &key,
 {
 	std::ostringstream ss;
 	ss.imbue(context().locale());
-	std::string real_key;
-	url_mapper &mp = get_mapper_for_key(key,real_key);
-	mp.map(ss,real_key,p1,p2,p3);
+	mapper().map(ss,key,p1,p2,p3);
 	return ss.str();
 }
 
@@ -365,9 +340,7 @@ std::string application::url(	std::string const &key,
 {
 	std::ostringstream ss;
 	ss.imbue(context().locale());
-	std::string real_key;
-	url_mapper &mp = get_mapper_for_key(key,real_key);
-	mp.map(ss,real_key,p1,p2,p3,p4);
+	mapper().map(ss,key,p1,p2,p3,p4);
 	return ss.str();
 }
 
