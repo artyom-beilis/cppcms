@@ -125,7 +125,8 @@ void basic_test()
 struct test1 : public cppcms::application {
 	test1(cppcms::service &s) : cppcms::application(s)
 	{
-		mapper().assign("default","/");
+		mapper().assign("/default");
+		mapper().assign("somepath","/");
 		mapper().assign("page","/{1}");
 		mapper().assign("preview","/{1}/preview");
 		mapper().assign("bylang","/{lang}");
@@ -138,7 +139,7 @@ struct test2 : public cppcms::application {
 		cppcms::application(s),
 		bee(s)
 	{
-		mapper().assign("default","/");
+		mapper().assign("somepath","/");
 		mapper().assign("page","/{1}");
 		mapper().assign("preview","/{1}/preview");
 		mapper().mount("bee","/bee{1}",bee);
@@ -161,7 +162,7 @@ struct test_app : public cppcms::application {
 		mapper().mount("foo","/foo{1}",foo);
 		mapper().mount("bar","/bar{1}",bar);
 		mapper().mount("foobar","/foobar{1}",bee);
-		mapper().assign("default","/test");
+		mapper().assign("somepath","/test");
 		mapper().root("xx");
 
 		bee.bee.mapper().set_value("lang","en");
@@ -169,31 +170,32 @@ struct test_app : public cppcms::application {
 	void test_hierarchy()
 	{
 		std::ostringstream ss;
-		mapper().map(ss,"default");
+		mapper().map(ss,"somepath");
 		TEST(value(ss) == "xx/test");
 
-		foo.mapper().map(ss,"default");
+		foo.mapper().map(ss,"somepath");
 		TEST(value(ss) == "xx/foo/");
 		foo.mapper().map(ss,"page",1);
 		TEST(value(ss) == "xx/foo/1");
 		foo.mapper().map(ss,"preview",1);
 		TEST(value(ss) == "xx/foo/1/preview");
 
-		bar.mapper().map(ss,"default");
+		bar.mapper().map(ss,"somepath");
 		TEST(value(ss) == "xx/bar/");
 		bar.mapper().map(ss,"page",1);
 		TEST(value(ss) == "xx/bar/1");
 		bar.mapper().map(ss,"preview",1);
 		TEST(value(ss) == "xx/bar/1/preview");
 
-		bee.mapper().map(ss,"default");
+
+		bee.mapper().map(ss,"somepath");
 		TEST(value(ss) == "xx/foobar/");
 		bee.mapper().map(ss,"page",1);
 		TEST(value(ss) == "xx/foobar/1");
 		bee.mapper().map(ss,"preview",1);
 		TEST(value(ss) == "xx/foobar/1/preview");
 
-		bee.bee.mapper().map(ss,"default");
+		bee.bee.mapper().map(ss,"somepath");
 		TEST(value(ss) == "xx/foobar/bee/");
 		bee.bee.mapper().map(ss,"page",1);
 		TEST(value(ss) == "xx/foobar/bee/1");
@@ -212,31 +214,36 @@ struct test_app : public cppcms::application {
 	}
 	void test_mapping()
 	{
-		TEST(u(*this,"/default")=="xx/test");
-		TEST(u(*this,"/foo/default")=="xx/foo/");
-		TEST(u(*this,"/foobar/bee/default")=="xx/foobar/bee/");
+		TEST(u(*this,"/somepath")=="xx/test");
+		TEST(u(*this,"/foo/somepath")=="xx/foo/");
+		TEST(u(*this,"/foo/")=="xx/foo/default");
+		TEST(u(*this,"/foo")=="xx/foo/default");
+		TEST(u(*this,"/foobar/bee/")=="xx/foobar/bee/default");
+		TEST(u(*this,"/foobar/bee")=="xx/foobar/bee/default");
 		TEST(u(*this,"/foobar/bee/bylang")=="xx/foobar/bee/en");
 		
-		TEST(u(*this,"default")=="xx/test");
-		TEST(u(*this,"foo/default")=="xx/foo/");
-		TEST(u(*this,"foobar/bee/default")=="xx/foobar/bee/");
+		TEST(u(*this,"somepath")=="xx/test");
+		TEST(u(*this,"foo/somepath")=="xx/foo/");
+		TEST(u(*this,"foobar/bee/somepath")=="xx/foobar/bee/");
 		TEST(u(*this,"foobar/bee/bylang")=="xx/foobar/bee/en");
 		
-		TEST(u(bar,"/default")=="xx/test");
-		TEST(u(bar,"/foo/default")=="xx/foo/");
-		TEST(u(bar,"/foobar/bee/default")=="xx/foobar/bee/");
+		TEST(u(bar,"/somepath")=="xx/test");
+		TEST(u(bar,"/foo/somepath")=="xx/foo/");
+		TEST(u(bar,"/foobar/bee/somepath")=="xx/foobar/bee/");
+		TEST(u(bar,"/foobar/bee/")=="xx/foobar/bee/default");
+		TEST(u(bar,"/foobar/bee")=="xx/foobar/bee/default");
 		TEST(u(bar,"/foobar/bee/bylang")=="xx/foobar/bee/en");
 		
-		TEST(u(bee.bee,"/default")=="xx/test");
-		TEST(u(bee.bee,"/foo/default")=="xx/foo/");
-		TEST(u(bee.bee,"/foobar/bee/default")=="xx/foobar/bee/");
+		TEST(u(bee.bee,"/somepath")=="xx/test");
+		TEST(u(bee.bee,"/foo/somepath")=="xx/foo/");
+		TEST(u(bee.bee,"/foobar/bee/somepath")=="xx/foobar/bee/");
 		TEST(u(bee.bee,"/foobar/bee/bylang")=="xx/foobar/bee/en");
 		
-		TEST(u(bee.bee,"default")=="xx/foobar/bee/");
+		TEST(u(bee.bee,"somepath")=="xx/foobar/bee/");
 		TEST(u(bee.bee,"bylang")=="xx/foobar/bee/en");
 		
-		TEST(u(bee.bee,"../default")=="xx/foobar/");
-		TEST(u(bee.bee,"../../default")=="xx/test");
+		TEST(u(bee.bee,"../somepath")=="xx/foobar/");
+		TEST(u(bee.bee,"../../somepath")=="xx/test");
 		TEST(u(bee.bee,"bylang")=="xx/foobar/bee/en");
 		TEST(u(foo,"../foobar/bee/bylang")=="xx/foobar/bee/en");
 	}

@@ -24,6 +24,8 @@
 
 #include <stdlib.h>
 
+#include <iostream>
+
 namespace cppcms {
 	struct url_mapper::data 
 	{
@@ -52,11 +54,24 @@ namespace cppcms {
 		{
 			by_key_type::const_iterator kp = by_key.find(key);
 			if(kp == by_key.end())
-				throw cppcms_error("url_mapper: key " + key + " not found");
+				throw cppcms_error("url_mapper: key `" + key + "' not found");
 			by_size_type::const_iterator sp = kp->second.find(params_no);
 			if(sp == kp->second.end())
 				throw cppcms_error("url_mapper: invalid number of parameters for " + key);
 			return sp->second;
+		}
+		
+		url_mapper *is_app(std::string const &key) const
+		{
+			by_key_type::const_iterator kp = by_key.find(key);
+			if(kp == by_key.end())
+				return 0;
+			by_size_type::const_iterator sp = kp->second.begin();
+			if(sp==kp->second.end())
+				return 0;
+			if(sp->second.child) 
+				return &sp->second.child->mapper();
+			return 0;
 		}
 
 		url_mapper &child(std::string const &name)
@@ -109,8 +124,12 @@ namespace cppcms {
 				}
 			}
 
+
 			if(parent) {
-				parent->mapper().map(output,this_name,ss.str());
+				std::string url = ss.str();
+				filters::streamable stream_url(url);
+				filters::streamable const *par_ptr=&stream_url;
+				parent->mapper().d->map(this_name,&par_ptr,1,data_helpers,output);
 			}
 
 		}
@@ -119,10 +138,6 @@ namespace cppcms {
 
 	void url_mapper::assign(std::string const &key,std::string const &url)
 	{
-		real_assign(key,url,0);
-	}
-	void url_mapper::real_assign(std::string const &key,std::string const &url,application *child)
-	{
 		if(	key.empty() 
 			|| key.find('/') != std::string::npos 
 			|| key ==".." 
@@ -130,6 +145,14 @@ namespace cppcms {
 		{
 			throw cppcms_error("cppcms::url_mapper: key may not be '' , '.' or '..' and must not include '/' in it");
 		}
+		real_assign(key,url,0);
+	}
+	void url_mapper::assign(std::string const &url)
+	{
+		real_assign(std::string(),url,0);
+	}
+	void url_mapper::real_assign(std::string const &key,std::string const &url,application *child)
+	{
 
 		data::entry e;
 		std::string::const_iterator prev = url.begin(), p = url.begin();
@@ -183,7 +206,25 @@ namespace cppcms {
 			throw cppcms_error("cppcms::url_mapper the application mapping should use only 1 parameter");
 		}
 		e.parts.push_back(std::string(prev,p));
+
 		e.child = child;
+
+		if(child) {
+			if(d->by_key.find(key)!=d->by_key.end()) 
+				throw cppcms_error(	"cppcms::url_mapper: mounted application key `" + key +
+							"' can't be shared with ordinary url key");
+		}
+		else {
+			data::by_key_type::iterator p = d->by_key.find(key);
+			if(p!=d->by_key.end()) {
+				data::by_size_type::const_iterator p2 = p->second.find(1);
+				if(p2!=p->second.end() && p2->second.child) 
+				{
+					throw cppcms_error(	"cppcms::url_mapper: ordinary url key `"+key+
+								"can't be shared with mounted application key");
+				}
+			}
+		}
 		d->by_key[key][max_index] = e;
 	}
 
@@ -258,6 +299,12 @@ namespace cppcms {
 			size_t end = key.find('/',pos);
 			if(end == std::string::npos) {
 				real_key = key.substr(pos);
+				url_mapper *tmp = mapper->d->is_app(real_key);
+				if(tmp) { 
+					// empty special key
+					real_key.clear();
+					return *tmp;
+				}
 				return *mapper;
 			}
 			size_t chunk_size = end - pos;

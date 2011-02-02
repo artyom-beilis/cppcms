@@ -68,7 +68,8 @@ bool thread_shared::prepare(data::thread_shared &c,int id)
 
 flat_thread::flat_thread(cppcms::service &s) : thread_shared(s)
 {
-
+	dispatcher().assign(".*",&flat_thread::prepare,this,0);
+	mapper().assign("{1}");
 }
 
 
@@ -125,6 +126,8 @@ void make_tree(data::tree_t &messages,std::map<int,std::map<int,data::msg> > &co
 
 tree_thread::tree_thread(cppcms::service &s) : thread_shared(s)
 {
+	dispatcher().assign(".*",&tree_thread::prepare,this,0);
+	mapper().assign("{1}");
 }
 
 
@@ -166,6 +169,8 @@ void tree_thread::prepare(std::string sid)
 
 reply::reply(cppcms::service &srv) : thread_shared(srv)
 {
+	dispatcher().assign(".*",&reply::prepare,this,0);
+	mapper().assign("{1}");
 }
 
 void reply::prepare(std::string smid)

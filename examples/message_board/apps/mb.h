@@ -3,11 +3,11 @@
 
 #include <cppcms/application.h>
 
-
 namespace apps {
 
 class mb : public cppcms::application {
 public:
+
 	mb(cppcms::service &s);
 
 };

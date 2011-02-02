@@ -166,11 +166,26 @@ void application::add(application &app)
 	if(app.parent()!=this)
 		app.parent(this);
 }
-void application::add(application &app,std::string regex,int part)
+void application::add(application &app,std::string const &regex,int part)
 {
 	add(app);
 	dispatcher().mount(regex,app,part);
 }
+
+void application::add(application &app,std::string const &name,std::string const &url)
+{
+	add(app);
+	mapper().mount(name,url,app);
+}
+
+void application::add(application &app,std::string const &name,std::string const &url,std::string const &regex,int part)
+{
+	add(app);
+	dispatcher().mount(regex,app,part);
+	mapper().mount(name,url,app);
+}
+
+
 void application::attach(application *app)
 {
 	d->managed_children.push_back(app);
@@ -208,10 +223,21 @@ void application::main(std::string url)
 	}
 }
 
-void application::attach(application *app,std::string regex,int part)
+void application::attach(application *app,std::string const &regex,int part)
 {
-	d->managed_children.push_back(app);
-	add(*app,regex,part);
+	attach(app);
+	dispatcher().mount(regex,*app,part);
+}
+void application::attach(application *app,std::string const &name,std::string const &url)
+{
+	attach(app);
+	mapper().mount(name,url,*app);
+}
+void application::attach(application *app,std::string const &name,std::string const &url,std::string const &regex,int part)
+{
+	attach(app);
+	dispatcher().mount(regex,*app,part);
+	mapper().mount(name,url,*app);
 }
 
 void application::render(std::string template_name,base_content &content)
@@ -225,29 +251,6 @@ void application::render(std::string skin,std::string template_name,base_content
 	rnd_guard g(content,this);
 	service().views_pool().render(skin,template_name,response().out(),content);
 }
-
-void application::render(std::string template_name)
-{
-	base_content *cnt = dynamic_cast<base_content *>(this);
-	if(!cnt) {
-		throw cppcms_error(	"Can't use application::render(std::string) when the application "
-					"is not derived from base_content");
-	}
-	render(template_name,*cnt);
-}
-
-void application::render(std::string skin,std::string template_name)
-{
-	base_content *cnt = dynamic_cast<base_content *>(this);
-	if(!cnt) {
-		throw cppcms_error(	"Can't use application::render(std::string,std::string) when the application "
-					"is not derived from base_content");
-	}
-	render(skin,template_name,*cnt);
-}
-
-
-
 
 void application::render(std::string template_name,std::ostream &out,base_content &content)
 {

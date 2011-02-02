@@ -553,9 +553,9 @@ class url_block:
         if m.group(3):
             params=make_format_params(m.group(4),'urlencode')
         if not params:
-            output( "out()<<content.rendering_application().url(%s);" % s)
+            output( "content.rendering_application().mapper().map(out(),%s);" % s)
         else:
-            output( "out()<<content.rendering_application().url(%s, %s);" % (s , ', '.join(params)))
+            output( "content.rendering_application().mapper().map(out(),%s, %s);" % (s , ', '.join(params)))
 
 
 class include_block:

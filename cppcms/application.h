@@ -185,25 +185,6 @@ namespace cppcms {
 		///
 		void render(std::string skin,std::string template_name,std::ostream &out,base_content &content);
 
-
-		///
-		/// Render a template \a template_name of default skin using this application as content.
-		///
-		/// Side effect requires: output stream for response class, causes all updated session
-		/// data be saved and all headers be written. You can't change headers after calling this function.
-		///
-		void render(std::string template_name);
-		///
-		/// Render a template \a template_name of \a skin skin using this application as content
-		///
-		/// Side effect requires: output stream for response class, causes all updated session
-		/// data be saved and all headers be written. You can't change headers after calling this function.
-		///
-		void render(std::string skin,std::string template_name);
-
-
-
-
 		///
 		/// Register an application \a app as child. Ownership of app is not transfered to parent, however
 		/// it would shared it's parent reference count.
@@ -211,41 +192,63 @@ namespace cppcms {
 		void add(application &app);
 
 		///
-		/// Register an application \a app as child. Ownership of app is not transfered to parent, however
+		/// Register an application \a app as child and mount it into url dispatched calling
+		/// dispatcher().mount(regex,app,part);
+		///
+		///  Ownership of app is not transfered to parent, however
 		/// it would shared it's parent reference count.
 		///
-		/// All URL that match regular expression \a regex would be passed to the child for match. Matched part
-		/// \a part would be used by child for matching.
 		///
-		/// For example:
+		void add(application &app,std::string const &regex,int part);
+
 		///
-		/// \code 
-		/// add(users,"^/users(.*)$",1")
-		/// \endcode
+		/// Register an application \a app as child and mount it into:
 		///
-		/// For URL /users/moshe would pass only "/moshe" to URL dispatched of \a users object
+		/// - url_dispatcher calling dispatcher().mount(regex,app,part);
+		/// - url_mapper calling mapper().mount(name,url,app);
 		///
-		void add(application &app,std::string regex,int part);
+		///  Ownership of app is not transfered to parent, however
+		///  it would shared it's parent reference count.
+		///
+		///
+		void add(application &app,std::string const &name,std::string const &url,std::string const &regex,int part);
+		///
+		/// Register an application \a app as child and mount it into
+		/// url_mapper calling mapper().mount(name,url,app);
+		///
+		///  Ownership of app is not transfered to parent, however
+		///  it would shared it's parent reference count.
+		///
+		///
+		void add(application &app,std::string const &name,std::string const &url);
 
 		///
 		/// Register an application \a app as child. Ownership of app is transfered to parent 
 		///
 		void attach(application *app);
 		///
-		/// Register an application \a app as child. Ownership of app is transfered to parent 
+		/// Register an application \a app as child and mount it into
+		/// url_dispatcher calling dispatcher().mount(regex,*app,part);
 		///
-		/// All URL that match regular expression \a regex would be passed to the child for match. Matched part
-		/// \a part would be used by child for matching.
+		///  Ownership of app is transfered to parent.
 		///
-		/// For example:
+		void attach(application *app,std::string const &regex,int part);
 		///
-		/// \code 
-		/// add(users,"^/users(.*)$",1")
-		/// \endcode
+		/// Register an application \a app as child and mount it into
+		/// url_mapper calling mapper().mount(name,url,*app);
 		///
-		/// For URL /users/moshe would pass only "/moshe" to URL dispatched of \a users object
+		///  Ownership of app is transfered to parent.
 		///
-		void attach(application *app,std::string regex,int part);
+		void attach(application *app,std::string const &name,std::string const &url);
+		///
+		/// Register an application \a app as child and mount it into:
+		///
+		/// - url_dispatcher calling dispatcher().mount(regex,*app,part);
+		/// - url_mapper calling mapper().mount(name,url,*app);
+		///
+		///  Ownership of app is transfered to parent.
+		///
+		void attach(application *app,std::string const &name,std::string const &url,std::string const &regex,int part);
 
 		///
 		/// Get the parent of the application, if the application is the topmost class in hierarchy,

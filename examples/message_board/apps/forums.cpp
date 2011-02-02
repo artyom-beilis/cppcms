@@ -26,6 +26,9 @@ namespace apps {
 
 forums::forums(cppcms::service &srv) : master(srv)
 {
+	mapper().assign("{1}"); // with id
+	mapper().assign("");    // default
+	dispatcher().assign(".*",&forums::prepare,this,0);
 }
 
 void forums::prepare_content(data::forums &c,std::string const &page)

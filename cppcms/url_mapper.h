@@ -44,6 +44,7 @@ namespace cppcms {
 		void root(std::string const &r);
 
 		void assign(std::string const &key,std::string const &url);
+		void assign(std::string const &url);
 
 		void set_value(std::string const &key,std::string const &value);
 		void clear_value(std::string const &key);

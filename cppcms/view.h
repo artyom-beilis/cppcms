@@ -23,5 +23,6 @@
 #include <cppcms/base_view.h>
 #include <cppcms/views_pool.h>
 #include <cppcms/application.h>
+#include <cppcms/url_mapper.h>
 #endif
 
