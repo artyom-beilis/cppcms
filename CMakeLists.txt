@@ -1,8 +1,8 @@
 cmake_minimum_required(VERSION 2.6)
 project(cppcms)
 set(CPPCMS_PACKAGE_NAME "CppCMS")
-set(CPPCMS_PACKAGE_STRING "CppCMS/0.99.6")
-set(CPPCMS_PACKAGE_VERSION "0.99.6")
+set(CPPCMS_PACKAGE_STRING "CppCMS/0.99.7")
+set(CPPCMS_PACKAGE_VERSION "0.99.7")
 
 include(CheckFunctionExists)
 include(CheckCXXSourceCompiles)
