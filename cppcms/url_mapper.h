@@ -131,6 +131,30 @@ namespace cppcms {
 	///  }
 	/// \endcode
 	///
+	/// Additional supported feature is "named" parameters which are usually set to
+	/// some default value using set_value, they are defined by special keywords between
+	/// instead of numbers. 
+	///
+	/// For example assign("article", "/article/{lang}/{1}") were "lang" is special value for language
+	/// defined by set_value("lang","en"), so mapping map(out(),"article",10) would create
+	/// a URL "/article/en/10"
+	///
+	/// Sometimes it is useful to change such values there are two ways to do it:
+	///
+	/// -    Overloading keyword with different parameters number assign("article","/article/{1}/{2}")
+	///      and then calling map(out(),"article","ru",10) for URL like "/article/ru/10".
+	/// -    Using naming of parameters at mapping level by prepending comma separated keywords at the
+	///      end of the path line after ";" map(out(),"article;lang","ru",10) - which would effectively work
+	///      like temporary calling set_value("lang","ru") and then calling map(out(),"article",10).
+	///      Unlike the previous case it also allows to do such changes globally.
+	///      <br>
+	///      For example if "news" application mounts article using "/{lang}/{1}" then
+	///      using such mapping would affect top level URL that does not belong to specific application.
+	///
+	///
+	///
+	/// 
+	///
 	///
 	class CPPCMS_API url_mapper : public booster::noncopyable {
 	public:
@@ -159,7 +183,7 @@ namespace cppcms {
 		/// brackets. For example "/page/{1}" where "{1}" is being substituted
 		/// by the first parameter in map functions.
 		///
-		/// The ids can be numbers - 1 to 4 and special keys that can be changed
+		/// The ids can be numbers - 1 to 6 and special keys that can be changed
 		/// in the run time using set_value functions. For example:
 		///
 		/// "/wiki/{lang}/page/{1}"
@@ -179,7 +203,7 @@ namespace cppcms {
 		/// map(output,"page",134) would create "/wiki/en/page/132" and 
 		/// map(output,"page","ru","cppcms") would create "/wiki/ru/page/cppcms"
 		///
-		/// Note: They keys containing "/" or keys with values "..", ".", ""  are prohibited  
+		/// Note: They keys containing "/", "," or ";" and keys with values "..", ".", ""  are prohibited  
 		/// as they have special meanings
 		///
 		void assign(std::string const &key,std::string const &url);
@@ -193,9 +217,15 @@ namespace cppcms {
 		/// Set special value for a key that would be used
 		/// in URL mapping, for example set_value("lang","en")
 		///
+		/// Note: this value is defined globally for all applications hierarchy and not only
+		/// for this specific application
+		///
 		void set_value(std::string const &key,std::string const &value);
 		///
 		/// Clear the special value - reset to empty
+		///
+		/// Note: this value is cleared globally for all applications hierarchy and not only
+		/// for this specific application
 		///
 		void clear_value(std::string const &key);
 	
@@ -238,6 +268,27 @@ namespace cppcms {
 				filters::streamable const &p2,
 				filters::streamable const &p3,
 				filters::streamable const &p4);
+		///
+		/// Write the URL to output stream \a out for the URL \a path with 5 parameters
+		///	
+		void map(	std::ostream &out,
+				std::string const &path,
+				filters::streamable const &p1,
+				filters::streamable const &p2,
+				filters::streamable const &p3,
+				filters::streamable const &p4,
+				filters::streamable const &p5);
+		///
+		/// Write the URL to output stream \a out for the URL \a path with 6 parameters
+		///	
+		void map(	std::ostream &out,
+				std::string const &path,
+				filters::streamable const &p1,
+				filters::streamable const &p2,
+				filters::streamable const &p3,
+				filters::streamable const &p4,
+				filters::streamable const &p5,
+				filters::streamable const &p6);
 
 		///
 		/// Mount sub application \a app using name \a name to a \url.
@@ -263,7 +314,7 @@ namespace cppcms {
 
 	private:
 		void real_assign(std::string const &key,std::string const &url,application *child = 0);
-		url_mapper &get_mapper_for_key(std::string const &key,std::string &real_key);
+		url_mapper &get_mapper_for_key(std::string const &key,std::string &real_key,std::vector<std::string> &direct);
 		url_mapper *root_mapper();
 		void real_map(	std::string const key,
 				filters::streamable const *const *params,

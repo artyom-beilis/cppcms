@@ -347,7 +347,32 @@ std::string application::url(	std::string const &key,
 	return ss.str();
 }
 
+std::string application::url(	std::string const &key,
+				filters::streamable const &p1,
+				filters::streamable const &p2,
+				filters::streamable const &p3,
+				filters::streamable const &p4,
+				filters::streamable const &p5)
+{
+	std::ostringstream ss;
+	ss.imbue(context().locale());
+	mapper().map(ss,key,p1,p2,p3,p4,p5);
+	return ss.str();
+}
 
+std::string application::url(	std::string const &key,
+				filters::streamable const &p1,
+				filters::streamable const &p2,
+				filters::streamable const &p3,
+				filters::streamable const &p4,
+				filters::streamable const &p5,
+				filters::streamable const &p6)
+{
+	std::ostringstream ss;
+	ss.imbue(context().locale());
+	mapper().map(ss,key,p1,p2,p3,p4,p5,p6);
+	return ss.str();
+}
 
 
 

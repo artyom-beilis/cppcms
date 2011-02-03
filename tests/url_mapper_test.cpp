@@ -43,6 +43,8 @@ void basic_test()
 	m.assign("foo","/foo/{1}/{2}");
 	m.assign("foo","/foo/{1}/{2}/{3}");
 	m.assign("foo","/foo/{1}/{2}/{3}/{4}");
+	m.assign("foo","/foo/{1}/{2}/{3}/{4}/{5}");
+	m.assign("foo","/foo/{1}/{2}/{3}/{4}/{5}/{6}");
 	m.assign("bar","/bar/{lang}/{1}");
 	m.assign("bar","/bar/{2}/{1}");
 	m.assign("test1","{1}x");
@@ -64,6 +66,10 @@ void basic_test()
 	TEST(value(ss) == "test.com/foo/1/2/3");
 	m.map(ss,"foo",1,2,3,4);
 	TEST(value(ss) == "test.com/foo/1/2/3/4");
+	m.map(ss,"foo",1,2,3,4,5);
+	TEST(value(ss) == "test.com/foo/1/2/3/4/5");
+	m.map(ss,"foo",1,2,3,4,5,6);
+	TEST(value(ss) == "test.com/foo/1/2/3/4/5/6");
 
 	m.map(ss,"foo",1,"a","b",5);
 	TEST(value(ss) == "test.com/foo/1/a/b/5");
@@ -130,6 +136,8 @@ struct test1 : public cppcms::application {
 		mapper().assign("page","/{1}");
 		mapper().assign("preview","/{1}/preview");
 		mapper().assign("bylang","/{lang}");
+		mapper().assign("byloc","/{lang}_{terr}");
+		mapper().assign("byloc","/{lang}_{terr}/{1}");
 	}
 };
 
@@ -166,6 +174,7 @@ struct test_app : public cppcms::application {
 		mapper().root("xx");
 
 		bee.bee.mapper().set_value("lang","en");
+		mapper().set_value("terr","US");
 	}
 	void test_hierarchy()
 	{
@@ -247,6 +256,30 @@ struct test_app : public cppcms::application {
 		TEST(u(bee.bee,"bylang")=="xx/foobar/bee/en");
 		TEST(u(foo,"../foobar/bee/bylang")=="xx/foobar/bee/en");
 	}
+	void test_keywords()
+	{
+		std::ostringstream ss;
+		mapper().map(ss,"/foobar/bee/bylang");
+		TEST(value(ss)=="xx/foobar/bee/en");
+		mapper().map(ss,"/foobar/bee/bylang;lang","ru");
+		TEST(value(ss)=="xx/foobar/bee/ru");
+		mapper().map(ss,"/foobar/bee/byloc;lang","ru");
+		TEST(value(ss)=="xx/foobar/bee/ru_US");
+		mapper().map(ss,"/foobar/bee/byloc;lang,terr","ru","RU");
+		TEST(value(ss)=="xx/foobar/bee/ru_RU");
+		mapper().map(ss,"/foobar/bee/byloc;terr","RU");
+		TEST(value(ss)=="xx/foobar/bee/en_RU");
+		mapper().map(ss,"/foobar/bee/byloc;terr,lang","UA","ru");
+		TEST(value(ss)=="xx/foobar/bee/ru_UA");
+		mapper().map(ss,"/foobar/bee/byloc;lang","ru","foo");
+		TEST(value(ss)=="xx/foobar/bee/ru_US/foo");
+		mapper().map(ss,"/foobar/bee/byloc;lang,terr","ru","RU","foo");
+		TEST(value(ss)=="xx/foobar/bee/ru_RU/foo");
+		mapper().map(ss,"/foobar/bee/byloc;terr","RU","foo");
+		TEST(value(ss)=="xx/foobar/bee/en_RU/foo");
+		mapper().map(ss,"/foobar/bee/byloc;terr,lang","UA","ru","foo");
+		TEST(value(ss)=="xx/foobar/bee/ru_UA/foo");
+	}
 };
 
 
@@ -265,6 +298,8 @@ int main()
 
 		std::cout << "- Mappting" << std::endl;
 		app.test_mapping();
+		std::cout << "- Keyword substitution" << std::endl;
+		app.test_keywords();
 
 	}
 	catch(std::exception const &e) {

@@ -330,28 +330,16 @@ namespace cppcms {
 
 
 		///
-		/// Map url-key \a key to actual URL, with parameters 
+		/// Map url-key \a key to actual URL, without parameters 
 		///
-		/// Key format is (/|(../)+)?real_key, where real key is the value that is defined
-		/// in the mapper.
-		///
-		/// - If the ket does not start with "/" or "../" then current dispatcher is used
-		/// - If it starts with /  then the actual mapper being used is root()->mapper()
-		/// - If it starts with ../  then the actual mapper being used is parent()->mapper()
-		/// - If it starts with ../../  then the actual mapper being used is parent()->parent()->mapper() and so on
+		/// Effectively it calls mapper().map(...)
 		///
 		std::string url(std::string const &key);
 
 		///
 		/// Map url-key \a key to actual URL, with parameter p1
 		///
-		/// Key format is (/|(../)+)?real_key, where real key is the value that is defined
-		/// in the mapper.
-		///
-		/// - If the ket does not start with "/" or "../" then current dispatcher is used
-		/// - If it starts with /  then the actual mapper being used is root()->mapper()
-		/// - If it starts with ../  then the actual mapper being used is parent()->mapper()
-		/// - If it starts with ../../  then the actual mapper being used is parent()->parent()->mapper() and so on
+		/// Effectively it calls mapper().map(...)
 		///
 		std::string url(std::string const &key,
 				filters::streamable const &p1);
@@ -359,13 +347,7 @@ namespace cppcms {
 		///
 		/// Map url-key \a key to actual URL, with parameters p1, p2 
 		///
-		/// Key format is (/|(../)+)?real_key, where real key is the value that is defined
-		/// in the mapper.
-		///
-		/// - If the ket does not start with "/" or "../" then current dispatcher is used
-		/// - If it starts with /  then the actual mapper being used is root()->mapper()
-		/// - If it starts with ../  then the actual mapper being used is parent()->mapper()
-		/// - If it starts with ../../  then the actual mapper being used is parent()->parent()->mapper() and so on
+		/// Effectively it calls mapper().map(...)
 		///
 		std::string url(std::string const &key,
 				filters::streamable const &p1,
@@ -374,13 +356,7 @@ namespace cppcms {
 		///
 		/// Map url-key \a key to actual URL, with parameters p1, p2, p3
 		///
-		/// Key format is (/|(../)+)?real_key, where real key is the value that is defined
-		/// in the mapper.
-		///
-		/// - If the ket does not start with "/" or "../" then current dispatcher is used
-		/// - If it starts with /  then the actual mapper being used is root()->mapper()
-		/// - If it starts with ../  then the actual mapper being used is parent()->mapper()
-		/// - If it starts with ../../  then the actual mapper being used is parent()->parent()->mapper() and so on
+		/// Effectively it calls mapper().map(...)
 		///
 		std::string url(std::string const &key,
 				filters::streamable const &p1,
@@ -390,19 +366,36 @@ namespace cppcms {
 		///
 		/// Map url-key \a key to actual URL, with parameters p1, p2, p3, p4
 		///
-		/// Key format is (/|(../)+)?real_key, where real key is the value that is defined
-		/// in the mapper.
-		///
-		/// - If the ket does not start with "/" or "../" then current dispatcher is used
-		/// - If it starts with /  then the actual mapper being used is root()->mapper()
-		/// - If it starts with ../  then the actual mapper being used is parent()->mapper()
-		/// - If it starts with ../../  then the actual mapper being used is parent()->parent()->mapper() and so on
+		/// Effectively it calls mapper().map(...)
 		///
 		std::string url(std::string const &key,
 				filters::streamable const &p1,
 				filters::streamable const &p2,
 				filters::streamable const &p3,
 				filters::streamable const &p4);
+		///
+		/// Map url-key \a key to actual URL, with parameters p1, p2, p3, p4, p5
+		///
+		/// Effectively it calls mapper().map(...)
+		///
+		std::string url(std::string const &key,
+				filters::streamable const &p1,
+				filters::streamable const &p2,
+				filters::streamable const &p3,
+				filters::streamable const &p4,
+				filters::streamable const &p5);
+		///
+		/// Map url-key \a key to actual URL, with parameters p1, p2, p3, p4, p5, p6
+		///
+		/// Effectively it calls mapper().map(...)
+		///
+		std::string url(std::string const &key,
+				filters::streamable const &p1,
+				filters::streamable const &p2,
+				filters::streamable const &p3,
+				filters::streamable const &p4,
+				filters::streamable const &p5,
+				filters::streamable const &p6);
 
 	private:
 

@@ -86,10 +86,10 @@ namespace cppcms {
 		void map(	std::string const key,
 				filters::streamable const * const *params,
 				size_t params_no,
-				std::map<std::string,std::string> const &data_helpers,
+				std::map<std::string,std::string> const &data_helpers_default,
+				std::map<std::string,std::string> const &data_helpers_override,
 				std::ostream &output) const
 		{
-
 			entry const &formatting = get_entry(key,params_no);
 			
 			std::ostringstream ss;
@@ -109,9 +109,15 @@ namespace cppcms {
 				if( i < formatting.indexes.size() ) {
 					if(formatting.indexes[i]==0) {
 						std::string const &hkey = formatting.keys[i];
-						std::map<std::string,std::string>::const_iterator p = data_helpers.find(hkey);
-						if(p != data_helpers.end()) {
+						std::map<std::string,std::string>::const_iterator p;
+						p = data_helpers_override.find(hkey);
+						if(p != data_helpers_override.end()) {
 							*out << p->second;
+						}
+						else {
+							p = data_helpers_default.find(hkey);
+							if(p!=data_helpers_default.end())
+								*out << p->second;
 						}
 					}
 					else {
@@ -129,7 +135,7 @@ namespace cppcms {
 				std::string url = ss.str();
 				filters::streamable stream_url(url);
 				filters::streamable const *par_ptr=&stream_url;
-				parent->mapper().d->map(this_name,&par_ptr,1,data_helpers,output);
+				parent->mapper().d->map(this_name,&par_ptr,1,data_helpers_default,data_helpers_override,output);
 			}
 
 		}
@@ -140,6 +146,8 @@ namespace cppcms {
 	{
 		if(	key.empty() 
 			|| key.find('/') != std::string::npos 
+			|| key.find(';') != std::string::npos 
+			|| key.find(',') != std::string::npos 
 			|| key ==".." 
 			|| key == "." )
 		{
@@ -283,7 +291,7 @@ namespace cppcms {
 	}
 
 
-	url_mapper &url_mapper::get_mapper_for_key(std::string const &key,std::string &real_key)
+	url_mapper &url_mapper::get_mapper_for_key(std::string const &key,std::string &real_key,std::vector<std::string> &keywords)
 	{
 		url_mapper *mapper = this;
 		size_t pos = 0;
@@ -298,7 +306,23 @@ namespace cppcms {
 		for(;;) {
 			size_t end = key.find('/',pos);
 			if(end == std::string::npos) {
-				real_key = key.substr(pos);
+				size_t separator = key.find(';',pos);
+				if(separator == std::string::npos) {
+					real_key = key.substr(pos);
+				}
+				else {
+					real_key = key.substr(pos,separator - pos);
+					pos = separator + 1;
+					for(;;){
+						end = key.find(',',pos);
+						size_t size = end - pos;
+						keywords.push_back(key.substr(pos,size));
+						if(end == std::string::npos)
+							break;
+						pos = end + 1;
+					}
+					
+				}
 				url_mapper *tmp = mapper->d->is_app(real_key);
 				if(tmp) { 
 					// empty special key
@@ -328,8 +352,27 @@ namespace cppcms {
 					std::ostream &output)
 	{
 		std::string real_key;
-		url_mapper &mp = get_mapper_for_key(key,real_key);
-		mp.d->map(real_key,params,params_no,topmost().d->helpers,output);
+		std::vector<std::string> direct;
+		url_mapper &mp = get_mapper_for_key(key,real_key,direct);
+		if(params_no < direct.size())
+			throw cppcms_error("url_mapper: number of keywords is larger then number of actual parameters");
+		std::map<std::string,std::string> mappings;
+		if(direct.size() == 0) {
+			mp.d->map(real_key,params,params_no,topmost().d->helpers,mappings,output);
+		}
+		else {
+			size_t direct_size = direct.size();
+			filters::streamable const * const *key_params = params;
+			params += direct_size;
+			params_no -= direct_size;
+			for(unsigned i=0;i<direct.size();i++) {
+				std::ostringstream ss;
+				ss.copyfmt(output);
+				(*key_params[i])(ss);
+				mappings[direct[i]]=ss.str();
+			}
+			mp.d->map(real_key,params,params_no,topmost().d->helpers,mappings,output);
+		}
 	}
 
 	void url_mapper::map(	std::ostream &out,	
@@ -374,6 +417,31 @@ namespace cppcms {
 	{
 		filters::streamable const *params[4] = { &p1,&p2,&p3,&p4 };
 		real_map(key,params,4,out);
+	}
+
+	void url_mapper::map(	std::ostream &out,
+				std::string const &key,
+				filters::streamable const &p1,
+				filters::streamable const &p2,
+				filters::streamable const &p3,
+				filters::streamable const &p4,
+				filters::streamable const &p5)
+	{
+		filters::streamable const *params[5] = { &p1,&p2,&p3,&p4,&p5 };
+		real_map(key,params,5,out);
+	}
+
+	void url_mapper::map(	std::ostream &out,
+				std::string const &key,
+				filters::streamable const &p1,
+				filters::streamable const &p2,
+				filters::streamable const &p3,
+				filters::streamable const &p4,
+				filters::streamable const &p5,
+				filters::streamable const &p6)
+	{
+		filters::streamable const *params[6] = { &p1,&p2,&p3,&p4,&p5,&p6 };
+		real_map(key,params,6,out);
 	}
 
 	url_mapper &url_mapper::parent()
