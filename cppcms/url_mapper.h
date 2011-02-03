@@ -31,7 +31,106 @@ namespace cppcms {
 	class application;
 
 	///
-	/// \brief class for mapping URLs - oposite of dispatch
+	/// \brief class for mapping URLs - the opposite of dispatch
+	///
+	/// This class is useful for mapping between different page identifications
+	/// that represent different classes/view and the URL.
+	///
+	///
+	/// The URL mapping is done in hierarchy of applications where each application
+	/// has its own name and they bundler into single hierarchy. Each application in hierarchy
+	/// can be referred by its key and location. It may have different "urls" for mapping
+	/// different values.
+	///
+	/// For example, we develop a content management system with following tools:
+	///
+	/// - site
+	///     - news 
+	///         - article 
+	///         - category 
+	///     - forums
+	///         - topics
+	///         - threads
+	///     - users
+	///         - management
+	///         - registration
+	///         - profile
+	///
+	/// Each node above is represented my cppcms::application and its children mounted
+	/// to it. In order to access each URL we use "file system" like convention:
+	///
+	///  - "/" - the default site page
+	///  - "/news" - the default news page
+	///  - "/news/article" - the default article page
+	///  - "/news/category/by_date" - the categories pages sorted by data
+	///  - "/news/category/by_interest" - the categories pages sorted by interest
+	///  - "/news/category" - the default category pages
+	///
+	/// And so on.
+	///
+	/// Each application can be referred by its full path from root or by its relative path,
+	/// so if we for example in article sub-application and we want to refer to "category"
+	/// URL we would use something like map(out(),"../category/by_interest",category_id);
+	///
+	/// In order to all this process work, each application should mount its children by some name,
+	/// like:
+	///
+	/// \code
+	///     site::site(cppcms::service &s) : 
+	///           cppcms::application(s),
+	///           news_(s),
+	///           forums_(s),
+	///           users_(s)
+	///     {
+	///         add(news_);
+	///         mapper().mount("news","/news{1}",news_);
+	///         add(forums_);
+	///         mapper().mount("forums","/forums{1}",forums_);
+	///         ...
+	/// \endcode
+	///
+	/// You can also use cppcms::application::add and cppcms::application::attach that allows
+	/// to provide mapping for url_dispatcher and url_mapper in a single command like:
+	///
+	/// \code
+	///    add(news_,
+	///        "news","/news{1}",
+	///        "/news((/.*)?)",1);
+	/// \endcode
+	///
+	/// Which effectively the same as:
+	///
+	/// \code
+	///    add(news_);
+	///    mapper().mount("news","/news{1}",news_);
+	///    dispatcher().mount("/news((/.*)?)",news_,1);
+	/// \endcode
+	///
+	/// Such system allows using "url" tag in templates system easily as"
+	/// 
+	/// \code
+	///   <a href="<% url "/news/article" using article id %>" >...</a>
+	/// \endcode
+	///
+	/// Each mounted application may a default URL (something like index.html)
+	/// which is mapped when mounted application is referred. So for example there
+	/// are may be following URLs:
+	///
+	/// - "/news/article" or "/news/article/" - the default URL
+	/// - "/news/article/preview" - preview unpublished article URL.
+	///
+	/// They can be defined in article class as following:
+	///
+	/// \code
+	///  article::article(cppcms::service &s) : cppcms::application(s)
+	///  {
+	///     mapper().assign("/{1}"); // the default URL
+	///     dispatcher().assign("/(\\d+)",&article::display,this,1);
+	///     mapper().assign("preview","/{1}/preview"); // the preview URL
+	///     dispatcher().assign("/(\\d+)/preview",&article::preview,this,1);
+	///  }
+	/// \endcode
+	///
 	///
 	class CPPCMS_API url_mapper : public booster::noncopyable {
 	public:
@@ -40,35 +139,101 @@ namespace cppcms {
 		~url_mapper();
 		/// \endcond
 		
+		///
+		/// Get the root of the application - the string that
+		/// is added to the any URL patter like "/forum" or
+		/// "http://my.site.com"
+		///
 		std::string root();
+		///
+		/// Set the root of the application - the string that
+		/// is added to the any URL patter like "/forum" or
+		/// "http://my.site.com"
+		///
 		void root(std::string const &r);
 
+		///
+		/// Provide a mapping between special \a key and a \a url pattern.
+		///
+		/// URL patter is a string that includes mapped patters between "{" and "}"
+		/// brackets. For example "/page/{1}" where "{1}" is being substituted
+		/// by the first parameter in map functions.
+		///
+		/// The ids can be numbers - 1 to 4 and special keys that can be changed
+		/// in the run time using set_value functions. For example:
+		///
+		/// "/wiki/{lang}/page/{1}"
+		///
+		/// Where "lang" can be defined by "set_value". For example.
+		///
+		/// For the url above with "lang" set to "en" and first parameter "cppcms"
+		/// the string would be "/wiki/en/page/cppcms"
+		///
+		/// Note the keys may be overloaded by number of parameters as for example:
+		///
+		/// - <tt>assign("page","/wiki/{1}/page/{2}");</tt>
+		/// - <tt>assign("page","/wiki/{lang}/page/{1}");</tt>
+		/// - <tt>assign("page","/wiki/{lang}/page/main");</tt>
+		///
+		/// Then map(output,"page") - would create "/wiki/en/page/main", 
+		/// map(output,"page",134) would create "/wiki/en/page/132" and 
+		/// map(output,"page","ru","cppcms") would create "/wiki/ru/page/cppcms"
+		///
+		/// Note: They keys containing "/" or keys with values "..", ".", ""  are prohibited  
+		/// as they have special meanings
+		///
 		void assign(std::string const &key,std::string const &url);
+		///
+		/// Map the default key for the application, \a url has same rules as for assign(key,url) but
+		/// they rather refer to default application's URL when it is used in hierarchy.
+		///
 		void assign(std::string const &url);
 
+		///
+		/// Set special value for a key that would be used
+		/// in URL mapping, for example set_value("lang","en")
+		///
 		void set_value(std::string const &key,std::string const &value);
+		///
+		/// Clear the special value - reset to empty
+		///
 		void clear_value(std::string const &key);
-		
+	
+		///
+		/// Write the URL to output stream \a out for the URL \a path with 0 parameters
+		///	
 		void map(	std::ostream &out,
-				std::string const &key);
+				std::string const &path);
 
+		///
+		/// Write the URL to output stream \a out for the URL \a path with 1 parameters
+		///	
 		void map(	std::ostream &out,
-				std::string const &key,
+				std::string const &path,
 				filters::streamable const &p1);
 
+		///
+		/// Write the URL to output stream \a out for the URL \a path with 2 parameters
+		///	
 		void map(	std::ostream &out,
-				std::string const &key,
+				std::string const &path,
 				filters::streamable const &p1,
 				filters::streamable const &p2);
 
+		///
+		/// Write the URL to output stream \a out for the URL \a path with 3 parameters
+		///	
 		void map(	std::ostream &out,
-				std::string const &key,
+				std::string const &path,
 				filters::streamable const &p1,
 				filters::streamable const &p2,
 				filters::streamable const &p3);
 
+		///
+		/// Write the URL to output stream \a out for the URL \a path with 4 parameters
+		///	
 		void map(	std::ostream &out,
-				std::string const &key,
+				std::string const &path,
 				filters::streamable const &p1,
 				filters::streamable const &p2,
 				filters::streamable const &p3,
@@ -78,7 +243,7 @@ namespace cppcms {
 		/// Mount sub application \a app using name \a name to a \url.
 		///
 		/// The URL format as in assign but it requires a single parameter {1}
-		/// which would be substituted with the mapping of the URL of subapplication
+		/// which would be substituted with the mapping of the URL of sub-application
 		/// instead of using "root" patch
 		///
 		void mount(std::string const &name,std::string const &url,application &app);
@@ -88,11 +253,11 @@ namespace cppcms {
 		url_mapper &child(std::string const &name);
 
 		///
-		/// Get a parent mapper, if not exists throws
+		/// Get a parent mapper, if not exists throws cppcms_error
 		///
 		url_mapper &parent();
 		///
-		/// Get a topmost mapper
+		/// Get a topmost mapper, if have no parents returns reference to \c this.
 		///
 		url_mapper &topmost();
 
