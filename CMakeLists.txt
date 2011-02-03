@@ -276,6 +276,7 @@ set(CPPCMS_SOURCES
 	src/crypto.cpp
 	src/daemonize.cpp
 	src/xss.cpp
+	src/copy_filter.cpp
 	cppcms_boost/src/zlib.cpp
 	cppcms_boost/src/gzip.cpp
 )
@@ -470,6 +471,7 @@ set(ALL_TESTS
 	status_test
 	xss_test
 	url_mapper_test
+	copy_filter_test
 	)
 foreach(TEST ${ALL_TESTS})
 	add_executable(${TEST} tests/${TEST}.cpp)
@@ -548,6 +550,7 @@ add_test(cache_backend_test cache_backend_test)
 add_test(serialization_test serialization_test)
 add_test(xss_test xss_test)
 add_test(url_mapper_test url_mapper_test)
+add_test(copy_filter_test copy_filter_test)
 
 add_test(status_test
 	status_test "-c" "${CNF}/status_test.js" 
