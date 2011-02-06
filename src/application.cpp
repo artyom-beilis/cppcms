@@ -151,6 +151,12 @@ application *application::parent()
 
 application *application::root()
 {
+	if(root_ == root_->root_)
+		return root_;
+	do {
+		root_ = root_->root_;
+	}
+	while(root_->root_ != root_);
 	return root_;
 }
 
