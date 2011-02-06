@@ -252,6 +252,10 @@ namespace http {
 		///
 		cookies_type const &cookies();
 		///
+		/// Get cookie by its name, if not assigned returns empty cookie
+		///
+		cookie const &cookie_by_name(std::string const &name);
+		///
 		/// form-data GET part of request
 		///
 		form_type const &get();

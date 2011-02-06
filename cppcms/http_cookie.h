@@ -103,6 +103,10 @@ public:
 	///
 	void secure(bool v);
 
+	///
+	/// Check if cookie is not assigned - empty
+	///
+	bool empty() const;
 
 	cookie();
 	~cookie();

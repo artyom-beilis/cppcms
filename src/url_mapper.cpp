@@ -323,6 +323,13 @@ namespace cppcms {
 					}
 					
 				}
+				if(real_key == ".")
+					real_key.clear();
+				else if(real_key == "..") {
+					mapper = &mapper->parent();
+					real_key.clear();
+				}
+					
 				url_mapper *tmp = mapper->d->is_app(real_key);
 				if(tmp) { 
 					// empty special key

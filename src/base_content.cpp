@@ -46,12 +46,12 @@ base_content const &base_content::operator=(base_content const &other)
 	return *this;
 }
 
-void base_content::rendering_application(application &app)
+void base_content::app(application &app)
 {
 	app_ = &app;
 }
 
-application &base_content::rendering_application()
+application &base_content::app()
 {
 	if(!app_) {
 		throw cppcms_error("Attempt to access to application that wasn't set");
@@ -59,7 +59,7 @@ application &base_content::rendering_application()
 	return *app_;
 }
 
-void base_content::reset_rendering_application()
+void base_content::reset_app()
 {
 	app_ = 0;
 }

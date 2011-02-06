@@ -114,6 +114,11 @@ public:
 	/// you call this function.
 	///
 	std::string get(std::string const &key);
+	
+	///
+	/// Get a value for a session \a key. If it is not set, returns default_value
+	///
+	std::string get(std::string const &key,std::string const &default_value);
 
 	///
 	/// Get convert the value that is set for a key \a key to type T using std::iostream. For example you can

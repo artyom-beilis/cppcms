@@ -282,6 +282,15 @@ void session_interface::clear()
 	data_.clear();
 }
 
+std::string session_interface::get(std::string const &key,std::string const &def)
+{
+	check();
+	data_type::const_iterator p=data_.find(key);
+	if(p==data_.end()) 
+		return def;
+	return p->second.value;
+}
+
 std::string session_interface::get(std::string const &key)
 {
 	check();

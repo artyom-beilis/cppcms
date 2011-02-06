@@ -415,6 +415,35 @@ add_custom_command(
 		${CMAKE_CURRENT_SOURCE_DIR}/src/hello_world_skin2.tmpl 
 		${CMAKE_CURRENT_SOURCE_DIR}/src/hello_world_view1.tmpl)
 
+add_custom_command(
+	OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/tc_skin_a.cpp
+	COMMAND ${PYTHON} ${CMAKE_CURRENT_SOURCE_DIR}/bin/cppcms_tmpl_cc 
+		-o ${CMAKE_CURRENT_BINARY_DIR}/tc_skin_a.cpp 
+			${CMAKE_CURRENT_SOURCE_DIR}/tests/tc_skin_a.tmpl
+	DEPENDS 
+		${CMAKE_CURRENT_SOURCE_DIR}/bin/cppcms_tmpl_cc 
+		${CMAKE_CURRENT_SOURCE_DIR}/tests/tc_skin_a.tmpl)
+
+add_custom_command(
+	OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/tc_skin_b.cpp
+	COMMAND ${PYTHON} ${CMAKE_CURRENT_SOURCE_DIR}/bin/cppcms_tmpl_cc 
+		-o ${CMAKE_CURRENT_BINARY_DIR}/tc_skin_b.cpp 
+			${CMAKE_CURRENT_SOURCE_DIR}/tests/tc_skin_b.tmpl
+	DEPENDS 
+		${CMAKE_CURRENT_SOURCE_DIR}/bin/cppcms_tmpl_cc 
+		${CMAKE_CURRENT_SOURCE_DIR}/tests/tc_skin_b.tmpl)
+
+add_custom_command(
+	OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/tc_skin.cpp
+	COMMAND ${PYTHON} ${CMAKE_CURRENT_SOURCE_DIR}/bin/cppcms_tmpl_cc 
+		-o ${CMAKE_CURRENT_BINARY_DIR}/tc_skin.cpp 
+			${CMAKE_CURRENT_SOURCE_DIR}/tests/tc_skin.tmpl
+	DEPENDS 
+		${CMAKE_CURRENT_SOURCE_DIR}/bin/cppcms_tmpl_cc 
+		${CMAKE_CURRENT_SOURCE_DIR}/tests/tc_skin.tmpl)
+
+
+
 if(NOT DISABLE_SHARED)
 	add_custom_command(
 		OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/skin3.cpp
@@ -434,6 +463,11 @@ if(NOT DISABLE_SHARED)
 	target_link_libraries(skin3 ${CPPCMS_LIB})
 endif(NOT DISABLE_SHARED)
 
+
+foreach(SKIN tc_skin_a tc_skin_b tc_skin)
+	add_library(${SKIN} SHARED ${CMAKE_CURRENT_BINARY_DIR}/${SKIN}.cpp)
+	target_link_libraries(${SKIN} ${CPPCMS_LIB})
+endforeach()
 
 
 add_executable(hello_world src/hello_world.cpp skin1.cpp skin2.cpp)
@@ -472,7 +506,10 @@ set(ALL_TESTS
 	xss_test
 	url_mapper_test
 	copy_filter_test
+	tc_test
 	)
+
+
 foreach(TEST ${ALL_TESTS})
 	add_executable(${TEST} tests/${TEST}.cpp)
 	target_link_libraries(${TEST} ${CPPCMS_LIB})

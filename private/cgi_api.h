@@ -70,7 +70,7 @@ namespace cgi {
 		virtual ~acceptor(){}
 	};
 
-	class connection : 
+	class CPPCMS_API connection : 
 		public booster::noncopyable,
 		public booster::enable_shared_from_this<connection>
 	{

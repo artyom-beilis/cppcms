@@ -4,8 +4,10 @@ import os
 import re
 import sys
 
-variable_match=r"\*?([a-zA-Z][a-zA-Z0-9_]*\(?\)?)(((\.|->)([a-zA-Z][a-zA-Z0-9_]*\(?\)?))*)"
 str_match=r'"([^"\\]|\\[^"]|\\")*"'
+single_var_param_match=r'(?:-?\d+|"(?:[^"\\]|\\[^"]|\\")*")'
+call_param_match=r'(?:\(\)|\((?:' + single_var_param_match + r')(?:,' + single_var_param_match + r')*\))'
+variable_match=r"\*?([a-zA-Z][a-zA-Z0-9_]*"+ call_param_match +r"?)(((\.|->)([a-zA-Z][a-zA-Z0-9_]*" + call_param_match + r"?))*)"
 
 def interleave(*args):
     for idx in range(0, max(map(len,args))):
@@ -79,8 +81,6 @@ class html_type:
             html_type_code='as_xhtml'
         else:
             html_type_code='as_html'
-
-    
 
 
 class view_block:
@@ -494,6 +494,16 @@ class form_block:
             flags = 'cppcms::form_flags::%s,cppcms::form_flags::%s' % ( html_type_code, m.group(1));
             output('{ cppcms::form_context _form_context(out(),%s); %s.render(_form_context); }' % (flags , ident))
 
+class render_block:
+    pattern=r'<%\s*render\s+(?P<name>[a-zA-Z]\w*)(\s+using\s+(?P<content>'+variable_match+r'))?\s*%>'
+    def use(self,m):
+        if m.group('content'):
+            content = make_ident(m.group('content'))
+        else:
+            content = 'content';
+        global namespace_name
+        output('content.app().render("%s","%s",out(),%s);"' % (content,namespace_name,content))
+
 
 class filters_show_block(base_show):
     pattern=r'^<%\s*('+ variable_match + r'\s*(\|.*)?)%>$'
@@ -517,6 +527,38 @@ def make_format_params(s,default_filter = 'escape'):
         m=re.match(pattern,s)
     error_exit("Seems to be wrong parameters list [%s]" % s_orig)
     return []
+
+class cache_block:
+    pattern=r'<%\s*cache\s+((?P<str>'+ \
+            str_match +')|(?P<var>'+ variable_match +r'))' + \
+            r'(\s+for\s+(?P<time>\d+))?(\s+on\s+miss\s+(?P<callback>[a-zA-Z]\w+)\(\))?' \
+            + '\s*%>'        
+    type = 'cache'
+    def use(self,m):
+        if(m.group('str')):
+            self.parameter = m.group('str')
+        else:
+            self.parameter = make_ident(m.group('var'));
+        output('{ std::string _cppcms_temp_val')
+        output('  if(content.app().cache().fetch_frame(%s,_cppcms_temp_val))' % self.parameter);
+        output('      out() << _cppcms_temp_val;');
+        output('  else {')
+        if(m.group('callback')):
+            output('    '+make_ident(m.group('callback')+'();'))
+        output('    cppcms::copy_filter _cppcms_cache_flt(out());')
+        self.timeout = m.group('time');
+    def on_end(self):
+        if self.timeout:
+            output('    content.app().cache().store_frame(%s,_cppcms_cache_flt.detach(),%s);' \
+                    % (self.parameter,self.timeout))
+        else:
+            output('    content.app().cache().store_frame(%s,_cppcms_cache_flt.detach());' % self.parameter);
+        output('}} // cache')
+
+
+
+
+
 
 class ngettext_block:
     pattern=r'^<%\s*ngt\s*('+str_match+')\s*,\s*('+str_match+')\s*,\s*('+variable_match+')\s*(using(.*))?\s*%>$'
@@ -553,9 +595,9 @@ class url_block:
         if m.group(3):
             params=make_format_params(m.group(4),'urlencode')
         if not params:
-            output( "content.rendering_application().mapper().map(out(),%s);" % s)
+            output( "content.app().mapper().map(out(),%s);" % s)
         else:
-            output( "content.rendering_application().mapper().map(out(),%s, %s);" % (s , ', '.join(params)))
+            output( "content.app().mapper().map(out(),%s, %s);" % (s , ', '.join(params)))
 
 
 class include_block:
@@ -672,6 +714,7 @@ def main():
                     url_block(), \
                     foreach_block(), item_block(), empty_block(),separator_block(), \
                     include_block(), \
+                    cache_block(), \
                     html_type(), form_block(), \
                     filters_show_block(), error_com() ]:
                 m = re.match(c.pattern,x)

@@ -43,18 +43,18 @@ namespace cppcms {
 		/// Get the application that renders current
 		/// content, throw cppcms_error if the application was not set
 		///
-		application &rendering_application();
+		application &app();
 		///
 		/// Set the application that renders current
 		///
 		/// Called automatically by application::render
 		///
-		void rendering_application(application &app);
+		void app(application &app);
 
 		///
 		/// Resets the application 
 		///
-		void reset_rendering_application();
+		void reset_app();
 
 	private:
 		struct _data;

@@ -306,6 +306,17 @@ std::map<std::string,cookie> const &request::cookies()
 {
 	return cookies_;
 }
+
+static cookie const empty_cookie;
+
+cookie const &request::cookie_by_name(std::string const &name)
+{
+	cookies_type::const_iterator p = cookies_.find(name);
+	if(p==cookies_.end())
+		return empty_cookie;
+	else
+		return p->second;
+}
 		
 request::form_type const &request::get()
 {

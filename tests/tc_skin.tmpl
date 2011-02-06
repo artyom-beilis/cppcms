@@ -1,0 +1,56 @@
+<% c++ #include "tests/tc_test_content.h" %>
+<% skin tc_skin %>
+<% view test_default_master uses data::master %>
+<% template render() %>c<% end template %>
+<% end view %>
+<% view view_y uses data::master %>
+<% template render() %>view y<% end template %>
+<% end view %>
+<% view view_x uses data::master %>
+<% template render() %>view x<% end template %>
+<% end view %>
+<% view master uses data::master %>
+<% template render() %>
+TBD
+<% end template %>
+<% end view %>
+
+<% view master_tmpl uses data::master %>
+<% template a() %>A<% end %>
+<% template b(int x) %>x=<% x %><% end %>
+<% template c(int x,std::string const &y) %>x=<%x%> y=<%y%><% end %>
+<% template render() %>
+<% include a() %>
+<% include b(10) %>
+<% include b(integer) %>
+<% include c(10,"test") %>
+<% include c(integer,text) %>
+<% foreach x as data::master::integers_type::iterator in integers %><% separator %>,<% item %><% include b(x) %><% end %><% end %>
+<% end template %>
+<% end view %>
+
+<% view master_if uses data::master %>
+<% template render() %>
+<% if integer %>integer<%else%>!integer<% end %>
+<% if not integer %>!integer<%else%>!!integer<% end %>
+<% if empty text %>text empty<% else %>text not empty<% end %>
+<% if not empty text %>!text empty<% else %>!!text not empty<% end %>
+<% if (true) %>true<%end%>
+<% if (false) %>false<%end%>
+<% if (false) %>false<% elif (true) %>true<%end%>
+<% end template %>
+<% end view %>
+
+<% view master_url uses data::master %>
+<% template render () %>
+<% url "." %>
+<% url "." using integer %>
+<% url "." using integer,text %>
+<% url "/" using integer %>
+<% url "/" using integer,text %>
+<% url "/" using integer,text | raw %>
+<% url "/foo" %>
+<% end %>
+<% end view %>
+
+<% end skin %>

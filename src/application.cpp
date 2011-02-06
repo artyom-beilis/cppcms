@@ -205,11 +205,11 @@ namespace {
 	public:
 		rnd_guard(base_content &cnt,application *app) : cnt_(&cnt)
 		{
-			cnt_->rendering_application(*app);
+			cnt_->app(*app);
 		}
 		~rnd_guard()
 		{
-			cnt_->reset_rendering_application();
+			cnt_->reset_app();
 		}
 	private:
 		base_content *cnt_;
