@@ -588,6 +588,7 @@ add_test(serialization_test serialization_test)
 add_test(xss_test xss_test)
 add_test(url_mapper_test url_mapper_test)
 add_test(copy_filter_test copy_filter_test)
+add_test(tc_test tc_test)
 
 add_test(status_test
 	status_test "-c" "${CNF}/status_test.js" 
