@@ -24,5 +24,7 @@
 #include <cppcms/views_pool.h>
 #include <cppcms/application.h>
 #include <cppcms/url_mapper.h>
+#include <cppcms/copy_filter.h>
+#include <cppcms/cache_interface.h>
 #endif
 

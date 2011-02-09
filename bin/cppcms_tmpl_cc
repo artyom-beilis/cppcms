@@ -531,7 +531,7 @@ def make_format_params(s,default_filter = 'escape'):
 class cache_block:
     pattern=r'<%\s*cache\s+((?P<str>'+ \
             str_match +')|(?P<var>'+ variable_match +r'))' + \
-            r'(\s+for\s+(?P<time>\d+))?(\s+on\s+miss\s+(?P<callback>[a-zA-Z]\w+)\(\))?' \
+            r'(\s+for\s+(?P<time>\d+))?(\s+on\s+miss\s+(?P<callback>[a-zA-Z]\w*)\(\))?' \
             + '\s*%>'        
     type = 'cache'
     def use(self,m):
@@ -539,14 +539,16 @@ class cache_block:
             self.parameter = m.group('str')
         else:
             self.parameter = make_ident(m.group('var'));
-        output('{ std::string _cppcms_temp_val')
+        output('{ std::string _cppcms_temp_val;')
         output('  if(content.app().cache().fetch_frame(%s,_cppcms_temp_val))' % self.parameter);
         output('      out() << _cppcms_temp_val;');
         output('  else {')
         if(m.group('callback')):
-            output('    '+make_ident(m.group('callback')+'();'))
+            output('    '+make_ident(m.group('callback')+'()') + ';')
         output('    cppcms::copy_filter _cppcms_cache_flt(out());')
         self.timeout = m.group('time');
+        global stack
+        stack.append(self)
     def on_end(self):
         if self.timeout:
             output('    content.app().cache().store_frame(%s,_cppcms_cache_flt.detach(),%s);' \
