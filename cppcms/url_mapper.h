@@ -316,7 +316,7 @@ namespace cppcms {
 		void real_assign(std::string const &key,std::string const &url,application *child = 0);
 		url_mapper &get_mapper_for_key(std::string const &key,std::string &real_key,std::vector<std::string> &direct);
 		url_mapper *root_mapper();
-		void real_map(	std::string const key,
+		void real_map(	std::string const &key,
 				filters::streamable const *const *params,
 				size_t params_no,
 				std::ostream &output);
