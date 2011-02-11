@@ -475,7 +475,7 @@ class form_block:
         if type=='input' or type=='begin' or type=='end':
             flags = 'cppcms::form_flags::' + html_type_code;
             output('{ cppcms::form_context _form_context(out(),%s);' % flags)
-            render_command = '    %s.render_input(_form_context);' % ident;
+            render_command = '    (%s).render_input(_form_context);' % ident;
             if type=='begin':
                 output('    _form_context.widget_part(cppcms::form_context::first_part);')
                 output(render_command)
@@ -485,14 +485,14 @@ class form_block:
             else:
                 output('    _form_context.widget_part(cppcms::form_context::first_part);')
                 output(render_command)
-                output('    out() << %s.attributes_string();' % ident)
+                output('    out() << (%s).attributes_string();' % ident)
                 output('    _form_context.widget_part(cppcms::form_context::second_part);')
                 output(render_command)
             output('}')
 
         else:
             flags = 'cppcms::form_flags::%s,cppcms::form_flags::%s' % ( html_type_code, m.group(1));
-            output('{ cppcms::form_context _form_context(out(),%s); %s.render(_form_context); }' % (flags , ident))
+            output('{ cppcms::form_context _form_context(out(),%s); (%s).render(_form_context); }' % (flags , ident))
 
 class render_block:
     pattern=r'<%\s*render\s+(?P<name>[a-zA-Z]\w*)(\s+using\s+(?P<content>'+variable_match+r'))?\s*%>'
