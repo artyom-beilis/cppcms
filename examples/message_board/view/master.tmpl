@@ -7,8 +7,8 @@
 <% template header() %>
 <title><% include title() %></title>
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-<link href="<% media %>/style.css" rel="stylesheet" type="text/css" />
-<link href="<% media %>/style-<% if rtl %>rtl<% else %>ltr<%end%>.css" rel="stylesheet" type="text/css" />
+<link href="<%= media %>/style.css" rel="stylesheet" type="text/css" />
+<link href="<%= media %>/style-<% if rtl %>rtl<% else %>ltr<%end%>.css" rel="stylesheet" type="text/css" />
 <% end template %>
 
 <% template render() %>

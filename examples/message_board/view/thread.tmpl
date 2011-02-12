@@ -3,11 +3,11 @@
 <% view base_thread uses data::thread_shared  extends master %>
 
 <% template msg_header(data::msg &m) %>
-	<% m.author %>, <a href="<% url "/comment" using m.msg_id %>"><% gt "reply" %></a>
+	<%= m.author %>, <a href="<% url "/comment" using m.msg_id %>"><% gt "reply" %></a>
 <% end %>
 
 <% template msg_cnt(data::msg  &m) %>
-<p><% m.content | ext text2html %></p>
+<p><%= m.content | ext text2html %></p>
 <% end %>
 
 <% template msg(data::msg &m) %>
@@ -82,8 +82,8 @@
 <% template body() %>
 	<% if not empty content %>
 		<dl>
-			<dt><% author %></dt>
-			<dd><% content | ext text2html %></dd>
+			<dt><%= author %></dt>
+			<dd><%= content | ext text2html %></dd>
 		</dl>
 	<% end %>
 	<form action="" method="post" >

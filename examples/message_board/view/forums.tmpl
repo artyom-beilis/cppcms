@@ -4,7 +4,7 @@
 	<% foreach topic in topics %>
 		<ul>
 		<% item %>
-		<li><a href="<% url "/user_thread" using topic.id %>"><% topic.title %></a></li>
+		<li><a href="<% url "/user_thread" using topic.id %>"><%= topic.title %></a></li>
 		<% end %>
 		</ul>
 	<% empty %>
