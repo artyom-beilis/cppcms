@@ -506,7 +506,7 @@ class render_block:
 
 
 class filters_show_block(base_show):
-    pattern=r'^<%\s*('+ variable_match + r'\s*(\|.*)?)%>$'
+    pattern=r'^<%=?\s*('+ variable_match + r'\s*(\|.*)?)%>$'
     def use(self,m):
         expr=self.prepare(m.group(1));
         if expr!="":
@@ -532,6 +532,8 @@ class cache_block:
     pattern=r'<%\s*cache\s+((?P<str>'+ \
             str_match +')|(?P<var>'+ variable_match +r'))' + \
             r'(\s+for\s+(?P<time>\d+))?(\s+on\s+miss\s+(?P<callback>[a-zA-Z]\w*)\(\))?' \
+            + r'(?P<notriggers>\s+no\s+triggers)?' \
+            + r'(?P<norecording>\s+no\s+recording)?' \
             + '\s*%>'        
     type = 'cache'
     def use(self,m):
@@ -539,25 +541,46 @@ class cache_block:
             self.parameter = m.group('str')
         else:
             self.parameter = make_ident(m.group('var'));
+        self.notriggers = m.group('notriggers')
+        self.norecording = m.group('norecording')
         output('{ std::string _cppcms_temp_val;')
         output('  if(content.app().cache().fetch_frame(%s,_cppcms_temp_val))' % self.parameter);
         output('      out() << _cppcms_temp_val;');
         output('  else {')
+        output('    cppcms::copy_filter _cppcms_cache_flt(out());')
+        if not self.norecording:
+            output('    cppcms::triggers_recorder _cppcms_trig_rec(content.app().cache());')
+        # the code below should be the last one 
         if(m.group('callback')):
             output('    '+make_ident(m.group('callback')+'()') + ';')
-        output('    cppcms::copy_filter _cppcms_cache_flt(out());')
         self.timeout = m.group('time');
         global stack
         stack.append(self)
     def on_end(self):
         if self.timeout:
-            output('    content.app().cache().store_frame(%s,_cppcms_cache_flt.detach(),%s);' \
-                    % (self.parameter,self.timeout))
+            timeout_time = self.timeout
         else:
-            output('    content.app().cache().store_frame(%s,_cppcms_cache_flt.detach());' % self.parameter);
+            timeout_time = '-1'
+        if self.norecording:
+            recorded = 'std::set<std::string>()'
+        else:
+            recorded = '_cppcms_trig_rec.detach()'
+        if self.notriggers:
+            notriggers='true'
+        else:
+            notriggers='false'
+        output('    content.app().cache().store_frame(%s,_cppcms_cache_flt.detach(),%s,%s,%s);' \
+                    % (self.parameter,recorded,timeout_time,notriggers))
         output('}} // cache')
 
-
+class trigger_block:
+    pattern=r'<%\s*trigger\s+((?P<str>'+  str_match +')|(?P<var>'+ variable_match +r'))' + r'\s*%>'
+    def use(self,m):
+        if(m.group('str')):
+            parameter = m.group('str')
+        else:
+            parameter = make_ident(m.group('var'));
+        output('content.app().cache().add_trigger(%s);' % parameter)
 
 
 
@@ -717,6 +740,7 @@ def main():
                     foreach_block(), item_block(), empty_block(),separator_block(), \
                     include_block(), \
                     cache_block(), \
+                    trigger_block(), \
                     html_type(), form_block(), \
                     filters_show_block(), error_com() ]:
                 m = re.match(c.pattern,x)

@@ -38,6 +38,70 @@ namespace cppcms {
 		class context;
 	};
 
+	class cache_interface;
+
+	///
+	/// \brief triggers_recorder is a class that allows you to record all triggers added in certain scope.
+	///
+	/// It is useful to have have "sub-dependencies" for smaller parts.
+	///
+	/// For example:
+	///
+	/// \code
+	///
+	///   if(cache().fetch_page("news"))
+	///      return;
+	///      // something there
+	///      if(cache().fetch_frame("politics",text))
+	///        response().out() << text;
+	///      else {
+	///        copy_filter politics(respone().out());
+	///        triggers_recorder politics_triggers(cache());
+	///        // some thing else there
+	///        for(int i=0;i<articles.size();i++) {
+	///          if(cache().fetch_frame(article_tag,text);
+	///            response().out() << text;
+	///          else {
+	///            copy_filter article(respone().out());
+	///            // generate article 
+	///            cache().store_frame(article_tag,article.detach()); 
+	///          }
+	///       }
+	///       cache().store_frame("polotics",
+	///                    politics.detach(), // the recorded content of politics
+	///                    politics_triggers.detach());
+	///      }
+	///      ...
+	/// \endcode
+	///                    
+	/// So tag "politics" records all added triggers like "article_234" and
+	/// now rise of "article_234" would invalidate "politics" section as well
+	/// as we automatically record all triggers inserted in triggers_recorder scope.
+	///
+	///
+	class CPPCMS_API  triggers_recorder : public booster::noncopyable {
+	public:
+		///
+		/// Start recording all triggers
+		///
+		triggers_recorder(cache_interface &);
+		///
+		/// Stop recording triggers
+		///
+		~triggers_recorder();
+		///
+		/// Stop recording triggers and get the set of all triggers
+		/// being added in its scope
+		///
+		std::set<std::string> detach();
+	private:
+		friend class cache_interface;
+		void add(std::string const &t);
+		struct data;
+		booster::hold_ptr<data> d;
+		std::set<std::string> triggers_;
+		cache_interface *cache_;
+	};
 
 	///
 	/// \brief This class is the major gateway of the application to CppCMS caching abilities. Any access too cache
@@ -256,6 +320,11 @@ namespace cppcms {
 
 	private:
 
+		friend class triggers_recorder;
+
+		void add_triggers_recorder(triggers_recorder *rec);
+		void remove_triggers_recorder(triggers_recorder *rec);
+
 
 		void store(	std::string const &key,
 				std::string const &data,
@@ -271,6 +340,7 @@ namespace cppcms {
 		booster::hold_ptr<_data> d;
 		http::context *context_;
 		std::set<std::string> triggers_;
+		std::set<triggers_recorder *> recorders_;
 		booster::intrusive_ptr<impl::base_cache> cache_module_;
 
 		uint32_t page_compression_used_ : 1;

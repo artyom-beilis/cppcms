@@ -50,6 +50,40 @@ namespace {
 	}
 }
 
+struct triggers_recorder::data {};
+
+triggers_recorder::triggers_recorder(cache_interface &cache):
+	cache_(&cache)
+{
+	cache_->add_triggers_recorder(this);
+}
+
+void triggers_recorder::add(std::string const &t)
+{
+	triggers_.insert(t);
+}
+
+std::set<std::string> triggers_recorder::detach()
+{
+	if(cache_) {
+		cache_->remove_triggers_recorder(this);
+		cache_ = 0;
+	}
+	else {
+		throw cppcms_error("triggers_recorder: the detach was called once, can't use the object twice");
+	}
+	std::set<std::string> result;
+	result.swap(triggers_);
+	return result;
+}
+
+triggers_recorder::~triggers_recorder()
+{
+	if(cache_)
+		cache_->remove_triggers_recorder(this);
+	cache_ = 0;
+}
+
 struct cache_interface::_data {};
 
 cache_interface::cache_interface(http::context &context) :
@@ -58,6 +92,17 @@ cache_interface::cache_interface(http::context &context) :
 {
 	cache_module_ = context_->service().cache_pool().get();
 }
+
+void cache_interface::add_triggers_recorder(triggers_recorder *tr)
+{
+	recorders_.insert(tr);
+}
+
+void cache_interface::remove_triggers_recorder(triggers_recorder *tr)
+{
+	recorders_.erase(tr);
+}
+
 
 cache_interface::~cache_interface()
 {
@@ -94,7 +139,7 @@ void cache_interface::store_page(string const &key,int timeout)
 	context_->response().finalize();
 
 	std::string r_key = (page_compression_used_ ? "_Z:" : "_U:") + key;
-	triggers_.insert(key);
+	add_trigger(key);
 	cache_module_->store(r_key,context_->response().copied_data(),triggers_,deadtime(timeout));
 }
 
@@ -124,6 +169,8 @@ bool cache_interface::has_cache()
 void cache_interface::add_trigger(string const &t)
 {
 	if(nocache()) return;
+	for(std::set<triggers_recorder *>::iterator p=recorders_.begin();p!=recorders_.end();++p)
+		(*p)->add(t);
 	triggers_.insert(t);
 }
 
@@ -144,8 +191,11 @@ bool cache_interface::fetch(string const &key,string &result,bool notriggers)
 	set<string> new_trig;
 
 	if(cache_module_->fetch(key,result, (notriggers ? 0 : &new_trig))) {
-		if(!notriggers)
-			triggers_.insert(new_trig.begin(),new_trig.end());
+		if(!notriggers) {
+			std::set<std::string>::const_iterator p;
+			for(p=new_trig.begin();p!=new_trig.end();++p)
+				add_trigger(*p);
+		}
 		return true;
 	}
 	return false;
@@ -158,8 +208,10 @@ void cache_interface::store(string const &key,string const &data,
 {
 	if(nocache()) return;
 	if(!notriggers) {
-		this->triggers_.insert(triggers.begin(),triggers.end());
-		this->triggers_.insert(key);
+		std::set<std::string>::const_iterator p;
+		for(p=triggers.begin();p!=triggers.end();++p)
+			add_trigger(*p);
+		add_trigger(key);
 	}
 	cache_module_->store(key,data,triggers,deadtime(timeout));
 }
