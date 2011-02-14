@@ -234,6 +234,14 @@ namespace booster {
 		}
 		
 		///
+		/// Convert local time to POSIX time similar to mktime
+		///
+		static ptime local_time(std::tm const &v);
+		///
+		/// Convert universal time to POSIX time similar to timegm or mktime in GMT timezone
+		///
+		static ptime universal_time(std::tm const &v);
+		///
 		/// Convert POSIX time \a v to a local time similar to localtime_r
 		///
 		static std::tm local_time(ptime const &v);

@@ -10,6 +10,7 @@
 #define _CRT_SECURE_NO_WARNINGS
 #endif
 #include <booster/posix_time.h>
+#include <booster/ctime.h>
 
 #ifdef BOOSTER_WIN_NATIVE
 #include <windows.h>
@@ -64,32 +65,22 @@ void ptime::sleep(ptime const &p)
 
 std::tm ptime::universal_time(ptime const &p)
 {
-	#ifdef BOOSTER_WIN_NATIVE
-	// WIN32 Uses TSL
-	time_t t=p.sec;
-	std::tm *res=::gmtime(&t);
-	return *res;
-	#else
-	time_t t=p.sec;
-	std::tm tm;
-	::gmtime_r(&t,&tm);
-	return tm;
-	#endif
+	return booster::universal_time(p.sec);
 }
 
 std::tm ptime::local_time(ptime const &p)
 {
-	#ifdef BOOSTER_WIN_NATIVE
-	// WIN32 Uses TSL
-	time_t t=p.sec;
-	std::tm *res=::localtime(&t);
-	return *res;
-	#else
-	time_t t=p.sec;
-	std::tm tm;
-	::localtime_r(&t,&tm);
-	return tm;
-	#endif
+	return booster::local_time(p.sec);
+}
+
+ptime ptime::universal_time(std::tm const &t)
+{
+	return ptime(booster::make_universal_time(t));
+}
+
+ptime ptime::local_time(std::tm const &t)
+{
+	return ptime(booster::make_local_time(t));
 }
 
 

@@ -6,8 +6,10 @@
 //  http://www.boost.org/LICENSE_1_0.txt)
 //
 #include <booster/posix_time.h>
+#include <booster/ctime.h>
 #include "test.h"
 
+#include <limits>
 #include <iostream>
 
 void test_lower(booster::ptime l,booster::ptime h)
@@ -24,6 +26,8 @@ int main()
 {
 	try {
 		using booster::ptime;
+
+		std::cout << "- Testing ptime" << std::endl;
 		ptime p;
 		TEST(p==ptime::zero);
 		TEST(p.get_seconds()==0 && p.get_nanoseconds()==0);
@@ -94,6 +98,76 @@ int main()
 		ptime end = ptime::now();
 		int diff = ptime::milliseconds(end-start);
 		TEST(100 <= diff && diff <=300);
+
+		std::cout << "- Testing ctime" << std::endl;
+		std::cout << "- Testing timegm normalization" << std::endl;	
+	
+		std::tm src = std::tm();
+		src.tm_year = 2011 - 1900;
+		src.tm_mday = 14;
+		src.tm_mon = 1; // feb
+
+		{
+			std::tm mon=src;
+			mon.tm_mon+=13;
+			booster::normalize_universal_time(mon);
+			TEST(mon.tm_mon == 2);
+			TEST(mon.tm_year == 2012 - 1900);
+			TEST(mon.tm_mday == 14);
+		}
+		{
+			std::tm mon=src;
+			mon.tm_mon-=24;
+			booster::normalize_universal_time(mon);
+			TEST(mon.tm_mon == 1);
+			TEST(mon.tm_year == 2009 - 1900);
+			TEST(mon.tm_mday == 14);
+		}
+		{
+			std::tm mon=src;
+			mon.tm_mday+=15;
+			booster::normalize_universal_time(mon);
+			TEST(mon.tm_mon == 2);
+			TEST(mon.tm_year == 2011 - 1900);
+			TEST(mon.tm_mday == 1);
+		}
+		{
+			std::tm mon=src;
+			mon.tm_year = 2000 - 1900;
+			mon.tm_mday+=15;
+			booster::normalize_universal_time(mon);
+			TEST(mon.tm_mon == 1);
+			TEST(mon.tm_year == 2000 - 1900);
+			TEST(mon.tm_mday == 29);
+		}
+	
+		std::cout << "- Testing timegm implementation" << std::endl;	
+		long long range = 500LL * 3600 * 24 * 366;
+		if(range > std::numeric_limits<time_t>::max()) {
+			range = std::numeric_limits<time_t>::max() - 3600 * 24;
+		}
+		long long low_point = -range;
+		long long top_point = +range;
+
+		for(time_t pt = low_point;pt < top_point;pt+=3600 * 12) {
+			// One is system other is mine
+			std::tm t_ref = booster::universal_time(pt);
+			TEST(booster::make_universal_time(booster::universal_time(pt)) == pt);
+			std::tm t_cpy = std::tm();
+			t_cpy.tm_year = t_ref.tm_year;
+			t_cpy.tm_mon = t_ref.tm_mon;
+			t_cpy.tm_mday = t_ref.tm_mday;
+			t_cpy.tm_hour = t_ref.tm_hour;
+			t_cpy.tm_min = t_ref.tm_min;
+			t_cpy.tm_sec = t_ref.tm_sec;
+			t_cpy.tm_isdst = -1;
+			TEST(booster::normalize_universal_time(t_cpy) == pt);
+			TEST(t_cpy.tm_wday == t_ref.tm_wday);
+			TEST(t_cpy.tm_yday == t_ref.tm_yday);
+		}
+
+
+
 	}
 	catch(std::exception const &e) {
 		std::cerr << "Fail " << e.what() << std::endl;
