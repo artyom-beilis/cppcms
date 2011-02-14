@@ -18,10 +18,17 @@
 ///////////////////////////////////////////////////////////////////////////////
 #define CPPCMS_SOURCE
 #include <cppcms/config.h>
+#ifndef CPPCMS_NO_CACHE
 #include "cache_storage.h"
 #include <booster/thread.h>
 
-#ifndef CPPCMS_WIN32
+#if defined CPPCMS_WIN32 
+# ifndef CPPCMS_NO_PREFOK_CACHE
+#   define CPPCMS_NO_PREFOK_CACHE
+# endif
+#endif
+
+#ifndef CPPCMS_NO_PREFOK_CACHE
 # include "posix_util.h"
 # include "shmem_allocator.h"
 #endif
@@ -55,7 +62,7 @@ struct copy_traits<std::string>
 	static std::string to_std(std::string const &a) { return a; }
 };
 
-#ifndef CPPCMS_WIN32
+#ifndef CPPCMS_NO_PREFOK_CACHE
 
 struct process_settings {
 	static shmem_control *process_memory;
@@ -398,13 +405,12 @@ public:
 
 }; // mem cache
 
-
 booster::intrusive_ptr<base_cache> thread_cache_factory(unsigned items)
 {
 	return new mem_cache<thread_settings>(items);
 }
 
-#ifndef CPPCMS_WIN32
+#if !defined(CPPCMS_NO_PREFOK_CACHE)
 booster::intrusive_ptr<base_cache> process_cache_factory(size_t memory)
 {
 	process_settings::init(memory);
@@ -415,5 +421,5 @@ booster::intrusive_ptr<base_cache> process_cache_factory(size_t memory)
 } // impl 
 } // cppcms
 
-
+#endif // CPPCMS_NO_PREFOK_CACHE
 

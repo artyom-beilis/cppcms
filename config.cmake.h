@@ -115,5 +115,9 @@
 #cmakedefine CPPCMS_HAS_FCGI
 #cmakedefine CPPCMS_HAS_SCGI
 #cmakedefine CPPCMS_HAS_HTTP
+#cmakedefine CPPCMS_NO_TCP_CACHE
+#cmakedefine CPPCMS_NO_CACHE
+#cmakedefine CPPCMS_NO_PREFOK_CACHE
+#cmakedefine CPPCMS_NO_GZIP
 
 #endif

@@ -39,18 +39,15 @@
 #include <iterator>
 #include <map>
 
-#ifdef CPPCMS_USE_EXTERNAL_BOOST
-#   include <boost/iostreams/stream.hpp>
-#   include <boost/iostreams/filtering_stream.hpp>
-#   include <boost/iostreams/filter/gzip.hpp>
-#   include <boost/iostreams/tee.hpp>
-#else // Internal Boost
-#   include <cppcms_boost/iostreams/stream.hpp>
-#   include <cppcms_boost/iostreams/filtering_stream.hpp>
-#   include <cppcms_boost/iostreams/filter/gzip.hpp>
-#   include <cppcms_boost/iostreams/tee.hpp>
-    namespace boost = cppcms_boost;
+#define CPPCMS_NO_ZLIB
+
+#include <cppcms_boost/iostreams/stream.hpp>
+#include <cppcms_boost/iostreams/filtering_stream.hpp>
+#ifndef CPPCMS_NO_ZLIB
+#include <cppcms_boost/iostreams/filter/gzip.hpp>
 #endif
+#include <cppcms_boost/iostreams/tee.hpp>
+namespace boost = cppcms_boost;
 
 namespace cppcms { namespace http {
 
@@ -208,6 +205,7 @@ void response::erase_header(std::string const &name)
 
 bool response::need_gzip()
 {
+#ifndef CPPCMS_NO_ZLIB
 	if(disable_compression_)
 		return false;
 	if(io_mode_!=normal)
@@ -224,6 +222,9 @@ bool response::need_gzip()
 	if(protocol::is_prefix_of("text/",content_type))
 		return true;
 	return false;
+#else
+	return false;
+#endif
 }
 
 response::io_mode_type response::io_mode()
@@ -284,16 +285,19 @@ std::ostream &response::out()
 		real_sink = &d->output;
 
 
+	#ifndef CPPCMS_NO_ZLIB
 	bool gzip = need_gzip();
 	
 	if(gzip) {
 		content_encoding("gzip");
 	}
+	#endif
 
 	// Now we shoulde write headers -- before comrpession
 	if(io_mode_ != raw && io_mode_ != asynchronous_raw)
 		write_http_headers(*real_sink);
 	
+	#ifndef CPPCMS_NO_ZLIB
 	if(gzip) {
 		gzip_params params;
 
@@ -308,6 +312,7 @@ std::ostream &response::out()
 
 		stream_ = &d->filter;
 	}
+	#endif
 	
 	if(copy_to_cache_) {
 		d->filter.push(tee_filter<std::ostream>(d->cached));

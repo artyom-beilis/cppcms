@@ -16,13 +16,17 @@ enable_testing()
 #
 #############################################################################
 
-option(DISABLE_SHARED	"Disable shared libraries build" OFF)
-option(DISABLE_STATIC	"Disable static libraries build" OFF)
-option(DISABLE_GCRYPT	"Disable usage of gcrypt library" OFF)
-option(DISABLE_OPENSSL	"Disable usage of openssl library" OFF)
-option(DISABLE_FCGI	"Disable fastcgi web server api" OFF)
-option(DISABLE_SCGI	"Disable scgi web server api" OFF)
-option(DISABLE_HTTP	"Disable http web server" OFF)
+option(DISABLE_SHARED		"Disable shared libraries build" OFF)
+option(DISABLE_STATIC		"Disable static libraries build" OFF)
+option(DISABLE_GCRYPT		"Disable usage of gcrypt library" OFF)
+option(DISABLE_OPENSSL		"Disable usage of openssl library" OFF)
+option(DISABLE_FCGI		"Disable fastcgi web server api" OFF)
+option(DISABLE_SCGI		"Disable scgi web server api" OFF)
+option(DISABLE_HTTP		"Disable http web server" OFF)
+option(DISABLE_CACHE		"Disable cache beckend" OFF)
+option(DISABLE_PREFORK_CACHE	"Disable cache beckend" OFF)
+option(DISABLE_TCPCACHE		"Disable distributed cache beckend" OFF)
+option(DISABLE_GZIP		"Disable support of gzip output compression" OFF)
 
 
 add_subdirectory(booster)
@@ -36,6 +40,10 @@ include_directories(${CMAKE_CURRENT_BINARY_DIR})
 include_directories(${CMAKE_CURRENT_BINARY_DIR}/booster)
 include_directories(${CMAKE_SOURCE_DIR})
 
+if(DISABLE_CACHE)
+	set(DISABLE_PREFORK_CACHE ON)
+	set(DISABLE_TCPCACHE ON)
+endif()
 
 
 #############################################################################
@@ -177,9 +185,11 @@ check_cxx_source_compiles(
 	int main(){std::list<int> l; __typeof__(l.begin()) p=l.begin();}"
 	CPPCMS_HAVE_UNDERSCORE_TYPEOF)
 
-find_library(ZLIB NAMES z zdll zlib${ZLIB_SUFFIX} zlib)
-find_path(ZLIB_INCLUDE_DIR zlib.h)
-include_directories(${ZLIB_INCLUDE_DIR})
+if(NOT DISABLE_GZIP)
+	find_library(ZLIB NAMES z zdll zlib${ZLIB_SUFFIX} zlib)
+	find_path(ZLIB_INCLUDE_DIR zlib.h)
+	include_directories(${ZLIB_INCLUDE_DIR})
+endif()
 
 
 if(${CMAKE_HOST_WIN32})
@@ -225,6 +235,24 @@ check_function_exists(canonicalize_file_name CPPCMS_HAVE_CANONICALIZE_FILE_NAME)
 
 add_definitions(-DCPPCMS_BOOST_ALL_NO_LIB)
 
+if(DISABLE_TCPCACHE)
+	set(CPPCMS_NO_TCP_CACHE 1)
+endif()
+
+if(DISABLE_CACHE)
+	set(CPPCMS_NO_CACHE 1)
+endif()
+
+if(DISABLE_PREFORK_CACHE)
+	set(CPPCMS_NO_PREFOK_CACHE 1)
+endif()
+
+if(DISABLE_GZIP)
+	set(CPPCMS_NO_GZIP 1)
+endif()
+
+
+
 set(CPPCMS_PUBLIC_HEADERS ${CMAKE_CURRENT_BINARY_DIR}/cppcms/config.h)
 
 
@@ -257,11 +285,6 @@ set(CPPCMS_SOURCES
 	src/cache_pool.cpp
 	src/cache_interface.cpp
 	src/cache_storage.cpp
-	src/tcp_cache_client.cpp
-	src/cache_over_ip.cpp
-	src/tcp_messenger.cpp
-	src/tcp_connector.cpp
-	src/tcp_cache_server.cpp
 	src/forwarder.cpp
 	src/session_pool.cpp
 	src/hmac_encryptor.cpp
@@ -281,9 +304,23 @@ set(CPPCMS_SOURCES
 	src/daemonize.cpp
 	src/xss.cpp
 	src/copy_filter.cpp
-	cppcms_boost/src/zlib.cpp
-	cppcms_boost/src/gzip.cpp
 )
+
+if(NOT DISABLE_GZIP)
+	set(CPPCMS_SOURCES ${CPPCMS_SOURCES}
+		cppcms_boost/src/zlib.cpp
+		cppcms_boost/src/gzip.cpp)
+endif()
+
+
+if(NOT DISABLE_TCPCACHE)
+	set(CPPCMS_SOURCES ${CPPCMS_SOURCES}
+		src/tcp_cache_client.cpp
+		src/cache_over_ip.cpp
+		src/tcp_messenger.cpp
+		src/tcp_connector.cpp
+		src/tcp_cache_server.cpp)
+endif()
 
 if(NOT DISABLE_GCRYPT)
 	find_path(GCRYPT_INCLUDE_DIR gcrypt.h)
@@ -383,7 +420,9 @@ foreach(ALIB ${CPPCMS_LIBS})
 		target_link_libraries(${ALIB} ${LIB_DL})
 	endif(LIB_DL)
 
-	target_link_libraries(${ALIB} ${ZLIB})
+	if(NOT DISABLE_GZIP)
+		target_link_libraries(${ALIB} ${ZLIB})
+	endif()
 endforeach(ALIB)
 
 
@@ -477,8 +516,10 @@ endforeach()
 add_executable(hello_world src/hello_world.cpp skin1.cpp skin2.cpp)
 target_link_libraries(hello_world ${CPPCMS_LIB})
 
-add_executable(cppcms_scale src/cache_server_main.cpp)
-target_link_libraries(cppcms_scale ${CPPCMS_LIB})
+if(NOT DISABLE_TCPCACHE)
+	add_executable(cppcms_scale src/cache_server_main.cpp)
+	target_link_libraries(cppcms_scale ${CPPCMS_LIB})
+endif()
 
 add_executable(cppcms_config_find_param src/cppcms_config_find_param.cpp src/json.cpp)
 if(DISABLE_SHARED)
@@ -497,7 +538,6 @@ set(ALL_TESTS
 	disco_test
 	encryptor_test
 	storage_test
-	cache_backend_test
 	json_test
 	base64_test
 	forwarder_test
@@ -513,6 +553,9 @@ set(ALL_TESTS
 	tc_test
 	)
 
+if(NOT DISABLE_TCPCACHE)
+	set(ALL_TESTS ${ALL_TESTS} cache_backend_test)
+endif()
 
 foreach(TEST ${ALL_TESTS})
 	add_executable(${TEST} tests/${TEST}.cpp)
@@ -556,12 +599,17 @@ endif(MSVC AND NOT DISABLE_STATIC)
 
 configure_file(config.cmake.h cppcms/config.h)
 
+set(CPPCMS_INSTALL_TARGETS ${CPPCMS_LIBS} cppcms_config_find_param)
+if(NOT DISABLE_TCPCACHE)
+	set(CPPCMS_INSTALL_TARGETS ${CPPCMS_INSTALL_TARGETS} cppcms_scale)
+endif()
+
 #################
 # Installation
 #################
 
 
-install(TARGETS ${CPPCMS_LIBS} cppcms_config_find_param cppcms_scale
+install(TARGETS ${CPPCMS_INSTALL_TARGETS} 
 	RUNTIME DESTINATION bin
 	LIBRARY DESTINATION lib
 	ARCHIVE DESTINATION lib
@@ -587,7 +635,9 @@ add_test(storage_test storage_test)
 add_test(json_test json_test)
 add_test(multipart_parser_test multipart_parser_test "${CNF}")
 add_test(content_type_parser_test content_type_parser_test)
-add_test(cache_backend_test cache_backend_test)
+if(NOT DISABLE_TCPCACHE)
+	add_test(cache_backend_test cache_backend_test)
+endif()
 add_test(serialization_test serialization_test)
 add_test(xss_test xss_test)
 add_test(url_mapper_test url_mapper_test)
@@ -677,14 +727,20 @@ foreach(TYPE async sync)
 	endif()
 endforeach()
 
-set_tests_properties( 
-	cache_backend_test 
+set(TESTS_WITH_TIMEOUT
 	forwarder_test 
 	jsonrpc_test 
 	proto_test_sync_http
 	proto_test_async_http
 	proto_test_sync_scgi
-	proto_test_async_scgi
+	proto_test_async_scgi)
+
+if(NOT DISABLE_TCPCACHE)
+	set(TESTS_WITH_TIMEOUT ${TESTS_WITH_TIMEOUT} cache_backend_test)
+endif()
+
+set_tests_properties( 
+	${TESTS_WITH_TIMEOUT}
 	PROPERTIES TIMEOUT 120)
 
 if(NOT WIN32)
