@@ -146,7 +146,13 @@ int main()
 		if(range > std::numeric_limits<time_t>::max()) {
 			range = std::numeric_limits<time_t>::max() - 3600 * 24;
 		}
+#ifdef BOOSTER_WIN_NATIVE
+		// Under Windows localtime and gmtime are valid for positive time_t values
+		// only
+		long long low_point = 0;
+#else
 		long long low_point = -range;
+#endif
 		long long top_point = +range;
 
 		for(time_t pt = low_point;pt < top_point;pt+=3600 * 12) {
