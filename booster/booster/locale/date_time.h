@@ -155,278 +155,279 @@ namespace booster {
             ///
             static const date_time_period pm(am_pm,1);
 
+            ///
+            /// convers period_type to date_time_period(f,1)
+            ///
+            inline date_time_period operator+(period::period_type f) 
+            {
+                return date_time_period(f);
+            }
+            ///
+            /// convers period_type to date_time_period(f,-1)
+            ///
+            inline date_time_period operator-(period::period_type f)
+            {
+                return date_time_period(f,-1);
+            }
+
+            ///
+            /// Create date_time_period of type \a f with value \a v. 
+            ///
+            inline date_time_period operator*(period::period_type f,char v)
+            {
+                return date_time_period(f,v);
+            }
+
+            ///
+            /// Create date_time_period of type \a f with value \a v. 
+            ///
+            inline date_time_period operator*(char v,period::period_type f)
+            {
+                return date_time_period(f,v);
+            }
+
+
+            ///
+            /// Create date_time_period of type \a f with value \a v. 
+            ///
+            inline date_time_period operator*(char v,date_time_period f)
+            {
+                return date_time_period(f.type,f.value*v);
+            }
+
+            ///
+            /// Create date_time_period of type \a f with value \a v. 
+            ///
+            inline date_time_period operator*(date_time_period f,char v)
+            {
+                return date_time_period(f.type,f.value*v);
+            }
+
+            ///
+            /// Create date_time_period of type \a f with value \a v. 
+            ///
+            inline date_time_period operator*(period::period_type f,short int v)
+            {
+                return date_time_period(f,v);
+            }
+
+            ///
+            /// Create date_time_period of type \a f with value \a v. 
+            ///
+            inline date_time_period operator*(short int v,period::period_type f)
+            {
+                return date_time_period(f,v);
+            }
+
+            ///
+            /// Create date_time_period of type \a f with value \a v. 
+            ///
+            inline date_time_period operator*(short int v,date_time_period f)
+            {
+                return date_time_period(f.type,f.value*v);
+            }
+
+            ///
+            /// Create date_time_period of type \a f with value \a v. 
+            ///
+            inline date_time_period operator*(date_time_period f,short int v)
+            {
+                return date_time_period(f.type,f.value*v);
+            }
+
+
+            ///
+            /// Create date_time_period of type \a f with value \a v. 
+            ///
+            inline date_time_period operator*(period::period_type f,int v)
+            {
+                return date_time_period(f,v);
+            }
+
+            ///
+            /// Create date_time_period of type \a f with value \a v. 
+            ///
+            inline date_time_period operator*(int v,period::period_type f)
+            {
+                return date_time_period(f,v);
+            }
+
+            ///
+            /// Create date_time_period of type \a f with value \a v. 
+            ///
+            inline date_time_period operator*(int v,date_time_period f)
+            {
+                return date_time_period(f.type,f.value*v);
+            }
+
+            ///
+            /// Create date_time_period of type \a f with value \a v. 
+            ///
+            inline date_time_period operator*(date_time_period f,int v)
+            {
+                return date_time_period(f.type,f.value*v);
+            }
+
+            ///
+            /// Create date_time_period of type \a f with value \a v. 
+            ///
+            inline date_time_period operator*(period::period_type f,long int v)
+            {
+                return date_time_period(f,v);
+            }
+
+            ///
+            /// Create date_time_period of type \a f with value \a v. 
+            ///
+            inline date_time_period operator*(long int v,period::period_type f)
+            {
+                return date_time_period(f,v);
+            }
+            ///
+            /// Create date_time_period of type \a f with value \a v. 
+            ///
+            inline date_time_period operator*(long int v,date_time_period f)
+            {
+                return date_time_period(f.type,f.value*v);
+            }
+
+            ///
+            /// Create date_time_period of type \a f with value \a v. 
+            ///
+            inline date_time_period operator*(date_time_period f,long int v)
+            {
+                return date_time_period(f.type,f.value*v);
+            }
+
+            ///
+            /// Create date_time_period of type \a f with value \a v. 
+            ///
+            inline date_time_period operator*(period::period_type f,unsigned char v)
+            {
+                return date_time_period(f,v);
+            }
+
+            ///
+            /// Create date_time_period of type \a f with value \a v. 
+            ///
+            inline date_time_period operator*(unsigned char v,period::period_type f)
+            {
+                return date_time_period(f,v);
+            }
+
+            ///
+            /// Create date_time_period of type \a f with value \a v. 
+            ///
+            inline date_time_period operator*(unsigned char v,date_time_period f)
+            {
+                return date_time_period(f.type,f.value*v);
+            }
+
+            ///
+            /// Create date_time_period of type \a f with value \a v. 
+            ///
+            inline date_time_period operator*(date_time_period f,unsigned char v)
+            {
+                return date_time_period(f.type,f.value*v);
+            }
+
+            ///
+            /// Create date_time_period of type \a f with value \a v. 
+            ///
+            inline date_time_period operator*(period::period_type f,unsigned short int v)
+            {
+                return date_time_period(f,v);
+            }
+
+            ///
+            /// Create date_time_period of type \a f with value \a v. 
+            ///
+            inline date_time_period operator*(unsigned short int v,period::period_type f)
+            {
+                return date_time_period(f,v);
+            }
+
+            ///
+            /// Create date_time_period of type \a f with value \a v. 
+            ///
+            inline date_time_period operator*(unsigned short int v,date_time_period f)
+            {
+                return date_time_period(f.type,f.value*v);
+            }
+
+            ///
+            /// Create date_time_period of type \a f with value \a v. 
+            ///
+            inline date_time_period operator*(date_time_period f,unsigned short int v)
+            {
+                return date_time_period(f.type,f.value*v);
+            }
+
+            ///
+            /// Create date_time_period of type \a f with value \a v. 
+            ///
+            inline date_time_period operator*(period::period_type f,unsigned int v)
+            {
+                return date_time_period(f,v);
+            }
+
+            ///
+            /// Create date_time_period of type \a f with value \a v. 
+            ///
+            inline date_time_period operator*(unsigned int v,period::period_type f)
+            {
+                return date_time_period(f,v);
+            }
+            
+            ///
+            /// Create date_time_period of type \a f with value \a v. 
+            ///
+            inline date_time_period operator*(unsigned int v,date_time_period f)
+            {
+                return date_time_period(f.type,f.value*v);
+            }
+            
+            ///
+            /// Create date_time_period of type \a f with value \a v. 
+            ///
+            inline date_time_period operator*(date_time_period f,unsigned int v)
+            {
+                return date_time_period(f.type,f.value*v);
+            }
+
+            ///
+            /// Create date_time_period of type \a f with value \a v. 
+            ///
+            inline date_time_period operator*(period::period_type f,unsigned long int v)
+            {
+                return date_time_period(f,v);
+            }
+            
+            ///
+            /// Create date_time_period of type \a f with value \a v. 
+            ///
+            inline date_time_period operator*(unsigned long int v,period::period_type f)
+            {
+                return date_time_period(f,v);
+            }
+            
+            ///
+            /// Create date_time_period of type \a f with value \a v. 
+            ///
+            inline date_time_period operator*(unsigned long int v,date_time_period f)
+            {
+                return date_time_period(f.type,f.value*v);
+            }
+            
+            ///
+            /// Create date_time_period of type \a f with value \a v. 
+            ///
+            inline date_time_period operator*(date_time_period f,unsigned long int v)
+            {
+                return date_time_period(f.type,f.value*v);
+            }
+
         } // period
-
-        ///
-        /// convers period_type to date_time_period(f,1)
-        ///
-        inline date_time_period operator+(period::period_type f) 
-        {
-            return date_time_period(f);
-        }
-        ///
-        /// convers period_type to date_time_period(f,-1)
-        ///
-        inline date_time_period operator-(period::period_type f)
-        {
-            return date_time_period(f,-1);
-        }
-
-        ///
-        /// Create date_time_period of type \a f with value \a v. 
-        ///
-        inline date_time_period operator*(period::period_type f,char v)
-        {
-            return date_time_period(f,v);
-        }
-
-        ///
-        /// Create date_time_period of type \a f with value \a v. 
-        ///
-        inline date_time_period operator*(char v,period::period_type f)
-        {
-            return date_time_period(f,v);
-        }
-
-        ///
-        /// Create date_time_period of type \a f with value \a v. 
-        ///
-        inline date_time_period operator*(char v,date_time_period f)
-        {
-            return date_time_period(f.type,f.value*v);
-        }
-
-        ///
-        /// Create date_time_period of type \a f with value \a v. 
-        ///
-        inline date_time_period operator*(date_time_period f,char v)
-        {
-            return date_time_period(f.type,f.value*v);
-        }
-
-        ///
-        /// Create date_time_period of type \a f with value \a v. 
-        ///
-        inline date_time_period operator*(period::period_type f,short int v)
-        {
-            return date_time_period(f,v);
-        }
-
-        ///
-        /// Create date_time_period of type \a f with value \a v. 
-        ///
-        inline date_time_period operator*(short int v,period::period_type f)
-        {
-            return date_time_period(f,v);
-        }
-
-        ///
-        /// Create date_time_period of type \a f with value \a v. 
-        ///
-        inline date_time_period operator*(short int v,date_time_period f)
-        {
-            return date_time_period(f.type,f.value*v);
-        }
-
-        ///
-        /// Create date_time_period of type \a f with value \a v. 
-        ///
-        inline date_time_period operator*(date_time_period f,short int v)
-        {
-            return date_time_period(f.type,f.value*v);
-        }
-
-
-        ///
-        /// Create date_time_period of type \a f with value \a v. 
-        ///
-        inline date_time_period operator*(period::period_type f,int v)
-        {
-            return date_time_period(f,v);
-        }
-
-        ///
-        /// Create date_time_period of type \a f with value \a v. 
-        ///
-        inline date_time_period operator*(int v,period::period_type f)
-        {
-            return date_time_period(f,v);
-        }
-
-        ///
-        /// Create date_time_period of type \a f with value \a v. 
-        ///
-        inline date_time_period operator*(int v,date_time_period f)
-        {
-            return date_time_period(f.type,f.value*v);
-        }
-
-        ///
-        /// Create date_time_period of type \a f with value \a v. 
-        ///
-        inline date_time_period operator*(date_time_period f,int v)
-        {
-            return date_time_period(f.type,f.value*v);
-        }
-
-        ///
-        /// Create date_time_period of type \a f with value \a v. 
-        ///
-        inline date_time_period operator*(period::period_type f,long int v)
-        {
-            return date_time_period(f,v);
-        }
-
-        ///
-        /// Create date_time_period of type \a f with value \a v. 
-        ///
-        inline date_time_period operator*(long int v,period::period_type f)
-        {
-            return date_time_period(f,v);
-        }
-        ///
-        /// Create date_time_period of type \a f with value \a v. 
-        ///
-        inline date_time_period operator*(long int v,date_time_period f)
-        {
-            return date_time_period(f.type,f.value*v);
-        }
-
-        ///
-        /// Create date_time_period of type \a f with value \a v. 
-        ///
-        inline date_time_period operator*(date_time_period f,long int v)
-        {
-            return date_time_period(f.type,f.value*v);
-        }
-
-        ///
-        /// Create date_time_period of type \a f with value \a v. 
-        ///
-        inline date_time_period operator*(period::period_type f,unsigned char v)
-        {
-            return date_time_period(f,v);
-        }
-
-        ///
-        /// Create date_time_period of type \a f with value \a v. 
-        ///
-        inline date_time_period operator*(unsigned char v,period::period_type f)
-        {
-            return date_time_period(f,v);
-        }
-
-        ///
-        /// Create date_time_period of type \a f with value \a v. 
-        ///
-        inline date_time_period operator*(unsigned char v,date_time_period f)
-        {
-            return date_time_period(f.type,f.value*v);
-        }
-
-        ///
-        /// Create date_time_period of type \a f with value \a v. 
-        ///
-        inline date_time_period operator*(date_time_period f,unsigned char v)
-        {
-            return date_time_period(f.type,f.value*v);
-        }
-
-        ///
-        /// Create date_time_period of type \a f with value \a v. 
-        ///
-        inline date_time_period operator*(period::period_type f,unsigned short int v)
-        {
-            return date_time_period(f,v);
-        }
-
-        ///
-        /// Create date_time_period of type \a f with value \a v. 
-        ///
-        inline date_time_period operator*(unsigned short int v,period::period_type f)
-        {
-            return date_time_period(f,v);
-        }
-
-        ///
-        /// Create date_time_period of type \a f with value \a v. 
-        ///
-        inline date_time_period operator*(unsigned short int v,date_time_period f)
-        {
-            return date_time_period(f.type,f.value*v);
-        }
-
-        ///
-        /// Create date_time_period of type \a f with value \a v. 
-        ///
-        inline date_time_period operator*(date_time_period f,unsigned short int v)
-        {
-            return date_time_period(f.type,f.value*v);
-        }
-
-        ///
-        /// Create date_time_period of type \a f with value \a v. 
-        ///
-        inline date_time_period operator*(period::period_type f,unsigned int v)
-        {
-            return date_time_period(f,v);
-        }
-
-        ///
-        /// Create date_time_period of type \a f with value \a v. 
-        ///
-        inline date_time_period operator*(unsigned int v,period::period_type f)
-        {
-            return date_time_period(f,v);
-        }
-        
-        ///
-        /// Create date_time_period of type \a f with value \a v. 
-        ///
-        inline date_time_period operator*(unsigned int v,date_time_period f)
-        {
-            return date_time_period(f.type,f.value*v);
-        }
-        
-        ///
-        /// Create date_time_period of type \a f with value \a v. 
-        ///
-        inline date_time_period operator*(date_time_period f,unsigned int v)
-        {
-            return date_time_period(f.type,f.value*v);
-        }
-
-        ///
-        /// Create date_time_period of type \a f with value \a v. 
-        ///
-        inline date_time_period operator*(period::period_type f,unsigned long int v)
-        {
-            return date_time_period(f,v);
-        }
-        
-        ///
-        /// Create date_time_period of type \a f with value \a v. 
-        ///
-        inline date_time_period operator*(unsigned long int v,period::period_type f)
-        {
-            return date_time_period(f,v);
-        }
-        
-        ///
-        /// Create date_time_period of type \a f with value \a v. 
-        ///
-        inline date_time_period operator*(unsigned long int v,date_time_period f)
-        {
-            return date_time_period(f.type,f.value*v);
-        }
-        
-        ///
-        /// Create date_time_period of type \a f with value \a v. 
-        ///
-        inline date_time_period operator*(date_time_period f,unsigned long int v)
-        {
-            return date_time_period(f.type,f.value*v);
-        }
 
 
         ///

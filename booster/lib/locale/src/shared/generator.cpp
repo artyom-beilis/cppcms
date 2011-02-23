@@ -98,15 +98,6 @@ namespace booster {
         {
             d->paths.push_back(path);
         }
-        #if defined(BOOSTER_WIN_NATIVE)
-        void generator::add_messages_path(std::wstring const &path)
-        {
-            std::string utf8_path_with_bom = "\xEF\xBB\xBF";
-            utf8_path_with_bom.append(conv::from_utf(path,"UTF-8"));
-            add_messages_path(utf8_path_with_bom);
-        }
-        #endif
-
         void generator::clear_paths()
         {
             d->paths.clear();

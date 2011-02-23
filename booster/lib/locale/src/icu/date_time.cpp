@@ -21,6 +21,10 @@
 
 #include "cdata.h"
 #include "uconv.h"
+#include "time_zone.h"
+
+#include <iostream>
+
 
 namespace booster {
 namespace locale {
@@ -197,9 +201,7 @@ namespace impl_icu {
         }
         virtual void set_timezone(std::string const &tz)
         {
-            icu_std_converter<char> cvt(encoding_);
-            icu::UnicodeString utz=cvt.icu(tz.c_str(),tz.c_str()+tz.size());
-            calendar_->adoptTimeZone(icu::TimeZone::createTimeZone(utz));
+            calendar_->adoptTimeZone(get_time_zone(tz));
         }
         virtual std::string get_timezone() const 
         {

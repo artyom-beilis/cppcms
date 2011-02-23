@@ -14,6 +14,8 @@
 #include <sstream>
 #include <stdlib.h>
 
+#include "timezone.h"
+
 namespace booster {
 namespace locale {
 namespace util {
@@ -179,38 +181,6 @@ private:
         }
         return std::use_facet<std::time_put<char_type> >(ios.getloc()).put(out,ios,fill,&tm,format.c_str(),format.c_str()+format.size());
     }
-
-    int parse_tz(std::string const &tz) const
-    {
-        int gmtoff = 0;
-        std::string ltz;
-        for(unsigned i=0;i<tz.size();i++) {
-            if('a' <= tz[i] && tz[i] <= 'z')
-                ltz += tz[i]-'a' + 'A';
-            else if(tz[i]==' ')
-                ;
-            else
-                ltz+=tz[i];
-        }
-        if(ltz.compare(0,3,"GMT")!=0 && ltz.compare(0,3,"UTC")!=0)
-            return 0;
-        if(ltz.size()<=3)
-            return 0;
-        char const *begin = ltz.c_str()+3;
-        char *end=0;
-        int hours = strtol(begin,&end,10);
-        if(end != begin) {
-            gmtoff+=hours * 3600;
-        }
-        if(*end==':') {
-            begin=end+1;
-            int minutes = strtol(begin,&end,10);
-            if(end!=begin)
-                gmtoff+=minutes * 60;
-        }
-        return gmtoff;
-    }
-
 
 };  /// num_format
 

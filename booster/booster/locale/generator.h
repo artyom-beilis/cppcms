@@ -120,17 +120,19 @@ namespace booster {
 
             ///
             /// Add a search path where dictionaries are looked in.
+            ///
+            /// \note
+            ///
+            /// - Under Windows platform the path is treated as path in locale's encoding so when
+            ///   if you create locale "en_US.windows-1251" then path would be treated as cp1255,
+            ///   and if it is en_US.UTF-8 it is treated as UTF-8. File name is always opened as 
+            ///   wide file name as Wide file names are the native file name on Windows.
+            ///
+            /// - Under POSIX platforms all paths passed as-is regardless of encoding as the narrow
+            ///   encodings are the native encodings for POSIX platform.
+            ///   
             /// 
             void add_messages_path(std::string const &path);
-
-            #if defined(BOOSTER_WIN_NATIVE)
-            ///
-            /// Add a "wide" search path where dictionaries are looked in. 
-            /// This function is Win32 specific only as windows "ANSI" API does not support full
-            /// range of paths as on any other operating systems
-            /// 
-            void add_messages_path(std::wstring const &path);
-            #endif
 
             ///
             /// Remove all added paths

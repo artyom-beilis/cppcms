@@ -23,6 +23,7 @@
 #include <iostream>
 
 #include "predefined_formatters.h"
+#include "time_zone.h"
 
 #ifdef BOOSTER_MSVC
 #  pragma warning(disable : 4244) // loose data 
@@ -612,12 +613,7 @@ namespace locale {
                         df = adf.get();
                     }
 
-                    if(!info.time_zone().empty()) {
-                        df->adoptTimeZone(icu::TimeZone::createTimeZone(info.time_zone().c_str()));
-                    }
-                    else {
-                        df->adoptTimeZone(icu::TimeZone::createDefault());
-                    }
+                    df->adoptTimeZone(get_time_zone(info.time_zone()));
                         
                     // Depending if we own formatter or not
                     if(adf.get())

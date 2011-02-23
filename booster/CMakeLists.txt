@@ -346,6 +346,7 @@ if(NOT DISABLE_ICU_LOCALE)
 		lib/locale/src/icu/formatter.cpp
 		lib/locale/src/icu/icu_backend.cpp
 		lib/locale/src/icu/numeric.cpp
+		lib/locale/src/icu/time_zone.cpp
 		)
 endif()
 

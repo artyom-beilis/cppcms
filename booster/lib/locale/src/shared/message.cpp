@@ -56,36 +56,29 @@ namespace booster {
 
                 #if defined(BOOSTER_WIN_NATIVE)
 
-                bool open(std::string const &file_name)
+                bool open(std::string const &file_name,std::string const &encoding)
                 {
                     close();
 
-                    /// Under windows we have to use "_wfopen" to get
-                    /// access to path's with Unicode in them
-                    ///
-                    /// As not all standard C++ libraries support nonstandard std::istream::open(wchar_t const *)
-                    /// we would use old and good stdio and _wfopen CRTL functions
-                    ///
+                    //
+                    // Under windows we have to use "_wfopen" to get
+                    // access to path's with Unicode in them
+                    //
+                    // As not all standard C++ libraries support nonstandard std::istream::open(wchar_t const *)
+                    // we would use old and good stdio and _wfopen CRTL functions
+                    //
 
-                    ///
-                    /// So in order to distinguish between local encoding and UTF encoding we use BOM
-                    ///
-
-                    if(file_name.compare(0,3,"\xEF\xBB\xBF")==0)
-                    {
-                        std::wstring wfile_name = conv::to_utf<wchar_t>(file_name.substr(3),"UTF-8");
-                        file = _wfopen(wfile_name.c_str(),L"rb");
-                    }
-                    else {
-                        file = fopen(file_name.c_str(),"rb");
-                    }
+                    std::wstring wfile_name = conv::to_utf<wchar_t>(file_name,encoding);
+                    file = _wfopen(wfile_name.c_str(),L"rb");
 
                     return file!=0;
                 }
 
                 #else // POSIX systems do not have all this Wide API crap, as native codepages are UTF-8
+
+                // We do not use encoding as we use native file name encoding
                 
-                bool open(std::string const &file_name)
+                bool open(std::string const &file_name,std::string const &/* encoding */)
                 {
                     close();
 
@@ -393,11 +386,11 @@ namespace booster {
                 }
 
 
-                bool load_file(std::string file_name,std::string encoding,int id)
+                bool load_file(std::string file_name,std::string const &encoding,int id)
                 {
                     c_file the_file;
 
-                    the_file.open(file_name);
+                    the_file.open(file_name,encoding);
 
                     if(!the_file.file)
                         return false;
