@@ -1,5 +1,5 @@
 //
-//  Copyright (c) 2009-2010 Artyom Beilis (Tonkikh)
+//  Copyright (c) 2009-2011 Artyom Beilis (Tonkikh)
 //
 //  Distributed under the Boost Software License, Version 1.0. (See
 //  accompanying file LICENSE_1_0.txt or copy at
@@ -13,6 +13,7 @@
 #include "posix_backend.h"
 
 #include "../util/locale_data.h"
+#include "../util/gregorian.h"
 #include <booster/locale/util.h>
 
 #include <langinfo.h>
@@ -102,6 +103,12 @@ namespace impl_posix {
                 return create_parsing(base,lc_,type);
             case codepage_facet:
                 return create_codecvt(base,nl_langinfo_l(CODESET,*lc_),type);
+            case calendar_facet:
+                {
+                    util::locale_data inf;
+                    inf.parse(real_id_);
+                    return util::install_gregorian_calendar(base,inf.country);
+                }
             case message_facet:
                 {
                     gnu_gettext::messages_info minf;

@@ -381,6 +381,12 @@ if(NOT DISABLE_STD_LOCALE)
 	)
 endif()
 
+if(NOT DISABLE_WINAPI_LOCALE OR NOT DISABLE_STD_LOCALE OR NOT DISABLE_POSIX_LOCALE)
+	set(BOOSTER_SRC ${BOOSTER_SRC}
+		lib/locale/src/util/gregorian.cpp)
+endif()
+
+
 if(USE_WINDOWS6_API)
 	check_cxx_source_compiles(
 		"#include <windows.h>

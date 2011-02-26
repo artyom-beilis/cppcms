@@ -1,5 +1,5 @@
 //
-//  Copyright (c) 2009-2010 Artyom Beilis (Tonkikh)
+//  Copyright (c) 2009-2011 Artyom Beilis (Tonkikh)
 //
 //  Distributed under the Boost Software License, Version 1.0. (See
 //  accompanying file LICENSE_1_0.txt or copy at
@@ -12,6 +12,7 @@
 #include "all_generator.h"
 #include "win_backend.h"
 #include <booster/locale/util.h>
+#include "../util/gregorian.h"
 #include "../util/locale_data.h"
 #include "api.h"
 
@@ -92,6 +93,12 @@ namespace impl_win {
                 return create_formatting(base,lc_,type);
             case parsing_facet:
                 return create_parsing(base,lc_,type);
+            case calendar_facet:
+                {
+                    util::locale_data inf;
+                    inf.parse(real_id_);
+                    return util::install_gregorian_calendar(base,inf.country);
+                }
             case message_facet:
                 {
                     gnu_gettext::messages_info minf;

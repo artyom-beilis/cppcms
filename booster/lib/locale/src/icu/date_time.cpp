@@ -1,5 +1,5 @@
 //
-//  Copyright (c) 2009-2010 Artyom Beilis (Tonkikh)
+//  Copyright (c) 2009-2011 Artyom Beilis (Tonkikh)
 //
 //  Distributed under the Boost Software License, Version 1.0. (See
 //  accompanying file LICENSE_1_0.txt or copy at
@@ -156,15 +156,33 @@ namespace impl_icu {
                 res.nanoseconds = 999999999;
             return res;
         }
-        virtual void set_option(calendar_option_type opt,int v) 
+        virtual void set_option(calendar_option_type opt,int /*v*/) 
         {
-            throw booster::invalid_argument("There is no settable options for calendar");
+            switch(opt) {
+            case is_gregorian:
+                throw date_time_error("is_gregorian is not settable options for calendar");
+            case is_dst:
+                throw date_time_error("is_dst is not settable options for calendar");
+            default:
+                ;
+            }
         }
         virtual int get_option(calendar_option_type opt) const
         {
-            if(opt==is_gregorian)
+            switch(opt) {
+            case is_gregorian:
                 return dynamic_cast<icu::GregorianCalendar const *>(calendar_.get())!=0;
-            throw booster::invalid_argument("Invalid option");
+            case is_dst:
+                {
+                    guard l(lock_);
+                    UErrorCode err = U_ZERO_ERROR;
+                    bool res = ( calendar_->inDaylightTime(err) != 0 );
+                    check_and_throw_dt(err);
+                    return res;
+                }
+            default:
+                return 0;
+            }
         }
         virtual void adjust_value(period_type p,update_type u,int difference)
         {
@@ -181,15 +199,25 @@ namespace impl_icu {
         }
         virtual int difference(abstract_calendar const *other_ptr,period::period_type p) const
         {
-            calendar_impl const &other_cal=dynamic_cast<calendar_impl const &>(*other_ptr);
-            std::auto_ptr<icu::Calendar> self(calendar_->clone()),other(other_cal.calendar_->clone());
             UErrorCode err=U_ZERO_ERROR;
             double other_time = 0;
-            {
-                guard l(other_cal.lock_);
-                other_time = other->getTime(err);
+            //
+            // fieldDifference has side effect of moving calendar (WTF?)
+            // So we clone it for performing this operation
+            // 
+            std::auto_ptr<icu::Calendar> self(calendar_->clone());
+
+            calendar_impl const *other_cal=dynamic_cast<calendar_impl const *>(other_ptr);
+            if(other_cal){
+                guard l(other_cal->lock_);
+                other_time = other_cal->calendar_->getTime(err);
+                check_and_throw_dt(err);
             }
-            check_and_throw_dt(err);
+            else {
+                posix_time p = other_ptr->get_time();
+                other_time = p.seconds * 1000.0 + p.nanoseconds / 1000000.0;
+            }
+
             int diff = 0;
             
             {

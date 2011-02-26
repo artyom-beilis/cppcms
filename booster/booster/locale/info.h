@@ -1,5 +1,5 @@
 //
-//  Copyright (c) 2009-2010 Artyom Beilis (Tonkikh)
+//  Copyright (c) 2009-2011 Artyom Beilis (Tonkikh)
 //
 //  Distributed under the Boost Software License, Version 1.0. (See
 //  accompanying file LICENSE_1_0.txt or copy at
@@ -98,7 +98,7 @@ namespace booster {
             ///
             bool utf8() const
             {
-                return get_ineger_property(utf8_property) != 0;
+                return get_integer_property(utf8_property) != 0;
             }
             
 #if defined (__SUNPRO_CC) && defined (_RWSTD_VER)
@@ -112,7 +112,7 @@ namespace booster {
             ///
             /// Get integer property by its id \a v
             ///
-            virtual int get_ineger_property(integer_property v) const = 0;
+            virtual int get_integer_property(integer_property v) const = 0;
         };
 
     }

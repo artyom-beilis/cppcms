@@ -1,5 +1,5 @@
 //
-//  Copyright (c) 2009-2010 Artyom Beilis (Tonkikh)
+//  Copyright (c) 2009-2011 Artyom Beilis (Tonkikh)
 //
 //  Distributed under the Boost Software License, Version 1.0. (See
 //  accompanying file LICENSE_1_0.txt or copy at
@@ -24,24 +24,29 @@ namespace booster {
             /// Operators like +, - * defined for these period allowing to perform easy calculations over them
             ///
             typedef enum {
-                invalid,                    ///< Special invalid value, should not be used directs
+                invalid,                    ///< Special invalid value, should not be used directly
                 era,                        ///< Era i.e. AC, BC in Gregorian and Julian calendar, range [0,1]
-                year,                       ///< Year, it is calendar specific
+                year,                       ///< Year, it is calendar specific, for example 2011 in Gregorian calendar.
                 extended_year,              ///< Extended year for Gregorian/Julian calendars, where 1 BC == 0, 2 BC == -1.
                 month,                      ///< The month of year, calendar specific, in Gregorian [0..11]
                 day,                        ///< The day of month, calendar specific, in Gregorian [1..31]
-                day_of_year,                ///< The number of day in year, starting from 1
-                day_of_week,                ///< Day of week, starting from Sunday, [1..7]
-                day_of_week_in_month,       ///< Original number of the day of the week in month.
+                day_of_year,                ///< The number of day in year, starting from 1, in Gregorian  [1..366]
+                day_of_week,                ///< Day of week, Sunday=1, Monday=2,..., Saturday=7.
+                                            ///< Note that that updating this value respects local day of week, so for example,
+                                            ///< If first day of week is Monday and the current day is Tuesday then setting
+                                            ///< the value to Sunday (1) would forward the date by 5 days forward and not backward
+                                            ///< by two days as it could be expected if the numbers were taken as is.
+                day_of_week_in_month,       ///< Original number of the day of the week in month. For example 1st Sunday, 
+                                            ///< 2nd Sunday, etc. in Gregorian [1..5]
                 day_of_week_local,          ///< Local day of week, for example in France Monday is 1, in US Sunday is 1, [1..7]
                 hour,                       ///< 24 clock hour [0..23]
                 hour_12,                    ///< 12 clock hour [0..11]
-                am_pm,                      ///< am or pm marker, [0..1]
+                am_pm,                      ///< am or pm marker [0..1]
                 minute,                     ///< minute [0..59]
                 second,                     ///< second [0..59]
                 week_of_year,               ///< The week number in the year
                 week_of_month,              ///< The week number withing current month
-                first_day_of_week,          ///< For example Sunday in US, Monday in France
+                first_day_of_week,          ///< First day if week, constant, for example Sunday in US = 1, Monday in France = 2
             } period_type;
 
         } // namespace period
@@ -90,7 +95,8 @@ namespace booster {
             /// Information about calendar
             ///
             typedef enum {
-                is_gregorian,  ///< Check if the calendar is Gregorian
+                is_gregorian,   ///< Check if the calendar is Gregorian
+                is_dst          ///< Check if the current time is in daylight time savings
             } calendar_option_type;
 
             ///

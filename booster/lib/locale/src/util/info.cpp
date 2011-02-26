@@ -1,5 +1,5 @@
 //
-//  Copyright (c) 2009-2010 Artyom Beilis (Tonkikh)
+//  Copyright (c) 2009-2011 Artyom Beilis (Tonkikh)
 //
 //  Distributed under the Boost Software License, Version 1.0. (See
 //  accompanying file LICENSE_1_0.txt or copy at
@@ -46,7 +46,7 @@ namespace util {
             };
         }
 
-        virtual int get_ineger_property(integer_property v) const
+        virtual int get_integer_property(integer_property v) const
         {
             switch(v) {
             case utf8_property:

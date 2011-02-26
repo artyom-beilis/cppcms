@@ -1,5 +1,5 @@
 //
-//  Copyright (c) 2009-2010 Artyom Beilis (Tonkikh)
+//  Copyright (c) 2009-2011 Artyom Beilis (Tonkikh)
 //
 //  Distributed under the Boost Software License, Version 1.0. (See
 //  accompanying file LICENSE_1_0.txt or copy at
@@ -263,26 +263,6 @@ void test_translate(std::string original,std::string expected,std::locale const 
 }
 
 
-#ifdef BOOSTER_WIN_NATIVE
-
-void test_wide_path(int argc,char **argv)
-{
-    std::cout << "Testing loading catalogs from wide path" << std::endl;
-    booster::locale::generator g;
-    g.add_messages_domain("default");
-    if(argc==2)
-        g.add_messages_path(booster::locale::conv::to_utf<wchar_t>(argv[1],"windows-1252"));
-    else
-        g.add_messages_path(L"./");
-
-    std::locale l=g("he_IL.UTF-8");
-
-    TEST(booster::locale::gettext("hello",l)=="שלום");
-
-}
-
-#endif
-
 
 int main(int argc,char **argv)
 {
@@ -294,10 +274,6 @@ int main(int argc,char **argv)
             booster::locale::localization_backend_manager::global(tmp_backend);
             
             std::cout << "Testing for backend --------- " << def[type] << std::endl;
-
-            #ifdef BOOSTER_WIN_NATIVE
-            test_wide_path(argc,argv);
-            #endif
 
             booster::locale::generator g;
             g.add_messages_domain("default");

@@ -1,5 +1,5 @@
 //
-//  Copyright (c) 2009-2010 Artyom Beilis (Tonkikh)
+//  Copyright (c) 2009-2011 Artyom Beilis (Tonkikh)
 //
 //  Distributed under the Boost Software License, Version 1.0. (See
 //  accompanying file LICENSE_1_0.txt or copy at
@@ -415,6 +415,11 @@ int date_time::maximum(period_type f) const
 int date_time::minimum(period_type f) const
 {
     return impl_->get_value(f,abstract_calendar::actual_minimum);
+}
+
+bool date_time::is_in_daylight_saving_time() const
+{
+    return impl_->get_option(abstract_calendar::is_dst);
 }
 
 namespace time_zone {

@@ -1,5 +1,5 @@
 //
-//  Copyright (c) 2009-2010 Artyom Beilis (Tonkikh)
+//  Copyright (c) 2009-2011 Artyom Beilis (Tonkikh)
 //
 //  Distributed under the Boost Software License, Version 1.0. (See
 //  accompanying file LICENSE_1_0.txt or copy at
@@ -10,6 +10,7 @@
 #include <booster/locale/gnu_gettext.h>
 #include "all_generator.h"
 #include "../util/locale_data.h"
+#include "../util/gregorian.h"
 #include <booster/locale/util.h>
 
 #if defined(BOOSTER_WIN_NATIVE)
@@ -163,6 +164,8 @@ namespace impl_std {
                 return create_parsing(base,name_,type,utf_mode_);
             case codepage_facet:
                 return create_codecvt(base,name_,type,utf_mode_);
+            case calendar_facet:
+                return util::install_gregorian_calendar(base,data_.country);
             case message_facet:
                 {
                     gnu_gettext::messages_info minf;

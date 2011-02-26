@@ -1,5 +1,5 @@
 //
-//  Copyright (c) 2009-2010 Artyom Beilis (Tonkikh)
+//  Copyright (c) 2009-2011 Artyom Beilis (Tonkikh)
 //
 //  Distributed under the Boost Software License, Version 1.0. (See
 //  accompanying file LICENSE_1_0.txt or copy at
@@ -893,6 +893,11 @@ namespace booster {
             /// in February maximum(day) may be 28 or 29, in January maximum(day)==31
             ///
             int maximum(period::period_type f) const;
+
+            ///
+            /// Check if the current time is in daylight saving time 
+            ///
+            bool is_in_daylight_saving_time() const;
 
         private:
             hold_ptr<abstract_calendar> impl_;
