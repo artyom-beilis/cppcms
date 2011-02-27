@@ -119,6 +119,10 @@ namespace util {
                 "JO","KE","KW","LY","MA","OM","QA","SA","SD","SO",
                 "SY","TN","YE"
             };
+            // workaround for Sun Solaris !@#%@#$%@#$%234
+            #ifdef sun
+            #undef sun
+            #endif
             static char const * const sun[] = {
                 "AR","AS","AZ","BW","CA","CN","FO","GE","GL","GU",
                 "HK","IL","IN","JM","JP","KG","KR","LA","MH","MN",

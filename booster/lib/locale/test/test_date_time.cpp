@@ -205,6 +205,12 @@ int main()
                 TEST(date_time(year* 1984 + february + day).get(week_of_year)==5);
                 TEST(time_point.get(week_of_month) == 1);
                 RESET();
+                
+                // Make sure we don't get year < 1970 so the test would
+                // work on windows where mktime supports positive time_t
+                // only
+                time_point = year * 2010;
+
                 TEST((time_point + year *1 - hour * 1 - time_point) / year == 0);
                 TEST((time_point + year *1 - time_point) / year == 1);
                 TEST((time_point + year *1 + hour * 1 - time_point) / year == 1);

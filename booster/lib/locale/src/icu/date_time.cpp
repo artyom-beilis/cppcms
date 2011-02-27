@@ -73,6 +73,10 @@ namespace impl_icu {
             UErrorCode err=U_ZERO_ERROR;
             calendar_.reset(icu::Calendar::createInstance(dat.locale,err));
             check_and_throw_dt(err);
+            #if U_ICU_VERSION_MAJOR_NUM*100 + U_ICU_VERSION_MINOR_NUM < 402
+            // workaround old/invalid data, it should be 4 in general
+            calendar_->setMinimalDaysInFirstWeek(4);
+            #endif
             encoding_ = dat.encoding;
         }
         calendar_impl(calendar_impl const &other)
