@@ -24,7 +24,7 @@
 
 //#define DEBUG_FMT
 
-bool equal(std::string const &s1,std::string const &s2,locale_t lc)
+bool equal(std::string const &s1,std::string const &s2,locale_t /*lc*/)
 {
     return s1 == s2;
 }

@@ -7,12 +7,19 @@
 //
 #define BOOSTER_SOURCE
 
+#include <booster/config.h>
+#ifdef BOOSTER_MSVC
+#  pragma warning(disable : 4996)
+#endif
+
 #include <locale>
 #include <booster/backtrace.h>
 #include <booster/locale/generator.h>
 #include <booster/locale/conversion.h>
 #include <booster/locale/encoding.h>
 #include <vector>
+
+
 
 #include "all_generator.h"
 
@@ -33,7 +40,7 @@ public:
         base_(base)
     {
     }
-    virtual string_type convert(converter_base::conversion_type how,char_type const *begin,char_type const *end,int flags = 0) const 
+    virtual string_type convert(converter_base::conversion_type how,char_type const *begin,char_type const *end,int /*flags*/ = 0) const 
     {
         switch(how) {
         case converter_base::upper_case:
@@ -68,7 +75,7 @@ public:
         base_(base)
     {
     }
-    virtual std::string convert(converter_base::conversion_type how,char const *begin,char const *end,int flags = 0) const 
+    virtual std::string convert(converter_base::conversion_type how,char const *begin,char const *end,int /*flags*/ = 0) const 
     {
         switch(how) {
         case upper_case:

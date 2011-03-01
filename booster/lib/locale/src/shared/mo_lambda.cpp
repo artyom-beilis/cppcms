@@ -53,7 +53,7 @@ namespace lambda {
             val(v)
         {
         }
-        virtual int operator()(int n) const 
+        virtual int operator()(int /*n*/) const 
         {
             return val;
         }

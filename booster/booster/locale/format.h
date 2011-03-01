@@ -80,7 +80,7 @@ namespace booster {
                 }
 
             private:
-                static void void_write(stream_type &output,void const *ptr)
+                static void void_write(stream_type &output,void const * /*ptr*/)
                 {
                     CharType empty_string[1]={0};
                     output<<empty_string;

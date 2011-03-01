@@ -47,7 +47,7 @@ public:
     }
 protected: 
 
-    virtual iter_type do_format_currency(bool intl,iter_type out,std::ios_base &ios,char_type fill,long double val) const
+    virtual iter_type do_format_currency(bool intl,iter_type out,std::ios_base &/*ios*/,char_type /*fill*/,long double val) const
     {
         char buf[64];
         char const *format = intl ? "%i" : "%n";
@@ -140,7 +140,7 @@ public:
     typedef CharType char_type;
     typedef std::basic_string<char_type> string_type;
 
-    virtual iter_type do_put(iter_type out,std::ios_base &ios,CharType fill,std::tm const *tm,char format,char modifier) const
+    virtual iter_type do_put(iter_type out,std::ios_base &/*ios*/,CharType /*fill*/,std::tm const *tm,char format,char modifier) const
     {
         char_type fmt[4] = { '%' , modifier != 0 ? modifier : format , modifier == 0 ? '\0' : format };
         string_type res = ftime_traits<char_type>::ftime(fmt,tm,*lc_);
@@ -392,7 +392,7 @@ public:
         if(decimal_point_.size() > 1)
             decimal_point_ = CharType('.');
     }
-    void to_str(std::string &s1,std::string &s2,locale_t lc)
+    void to_str(std::string &s1,std::string &s2,locale_t /*lc*/)
     {
         s2.swap(s1);
     }

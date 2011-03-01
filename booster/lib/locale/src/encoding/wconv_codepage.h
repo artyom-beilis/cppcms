@@ -343,7 +343,9 @@ namespace impl {
                 throw conversion_error();
             }
             std::vector<char> ctmp;
-            wide_to_multibyte(code_page_,begin,end,how_ == skip,ctmp);
+			wchar_t const *wbegin = reinterpret_cast<wchar_t const *>(begin);
+			wchar_t const *wend = reinterpret_cast<wchar_t const *>(end);
+            wide_to_multibyte(code_page_,wbegin,wend,how_ == skip,ctmp);
             std::string res;
             if(ctmp.empty())
                 return res;
@@ -387,7 +389,7 @@ namespace impl {
             size_t n=buf.size();
             string_type res;
             res.reserve(n);
-            for(int i=0;i<n;i++) {
+            for(unsigned i=0;i<n;i++) {
                 wchar_t cur = buf[i];
                 if(0xD800 <= cur && cur<= 0xDBFF) {
                     i++;

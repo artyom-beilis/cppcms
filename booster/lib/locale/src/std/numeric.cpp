@@ -32,7 +32,7 @@ public:
     }
     typedef typename std::time_put<CharType>::iter_type iter_type;
 
-    virtual iter_type do_put(iter_type out,std::ios_base &ios,CharType fill,std::tm const *tm,char format,char modifier) const
+    virtual iter_type do_put(iter_type out,std::ios_base &/*ios*/,CharType fill,std::tm const *tm,char format,char modifier) const
     {
         std::basic_stringstream<CharType> ss;
         ss.imbue(base_);
@@ -49,7 +49,7 @@ public:
         base_(base)
     {
     }
-    virtual iter_type do_put(iter_type out,std::ios_base &ios,char fill,std::tm const *tm,char format,char modifier = 0) const
+    virtual iter_type do_put(iter_type out,std::ios_base &/*ios*/,char fill,std::tm const *tm,char format,char modifier = 0) const
     {
         std::basic_ostringstream<wchar_t> wtmps;
         wtmps.imbue(base_);

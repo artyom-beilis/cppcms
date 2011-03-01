@@ -15,6 +15,8 @@
 
 namespace bl = booster::locale;
 
+std::string backend;
+
 std::string same_s(std::string s)
 {
     return s;
@@ -216,10 +218,12 @@ void test_cntranslate(std::string c,std::string s,std::string p,int n,std::strin
     strings_equal<char>(c,s,p,n,expected,l,domain);
     strings_equal<wchar_t>(c,s,p,n,expected,l,domain);
     #ifdef BOOSTER_HAS_CHAR16_T
-    strings_equal<char16_t>(c,s,p,n,expected,l,domain);
+	if(backend=="icu" || backend=="std")
+		strings_equal<char16_t>(c,s,p,n,expected,l,domain);
     #endif
     #ifdef BOOSTER_HAS_CHAR32_T
-    strings_equal<char32_t>(c,s,p,n,expected,l,domain);
+	if(backend=="icu" || backend=="std")
+		strings_equal<char32_t>(c,s,p,n,expected,l,domain);
     #endif
 }
 
@@ -229,10 +233,12 @@ void test_ntranslate(std::string s,std::string p,int n,std::string expected,std:
     strings_equal<char>(s,p,n,expected,l,domain);
     strings_equal<wchar_t>(s,p,n,expected,l,domain);
     #ifdef BOOSTER_HAS_CHAR16_T
-    strings_equal<char16_t>(s,p,n,expected,l,domain);
+	if(backend=="icu" || backend=="std")
+		strings_equal<char16_t>(s,p,n,expected,l,domain);
     #endif
     #ifdef BOOSTER_HAS_CHAR32_T
-    strings_equal<char32_t>(s,p,n,expected,l,domain);
+    if(backend=="icu" || backend=="std")
+		strings_equal<char32_t>(s,p,n,expected,l,domain);
     #endif
 }
 
@@ -241,10 +247,12 @@ void test_ctranslate(std::string c,std::string original,std::string expected,std
     strings_equal<char>(c,original,expected,l,domain);
     strings_equal<wchar_t>(c,original,expected,l,domain);
     #ifdef BOOSTER_HAS_CHAR16_T
-    strings_equal<char16_t>(c,original,expected,l,domain);
+    if(backend=="icu" || backend=="std")
+		strings_equal<char16_t>(c,original,expected,l,domain);
     #endif
     #ifdef BOOSTER_HAS_CHAR32_T
-    strings_equal<char32_t>(c,original,expected,l,domain);
+    if(backend=="icu" || backend=="std")
+	    strings_equal<char32_t>(c,original,expected,l,domain);
     #endif
 }
 
@@ -255,10 +263,12 @@ void test_translate(std::string original,std::string expected,std::locale const 
     strings_equal<char>(original,expected,l,domain);
     strings_equal<wchar_t>(original,expected,l,domain);
     #ifdef BOOSTER_HAS_CHAR16_T
-    strings_equal<char16_t>(original,expected,l,domain);
+    if(backend=="icu" || backend=="std")
+	    strings_equal<char16_t>(original,expected,l,domain);
     #endif
     #ifdef BOOSTER_HAS_CHAR32_T
-    strings_equal<char32_t>(original,expected,l,domain);
+    if(backend=="icu" || backend=="std")
+	    strings_equal<char32_t>(original,expected,l,domain);
     #endif
 }
 
@@ -267,11 +277,26 @@ void test_translate(std::string original,std::string expected,std::locale const 
 int main(int argc,char **argv)
 {
     try {
-        std::string def[] = { "icu" , "posix", "winapi", "std" };
+        std::string def[] = {
+        #ifdef BOOSTER_LOCALE_WITH_ICU
+            "icu" , 
+        #endif
+        #ifndef BOOSTER_LOCALE_NO_STD_BACKEND
+            "std" ,
+        #endif
+        #ifndef BOOSTER_LOCALE_NO_POSIX_BACKEND
+            "posix",
+        #endif
+        #ifndef BOOSTER_LOCALE_NO_WINAPI_BACKEND
+            "winapi",
+        #endif
+		};
         for(int type = 0 ; type < int(sizeof(def)/sizeof(def[0])) ; type ++ ) {
             booster::locale::localization_backend_manager tmp_backend = booster::locale::localization_backend_manager::global();
             tmp_backend.select(def[type]);
             booster::locale::localization_backend_manager::global(tmp_backend);
+			
+			backend = def[type];
             
             std::cout << "Testing for backend --------- " << def[type] << std::endl;
 
@@ -347,11 +372,13 @@ int main(int argc,char **argv)
             TEST(same_w(bl::translate("hello"))==to<wchar_t>("שלום"));
             
             #ifdef BOOSTER_HAS_CHAR16_T
-            TEST(same_u16(bl::translate("hello"))==to<char16_t>("שלום"));
+			if(backend=="icu" || backend=="std")
+				TEST(same_u16(bl::translate("hello"))==to<char16_t>("שלום"));
             #endif
             
             #ifdef BOOSTER_HAS_CHAR32_T
-            TEST(same_u32(bl::translate("hello"))==to<char32_t>("שלום"));
+			if(backend=="icu" || backend=="std")
+				TEST(same_u32(bl::translate("hello"))==to<char32_t>("שלום"));
             #endif
         
         }

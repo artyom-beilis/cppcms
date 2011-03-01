@@ -14,7 +14,7 @@
 #include <booster/locale/util.h>
 
 #ifdef BOOSTER_MSVC
-#  pragma warning(disable : 4244) // loose data 
+#  pragma warning(disable : 4244 4996) // loose data 
 #endif
 
 
@@ -213,7 +213,7 @@ namespace util {
                         to_unicode_tbl_[i] = illegal;
                     }
                 }
-                catch(conv::conversion_error const &e) {
+                catch(conv::conversion_error const &/*e*/) {
                     to_unicode_tbl_[i] = illegal;
                 }
             }
@@ -355,7 +355,7 @@ namespace util {
 
         typedef CharType uchar;
 
-        virtual std::codecvt_base::result do_unshift(std::mbstate_t &s,char *from,char *to,char *&next) const
+        virtual std::codecvt_base::result do_unshift(std::mbstate_t &s,char *from,char * /*to*/,char *&next) const
         {
             uint16_t &state = *reinterpret_cast<uint16_t *>(&s);
 #ifdef DEBUG_CODECVT            
@@ -433,7 +433,7 @@ namespace util {
         // Implementation for UTF-32
         //
         std::codecvt_base::result
-        do_real_in( std::mbstate_t &state,
+        do_real_in( std::mbstate_t &/*state*/,
                     char const *from,
                     char const *from_end,
                     char const *&from_next,
@@ -477,7 +477,7 @@ namespace util {
         // Implementation for UTF-32
         //
         std::codecvt_base::result
-        do_real_out(std::mbstate_t &state,
+        do_real_out(std::mbstate_t &/*state*/, // state is not used there
                     uint32_t const *from,
                     uint32_t const *from_end,
                     uint32_t const *&from_next,
@@ -746,7 +746,7 @@ namespace util {
     class code_converter<char> : public std::codecvt<char,char,mbstate_t>
     {
     public:
-        code_converter(std::auto_ptr<base_converter> cvt,size_t refs = 0) : 
+        code_converter(std::auto_ptr<base_converter> /*cvt*/,size_t refs = 0) : 
             std::codecvt<char,char,mbstate_t>(refs)  
         {
         }

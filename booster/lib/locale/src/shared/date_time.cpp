@@ -419,7 +419,7 @@ int date_time::minimum(period_type f) const
 
 bool date_time::is_in_daylight_saving_time() const
 {
-    return impl_->get_option(abstract_calendar::is_dst);
+    return impl_->get_option(abstract_calendar::is_dst)!=0;
 }
 
 namespace time_zone {

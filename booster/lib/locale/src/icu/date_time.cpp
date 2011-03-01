@@ -247,7 +247,7 @@ namespace impl_icu {
             calendar_impl const *oc=dynamic_cast<calendar_impl const *>(other);
             if(!oc)
                 return false;
-            return calendar_->isEquivalentTo(*oc->calendar_);
+            return calendar_->isEquivalentTo(*oc->calendar_)!=0;
         }
 
     private:

@@ -17,6 +17,12 @@
 
 #include "timezone.h"
 
+// This is internal header so disable crappy "unsecure functions" for all
+#ifdef BOOSTER_MSVC
+#  pragma warning(disable : 4996)
+#endif
+
+
 namespace booster {
 namespace locale {
 namespace util {

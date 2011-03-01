@@ -390,8 +390,7 @@ namespace locale {
             }
         }
 
-        icu::UnicodeString strftime_to_icu(icu::UnicodeString const &ftime,icu::Locale const &locale,
-            icu_formatters_cache const *cache=0)
+        icu::UnicodeString strftime_to_icu(icu::UnicodeString const &ftime,icu::Locale const &locale)
         {
             unsigned len=ftime.length();
             icu::UnicodeString result;
@@ -566,7 +565,7 @@ namespace locale {
                                 {
                                     icu_std_converter<CharType> cvt_(encoding);
                                     std::basic_string<CharType> const &f=info.date_time_pattern<CharType>();
-                                    pattern = strftime_to_icu(cvt_.icu(f.c_str(),f.c_str()+f.size()),locale,&cache);
+                                    pattern = strftime_to_icu(cvt_.icu(f.c_str(),f.c_str()+f.size()),locale);
                                 }
                             }
                             break;

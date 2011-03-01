@@ -11,6 +11,10 @@
 #include <booster/config.h>
 #include <stdlib.h>
 
+#ifdef BOOSTER_MSVC
+#  pragma warning(disable : 4996)
+#endif
+
 #if defined(BOOSTER_WIN_NATIVE) || defined(__CYGWIN__)
 #ifndef NOMINMAX
 #define NOMINMAX
@@ -32,6 +36,7 @@ namespace booster {
                 if(!lang || !*lang)
                     lang = getenv("LANG");
                 #ifndef BOOSTER_LOCALE_USE_WIN32_API
+                (void)use_utf8; // not relevant for non-windows
                 if(!lang || !*lang)
                     lang = "C";
                 return lang;

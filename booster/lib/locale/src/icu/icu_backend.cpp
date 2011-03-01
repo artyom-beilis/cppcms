@@ -26,6 +26,7 @@ namespace impl_icu {
         {
         }
         icu_localization_backend(icu_localization_backend const &other) : 
+            localization_backend(),
             paths_(other.paths_),
             domains_(other.domains_),
             locale_id_(other.locale_id_),

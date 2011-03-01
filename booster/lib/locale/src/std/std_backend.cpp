@@ -35,6 +35,7 @@ namespace impl_std {
         {
         }
         std_localization_backend(std_localization_backend const &other) : 
+            localization_backend(),
             paths_(other.paths_),
             domains_(other.domains_),
             locale_id_(other.locale_id_),

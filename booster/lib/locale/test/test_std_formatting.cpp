@@ -17,6 +17,11 @@
 
 //#define DEBUG_FMT
 
+#include <booster/config.h>
+#ifdef BOOSTER_MSVC
+#  pragma warning(disable : 4996)
+#endif
+
 
 template<typename C1,typename C2>
 bool equal(std::basic_string<C1> const &s1,std::basic_string<C2> const &s2)

@@ -6,6 +6,10 @@
 //  http://www.boost.org/LICENSE_1_0.txt)
 //
 #define BOOSTER_SOURCE
+#include <booster/config.h>
+#ifdef BOOSTER_MSVC
+#  pragma warning(disable : 4996)
+#endif
 #include <locale>
 #include <string>
 #include <ios>
