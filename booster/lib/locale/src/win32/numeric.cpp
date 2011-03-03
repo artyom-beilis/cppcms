@@ -62,7 +62,7 @@ public:
 private:
 
     virtual 
-    iter_type do_format_currency(bool intl,iter_type out,std::ios_base &ios,char_type fill,long double val) const
+    iter_type do_format_currency(bool /*intl*/,iter_type out,std::ios_base &ios,char_type fill,long double val) const
     {
         if(lc_.is_c()) {
             std::locale loc = ios.getloc();
@@ -103,7 +103,12 @@ public:
     typedef CharType char_type;
     typedef std::basic_string<char_type> string_type;
 
-    virtual iter_type do_put(iter_type out,std::ios_base &ios,CharType fill,std::tm const *tm,char format,char modifier) const
+    virtual iter_type do_put(   iter_type out,
+                                std::ios_base &/*ios*/,
+                                CharType /*fill*/,
+                                std::tm const *tm,
+                                char format,
+                                char /*modifier*/) const
     {
         return write_it(out,wcsftime_l(format,tm,lc_));
     }

@@ -29,9 +29,11 @@ namespace booster {
         /// Backends may support different tuning options, but these are the default options avalible for user
         /// for all of them
         ///
-        /// -# locale - the name of the locale in POSIX format like en_US.UTF-8
-        /// -# message_path - path to location of message catalogs vector of strings
-        /// -# message_application - the name of applications that use message catalogs (vector of strings)
+        /// -# \c locale - the name of the locale in POSIX format like en_US.UTF-8
+        /// -# \c use_ansi_encoding - select system locale using ANSI codepages rather then UTF-8 under Windows
+        ///     by default
+        /// -# \c message_path - path to location of message catalogs vector of strings
+        /// -# \c message_application - the name of applications that use message catalogs (vector of strings)
         /// 
         /// Each backend may be installed with different default priority so when you work with two differnt backends, you
         /// can specify priotiry so this backend will be chosen according to their priority.

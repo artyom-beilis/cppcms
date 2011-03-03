@@ -22,7 +22,8 @@ namespace impl_icu {
     class icu_localization_backend : public localization_backend {
     public:
         icu_localization_backend() : 
-            invalid_(true)
+            invalid_(true),
+            use_ansi_encoding_(false)
         {
         }
         icu_localization_backend(icu_localization_backend const &other) : 
@@ -30,7 +31,8 @@ namespace impl_icu {
             paths_(other.paths_),
             domains_(other.domains_),
             locale_id_(other.locale_id_),
-            invalid_(true)
+            invalid_(true),
+            use_ansi_encoding_(other.use_ansi_encoding_)
         {
         }
         virtual icu_localization_backend *clone() const
@@ -47,11 +49,14 @@ namespace impl_icu {
                 paths_.push_back(value);
             else if(name=="message_application")
                 domains_.push_back(value);
+            else if(name=="use_ansi_encoding")
+                use_ansi_encoding_ = value == "true";
 
         }
         void clear_options()
         {
             invalid_ = true;
+            use_ansi_encoding_ = false;
             locale_id_.clear();
             paths_.clear();
             domains_.clear();
@@ -63,8 +68,10 @@ namespace impl_icu {
                 return;
             invalid_ = false;
             real_id_ = locale_id_;
-            if(real_id_.empty())
-                real_id_ = util::get_system_locale();
+            if(real_id_.empty()) {
+                bool utf8 = ! use_ansi_encoding_;
+                real_id_ = util::get_system_locale(utf8);
+            }
             
             util::locale_data d;
             d.parse(real_id_);
@@ -143,6 +150,7 @@ namespace impl_icu {
         std::string variant_;
         std::string real_id_;
         bool invalid_;
+        bool use_ansi_encoding_;
     };
     
     localization_backend *create_localization_backend()

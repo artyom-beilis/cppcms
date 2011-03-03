@@ -31,7 +31,8 @@ namespace impl_std {
     class std_localization_backend : public localization_backend {
     public:
         std_localization_backend() : 
-            invalid_(true)
+            invalid_(true),
+            use_ansi_encoding_(false)
         {
         }
         std_localization_backend(std_localization_backend const &other) : 
@@ -39,7 +40,8 @@ namespace impl_std {
             paths_(other.paths_),
             domains_(other.domains_),
             locale_id_(other.locale_id_),
-            invalid_(true)
+            invalid_(true),
+            use_ansi_encoding_(other.use_ansi_encoding_)
         {
         }
         virtual std_localization_backend *clone() const
@@ -56,11 +58,14 @@ namespace impl_std {
                 paths_.push_back(value);
             else if(name=="message_application")
                 domains_.push_back(value);
+            else if(name=="use_ansi_encoding")
+                use_ansi_encoding_ = value == "true";
 
         }
         void clear_options()
         {
             invalid_ = true;
+            use_ansi_encoding_ = false;
             locale_id_.clear();
             paths_.clear();
             domains_.clear();
@@ -72,8 +77,10 @@ namespace impl_std {
                 return;
             invalid_ = false;
             std::string lid=locale_id_;
-            if(lid.empty())
-                lid = util::get_system_locale();
+            if(lid.empty()) {
+                bool use_utf8 = ! use_ansi_encoding_;
+                lid = util::get_system_locale(use_utf8);
+            }
             in_use_id_ = lid;
             data_.parse(lid);
             name_ = "C";
@@ -211,6 +218,7 @@ namespace impl_std {
         std::string in_use_id_;
         utf8_support utf_mode_;
         bool invalid_;
+        bool use_ansi_encoding_;
     };
     
     localization_backend *create_localization_backend()

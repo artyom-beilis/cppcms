@@ -22,6 +22,7 @@ namespace booster {
                 cats(all_categories),
                 chars(all_characters),
                 caching_enabled(false),
+                use_ansi_encoding(false),
                 backend_manager(mgr)
             {
             }
@@ -34,6 +35,7 @@ namespace booster {
             unsigned chars;
 
             bool caching_enabled;
+            bool use_ansi_encoding;
 
             std::vector<std::string> paths;
             std::vector<std::string> domains;
@@ -154,6 +156,16 @@ namespace booster {
             return result;
         }
 
+        bool generator::use_ansi_encoding() const
+        {
+            return d->use_ansi_encoding;
+        }
+
+        void generator::use_ansi_encoding(bool v)
+        {
+            d->use_ansi_encoding = v;
+        }
+
         bool generator::locale_cache_enabled() const
         {
             return d->caching_enabled;
@@ -166,6 +178,8 @@ namespace booster {
         void generator::set_all_options(shared_ptr<localization_backend> backend,std::string const &id) const
         {
             backend->set_option("locale",id);
+            if(d->use_ansi_encoding)
+                backend->set_option("use_ansi_encoding","true");
             for(unsigned i=0;i<d->domains.size();i++)
                 backend->set_option("message_application",d->domains[i]);
             for(unsigned i=0;i<d->paths.size();i++)

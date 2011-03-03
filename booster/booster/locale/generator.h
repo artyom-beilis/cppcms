@@ -155,6 +155,20 @@ namespace booster {
             bool locale_cache_enabled() const;
 
             ///
+            /// Check if by default ANSI encoding is selected or UTF-8 onces. The default is false.
+            ///
+            bool use_ansi_encoding() const;
+
+            ///
+            /// Select ANSI encodings as default system encoding rather then UTF-8 by default
+            /// under Windows.
+            ///
+            /// The default is the most protable and most powerful encoding UTF-8, but yet user
+            /// may select "system" one if it deals with legacy applications
+            ///
+            void use_ansi_encoding(bool enc);
+
+            ///
             /// Generate a locale with id \a id
             ///
             std::locale generate(std::string const &id) const;

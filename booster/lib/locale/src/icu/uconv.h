@@ -181,13 +181,13 @@ namespace impl_icu {
             char_type const *ptr=reinterpret_cast<char_type const *>(str.getBuffer());
             return string_type(ptr,str.length());
         }
-        size_t cut(icu::UnicodeString const &str,char_type const *begin,char_type const *end,size_t n,
-                        size_t from_u=0,size_t from_c=0) const
+        size_t cut(icu::UnicodeString const &/*str*/,char_type const * /*begin*/,char_type const * /*end*/,size_t n,
+                        size_t /*from_u*/=0,size_t /*from_c*/=0) const
         {
             return n;
         }
         
-        icu_std_converter(std::string charset,cpcvt_type unused=cvt_skip) {}
+        icu_std_converter(std::string /*charset*/,cpcvt_type /*unused*/=cvt_skip) {}
 
     };
     

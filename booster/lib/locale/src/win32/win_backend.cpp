@@ -20,22 +20,23 @@ namespace booster {
 namespace locale {
 namespace impl_win { 
     
-    class posix_localization_backend : public localization_backend {
+    class winapi_localization_backend : public localization_backend {
     public:
-        posix_localization_backend() : 
+        winapi_localization_backend() : 
             invalid_(true)
         {
         }
-        posix_localization_backend(posix_localization_backend const &other) : 
+        winapi_localization_backend(winapi_localization_backend const &other) :
+            localization_backend(), 
             paths_(other.paths_),
             domains_(other.domains_),
             locale_id_(other.locale_id_),
             invalid_(true)
         {
         }
-        virtual posix_localization_backend *clone() const
+        virtual winapi_localization_backend *clone() const
         {
-            return new posix_localization_backend(*this);
+            return new winapi_localization_backend(*this);
         }
 
         void set_option(std::string const &name,std::string const &value) 
@@ -63,7 +64,7 @@ namespace impl_win {
                 return;
             invalid_ = false;
             if(locale_id_.empty()) {
-                real_id_ = util::get_system_locale(true);
+                real_id_ = util::get_system_locale(true); // always UTF-8
                 lc_ = winlocale(real_id_);
             }
             else {
@@ -141,7 +142,7 @@ namespace impl_win {
     
     localization_backend *create_localization_backend()
     {
-        return new posix_localization_backend();
+        return new winapi_localization_backend();
     }
 
 }  // impl win
