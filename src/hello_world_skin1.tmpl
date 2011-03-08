@@ -2,6 +2,7 @@
 <% skin %>
 	<% view master uses view::master %>
 	<% template test(std::string &v,int p) %>
+	<% p %>
 	<% foreach c as std::string::iterator in v %>
 		<% item %><% c %><% end %>
 	<% end %>

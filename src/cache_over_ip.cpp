@@ -74,7 +74,7 @@ namespace impl {
 				return false;
 			}
 		}
-		virtual void store(std::string const &key,std::string const &b,std::set<std::string> const &triggers,time_t timeout,uint64_t const *gen)
+		virtual void store(std::string const &key,std::string const &b,std::set<std::string> const &triggers,time_t timeout,uint64_t const * /*gen*/)
 		{
 			if(l1_.get())
 				l1_->remove(key);
@@ -86,7 +86,7 @@ namespace impl {
 				l1_->rise(trigger);
 			tcp()->rise(trigger);
 		}
-		virtual void remove(std::string const &key)
+		virtual void remove(std::string const &/*key*/)
 		{
 			// NA
 		}

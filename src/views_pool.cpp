@@ -100,7 +100,7 @@ namespace impl {
 	public:
 		static std::string name(std::string file,std::string path);
 
-		shared_object(std::string file_name,bool unused)
+		shared_object(std::string file_name,bool /*unused*/)
 		{
 			handler_ = dlopen(file_name.c_str(),RTLD_LAZY);
 			if(!handler_) {

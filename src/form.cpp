@@ -426,7 +426,7 @@ std::string base_widget::attributes_string()
 	return attr_;
 }
 
-void base_widget::generate(int position,form_context *context)
+void base_widget::generate(int position,form_context * /*context*/)
 {
 	if(is_generation_done_)
 		return;
@@ -1482,7 +1482,7 @@ void file::load(http::context &context)
 		}
 	}
 }
-void file::render_value(form_context &context)
+void file::render_value(form_context &/*context*/)
 {
 	// Nothing really to do
 }

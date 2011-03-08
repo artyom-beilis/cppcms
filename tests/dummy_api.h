@@ -55,12 +55,12 @@ public:
 		throw std::runtime_error("dummy_api: unsupported");
 	}
 
-	void async_write_some(void const *,size_t,io_handler const &h)
+	void async_write_some(void const *,size_t,io_handler const &)
 	{
 		throw std::runtime_error("dummy_api: unsupported");
 	}
 	virtual void write_eof(){}
-	virtual size_t write_some(void const *p,size_t s,booster::system::error_code &e) 
+	virtual size_t write_some(void const *p,size_t s,booster::system::error_code &) 
 	{
 		output_->append(reinterpret_cast<char const *>(p),s);
 		return s;
@@ -74,11 +74,11 @@ public:
 		return false;
 	}
 	void close(){}
-	virtual void async_read_some(void *,size_t,io_handler const &h) 
+	virtual void async_read_some(void *,size_t,io_handler const &) 
 	{
 		throw std::runtime_error("dummy_api: unsupported");
 	}
-	virtual void async_write_eof(handler const &h)
+	virtual void async_write_eof(handler const &)
 	{
 		throw std::runtime_error("dummy_api: unsupported");
 	}

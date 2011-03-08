@@ -135,7 +135,7 @@ public:
 	}
 private:
 
-	void on_timeout(booster::system::error_code const &e)
+	void on_timeout(booster::system::error_code const &/*e*/)
 	{
 		broadcast();
 		timer_.expires_from_now(booster::ptime(100));

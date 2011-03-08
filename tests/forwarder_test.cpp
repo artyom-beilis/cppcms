@@ -113,7 +113,7 @@ public:
 private:
 	struct mini_forwarder : public cppcms::application {
 		mini_forwarder(cppcms::service &s) : cppcms::application(s) {}
-		virtual void main(std::string unused)
+		virtual void main(std::string /*unused*/)
 		{
 			cppcms::forward_connection(release_context(),"127.0.0.1",8081);
 		}

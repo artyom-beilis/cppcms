@@ -48,18 +48,18 @@ namespace json {
 	{
 	}
 	bad_value_cast::bad_value_cast(std::string const &s,json_type actual) : 
-		msg_("cppcms::json::bad_cast: ")
+		msg_("cppcms::json::bad_cast: " + s)
 	{
 		std::ostringstream msg;
-		msg<<"error converting from "<<actual;
+		msg<<" error converting from "<<actual;
 		msg_ +=msg.str();
 
 	}
 	bad_value_cast::bad_value_cast(std::string const &s,json_type expected, json_type actual) : 
-		msg_("cppcms::json::bad_cast: ")
+		msg_("cppcms::json::bad_cast: " + s)
 	{
 		std::ostringstream msg;
-		msg<<"error converting from "<<actual<<" to "<<expected;
+		msg<<" error converting from "<<actual<<" to "<<expected;
 		msg_ +=msg.str();
 
 	}

@@ -179,7 +179,7 @@ namespace utf8 {
 	};
 	inline seq encode(uint32_t value)
 	{
-		seq out={ {0} };
+		seq out=seq();
 		if(value <=0x7F) {
 			out.c[0]=value;
 			out.len=1;
@@ -249,7 +249,7 @@ namespace utf16 {
 	};
 	inline seq encode(uint32_t u)
 	{
-		seq out={ {0} };
+		seq out=seq();
 		if(u<=0xFFFF) {
 			out.c[0]=u;
 			out.len=1;

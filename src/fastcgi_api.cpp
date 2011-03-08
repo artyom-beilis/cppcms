@@ -415,7 +415,10 @@ namespace cgi {
 	
 		void on_start_request(booster::system::error_code const &e,handler const &h)
 		{
-
+			if(e) {
+				h(e);
+				return;
+			}
 			if(header_.version!=fcgi_version_1)
 			{
 				h(booster::system::error_code(errc::protocol_violation,cppcms_category));
@@ -544,6 +547,10 @@ namespace cgi {
 
 		void params_record_expected(booster::system::error_code const &e,handler const &h)
 		{
+			if(e) {
+				h(e);
+				return;
+			}
 			for(;;){
 				if(header_.type!=fcgi_params || header_.request_id!=request_id_)
 					h(booster::system::error_code(errc::protocol_violation,cppcms_category));
@@ -662,7 +669,7 @@ namespace cgi {
 			on_header_read_binder(handler const &_h,booster::shared_ptr<fastcgi> const &s) : h(_h),self(s)
 			{
 			}
-			virtual void operator()(booster::system::error_code const &e,size_t read)
+			virtual void operator()(booster::system::error_code const &e,size_t /*read*/)
 			{
 				self->on_body_read(e,h);
 			}

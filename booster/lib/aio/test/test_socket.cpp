@@ -417,7 +417,7 @@ struct cancel_once {
 	io::stream_socket *sock;
 	bool write;
 	bool both;
-	void operator()(sys::error_code const &e,size_t n)
+	void operator()(sys::error_code const &e,size_t /*n*/)
 	{
 		static char buffer[1000];
 		if(e || cancel_op) {
@@ -604,7 +604,7 @@ void test_full_async_read_write()
 	TEST(calls_no == 6);
 }
 
-void got_erro_handler(sys::error_code const &e,size_t n)
+void got_erro_handler(sys::error_code const &e,size_t /*n*/)
 {
 	TEST(e);
 	calls_no ++;

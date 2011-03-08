@@ -37,7 +37,8 @@ int main()
 {
 	booster::fork_shared_mutex mutex_;
 	int fd[2];
-	pipe(fd);
+	int res =  pipe(fd);
+	(void)(res);
 	int pid = fork();
 	try {
 		if(pid!=0) { // parent

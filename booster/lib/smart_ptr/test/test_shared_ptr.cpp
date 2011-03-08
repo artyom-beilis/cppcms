@@ -48,11 +48,11 @@ struct counted {
 	{
 		counter--;
 	}
-	counted(counted const &other)
+	counted(counted const &)
 	{
 		counter++;
 	}
-	counted const &operator=(counted const &other)
+	counted const &operator=(counted const &)
 	{
 		return *this;
 	}

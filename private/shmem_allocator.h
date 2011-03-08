@@ -96,8 +96,8 @@ public :
 	};
 
 
-	template<typename U> shmem_allocator (const shmem_allocator< U, mm > &a) { };
-	shmem_allocator (const shmem_allocator &__a){ };
+	template<typename U> shmem_allocator (const shmem_allocator< U, mm > &) { };
+	shmem_allocator (const shmem_allocator &){ };
 	shmem_allocator() {};
 
 	inline pointer allocate(size_type cnt, std::allocator<void>::const_pointer = 0) const

@@ -46,11 +46,11 @@ namespace cppcms { namespace filters {
 		{
 			out<<reinterpret_cast<char const *>(p);
 		}
-		std::string ch_to_string(std::ios &ios,void const *p)
+		std::string ch_to_string(std::ios &/*ios*/,void const *p)
 		{
 			return reinterpret_cast<char const *>(p);
 		}
-		std::string s_to_string(std::ios &ios,void const *p)
+		std::string s_to_string(std::ios &/*ios*/,void const *p)
 		{
 			return *reinterpret_cast<std::string const *>(p);
 		}

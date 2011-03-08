@@ -166,7 +166,7 @@ void run_closer()
 	#endif
 }
 
-void run_stopper(booster::system::error_code const &e)
+void run_stopper(booster::system::error_code const &/*e*/)
 {
 	the_service->stop();
 }

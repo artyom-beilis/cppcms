@@ -138,7 +138,7 @@ namespace cppcms { namespace impl { namespace cgi {
 				conn_->async_write(&response_.front(),len,boost::bind(&cgi_forwarder::on_response_written,shared_from_this(),_1,_2));
 			}
 		}
-		void on_response_written(booster::system::error_code const &e,size_t len)
+		void on_response_written(booster::system::error_code const &e,size_t /*len*/)
 		{
 			if(e) { cleanup(); return; }
 			scgi_.async_read_some(booster::aio::buffer(response_),

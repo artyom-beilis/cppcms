@@ -136,7 +136,7 @@ if(CMAKE_COMPILER_IS_GNUCXX)
 		int main() {}"
 		GCC_IS_GCC4)
 
-	set(CXX_FLAGS "-Wall")
+	set(CXX_FLAGS "-Wall -Wextra")
 
 	if(CMAKE_SYSTEM_NAME STREQUAL "SunOS")
 		set(CXX_FLAGS "${CXX_FLAGS} -pthreads")

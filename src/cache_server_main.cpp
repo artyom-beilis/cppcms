@@ -59,7 +59,7 @@ struct params {
 			"    should be defined\n"
 			"\n";
 	}
-	params(int argc,char **argv) :
+	params(int /*argc*/,char **argv) :
 		en_cache(false),
 		en_sessions(none),
 		items_limit(-1),

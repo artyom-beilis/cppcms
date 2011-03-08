@@ -59,8 +59,9 @@ void cookie::write(std::ostream &out) const
 	if(name_.empty())
 		throw cppcms_error("Cookie's name is not defined");
 	out<<"Set-Cookie:"<<name_<<'=';
-	if(value_.empty())
-		; // Nothing to do write
+	if(value_.empty()) {
+		// Nothing to do write
+	}
 	if(protocol::tocken(value_.begin(),value_.end())==value_.end())
 		out<<value_;
 	else

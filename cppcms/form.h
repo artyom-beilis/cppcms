@@ -398,7 +398,7 @@ namespace cppcms {
 			///
 			/// Note: prefer using ++i then i++ as copying iterator is not cheap.
 			///
-			iterator operator++(int unused)
+			iterator operator++(int /*unused*/)
 			{
 				iterator tmp(*this);
 				next();

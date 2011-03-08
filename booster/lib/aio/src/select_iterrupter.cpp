@@ -144,12 +144,14 @@ namespace booster { namespace aio { namespace impl {
 	
 	void select_interrupter::clean()
 	{
+		int n;
 		static char buffer[64];
 		#ifdef BOOSTER_WIN32
-		::recv(read_,buffer,sizeof(buffer),0);
+		n = ::recv(read_,buffer,sizeof(buffer),0);
 		#else
-		::read(read_,buffer,sizeof(buffer));
+		n = ::read(read_,buffer,sizeof(buffer));
 		#endif
+		(void)(n); // Shut the GCC UP
 	}
 
 	

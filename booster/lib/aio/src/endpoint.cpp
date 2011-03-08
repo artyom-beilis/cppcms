@@ -143,6 +143,7 @@ family_type endpoint::family() const
 	default:
 		throw_invalid();
 	}
+	return pf_inet; // shut gcc up
 }
 
 
@@ -158,6 +159,7 @@ int endpoint::port() const
 	default:
 		throw_invalid();
 	}
+	return 0; 
 }
 
 std::string endpoint::ip() const
@@ -194,6 +196,7 @@ std::string endpoint::ip() const
 	default:
 		throw_invalid();
 	}
+	return std::string(); // shut gcc up
 }
 
 #ifndef BOOSTER_AIO_NO_PF_UNIX

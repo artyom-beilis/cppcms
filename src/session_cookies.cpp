@@ -41,7 +41,7 @@ session_cookies::~session_cookies()
 {
 }
 
-void session_cookies::save(session_interface &session,string const &data,time_t timeout,bool not_used,bool on_server)
+void session_cookies::save(session_interface &session,string const &data,time_t timeout,bool /*not_used*/,bool on_server)
 {
 	if(on_server)
 		throw cppcms_error("Can't use cookies backend when data should be stored on server");

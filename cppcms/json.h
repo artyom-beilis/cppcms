@@ -48,10 +48,10 @@ namespace json {
 	///
 	struct undefined {};
 
-	inline bool operator==(undefined const &l,undefined const &r) {return true;}
-	inline bool operator!=(undefined const &l,undefined const &r) {return false;}
-	inline bool operator==(null const &l,null const &r) {return true;}
-	inline bool operator!=(null const &l,null const &r) {return false;}
+	inline bool operator==(undefined const &/*l*/,undefined const &/*r*/) {return true;}
+	inline bool operator!=(undefined const &/*l*/,undefined const &/*r*/) {return false;}
+	inline bool operator==(null const &/*l*/,null const &/*r*/) {return true;}
+	inline bool operator!=(null const &/*l*/,null const &/*r*/) {return false;}
 
 	///
 	/// The json::array - std::vector of json::value's
@@ -622,7 +622,7 @@ namespace json {
 
 	template<>					
 	struct traits<json::null> {				
-		static void set(value &v,json::null const &in)
+		static void set(value &v,json::null const &/*in*/)
 		{					
 			v.null();
 		}					

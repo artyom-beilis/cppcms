@@ -44,7 +44,7 @@ aes_factory::aes_factory(std::string const &cbc,crypto::key const &cbc_key,std::
 	cbc_(cbc),
 	cbc_key_(cbc_key),
 	hmac_(hmac),
-	hmac_key_(hmac_key_)
+	hmac_key_(hmac_key)
 {
 }
 aes_factory::aes_factory(std::string const &algo,crypto::key const &k) :

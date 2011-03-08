@@ -190,7 +190,7 @@ namespace cppcms {
 		template<typename C,typename Enable = void>
 		class page_guard {
 		public:
-			page_guard(C *o) {}
+			page_guard(C * /*o*/) {}
 		};
 
 		template<typename C>

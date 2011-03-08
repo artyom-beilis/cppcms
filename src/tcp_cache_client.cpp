@@ -33,7 +33,7 @@ tcp_cache::~tcp_cache()
 
 void tcp_cache::rise(std::string const &trigger)
 {
-	tcp_operation_header h={0};
+	tcp_operation_header h=tcp_operation_header();
 	h.opcode=opcodes::rise;
 	h.size=trigger.size();
 	std::string data=trigger;
@@ -43,7 +43,7 @@ void tcp_cache::rise(std::string const &trigger)
 
 void tcp_cache::clear()
 {
-	tcp_operation_header h={0};
+	tcp_operation_header h=tcp_operation_header();
 	h.opcode=opcodes::clear;
 	h.size=0;
 	std::string empty;
@@ -58,7 +58,7 @@ int tcp_cache::fetch(	std::string const &key,
 			bool transfer_if_not_updated) 
 {
 	std::string data=key;
-	tcp_operation_header h={0};
+	tcp_operation_header h=tcp_operation_header();
 	h.opcode=opcodes::fetch;
 	h.size=data.size();
 	h.operations.fetch.key_len=data.size();
@@ -103,7 +103,7 @@ void tcp_cache::stats(unsigned &keys,unsigned &triggers)
 {
 	keys=0; triggers=0;
 	for(int i=0;i<conns;i++) {
-		tcp_operation_header h={0};
+		tcp_operation_header h=tcp_operation_header();
 		std::string data;
 		h.opcode=opcodes::stats;
 		tcp[i].transmit(h,data);
@@ -119,7 +119,7 @@ void tcp_cache::store(	std::string const &key,
 			std::set<std::string> const &triggers,
 			time_t timeout)
 {
-	tcp_operation_header h={0};
+	tcp_operation_header h=tcp_operation_header();
 	std::string data;
 	h.opcode=opcodes::store;
 	data.append(key);

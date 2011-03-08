@@ -72,7 +72,7 @@ typedef unique_lock<recursive_mutex> lock_guard;
 		{
 			map_.clear();
 		}
-		void erase(native_type fd) {}
+		void erase(native_type /*fd*/) {}
 	private:
 		std::vector<Cont> map_;
 	};

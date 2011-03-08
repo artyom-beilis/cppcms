@@ -115,7 +115,7 @@ namespace booster {
             std::ostringstream res;
             res.imbue(std::locale::classic());
             res << ptr<<": ";
-            Dl_info info = {0};
+            Dl_info info = Dl_info();
             if(dladdr(ptr,&info) == 0) {
                 res << "???";
             }

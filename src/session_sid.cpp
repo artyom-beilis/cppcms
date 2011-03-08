@@ -74,7 +74,7 @@ bool session_sid::valid_sid(std::string const &cookie,std::string &id)
 	return true;
 }
 
-void session_sid::save(session_interface &session,std::string const &data,time_t timeout,bool new_data,bool unused)
+void session_sid::save(session_interface &session,std::string const &data,time_t timeout,bool new_data,bool /*unused*/)
 {
 	std::string id;
 	if(valid_sid(session.get_session_cookie(),id)) {

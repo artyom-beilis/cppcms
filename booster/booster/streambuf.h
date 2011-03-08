@@ -33,7 +33,7 @@ namespace booster {
 		///
 		/// If the stream is write only, do not implement (returns EOF by default)
 		///
-		virtual size_t read(char *pos,size_t length)
+		virtual size_t read(char * /*pos*/,size_t /*length*/)
 		{
 			return 0;
 		}
@@ -43,7 +43,7 @@ namespace booster {
 		///
 		/// If the stream is read only, do not implement (returns EOF by default)
 		///
-		virtual size_t write(char const *pos,size_t length)
+		virtual size_t write(char const * /*pos*/,size_t /*length*/)
 		{
 			return 0;
 		}
@@ -55,7 +55,7 @@ namespace booster {
 		///
 		/// If the stream is not seekable do not reimplement, returns -1 by default.
 		///
-		virtual long long seek(long long position,pos_type pos = set)
+		virtual long long seek(long long /*position*/,pos_type /*pos*/ = set)
 		{
 			return -1;
 		}

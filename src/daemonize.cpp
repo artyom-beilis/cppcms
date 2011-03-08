@@ -214,7 +214,8 @@ namespace impl {
 			close(devnull_fd);
 			devnull_fd = -1;
 
-			chdir("/");
+			int chdir_r = chdir("/");
+			(void)(chdir_r); // shut up GCC
 
 			if(lock_fd!=-1) {
 				std::ostringstream ss;

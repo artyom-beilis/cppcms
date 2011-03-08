@@ -365,7 +365,7 @@ namespace {
 
 #else
 
-	void handler(int nothing)
+	void handler(int /*nothing*/)
 	{
 		if(the_service)
 			the_service->shutdown();
@@ -523,7 +523,7 @@ bool service::prefork()
 	return false;
 }
 #else // UNIX
-static void  dummy(int n) {}
+static void  dummy(int /*n*/) {}
 bool service::prefork()
 {
 	sigset_t pipemask;
@@ -733,9 +733,11 @@ void service::start_acceptor(bool after_fork)
 	using namespace impl::cgi;
 	int backlog=settings().get("service.backlog",threads_no() * std::max(procs_no(),1) * 2);
 	bool preforking = procs_no() > 1 && !after_fork;
-	#ifndef CPPCMS_WIN32
 	if(preforking)
+	#ifndef CPPCMS_WIN32
 		impl_->prefork_acceptor_.reset(new impl::prefork_acceptor(this));
+	#else
+		throw cppcms_error("Preforking is not supported under Windows");
 	#endif
 
 	if(	settings().find("service.list").type()!=json::is_undefined 

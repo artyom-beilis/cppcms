@@ -112,7 +112,7 @@ namespace aio {
 			}
 			if(map_[fd]==-1) {
 				map_[fd]=pollfds_.size();
-				struct pollfd tmp={0};
+				pollfd tmp=pollfd();
 				tmp.fd=fd;
 				pollfds_.push_back(tmp);
 			}
@@ -298,7 +298,7 @@ namespace aio {
 		
 		virtual int poll(reactor::event *events,int n,int timeout,int &error)
 		{
-			struct epoll_event fds[128] = {{0}};
+			struct epoll_event fds[128] = {};
 			if (n >128) n=128;
 
 			int size = 0;
@@ -341,7 +341,7 @@ namespace aio {
 
 		void write_flag(int fd,int op,int flags,int &error)
 		{
-			struct epoll_event efd={0};
+			struct epoll_event efd=epoll_event();
 			efd.events=flags;
 			efd.data.fd=fd;
 			
@@ -474,7 +474,7 @@ namespace aio {
 			}
 			if(map_[fd]==-1) {
 				map_[fd]=pollfds_.size();
-				ev tmp={0};
+				ev tmp=ev();
 				tmp.fd=fd;
 				pollfds_.push_back(tmp);
 				return pollfds_.back();

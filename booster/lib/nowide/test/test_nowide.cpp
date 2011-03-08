@@ -13,8 +13,8 @@ int main()
 {
 	try {
 		namespace nw=booster::nowide;
-		wchar_t shalom[5] = { 0x05e9,0x05dc,0x05d5,0x05dd, 0};
 		#ifdef BOOSTER_WIN_NATIVE
+		wchar_t shalom[5] = { 0x05e9,0x05dc,0x05d5,0x05dd, 0};
 		std::cout << "Testing converting" << std::endl;
 		TEST(nw::convert(shalom)=="שלום");
 		TEST(nw::convert("שלום")==shalom);
@@ -32,7 +32,7 @@ int main()
 			f=nw::fopen("עולם.txt","r");
 			TEST(f);
 			char str[16]={0};
-			fgets(str,16,f);
+			TEST(fgets(str,16,f)!=0);
 			TEST(str==std::string("test"));
 			fclose(f);
 			TEST(nw::remove("עולם.txt")==0);

@@ -1,5 +1,0 @@
-server.api = "fastcgi"
-server.mod = "prefork"
-server.socket = "/tmp/hello-world.sock"
-
-

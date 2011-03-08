@@ -13,7 +13,7 @@
 class counted : public booster::detail::sp_counted_base {
 public:
 	virtual void dispose() {}
-	virtual void *get_deleter(booster::detail::sp_typeinfo const &ti) { return 0; }
+	virtual void *get_deleter(booster::detail::sp_typeinfo const &) { return 0; }
 	counted() {
 		counter++;
 	}

@@ -32,7 +32,7 @@ public:
 	unit_test(cppcms::service &s) : cppcms::application(s)
 	{
 	}
-	virtual void main(std::string test)
+	virtual void main(std::string /*test*/)
 	{
 		response().set_cookie(cppcms::http::cookie("normal","token"));
 		response().set_cookie(cppcms::http::cookie("utf","\xD7\xA9\xD7\x9C\xD7\x95\xD7\x9D \xD7\xA9\xD7\x9C\xD7\x95\xD7\x9D"));

@@ -23,7 +23,7 @@
 #include <string.h>
 
 
-int main(int argc,char **argv)
+int main()
 {
 	try {
 		using cppcms::http::content_type;
