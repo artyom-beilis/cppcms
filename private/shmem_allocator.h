@@ -20,12 +20,7 @@
 #define CPPCMS_ALLOCATORS
 #include <cppcms/config.h>
 
-#ifdef CPPCMS_USE_EXTERNAL_BOOST
-#   include <boost/interprocess/managed_external_buffer.hpp>
-#else
-#   include <cppcms_boost/interprocess/managed_external_buffer.hpp>
-    namespace boost = cppcms_boost;
-#endif
+#include "boost_interprocess.h"
 
 #include "posix_util.h"
 #include <cppcms/cppcms_error.h>
