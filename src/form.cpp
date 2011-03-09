@@ -605,7 +605,7 @@ void base_text::load(http::context &context)
 	auto_generate();
 	value_.clear();
 	code_points_ = 0;
-	set(false);
+	set(true); // we don't care if the value was set
 	valid(true);
 	if(name().empty()) {
 		return;
@@ -616,7 +616,6 @@ void base_text::load(http::context &context)
 		return;	
 	}
 	value_=p->second;
-	set(true);
 	if(validate_charset_) {
 		code_points_ = 0;
 		if(!encoding::valid(context.locale(),value_.data(),value_.data()+value_.size(),code_points_))
@@ -864,6 +863,7 @@ void checkbox::render_value(form_context &context)
 void checkbox::load(http::context &context)
 {
 	auto_generate();
+	set(true);
 	std::pair<http::request::form_type::const_iterator,http::request::form_type::const_iterator> 
 		range=context.request().post_or_get().equal_range(name());
 	value(false);
@@ -964,6 +964,7 @@ void select_multiple::clear()
 void select_multiple::load(http::context &context)
 {
 	auto_generate();
+	set(true);
 	std::pair<http::request::form_type::const_iterator,http::request::form_type::const_iterator> 
 		range=context.request().post_or_get().equal_range(name());
 	std::set<std::string> keys;
@@ -1199,6 +1200,7 @@ bool select_base::validate()
 void select_base::load(http::context &context)
 {
 	auto_generate();
+	set(true);
 	std::pair<http::request::form_type::const_iterator,http::request::form_type::const_iterator> 
 		range=context.request().post_or_get().equal_range(name());
 	selected_ = -1;
@@ -1363,6 +1365,7 @@ void submit::render_value(form_context &context)
 void submit::load(http::context &context)
 {
 	auto_generate();
+	set(true);
 	pressed_ = context.request().post_or_get().find(name()) != context.request().post_or_get().end();
 }
 

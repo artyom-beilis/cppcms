@@ -484,7 +484,12 @@ namespace cppcms {
 			/// 
 			/// Check if a value was assigned to widget. Usually becomes true
 			/// when user assignees value to widget or the widget is loaded.
-			/// 
+			///
+			/// If there is exist a reasonable default value for a widget 
+			/// then set() should be true. For widgets like file or numeric
+			/// where explicit parsing is required the set() value would indecate
+			/// that user provided some value (uploaded a file, had gave a number)
+			///
 			bool set();
 
 			///
@@ -947,6 +952,11 @@ namespace cppcms {
 
 		///
 		/// \brief Widget for number input. It is template class that assumes that T is number
+		///
+		/// This class parses the input and checks if it is value value. If it is set() would
+		/// be true.
+		///
+		/// If the value was not defined access to value() would throw an exception
 		///
 
 		template<typename T>
@@ -1456,7 +1466,10 @@ namespace cppcms {
 		};
 
 		///
-		/// Class that represents file upload form entry
+		/// \brief Class that represents file upload form entry
+		///
+		/// If the file was not uploaded set() would be false and 
+		/// on attempt to access value() member function it would throw
 		///
 		class CPPCMS_API file : public base_html_input {
 		public:
@@ -1499,7 +1512,8 @@ namespace cppcms {
 			bool validate_filename_charset();
 
 			///
-			/// Get uploaded file
+			/// Get uploaded file, throws cppcms_error if set() == false, i.e. if the file
+			/// was not uploaded
 			///
 			booster::shared_ptr<http::file> value();
 
