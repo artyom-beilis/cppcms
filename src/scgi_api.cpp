@@ -38,7 +38,7 @@ namespace io = booster::aio;
 namespace cppcms {
 namespace impl {
 namespace cgi {
-	template<typename API> class socket_acceptor;
+	template<typename API,typename Factory> class socket_acceptor;
 	class scgi : public connection {
 	public:
 		scgi(cppcms::service &srv) :

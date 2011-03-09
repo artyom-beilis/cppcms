@@ -59,7 +59,7 @@ namespace impl {
 namespace cgi {
 
 
-	template<typename API> class socket_acceptor;
+	template<typename API,typename Factory> class socket_acceptor;
 	class fastcgi : public connection {
 	public:
 		fastcgi(cppcms::service &srv) :

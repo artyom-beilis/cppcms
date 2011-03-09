@@ -35,7 +35,15 @@ namespace cppcms {
 namespace impl {
 	namespace cgi {
 
-		template<class ServerAPI>
+		template<typename API>
+		struct server_api_factory {
+			API *operator()(cppcms::service &srv) const
+			{
+				return new API(srv);
+			}
+		};
+
+		template<class ServerAPI,class Factory = server_api_factory<ServerAPI> >
 		class socket_acceptor : public acceptor {
 		public:
 			socket_acceptor(cppcms::service &srv,std::string ip,int port,int backlog) :
@@ -50,6 +58,12 @@ namespace impl {
 				acceptor_.bind(ep);
 				acceptor_.listen(backlog);
 			}
+
+			void factory(Factory const &f)
+			{
+				factory_ = f;
+			}
+
 #if !defined(CPPCMS_WIN32)
 			socket_acceptor(cppcms::service &srv,int backlog) :
 				srv_(srv),
@@ -90,7 +104,7 @@ namespace impl {
 			{
 				booster::shared_ptr<ServerAPI> api;
 				try {
-					api.reset(new ServerAPI(srv_));
+					api.reset(factory_(srv_));
 					api->socket_.assign(fd);
 					fd=-1;
 				}
@@ -112,7 +126,7 @@ namespace impl {
 			{
 				if(stopped_)
 					return;
-				booster::shared_ptr<ServerAPI> api(new ServerAPI(srv_));
+				booster::shared_ptr<ServerAPI> api(factory_(srv_));
 				api_=api;
 				asio_socket_ = &api->socket_;
 				acceptor_.async_accept(*asio_socket_,accept_binder(this));
@@ -143,6 +157,7 @@ namespace impl {
 			booster::aio::acceptor acceptor_;
 			bool stopped_;
 			bool tcp_;
+			Factory factory_;
 		};
 
 

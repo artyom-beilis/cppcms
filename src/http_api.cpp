@@ -49,9 +49,23 @@ namespace io = booster::aio;
 namespace cppcms {
 namespace impl {
 namespace cgi {
+
+	class http;
+	class http_creator {
+	public:
+		http_creator(std::string const &ip="0.0.0.0",int port = 8080) :
+			ip_(ip),port_(port)
+		{
+		}
+		http *operator()(cppcms::service &srv) const;
+	private:
+		std::string ip_;
+		int port_;
+	};
+
 	class http : public connection {
 	public:
-		http(cppcms::service &srv) :
+		http(cppcms::service &srv,std::string const &ip,int port) :
 			connection(srv),
 			socket_(srv.impl().get_io_service()),
 			input_body_ptr_(0),
@@ -64,10 +78,10 @@ namespace cgi {
 		{
 
 			env_["SERVER_SOFTWARE"]=CPPCMS_PACKAGE_NAME "/" CPPCMS_PACKAGE_VERSION;
-			env_["SERVER_NAME"]=srv.cached_settings().service.ip;
+			env_["SERVER_NAME"]=ip;
 			std::ostringstream ss;
 			ss.imbue(std::locale::classic());
-			ss << srv.cached_settings().service.port;
+			ss << port;
 			env_["SERVER_PORT"]=ss.str();
 			env_["GATEWAY_INTERFACE"]="CGI/1.0";
 			env_["SERVER_PROTOCOL"]="HTTP/1.0";
@@ -422,7 +436,7 @@ namespace cgi {
 			return booster::static_pointer_cast<http>(shared_from_this());
 		}
 		
-		friend class socket_acceptor<http>;
+		friend class socket_acceptor<http,http_creator>;
 		
 		booster::aio::stream_socket socket_;
 
@@ -444,9 +458,17 @@ namespace cgi {
 		unsigned total_read_;
 	};
 
+	http *http_creator::operator()(cppcms::service &srv) const
+	{
+		return new http(srv,ip_,port_);
+	}
+
 	std::auto_ptr<acceptor> http_api_factory(cppcms::service &srv,std::string ip,int port,int backlog)
 	{
-		std::auto_ptr<acceptor> a(new socket_acceptor<http>(srv,ip,port,backlog));
+		typedef socket_acceptor<http,http_creator> acceptor_type;
+		std::auto_ptr<acceptor_type> acc(new acceptor_type(srv,ip,port,backlog));
+		acc->factory(http_creator(ip,port));
+		std::auto_ptr<acceptor> a(acc);
 		return a;
 	}
 
