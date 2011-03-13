@@ -51,11 +51,11 @@ namespace cppcms {
 	}
 
 	///
-	/// \brief this struct holds various flags for HTML generation control
+	/// \brief This struct holds various flags to control the HTML generation.
 	///
 	struct form_flags {
 		///
-		/// This enum represents HTML/XHTML switch
+		/// This enum represents the HTML/XHTML switch.
 		///
 		typedef enum {
 			as_html = 0,	///< render form/widget as ordinary HTML
@@ -63,7 +63,7 @@ namespace cppcms {
 		} html_type;
 
 		///
-		/// This enum represents the style of widgets generation
+		/// This enum represents the style for the widgets generation.
 		///
 		typedef enum {
 			as_p	= 0 , ///< Render each widget using paragraphs
@@ -74,79 +74,88 @@ namespace cppcms {
 		} html_list_type;
 
 		///
-		/// This is special flag for partial generation of widget's HTML
+		/// This special flag is used to partially generate a widget's HTML.
 		///
 		typedef enum {
-			first_part  = 0, ///< Render part 1; HTML attributes can be inserted after it
-			second_part = 1  ///< Render part 2 -- compete part 1.
+			first_part  = 0, ///< Render part 1: HTML attributes can be inserted after it.
+			second_part = 1  ///< Render part 2: complete part 1.
 		} widget_part_type;
 	};
 
 	///
-	/// \brief This class represent the context required for generation of HTML for the widgets
+	/// \brief This class represents the context required to generate the widgets' HTML.
 	///
 	class CPPCMS_API form_context : public form_flags
 	{
 	public:
 		///
-		/// Default constructor
+		/// Default constructor.
 		///
 		form_context();
+
 		///
-		/// Copy-constructor
+		/// Copy-constructor.
 		///
 		form_context(form_context const &other);
+
 		///
-		/// Assignment
+		/// Assignment.
 		///
 		form_context const &operator = (form_context const &other);
+
 		///
-		/// Create a rendering context
+		/// Create a rendering context.
 		///
-		/// \param output the output std::ostream to write HTML to
-		/// \param ht flags representing the type of HTML that should be generated
-		/// \param hlt flag that defines the style of widgets generation
+		/// \param output the std::ostream output to write HTML to.
+		/// \param ht flags represents the type of HTML that should be generated.
+		/// \param hlt flag defines the style of widgets generation.
 		///
 		form_context(	std::ostream &output,
 				html_type ht = form_flags::as_html,
 				html_list_type hlt=form_flags::as_p);
+
 		///
-		/// Destructor
+		/// Destructor.
 		///
 		~form_context();
 	
 		///
-		/// Set an HTML/XHTML flag
+		/// Set the HTML/XHTML flag.
 		///	
 		void html(html_type t);
+
 		///
-		/// Set widgets rendering style
+		/// Set the widgets rendering style.
 		///
 		void html_list(html_list_type t);
+
 		///
-		/// Set flag for rendering of partial widget
+		/// Set the flag for the partial rendering of the widget.
 		///
 		void widget_part(widget_part_type t);
 
 		///
-		/// Set the output stream
+		/// Set the output stream.
 		///
 		void out(std::ostream &out);
 		
 		///
-		/// Set an HTML/XHTML flag - default as_html
+		/// Set the HTML/XHTML flag. The default is \a as_html.
 		///	
 		html_type html() const;
+
 		///
-		/// Get widgets rendering style - default as_p
+		/// Get the widget rendering style. The default is \a as_p.
 		///
 		html_list_type html_list() const;
+
 		///
-		/// Get the part of widget that should be generated, see widget_part_type, default first_part
+		/// Get the part of the widget that should be generated. See \a widget_part_type. The default is \a first_part.
 		///
 		widget_part_type widget_part() const;
+
 		///
-		/// Get the output stream
+		/// Get the output stream.
 		///
 		std::ostream &out() const;
 
@@ -164,35 +173,29 @@ namespace cppcms {
 
 	
 	///
-	/// \brief This class is base class of any form or form-widget used in CppCMS.
+	/// \brief This class is the base class for any form or form widget used in CppCMS.
 	///
-	/// It provides abstract basic operations that every widget or form should implement
+	/// It provides basic, abstract operations that every widget or form should implement.
 	///
-
 	class CPPCMS_API base_form : public form_flags {
 	public:
-
 		///
-		/// Render the widget to std::ostream \a output with control flags \a flags.
-		/// Usually this function is called directly by template rendering functions
+		/// Render the widget to std::ostream \a output with the control flags \a flags.
+		/// Usually this function is called directly by the template rendering functions.
 		///
-
 		virtual void render(form_context &context) = 0;
 
-
 		///
-		/// Load the information of form from the provided http::context \a context.
-		/// User calls this function for loading all information from the raw POST/GET
-		/// form to internal widget representation.
+		/// Load the form information from the provided http::context \a context.
+		/// A user can call this function to load all information from the raw POST/GET
+		/// data into the internal widget representation.
 		///
-
 		virtual void load(http::context &context) = 0;
 
 		///
-		/// Validate the form according to defined rules. If all checks are OK
+		/// Validate the form according to defined rules. If all checks are OK,
 		/// true is returned. If some widget or form fails, false is returned.
 		///
-
 		virtual bool validate() = 0;
 
 		///
@@ -201,13 +204,12 @@ namespace cppcms {
 		virtual void clear() = 0;
 
 		///
-		/// Set parent of this form. Used internaly, should not be used
+		/// Set a parent of this form. Used internally. You should not use it.
 		///
-		
 		virtual void parent(base_form *subform) = 0;
 
 		///
-		/// Get parent of this form. If this is topmost form, NULL is returned
+		/// Get the parent of this form. If this is the topmost form, NULL is returned.
 		///
 		virtual base_form *parent() = 0;
 
@@ -216,79 +218,68 @@ namespace cppcms {
 	};
 
 	///
-	/// \brief The \a form is a container that used to collect other widgets and forms to single unit
+	/// \brief The \a form is a container used to collect other widgets and forms into a single unit.
 	///
-	/// Generally various widgets and forms are combined into single form in order to simplify rendering
-	/// and validation of forms that include more then one widget
+	/// Generally various widgets and forms are combined into a single form in order to simplify the rendering
+	/// and validation of forms that include more than one widget.
 	///
-
 	class CPPCMS_API form :	public booster::noncopyable,
 				public base_form
 	{
 	public:
-
-
 		form();
 		virtual ~form();
 
-
 		///
-		/// Render all widgets and sub-forms to \a output, using
-		/// base_form \a flags
+		/// Render all the widgets and sub-forms to the \a output, using
+		/// the base_form \a flags.
 		///
-
 		virtual void render(form_context &context);
 
-
 		///
-		/// Load all information from widgets from http::context \a cont
+		/// Load all the widget information from http::context \a cont.
 		///
 		virtual void load(http::context &cont);
 
 		///
-		/// validate all subforms and widgets. If at least one of them fails,
+		/// Validate all subforms and widgets. If at least one of them fails,
 		/// false is returned. Otherwise, true is returned.
 		///
-
 		virtual bool validate();
 
 		///
-		/// Clear all subforms and widgets for all loaded data.
+		/// Clear all subforms and widgets from all loaded data.
 		///
 		virtual void clear();
 
 		///
-		/// adds \a subform to form, the ownership is not transferred to
-		/// to the parent
+		/// Add \a subform to form. The ownership is not transferred to
+		/// the parent.
 		///
-
 		void add(form &subform);
 
 		///
-		/// add \a subform to form, the ownership is transferred to
-		/// the parent and subform will be destroyed together with
-		/// the parent
+		/// Add \a subform to form. The ownership is transferred to
+		/// the parent and the subform will be destroyed together with
+		/// the parent.
 		///
-
 		void attach(form *subform);
 
 		///
-		/// adds \a widget to form, the ownership is not transferred to
-		/// to the parent
+		/// Add \a widget to form. The ownership is not transferred to
+		/// to the parent.
 		///
-
 		void add(widgets::base_widget &widget);
 
 		///
-		/// add \a widget to form, the ownership is transferred to
-		/// the parent the widget will be destroyed together with
-		/// the parent form
+		/// Add \a widget to form. The ownership is transferred to
+		/// the parent and the widget will be destroyed together with
+		/// the parent.
 		///
-
 		void attach(widgets::base_widget *widget);
 
 		///
-		/// Shortcut to \a add
+		/// Shortcut to \a add.
 		///
 		inline form &operator + (form &f)
 		{
@@ -297,31 +288,31 @@ namespace cppcms {
 		}
 		
 		///
-		/// Shortcut to \a add
+		/// Shortcut to \a add.
 		///
 		inline form &operator + (widgets::base_widget &f)
 		{
 			add(f);
 			return *this;
 		}
+
 		///
-		/// Set parent of this form. Used internaly, should not be used. It is called
-		/// when the form is added or attached to other form.
+		/// Set the parent of this form. It is used internally; you should not use it. It is called
+		/// when the form is added or attached to another form.
 		///
-		
 		virtual void parent(base_form *subform);
 
 		///
-		/// Get parent of this form. If this is topmost form, NULL is returned
-		/// It is assumed that the parent is always form.
+		/// Get parent of this form. If this is the topmost form, NULL is returned.
+		/// It is assumed that the parent is always a form.
 		///
 		virtual form *parent();
 		
 		///
-		/// \brief Input iterator that is used to iterate over all widgets of the form
+		/// \brief Input iterator used to iterate over all the widgets in a form.
 		///
-		/// This class is mainly used by templates framework for widgets rendering. It
-		/// walks on all widgets and subforms recursively.
+		/// This class is mainly used by templates to render widgets. It
+		/// walks over all widgets and subforms recursively.
 		///
 		/// Note: it walks over widgets only:
 		///
@@ -331,38 +322,36 @@ namespace cppcms {
 		///   if p!=f.end() --> *p is derived from widgets::base_widget.
 		/// \endcode
 		///
-
 		class CPPCMS_API iterator : public std::iterator<std::input_iterator_tag,widgets::base_widget>
 		{
 		public:
 			///
-			/// End iterator
+			/// End iterator.
 			///
-
 			iterator();
 
 			///
-			/// Create widgets iterator
+			/// Create a widget iterator.
 			///
 			iterator(form &);
 
 			///
-			/// Destructor
+			/// Destructor.
 			///
 			~iterator();
 
 			///
-			/// Copy the iterator, this is not cheap operation.
+			/// Copy the iterator. This operation is not cheap.
 			///
-
 			iterator(iterator const &other);
+
 			///
-			/// Assign the iterator, this is not cheap operation.
+			/// Assign the iterator. This operation is not cheap.
 			///
 			iterator const &operator = (iterator const &other);
 
 			///
-			/// Returns the underlying widget. Condition: *this!=iterator()
+			/// Return the underlying widget. Condition: *this!=iterator().
 			///
 			widgets::base_widget *operator->() const
 			{
@@ -370,7 +359,7 @@ namespace cppcms {
 			}
 
 			///
-			/// Returns the underlying widget. Condition: *this!=iterator()
+			/// Return the underlying widget. Condition: *this!=iterator().
 			///
 			widgets::base_widget &operator*() const
 			{
@@ -378,14 +367,15 @@ namespace cppcms {
 			}
 
 			///
-			/// Check if two iterators pointing to same element
+			/// Check if two iterators point to the same element.
 			///
 			bool operator==(iterator const &other) const
 			{
 				return equal(other);
 			}
+
 			///
-			/// Check if two iterators pointing to different element
+			/// Check if two iterators point to different elements.
 			///
 			bool operator!=(iterator const &other) const
 			{
@@ -396,7 +386,7 @@ namespace cppcms {
 			/// Post Increment operator, it forward the iterator no text widget.
 			/// Note it does not point to higher level form container.
 			///
-			/// Note: prefer using ++i then i++ as copying iterator is not cheap.
+			/// Note: it is preferable to use ++i rather than i++ as copying iterators is not cheap.
 			///
 			iterator operator++(int /*unused*/)
 			{
@@ -404,6 +394,7 @@ namespace cppcms {
 				next();
 				return tmp;
 			}
+
 			///
 			/// Increment operator. It forward the iterator no text widget.
 			/// Note it does not point to higher level form container
