@@ -7,11 +7,10 @@
 		"script" : "/hello"
 	},
 	"localization" : {
-		"encoding" : "utf-8",
 		"messages" : {
 			"paths" : [ "./locale" ],
 			"domains" : [ "hello" ]
 		},
-		"locales" : [ "he_IL", "en_US" ]
+		"locales" : [ "he_IL.UTF-8", "en_US.UTF-8" ]
 	}
 }

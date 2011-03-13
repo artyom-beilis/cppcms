@@ -20,7 +20,7 @@ public:
     }
     void say_hello(std::string lang)
     {
-        context().locale(lang);
+        context().locale(lang + ".UTF-8");
         content::message c;
         c.message=cppcms::locale::translate("Hello World");
         render("message",c);
