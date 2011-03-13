@@ -8,6 +8,11 @@
 #define BOOSTER_SOURCE
 #include <booster/ctime.h>
 #include <booster/backtrace.h>
+#include <booster/config.h>
+#ifdef BOOSTER_MSVC
+#  pragma warning(disable : 4996)
+#endif
+
 namespace booster {
 
 std::tm local_time(time_t pt)

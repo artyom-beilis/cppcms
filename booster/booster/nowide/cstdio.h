@@ -6,6 +6,13 @@
 #include <booster/config.h>
 #include <booster/nowide/convert.h>
 
+#include <booster/config.h>
+#ifdef BOOSTER_MSVC
+#  pragma warning(push)
+#  pragma warning(disable : 4996)
+#endif
+
+
 namespace booster {
 	namespace nowide {
 	#ifndef BOOSTER_WIN_NATIVE
@@ -25,7 +32,7 @@ namespace booster {
 			try {
 				return _wfopen(convert(file_name).c_str(),convert(mode).c_str());
 			}
-			catch(bad_utf const &e) {
+			catch(bad_utf const &) {
 				return 0;
 			}
 		}
@@ -37,7 +44,7 @@ namespace booster {
 			try {
 				return _wfreopen(convert(file_name).c_str(),convert(mode).c_str(),stream);
 			}
-			catch(bad_utf const &e) {
+			catch(bad_utf const &) {
 				return 0;
 			}
 		}
@@ -49,7 +56,7 @@ namespace booster {
 			try {
 				return _wrename(convert(old_name).c_str(),convert(new_name).c_str());
 			}
-			catch(bad_utf const &e) {
+			catch(bad_utf const &) {
 				return -1;
 			}
 		}
@@ -61,12 +68,16 @@ namespace booster {
 			try {
 				return _wremove(convert(name).c_str());
 			}
-			catch(bad_utf const &e) {
+			catch(bad_utf const &) {
 				return -1;
 			}
 		}
 	#endif
 	} // nowide
 } // booster
+
+#ifdef BOOSTER_MSVC
+#pragma warning(pop)
+#endif
 
 #endif

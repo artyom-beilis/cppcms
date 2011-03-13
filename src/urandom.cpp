@@ -39,7 +39,7 @@ namespace cppcms {
 		urandom_device_impl() {
 			if(CryptAcquireContext(&provider_,0,0,PROV_RSA_FULL,CRYPT_VERIFYCONTEXT)) 
 				return;
-			if(GetLastError() == NTE_BAD_KEYSET) {
+			if(GetLastError() == (DWORD)(NTE_BAD_KEYSET)) {
 				if(CryptAcquireContext(&provider_,0,0,PROV_RSA_FULL,CRYPT_NEWKEYSET))
 					return;
 			}

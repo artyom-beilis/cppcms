@@ -108,7 +108,7 @@ public:
 				break;
 		}
 		
-		OVERLAPPED ov = {0};
+		OVERLAPPED ov = OVERLAPPED();
 		
 		if(!::LockFileEx(h_,LOCKFILE_EXCLUSIVE_LOCK,0,0,16,&ov)) {
 			::CloseHandle(h_);
@@ -121,7 +121,7 @@ public:
 	{
 		if(h_==INVALID_HANDLE_VALUE)
 			return;
-		OVERLAPPED ov = {0};
+		OVERLAPPED ov = OVERLAPPED();
 		::UnlockFileEx(h_,0,0,16,&ov);
 		::CloseHandle(h_);
 	}

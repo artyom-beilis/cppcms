@@ -23,8 +23,8 @@
 namespace cppcms {
 namespace impl {
 
-	void daemonize(json::value const &conf) {}
-	void de_daemonize(json::value const &conf) {}
+	void daemonize(json::value const &/*conf*/) {}
+	void de_daemonize(json::value const &/*conf*/) {}
 }
 }
 #else // POSIX OS
