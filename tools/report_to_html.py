@@ -14,6 +14,7 @@ dic = {
 	'intel':'<td>Intel 11.0</td><td>Linux 2.6</td><td>x86_64</td>', 
 	'bsd_gcc':'<td>GCC-4.2</td><td>FreeBSD 8.0</td><td>x86</td>', 
 	'solaris_gcc':'<td>GCC-3.4</td><td>OpenSolaris 2009.06</td><td>x86</td>',
+	'solaris_suncc':'<td>Sun Studio 5.11</td><td>OpenSolaris 2009.06</td><td>x86</td>',
 	'win_gcc':'<td>GCC-4.5/MinGW</td><td>Windows XP</td><td>x86</td>', 
 	'win_msvc':'<td>MSVC 2008</td><td>Windows XP</td><td>x86</td>', 
 	#'win_cyg':'<td>GCC-4.3</td><td>Windows XP/Cygwin</td><td>x86</td>', 
