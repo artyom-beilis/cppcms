@@ -9,6 +9,8 @@
 
 #include "reactor_config.h"
 
+#include <string.h>
+
 #ifdef AIO_HAVE_POSIX_SELECT
 #include <sys/types.h>
 #include <sys/time.h>

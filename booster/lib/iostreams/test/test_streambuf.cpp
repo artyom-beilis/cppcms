@@ -1,8 +1,12 @@
 #include <booster/streambuf.h>
-#include "test.h"
 #include <string.h>
 #include <iostream>
 #include <fstream>
+
+int errors;
+int tests;
+
+#define TEST(x) do { tests++; if(!(x)) { std::cerr << #x << " in " << __LINE__ << " failed" << std::endl;  errors++; } } while(0)
 
 class output : public booster::io_device
 {
@@ -285,7 +289,13 @@ int main()
 		std::cerr << e.what() << std::endl;
 		return 1;
 	}
-	std::cout << "ok" << std::endl;
-	return 0;
+	if(errors == 0) {
+		std::cout << "ok, passed " << tests << " tests "<< std::endl;
+		return 0;
+	}
+	else { 
+		std::cerr << "Fail: passed " << tests - errors<< " tests " << " failed " << errors << std::endl;
+		return 1;
+	}
 
 }

@@ -415,9 +415,9 @@ void test_encoding()
 		r.encoding("UTF-8");
 		std::cout << "-- Testing UTF-8" << std::endl;
 		TEST(valenc("שלום עולם",r));
-		TEST(!valenc("שלום \xFFעולם",r,"שלום עולם","שלום ?עולם"));
+		TEST(!valenc("שלום \xFF" "עולם",r,"שלום עולם","שלום ?עולם"));
 		TEST(!valenc("שלום \4עולם",r,"שלום עולם","שלום ?עולם"));
-		TEST(!valenc("\xFFעולם",r,"עולם","?עולם"));
+		TEST(!valenc("\xFF" "עולם",r,"עולם","?עולם"));
 		TEST(!valenc("\4עולם",r,"עולם","?עולם"));
 		TEST(!valenc("שלום \xFF",r,"שלום ","שלום ?"));
 		TEST(!valenc("שלום \4",r,"שלום ","שלום ?"));

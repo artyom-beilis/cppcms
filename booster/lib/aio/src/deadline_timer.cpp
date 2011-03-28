@@ -77,7 +77,6 @@ void deadline_timer::wait()
 		return;
 	ptime::sleep(diff);
 }
-
 struct deadline_timer::waiter : public booster::callable<void(system::error_code const &e)> {
 	event_handler h;
 	deadline_timer *self;

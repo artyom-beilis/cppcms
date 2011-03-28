@@ -11,6 +11,7 @@
 
 #ifndef BOOSTER_WIN32
 #include <sys/socket.h>
+#include <unistd.h>
 #else
 #include <winsock2.h>
 #include <windows.h>

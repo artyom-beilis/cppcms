@@ -10,6 +10,7 @@
 
 #include <booster/aio/types.h>
 #include <booster/hold_ptr.h>
+#include <booster/callback.h>
 #include <booster/noncopyable.h>
 
 namespace booster {

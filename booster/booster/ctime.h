@@ -10,6 +10,7 @@
 
 #include <booster/config.h>
 #include <ctime>
+#include <time.h>
 
 namespace booster {
 	///

@@ -21,6 +21,7 @@
 #include <iostream>
 #include "test.h"
 #include <string.h>
+#include <stdlib.h>
 
 char const test_1_content[] = "multipart/form-data; boundary=xxyy";
 char const test_1_file[] = 

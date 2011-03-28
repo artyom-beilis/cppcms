@@ -16,6 +16,9 @@
 //  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 ///////////////////////////////////////////////////////////////////////////////
+#if defined(__sun)
+#define _POSIX_PTHREAD_SEMANTICS
+#endif
 #include "tcp_cache_server.h"
 #include "cache_storage.h"
 #ifndef CPPCMS_WIN32

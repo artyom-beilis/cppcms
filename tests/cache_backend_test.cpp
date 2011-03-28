@@ -22,6 +22,7 @@
 #include "cache_over_ip.h"
 #include "base_cache.h"
 #include <booster/intrusive_ptr.h>
+#include <cppcms/config.h>
 #include "test.h"
 #include <iostream>
 #include <memory>
@@ -127,7 +128,7 @@ int main()
 		std::cout << "Testing thread cache... "<< std::flush;
 		test_cache(cppcms::impl::thread_cache_factory(20));
 		std::cout << "Ok" << std::endl;
-		#ifndef CPPCMS_WIN32
+		#if !defined(CPPCMS_WIN32) && !defined(CPPCMS_NO_PREFOK_CACHE)
 		std::cout << "Testing process cache... " << std::flush;
 		test_cache(cppcms::impl::process_cache_factory(16*1024));
 		std::cout << "Ok" << std::endl;

@@ -11,6 +11,7 @@
 #include <booster/config.h>
 #include <stdexcept>
 #include <typeinfo>
+#include <string>
 #include <vector>
 #include <iosfwd>
 

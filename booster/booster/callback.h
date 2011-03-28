@@ -110,18 +110,20 @@ namespace booster {
 
 	#define BOOSTER_CALLBACK						\
 	template<typename Result BOOSTER_TEMPLATE_PARAMS >			\
-	struct callable<Result(BOOSTER_TYPE_PARAMS)> : public refcounted {	\
+	struct callable<Result(BOOSTER_TEMPLATE_TYPE_PARAMS)> :public refcounted\
+	{									\
 		virtual Result operator()(BOOSTER_TYPE_PARAMS) = 0;		\
 		virtual ~callable(){}						\
 	};									\
 										\
 	template<typename Result BOOSTER_TEMPLATE_PARAMS >			\
-	class callback<Result(BOOSTER_TYPE_PARAMS)>				\
+	class callback<Result(BOOSTER_TEMPLATE_TYPE_PARAMS)>			\
 	{									\
 	public:									\
 		typedef Result result_type;					\
 										\
-		typedef callable<Result(BOOSTER_TYPE_PARAMS)> callable_type;	\
+		typedef callable<Result(BOOSTER_TEMPLATE_TYPE_PARAMS)> 		\
+			callable_type;						\
 										\
 		template<typename R,typename F>					\
 		struct callable_impl : public callable_type {			\
@@ -193,72 +195,92 @@ namespace booster {
 	};									\
 
 	#define BOOSTER_TEMPLATE_PARAMS
+	#define BOOSTER_TEMPLATE_TYPE_PARAMS
 	#define BOOSTER_TYPE_PARAMS
 	#define BOOSTER_CALL_PARAMS
 	BOOSTER_CALLBACK
 	#undef BOOSTER_TEMPLATE_PARAMS
+	#undef BOOSTER_TEMPLATE_TYPE_PARAMS
 	#undef BOOSTER_TYPE_PARAMS
 	#undef BOOSTER_CALL_PARAMS
 
 	#define BOOSTER_TEMPLATE_PARAMS ,typename P1
+	#define BOOSTER_TEMPLATE_TYPE_PARAMS  P1
 	#define BOOSTER_TYPE_PARAMS  P1 a1
 	#define BOOSTER_CALL_PARAMS a1
 	BOOSTER_CALLBACK
 	#undef BOOSTER_TEMPLATE_PARAMS
+	#undef BOOSTER_TEMPLATE_TYPE_PARAMS
 	#undef BOOSTER_TYPE_PARAMS
 	#undef BOOSTER_CALL_PARAMS
 
 	#define BOOSTER_TEMPLATE_PARAMS ,typename P1,typename P2
+	#define BOOSTER_TEMPLATE_TYPE_PARAMS  P1, P2
 	#define BOOSTER_TYPE_PARAMS  P1 a1,P2 a2
 	#define BOOSTER_CALL_PARAMS a1,a2
 	BOOSTER_CALLBACK
 	#undef BOOSTER_TEMPLATE_PARAMS
+	#undef BOOSTER_TEMPLATE_TYPE_PARAMS
 	#undef BOOSTER_TYPE_PARAMS
 	#undef BOOSTER_CALL_PARAMS
 			
 	#define BOOSTER_TEMPLATE_PARAMS ,typename P1,typename P2,typename P3
+	#define BOOSTER_TEMPLATE_TYPE_PARAMS  P1, P2, P3
 	#define BOOSTER_TYPE_PARAMS  P1 a1,P2 a2,P3 a3
 	#define BOOSTER_CALL_PARAMS a1,a2,a3
 	BOOSTER_CALLBACK
 	#undef BOOSTER_TEMPLATE_PARAMS
+	#undef BOOSTER_TEMPLATE_TYPE_PARAMS
 	#undef BOOSTER_TYPE_PARAMS
 	#undef BOOSTER_CALL_PARAMS
 	
 	#define BOOSTER_TEMPLATE_PARAMS ,typename P1,typename P2,typename P3,typename P4
+	#define BOOSTER_TEMPLATE_TYPE_PARAMS  P1, P2, P3, P4
 	#define BOOSTER_TYPE_PARAMS  P1 a1,P2 a2,P3 a3,P4 a4
 	#define BOOSTER_CALL_PARAMS a1,a2,a3,a4
 	BOOSTER_CALLBACK
 	#undef BOOSTER_TEMPLATE_PARAMS
+	#undef BOOSTER_TEMPLATE_TYPE_PARAMS
 	#undef BOOSTER_TYPE_PARAMS
 	#undef BOOSTER_CALL_PARAMS
 
 	#define BOOSTER_TEMPLATE_PARAMS ,typename P1,typename P2,typename P3,typename P4,typename P5
+	#define BOOSTER_TEMPLATE_TYPE_PARAMS  P1, P2, P3, P4, P5
 	#define BOOSTER_TYPE_PARAMS  P1 a1,P2 a2,P3 a3,P4 a4,P5 a5
 	#define BOOSTER_CALL_PARAMS a1,a2,a3,a4,a5
 	BOOSTER_CALLBACK
 	#undef BOOSTER_TEMPLATE_PARAMS
+	#undef BOOSTER_TEMPLATE_TYPE_PARAMS
 	#undef BOOSTER_TYPE_PARAMS
 	#undef BOOSTER_CALL_PARAMS
 
 	#define BOOSTER_TEMPLATE_PARAMS ,typename P1,typename P2,typename P3,typename P4,typename P5,typename P6
+	#define BOOSTER_TEMPLATE_TYPE_PARAMS  P1, P2, P3, P4, P5, P6
 	#define BOOSTER_TYPE_PARAMS  P1 a1,P2 a2,P3 a3,P4 a4,P5 a5,P6 a6
 	#define BOOSTER_CALL_PARAMS a1,a2,a3,a4,a5,a6
 	BOOSTER_CALLBACK
 	#undef BOOSTER_TEMPLATE_PARAMS
+	#undef BOOSTER_TEMPLATE_TYPE_PARAMS
 	#undef BOOSTER_TYPE_PARAMS
 	#undef BOOSTER_CALL_PARAMS
+	
 	#define BOOSTER_TEMPLATE_PARAMS ,typename P1,typename P2,typename P3,typename P4,typename P5,typename P6,typename P7
+	#define BOOSTER_TEMPLATE_TYPE_PARAMS  P1, P2, P3, P4, P5, P6, P7
 	#define BOOSTER_TYPE_PARAMS  P1 a1,P2 a2,P3 a3,P4 a4,P5 a5,P6 a6,P7 a7
 	#define BOOSTER_CALL_PARAMS a1,a2,a3,a4,a5,a6,a7
 	BOOSTER_CALLBACK
 	#undef BOOSTER_TEMPLATE_PARAMS
+	#undef BOOSTER_TEMPLATE_TYPE_PARAMS
 	#undef BOOSTER_TYPE_PARAMS
 	#undef BOOSTER_CALL_PARAMS
+	
 	#define BOOSTER_TEMPLATE_PARAMS ,typename P1,typename P2,typename P3,typename P4,typename P5,typename P6,typename P7,typename P8
+	#define BOOSTER_TEMPLATE_TYPE_PARAMS  P1, P2, P3, P4, P5, P6, P7, P8
 	#define BOOSTER_TYPE_PARAMS  P1 a1,P2 a2,P3 a3,P4 a4,P5 a5,P6 a6,P7 a7,P8 a8
 	#define BOOSTER_CALL_PARAMS a1,a2,a3,a4,a5,a6,a7,a8
 	BOOSTER_CALLBACK
 	#undef BOOSTER_TEMPLATE_PARAMS
+	#undef BOOSTER_TEMPLATE_TYPE_PARAMS
 	#undef BOOSTER_TYPE_PARAMS
 	#undef BOOSTER_CALL_PARAMS
 

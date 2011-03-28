@@ -24,10 +24,14 @@ option(DISABLE_FCGI		"Disable fastcgi web server api" OFF)
 option(DISABLE_SCGI		"Disable scgi web server api" OFF)
 option(DISABLE_HTTP		"Disable http web server" OFF)
 option(DISABLE_CACHE		"Disable cache beckend" OFF)
-option(DISABLE_PREFORK_CACHE	"Disable cache beckend" OFF)
 option(DISABLE_TCPCACHE		"Disable distributed cache beckend" OFF)
 option(DISABLE_GZIP		"Disable support of gzip output compression" OFF)
 
+if(CMAKE_CXX_COMPILER_ID STREQUAL "SunPro")
+	option(DISABLE_PREFORK_CACHE	"Disable prefork-cache beckend" ON)
+else()
+	option(DISABLE_PREFORK_CACHE	"Disable prefork-cache beckend" OFF)
+endif()
 
 add_subdirectory(booster)
 

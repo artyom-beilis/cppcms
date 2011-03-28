@@ -11,6 +11,7 @@
 #include <booster/config.h>
 #include <booster/posix_time.h>
 #include <booster/hold_ptr.h>
+#include <booster/callback.h>
 #include <booster/aio/types.h>
 #include <booster/noncopyable.h>
 
