@@ -6,6 +6,14 @@
 //  http://www.boost.org/LICENSE_1_0.txt)
 //
 
+#ifdef BOOSTER_LOCALE_NO_WINAPI_BACKEND
+#include <iostream>
+int main()
+{
+        std::cout << "WinAPI Backend is not build... Skipping" << std::endl;
+}
+#else
+
 #include <booster/locale/formatting.h>
 #include <booster/locale/localization_backend.h>
 #include <booster/locale/generator.h>
@@ -246,5 +254,8 @@ int main()
     FINALIZE();
 
 }
+
+#endif // no winapi
+
 // vim: tabstop=4 expandtab shiftwidth=4 softtabstop=4
 

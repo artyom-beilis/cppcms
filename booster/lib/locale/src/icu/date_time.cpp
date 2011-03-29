@@ -141,6 +141,14 @@ namespace impl_icu {
             calendar_->setTime(utime,code);
             check_and_throw_dt(code);
         }
+        virtual void normalize()
+        {
+            // Can't call complete() explicitly (protected)
+            // calling get wich calls complete
+            UErrorCode code=U_ZERO_ERROR;
+            calendar_->get(UCAL_YEAR,code);
+            check_and_throw_dt(code);
+        }
         virtual posix_time get_time() const
         {
             

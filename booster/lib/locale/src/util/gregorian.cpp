@@ -170,37 +170,37 @@ namespace util {
             virtual void set_value(period::period_type p,int value) 
             {
                 using namespace period;
-                std::tm t = tm_;
                 switch(p) {
                 case era:                        ///< Era i.e. AC, BC in Gregorian and Julian calendar, range [0,1]
                     return;
                 case year:                       ///< Year, it is calendar specific
                 case extended_year:              ///< Extended year for Gregorian/Julian calendars, where 1 BC == 0, 2 BC == -1.
-                    t.tm_year = value - 1900;
+                    tm_updated_.tm_year = value - 1900;
                     break;
                 case month:
-                    t.tm_mon = value;
+                    tm_updated_.tm_mon = value;
                     break;
                 case day:
-                    t.tm_mday = value;
+                    tm_updated_.tm_mday = value;
                     break;
                 case hour:                       ///< 24 clock hour [0..23]
-                    t.tm_hour = value;
+                    tm_updated_.tm_hour = value;
                     break;
                 case hour_12:                    ///< 12 clock hour [0..11]
-                    t.tm_hour = t.tm_hour / 12 * 12 + value;
+                    tm_updated_.tm_hour = tm_updated_.tm_hour / 12 * 12 + value;
                     break;
                 case am_pm:                      ///< am or pm marker, [0..1]
-                    t.tm_hour = 12 * value + t.tm_hour % 12;
+                    tm_updated_.tm_hour = 12 * value + tm_updated_.tm_hour % 12;
                     break;
                 case minute:                     ///< minute [0..59]
-                    t.tm_min = value;
+                    tm_updated_.tm_min = value;
                     break;
                 case second:
-                    t.tm_sec = value;
+                    tm_updated_.tm_sec = value;
                     break;
                 case day_of_year:
-                    t.tm_mday += (value - (t.tm_yday + 1));
+                    normalize();
+                    tm_updated_.tm_mday += (value - (tm_updated_.tm_yday + 1));
                     break;
                 case day_of_week:           ///< Day of week, starting from Sunday, [1..7]
                     if(value < 1) // make sure it is positive 
@@ -209,22 +209,67 @@ namespace util {
                     value = (value - 1 - first_day_of_week_ + 14) % 7 + 1;
                     // fall throght
                 case day_of_week_local:     ///< Local day of week, for example in France Monday is 1, in US Sunday is 1, [1..7]
-                    t.tm_mday += (value - 1) - (t.tm_wday - first_day_of_week_ + 7) % 7;
+                    normalize();
+                    tm_updated_.tm_mday += (value - 1) - (tm_updated_.tm_wday - first_day_of_week_ + 7) % 7;
                     break;
                 case day_of_week_in_month:  ///< Original number of the day of the week in month. (1st sunday, 2nd sunday etc)
                 case week_of_year:          ///< The week number in the year, 4 is the minimal number of days to be in month
                 case week_of_month:         ///< The week number withing current month
                     {
+                        normalize();
                         int current_week = get_value(p,current);
                         int diff = 7 * (value - current_week);
-                        t.tm_mday += diff;
+                        tm_updated_.tm_mday += diff;
                     }
                     break;
                 case period::first_day_of_week:          ///< For example Sunday in US, Monday in France
                 default:
                     return;
                 }
-                from_tm(t);
+                normalized_ = false;
+            }
+
+            void normalize()
+            {
+                if(!normalized_) {
+                    std::tm val = tm_updated_;
+                    val.tm_isdst = -1;
+                    val.tm_wday = -1; // indecator of error
+                    time_t point = -1;
+                    if(is_local_) {
+                        point = mktime(&val);
+                        if(point == static_cast<time_t>(-1)){
+                            #ifndef BOOSTER_WIN_NATIVE
+                            // windows does not handle negative time_t, under other plaforms
+                            // it may be actually valid value in  1969-12-31 23:59:59
+                            // so we check that a filed was updated - does not happen in case of error
+                            if(val.tm_wday == -1)
+                            #endif
+                            {
+                                throw date_time_error("boost::locale::gregorian_calendar: invalid time");
+                            }
+                        }
+                    }
+                    else {
+                        point = internal_timegm(&val);
+                        #ifdef BOOSTER_WIN_NATIVE
+                        // Windows uses TLS, thread safe
+                        std::tm *revert_point = 0;
+                        if(point < 0  || (revert_point = gmtime(&point)) == 0)
+                            throw date_time_error("boost::locale::gregorian_calendar time is out of range");
+                        val = *revert_point;
+                        #else
+                        if(!gmtime_r(&point,&val))
+                            throw date_time_error("boost::locale::gregorian_calendar invalid time");
+                        #endif
+                        
+                    }
+                    
+                    time_ = point - tzoff_;
+                    tm_ = val;
+                    tm_updated_ = val;
+                    normalized_ = true;
+                }
             }
 
             int get_week_number(int day,int wday) const
@@ -567,43 +612,43 @@ namespace util {
                 case move:
                     {
                         using namespace period;
-                        std::tm t = tm_;
                         switch(p) {
                         case year:                       ///< Year, it is calendar specific
                         case extended_year:              ///< Extended year for Gregorian/Julian calendars, where 1 BC == 0, 2 BC == -1.
-                            t.tm_year +=difference;
+                            tm_updated_.tm_year +=difference;
                             break;
                         case month:
-                            t.tm_mon +=difference;
+                            tm_updated_.tm_mon +=difference;
                             break;
                         case day:
                         case day_of_year:
                         case day_of_week:                ///< Day of week, starting from Sunday, [1..7]
                         case day_of_week_local: ///< Local day of week, for example in France Monday is 1, in US Sunday is 1, [1..7]
-                            t.tm_mday +=difference;
+                            tm_updated_.tm_mday +=difference;
                             break;
                         case hour:                       ///< 24 clock hour [0..23]
                         case hour_12:                    ///< 12 clock hour [0..11]
-                            t.tm_hour += difference;
+                            tm_updated_.tm_hour += difference;
                             break;
                         case am_pm:                      ///< am or pm marker, [0..1]
-                            t.tm_hour += 12 * difference;
+                            tm_updated_.tm_hour += 12 * difference;
                             break;
                         case minute:                     ///< minute [0..59]
-                            t.tm_min += difference;
+                            tm_updated_.tm_min += difference;
                             break;
                         case second:
-                            t.tm_sec += difference;
+                            tm_updated_.tm_sec += difference;
                             break;
                         case week_of_year:               ///< The week number in the year
                         case week_of_month:              ///< The week number withing current month
                         case day_of_week_in_month:       ///< Original number of the day of the week in month.
-                            t.tm_mday +=difference * 7;
+                            tm_updated_.tm_mday +=difference * 7;
                             break;
                         default:
                             ; // Not all values are adjustable
                         }
-                        from_tm(t);
+                        normalized_ = false;
+                        normalize();
                     }
                     break;
                 case roll:
@@ -618,6 +663,7 @@ namespace util {
                                 addon = ((-difference/max_diff) + 1) * max_diff;
                             value = (value - cur_min + difference + addon) % max_diff + cur_min;
                             set_value(p,value);
+                            normalize();
                         }
                     }
                 default:
@@ -744,43 +790,6 @@ namespace util {
             }
 
     private:
-        void from_tm(std::tm val)
-        {
-            val.tm_isdst = -1;
-            val.tm_wday = -1; // indecator of error
-            time_t point = -1;
-            if(is_local_) {
-                point = mktime(&val);
-                if(point == static_cast<time_t>(-1)){
-                    #ifndef BOOSTER_WIN_NATIVE
-                    // windows does not handle negative time_t, under other plaforms
-                    // it may be actually valid value in  1969-12-31 23:59:59
-                    // so we check that a filed was updated - does not happen in case of error
-                    if(val.tm_wday == -1)
-                    #endif
-                    {
-                        throw date_time_error("boost::locale::gregorian_calendar: invalid time");
-                    }
-                }
-            }
-            else {
-                point = internal_timegm(&val);
-                #ifdef BOOSTER_WIN_NATIVE
-                // Windows uses TLS, thread safe
-                std::tm *revert_point = 0;
-                if(point < 0  || (revert_point = gmtime(&point)) == 0)
-                    throw date_time_error("boost::locale::gregorian_calendar time is out of range");
-                val = *revert_point;
-                #else
-                if(!gmtime_r(&point,&val))
-                    throw date_time_error("boost::locale::gregorian_calendar invalid time");
-                #endif
-                
-            }
-            
-            time_ = point - tzoff_;
-            tm_ = val;
-        }
 
         void from_time(time_t point)
         {
@@ -797,11 +806,15 @@ namespace util {
                 throw date_time_error("boost::locale::gregorian_calendar: invalid time point");
             }
             tm_ = *t;
+            tm_updated_ = *t;
+            normalized_ = true;
             time_ = point;
         }
         int first_day_of_week_;
         time_t time_;
         std::tm tm_;
+        std::tm tm_updated_;
+        bool normalized_;
         bool is_local_;
         int tzoff_;
         std::string time_zone_name_;

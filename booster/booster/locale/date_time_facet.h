@@ -112,7 +112,19 @@ namespace booster {
             ///
             /// Set specific \a value for period \a p, note not all values are settable.
             ///
+            /// After call of set_value you may want to call normalize() function to make sure
+            /// vall periods are updated, if you set sereral fields that are part of single
+            /// date/time representation you should call set_value several times and then
+            /// call normalize().
+            ///
+            /// If normalize() is not called after set_value, the behavior is undefined
+            ///
             virtual void set_value(period::period_type p,int value) = 0;
+
+            ///
+            /// Recalculate all periods after setting them, should be called after use of set_value() function.
+            ///
+            virtual void normalize() = 0;
 
             ///
             /// Get specific value for period \a p according to a value_type \a v

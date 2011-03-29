@@ -5,7 +5,13 @@
 //  accompanying file LICENSE_1_0.txt or copy at
 //  http://www.boost.org/LICENSE_1_0.txt)
 //
-
+#ifdef BOOSTER_LOCALE_NO_POSIX_BACKEND
+#include <iostream>
+int main()
+{
+        std::cout << "POSIX Backend is not build... Skipping" << std::endl;
+}
+#else
 #include <booster/config.h>
 #include <booster/locale/conversion.h>
 #include <booster/locale/localization_backend.h>
@@ -107,6 +113,7 @@ int main()
     FINALIZE();
 
 }
+#endif  // NO POSIX
 // vim: tabstop=4 expandtab shiftwidth=4 softtabstop=4
 
 

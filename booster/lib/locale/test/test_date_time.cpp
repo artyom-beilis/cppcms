@@ -218,6 +218,31 @@ int main()
                 TEST((time_point - year *1 - time_point) / year == -1);
                 TEST((time_point - year *1 - hour * 1 - time_point) / year == -1);
 
+                RESET();
+
+                time_point.time(24*3600 * 2);
+
+                time_point = year * 2011;
+                time_point = march;
+                time_point = day * 29;
+
+                date_time tmp_save = time_point;
+
+                time_point = year * 2011;
+                time_point = february;
+                time_point = day * 5;
+
+                TEST(time_point.get(year) == 2011);
+                TEST(time_point.get(month) == 2); // march
+                TEST(time_point.get(day) == 5);
+                
+                time_point = tmp_save;
+
+                time_point = year * 2011 + february + day * 5;
+                TEST(time_point.get(year) == 2011);
+                TEST(time_point.get(month) == 1); // february
+                TEST(time_point.get(day) == 5);
+
             } // test
         }   // for loop
 

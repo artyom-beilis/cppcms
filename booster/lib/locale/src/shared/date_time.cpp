@@ -149,8 +149,10 @@ date_time::date_time(date_time const &other)
 date_time::date_time(date_time const &other,date_time_period_set const &s)
 {
     impl_.reset(other.impl_->clone());
-    for(unsigned i=0;i<s.size();i++)
-        set(s[i].type,s[i].value);
+    for(unsigned i=0;i<s.size();i++) {
+        impl_->set_value(s[i].type,s[i].value);
+    }
+    impl_->normalize();
 }
 
 date_time const &date_time::operator = (date_time const &other)
@@ -190,26 +192,32 @@ date_time::date_time(date_time_period_set const &s) :
     impl_(std::use_facet<calendar_facet>(std::locale()).create_calendar())
 {
     impl_->set_timezone(time_zone::global());
-    for(unsigned i=0;i<s.size();i++)
-        set(s[i].type,s[i].value);
+    for(unsigned i=0;i<s.size();i++) {
+        impl_->set_value(s[i].type,s[i].value);
+    }
+    impl_->normalize();
 }
 date_time::date_time(date_time_period_set const &s,calendar const &cal) :
     impl_(cal.impl_->clone())
 {
-    for(unsigned i=0;i<s.size();i++)
-        set(s[i].type,s[i].value);
+    for(unsigned i=0;i<s.size();i++) {
+        impl_->set_value(s[i].type,s[i].value);
+    }
+    impl_->normalize();
 }
 
 date_time const &date_time::operator=(date_time_period_set const &s)
 {
     for(unsigned i=0;i<s.size();i++)
-        set(s[i].type,s[i].value);
+        impl_->set_value(s[i].type,s[i].value);
+    impl_->normalize();
     return *this;
 }
 
 void date_time::set(period_type f,int v)
 {
     impl_->set_value(f,v);
+    impl_->normalize();
 }
 
 int date_time::get(period_type f) const

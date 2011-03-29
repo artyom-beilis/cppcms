@@ -5,6 +5,13 @@
 //  accompanying file LICENSE_1_0.txt or copy at
 //  http://www.boost.org/LICENSE_1_0.txt)
 //
+#ifndef BOOSTER_LOCALE_WITH_ICU
+#include <iostream>
+int main()
+{
+        std::cout << "ICU is not build... Skipping" << std::endl;
+}
+#else
 
 #include <booster/locale/conversion.h>
 #include <booster/locale/generator.h>
@@ -115,6 +122,7 @@ int main()
     FINALIZE();
 
 }
+#endif // NO ICU
 // vim: tabstop=4 expandtab shiftwidth=4 softtabstop=4
 
 

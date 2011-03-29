@@ -32,6 +32,7 @@ find boost_locale -regextype posix-extended -regex '.*\.(cpp|h)' -exec sed -i 's
 find boost_locale -regextype posix-extended -regex '.*\.(cpp|h)' -exec sed -i 's/std::runtime_error/booster::runtime_error/' '{}' \;
 find boost_locale -regextype posix-extended -regex '.*\.(cpp|h)' -exec sed -i 's/std::out_of_range/booster::out_of_range/' '{}' \;
 find boost_locale -regextype posix-extended -regex '.*\.(cpp|h)' -exec sed -i 's/std::invalid_argument/booster::invalid_argument/' '{}' \;
+find boost_locale -regextype posix-extended -regex '.*\.(cpp|h)' -exec sed -i 's/#include <boost\/config\/auto_link.hpp>/#undef BOOST_LIB_NAME/' '{}' \;
 
 sed -i 's/BOOST_VERSION >= 103600/0/' boost_locale/libs/locale/src/shared/message.cpp
 

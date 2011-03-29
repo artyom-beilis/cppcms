@@ -5,6 +5,14 @@
 //  accompanying file LICENSE_1_0.txt or copy at
 //  http://www.boost.org/LICENSE_1_0.txt)
 //
+#ifndef BOOSTER_LOCALE_WITH_ICU
+#include <iostream>
+int main()
+{
+        std::cout << "ICU is not build... Skipping" << std::endl;
+}
+#else
+
 #ifdef _MSC_VER
 #define _CRT_SECURE_NO_WARNINGS 
 // Disable this "security crap"
@@ -369,5 +377,5 @@ int main()
 
 }
 
-
+#endif // NOICU
 // vim: tabstop=4 expandtab shiftwidth=4 softtabstop=4
