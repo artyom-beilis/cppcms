@@ -6,7 +6,14 @@
 int errors;
 int tests;
 
-#define TEST(x) do { tests++; if(!(x)) { std::cerr << #x << " in " << __LINE__ << " failed" << std::endl;  errors++; } } while(0)
+#define TEST(x) 								\
+	do { 									\
+		tests++; 							\
+		if(x) 								\
+			break; 							\
+		std::cerr<<" "#x<<" in "<<__LINE__<<" failed"<<std::endl;	\
+		errors++; 							\
+	} while(0)
 
 class output : public booster::io_device
 {

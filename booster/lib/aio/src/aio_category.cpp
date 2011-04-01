@@ -32,7 +32,7 @@ namespace aio_error {
 	
 	category const &get_category()
 	{
-		static const category cat;
+		static const category cat = category();
 		return cat;
 	}
 	

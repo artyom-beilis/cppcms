@@ -41,7 +41,7 @@ namespace booster { namespace system {
 
 	error_category const &get_posix_category()
 	{
-		static const posix_error_impl se;
+		static const posix_error_impl se = posix_error_impl();
 		return se;
 	}
 
@@ -55,7 +55,7 @@ namespace booster { namespace system {
 	};
 	error_category const &get_system_category()
 	{
-		static const system_error_impl se;
+		static const system_error_impl se = system_error_impl();
 		return se;
 	}
 

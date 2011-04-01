@@ -33,7 +33,7 @@ namespace impl {
 			return "unknown";
 		}
 	}
-	const error_category cppcms_category;
+	const error_category cppcms_category = error_category();
 
 } // impl
 } // cppcms
