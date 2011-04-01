@@ -22,7 +22,7 @@ solaris_suncc()
 	mkdir build
 	cd build
 
-	if cmake $FLAGS -DCMAKE_C_COMPILER=/usr/bin/suncc -DCMAKE_CXX_COMPILER=/usr/bin/sunCC -DCMAKE_INCLUDE_PATH=$HOME/sun/include -DCMAKE_LIBRARY_PATH=$HOME/sun/lib -DDISABLE_STATIC=ON .. -DCMAKE_BUILD_TYPE=Release && make && ctest -E test_locale_collate
+	if cmake $FLAGS -DCMAKE_C_COMPILER=/usr/bin/suncc -DCMAKE_CXX_COMPILER=/usr/bin/sunCC -DCMAKE_INCLUDE_PATH=$HOME/sun/include -DCMAKE_LIBRARY_PATH=$HOME/sun/lib -DDISABLE_STATIC=ON .. -DCMAKE_BUILD_TYPE=Release && make && ctest -E '(test_locale_collate|test_iostreams_streambuf)'
 	then
 		return 0;
 	else
