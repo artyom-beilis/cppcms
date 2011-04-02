@@ -19,7 +19,6 @@
 #include <vector>
 #include <iterator>
 #include <algorithm>
-#include <typeinfo>
 #include <iterator>
 #include <booster/backtrace.h>
 
@@ -259,39 +258,69 @@ namespace booster {
                     }
                 };
 
+                template<typename CharType,typename SomeIteratorType>
+                struct linear_iterator_traits {
+                    static const bool is_linear = false;
+                };
+
+                template<typename CharType>
+                struct linear_iterator_traits<CharType,typename std::basic_string<CharType>::iterator> {
+                    static const bool is_linear = true;
+                };
+
+                template<typename CharType>
+                struct linear_iterator_traits<CharType,typename std::basic_string<CharType>::const_iterator> {
+                    static const bool is_linear = true;
+                };
+                
+                template<typename CharType>
+                struct linear_iterator_traits<CharType,typename std::vector<CharType>::iterator> {
+                    static const bool is_linear = true;
+                };
+
+                template<typename CharType>
+                struct linear_iterator_traits<CharType,typename std::vector<CharType>::const_iterator> {
+                    static const bool is_linear = true;
+                };
+
+                template<typename CharType>
+                struct linear_iterator_traits<CharType,CharType *> {
+                    static const bool is_linear = true;
+                };
+
+                template<typename CharType>
+                struct linear_iterator_traits<CharType,CharType const *> {
+                    static const bool is_linear = true;
+                };
+
+
                 template<typename IteratorType>
                 struct mapping_traits<IteratorType,std::random_access_iterator_tag> {
+
                     typedef typename std::iterator_traits<IteratorType>::value_type char_type;
+
+
 
                     static index_type map(boundary_type t,IteratorType b,IteratorType e,std::locale const &l)
                     {
                         index_type result;
+
                         //
                         // Optimize for most common cases
                         //
-                        // C++0x requires that string is continious in memory and all string implementations
+                        // C++0x requires that string is continious in memory and all known
+                        // string implementations
                         // do this because of c_str() support. 
                         //
 
-                        if( 
-                            (
-                                typeid(IteratorType) == typeid(typename std::basic_string<char_type>::iterator)
-                                || typeid(IteratorType) == typeid(typename std::basic_string<char_type>::const_iterator)
-                                || typeid(IteratorType) == typeid(typename std::vector<char_type>::iterator)
-                                || typeid(IteratorType) == typeid(typename std::vector<char_type>::const_iterator)
-                                || typeid(IteratorType) == typeid(char_type *)
-                                || typeid(IteratorType) == typeid(char_type const *)
-                            )
-                            &&
-                                b!=e
-                          )
+                        if(linear_iterator_traits<char_type,IteratorType>::is_linear && b!=e)
                         {
                             char_type const *begin = &*b;
                             char_type const *end = begin + (e-b);
                             index_type tmp=std::use_facet<boundary_indexing<char_type> >(l).map(t,begin,end);
                             result.swap(tmp);
                         }
-                        else{
+                        else {
                             std::basic_string<char_type> str(b,e);
                             index_type tmp = std::use_facet<boundary_indexing<char_type> >(l).map(t,str.c_str(),str.c_str()+str.size());
                             result.swap(tmp);

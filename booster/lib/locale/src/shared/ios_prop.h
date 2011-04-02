@@ -53,7 +53,7 @@ namespace booster {
                         int id=get_id();
                         Property *p=reinterpret_cast<Property *>(ios.pword(id));
                         delete p;
-                        ios.pword(id)=static_cast<void *>(-1);
+                        ios.pword(id)=reinterpret_cast<void *>(-1);
                     }
                 }
                 static void global_init()
