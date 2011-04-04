@@ -20,14 +20,17 @@ def load_file(file_name):
 def test_io(input,socket_type,target):
     try:
         s=socket.socket(socket_type,socket.SOCK_STREAM);
-        s.connect(target)
-        if socket_type==socket.AF_INET:
-            s.setsockopt(socket.IPPROTO_TCP,socket.TCP_NODELAY,1)
-        s.sendall(input)
-        for x in xrange(0,100):
-            chunk = s.recv(1024)
-            if chunk == '':
-                break
+        try:
+            s.connect(target)
+            if socket_type==socket.AF_INET:
+                s.setsockopt(socket.IPPROTO_TCP,socket.TCP_NODELAY,1)
+            s.sendall(input)
+            for x in xrange(0,100):
+                chunk = s.recv(1024)
+                if chunk == '':
+                    break
+        except socket.error:
+            pass
         s.close();
     except socket.error:
         pass
