@@ -170,7 +170,7 @@ elseif(CMAKE_CXX_COMPILER_ID STREQUAL "SunPro")
 	# We use STL port under Sun Studio, standard library is broken
 	#
 	
-	set(CXX_FLAGS "-library=stlport4")
+	set(CXX_FLAGS "-library=stlport4 -xannotate=no")
 
 	if(CMAKE_SYSTEM_NAME STREQUAL "SunOS")
 		set(CXX_FLAGS "${CXX_FLAGS} -mt")
