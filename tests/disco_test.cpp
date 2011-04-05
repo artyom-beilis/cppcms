@@ -101,7 +101,7 @@ public:
 	{
 		calls ++;
 		std::ostream &out = response().out();
-		for(unsigned i=0;i<10000000;i++) {
+		for(unsigned i=0;i<100000;i++) {
 			out << i << '\n';
 		}
 		release_context()->async_complete_response();
@@ -129,5 +129,6 @@ int main(int argc,char **argv)
 		std::cerr << "Failed bad_count = " << bad_count << " calls = " << calls << std::endl;
 		return EXIT_FAILURE;
 	}
+	std::cout << "Ok" << std::endl;
 	return EXIT_SUCCESS;
 }
