@@ -17,6 +17,7 @@
 //
 ///////////////////////////////////////////////////////////////////////////////
 #include <cppcms/xss.h>
+#include <booster/locale/encoding.h>
 #include "test.h"
 #include <iostream>
 #include <string.h>
@@ -434,38 +435,43 @@ void test_encoding()
 		TEST(!valenc("\xf9\xec\xe5\xed \xc8",r,"\xf9\xec\xe5\xed ","\xf9\xec\xe5\xed ?"));
 		TEST(!valenc("\xf9\xec\xe5\xed \4",r,"\xf9\xec\xe5\xed ","\xf9\xec\xe5\xed ?"));
 	}
-{
-		rules r;
-		r.encoding("windows-932");
-		std::cout << "-- Testing windows-932" << std::endl;
-		TEST(valenc("aX\xCB\x83\x71\x82\xd0",r));
-		// Only remove
-		// single invalid code point in the middle 0xa0
-		TEST(!valenc("aX\xCB\x83\x71\xa0\x82\xd0",r,"aX\xCB\x83\x71\x82\xd0","aX\xCB\x83\x71\x82\xd0"));
-		// single invalid code point in the end 0xa0
-		TEST(!valenc("aX\xCB\x83\x71\xa0",r,"aX\xCB\x83\x71","aX\xCB\x83\x71"));
-		// single invalid code point in the begin 0xa0
-		TEST(!valenc("\xa0\x82\xd0",r,"\x82\xd0","\x82\xd0"));
-		// incompete code point in the end 0x82xd0
-		TEST(!valenc("aX\xCB\x83\x71\x82\xd0\x82",r,"aX\xCB\x83\x71\x82\xd0","aX\xCB\x83\x71\x82\xd0"));
-		// single invalid code point in the middle 4
-		TEST(!valenc("aX\xCB\x83\x71\4\x82\xd0",r,"aX\xCB\x83\x71\x82\xd0","aX\xCB\x83\x71\x82\xd0"));
-		// single invalid code point in the end 4
-		TEST(!valenc("aX\xCB\x83\x71\4",r,"aX\xCB\x83\x71","aX\xCB\x83\x71"));
-		// single invalid code point in the begin 4
-		TEST(!valenc("\4\x82\xd0",r,"\x82\xd0","\x82\xd0"));
-		// single invalid code point in the middle 83 f0
-		TEST(!valenc(	"aX\xCB\x83\x71\x83\xf0\x82\xd0",r,
-				"aX\xCB\x83\x71\x82\xd0",
-				0, // both are legal ways to interpret as xf0x82 + d0 and x82xd0 are valid code points
-				"aX\xCB\x83\x71\xf0\x82\xd0"));
-		// single invalid code point in the end 83 f0
-		TEST(!valenc("aX\xCB\x83\x71\x83\xf0",r,"aX\xCB\x83\x71","aX\xCB\x83\x71"));
-		// single invalid code point in the begin 83 f0
-		TEST(!valenc(	"\x83\xf0\x82\xd0",r,
-				"\x82\xd0", 
-				0, // both are legal ways to interpret as xf0x82 + d0 and x82xd0 are valid code points
-				"\xf0\x82\xd0"));
+	{
+		try {
+			rules r;
+			r.encoding("windows-932");
+			std::cout << "-- Testing windows-932" << std::endl;
+			TEST(valenc("aX\xCB\x83\x71\x82\xd0",r));
+			// Only remove
+			// single invalid code point in the middle 0xa0
+			TEST(!valenc("aX\xCB\x83\x71\xa0\x82\xd0",r,"aX\xCB\x83\x71\x82\xd0","aX\xCB\x83\x71\x82\xd0"));
+			// single invalid code point in the end 0xa0
+			TEST(!valenc("aX\xCB\x83\x71\xa0",r,"aX\xCB\x83\x71","aX\xCB\x83\x71"));
+			// single invalid code point in the begin 0xa0
+			TEST(!valenc("\xa0\x82\xd0",r,"\x82\xd0","\x82\xd0"));
+			// incompete code point in the end 0x82xd0
+			TEST(!valenc("aX\xCB\x83\x71\x82\xd0\x82",r,"aX\xCB\x83\x71\x82\xd0","aX\xCB\x83\x71\x82\xd0"));
+			// single invalid code point in the middle 4
+			TEST(!valenc("aX\xCB\x83\x71\4\x82\xd0",r,"aX\xCB\x83\x71\x82\xd0","aX\xCB\x83\x71\x82\xd0"));
+			// single invalid code point in the end 4
+			TEST(!valenc("aX\xCB\x83\x71\4",r,"aX\xCB\x83\x71","aX\xCB\x83\x71"));
+			// single invalid code point in the begin 4
+			TEST(!valenc("\4\x82\xd0",r,"\x82\xd0","\x82\xd0"));
+			// single invalid code point in the middle 83 f0
+			TEST(!valenc(	"aX\xCB\x83\x71\x83\xf0\x82\xd0",r,
+					"aX\xCB\x83\x71\x82\xd0",
+					0, // both are legal ways to interpret as xf0x82 + d0 and x82xd0 are valid code points
+					"aX\xCB\x83\x71\xf0\x82\xd0"));
+			// single invalid code point in the end 83 f0
+			TEST(!valenc("aX\xCB\x83\x71\x83\xf0",r,"aX\xCB\x83\x71","aX\xCB\x83\x71"));
+			// single invalid code point in the begin 83 f0
+			TEST(!valenc(	"\x83\xf0\x82\xd0",r,
+					"\x82\xd0", 
+					0, // both are legal ways to interpret as xf0x82 + d0 and x82xd0 are valid code points
+					"\xf0\x82\xd0"));
+		}
+		catch(booster::locale::conv::invalid_charset_error const &e) {
+			std::cout << "--- windows-932 charset is not supported" << std::endl;
+		}
 	}
 }
 
