@@ -9,13 +9,37 @@
 #include <booster/locale/generator.h>
 #include <booster/locale/localization_backend.h>
 #include <booster/locale/message.h>
+#include <booster/locale/gnu_gettext.h>
 #include <booster/locale/encoding.h>
 #include "test_locale.h"
 #include "test_locale_tools.h"
+#include <fstream>
 
 namespace bl = booster::locale;
 
 std::string backend;
+
+bool file_loader_is_actually_called = false;
+
+struct file_loader {
+    std::vector<char> operator()(std::string const &name,std::string const &/*encoding*/) const
+    {
+        std::vector<char> buffer;
+        std::ifstream f(name.c_str(),std::ifstream::binary);
+        if(!f)
+            return buffer;
+        f.seekg(0,std::ifstream::end);
+        size_t len = f.tellg();
+        if(len == 0)
+            return buffer;
+        f.seekg(0);
+        buffer.resize(len,'\0');
+        f.read(&buffer[0],len);
+        file_loader_is_actually_called = true;
+        return buffer;
+    }
+};
+
 
 std::string same_s(std::string s)
 {
@@ -316,8 +340,8 @@ int main(int argc,char **argv)
             for(unsigned i=0;i<sizeof(locales)/sizeof(locales[0]);i++){
                 std::locale l=g(locales[i]);
                 
-                std::cout << "Testing "<<locales[i]<<std::endl;
-                std::cout << " single forms" << std::endl;
+                std::cout << "  Testing "<<locales[i]<<std::endl;
+                std::cout << "    single forms" << std::endl;
 
                 test_translate("hello","שלום",l,"default");
                 test_translate("hello","היי",l,"simple");
@@ -329,7 +353,7 @@ int main(int argc,char **argv)
                 test_ctranslate("context","hello","שלום בהקשר אחר",l,"default");
                 test_translate("#hello","#שלום",l,"default");
 
-                std::cout << " plural forms" << std::endl;
+                std::cout << "    plural forms" << std::endl;
 
                 {
                     test_ntranslate("x day","x days",0,"x ימים",l,"default");
@@ -343,7 +367,7 @@ int main(int argc,char **argv)
                     test_ntranslate("x day","x days",2,"x days",l,"undefined");
                     test_ntranslate("x day","x days",20,"x days",l,"undefined");
                 }
-                std::cout << " plural forms with context" << std::endl;
+                std::cout << "    plural forms with context" << std::endl;
                 {
                     std::string inp = "context"; 
                     std::string out = "בהקשר "; 
@@ -360,11 +384,11 @@ int main(int argc,char **argv)
                     test_cntranslate(inp,"x day","x days",20,"x days",l,"undefined");
                 }
             }
-            std::cout << "Testing fallbacks" <<std::endl;
+            std::cout << "  Testing fallbacks" <<std::endl;
             test_translate("test","he_IL",g("he_IL.UTF-8"),"full");
             test_translate("test","he",g("he_IL.UTF-8"),"fall");
             
-            std::cout << "Testing automatic conversions " << std::endl;
+            std::cout << "  Testing automatic conversions " << std::endl;
             std::locale::global(g("he_IL.UTF-8"));
 
 
@@ -380,8 +404,28 @@ int main(int argc,char **argv)
 			if(backend=="icu" || backend=="std")
 				TEST(same_u32(bl::translate("hello"))==to<char32_t>("שלום"));
             #endif
-        
+
         }
+        
+        std::cout << "Testing custom file system support" << std::endl;
+        {
+            booster::locale::gnu_gettext::messages_info info;
+            info.language = "he";
+            info.country = "IL";
+            info.encoding="UTF-8";
+            if(argc==2)
+                info.paths.push_back(argv[1]);
+            else
+                info.paths.push_back("./");
+
+            info.domains.push_back("default");
+            info.callback = file_loader();
+
+            std::locale l(std::locale::classic(),booster::locale::gnu_gettext::create_messages_facet<char>(info));
+            TEST(file_loader_is_actually_called);
+            TEST(bl::translate("hello").str<char>(l)=="שלום");
+        }
+        
     }
     catch(std::exception const &e) {
         std::cerr << "Failed " << e.what() << std::endl;

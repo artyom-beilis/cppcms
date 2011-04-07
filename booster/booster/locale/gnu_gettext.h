@@ -9,10 +9,14 @@
 #define BOOSTER_LOCLAE_GNU_GETTEXT_HPP
 
 #include <booster/locale/message.h>
+#include <booster/function.h>
 #include <booster/backtrace.h>
 
 namespace booster {
 namespace locale {
+///
+/// \brief This namespace holds classes that provide GNU Gettext message catalogs support.
+///
 namespace gnu_gettext {
 
     ///
@@ -35,11 +39,34 @@ namespace gnu_gettext {
         std::string variant;    ///< Language variant, like "euro" so it would look for catalog like de_DE\@euro
         std::string encoding;   ///< Required target charset encoding. Igronred for wide characters.
                                 ///< for narror should specify correct encoding required for this catalog
-        std::string locale_category; ///< Locale category, is set by default LC_MESSAGES, but ma
+        std::string locale_category; ///< Locale category, is set by default LC_MESSAGES, but may be changed
         std::vector<std::string> domains;   ///< Message domains - application name, like my_app. So files named my_app.mo
                                             ///< would be loaded
-        std::vector<std::string> paths;     ///< Paths to seach files in. 
-                                            ///< For Unicode Path under windows, encode the string as UTF-8 and add BOM.
+        std::vector<std::string> paths;     ///< Paths to search files in. Under MS Windows it uses encoding
+                                            ///< parameter to convert them to wide OS specific paths.
+        
+        ///
+        /// The callback for custom file system support. This callback should read the file named \a file_name
+        /// encoded in \a encoding character set into std::vector<char> and return it.
+        ///
+        /// - If the file does not exist, it should return an empty vector.
+        /// - If a error occurs during file read it should throw a error.
+        ///
+        /// \note The user should support only these encodings the locales are created for, so if the user
+        /// uses only one encoding or the file system is encoding agnostic, he may ignore \a encoding parameter.
+        ///
+        typedef function<
+                    std::vector<char>(
+                        std::string const &file_name,
+                        std::string const &encoding
+                    ) 
+                > callback_type;
+
+        ///
+        /// The callback for handling custom file systems, if it is empty, the real OS file-system
+        /// is being used.
+        /// 
+        callback_type callback;
 
     };
 

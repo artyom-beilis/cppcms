@@ -98,17 +98,20 @@ namespace booster {
             public:
                 typedef std::pair<char const *,char const *> pair_type;
                 
+                mo_file(std::vector<char> &file) :
+                    native_byteorder_(true),
+                    size_(0)
+                {
+                    load_file(file);
+                    init();
+                }
+
                 mo_file(FILE *file) :
                     native_byteorder_(true),
                     size_(0)
                 {
                     load_file(file);
-                    // Read all format sizes
-                    size_=get(8);
-                    keys_offset_=get(12);
-                    translations_offset_=get(16);
-                    hash_size_=get(20);
-                    hash_offset_=get(24);
+                    init();
                 }
 
                 pair_type find(char const *key_in) const
@@ -165,7 +168,34 @@ namespace booster {
                 }
 
             private:
-                void load_file_direct(FILE *file)
+                void init()
+                {
+                    // Read all format sizes
+                    size_=get(8);
+                    keys_offset_=get(12);
+                    translations_offset_=get(16);
+                    hash_size_=get(20);
+                    hash_offset_=get(24);
+                }
+
+                void load_file(std::vector<char> &data)
+                {
+                    vdata_.swap(data);
+                    file_size_ = vdata_.size();
+                    data_ = &vdata_[0];
+                    if(file_size_ < 4 )
+                        throw booster::runtime_error("invalid 'mo' file format - the file is too short");
+                    uint32_t magic=0;
+                    memcpy(&magic,data_,4);
+                    if(magic == 0x950412de)
+                        native_byteorder_ = true;
+                    else if(magic == 0xde120495)
+                        native_byteorder_ = false;
+                    else
+                        throw booster::runtime_error("Invalid file format - invalid magic number");
+                }
+
+                void load_file(FILE *file)
                 {
                     uint32_t magic=0;
                     // if the size is wrong magic would be wrong
@@ -193,11 +223,6 @@ namespace booster {
                     file_size_ = len;
                 }
                 
-                void load_file(FILE *file)
-                {
-                   load_file_direct(file);
-                }
-
                 uint32_t get(unsigned offset) const
                 {
                     uint32_t tmp;
@@ -358,8 +383,7 @@ namespace booster {
                         for(unsigned j=0;!found && j<paths.size();j++) {
                             for(unsigned i=0;!found && i<search_paths.size();i++) {
                                 std::string full_path = search_paths[i]+"/"+paths[j]+"/" + lc_cat + "/"+domain+".mo";
-
-                                found = load_file(full_path,encoding,id);
+                                found = load_file(full_path,encoding,id,inf.callback);
                             }
                         }
                     }
@@ -392,18 +416,26 @@ namespace booster {
                 }
 
 
-                bool load_file(std::string file_name,std::string const &encoding,int id)
+                bool load_file( std::string const &file_name,
+                                std::string const &encoding,
+                                int id,
+                                messages_info::callback_type const &callback)
                 {
-                    c_file the_file;
+                    std::auto_ptr<mo_file> mo;
 
-                    the_file.open(file_name,encoding);
-
-                    if(!the_file.file)
-                        return false;
-
-                    std::auto_ptr<mo_file> mo(new mo_file(the_file.file));
-
-                    the_file.close();
+                    if(callback) {
+                        std::vector<char> vfile = callback(file_name,encoding);
+                        if(vfile.empty()) 
+                            return false;
+                        mo.reset(new mo_file(vfile));
+                    }
+                    else {
+                        c_file the_file;
+                        the_file.open(file_name,encoding);
+                        if(!the_file.file)
+                            return false;
+                        mo.reset(new mo_file(the_file.file));
+                    }
                     
                     std::string plural = extract(mo->value(0).first,"plural=","\r\n;");
 
