@@ -6,10 +6,9 @@
 //  http://www.boost.org/LICENSE_1_0.txt)
 //
 #define BOOSTER_SOURCE
-#include <booster/aio/basic_io_device.h>
-
 #include "socket_details.h"
 
+#include <booster/aio/basic_io_device.h>
 #include <booster/aio/io_service.h>
 #include <booster/aio/aio_category.h>
 

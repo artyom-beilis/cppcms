@@ -49,6 +49,28 @@ if(DISABLE_CACHE)
 	set(DISABLE_TCPCACHE ON)
 endif()
 
+if(WIN32 OR CYGWIN)
+	set(IS_WINDOWS TRUE)
+else()
+	set(IS_WINDOWS FALSE)
+endif()
+
+if(WIN32 AND NOT CYGWIN)
+	set(WINDOWS_NATIVE TRUE)
+else()
+	set(WINDOWS_NATIVE FALSE)
+endif()
+
+if(CYGWIN)
+	set(IS_CYGWIN TRUE)
+else()
+	set(IS_CYGWIN FALSE)
+endif()
+
+
+
+
+
 
 #############################################################################
 #
@@ -75,7 +97,7 @@ if(CMAKE_COMPILER_IS_GNUCXX)
 		set(CXX_FLAGS "${CXX_FLAGS} -Wno-uninitialized")
 	endif()
 
-	if(WIN32)
+	if(IS_WINDOWS)
 		if(GCC_IS_GCC4) 
 			# Very important, otherwise process would not start under cygwin
 			set(CMAKE_CXX_LINK_FLAGS "${CMAKE_CXX_LINK_FLAGS} -Wl,--enable-auto-import")
@@ -196,10 +218,10 @@ if(NOT DISABLE_GZIP)
 endif()
 
 
-if(${CMAKE_HOST_WIN32})
+if(IS_WINDOWS)
 	find_library(WS2_32 ws2_32)
 	find_library(WSOCK32 wsock32)
-else(${CMAKE_HOST_WIN32})
+else()
 	check_function_exists(dlopen CPPCMS_HAVE_DLOPEN)
 	if(NOT CPPCMS_HAVE_DLOPEN)
 		check_library_exists(dl dlopen "" CPPCMS_HAVE_LIB_DL)
@@ -232,7 +254,7 @@ else(${CMAKE_HOST_WIN32})
 			endif(NOT CPPCMS_HAVE_LIB_NSL)
 		endif(NOT LIB_SOCKGETHOSTBYNAME)
 	endif(NOT CPPCMS_HAVE_GETHOSTBYNAME)
-endif(${CMAKE_HOST_WIN32}) 
+endif() 
 
 
 check_function_exists(canonicalize_file_name CPPCMS_HAVE_CANONICALIZE_FILE_NAME)
@@ -370,11 +392,11 @@ if(NOT DISABLE_HTTP)
 endif()
 	
 
-if(WIN32 AND NOT CYGWIN)
+if(WINDOWS_NATIVE)
 	set(CPPCMS_SOURCES ${CPPCMS_SOURCES} src/session_win32_file_storage.cpp)
-else(WIN32 AND NOT CYGWIN)
+else()
 	set(CPPCMS_SOURCES ${CPPCMS_SOURCES} src/session_posix_file_storage.cpp)
-endif(WIN32 AND NOT CYGWIN)
+endif()
 
 if(NOT DISABLE_SHARED)
 	add_library(cppcms SHARED ${CPPCMS_SOURCES})
@@ -514,6 +536,9 @@ endif(NOT DISABLE_SHARED)
 foreach(SKIN tc_skin_a tc_skin_b tc_skin)
 	add_library(${SKIN} SHARED ${CMAKE_CURRENT_BINARY_DIR}/${SKIN}.cpp)
 	target_link_libraries(${SKIN} ${CPPCMS_LIB})
+	if(IS_WINDOWS)
+		set_target_properties(${SKIN} PROPERTIES COMPILE_DEFINITIONS DLL_EXPORT)
+	endif()
 endforeach()
 
 
@@ -581,14 +606,14 @@ endforeach()
 #####################################
 
 # These are use export
-if(WIN32 AND NOT DISABLE_SHARED)
+if(IS_WINDOWS AND NOT DISABLE_SHARED)
 	set_target_properties(${ALL_TESTS} hello_world cppcms PROPERTIES
 				COMPILE_DEFINITIONS DLL_EXPORT)
-endif(WIN32 AND NOT DISABLE_SHARED)
+endif()
 
 set_target_properties(${CPPCMS_LIBS} PROPERTIES CLEAN_DIRECT_OUTPUT 1)
 set_target_properties(${CPPCMS_LIBS} PROPERTIES OUTPUT_NAME "cppcms${CPPCMS_SUFFIX}")
-if(WIN32)
+if(IS_WINDOWS)
 	set_target_properties(${CPPCMS_LIBS} PROPERTIES VERSION 1 SOVERSION 1)
 else()
 	set_target_properties(${CPPCMS_LIBS} PROPERTIES VERSION 1.0.0 SOVERSION 1)
@@ -694,7 +719,7 @@ add_test(disco_test_scgi_tcp
 	"--service-api=scgi" "--service-port=8080" "--service-ip=127.0.0.1"
 	"--test-exec=${PYTHON} ${CNF}/disco_test.py scgi_tcp")
 
-if(NOT WIN32)
+if(NOT IS_WINDOWS)
 	add_test(disco_test_fastcgi_unix 
 		disco_test "-c" "${CNF}/proto_test.js" 
 		"--service-api=fastcgi" "--service-socket=/tmp/cppcms_test_socket"
@@ -719,7 +744,7 @@ foreach(TYPE async sync)
 		proto_test "-c" "${CNF}/proto_test.js" 
 		"--test-async=${TYPE}" "--service-api=fastcgi" "--service-port=8080" "--service-ip=127.0.0.1"
 		"--test-exec=${PYTHON} ${CNF}/proto_test.py fastcgi_tcp")
-	if(NOT WIN32)
+	if(NOT IS_WINDOWS)
 		add_test(proto_test_${TYPE}_scgi_unix
 			proto_test "-c" "${CNF}/proto_test.js" 
 			"--test-async=${TYPE}" "--service-api=scgi" "--service-socket=/tmp/cppcms_test_socket"
@@ -747,7 +772,7 @@ set_tests_properties(
 	${TESTS_WITH_TIMEOUT}
 	PROPERTIES TIMEOUT 120)
 
-if(NOT WIN32)
+if(NOT IS_WINDOWS)
 	set_tests_properties(
 		proto_test_sync_scgi_unix
 		proto_test_async_scgi_unix
