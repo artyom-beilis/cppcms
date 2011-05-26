@@ -19,7 +19,7 @@ namespace booster {
 		T *ptr_;
 	public:
 		clone_ptr() : ptr_(0) {}
-		clone_ptr(T *v) : ptr_(v) {}
+		explicit clone_ptr(T *v) : ptr_(v) {}
 		clone_ptr(clone_ptr const &other) : ptr_(0)
 		{
 			if(other.ptr_)
@@ -28,13 +28,8 @@ namespace booster {
 		clone_ptr const &operator=(clone_ptr const &other)
 		{
 			if(this != &other) {
-				if(ptr_) {
-					delete ptr_;
-					ptr_=0;
-				}
-				if(other.ptr_) {
-					ptr_=other.ptr_->clone();
-				}
+				clone_ptr tmp(other);
+				swap(tmp);
 			}
 			return *this;
 		}

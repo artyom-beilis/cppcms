@@ -21,7 +21,7 @@ namespace booster {
 		hold_ptr const &operator=(hold_ptr const &other); // non assignable
 	public:
 		hold_ptr() : ptr_(0) {}
-		hold_ptr(T *v) : ptr_(v) {}
+		explicit hold_ptr(T *v) : ptr_(v) {}
 		~hold_ptr() 
 		{
 			if(ptr_) delete ptr_;

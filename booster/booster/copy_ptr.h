@@ -23,7 +23,7 @@ namespace booster {
 		T *ptr_;
 	public:
 		copy_ptr() : ptr_(0) {}
-		copy_ptr(T *v) : ptr_(v) {}
+		explicit copy_ptr(T *v) : ptr_(v) {}
 		copy_ptr(copy_ptr const &other) :
 			ptr_(other.ptr_ ? new T(*other.ptr_) : 0)
 		{
@@ -31,13 +31,8 @@ namespace booster {
 		copy_ptr const &operator=(copy_ptr const &other)
 		{
 			if(this != &other) {
-				if(ptr_) {
-					delete ptr_;
-					ptr_=0;
-				}
-				if(other.ptr_) {
-					ptr_=new T(*other.ptr_);
-				}
+				copy_ptr tmp(other);
+				swap(tmp);
 			}
 			return *this;
 		}
