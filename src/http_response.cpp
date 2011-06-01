@@ -39,11 +39,9 @@
 #include <iterator>
 #include <map>
 
-#define CPPCMS_NO_ZLIB
-
 #include <cppcms_boost/iostreams/stream.hpp>
 #include <cppcms_boost/iostreams/filtering_stream.hpp>
-#ifndef CPPCMS_NO_ZLIB
+#ifndef CPPCMS_NO_GZIP
 #include <cppcms_boost/iostreams/filter/gzip.hpp>
 #endif
 #include <cppcms_boost/iostreams/tee.hpp>
@@ -205,7 +203,7 @@ void response::erase_header(std::string const &name)
 
 bool response::need_gzip()
 {
-#ifndef CPPCMS_NO_ZLIB
+#ifndef CPPCMS_NO_GZIP
 	if(disable_compression_)
 		return false;
 	if(io_mode_!=normal)
@@ -285,7 +283,7 @@ std::ostream &response::out()
 		real_sink = &d->output;
 
 
-	#ifndef CPPCMS_NO_ZLIB
+	#ifndef CPPCMS_NO_GZIP
 	bool gzip = need_gzip();
 	
 	if(gzip) {
@@ -297,7 +295,7 @@ std::ostream &response::out()
 	if(io_mode_ != raw && io_mode_ != asynchronous_raw)
 		write_http_headers(*real_sink);
 	
-	#ifndef CPPCMS_NO_ZLIB
+	#ifndef CPPCMS_NO_GZIP
 	if(gzip) {
 		gzip_params params;
 
