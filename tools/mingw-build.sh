@@ -20,6 +20,7 @@ win_gcc()
 		-DCMAKE_INCLUDE_PATH=e:/projects/mingw/include \
 		-DCMAKE_LIBRARY_PATH=e:/projects/mingw/lib \
 		-DDISABLE_STATIC=ON .. \
+		-DCMAKE_BUILD_TYPE=Debug \
 		&& make && ctest -E icu_vs_os_timezone
 	then
 		return 0;

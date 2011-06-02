@@ -22,7 +22,7 @@ bsd_gcc()
 	mkdir build
 	cd build
 
-	if cmake $FLAGS -DCMAKE_INCLUDE_PATH=/usr/local/include -DCMAKE_LIBRARY_PATH=/usr/local/lib -DDISABLE_STATIC=ON .. && make && make test
+	if cmake $FLAGS -DCMAKE_INCLUDE_PATH=/opt/icu46/include -DCMAKE_LIBRARY_PATH=/opt/icu46/lib -DCMAKE_CXX_FLAGS:STRING=-I/opt/icu46/include -DCMAKE_BUILD_TYPE=Debug -DDISABLE_STATIC=ON .. && make && make test
 	then
 		return 0;
 	else

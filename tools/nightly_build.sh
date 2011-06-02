@@ -51,7 +51,7 @@ gcc_45()
 	cd build
 
 
-	if cmake $FLAGS -DDISABLE_STATIC=ON -DCMAKE_C_COMPILER=/opt/gcc45/bin/gcc-4.5 -DCMAKE_CXX_COMPILER=/opt/gcc45/bin/g++-4.5 .. && make && make test
+	if cmake $FLAGS -DDISABLE_STATIC=ON -DCMAKE_BUILD_TYPE=Debug -DCMAKE_C_COMPILER=/opt/gcc45/bin/gcc-4.5 -DCMAKE_CXX_COMPILER=/opt/gcc45/bin/g++-4.5 .. && make && make test
 	then
 		return 0;
 	else
@@ -97,7 +97,7 @@ gcc_450x()
 	cd build
 
 
-	if cmake $FLAGS -DDISABLE_STATIC=ON -DCMAKE_CXX_FLAGS:STRING=-std=c++0x  -DCMAKE_C_COMPILER=/opt/gcc45/bin/gcc-4.5 -DCMAKE_CXX_COMPILER=/opt/gcc45/bin/g++-4.5 .. && make && make test
+	if cmake $FLAGS -DDISABLE_STATIC=ON -DCMAKE_BUILD_TYPE=Debug -DCMAKE_CXX_FLAGS:STRING=-std=c++0x  -DCMAKE_C_COMPILER=/opt/gcc45/bin/gcc-4.5 -DCMAKE_CXX_COMPILER=/opt/gcc45/bin/g++-4.5 .. && make && make test
 	then
 		return 0;
 	else
@@ -163,6 +163,11 @@ scp -P 2222 'artik@localhost:/tmp/faults/*' /tmp/faults/
 VBoxManage controlvm Solaris acpipowerbutton
 wait $PID
 
+#####################
+# Debian Armel
+#####################
+
+$ROOT_PATH/arm.sh
 
 #####################
 # Windows
