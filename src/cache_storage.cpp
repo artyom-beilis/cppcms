@@ -147,21 +147,21 @@ class mem_cache : public base_cache {
 			string_type,
 			container,
 			std::less<string_type>,
-			typename allocator::template rebind<std::pair<string_type,container> >::other
+			typename allocator::template rebind<std::pair<const string_type,container> >::other
 		> map_type;
 
 	typedef typename map_type::iterator pointer;
 
 	typedef std::list<
 			pointer,
-			typename allocator::template rebind<std::pair<string_type,container> >::other
+			typename allocator::template rebind<pointer>::other
 		> lru_list_type;
 
 	typedef std::multimap<
 			string_type,
 			pointer,
 			std::less<string_type>,
-			typename allocator::template rebind<std::pair<string_type,pointer> >::other
+			typename allocator::template rebind<std::pair<const string_type,pointer> >::other
 		> triggers_map_type;
 
 	typedef std::list<
@@ -173,7 +173,7 @@ class mem_cache : public base_cache {
 			time_t,
 			pointer,
 			std::less<time_t>,
-			typename allocator::template rebind<std::pair<time_t,pointer> >::other 
+			typename allocator::template rebind<std::pair<const time_t,pointer> >::other 
 		> timeout_mmap_type;
 
 	struct container {
@@ -404,6 +404,7 @@ public:
 	}
 
 }; // mem cache
+
 
 booster::intrusive_ptr<base_cache> thread_cache_factory(unsigned items)
 {
