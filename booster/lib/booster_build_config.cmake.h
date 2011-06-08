@@ -61,6 +61,7 @@
 
 #cmakedefine BOOSTER_AIO_HAVE_PF_INET6
  
+#cmakedefine BOOSTER_HAVE_EXECINFO
 
 
 #endif

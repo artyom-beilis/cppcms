@@ -8,10 +8,10 @@
 #define BOOSTER_SOURCE
 
 #include <booster/backtrace.h>
+#include <booster/build_config.h>
 
 #if (defined(__linux) && !defined(__UCLIBC__)) || defined(__APPLE__) || defined(__sun)
-#define BOOSTER_HAVE_EXECINFO
-#define BOOSTER_HAVE_DLADDR
+#  define BOOSTER_HAVE_DLADDR
 #endif
 
 #if defined(__GNUC__)

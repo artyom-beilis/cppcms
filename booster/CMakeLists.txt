@@ -282,13 +282,18 @@ check_cxx_source_compiles(
 	BOOSTER_HAVE_FREEBSD_ATOMIC)
 
 check_cxx_source_compiles(
+	"#include <execinfo.h>
+	int main() { backtrace(0,0); }"
+	BOOSTER_HAVE_EXECINFO)
+
+check_cxx_source_compiles(
 	"#include <atomic.h>
 	int main() { volatile unsigned v=0; return atomic_add_int_nv(&v,1); }"
 	BOOSTER_HAVE_SOLARIS_ATOMIC)
 
 check_cxx_source_compiles(
 	"#include <libkern/OSAtomic.h>
-	int main() { volatile int v=0; return OSAtomicAdd32(1,&v); }"
+	int main() { int32_t v=0; return OSAtomicAdd32(1,&v); }"
 	BOOSTER_HAVE_MAC_OS_X_ATOMIC)
 
 check_cxx_source_compiles(

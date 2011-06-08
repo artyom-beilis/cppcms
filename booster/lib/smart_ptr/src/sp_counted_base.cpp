@@ -80,7 +80,8 @@ namespace booster {
 
         static bool atomic_cas(sp_counted_base_atomic_type volatile *pw,int old_value,int new_value)
         {
-            return OSAtomicCompareAndSwapInt(old_value,new_value,&pw->i);
+            // Older versions get non-volatile parameter
+            return OSAtomicCompareAndSwap32(old_value,new_value,const_cast<int32_t *>(&pw->i));
         }
         static int atomic_get(sp_counted_base_atomic_type volatile *pw)
         {
@@ -95,7 +96,8 @@ namespace booster {
         }
         static int atomic_exchange_and_add(sp_counted_base_atomic_type volatile * pw, int dv)
         {
-            return OSAtomicAdd32(dv,&pw->i)-dv;
+            // Older versions get non-volatile parameter
+            return OSAtomicAdd32(dv,const_cast<int32_t *>(&pw->i))-dv;
         }
         static void atomic_increment(sp_counted_base_atomic_type volatile *pw)
         {

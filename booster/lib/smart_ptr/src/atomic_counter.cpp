@@ -46,7 +46,7 @@
 
 #   include <libkern/OSAtomic.h>
 #   define booster_atomic_set(p,v) ((p)->i=v)
-#   define booster_atomic_add_and_fetch(p,d) (OSAtomicAdd32(d,&(p)->i))
+#   define booster_atomic_add_and_fetch(p,d) (OSAtomicAdd32(d,const_cast<int32_t *>(&(p)->i)))
 
 #elif defined BOOSTER_HAS_GCC_SYNC
 
