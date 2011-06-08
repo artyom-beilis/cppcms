@@ -84,7 +84,10 @@ def test_io(name,method,input_f,output_f,seed=12,load=load_file,parse=identity):
         else:
             print 'Unknown method',method
             sys.exit(1)
-        s.shutdown(socket.SHUT_RDWR)
+        if hasattr(socket,'SHUT_RDWR'):
+            s.shutdown(socket.SHUT_RDWR)
+        else:
+            s.shutdown(2) 
         s.close()
     except socket.error:
         pass
