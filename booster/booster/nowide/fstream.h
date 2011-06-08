@@ -6,7 +6,7 @@
 #include <fstream>
 #include <memory>
 
-#ifdef BOOSTER_WIN_NATIVE
+#if defined BOOSTER_WIN_NATIVE || defined BOOSTER_WORKAROUND_BROKEN_GCC_ON_DARWIN
 #include <booster/streambuf.h>
 #include <booster/nowide/cstdio.h>
 #endif
@@ -18,7 +18,7 @@ namespace booster {
 /// of std namespace (i.e. not on Windows)
 ///
 namespace nowide {
-#ifndef BOOSTER_WIN_NATIVE
+#if !defined BOOSTER_WIN_NATIVE && !defined(BOOSTER_WORKAROUND_BROKEN_GCC_ON_DARWIN)
 
 	using std::basic_ifstream;
 	using std::basic_ofstream;
@@ -30,7 +30,7 @@ namespace nowide {
 	using std::fstream;
 
 #endif
-#if defined(BOOSTER_WIN_NATIVE) || defined(BOOSTER_DOXYGEN_DOCS)
+#if defined(BOOSTER_WIN_NATIVE) || defined(BOOSTER_DOXYGEN_DOCS) || defined(BOOSTER_WORKAROUND_BROKEN_GCC_ON_DARWIN)
 
 	#if  defined BOOSTER_MSVC
 

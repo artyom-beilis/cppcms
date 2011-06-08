@@ -11,6 +11,7 @@
 #include <booster/locale/message.h>
 #include <booster/locale/gnu_gettext.h>
 #include <booster/locale/encoding.h>
+#include <booster/nowide/fstream.h>
 #include "test_locale.h"
 #include "test_locale_tools.h"
 #include <fstream>
@@ -25,7 +26,7 @@ struct file_loader {
     std::vector<char> operator()(std::string const &name,std::string const &/*encoding*/) const
     {
         std::vector<char> buffer;
-        std::ifstream f(name.c_str(),std::ifstream::binary);
+        booster::nowide::ifstream f(name.c_str(),std::ifstream::binary);
         if(!f)
             return buffer;
         f.seekg(0,std::ifstream::end);
