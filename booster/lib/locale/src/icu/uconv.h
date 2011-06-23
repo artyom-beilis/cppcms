@@ -5,8 +5,8 @@
 //  accompanying file LICENSE_1_0.txt or copy at
 //  http://www.boost.org/LICENSE_1_0.txt)
 //
-#ifndef BOOSTER_SRC_LOCALE_HPP
-#define BOOSTER_SRC_LOCALE_HPP
+#ifndef BOOSTER_SRC_LOCALE_ICU_UCONV_HPP
+#define BOOSTER_SRC_LOCALE_ICU_UCONV_HPP
 #include <unicode/unistr.h>
 #include <unicode/ucnv.h>
 #include <unicode/ustring.h>
@@ -14,6 +14,7 @@
 #include <booster/locale/encoding.h>
 
 #include <string>
+#include <memory>
 #include "icu_util.h"
 
 namespace booster {

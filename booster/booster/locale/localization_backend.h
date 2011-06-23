@@ -16,27 +16,28 @@
 #include <string>
 #include <locale>
 #include <vector>
+#include <memory>
 
 namespace booster {
     namespace locale {
 
         ///
-        /// \brief this class represents localization backend that can be used for localizing your application.
+        /// \brief this class represents a localization backend that can be used for localizing your application.
         /// 
-        /// Backends are usually registered inside localization backends manager and allow transparent support
-        /// of different backends, so user can swithc backend by simply linking the application to correct one.
+        /// Backends are usually registered inside the localization backends manager and allow transparent support
+        /// of different backends, so a user can switch the backend by simply linking the application to the correct one.
         ///
-        /// Backends may support different tuning options, but these are the default options avalible for user
+        /// Backends may support different tuning options, but these are the default options available to the user
         /// for all of them
         ///
         /// -# \c locale - the name of the locale in POSIX format like en_US.UTF-8
         /// -# \c use_ansi_encoding - select system locale using ANSI codepages rather then UTF-8 under Windows
         ///     by default
-        /// -# \c message_path - path to location of message catalogs vector of strings
+        /// -# \c message_path - path to the location of message catalogs (vector of strings)
         /// -# \c message_application - the name of applications that use message catalogs (vector of strings)
         /// 
-        /// Each backend may be installed with different default priority so when you work with two differnt backends, you
-        /// can specify priotiry so this backend will be chosen according to their priority.
+        /// Each backend can be installed with a different default priority so when you work with two different backends, you
+        /// can specify priority so this backend will be chosen according to their priority.
         ///
         
         class localization_backend {

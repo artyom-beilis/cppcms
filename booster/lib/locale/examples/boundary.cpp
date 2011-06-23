@@ -26,21 +26,21 @@ int main()
 
     cout<<text<<endl;
 
-    typedef boundary::token_iterator<std::string::iterator> iter_type;
-    typedef boundary::mapping<iter_type>  mapping_type;
-    mapping_type index(boundary::word,text.begin(),text.end());
-    iter_type p,e;
+    boundary::stoken_index index(boundary::word,text.begin(),text.end());
+    boundary::stoken_index::iterator p,e;
 
     for(p=index.begin(),e=index.end();p!=e;++p) {
         cout<<"Part ["<<*p<<"] has ";
-        if(p.mark() & boundary::word_number)
-            cout<<"number ";
-        if(p.mark() & boundary::word_letter)
-            cout<<"letter ";
-        if(p.mark() & boundary::word_kana)
-            cout<<"kana characters ";
-        if(p.mark() & boundary::word_ideo)
-            cout<<"ideographic characters ";
+        if(p->rule() & boundary::word_number)
+            cout<<"number(s) ";
+        if(p->rule() & boundary::word_letter)
+            cout<<"letter(s) ";
+        if(p->rule() & boundary::word_kana)
+            cout<<"kana character(s) ";
+        if(p->rule() & boundary::word_ideo)
+            cout<<"ideographic character(s) ";
+        if(p->rule() & boundary::word_none)
+            cout<<"no word characters";
         cout<<endl;
     }
 

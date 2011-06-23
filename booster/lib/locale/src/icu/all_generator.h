@@ -9,7 +9,6 @@
 #define BOOSTER_LOCALE_IMPL_ALL_GENERATOR_HPP
 
 #include <booster/locale/generator.h>
-#include <vector>
 
 namespace booster {
     namespace locale {

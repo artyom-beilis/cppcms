@@ -27,6 +27,7 @@ int main()
 #include <sstream>
 #include <iostream>
 #include <iomanip>
+#include <limits>
 
 #include <unicode/uversion.h>
 
@@ -126,10 +127,30 @@ do { \
         ss << booster::locale::basic_format<CharType>(fmt) % v; \
         TESTEQ(ss.str(),to_correct_string<CharType>(exp,loc)); \
         ss.str(to_correct_string<CharType>("",loc)); \
-        ss << booster::locale::basic_format<CharType>(booster::locale::translate(f)) % v; \
+        ss << booster::locale::basic_format<CharType>(booster::locale::translate(fmt.c_str())) % v; \
+        /*ss << boost::locale::basic_format<CharType>(fmt) % v; */ \
         TESTEQ(ss.str(),to_correct_string<CharType>(exp,loc)); \
         TESTEQ( (booster::locale::basic_format<CharType>(fmt) % v).str(loc),to_correct_string<CharType>(exp,loc)); \
     } while(0)
+
+
+#define TEST_MIN_MAX_FMT(type,minval,maxval)    \
+    do { \
+        TEST_FMT(as::number,std::numeric_limits<type>::min(),minval); \
+        TEST_FMT(as::number,std::numeric_limits<type>::max(),maxval); \
+    }while(0)
+
+#define TEST_MIN_MAX_PAR(type,minval,maxval)    \
+    do {\
+        TEST_PAR(as::number,type,minval,std::numeric_limits<type>::min()); \
+        TEST_PAR(as::number,type,maxval,std::numeric_limits<type>::max()); \
+    }while(0)
+
+#define TEST_MIN_MAX(type,minval,maxval)    \
+    do { \
+        TEST_MIN_MAX_FMT(type,minval,maxval); \
+        TEST_MIN_MAX_PAR(type,minval,maxval); \
+    }while(0)
 
 
 template<typename CharType>
@@ -142,6 +163,44 @@ void test_manip(std::string e_charset="UTF-8")
     TEST_FP1(as::number,1200.1,"1,200.1",double,1200.1);
     TEST_FMT(as::number<<std::setfill(CharType('_'))<<std::setw(6),1534,"_1,534");
     TEST_FMT(as::number<<std::left<<std::setfill(CharType('_'))<<std::setw(6),1534,"1,534_");
+    
+    // Ranges
+    if(sizeof(short) == 2) {
+        TEST_MIN_MAX(short,"-32,768","32,767");
+        TEST_MIN_MAX(unsigned short,"0","65,535");
+        TEST_NOPAR(as::number,"-1",unsigned short);
+        TEST_NOPAR(as::number,"65,535",short);
+    }
+    if(sizeof(int)==4) {
+        TEST_MIN_MAX(int,"-2,147,483,648","2,147,483,647");
+        TEST_MIN_MAX(unsigned int,"0","4,294,967,295");
+        TEST_NOPAR(as::number,"-1",unsigned int);
+        TEST_NOPAR(as::number,"4,294,967,295",int);
+    }
+    if(sizeof(long)==4) {
+        TEST_MIN_MAX(long,"-2,147,483,648","2,147,483,647");
+        TEST_MIN_MAX(unsigned long,"0","4,294,967,295");
+        TEST_NOPAR(as::number,"-1",unsigned long);
+        TEST_NOPAR(as::number,"4,294,967,295",long);
+    }
+    if(sizeof(long)==8) {
+        TEST_MIN_MAX(long,"-9,223,372,036,854,775,808","9,223,372,036,854,775,807");
+        TEST_MIN_MAX_FMT(unsigned long,"0","18446744073709551615"); // Unsupported range by icu - ensure fallback
+        TEST_NOPAR(as::number,"-1",unsigned long);
+    }
+    #ifndef BOOSTER_NO_LONG_LONG
+    if(sizeof(long long)==8) {
+        TEST_MIN_MAX(long long,"-9,223,372,036,854,775,808","9,223,372,036,854,775,807");
+        // we can't really parse this as ICU does not support this range, only format
+        TEST_MIN_MAX_FMT(unsigned long long,"0","18446744073709551615"); // Unsupported range by icu - ensure fallback
+        TEST_FMT(as::number,9223372036854775807ULL,"9,223,372,036,854,775,807");
+        TEST_FMT(as::number,9223372036854775808ULL,"9223372036854775808"); // Unsupported range by icu - ensure fallback
+        TEST_NOPAR(as::number,"-1",unsigned long long);
+    }
+    #endif
+
+
+
     TEST_FP3(as::number,std::left,std::setw(3),15,"15 ",int,15);
     TEST_FP3(as::number,std::right,std::setw(3),15," 15",int,15);
     TEST_FP3(as::number,std::setprecision(3),std::fixed,13.1,"13.100",double,13.1);

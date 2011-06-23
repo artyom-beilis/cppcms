@@ -14,6 +14,8 @@
 #include <unicode/ucnv.h>
 #include <unicode/ucnv_err.h>
 #include <vector>
+#include <memory>
+
 namespace booster {
 namespace locale {
 namespace conv {

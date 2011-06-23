@@ -9,6 +9,7 @@
 #define BOOSTER_LOCALE_ICU_CDATA_HPP
 
 #include <unicode/locid.h>
+#include <string>
 
 namespace booster {
     namespace locale {

@@ -10,10 +10,10 @@
 
 //
 // Bug - when ICU tries to find a file that is equivalent to /etc/localtime it finds /usr/share/zoneinfo/localtime
-// that is just symbolic link to /etc/localtime.
+// that is just a symbolic link to /etc/localtime.
 //
-// It started from 4.0 and fixed in version 4.6, also it fix in backported to 4.4 branch so it should be
-// avalible from 4.4.3... So we test if workaround required
+// It started in 4.0 and was fixed in version 4.6, also the fix was backported to the 4.4 branch so it should be
+// available from 4.4.3... So we test if the workaround is required
 //
 // It is also relevant only for Linux, BSD and Apple (as I see in ICU code)
 //
@@ -57,10 +57,10 @@ namespace booster {
             #else
 
             //
-            // This is a workaround of ICU timezone detection bug
-            // it is \b very ICU specific and should not be used 
-            // in general, it is also designed to work only on
-            // specific patforms: Linux, BSD and Apple this bug may actually
+            // This is a workaround for an ICU timezone detection bug.
+            // It is \b very ICU specific and should not be used 
+            // in general. It is also designed to work only on
+            // specific patforms: Linux, BSD and Apple, where this bug may actually
             // occur
             // 
             namespace {
@@ -219,7 +219,7 @@ namespace booster {
                 // Check if there is a bug?
                 if(id != icu::UnicodeString("localtime"))
                     return tz.release();
-                // Now lets deal with the bug and run the fixed
+                // Now let's deal with the bug and run the fixed
                 // search loop as that of ICU
                 std::string real_id = get_time_zone_name();
                 if(real_id.empty()) {

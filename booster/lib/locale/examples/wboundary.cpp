@@ -56,21 +56,21 @@ int main()
 
     wcout<<text<<endl;
 
-    typedef boundary::token_iterator<std::wstring::iterator> iter_type;
-    typedef boundary::mapping<iter_type>  mapping_type;
-    mapping_type index(boundary::word,text.begin(),text.end());
-    iter_type p,e;
+    boundary::wstoken_index index(boundary::word,text.begin(),text.end());
+    boundary::wstoken_index::iterator p,e;
 
     for(p=index.begin(),e=index.end();p!=e;++p) {
         wcout<<L"Part ["<<*p<<L"] has ";
-        if(p.mark() & boundary::word_number)
-            wcout<<L"number ";
-        if(p.mark() & boundary::word_letter)
-            wcout<<L"letter ";
-        if(p.mark() & boundary::word_kana)
-            wcout<<L"kana characters ";
-        if(p.mark() & boundary::word_ideo)
-            wcout<<L"ideographic characters ";
+        if(p->rule() & boundary::word_number)
+            wcout<<L"number(s) ";
+        if(p->rule() & boundary::word_letter)
+            wcout<<L"letter(s) ";
+        if(p->rule() & boundary::word_kana)
+            wcout<<L"kana character(s) ";
+        if(p->rule() & boundary::word_ideo)
+            wcout<<L"ideographic character(s) ";
+        if(p->rule() & boundary::word_none)
+            wcout<<L"no word characters";
         wcout<<endl;
     }
 

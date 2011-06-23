@@ -31,8 +31,8 @@ namespace booster {
             mutable cached_type cached;
             mutable booster::mutex cached_lock;
 
-            unsigned cats;
-            unsigned chars;
+            locale_category_type cats;
+            character_facet_type chars;
 
             bool caching_enabled;
             bool use_ansi_encoding;
@@ -58,21 +58,21 @@ namespace booster {
         {
         }
 
-        unsigned generator::categories() const
+        locale_category_type generator::categories() const
         {
             return d->cats;
         }
-        void generator::categories(unsigned t)
+        void generator::categories(locale_category_type t)
         {
             d->cats=t;
         }
 
-        void generator::characters(unsigned t)
+        void generator::characters(character_facet_type t)
         {
             d->chars=t;
         }
         
-        unsigned generator::characters() const
+        character_facet_type generator::characters() const
         {
             return d->chars;
         }
@@ -129,19 +129,19 @@ namespace booster {
             set_all_options(backend,id);
 
             std::locale result = base;
-            unsigned facets = d->cats;
-            unsigned chars = d->chars;
+            locale_category_type facets = d->cats;
+            character_facet_type chars = d->chars;
 
-            for(unsigned facet = per_character_facet_first; facet <= per_character_facet_last && facet!=0; facet <<=1) {
+            for(locale_category_type facet = per_character_facet_first; facet <= per_character_facet_last && facet!=0; facet <<=1) {
                 if(!(facets & facet))
                     continue;
-                for(unsigned ch = character_first_facet ; ch<=character_last_facet;ch <<=1) {
+                for(character_facet_type ch = character_first_facet ; ch<=character_last_facet;ch <<=1) {
                     if(!(ch & chars))
                         continue;
                     result = backend->install(result,facet,ch);
                 }
             }
-            for(unsigned facet = non_character_facet_first; facet <= non_character_facet_last && facet!=0; facet <<=1) {
+            for(locale_category_type facet = non_character_facet_first; facet <= non_character_facet_last && facet!=0; facet <<=1) {
                 if(!(facets & facet))
                     continue;
                 result = backend->install(result,facet);
@@ -180,9 +180,9 @@ namespace booster {
             backend->set_option("locale",id);
             if(d->use_ansi_encoding)
                 backend->set_option("use_ansi_encoding","true");
-            for(unsigned i=0;i<d->domains.size();i++)
+            for(size_t i=0;i<d->domains.size();i++)
                 backend->set_option("message_application",d->domains[i]);
-            for(unsigned i=0;i<d->paths.size();i++)
+            for(size_t i=0;i<d->paths.size();i++)
                 backend->set_option("message_path",d->paths[i]);
         }
         

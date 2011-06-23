@@ -13,6 +13,7 @@
 #include <booster/locale/formatting.h>
 #include <booster/locale/info.h>
 #include <sstream>
+#include <vector>
 #include <stdlib.h>
 
 #include "timezone.h"
@@ -231,7 +232,7 @@ private:
             
             //
             // we do not really know internal point, so we assume that it does not
-            // exists. so according to standard field should be right aligned
+            // exist. so according to the standard field should be right aligned
             //
             if(flags != std::ios_base::left)
                 on_left = n;

@@ -21,8 +21,10 @@
 #include <ctype.h>
 #include <langinfo.h>
 #include <monetary.h>
+#include <errno.h>
 #include "../util/numeric.h"
 #include "all_generator.h"
+
 
 #if defined(__linux) || defined(__APPLE__)
 #define BOOSTER_LOCALE_HAVE_WCSFTIME_L
@@ -49,17 +51,19 @@ protected:
 
     virtual iter_type do_format_currency(bool intl,iter_type out,std::ios_base &/*ios*/,char_type /*fill*/,long double val) const
     {
-        char buf[64];
+        char buf[4]={};
         char const *format = intl ? "%i" : "%n";
-        size_t n = strfmon_l(buf,256,*lc_,format,static_cast<double>(val));
-        std::string formatted;
-        if(n==0) {
-            std::vector<char> tmp(1024);
-            n = strfmon_l(&tmp.front(),1024,*lc_,format,static_cast<double>(val));
-            return write_it(out,&tmp.front(),n);
-        }
-        else
+        errno=0;
+        ssize_t n = strfmon_l(buf,sizeof(buf),*lc_,format,static_cast<double>(val));
+        if(n >= 0) 
             return write_it(out,buf,n);
+        
+        for(std::vector<char> tmp(sizeof(buf)*2);tmp.size() <= 4098;tmp.resize(tmp.size()*2)) {
+            n = strfmon_l(&tmp.front(),tmp.size(),*lc_,format,static_cast<double>(val));
+            if(n >= 0)
+                return write_it(out,&tmp.front(),n);
+        }
+        return out;
     }
 
     std::ostreambuf_iterator<char> write_it(std::ostreambuf_iterator<char> out,char const *ptr,size_t n) const
@@ -94,6 +98,13 @@ struct ftime_traits<char> {
         size_t n=strftime_l(buf,sizeof(buf),format,t,lc);
         if(n == 0) {
             // should be big enough
+            //
+            // Note standard specifies that in case of the error
+            // the function returns 0, however 0 may be actually
+            // valid output value of for example empty format or an
+            // output of %p in some locales
+            //
+            // Thus we try to guess that 1024 would be enough.
             std::vector<char> v(1024);
             n = strftime_l(&v.front(),1024,format,t,lc);
             return std::string(&v.front(),n);
@@ -108,9 +119,16 @@ struct ftime_traits<wchar_t> {
     {
         #ifdef HAVE_WCSFTIME_L
             wchar_t buf[16];
-            size_t n=wcsftime_l(buf,16,format,t,lc);
+            size_t n=wcsftime_l(buf,sizeof(buf)/sizeof(buf[0]),format,t,lc);
             if(n == 0) {
                 // should be big enough
+                //
+                // Note standard specifies that in case of the error
+                // the function returns 0, however 0 may be actually
+                // valid output value of for example empty format or an
+                // output of %p in some locales
+                //
+                // Thus we try to guess that 1024 would be enough.
                 std::vector<wchar_t> v(1024);
                 n = wcsftime_l(&v.front(),1024,format,t,lc);
             }

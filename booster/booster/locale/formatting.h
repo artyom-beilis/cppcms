@@ -14,7 +14,7 @@
 #  pragma warning(disable : 4275 4251 4231 4660)
 #endif
 #include <booster/cstdint.h>
-#include <booster/locale/date_time.h>
+#include <booster/locale/time_zone.h>
 #include <ostream>
 #include <istream>
 #include <string>
@@ -92,7 +92,7 @@ namespace booster {
         ///
         /// \brief This class holds an external data - beyond existing fmtflags that std::ios_base holds
         ///
-        /// You almost never create this object directly, you rather access it via ios_info::get(stream_object)
+        /// You should almost never create this object directly. Instead, you should access it via ios_info::get(stream_object)
         /// static member function. It automatically creates default formatting data for that stream
         ///
         class BOOSTER_API ios_info {
@@ -222,6 +222,7 @@ namespace booster {
                 ~string_set();
                 string_set(string_set const &other);
                 string_set const &operator=(string_set const &other);
+                void swap(string_set &other);
                 
                 template<typename Char>
                 void set(Char const *s)
@@ -231,6 +232,7 @@ namespace booster {
                     type=&typeid(Char);
                     Char const *end = s;
                     while(*end!=0) end++;
+                    // if ptr = 0 it does not matter what is value of size
                     size = sizeof(Char)*(end - s+1);
                     ptr = new char[size];
                     memcpy(ptr,s,size);

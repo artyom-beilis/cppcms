@@ -36,11 +36,11 @@ namespace impl_icu {
             date_time_error(u_errorName(e));
         }
     }
-    using period::period_type;
+    using period::marks::period_mark;
 
-    static UCalendarDateFields to_icu(period_type f)
+    static UCalendarDateFields to_icu(period::marks::period_mark f)
     {
-        using namespace period;
+        using namespace period::marks;
 
         switch(f) {
         case era: return UCAL_ERA;
@@ -90,16 +90,16 @@ namespace impl_icu {
             return new calendar_impl(*this);
         }
 
-        void set_value(period::period_type p,int value)
+        void set_value(period::marks::period_mark p,int value)
         {
             calendar_->set(to_icu(p),int32_t(value));
         }
 
-        int get_value(period::period_type p,value_type type) const
+        int get_value(period::marks::period_mark p,value_type type) const
         {
             UErrorCode err=U_ZERO_ERROR;
             int v=0;
-            if(p==period::first_day_of_week) {
+            if(p==period::marks::first_day_of_week) {
                 guard l(lock_);
                 v=calendar_->getFirstDayOfWeek(err);
             }
@@ -196,7 +196,7 @@ namespace impl_icu {
                 return 0;
             }
         }
-        virtual void adjust_value(period_type p,update_type u,int difference)
+        virtual void adjust_value(period::marks::period_mark p,update_type u,int difference)
         {
             UErrorCode err=U_ZERO_ERROR;
             switch(u) {
@@ -209,7 +209,7 @@ namespace impl_icu {
             }
             check_and_throw_dt(err);
         }
-        virtual int difference(abstract_calendar const *other_ptr,period::period_type p) const
+        virtual int difference(abstract_calendar const *other_ptr,period::marks::period_mark p) const
         {
             UErrorCode err=U_ZERO_ERROR;
             double other_time = 0;
@@ -230,12 +230,8 @@ namespace impl_icu {
                 other_time = p.seconds * 1000.0 + p.nanoseconds / 1000000.0;
             }
 
-            int diff = 0;
-            
-            {
-                guard l(lock_);
-                diff = self->fieldDifference(other_time,to_icu(p),err);
-            }
+            int diff = self->fieldDifference(other_time,to_icu(p),err);
+
             check_and_throw_dt(err);
             return diff;
         }

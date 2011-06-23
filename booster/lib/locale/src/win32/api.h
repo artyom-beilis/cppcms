@@ -46,9 +46,9 @@ namespace impl_win {
         std::string grouping;
     };
 
-    inline int collation_level_to_flag(collator_base::level_type level)
+    inline DWORD collation_level_to_flag(collator_base::level_type level)
     {
-        int flags;
+        DWORD flags;
         switch(level) {
         case collator_base::primary:
             flags = NORM_IGNORESYMBOLS | NORM_IGNORECASE | NORM_IGNORENONSPACE;
@@ -222,7 +222,7 @@ namespace impl_win {
 
     inline std::wstring wcsnormalize(norm_type norm,wchar_t const *begin,wchar_t const *end)
     {
-        // We use FoldString, under Vista it actually does noramlization;
+        // We use FoldString, under Vista it actually does normalization;
         // under XP and below it does something similar, half job, better then nothing
         unsigned flags = 0;
         switch(norm) {

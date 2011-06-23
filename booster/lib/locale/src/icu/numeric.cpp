@@ -21,25 +21,6 @@ namespace booster {
 namespace locale {
 namespace impl_icu {
 
-class num_base {
-protected:
-
-    template<typename ValueType>
-    static bool use_parent(std::ios_base &ios)
-    {
-        uint64_t flg = ios_info::get(ios).display_flags();
-        if(flg == flags::posix)
-            return true;
-
-        if(!std::numeric_limits<ValueType>::is_integer)
-            return false;
-        if(flg == flags::number && (ios.flags() & std::ios_base::basefield) != std::ios_base::dec) {
-            return true;
-        }
-        return false;
-    }
-};
-
 namespace details {
     template<typename V,int n=std::numeric_limits<V>::digits,bool integer=std::numeric_limits<V>::is_integer>
     struct cast_traits;
@@ -67,7 +48,7 @@ namespace details {
     };
     template<typename v>
     struct cast_traits<v,32,true> {
-        typedef uint32_t cast_type;
+        typedef int64_t cast_type;
     };
     template<typename v>
     struct cast_traits<v,63,true> {
@@ -75,14 +56,56 @@ namespace details {
     };
     template<typename v>
     struct cast_traits<v,64,true> {
-        typedef uint64_t cast_type;
+        typedef int64_t cast_type;
     };
     template<typename V,int u>
     struct cast_traits<V,u,false> {
         typedef double cast_type;
     };
 
+    // ICU does not support uint64_t values so fallback
+    // to POSIX formatting
+    template<   typename V,
+                bool Sig=std::numeric_limits<V>::is_signed,
+                bool Int=std::numeric_limits<V>::is_integer,
+                bool Big=(sizeof(V) >= 8)
+            >
+    struct use_parent_traits 
+    {
+        static bool use(V /*v*/) { return false; }
+    };
+    template<typename V>
+    struct use_parent_traits<V,false,true,true>
+    {
+        static bool use(V v) { return static_cast<int64_t>(v) < 0; }
+    };
+
 }
+
+
+
+class num_base {
+protected:
+
+    template<typename ValueType>
+    static bool use_parent(std::ios_base &ios,ValueType v)
+    {
+        uint64_t flg = ios_info::get(ios).display_flags();
+        if(flg == flags::posix)
+            return true;
+        if(details::use_parent_traits<ValueType>::use(v))
+            return true;
+
+        if(!std::numeric_limits<ValueType>::is_integer)
+            return false;
+
+        if(flg == flags::number && (ios.flags() & std::ios_base::basefield) != std::ios_base::dec) {
+            return true;
+        }
+        return false;
+    }
+};
+
 
 template<typename CharType>
 class num_format : public std::num_put<CharType>, protected num_base
@@ -141,7 +164,7 @@ private:
     {
         formatter_ptr formatter;
         
-        if(use_parent<ValueType>(ios) || (formatter = formatter_type::create(ios,loc_,enc_)).get() == 0) {
+        if(use_parent<ValueType>(ios,val) || (formatter = formatter_type::create(ios,loc_,enc_)).get() == 0) {
             return std::num_put<char_type>::do_put(out,ios,fill,val);
         }
         
@@ -156,7 +179,7 @@ private:
             
             //
             // We do not really know internal point, so we assume that it does not
-            // exists. So according to standard field should be right aligned
+            // exist. So according to the standard field should be right aligned
             //
             if(flags != std::ios_base::left)
                 on_left = n;
@@ -252,7 +275,7 @@ private:
     
 
     //
-    // This is not really efficient solusion, but it works
+    // This is not really an efficient solution, but it works
     //
     template<typename ValueType>
     iter_type do_real_get(iter_type in,iter_type end,std::ios_base &ios,std::ios_base::iostate &err,ValueType &val) const
@@ -260,7 +283,7 @@ private:
         formatter_ptr formatter;
         stream_type *stream_ptr = dynamic_cast<stream_type *>(&ios);
 
-        if(!stream_ptr || use_parent<ValueType>(ios) || (formatter = formatter_type::create(ios,loc_,enc_)).get()==0) {
+        if(!stream_ptr || use_parent<ValueType>(ios,0) || (formatter = formatter_type::create(ios,loc_,enc_)).get()==0) {
             return std::num_get<CharType>::do_get(in,end,ios,err,val);
         }
 
@@ -302,9 +325,14 @@ private:
     {
         typedef std::numeric_limits<ValueType> value_limits;
         typedef std::numeric_limits<CastedType> casted_limits;
-        if(v > (value_limits::max)() || v < (value_limits::min)()) {
+        if(v < 0 && value_limits::is_signed == false)
             return false;
-        }       
+        
+        static const CastedType max_val = value_limits::max();
+
+        if(sizeof(CastedType) > sizeof(ValueType) && v > max_val)
+            return false;
+
         if(value_limits::is_integer == casted_limits::is_integer) {
             return true;
         }

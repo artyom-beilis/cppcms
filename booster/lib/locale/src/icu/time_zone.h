@@ -15,7 +15,7 @@ namespace booster {
     namespace locale {
         namespace impl_icu {
 
-            // it provides workaround for ICU default timezone bug and also
+            // Provides a workaround for an ICU default timezone bug and also
             // handles time_zone string correctly - if empty returns default
             // otherwise returns the instance created with time_zone
             icu::TimeZone *get_time_zone(std::string const &time_zone);

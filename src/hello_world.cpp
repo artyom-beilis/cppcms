@@ -320,9 +320,9 @@ public:
 	{
 		response().out()<<name<<":";
 		using namespace cppcms::locale::boundary;
-		mapping<token_iterator<std::string::const_iterator> > ind(type,str.begin(),str.end(),context().locale());
+		stoken_index ind(type,str.begin(),str.end(),context().locale());
 
-		token_iterator<std::string::const_iterator> p;
+		stoken_index::iterator p;
 
 		for(p=ind.begin();p!=ind.end();++p) {
 			response().out()<<"|"<<*p;

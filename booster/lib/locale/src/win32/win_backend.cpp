@@ -15,6 +15,8 @@
 #include "../util/gregorian.h"
 #include "../util/locale_data.h"
 #include "api.h"
+#include <algorithm>
+#include <iterator>
 
 namespace booster {
 namespace locale {
@@ -109,7 +111,7 @@ namespace impl_win {
                     minf.country = inf.country();
                     minf.variant = inf.variant();
                     minf.encoding = inf.encoding();
-                    minf.domains = domains_;
+                    std::copy(domains_.begin(),domains_.end(),std::back_inserter<gnu_gettext::messages_info::domains_type>(minf.domains));
                     minf.paths = paths_;
                     switch(type) {
                     case char_facet:

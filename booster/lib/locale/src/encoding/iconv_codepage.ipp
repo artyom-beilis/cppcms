@@ -79,12 +79,83 @@ public:
         return iconv(cvt_,inbuf,inchar_left,outbuf,outchar_left);
     }
 
-    bool open(char const *to,char const *from)
+    bool open(char const *to,char const *from,method_type how)
     {
         close();
         cvt_ = iconv_open(to,from);
+        how_ = how;
         return cvt_ != (iconv_t)(-1);
     }
+    
+    template<typename OutChar,typename InChar>
+    std::basic_string<OutChar> real_convert(InChar const *ubegin,InChar const *uend)
+    {
+        std::basic_string<OutChar> sresult;
+        
+        sresult.reserve(uend - ubegin);
+
+        OutChar result[64];
+
+        char *out_start   = reinterpret_cast<char *>(&result[0]);
+        char const *begin = reinterpret_cast<char const *>(ubegin);
+        char const *end   = reinterpret_cast<char const *>(uend);
+        
+        enum { normal , unshifting , done } state = normal;
+
+        while(state!=done) {
+
+            size_t in_left = end - begin;
+            size_t out_left = sizeof(result);
+            
+            char *out_ptr = out_start;
+            size_t res = 0;
+            if(in_left == 0)
+                state = unshifting;
+
+            if(state == normal) 
+                res = conv(&begin,&in_left,&out_ptr,&out_left);
+            else
+                res = conv(0,0,&out_ptr,&out_left);
+
+            int err = errno;
+           
+            size_t output_count = (out_ptr - out_start) / sizeof(OutChar);
+
+            sresult.append(&result[0],output_count);
+
+            if(res == (size_t)(-1)) {
+                if(err == EILSEQ || err == EINVAL) {
+                    if(how_ == stop) {
+                        throw conversion_error();
+                    }
+
+                    if(begin != end) {
+                        begin+=sizeof(InChar);
+                        if(begin >= end)
+                            break;
+                    }
+                    else {
+                        break;
+                    }
+                }
+                else if (err==E2BIG) {
+                    continue;
+                }
+                else {
+                    // We should never get there
+                    // but if we do
+                    if(how_ == stop)
+                        throw conversion_error();
+                    else
+                        break;
+                }
+            }
+            if(state == unshifting)
+                state = done;
+        }
+        return sresult;
+    }
+
 
 private:
 
@@ -98,6 +169,8 @@ private:
     
     iconv_t cvt_;
 
+    method_type how_;
+
 };
 
 template<typename CharType>
@@ -109,90 +182,27 @@ public:
 
     virtual bool open(char const *charset,method_type how)
     {
-        if(!iconverter_base::open(charset,utf_name<CharType>()))
-            return false;
-        method(how);
-        return true;
-    }
-    void method(method_type how)
-    {
-        how_ = how;
+        return iconverter_base::open(charset,utf_name<CharType>(),how);
     }
 
     virtual std::string convert(char_type const *ubegin,char_type const *uend)
     {
-        std::string sresult;
-        std::vector<char> result((uend-ubegin)+10,'\0');
-        char *out_start = &result[0];
-
-        char const *begin = reinterpret_cast<char const *>(ubegin);
-        char const *end = reinterpret_cast<char const *>(uend);
-        
-        enum { normal , unshifting , done } state = normal;
-
-        while(state!=done) {
-
-            size_t in_left = end - begin;
-            size_t out_left = result.size();
-            
-            char *out_ptr = out_start;
-            size_t res = 0;
-            if(in_left == 0)
-                state = unshifting;
-
-            if(state == normal) 
-                res = conv(&begin,&in_left,&out_ptr,&out_left);
-            else
-                res = conv(0,0,&out_ptr,&out_left);
-
-            int err = errno;
-            
-            sresult.append(&result[0],out_ptr - out_start);
-
-            if(res == (size_t)(-1)) {
-                if(err == EILSEQ || err == EINVAL) {
-                    if(how_ == stop) {
-                        throw conversion_error();
-                    }
-                    else if(begin != end) {
-                        begin+=sizeof(char_type);
-                    }
-                    else {
-                        break;
-                    }
-                }
-                else if (err==E2BIG) {
-                    continue;
-                }
-                else {
-                    break;
-                }
-            }
-            if(state == unshifting)
-                state = done;
-        }
-        return sresult;
+        return real_convert<char,char_type>(ubegin,uend);
     }
-
-private:
-    method_type how_;
-
 };
 
-class iconv_between: public iconv_from_utf<char>, public converter_between
+class iconv_between: public iconverter_base,  public converter_between
 {
 public:
     virtual bool open(char const *to_charset,char const *from_charset,method_type how)
     {
-        if(!iconverter_base::open(to_charset,from_charset))
-            return false;
-        method(how);
-        return true;
+        return iconverter_base::open(to_charset,from_charset,how);
     }
     virtual std::string convert(char const *begin,char const *end)
     {
-        return iconv_from_utf<char>::convert(begin,end);
+        return real_convert<char,char>(begin,end);
     }
+
 };
 
 
@@ -206,67 +216,13 @@ public:
 
     virtual bool open(char const *charset,method_type how)
     {
-        if(!iconverter_base::open(utf_name<CharType>(),charset))
-            return false;
-        how_ = how;
-        return true;
+        return iconverter_base::open(utf_name<CharType>(),charset,how);
     }
 
     virtual string_type convert(char const *begin,char const *end)
     {
-        string_type sresult;
-        std::vector<char_type> result((end-begin)+10,char_type());
-        char *out_start = reinterpret_cast<char *>(&result[0]);
-        
-        enum { normal , unshifting , done } state = normal;
-
-        while(state!=done) {
-
-            size_t in_left = end - begin;
-            size_t out_left = result.size() * sizeof(char_type);
-            
-            char *out_ptr = out_start;
-
-            size_t res = 0;
-            if(in_left == 0)
-                state = unshifting;
-
-            if(state == normal) 
-                res = conv(&begin,&in_left,&out_ptr,&out_left);
-            else
-                res = conv(0,0,&out_ptr,&out_left);
-
-            int err = errno;
-
-            sresult.append(&result[0],(out_ptr - out_start)/sizeof(char_type));
-
-            if(res == (size_t)(-1)) {
-                if(err == EILSEQ || err == EINVAL) {
-                    if(how_ == stop) {
-                        throw conversion_error();
-                    }
-                    else if(begin != end) {
-                        begin++;
-                    }
-                    else {
-                        break;
-                    }
-                }
-                else if (err==E2BIG) {
-                    continue;
-                }
-                else {
-                    break;
-                }
-            }
-            if(state == unshifting)
-                state = done;
-        }
-        return sresult;
+        return real_convert<char_type,char>(begin,end);
     }
-
-private:
-    method_type how_;
 };
 
 

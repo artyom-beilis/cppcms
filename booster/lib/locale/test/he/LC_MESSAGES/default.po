@@ -5,6 +5,9 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=4; plural= (n==1 ? 0 : (n==2 ? 1 : (n>10 ? 3 : 2)))  ;\n"
 
+msgid "בדיקה"
+msgstr "test"
+
 msgid "hello"
 msgstr "שלום"
 

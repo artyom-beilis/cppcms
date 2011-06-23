@@ -15,6 +15,8 @@
 #include "../util/locale_data.h"
 #include "../util/gregorian.h"
 #include <booster/locale/util.h>
+#include <algorithm>
+#include <iterator>
 
 #include <langinfo.h>
 
@@ -75,14 +77,26 @@ namespace impl_posix {
             real_id_ = locale_id_;
             if(real_id_.empty())
                 real_id_ = util::get_system_locale();
+            
             locale_t tmp = newlocale(LC_ALL_MASK,real_id_.c_str(),0);
+            
             if(!tmp) {
                 tmp=newlocale(LC_ALL_MASK,"C",0);
             }
             if(!tmp) {
                 throw booster::runtime_error("newlocale failed");
             }
-            locale_t *tmp_p = new locale_t();
+            
+            locale_t *tmp_p = 0;
+            
+            try {
+                tmp_p = new locale_t();
+            }
+            catch(...) {
+                freelocale(tmp);
+                throw;
+            }
+            
             *tmp_p = tmp;
             lc_ = booster::shared_ptr<locale_t>(tmp_p,free_locale_by_ptr);
         }
@@ -119,7 +133,7 @@ namespace impl_posix {
                     minf.country = inf.country;
                     minf.variant = inf.variant;
                     minf.encoding = inf.encoding;
-                    minf.domains = domains_;
+                    std::copy(domains_.begin(),domains_.end(),std::back_inserter<gnu_gettext::messages_info::domains_type>(minf.domains));
                     minf.paths = paths_;
                     switch(type) {
                     case char_facet:

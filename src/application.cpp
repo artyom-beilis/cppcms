@@ -288,19 +288,19 @@ void application::recycle()
 
 std::string application::translate(char const *ctx,char const *message)
 {
-	return booster::locale::translate(ctx,message).str<char>(context().locale());
+	return booster::locale::translate(ctx,message).str(context().locale());
 }
 std::string application::translate(char const *message)
 {
-	return booster::locale::translate(message).str<char>(context().locale());
+	return booster::locale::translate(message).str(context().locale());
 }
 std::string application::translate(char const *ctx,char const *single,char const *plural,int n)
 {
-	return booster::locale::translate(ctx,single,plural,n).str<char>(context().locale());
+	return booster::locale::translate(ctx,single,plural,n).str(context().locale());
 }
 std::string application::translate(char const *single,char const *plural,int n)
 {
-	return booster::locale::translate(single,plural,n).str<char>(context().locale());
+	return booster::locale::translate(single,plural,n).str(context().locale());
 }
 
 std::string application::url(std::string const &key)

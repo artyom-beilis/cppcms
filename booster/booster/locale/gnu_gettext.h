@@ -22,10 +22,10 @@ namespace gnu_gettext {
     ///
     /// \brief This structure holds all information required for creating gnu-gettext message catalogs,
     ///
-    /// User is expected to set its parameters to load these catalogs correctly. This sturcture
-    /// also allows to provide functions for charset conversion, note, you need to provide them,
-    /// so this structure not useful for wide characters without subclassing and it will also
-    /// ignore gettext catalogs that use charset different from \a encoding.
+    /// The user is expected to set its parameters to load these catalogs correctly. This structure
+    /// also allows providing functions for charset conversion. Note, you need to provide them,
+    /// so this structure is not useful for wide characters without subclassing and it will also
+    /// ignore gettext catalogs that use a charset different from \a encoding.
     ///
     struct messages_info {
         messages_info() :
@@ -35,15 +35,44 @@ namespace gnu_gettext {
         }
 
         std::string language;   ///< The language we load the catalog for, like "ru", "en", "de" 
-        std::string country;    ///< The country wel load the catalog for, like "US", "IL"
+        std::string country;    ///< The country we load the catalog for, like "US", "IL"
         std::string variant;    ///< Language variant, like "euro" so it would look for catalog like de_DE\@euro
-        std::string encoding;   ///< Required target charset encoding. Igronred for wide characters.
-                                ///< for narror should specify correct encoding required for this catalog
-        std::string locale_category; ///< Locale category, is set by default LC_MESSAGES, but may be changed
-        std::vector<std::string> domains;   ///< Message domains - application name, like my_app. So files named my_app.mo
-                                            ///< would be loaded
-        std::vector<std::string> paths;     ///< Paths to search files in. Under MS Windows it uses encoding
-                                            ///< parameter to convert them to wide OS specific paths.
+        std::string encoding;   ///< Required target charset encoding. Ignored for wide characters.
+                                ///< For narrow, should specify the correct encoding required for this catalog
+        std::string locale_category; ///< Locale category, is set by default to LC_MESSAGES, but may be changed
+        struct domain {
+            std::string name;
+            std::string encoding;
+            domain() {}
+            domain(std::string const &n) 
+            {
+                size_t pos = n.find("/");
+                if(pos==std::string::npos) {
+                    name = n;
+                    encoding = "UTF-8";
+                }
+                else {
+                    name = n.substr(0,pos);
+                    encoding = n.substr(pos+1);
+                }
+
+            }
+
+            bool operator==(domain const &other) const
+            {
+                return name==other.name;
+            }
+            bool operator!=(domain const &other) const
+            {
+                return !(*this==other);
+            }
+
+        };
+        typedef std::vector<domain> domains_type;
+        domains_type domains;           ///< Message domains - application name, like my_app. So files named my_app.mo
+                                        ///< would be loaded
+        std::vector<std::string> paths; ///< Paths to search files in. Under MS Windows it uses encoding
+                                        ///< parameter to convert them to wide OS specific paths.
         
         ///
         /// The callback for custom file system support. This callback should read the file named \a file_name
@@ -52,8 +81,8 @@ namespace gnu_gettext {
         /// - If the file does not exist, it should return an empty vector.
         /// - If a error occurs during file read it should throw a error.
         ///
-        /// \note The user should support only these encodings the locales are created for, so if the user
-        /// uses only one encoding or the file system is encoding agnostic, he may ignore \a encoding parameter.
+        /// \note The user should support only the encodings the locales are created for. So if the user
+        /// uses only one encoding or the file system is encoding agnostic, he may ignore the \a encoding parameter.
         ///
         typedef function<
                     std::vector<char>(
@@ -76,24 +105,24 @@ namespace gnu_gettext {
     ///
 
     template<typename CharType>
-    message_format<CharType> *create_messages_facet(messages_info &info);
+    message_format<CharType> *create_messages_facet(messages_info const &info);
 
     /// \cond INTERNAL
     
     template<>
-    BOOSTER_API message_format<char> *create_messages_facet(messages_info &info);
+    BOOSTER_API message_format<char> *create_messages_facet(messages_info const &info);
     
     template<>
-    BOOSTER_API message_format<wchar_t> *create_messages_facet(messages_info &info);
+    BOOSTER_API message_format<wchar_t> *create_messages_facet(messages_info const &info);
 
     #ifdef BOOSTER_HAS_CHAR16_T
     template<>
-    BOOSTER_API message_format<char16_t> *create_messages_facet(messages_info &info);
+    BOOSTER_API message_format<char16_t> *create_messages_facet(messages_info const &info);
     #endif
     
     #ifdef BOOSTER_HAS_CHAR32_T
     template<>
-    BOOSTER_API message_format<char32_t> *create_messages_facet(messages_info &info);
+    BOOSTER_API message_format<char32_t> *create_messages_facet(messages_info const &info);
     #endif
 
     /// \endcond

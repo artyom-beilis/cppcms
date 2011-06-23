@@ -13,19 +13,19 @@
 #endif
 
 #ifdef BOOSTER_LOCALE_WITH_ICONV
-#include "iconv_codepage.h"
+#include "iconv_codepage.ipp"
 #endif
 #ifdef BOOSTER_LOCALE_WITH_ICU
-#include "uconv_codepage.h"
+#include "uconv_codepage.ipp"
 #endif
 #ifdef BOOSTER_LOCALE_WITH_WCONV
-#include "wconv_codepage.h"
+#include "wconv_codepage.ipp"
 #endif
 
 #include <booster/locale/encoding.h>
 
 #include <string>
-#include <string.h>
+#include <cstring>
 #include <memory>
 
 namespace booster {
@@ -113,7 +113,7 @@ namespace booster {
                 std::string normalize_encoding(char const *ccharset)
                 {
                     std::string charset;
-                    charset.reserve(strlen(ccharset));
+                    charset.reserve(std::strlen(ccharset));
                     while(*ccharset!=0) {
                         char c=*ccharset++;
                         if('0' <= c && c<= '9')

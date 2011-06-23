@@ -8,6 +8,7 @@
 #ifndef BOOSTER_LOCALE_GENERATOR_HPP
 #define BOOSTER_LOCALE_GENERATOR_HPP
 #include <booster/config.h>
+#include <booster/cstdint.h>
 #ifdef BOOSTER_MSVC
 #  pragma warning(push)
 #  pragma warning(disable : 4275 4251 4231 4660)
@@ -29,39 +30,39 @@ namespace booster {
         class localization_backend;
         class localization_backend_manager;
 
-        static const unsigned nochar_facet    = 0;        ///< Unspecified character category for character independed facets
-        static const unsigned char_facet      = 1 << 0;   ///< 8-bit character facets
-        static const unsigned wchar_t_facet   = 1 << 1;   ///< wide character facets
-        static const unsigned char16_t_facet  = 1 << 2;   ///< C++0x char16_t facets
-        static const unsigned char32_t_facet  = 1 << 3;   ///< C++0x char32_t facets
+        static const uint32_t nochar_facet    = 0;        ///< Unspecified character category for character independed facets
+        static const uint32_t char_facet      = 1 << 0;   ///< 8-bit character facets
+        static const uint32_t wchar_t_facet   = 1 << 1;   ///< wide character facets
+        static const uint32_t char16_t_facet  = 1 << 2;   ///< C++0x char16_t facets
+        static const uint32_t char32_t_facet  = 1 << 3;   ///< C++0x char32_t facets
 
-        static const unsigned character_first_facet = char_facet;  ///< First facet specific for character type
-        static const unsigned character_last_facet = char32_t_facet; ///< Last facet specific for character typr
-        static const unsigned all_characters = 0xFFFF;     ///< Special mask -- generate all
+        static const uint32_t character_first_facet = char_facet;  ///< First facet specific for character type
+        static const uint32_t character_last_facet = char32_t_facet; ///< Last facet specific for character typr
+        static const uint32_t all_characters = 0xFFFF;     ///< Special mask -- generate all
         
-        typedef unsigned character_facet_type; ///<type that specifies the character type that locales can be generated for
+        typedef uint32_t character_facet_type; ///<type that specifies the character type that locales can be generated for
 
-        static const unsigned     convert_facet   = 1 << 0;   ///< Generate convertsion facets
-        static const unsigned     collation_facet = 1 << 1;   ///< Generate collation facets
-        static const unsigned     formatting_facet= 1 << 2;   ///< Generate numbers, currency, date-time formatting facets
-        static const unsigned     parsing_facet   = 1 << 3;   ///< Generate numbers, currency, date-time formatting facets
-        static const unsigned     message_facet   = 1 << 4;   ///< Generate message facets
-        static const unsigned     codepage_facet  = 1 << 5;   ///< Generate codepage conversion facets (derived from std::codecvt)
-        static const unsigned     boundary_facet  = 1 << 6;   ///< Generate boundary analysis facet
+        static const uint32_t     convert_facet   = 1 << 0;   ///< Generate convertsion facets
+        static const uint32_t     collation_facet = 1 << 1;   ///< Generate collation facets
+        static const uint32_t     formatting_facet= 1 << 2;   ///< Generate numbers, currency, date-time formatting facets
+        static const uint32_t     parsing_facet   = 1 << 3;   ///< Generate numbers, currency, date-time formatting facets
+        static const uint32_t     message_facet   = 1 << 4;   ///< Generate message facets
+        static const uint32_t     codepage_facet  = 1 << 5;   ///< Generate codepage conversion facets (derived from std::codecvt)
+        static const uint32_t     boundary_facet  = 1 << 6;   ///< Generate boundary analysis facet
             
-        static const unsigned     per_character_facet_first = convert_facet; ///< First facet specific for character
-        static const unsigned     per_character_facet_last = boundary_facet; ///< Last facet specific for character
+        static const uint32_t     per_character_facet_first = convert_facet; ///< First facet specific for character
+        static const uint32_t     per_character_facet_last = boundary_facet; ///< Last facet specific for character
 
-        static const unsigned     calendar_facet  = 1 << 16;   ///< Generate boundary analysis facet
-        static const unsigned     information_facet = 1 << 17;   ///< Generate general locale information facet
+        static const uint32_t     calendar_facet  = 1 << 16;   ///< Generate boundary analysis facet
+        static const uint32_t     information_facet = 1 << 17;   ///< Generate general locale information facet
 
-        static const unsigned    non_character_facet_first = calendar_facet; ///< First character independed facet 
-        static const unsigned    non_character_facet_last = information_facet;///< Last character independed facet 
+        static const uint32_t    non_character_facet_first = calendar_facet; ///< First character independed facet 
+        static const uint32_t    non_character_facet_last = information_facet;///< Last character independed facet 
 
             
-        static const unsigned    all_categories  = 0xFFFFFFFFu;   ///< Generate all of them
+        static const uint32_t    all_categories  = 0xFFFFFFFFu;   ///< Generate all of them
         
-        typedef unsigned locale_category_type; ///< a type used for more fine grained generation of facets
+        typedef uint32_t locale_category_type; ///< a type used for more fine grained generation of facets
 
         ///
         /// \brief the major class used for locale generation
@@ -87,24 +88,40 @@ namespace booster {
             ///
             /// Set types of facets that should be generated, default all
             ///
-            void categories(unsigned cats);
+            void categories(locale_category_type cats);
             ///
             /// Get types of facets that should be generated, default all
             ///
-            unsigned categories() const;
+            locale_category_type categories() const;
             
             ///
             /// Set the characters type for which the facets should be generated, default all supported
             ///
-            void characters(unsigned chars);
+            void characters(character_facet_type chars);
             ///
             /// Get the characters type for which the facets should be generated, default all supported
             ///
-            unsigned characters() const;
+            character_facet_type characters() const;
 
             ///
             /// Add a new domain of messages that would be generated. It should be set in order to enable
             /// messages support.
+            ///
+            /// Messages domain has following format: "name" or "name/encoding"
+            /// where name is the base name of the "mo" file where the catalog is stored
+            /// without ".mo" extension. For example for file \c /usr/share/locale/he/LC_MESSAGES/blog.mo
+            /// it would be \c blog.
+            ///
+            /// You can optionally specify the encoding of the keys in the sources by adding "/encoding_name"
+            /// For example blog/cp1255.
+            ///
+            /// If not defined all keys are assumed to be UTF-8 encoded.
+            ///
+            /// \note When you select a domain for the program using dgettext or message API, you
+            /// do not specify the encoding part. So for example if the provided
+            /// domain name was "blog/windows-1255" then for translation
+            /// you should use dgettext("blog","Hello")
+            ///
             ///
             void add_messages_domain(std::string const &domain);
             ///
@@ -123,13 +140,13 @@ namespace booster {
             ///
             /// \note
             ///
-            /// - Under Windows platform the path is treated as path in locale's encoding so when
+            /// - Under the Windows platform the path is treated as a path in the locale's encoding so
             ///   if you create locale "en_US.windows-1251" then path would be treated as cp1255,
-            ///   and if it is en_US.UTF-8 it is treated as UTF-8. File name is always opened as 
-            ///   wide file name as Wide file names are the native file name on Windows.
+            ///   and if it is en_US.UTF-8 it is treated as UTF-8. File name is always opened with 
+            ///   a wide file name as wide file names are the native file name on Windows.
             ///
-            /// - Under POSIX platforms all paths passed as-is regardless of encoding as the narrow
-            ///   encodings are the native encodings for POSIX platform.
+            /// - Under POSIX platforms all paths passed as-is regardless of encoding as narrow
+            ///   encodings are the native encodings for POSIX platforms.
             ///   
             /// 
             void add_messages_path(std::string const &path);
@@ -163,8 +180,8 @@ namespace booster {
             /// Select ANSI encodings as default system encoding rather then UTF-8 by default
             /// under Windows.
             ///
-            /// The default is the most protable and most powerful encoding UTF-8, but yet user
-            /// may select "system" one if it deals with legacy applications
+            /// The default is the most portable and most powerful encoding, UTF-8, but the user
+            /// can select "system" one if he deals with legacy applications
             ///
             void use_ansi_encoding(bool enc);
 
@@ -173,8 +190,8 @@ namespace booster {
             ///
             std::locale generate(std::string const &id) const;
             ///
-            /// Generate a locale with id \a id, use \a base as a locale for which all facets are added,
-            /// instead of std::locale::classic() one
+            /// Generate a locale with id \a id. Use \a base as a locale to which all facets are added,
+            /// instead of std::locale::classic().
             ///
             std::locale generate(std::locale const &base,std::string const &id) const;
             ///

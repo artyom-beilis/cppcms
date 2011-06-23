@@ -12,6 +12,8 @@
 
 #include <booster/locale/encoding.h>
 #include <algorithm>
+#include <cstring>
+#include <string>
 #include "conv.h"
 
 #ifndef NOMINMAX
@@ -85,16 +87,7 @@ namespace impl {
 
     size_t remove_substitutions(std::vector<wchar_t> &v)
     {
-        if(std::find(v.begin(),v.end(),wchar_t(0xFFFD)) == v.end()) {
-            return v.size();
-        }
-        std::vector<wchar_t> v2;
-        v2.reserve(v.size());
-        for(unsigned i=0;i<v.size();i++) {
-            if(v[i]!=0xFFFD)
-                v2.push_back(v[i]);
-        }
-        v.swap(v2);
+        v.erase(std::remove(v.begin(), v.end(), wchar_t(0xFFFD)), v.end());
         return v.size();
     }
 

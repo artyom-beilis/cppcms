@@ -11,8 +11,8 @@
 namespace booster { 
 namespace locale {
     ///
-    /// \brief a smart pointer similar to std::auto_ptr but it is non-copyable and
-    /// underlying object has same constness as the pointer itself (not like in ordinary pointer).
+    /// \brief a smart pointer similar to std::auto_ptr but it is non-copyable and the
+    /// underlying object has the same constness as the pointer itself (unlike an ordinary pointer).
     ///
     template<typename T>
     class hold_ptr {
@@ -26,14 +26,14 @@ namespace locale {
         ///
         /// Create a pointer that holds \a v, ownership is transfered to smart pointer
         ///
-        hold_ptr(T *v) : ptr_(v) {}
+        explicit hold_ptr(T *v) : ptr_(v) {}
 
         ///
         /// Destroy smart pointer and the object it owns.
         ///
         ~hold_ptr() 
         {
-            if(ptr_) delete ptr_;
+            delete ptr_;
         }
 
         ///

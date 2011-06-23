@@ -361,7 +361,7 @@ class if_block:
         self.type=m.group(1)
         if m.group(4):
             if m.group(4)=='rtl':
-                self.ident='(cppcms::locale::translate("LTR").str<char>(out().getloc())=="RTL")'
+                self.ident='(cppcms::locale::translate("LTR").str(out().getloc())=="RTL")'
             else:
                 self.ident=make_ident(m.group(4))
             if m.group(3):

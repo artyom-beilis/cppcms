@@ -167,9 +167,9 @@ namespace util {
             ///
             /// Set specific \a value for period \a p, note not all values are settable.
             ///
-            virtual void set_value(period::period_type p,int value) 
+            virtual void set_value(period::marks::period_mark p,int value) 
             {
-                using namespace period;
+                using namespace period::marks;
                 switch(p) {
                 case era:                        ///< Era i.e. AC, BC in Gregorian and Julian calendar, range [0,1]
                     return;
@@ -222,7 +222,7 @@ namespace util {
                         tm_updated_.tm_mday += diff;
                     }
                     break;
-                case period::first_day_of_week:          ///< For example Sunday in US, Monday in France
+                case period::marks::first_day_of_week:          ///< For example Sunday in US, Monday in France
                 default:
                     return;
                 }
@@ -303,9 +303,9 @@ namespace util {
             ///
             /// Get specific value for period \a p according to a value_type \a v
             ///
-            virtual int get_value(period::period_type p,value_type v) const 
+            virtual int get_value(period::marks::period_mark p,value_type v) const 
             {
-                using namespace period;
+                using namespace period::marks;
                 switch(p) {
                 case era:
                     return 1;
@@ -478,7 +478,7 @@ namespace util {
                         return tm_.tm_sec;
                     }
                     break;
-                case period::first_day_of_week:          ///< For example Sunday in US, Monday in France
+                case period::marks::first_day_of_week:          ///< For example Sunday in US, Monday in France
                     return first_day_of_week_ + 1;
                 
                 case week_of_year:               ///< The week number in the year
@@ -606,12 +606,12 @@ namespace util {
             /// Adjust period's \a p value by \a difference items using a update_type \a u.
             /// Note: not all values are adjustable
             ///
-            virtual void adjust_value(period::period_type p,update_type u,int difference)
+            virtual void adjust_value(period::marks::period_mark p,update_type u,int difference)
             {
                 switch(u) {
                 case move:
                     {
-                        using namespace period;
+                        using namespace period::marks;
                         switch(p) {
                         case year:                       ///< Year, it is calendar specific
                         case extended_year:              ///< Extended year for Gregorian/Julian calendars, where 1 BC == 0, 2 BC == -1.
@@ -671,7 +671,7 @@ namespace util {
                 }
             }
 
-            int get_diff(period::period_type p,int diff,gregorian_calendar const *other) const
+            int get_diff(period::marks::period_mark p,int diff,gregorian_calendar const *other) const
             {
                 if(diff == 0)
                     return 0;
@@ -694,7 +694,7 @@ namespace util {
             ///
             /// Calculate the difference between this calendar  and \a other in \a p units
             ///
-            virtual int difference(abstract_calendar const *other_cal,period::period_type p) const 
+            virtual int difference(abstract_calendar const *other_cal,period::marks::period_mark p) const 
             {
                 std::auto_ptr<gregorian_calendar> keeper;
                 gregorian_calendar const *other = dynamic_cast<gregorian_calendar const *>(other_cal);
@@ -706,7 +706,7 @@ namespace util {
 
                 int factor = 1; // for weeks vs days handling
 
-                using namespace period;
+                using namespace period::marks;
                 switch(p) {
                 case era:
                     return 0;
@@ -714,13 +714,13 @@ namespace util {
                 case extended_year:
                     {
                         int diff = other->tm_.tm_year - tm_.tm_year;
-                        return get_diff(period::year,diff,other);
+                        return get_diff(period::marks::year,diff,other);
                     }
                 case month:
                     {
                         int diff = 12 * (other->tm_.tm_year - tm_.tm_year) 
                                     + other->tm_.tm_mon - tm_.tm_mon;
-                        return get_diff(period::month,diff,other);
+                        return get_diff(period::marks::month,diff,other);
                     }
                 case day_of_week_in_month:
                 case week_of_month:
@@ -737,7 +737,7 @@ namespace util {
                             diff += days_from_0(other->tm_.tm_year + 1900) -
                                     days_from_0(tm_.tm_year + 1900);
                         }
-                        return get_diff(period::day,diff,other) / factor;
+                        return get_diff(period::marks::day,diff,other) / factor;
                     }
                 case am_pm:
                     return static_cast<int>( (other->time_ - time_) / (3600*12) );

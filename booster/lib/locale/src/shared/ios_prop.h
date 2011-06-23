@@ -27,7 +27,7 @@ namespace booster {
                         ios.pword(id) = new Property(prop);
                     }
                     else {
-                        *reinterpret_cast<Property *>(ios.pword(id))=prop;
+                        *static_cast<Property *>(ios.pword(id))=prop;
                     }
                 }
                 
@@ -36,7 +36,7 @@ namespace booster {
                     int id=get_id();
                     if(!has(ios))
                         set(Property(),ios);
-                    return *reinterpret_cast<Property *>(ios.pword(id));
+                    return *static_cast<Property *>(ios.pword(id));
                 }
                 
                 static bool has(std::ios_base &ios)
@@ -51,9 +51,9 @@ namespace booster {
                 {
                     if(has(ios)) {
                         int id=get_id();
-                        Property *p=reinterpret_cast<Property *>(ios.pword(id));
+                        Property *p=static_cast<Property *>(ios.pword(id));
                         delete p;
-                        ios.pword(id)=reinterpret_cast<void *>(-1);
+                        ios.pword(id)=invalid;
                     }
                 }
                 static void global_init()

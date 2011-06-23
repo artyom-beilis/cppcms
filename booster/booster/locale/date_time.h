@@ -16,6 +16,8 @@
 
 #include <booster/locale/hold_ptr.h>
 #include <booster/locale/date_time_facet.h>
+#include <booster/locale/formatting.h>
+#include <booster/locale/time_zone.h>
 #include <locale>
 #include <vector>
 #include <booster/backtrace.h>
@@ -44,10 +46,12 @@ namespace booster {
 
 
         ///
-        /// \brief This structure provides a pair period_type and amount.
+        /// \brief This class represents a pair of period_type and the integer
+        /// values that describes its amount. For example 3 days or 4 years.
         ///
-        /// Usually obtained as product of period_type and integer.
-        /// For example day*3 == date_time_period(day,3)
+        /// Usually obtained as product of period_type and integer or
+        /// my calling a representative functions
+        /// For example day()*3 == date_time_period(day(),3) == day(3)
         /// 
         struct date_time_period 
         {
@@ -65,95 +69,249 @@ namespace booster {
             ///
             /// Constructor that creates date_time_period from period_type \a f and a value \a v -- default 1.
             ///
-            date_time_period(period::period_type f=period::invalid,int v=1) : type(f), value(v) {}
+            date_time_period(period::period_type f=period::period_type(),int v=1) : type(f), value(v) {}
         };
 
         namespace period {
             ///
-            /// Predefined constant for January
+            ///  Get period_type for: special invalid value, should not be used directly
             ///
-            static const date_time_period january(month,0);
+            inline period_type invalid(){ return period_type(marks::invalid); }
             ///
-            /// Predefined constant for February
+            ///  Get period_type for: Era i.e. AC, BC in Gregorian and Julian calendar, range [0,1]
             ///
-            static const date_time_period february(month,1);
+            inline period_type era(){ return period_type(marks::era); }
             ///
-            /// Predefined constant for March
+            ///  Get period_type for: Year, it is calendar specific, for example 2011 in Gregorian calendar.
             ///
-            static const date_time_period march(month,2);
+            inline period_type year(){ return period_type(marks::year); }
             ///
-            /// Predefined constant for April
+            ///  Get period_type for: Extended year for Gregorian/Julian calendars, where 1 BC == 0, 2 BC == -1.
             ///
-            static const date_time_period april(month,3);
+            inline period_type extended_year(){ return period_type(marks::extended_year); }
             ///
-            /// Predefined constant for May
+            ///  Get period_type for: The month of year, calendar specific, in Gregorian [0..11]
             ///
-            static const date_time_period may(month,4);
+            inline period_type month(){ return period_type(marks::month); }
             ///
-            /// Predefined constant for June
+            ///  Get period_type for: The day of month, calendar specific, in Gregorian [1..31]
             ///
-            static const date_time_period june(month,5);
+            inline period_type day(){ return period_type(marks::day); }
             ///
-            /// Predefined constant for July
+            ///  Get period_type for: The number of day in year, starting from 1, in Gregorian  [1..366]
             ///
-            static const date_time_period july(month,6);
+            inline period_type day_of_year(){ return period_type(marks::day_of_year); }
             ///
-            /// Predefined constant for August
+            ///  Get period_type for: Day of week, Sunday=1, Monday=2,..., Saturday=7.
             ///
-            static const date_time_period august(month,7);
+            /// Note that that updating this value respects local day of week, so for example,
+            /// If first day of week is Monday and the current day is Tuesday then setting
+            /// the value to Sunday (1) would forward the date by 5 days forward and not backward
+            /// by two days as it could be expected if the numbers were taken as is.
             ///
-            /// Predefined constant for September
+            inline period_type day_of_week(){ return period_type(marks::day_of_week); }
             ///
-            static const date_time_period september(month,8);
+            ///  Get period_type for: Original number of the day of the week in month. For example 1st Sunday, 
+            /// 2nd Sunday, etc. in Gregorian [1..5]
             ///
-            /// Predefined constant for October 
+            inline period_type day_of_week_in_month(){ return period_type(marks::day_of_week_in_month); }
             ///
-            static const date_time_period october(month,9);
+            ///  Get period_type for: Local day of week, for example in France Monday is 1, in US Sunday is 1, [1..7]
             ///
-            /// Predefined constant for November
+            inline period_type day_of_week_local(){ return period_type(marks::day_of_week_local); }
             ///
-            static const date_time_period november(month,10);
+            ///  Get period_type for: 24 clock hour [0..23]
             ///
-            /// Predefined constant for December
+            inline period_type hour(){ return period_type(marks::hour); }
             ///
-            static const date_time_period december(month,11);
+            ///  Get period_type for: 12 clock hour [0..11]
+            ///
+            inline period_type hour_12(){ return period_type(marks::hour_12); }
+            ///
+            ///  Get period_type for: am or pm marker [0..1]
+            ///
+            inline period_type am_pm(){ return period_type(marks::am_pm); }
+            ///
+            ///  Get period_type for: minute [0..59]
+            ///
+            inline period_type minute(){ return period_type(marks::minute); }
+            ///
+            ///  Get period_type for: second [0..59]
+            ///
+            inline period_type second(){ return period_type(marks::second); }
+            ///
+            ///  Get period_type for: The week number in the year
+            ///
+            inline period_type week_of_year(){ return period_type(marks::week_of_year); }
+            ///
+            ///  Get period_type for: The week number withing current month
+            ///
+            inline period_type week_of_month(){ return period_type(marks::week_of_month); }
+            ///
+            ///  Get period_type for: First day of week, constant, for example Sunday in US = 1, Monday in France = 2
+            ///
+            inline period_type first_day_of_week(){ return period_type(marks::first_day_of_week); }
 
             ///
-            /// Predefined constant for Sunday
+            ///  Get date_time_period for: Era i.e. AC, BC in Gregorian and Julian calendar, range [0,1]
             ///
-            static const date_time_period sunday(day_of_week,1);
+            inline date_time_period era(int v) { return date_time_period(era(),v); } 
             ///
-            /// Predefined constant for Monday 
+            ///  Get date_time_period for: Year, it is calendar specific, for example 2011 in Gregorian calendar.
             ///
-            static const date_time_period monday(day_of_week,2);
+            inline date_time_period year(int v) { return date_time_period(year(),v); } 
             ///
-            /// Predefined constant for Tuesday
+            ///  Get date_time_period for: Extended year for Gregorian/Julian calendars, where 1 BC == 0, 2 BC == -1.
             ///
-            static const date_time_period tuesday(day_of_week,3);
+            inline date_time_period extended_year(int v) { return date_time_period(extended_year(),v); } 
             ///
-            /// Predefined constant for Wednesday
+            ///  Get date_time_period for: The month of year, calendar specific, in Gregorian [0..11]
             ///
-            static const date_time_period wednesday(day_of_week,4);
+            inline date_time_period month(int v) { return date_time_period(month(),v); } 
             ///
-            /// Predefined constant for Thursday
+            ///  Get date_time_period for: The day of month, calendar specific, in Gregorian [1..31]
             ///
-            static const date_time_period thursday(day_of_week,5);
+            inline date_time_period day(int v) { return date_time_period(day(),v); } 
             ///
-            /// Predefined constant for Friday
+            ///  Get date_time_period for: The number of day in year, starting from 1, in Gregorian  [1..366]
             ///
-            static const date_time_period friday(day_of_week,6);
+            inline date_time_period day_of_year(int v) { return date_time_period(day_of_year(),v); } 
             ///
-            /// Predefined constant for Saturday
+            ///  Get date_time_period for: Day of week, Sunday=1, Monday=2,..., Saturday=7.
             ///
-            static const date_time_period saturday(day_of_week,7);
+            /// Note that that updating this value respects local day of week, so for example,
+            /// If first day of week is Monday and the current day is Tuesday then setting
+            /// the value to Sunday (1) would forward the date by 5 days forward and not backward
+            /// by two days as it could be expected if the numbers were taken as is.
             ///
-            /// Predefined constant for AM (Ante Meridiem)
+            inline date_time_period day_of_week(int v) { return date_time_period(day_of_week(),v); } 
             ///
-            static const date_time_period am(am_pm,0);
+            ///  Get date_time_period for: Original number of the day of the week in month. For example 1st Sunday, 
+            /// 2nd Sunday, etc. in Gregorian [1..5]
             ///
-            /// Predefined constant for PM (Post Meridiem)
+            inline date_time_period day_of_week_in_month(int v) { return date_time_period(day_of_week_in_month(),v); } 
             ///
-            static const date_time_period pm(am_pm,1);
+            ///  Get date_time_period for: Local day of week, for example in France Monday is 1, in US Sunday is 1, [1..7]
+            ///
+            inline date_time_period day_of_week_local(int v) { return date_time_period(day_of_week_local(),v); } 
+            ///
+            ///  Get date_time_period for: 24 clock hour [0..23]
+            ///
+            inline date_time_period hour(int v) { return date_time_period(hour(),v); } 
+            ///
+            ///  Get date_time_period for: 12 clock hour [0..11]
+            ///
+            inline date_time_period hour_12(int v) { return date_time_period(hour_12(),v); } 
+            ///
+            ///  Get date_time_period for: am or pm marker [0..1]
+            ///
+            inline date_time_period am_pm(int v) { return date_time_period(am_pm(),v); } 
+            ///
+            ///  Get date_time_period for: minute [0..59]
+            ///
+            inline date_time_period minute(int v) { return date_time_period(minute(),v); } 
+            ///
+            ///  Get date_time_period for: second [0..59]
+            ///
+            inline date_time_period second(int v) { return date_time_period(second(),v); } 
+            ///
+            ///  Get date_time_period for: The week number in the year
+            ///
+            inline date_time_period week_of_year(int v) { return date_time_period(week_of_year(),v); } 
+            ///
+            ///  Get date_time_period for: The week number withing current month
+            ///
+            inline date_time_period week_of_month(int v) { return date_time_period(week_of_month(),v); } 
+            ///
+            ///  Get date_time_period for: First day of week, constant, for example Sunday in US = 1, Monday in France = 2
+            ///
+            inline date_time_period first_day_of_week(int v) { return date_time_period(first_day_of_week(),v); } 
+
+            ///
+            /// Get predefined constant for January
+            ///
+            inline date_time_period january() { return date_time_period(month(),0); }
+            ///
+            /// Get predefined constant for February
+            ///
+            inline date_time_period february() { return date_time_period(month(),1); }
+            ///
+            /// Get predefined constant for March
+            ///
+            inline date_time_period march() { return date_time_period(month(),2); }
+            ///
+            /// Get predefined constant for April
+            ///
+            inline date_time_period april() { return date_time_period(month(),3); }
+            ///
+            /// Get predefined constant for May
+            ///
+            inline date_time_period may() { return date_time_period(month(),4); }
+            ///
+            /// Get predefined constant for June
+            ///
+            inline date_time_period june() { return date_time_period(month(),5); }
+            ///
+            /// Get predefined constant for July
+            ///
+            inline date_time_period july() { return date_time_period(month(),6); }
+            ///
+            /// Get predefined constant for August
+            ///
+            inline date_time_period august() { return date_time_period(month(),7); }
+            ///
+            /// Get predefined constant for September
+            ///
+            inline date_time_period september() { return date_time_period(month(),8); }
+            ///
+            /// Get predefined constant for October 
+            ///
+            inline date_time_period october() { return date_time_period(month(),9); }
+            ///
+            /// Get predefined constant for November
+            ///
+            inline date_time_period november() { return date_time_period(month(),10); }
+            ///
+            /// Get predefined constant for December
+            ///
+            inline date_time_period december() { return date_time_period(month(),11); }
+
+            ///
+            /// Get predefined constant for Sunday
+            ///
+            inline date_time_period sunday() { return date_time_period(day_of_week(),1); }
+            ///
+            /// Get predefined constant for Monday 
+            ///
+            inline date_time_period monday() { return date_time_period(day_of_week(),2); }
+            ///
+            /// Get predefined constant for Tuesday
+            ///
+            inline date_time_period tuesday() { return date_time_period(day_of_week(),3); }
+            ///
+            /// Get predefined constant for Wednesday
+            ///
+            inline date_time_period wednesday() { return date_time_period(day_of_week(),4); }
+            ///
+            /// Get predefined constant for Thursday
+            ///
+            inline date_time_period thursday() { return date_time_period(day_of_week(),5); }
+            ///
+            /// Get predefined constant for Friday
+            ///
+            inline date_time_period friday() { return date_time_period(day_of_week(),6); }
+            ///
+            /// Get predefined constant for Saturday
+            ///
+            inline date_time_period saturday() { return date_time_period(day_of_week(),7); }
+            ///
+            /// Get predefined constant for AM (Ante Meridiem)
+            ///
+            inline date_time_period am() { return date_time_period(am_pm(),0); }
+            ///
+            /// Get predefined constant for PM (Post Meridiem)
+            ///
+            inline date_time_period pm() { return date_time_period(am_pm(),1); }
 
             ///
             /// convers period_type to date_time_period(f,1)
@@ -173,259 +331,32 @@ namespace booster {
             ///
             /// Create date_time_period of type \a f with value \a v. 
             ///
-            inline date_time_period operator*(period::period_type f,char v)
+            template<typename T>
+            date_time_period operator*(period::period_type f,T v)
             {
                 return date_time_period(f,v);
             }
 
-            ///
-            /// Create date_time_period of type \a f with value \a v. 
-            ///
-            inline date_time_period operator*(char v,period::period_type f)
-            {
-                return date_time_period(f,v);
-            }
-
-
-            ///
-            /// Create date_time_period of type \a f with value \a v. 
-            ///
-            inline date_time_period operator*(char v,date_time_period f)
-            {
-                return date_time_period(f.type,f.value*v);
-            }
-
-            ///
-            /// Create date_time_period of type \a f with value \a v. 
-            ///
-            inline date_time_period operator*(date_time_period f,char v)
-            {
-                return date_time_period(f.type,f.value*v);
-            }
-
-            ///
-            /// Create date_time_period of type \a f with value \a v. 
-            ///
-            inline date_time_period operator*(period::period_type f,short int v)
-            {
-                return date_time_period(f,v);
-            }
-
-            ///
-            /// Create date_time_period of type \a f with value \a v. 
-            ///
-            inline date_time_period operator*(short int v,period::period_type f)
-            {
-                return date_time_period(f,v);
-            }
-
-            ///
-            /// Create date_time_period of type \a f with value \a v. 
-            ///
-            inline date_time_period operator*(short int v,date_time_period f)
-            {
-                return date_time_period(f.type,f.value*v);
-            }
-
-            ///
-            /// Create date_time_period of type \a f with value \a v. 
-            ///
-            inline date_time_period operator*(date_time_period f,short int v)
-            {
-                return date_time_period(f.type,f.value*v);
-            }
-
-
-            ///
-            /// Create date_time_period of type \a f with value \a v. 
-            ///
-            inline date_time_period operator*(period::period_type f,int v)
-            {
-                return date_time_period(f,v);
-            }
-
-            ///
-            /// Create date_time_period of type \a f with value \a v. 
-            ///
-            inline date_time_period operator*(int v,period::period_type f)
-            {
-                return date_time_period(f,v);
-            }
-
-            ///
-            /// Create date_time_period of type \a f with value \a v. 
-            ///
-            inline date_time_period operator*(int v,date_time_period f)
-            {
-                return date_time_period(f.type,f.value*v);
-            }
-
-            ///
-            /// Create date_time_period of type \a f with value \a v. 
-            ///
-            inline date_time_period operator*(date_time_period f,int v)
-            {
-                return date_time_period(f.type,f.value*v);
-            }
-
-            ///
-            /// Create date_time_period of type \a f with value \a v. 
-            ///
-            inline date_time_period operator*(period::period_type f,long int v)
-            {
-                return date_time_period(f,v);
-            }
-
-            ///
-            /// Create date_time_period of type \a f with value \a v. 
-            ///
-            inline date_time_period operator*(long int v,period::period_type f)
+            template<typename T>
+            date_time_period operator*(T v,period::period_type f)
             {
                 return date_time_period(f,v);
             }
             ///
             /// Create date_time_period of type \a f with value \a v. 
             ///
-            inline date_time_period operator*(long int v,date_time_period f)
+            template<typename T>
+            date_time_period operator*(T v,date_time_period f)
             {
                 return date_time_period(f.type,f.value*v);
             }
 
-            ///
-            /// Create date_time_period of type \a f with value \a v. 
-            ///
-            inline date_time_period operator*(date_time_period f,long int v)
+            template<typename T>
+            date_time_period operator*(date_time_period f,T v)
             {
                 return date_time_period(f.type,f.value*v);
             }
 
-            ///
-            /// Create date_time_period of type \a f with value \a v. 
-            ///
-            inline date_time_period operator*(period::period_type f,unsigned char v)
-            {
-                return date_time_period(f,v);
-            }
-
-            ///
-            /// Create date_time_period of type \a f with value \a v. 
-            ///
-            inline date_time_period operator*(unsigned char v,period::period_type f)
-            {
-                return date_time_period(f,v);
-            }
-
-            ///
-            /// Create date_time_period of type \a f with value \a v. 
-            ///
-            inline date_time_period operator*(unsigned char v,date_time_period f)
-            {
-                return date_time_period(f.type,f.value*v);
-            }
-
-            ///
-            /// Create date_time_period of type \a f with value \a v. 
-            ///
-            inline date_time_period operator*(date_time_period f,unsigned char v)
-            {
-                return date_time_period(f.type,f.value*v);
-            }
-
-            ///
-            /// Create date_time_period of type \a f with value \a v. 
-            ///
-            inline date_time_period operator*(period::period_type f,unsigned short int v)
-            {
-                return date_time_period(f,v);
-            }
-
-            ///
-            /// Create date_time_period of type \a f with value \a v. 
-            ///
-            inline date_time_period operator*(unsigned short int v,period::period_type f)
-            {
-                return date_time_period(f,v);
-            }
-
-            ///
-            /// Create date_time_period of type \a f with value \a v. 
-            ///
-            inline date_time_period operator*(unsigned short int v,date_time_period f)
-            {
-                return date_time_period(f.type,f.value*v);
-            }
-
-            ///
-            /// Create date_time_period of type \a f with value \a v. 
-            ///
-            inline date_time_period operator*(date_time_period f,unsigned short int v)
-            {
-                return date_time_period(f.type,f.value*v);
-            }
-
-            ///
-            /// Create date_time_period of type \a f with value \a v. 
-            ///
-            inline date_time_period operator*(period::period_type f,unsigned int v)
-            {
-                return date_time_period(f,v);
-            }
-
-            ///
-            /// Create date_time_period of type \a f with value \a v. 
-            ///
-            inline date_time_period operator*(unsigned int v,period::period_type f)
-            {
-                return date_time_period(f,v);
-            }
-            
-            ///
-            /// Create date_time_period of type \a f with value \a v. 
-            ///
-            inline date_time_period operator*(unsigned int v,date_time_period f)
-            {
-                return date_time_period(f.type,f.value*v);
-            }
-            
-            ///
-            /// Create date_time_period of type \a f with value \a v. 
-            ///
-            inline date_time_period operator*(date_time_period f,unsigned int v)
-            {
-                return date_time_period(f.type,f.value*v);
-            }
-
-            ///
-            /// Create date_time_period of type \a f with value \a v. 
-            ///
-            inline date_time_period operator*(period::period_type f,unsigned long int v)
-            {
-                return date_time_period(f,v);
-            }
-            
-            ///
-            /// Create date_time_period of type \a f with value \a v. 
-            ///
-            inline date_time_period operator*(unsigned long int v,period::period_type f)
-            {
-                return date_time_period(f,v);
-            }
-            
-            ///
-            /// Create date_time_period of type \a f with value \a v. 
-            ///
-            inline date_time_period operator*(unsigned long int v,date_time_period f)
-            {
-                return date_time_period(f.type,f.value*v);
-            }
-            
-            ///
-            /// Create date_time_period of type \a f with value \a v. 
-            ///
-            inline date_time_period operator*(date_time_period f,unsigned long int v)
-            {
-                return date_time_period(f.type,f.value*v);
-            }
 
         } // period
 
@@ -475,20 +406,20 @@ namespace booster {
             ///
             size_t size() const
             {
-                if(basic_[0].type == period::invalid)
+                if(basic_[0].type == period::period_type())
                     return 0;
-                if(basic_[1].type == period::invalid)
+                if(basic_[1].type == period::period_type())
                     return 1;
-                if(basic_[2].type == period::invalid)
+                if(basic_[2].type == period::period_type())
                     return 2;
-                if(basic_[3].type == period::invalid)
+                if(basic_[3].type == period::period_type())
                     return 3;
                 return 4+periods_.size();
             }
             ///
             /// Get item at position \a n the set, n should be in range [0,size)
             ///
-            date_time_period const &operator[](unsigned n) const 
+            date_time_period const &operator[](size_t n) const 
             {
                 if(n >= size())
                     throw booster::out_of_range("Invalid index to date_time_period");
@@ -911,7 +842,7 @@ namespace booster {
         /// For example:
         /// \code
         ///  date_time now(time(0),hebrew_calendar)
-        ///  cout << "Year:" t / perood::year <<" Full Date:"<< as::date_time << t;
+        ///  cout << "Year: " << period::year(now) <<" Full Date:"<< now;
         /// \endcode
         ///
         /// The output may be Year:5770 Full Date:Jan 1, 2010
@@ -919,7 +850,22 @@ namespace booster {
         template<typename CharType>
         std::basic_ostream<CharType> &operator<<(std::basic_ostream<CharType> &out,date_time const &t)
         {
-            out << t.time();
+            double time_point = t.time();
+            uint64_t display_flags = ios_info::get(out).display_flags();
+            if  (
+                    display_flags == flags::date 
+                    || display_flags == flags::time 
+                    || display_flags == flags::datetime 
+                    || display_flags == flags::strftime
+                ) 
+            {
+                out << time_point;
+            }
+            else {
+                ios_info::get(out).display_flags(flags::datetime);
+                out << time_point;
+                ios_info::get(out).display_flags(display_flags);
+            }
             return out;
         }
 
@@ -932,7 +878,21 @@ namespace booster {
         std::basic_istream<CharType> &operator>>(std::basic_istream<CharType> &in,date_time &t)
         {
             double v;
-            in >> v;
+            uint64_t display_flags = ios_info::get(in).display_flags();
+            if  (
+                    display_flags == flags::date 
+                    || display_flags == flags::time 
+                    || display_flags == flags::datetime 
+                    || display_flags == flags::strftime
+                ) 
+            {
+                in >> v;
+            }
+            else {
+                ios_info::get(in).display_flags(flags::datetime);
+                in >> v;
+                ios_info::get(in).display_flags(display_flags);
+            }
             t.time(v);
             return in;
         }
@@ -957,9 +917,17 @@ namespace booster {
                 e_(second)
             {
             }
-
+            
             ///
             /// find a difference in terms of period_type \a f
+            ///
+            int get(period::period_type f) const
+            {
+                return start().difference(end(),f);
+            }
+
+            ///
+            /// Syntactic sugar for get(f)
             ///
             int operator / (period::period_type f) const
             {
@@ -988,23 +956,156 @@ namespace booster {
             return date_time_duration(earlier,later);
         }
 
+        
+        namespace period {
+            ///
+            ///  Extract from date_time numerical value of Era i.e. AC, BC in Gregorian and Julian calendar, range [0,1]
+            ///
+            inline int era(date_time const &dt) { return dt.get(era()); } 
+            ///
+            ///  Extract from date_time numerical value of Year, it is calendar specific, for example 2011 in Gregorian calendar.
+            ///
+            inline int year(date_time const &dt) { return dt.get(year()); } 
+            ///
+            ///  Extract from date_time numerical value of Extended year for Gregorian/Julian calendars, where 1 BC == 0, 2 BC == -1.
+            ///
+            inline int extended_year(date_time const &dt) { return dt.get(extended_year()); } 
+            ///
+            ///  Extract from date_time numerical value of The month of year, calendar specific, in Gregorian [0..11]
+            ///
+            inline int month(date_time const &dt) { return dt.get(month()); } 
+            ///
+            ///  Extract from date_time numerical value of The day of month, calendar specific, in Gregorian [1..31]
+            ///
+            inline int day(date_time const &dt) { return dt.get(day()); } 
+            ///
+            ///  Extract from date_time numerical value of The number of day in year, starting from 1, in Gregorian  [1..366]
+            ///
+            inline int day_of_year(date_time const &dt) { return dt.get(day_of_year()); } 
+            ///
+            ///  Extract from date_time numerical value of Day of week, Sunday=1, Monday=2,..., Saturday=7.
+            ///
+            /// Note that that updating this value respects local day of week, so for example,
+            /// If first day of week is Monday and the current day is Tuesday then setting
+            /// the value to Sunday (1) would forward the date by 5 days forward and not backward
+            /// by two days as it could be expected if the numbers were taken as is.
+            ///
+            inline int day_of_week(date_time const &dt) { return dt.get(day_of_week()); } 
+            ///
+            ///  Extract from date_time numerical value of Original number of the day of the week in month. For example 1st Sunday, 
+            /// 2nd Sunday, etc. in Gregorian [1..5]
+            ///
+            inline int day_of_week_in_month(date_time const &dt) { return dt.get(day_of_week_in_month()); } 
+            ///
+            ///  Extract from date_time numerical value of Local day of week, for example in France Monday is 1, in US Sunday is 1, [1..7]
+            ///
+            inline int day_of_week_local(date_time const &dt) { return dt.get(day_of_week_local()); } 
+            ///
+            ///  Extract from date_time numerical value of 24 clock hour [0..23]
+            ///
+            inline int hour(date_time const &dt) { return dt.get(hour()); } 
+            ///
+            ///  Extract from date_time numerical value of 12 clock hour [0..11]
+            ///
+            inline int hour_12(date_time const &dt) { return dt.get(hour_12()); } 
+            ///
+            ///  Extract from date_time numerical value of am or pm marker [0..1]
+            ///
+            inline int am_pm(date_time const &dt) { return dt.get(am_pm()); } 
+            ///
+            ///  Extract from date_time numerical value of minute [0..59]
+            ///
+            inline int minute(date_time const &dt) { return dt.get(minute()); } 
+            ///
+            ///  Extract from date_time numerical value of second [0..59]
+            ///
+            inline int second(date_time const &dt) { return dt.get(second()); } 
+            ///
+            ///  Extract from date_time numerical value of The week number in the year
+            ///
+            inline int week_of_year(date_time const &dt) { return dt.get(week_of_year()); } 
+            ///
+            ///  Extract from date_time numerical value of The week number withing current month
+            ///
+            inline int week_of_month(date_time const &dt) { return dt.get(week_of_month()); } 
+            ///
+            ///  Extract from date_time numerical value of First day of week, constant, for example Sunday in US = 1, Monday in France = 2
+            ///
+            inline int first_day_of_week(date_time const &dt) { return dt.get(first_day_of_week()); } 
+            
+            ///
+            ///  Extract from date_time_duration numerical value of duration in  Era i.e. AC, BC in Gregorian and Julian calendar, range [0,1]
+            ///
+            inline int era(date_time_duration const &dt) { return dt.get(era()); } 
+            ///
+            ///  Extract from date_time_duration numerical value of duration in years
+            ///
+            inline int year(date_time_duration const &dt) { return dt.get(year()); } 
+            ///
+            ///  Extract from date_time_duration numerical value of duration in extended years (for Gregorian/Julian calendars, where 1 BC == 0, 2 BC == -1).
+            ///
+            inline int extended_year(date_time_duration const &dt) { return dt.get(extended_year()); } 
+            ///
+            ///  Extract from date_time_duration numerical value of duration in months
+            ///
+            inline int month(date_time_duration const &dt) { return dt.get(month()); } 
+            ///
+            ///  Extract from date_time_duration numerical value of duration in days of month
+            ///
+            inline int day(date_time_duration const &dt) { return dt.get(day()); } 
+            ///
+            ///  Extract from date_time_duration numerical value of duration in days of year
+            ///
+            inline int day_of_year(date_time_duration const &dt) { return dt.get(day_of_year()); } 
+            ///
+            ///  Extract from date_time_duration numerical value of duration in days of week
+            ///
+            inline int day_of_week(date_time_duration const &dt) { return dt.get(day_of_week()); } 
+            ///
+            ///  Extract from date_time_duration numerical value of duration in original number of the day of the week in month
+            ///
+            inline int day_of_week_in_month(date_time_duration const &dt) { return dt.get(day_of_week_in_month()); } 
+            ///
+            ///  Extract from date_time_duration numerical value of duration in local day of week
+            ///
+            inline int day_of_week_local(date_time_duration const &dt) { return dt.get(day_of_week_local()); } 
+            ///
+            ///  Extract from date_time_duration numerical value of duration in hours
+            ///
+            inline int hour(date_time_duration const &dt) { return dt.get(hour()); } 
+            ///
+            ///  Extract from date_time_duration numerical value of duration in  12 clock hours
+            ///
+            inline int hour_12(date_time_duration const &dt) { return dt.get(hour_12()); } 
+            ///
+            ///  Extract from date_time_duration numerical value of duration in  am or pm markers
+            ///
+            inline int am_pm(date_time_duration const &dt) { return dt.get(am_pm()); } 
+            ///
+            ///  Extract from date_time_duration numerical value of duration in  minutes
+            ///
+            inline int minute(date_time_duration const &dt) { return dt.get(minute()); } 
+            ///
+            ///  Extract from date_time_duration numerical value of duration in  seconds
+            ///
+            inline int second(date_time_duration const &dt) { return dt.get(second()); } 
+            ///
+            ///  Extract from date_time_duration numerical value of duration in the week number in the year
+            ///
+            inline int week_of_year(date_time_duration const &dt) { return dt.get(week_of_year()); } 
+            ///
+            ///  Extract from date_time_duration numerical value of duration in  The week number withing current month
+            ///
+            inline int week_of_month(date_time_duration const &dt) { return dt.get(week_of_month()); } 
+            ///
+            ///  Extract from date_time_duration numerical value of duration in the first day of week
+            ///
+            inline int first_day_of_week(date_time_duration const &dt) { return dt.get(first_day_of_week()); } 
 
-        ///
-        /// \brief namespace that holds function for operating global time zone identifier
-        ///
-        namespace time_zone {
-            ///
-            /// Get global time zone identifier. If empty, system time zone is used
-            ///
-            BOOSTER_API std::string global();
-            ///
-            /// Set global time zone identifier returing pervious one. If empty, system time zone is used
-            ///
-            BOOSTER_API std::string global(std::string const &new_tz);
+
         }
-
+        
         /// @}
-
 
 
     } // locale

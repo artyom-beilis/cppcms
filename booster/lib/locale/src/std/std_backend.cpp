@@ -12,6 +12,8 @@
 #include "../util/locale_data.h"
 #include "../util/gregorian.h"
 #include <booster/locale/util.h>
+#include <algorithm>
+#include <iterator>
 
 #if defined(BOOSTER_WIN_NATIVE)
 #  ifndef NOMINMAX
@@ -181,7 +183,7 @@ namespace impl_std {
                     minf.country = data_.country;
                     minf.variant = data_.variant;
                     minf.encoding = data_.encoding;
-                    minf.domains = domains_;
+                    std::copy(domains_.begin(),domains_.end(),std::back_inserter<gnu_gettext::messages_info::domains_type>(minf.domains));
                     minf.paths = paths_;
                     switch(type) {
                     case char_facet:

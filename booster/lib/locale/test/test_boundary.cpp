@@ -14,11 +14,28 @@ int main()
 }
 #else
 
+//#define BOOST_LOCALE_ERROR_LIMIT 1000000
+//#define BOOST_LOCALE_ERROR_LIMIT 0
+
 #include <booster/locale/boundary.h>
 #include <booster/locale/generator.h>
 #include "test_locale.h"
 #include "test_locale_tools.h"
 #include <list>
+
+// Debugging code
+
+template<typename Char>
+void print_str(std::basic_string<Char> const &/*s*/)
+{
+}
+
+template<>
+void print_str<char>(std::basic_string<char> const &s)
+{
+    std::cout << "[" << s <<"]" << std::endl;
+}
+
 
 namespace lb = booster::locale::boundary;
 
@@ -73,89 +90,246 @@ void test_word_container(Iterator begin,Iterator end,
         // token iterator tests
         //
         {
-            typedef lb::token_iterator<Iterator> iter_type;
-            lb::mapping<iter_type> map(bt,begin,end,l);
+            lb::token_index<Iterator> map(bt,begin,end,l);
+            typedef typename lb::token_index<Iterator>::iterator iter_type;
 
-            map.mask(mask);
-        
-            unsigned i=0;
-            iter_type p;
-            for(p=map.begin();p!=map.end();++p,i++) {
-                p.full_select(false);
-                TEST(*p==chunks[i]);
-                p.full_select(true);
-                TEST(*p==fchunks[i]);
-                TEST(p.mark() == unsigned(masks[i]));
-            }
+            map.rule(mask);
 
-            TEST(chunks.size() == i);
+            {        
+                unsigned i=0;
+                iter_type p;
+                map.full_select(false);
+                for(p=map.begin();p!=map.end();++p,i++) {
+                    TEST(p->str()==chunks[i]);
+                    TEST(p->rule() == unsigned(masks[i]));
+                }
                 
-            
-            for(;;) {
-                if(p==map.begin()) {
-                    TEST(i==0);
-                    break;
+                TEST(chunks.size() == i);
+                for(;;) {
+                    if(p==map.begin()) {
+                        TEST(i==0);
+                        break;
+                    }
+                    else {
+                        --p;
+                        TEST(p->str()==chunks[--i]);
+                        TEST(p->rule() == unsigned(masks[i]));
+                    }
                 }
-                else {
+                for(i=0,p=map.end();i<chunks.size();i++){
                     --p;
-                    p.full_select(false);
-                    TEST(*p==chunks[--i]);
-                    p.full_select(true);
-                    TEST(p.mark() == unsigned(masks[i]));
+                    unsigned index = chunks.size() - i - 1;
+                    TEST(p->str()==chunks[index]);
+                    TEST(p->rule() == unsigned(masks[index]));
                 }
+                TEST(p==map.begin());
+            }
+
+            {
+                unsigned i=0;
+                iter_type p;
+                map.full_select(true);
+                for(p=map.begin();p!=map.end();++p,i++) {
+                    TEST(p->str()==fchunks[i]);
+                    TEST(p->rule() == unsigned(masks[i]));
+                }
+
+                TEST(chunks.size() == i);
+                
+                for(;;) {
+                    if(p==map.begin()) {
+                        TEST(i==0);
+                        break;
+                    }
+                    else {
+                        --p;
+                        if(p->str()!=fchunks[i-1]) {
+                            print_str(p->str());
+                            print_str(fchunks[i-1]);
+                        }
+                        TEST(p->str()==fchunks[--i]);
+                        TEST(p->rule() == unsigned(masks[i]));
+                    }
+                }
+                
+                for(i=0,p=map.end();i<chunks.size();i++){
+                    --p;
+                    unsigned index = chunks.size() - i - 1;
+                    TEST(p->str()==fchunks[index]);
+                    TEST(p->rule() == unsigned(masks[index]));
+                }
+                TEST(p==map.begin());
             }
             
-            unsigned chunk_ptr=0;
-            i=0;
-            for(Iterator optr=begin;optr!=end;optr++,i++) {
-                p=optr;
-                if(chunk_ptr < pos.size() && i>=unsigned(pos[chunk_ptr])){
-                    chunk_ptr++;
+            {            
+                iter_type p;
+                unsigned chunk_ptr=0;
+                unsigned i=0;
+                map.full_select(false);
+                for(Iterator optr=begin;optr!=end;optr++,i++) {
+                    p=map.find(optr);
+                    if(chunk_ptr < pos.size() && i>=unsigned(pos[chunk_ptr])){
+                        chunk_ptr++;
+                    }
+                    if(chunk_ptr>=pos.size()) {
+                        TEST(p==map.end());
+                    }
+                    else {
+                        TEST(p->str()==chunks[chunk_ptr]);
+                        TEST(p->rule()==unsigned(masks[chunk_ptr]));
+                    }
                 }
-                if(chunk_ptr>=pos.size()) {
-                    TEST(p==map.end());
-                }
-                else {
-                    p.full_select(false);
-                    TEST(*p==chunks[chunk_ptr]);
-                    p.full_select(true);
-                    TEST(*p==fchunks[chunk_ptr]);
-                    TEST(p.mark()==unsigned(masks[chunk_ptr]));
+            }
+            {            
+                iter_type p;
+                unsigned chunk_ptr=0;
+                unsigned i=0;
+                map.full_select(true);
+                for(Iterator optr=begin;optr!=end;optr++,i++) {
+                    p=map.find(optr);
+                    if(chunk_ptr < pos.size() && i>=unsigned(pos[chunk_ptr])){
+                        chunk_ptr++;
+                    }
+                    if(chunk_ptr>=pos.size()) {
+                        TEST(p==map.end());
+                    }
+                    else {
+                        TEST(p->str()==fchunks[chunk_ptr]);
+                        TEST(p->rule()==unsigned(masks[chunk_ptr]));
+                    }
                 }
             }
 
         } // token iterator tests
 
         { // break iterator tests
-            typedef lb::break_iterator<Iterator> iter_type;
-            lb::mapping<iter_type> map(bt,begin,end,l);
+            lb::bound_index<Iterator> map(bt,begin,end,l);
+            typedef typename lb::bound_index<Iterator>::iterator iter_type;
 
-            map.mask(mask);
+            map.rule(mask);
         
             unsigned i=0;
             iter_type p;
             for(p=map.begin();p!=map.end();++p,i++) {
-                TEST(*p==iters[i]);
-                TEST(p.mark()==bmasks[i]);
+                TEST(p->iterator()==iters[i]);
+                TEST(p->rule()==bmasks[i]);
             }
 
             TEST(iters.size() == i);
+
             do {
                 --p;
                 --i;
-                TEST(*p==iters[i]);
+                TEST(p->iterator()==iters.at(i));
             } while(p!=map.begin());
             TEST(i==0);
 
             unsigned iters_ptr=0;
             for(Iterator optr=begin;optr!=end;optr++) {
-                p=optr;
-                TEST(*p==iters[iters_ptr]);
+                p=map.find(optr);
+                TEST(p->iterator()==iters[iters_ptr]);
                 if(iters.at(iters_ptr)==optr)
                     iters_ptr++;
             }
         
         } // break iterator tests
+
+        { // copy test
+            typedef lb::token_index<Iterator> ti_type;
+            typedef lb::bound_index<Iterator> bi_type;
+            {   // token to bound
+                ti_type ti(bt,begin,end,l);
+                ti.rule(mask);
+                {
+                    bi_type bi(ti);
+                    bi.rule(mask);
+                    unsigned i=0;
+                    typename bi_type::iterator p;
+                    for(p=bi.begin();p!=bi.end();++p,i++) {
+                        TEST(p->iterator()==iters[i]);
+                        TEST(p->rule()==bmasks[i]);
+                    }
+                }
+                {
+                    bi_type bi;
+                    bi.rule(mask);
+                    bi = ti;
+                    unsigned i=0;
+                    typename bi_type::iterator p;
+                    for(p=bi.begin();p!=bi.end();++p,i++) {
+                        TEST(p->iterator()==iters[i]);
+                        TEST(p->rule()==bmasks[i]);
+                    }
+                }
+                // bound to bound
+                bi_type bi_2(bt,begin,end,l);
+                bi_2.rule(mask);
+                {
+                    bi_type bi(bi_2);
+                    unsigned i=0;
+                    typename bi_type::iterator p;
+                    for(p=bi.begin();p!=bi.end();++p,i++) {
+                        TEST(p->iterator()==iters[i]);
+                        TEST(p->rule()==bmasks[i]);
+                    }
+                }
+                {
+                    bi_type bi;
+                    bi = bi_2;
+                    unsigned i=0;
+                    typename bi_type::iterator p;
+                    for(p=bi.begin();p!=bi.end();++p,i++) {
+                        TEST(p->iterator()==iters[i]);
+                        TEST(p->rule()==bmasks[i]);
+                    }
+                }
+            }
+            {   // bound to token
+                bi_type bi(bt,begin,end,l);
+                {
+                    ti_type ti(bi);
+                    ti.rule(mask);
+                    unsigned i=0;
+                    typename ti_type::iterator p;
+                    for(p=ti.begin();p!=ti.end();++p,i++) {
+                        TEST(p->str()==chunks[i]);
+                        TEST(p->rule()==unsigned(masks[i]));
+                    }
+                }
+                {
+                    ti_type ti;
+                    ti.rule(mask);
+                    ti = (bi);
+                    unsigned i=0;
+                    typename ti_type::iterator p;
+                    for(p=ti.begin();p!=ti.end();++p,i++) {
+                        TEST(p->str()==chunks[i]);
+                        TEST(p->rule()==unsigned(masks[i]));
+                    }
+                }
+                ti_type ti_2(bt,begin,end,l);
+                ti_2.rule(mask);
+                {
+                    ti_type ti(ti_2);
+                    unsigned i=0;
+                    typename ti_type::iterator p;
+                    for(p=ti.begin();p!=ti.end();++p,i++) {
+                        TEST(p->str()==chunks[i]);
+                        TEST(p->rule()==unsigned(masks[i]));
+                    }
+                }
+                {
+                    ti_type ti;
+                    ti = (ti_2);
+                    unsigned i=0;
+                    typename ti_type::iterator p;
+                    for(p=ti.begin();p!=ti.end();++p,i++) {
+                        TEST(p->str()==chunks[i]);
+                        TEST(p->rule()==unsigned(masks[i]));
+                    }
+                }
+            }
+        }
     } // for mask
 
 }

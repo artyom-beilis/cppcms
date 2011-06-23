@@ -18,10 +18,14 @@
 int error_counter=0;
 int test_counter=0;
 
+#ifndef BOOSTER_LOCALE_ERROR_LIMIT
+#define BOOSTER_LOCALE_ERROR_LIMIT 20
+#endif
 
-#define THROW_IF_TOO_BIG(X)         \
-do {                                \
-    if((X) > 20)                    \
+
+#define THROW_IF_TOO_BIG(X)                                                     \
+do {                                                                            \
+    if((X) > BOOSTER_LOCALE_ERROR_LIMIT)                                          \
         throw booster::runtime_error("Error limits reached, stopping unit test");   \
 }while(0)
 

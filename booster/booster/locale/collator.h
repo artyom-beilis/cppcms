@@ -24,12 +24,12 @@ namespace locale {
     ///
     /// \defgroup collation Collation 
     ///
-    /// This module that introduces collation related classes
+    /// This module introduces collation related classes
     ///
     /// @{
 
     ///
-    /// \brief a base class that included collation level flags
+    /// \brief a base class that includes collation level flags
     ///
 
     class collator_base {
@@ -49,8 +49,8 @@ namespace locale {
     ///
     /// \brief Collation facet. 
     ///
-    /// It reimplements standard C++ stc::collate
-    /// allowing usage of std::locale class for direct string comparison
+    /// It reimplements standard C++ std::collate,
+    /// allowing usage of std::locale for direct string comparison
     ///
     template<typename CharType>
     class collator : 
@@ -59,7 +59,7 @@ namespace locale {
     {
     public:
         ///
-        /// Type of underlying character
+        /// Type of the underlying character
         ///
         typedef CharType char_type;
         ///
@@ -69,7 +69,10 @@ namespace locale {
         
 
         ///
-        /// Compare two strings in rage [b1,e1), [b2,e2) according using a collation level \a level. Calls do_compare
+        /// Compare two strings in rage [b1,e1),  [b2,e2) according using a collation level \a level. Calls do_compare
+        ///
+        /// Returns -1 if the first of the two strings sorts before the seconds, returns 1 if sorts after and 0 if
+        /// they considered equal.
         ///
         int compare(level_type level,
                     char_type const *b1,char_type const *e1,
@@ -79,7 +82,14 @@ namespace locale {
         }
         ///
         /// Create a binary string that can be compared to other in order to get collation order. The string is created
-        /// for text in range [b,e). It is useful for collation of multiple strings for text. Calls do_transform
+        /// for text in range [b,e). It is useful for collation of multiple strings for text.
+        ///
+        /// The transformation follows these rules:
+        /// \code
+        ///   compare(level,b1,e1,b2,e2) == sign( transform(level,b1,e1).compare(transform(level,b2,e2)) );
+        /// \endcode
+        ///
+        /// Calls do_transform
         ///
         string_type transform(level_type level,char_type const *b,char_type const *e) const
         {
@@ -87,7 +97,11 @@ namespace locale {
         }
 
         ///
-        /// Calculate a hash of a text in range [b,e). The value can be used for collation sensitive string comparison. Calls do_hash
+        /// Calculate a hash of a text in range [b,e). The value can be used for collation sensitive string comparison.
+        ///
+        /// If compare(level,b1,e1,b2,e2) == 0 then hash(level,b1,e1) == hash(level,b2,e2)
+        ///
+        /// Calls do_hash
         ///
         long hash(level_type level,char_type const *b,char_type const *e) const
         {
@@ -97,6 +111,10 @@ namespace locale {
         ///
         /// Compare two strings \a l and \a r using collation level \a level
         ///
+        /// Returns -1 if the first of the two strings sorts before the seconds, returns 1 if sorts after and 0 if
+        /// they considered equal.
+        ///
+        ///
         int compare(level_type level,string_type const &l,string_type const &r) const
         {
             return do_compare(level,l.data(),l.data()+l.size(),r.data(),r.data()+r.size());
@@ -104,6 +122,8 @@ namespace locale {
 
         ///
         /// Calculate a hash that can be used for collation sensitive string comparison of a string \a s
+        ///
+        /// If compare(level,s1,s2) == 0 then hash(level,s1) == hash(level,s2)
         ///
 
         long hash(level_type level,string_type const &s) const
@@ -113,6 +133,11 @@ namespace locale {
         ///
         /// Create a binary string from string \a s, that can be compared to other, useful for collation of multiple
         /// strings.
+        ///
+        /// The transformation follows these rules:
+        /// \code
+        ///   compare(level,s1,s2) == sign( transform(level,s1).compare(transform(level,s2)) );
+        /// \endcode
         ///
         string_type transform(level_type level,string_type const &s) const
         {
@@ -178,7 +203,7 @@ namespace locale {
 
     ///
     /// \brief This class can be used in STL algorithms and containers for comparison of strings
-    /// with different level then primary
+    /// with a level other than primary
     ///
     /// For example:
     ///

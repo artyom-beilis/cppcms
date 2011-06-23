@@ -13,6 +13,8 @@
 #include "cdata.h"
 #include "icu_backend.h"
 #include "../util/locale_data.h"
+#include <algorithm>
+#include <iterator>
 
 #include <unicode/ucnv.h>
 
@@ -108,7 +110,7 @@ namespace impl_icu {
                     minf.country = country_;
                     minf.variant = variant_;
                     minf.encoding = data_.encoding;
-                    minf.domains = domains_;
+                    std::copy(domains_.begin(),domains_.end(),std::back_inserter<gnu_gettext::messages_info::domains_type>(minf.domains));
                     minf.paths = paths_;
                     switch(type) {
                     case char_facet:

@@ -26,7 +26,7 @@
 #include "time_zone.h"
 
 #ifdef BOOSTER_MSVC
-#  pragma warning(disable : 4244) // loose data 
+#  pragma warning(disable : 4244) // lose data 
 #endif
 
 
@@ -63,13 +63,6 @@ namespace locale {
                 return cvt_.std(tmp);
             }
 
-            virtual string_type format(uint64_t value,size_t &code_points) const
-            {
-                icu::UnicodeString tmp;
-                icu_fmt_->format(static_cast<int64_t>(value),tmp);
-                code_points=tmp.countChar32();
-                return cvt_.std(tmp);
-            }
             virtual string_type format(int32_t value,size_t &code_points) const
             {
                 icu::UnicodeString tmp;
@@ -78,13 +71,6 @@ namespace locale {
                 #else
                 icu_fmt_->format(::int32_t(value),tmp);
                 #endif
-                code_points=tmp.countChar32();
-                return cvt_.std(tmp);
-            }
-            virtual string_type format(uint32_t value,size_t &code_points) const
-            {
-                icu::UnicodeString tmp;
-                icu_fmt_->format(static_cast<int64_t>(value),tmp);
                 code_points=tmp.countChar32();
                 return cvt_.std(tmp);
             }
@@ -98,32 +84,9 @@ namespace locale {
             {
                 return do_parse(str,value);
             }
-            virtual size_t parse(string_type const &str,uint32_t &value) const
-            {
-                int64_t v = 0;
-                size_t cut = do_parse(str,v);
-                if(cut==0)
-                    return 0;
-                if(v < 0 || v > std::numeric_limits<uint32_t>::max())
-                    return 0;
-                value=static_cast<uint32_t>(v);
-                return cut;
-            }
             virtual size_t parse(string_type const &str,int32_t &value) const
             {
                 return do_parse(str,value);
-            }
-
-            virtual size_t parse(string_type const &str,uint64_t &value) const
-            {
-                double v = 0;
-                size_t cut = do_parse(str,v);
-                if(cut==0)
-                    return 0;
-                if(v < 0 || v > std::numeric_limits<uint64_t>::max() || static_cast<uint64_t>(v) != v)
-                    return 0;
-                value=static_cast<uint64_t>(v);
-                return cut;
             }
 
             number_format(icu::NumberFormat *fmt,std::string codepage) :
@@ -201,15 +164,7 @@ namespace locale {
                 return do_format(value,code_points);
             }
 
-            virtual string_type format(uint64_t value,size_t &code_points) const
-            {
-                return do_format(value,code_points);
-            }
             virtual string_type format(int32_t value,size_t &code_points) const
-            {
-                return do_format(value,code_points);
-            }
-            virtual string_type format(uint32_t value,size_t &code_points) const
             {
                 return do_format(value,code_points);
             }
@@ -222,15 +177,7 @@ namespace locale {
             {
                 return do_parse(str,value);
             }
-            virtual size_t parse(string_type const &str,uint64_t &value) const
-            {
-                return do_parse(str,value);
-            }
             virtual size_t parse(string_type const &str,int32_t &value) const
-            {
-                return do_parse(str,value);
-            }
-            virtual size_t parse(string_type const &str,uint32_t &value) const
             {
                 return do_parse(str,value);
             }

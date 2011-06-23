@@ -24,10 +24,10 @@ int main()
     date_time start=now;
 
     // Set the first day of the first month of this year
-    start.set(period::month,now.minimum(period::month));
-    start.set(period::day,start.minimum(period::day));
+    start.set(period::month(),now.minimum(period::month()));
+    start.set(period::day(),start.minimum(period::day()));
 
-    int current_year = now / period::year;
+    int current_year = period::year(now);
 
 
     // Display current year
@@ -36,7 +36,7 @@ int main()
     //
     // Run forward untill current year is the date
     //
-    for(now=start;now / period::year == current_year;) {
+    for(now=start; period::year(now) == current_year;) {
 
         // Print heading of month
         if(calendar().is_gregorian()) 
@@ -44,24 +44,24 @@ int main()
         else
             std::cout << format("{1,ftime='%B'} ({1,ftime='%Y-%m-%d',locale=en} - {2,locale=en,ftime='%Y-%m-%d'})")
                 % now 
-                % date_time(now,now.maximum(period::day)*period::day) << std::endl;
+                % date_time(now,now.maximum(period::day())*period::day()) << std::endl;
 
         int first = calendar().first_day_of_week();
 
         // Print weeks days
         for(int i=0;i<7;i++) {
-            date_time tmp(now,period::day_of_week * (first + i));
+            date_time tmp(now,period::day_of_week() * (first + i));
             std::cout << format("{1,w=8,ftime='%a'} ") % tmp;
         }
         std::cout << std::endl;
 
-        int current_month = now / period::month;
-        int skip = now / period::day_of_week_local - 1;
+        int current_month = now / period::month();
+        int skip = now / period::day_of_week_local() - 1;
         for(int i=0;i<skip*9;i++)
             std::cout << ' ';
-        for(;now / period::month == current_month ;now += period::day) {
+        for(;now / period::month() == current_month ;now += period::day()) {
             std::cout << format("{1,w=8,ftime='%e'} ") % now;     
-            if(now / period::day_of_week_local == 7)
+            if(now / period::day_of_week_local() == 7)
                 std::cout << std::endl;
         }
         std::cout << std::endl;

@@ -17,9 +17,11 @@
 #define WITH_CASE_MAPS
 #endif
 
+
 #include "cdata.h"
 #include "uconv.h"
 
+#include <vector>
 
 namespace booster {
 namespace locale {

@@ -5,10 +5,11 @@
 //  accompanying file LICENSE_1_0.txt or copy at
 //  http://www.boost.org/LICENSE_1_0.txt)
 //
-#ifndef BOOSTER_LOCALE_IMPL_POSIX_CODECVT_HPP
+#ifndef BOOSTER_LOCALE_IMPL_ICU_CODECVT_HPP
 #define BOOSTER_LOCALE_IMPL_ICU_CODECVT_HPP
 #include <booster/config.h>
 #include <booster/locale/util.h>
+#include <memory>
 namespace booster {
 namespace locale {
 namespace impl_icu {

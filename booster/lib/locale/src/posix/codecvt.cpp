@@ -65,7 +65,7 @@ namespace impl_posix {
                     size_t res = iconv(d,&in,&insize,&out,&outsize);
                     
                     // Now if this single byte starts a sequence we add incomplete 
-                    // to know to ask that we need two bytes, othewise it maybe only
+                    // to know to ask that we need two bytes, othewise it may only be
                     // illegal
 
                     uint32_t point;

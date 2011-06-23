@@ -31,21 +31,18 @@ namespace impl_icu {
             encoding_(encoding)
         {
             UErrorCode err=U_ZERO_ERROR;
+            
+            // No need to check err each time, this
+            // is how ICU works.
             cvt_ = ucnv_open(encoding.c_str(),&err);
+            ucnv_setFromUCallBack(cvt_,UCNV_FROM_U_CALLBACK_STOP,0,0,0,&err);
+            ucnv_setToUCallBack(cvt_,UCNV_TO_U_CALLBACK_STOP,0,0,0,&err);
+
             if(!cvt_ || U_FAILURE(err)) {
                 if(cvt_)
                     ucnv_close(cvt_);
                 throw conv::invalid_charset_error(encoding);
             }
-            
-            err=U_ZERO_ERROR;
-
-            ucnv_setFromUCallBack(cvt_,UCNV_FROM_U_CALLBACK_STOP,0,0,0,&err);
-            check_and_throw_icu_error(err);
-            
-            err=U_ZERO_ERROR;
-            ucnv_setToUCallBack(cvt_,UCNV_TO_U_CALLBACK_STOP,0,0,0,&err);
-            check_and_throw_icu_error(err);
             
             max_len_ = ucnv_getMaxCharSize(cvt_);
         }

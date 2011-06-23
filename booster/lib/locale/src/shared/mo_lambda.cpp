@@ -14,6 +14,7 @@ namespace locale {
 namespace gnu_gettext {
 namespace lambda {
 
+namespace { // anon
     struct identity : public plural {
         virtual int operator()(int n) const 
         {
@@ -236,9 +237,9 @@ namespace lambda {
     }
 
 
-    class tockenizer {
+    class tokenizer {
     public:
-        tockenizer(char const *s) { text=s; pos=0; step(); };
+        tokenizer(char const *s) { text=s; pos=0; step(); };
         int get(int *val=NULL){
             int iv=int_value;
             int res=next_tocken;
@@ -307,7 +308,7 @@ namespace lambda {
     class parser {
     public:
 
-        parser(tockenizer &tin) : t(tin) {};
+        parser(tokenizer &tin) : t(tin) {};
 
         plural_ptr compile()
         {
@@ -398,16 +399,18 @@ namespace lambda {
             return plural_ptr(new conditional(cond,case1,case2));
         }
 
-        tockenizer &t;
+        tokenizer &t;
 
     };
 
-    plural_ptr compile(char const *str)
-    {
-        tockenizer t(str);
-        parser p(t);
-        return p.compile();
-    }
+} // namespace anon
+
+plural_ptr compile(char const *str)
+{
+    tokenizer t(str);
+    parser p(t);
+    return p.compile();
+}
 
 
 } // lambda
