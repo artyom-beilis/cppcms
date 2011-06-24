@@ -25,7 +25,8 @@ namespace booster {
         /// @{
 
         ///
-        /// \brief namespace that holds function for operating global time zone identifier
+        /// \brief namespace that holds functions for operating with global
+        /// time zone
         ///
         namespace time_zone {
             ///
@@ -33,7 +34,7 @@ namespace booster {
             ///
             BOOSTER_API std::string global();
             ///
-            /// Set global time zone identifier returing pervious one. If empty, system time zone is used
+            /// Set global time zone identifier returning previous one. If empty, system time zone is used
             ///
             BOOSTER_API std::string global(std::string const &new_tz);
         }

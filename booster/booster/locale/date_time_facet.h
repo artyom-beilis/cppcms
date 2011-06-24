@@ -49,8 +49,8 @@ namespace booster {
                     minute,                     ///< minute [0..59]
                     second,                     ///< second [0..59]
                     week_of_year,               ///< The week number in the year
-                    week_of_month,              ///< The week number withing current month
-                    first_day_of_week,          ///< First day if week, constant, for example Sunday in US = 1, Monday in France = 2
+                    week_of_month,              ///< The week number within current month
+                    first_day_of_week,          ///< First day of week, constant, for example Sunday in US = 1, Monday in France = 2
                 };
 
             } // marks
@@ -238,7 +238,7 @@ namespace booster {
             virtual abstract_calendar *create_calendar() const = 0;
 
             ///
-            /// Locale id (for work with std::locale
+            /// Locale id (needed to work with std::locale)
             ///
             static std::locale::id id;
         };

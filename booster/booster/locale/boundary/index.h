@@ -514,6 +514,8 @@ namespace booster {
 
             } // details
 
+            /// \endcond
+
             template<typename BaseIterator>
             class token_index;
 
@@ -541,8 +543,13 @@ namespace booster {
             class token_index {
             public:
                 typedef BaseIterator base_iterator;
+                #ifdef BOOSTER_LOCALE_DOXYGEN
+                typedef unspecified_iterator_type iterator;
+                typedef unspecified_iterator_type const_iterator;
+                #else
                 typedef details::token_index_iterator<base_iterator> iterator;
                 typedef details::token_index_iterator<base_iterator> const_iterator;
+                #endif
                 typedef token<base_iterator> value_type;
 
                 token_index() : mask_(0xFFFFFFFFu),full_select_(false)
@@ -624,8 +631,13 @@ namespace booster {
             class bound_index {
             public:
                 typedef BaseIterator base_iterator;
+                #ifdef BOOSTER_LOCALE_DOXYGEN
+                typedef unspecified_iterator_type iterator;
+                typedef unspecified_iterator_type const_iterator;
+                #else
                 typedef details::bound_index_iterator<base_iterator> iterator;
                 typedef details::bound_index_iterator<base_iterator> const_iterator;
+                #endif
                 typedef bound<base_iterator> value_type;
                 
                 bound_index() : mask_(0xFFFFFFFFu)
@@ -720,14 +732,14 @@ namespace booster {
                 map_ = other.map_;
                 return *this;
             }
-            
+          
             typedef token_index<std::string::const_iterator> stoken_index;
             typedef token_index<std::wstring::const_iterator> wstoken_index;
             #ifdef BOOSTER_HAS_CHAR16_T
-            typedef token_index<std::basic_string<char16_t>::const_iterator> u16stoken_index;
+            typedef token_index<std::u16string::const_iterator> u16stoken_index;
             #endif
             #ifdef BOOSTER_HAS_CHAR32_T
-            typedef token_index<std::basic_string<char32_t>::const_iterator> u32stoken_index;
+            typedef token_index<std::u32string::const_iterator> u32stoken_index;
             #endif
            
             typedef token_index<char const *> ctoken_index;
@@ -742,10 +754,10 @@ namespace booster {
             typedef bound_index<std::string::const_iterator> sbound_index;
             typedef bound_index<std::wstring::const_iterator> wsbound_index;
             #ifdef BOOSTER_HAS_CHAR16_T
-            typedef bound_index<std::basic_string<char16_t>::const_iterator> u16sbound_index;
+            typedef bound_index<std::u16string::const_iterator> u16sbound_index;
             #endif
             #ifdef BOOSTER_HAS_CHAR32_T
-            typedef bound_index<std::basic_string<char32_t>::const_iterator> u32sbound_index;
+            typedef bound_index<std::u32string::const_iterator> u32sbound_index;
             #endif
            
             typedef bound_index<char const *> cbound_index;

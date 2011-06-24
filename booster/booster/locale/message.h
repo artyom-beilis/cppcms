@@ -356,7 +356,7 @@ namespace booster {
             }
            
             ///
-            /// Translate message to a string using locale \a locale and message domain  \ a domain_id
+            /// Translate message to a string using locale \a locale and message domain  \a domain_id
             /// 
             string_type str(std::locale const &locale,std::string const &domain_id) const
             {
@@ -367,7 +367,7 @@ namespace booster {
             }
 
             ///
-            /// Translate message to a string using the default locale and message domain  \ a domain_id
+            /// Translate message to a string using the default locale and message domain  \a domain_id
             /// 
             string_type str(std::string const &domain_id) const
             {
@@ -380,7 +380,7 @@ namespace booster {
 
             
             ///
-            /// Translate message to a string using locale \a loc and message domain index  \ a id
+            /// Translate message to a string using locale \a loc and message domain index  \a id
             /// 
             string_type str(std::locale const &loc,int id) const
             {
@@ -764,7 +764,13 @@ namespace booster {
             ///
             /// Manipulator for switching message domain in ostream,
             ///
-            inline details::set_domain domain(std::string const &id)
+            inline 
+            #ifdef BOOSTER_LOCALE_DOXYGEN
+            unspecified_type
+            #else
+            details::set_domain 
+            #endif
+            domain(std::string const &id)
             {
                 details::set_domain tmp = { id };
                 return tmp;

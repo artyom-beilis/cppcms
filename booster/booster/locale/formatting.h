@@ -305,7 +305,7 @@ namespace booster {
             }
             
             ///
-            /// Format percent, value 0.3 is treaded as 30%.
+            /// Format percent, value 0.3 is treated as 30%.
             ///
             inline std::ios_base & percent(std::ios_base & ios)
             {
@@ -314,7 +314,7 @@ namespace booster {
             }
             
             ///
-            /// Format a date, number is treaded as POSIX time
+            /// Format a date, number is treated as POSIX time
             ///
             inline std::ios_base & date(std::ios_base & ios)
             {
@@ -323,7 +323,7 @@ namespace booster {
             }
 
             ///
-            /// Format a time, number is treaded as POSIX time
+            /// Format a time, number is treated as POSIX time
             ///
             inline std::ios_base & time(std::ios_base & ios)
             {
@@ -332,7 +332,7 @@ namespace booster {
             }
 
             ///
-            /// Format a date and time, number is treaded as POSIX time
+            /// Format a date and time, number is treated as POSIX time
             ///
             inline std::ios_base & datetime(std::ios_base & ios)
             {
@@ -555,7 +555,12 @@ namespace booster {
 
 
             template<typename CharType>
-            details::add_ftime<CharType> ftime(std::basic_string<CharType> const &format)
+            #ifdef BOOSTER_LOCALE_DOXYGEN
+            unspecified_type
+            #else
+            details::add_ftime<CharType> 
+            #endif
+            ftime(std::basic_string<CharType> const &format)
             {
                 details::add_ftime<CharType> fmt;
                 fmt.ftime=format;
@@ -566,7 +571,12 @@ namespace booster {
             /// See ftime(std::basic_string<CharType> const &format)
             ///
             template<typename CharType>
-            details::add_ftime<CharType> ftime(CharType const *format)
+            #ifdef BOOSTER_LOCALE_DOXYGEN
+            unspecified_type
+            #else
+            details::add_ftime<CharType> 
+            #endif
+            ftime(CharType const *format)
             {
                 details::add_ftime<CharType> fmt;
                 fmt.ftime=format;
@@ -615,7 +625,13 @@ namespace booster {
             ///
             /// Set time zone using \a id
             ///
-            inline details::set_timezone time_zone(char const *id) 
+            inline 
+            #ifdef BOOSTER_LOCALE_DOXYGEN
+            unspecified_type
+            #else
+            details::set_timezone 
+            #endif
+            time_zone(char const *id) 
             {
                 details::set_timezone tz;
                 tz.id=id;
@@ -625,7 +641,13 @@ namespace booster {
             ///
             /// Set time zone using \a id
             ///
-            inline details::set_timezone time_zone(std::string const &id) 
+            inline 
+            #ifdef BOOSTER_LOCALE_DOXYGEN
+            unspecified_type
+            #else
+            details::set_timezone 
+            #endif            
+            time_zone(std::string const &id) 
             {
                 details::set_timezone tz;
                 tz.id=id;

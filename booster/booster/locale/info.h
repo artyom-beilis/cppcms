@@ -92,7 +92,7 @@ namespace booster {
             }
 
             ///
-            /// Is underlying encoding is UTF-8 (for char streams and strings)
+            /// True if the underlying encoding is UTF-8 (for char streams and strings)
             ///
             bool utf8() const
             {

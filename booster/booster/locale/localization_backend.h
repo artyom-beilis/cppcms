@@ -36,8 +36,8 @@ namespace booster {
         /// -# \c message_path - path to the location of message catalogs (vector of strings)
         /// -# \c message_application - the name of applications that use message catalogs (vector of strings)
         /// 
-        /// Each backend can be installed with a different default priority so when you work with two different backends, you
-        /// can specify priority so this backend will be chosen according to their priority.
+        /// Each backend can be installed with a different default priotiry so when you work with two different backends, you
+        /// can specify priotiry so this backend will be chosen according to their priority.
         ///
         
         class localization_backend {
@@ -119,12 +119,12 @@ namespace booster {
             void remove_all_backends();
             
             ///
-            /// Get list of all avalible backends
+            /// Get list of all available backends
             ///
             std::vector<std::string> get_all_backends() const;
             
             ///
-            /// Select specific backend by name for a category \a category. It allows combing different
+            /// Select specific backend by name for a category \a category. It allows combining different
             /// backends for user preferences.
             ///
             void select(std::string const &backend_name,locale_category_type category = all_categories);

@@ -24,7 +24,7 @@ namespace locale {
         ///
         hold_ptr() : ptr_(0) {}
         ///
-        /// Create a pointer that holds \a v, ownership is transfered to smart pointer
+        /// Create a pointer that holds \a v, ownership is transferred to smart pointer
         ///
         explicit hold_ptr(T *v) : ptr_(v) {}
 
@@ -68,7 +68,7 @@ namespace locale {
         T *release() { T *tmp=ptr_; ptr_=0; return tmp; }
 
         ///
-        /// Set new value to pointer, previous object is destroyed, ownership on new object is transfered
+        /// Set new value to pointer, previous object is destroyed, ownership on new object is transferred
         ///
         void reset(T *p=0)
         {

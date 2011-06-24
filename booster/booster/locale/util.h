@@ -172,12 +172,12 @@ namespace util {
     };
 
     ///
-    /// This function creates a \a base_converter that can can be used for conversion between UTF-8 and
+    /// This function creates a \a base_converter that can be used for conversion between UTF-8 and
     /// unicode code points
     ///
     BOOSTER_API std::auto_ptr<base_converter> create_utf8_converter();
     ///
-    /// This function creates a \a base_converter that can can be used for conversion between single byte
+    /// This function creates a \a base_converter that can be used for conversion between single byte
     /// character encodings like ISO-8859-1, koi8-r, windows-1255 and Unicode code points,
     /// 
     /// If \a encoding is not supported, empty pointer is returned. You should check if
@@ -193,7 +193,7 @@ namespace util {
     /// codecvt facet would convert between narrow and wide/char16_t/char32_t encodings using \a cvt converter.
     /// If \a cvt is null pointer, always failure conversion would be used that fails on every first input or output.
     /// 
-    /// Note: the codecvt faced handles both UTF-16 and UTF-32 wide encodings, it know to break and join
+    /// Note: the codecvt facet handles both UTF-16 and UTF-32 wide encodings, it knows to break and join
     /// Unicode code-points above 0xFFFF to and from surrogate pairs correctly. \a cvt should be unaware
     /// of wide encoding type
     ///

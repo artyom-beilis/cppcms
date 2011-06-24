@@ -34,7 +34,7 @@ namespace booster {
             ///
             /// \brief The excepton that is thrown in case of conversion error
             ///
-            class conversion_error : public booster::runtime_error {
+            class BOOSTER_SYMBOL_VISIBLE conversion_error : public booster::runtime_error {
             public:
                 conversion_error() : booster::runtime_error("Conversion failed") {}
             };
@@ -43,7 +43,7 @@ namespace booster {
             /// \brief This exception is thrown in case of use of unsupported
             /// or invalid character set
             ///
-            class invalid_charset_error : public booster::runtime_error {
+            class BOOSTER_SYMBOL_VISIBLE invalid_charset_error : public booster::runtime_error {
             public:
 
                 /// Create an error for charset \a charset

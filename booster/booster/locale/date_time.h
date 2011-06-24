@@ -36,7 +36,7 @@ namespace booster {
         ///
         /// \brief This error is thrown in case of invalid state that occurred
         ///
-        class date_time_error : public booster::runtime_error {
+        class BOOSTER_SYMBOL_VISIBLE date_time_error : public booster::runtime_error {
         public:
             ///
             /// Constructor of date_time_error class
@@ -144,7 +144,7 @@ namespace booster {
             ///
             inline period_type week_of_year(){ return period_type(marks::week_of_year); }
             ///
-            ///  Get period_type for: The week number withing current month
+            ///  Get period_type for: The week number within current month
             ///
             inline period_type week_of_month(){ return period_type(marks::week_of_month); }
             ///
@@ -219,7 +219,7 @@ namespace booster {
             ///
             inline date_time_period week_of_year(int v) { return date_time_period(week_of_year(),v); } 
             ///
-            ///  Get date_time_period for: The week number withing current month
+            ///  Get date_time_period for: The week number within current month
             ///
             inline date_time_period week_of_month(int v) { return date_time_period(week_of_month(),v); } 
             ///
@@ -314,14 +314,14 @@ namespace booster {
             inline date_time_period pm() { return date_time_period(am_pm(),1); }
 
             ///
-            /// convers period_type to date_time_period(f,1)
+            /// convert period_type to date_time_period(f,1)
             ///
             inline date_time_period operator+(period::period_type f) 
             {
                 return date_time_period(f);
             }
             ///
-            /// convers period_type to date_time_period(f,-1)
+            /// convert period_type to date_time_period(f,-1)
             ///
             inline date_time_period operator-(period::period_type f)
             {
@@ -503,7 +503,7 @@ namespace booster {
             ///
             int minimum(period::period_type f) const;
             ///
-            /// Get grates possible minimum value for period f, For example for period::day it is 1, but may be different for other calendars.
+            /// Get greatest possible minimum value for period f, For example for period::day it is 1, but may be different for other calendars.
             ///
             int greatest_minimum(period::period_type f) const;
             ///
@@ -592,30 +592,30 @@ namespace booster {
             ~date_time();
 
             ///
-            /// Create a date_time opject using POSIX time \a time and default calendar
+            /// Create a date_time object using POSIX time \a time and default calendar
             ///
             date_time(double time);
             ///
-            /// Create a date_time opject using POSIX time \a time and calendar \a cal
+            /// Create a date_time object using POSIX time \a time and calendar \a cal
             ///
             date_time(double time,calendar const &cal);
             ///
-            /// Create a date_time opject using calendar \a cal and initializes it to current time.
+            /// Create a date_time object using calendar \a cal and initializes it to current time.
             ///
             date_time(calendar const &cal);
             
             ///
-            /// Create a date_time opject using default calendar and define values given in \a set
+            /// Create a date_time object using default calendar and define values given in \a set
             ///
             date_time(date_time_period_set const &set);
             ///
-            /// Create a date_time opject using calendar \a cal and define values given in \a set
+            /// Create a date_time object using calendar \a cal and define values given in \a set
             ///
             date_time(date_time_period_set const &set,calendar const &cal);
 
            
             ///
-            /// assign values to valrious periods in set \a f  
+            /// assign values to various periods in set \a f  
             ///
             date_time const &operator=(date_time_period_set const &f);
 
@@ -703,7 +703,7 @@ namespace booster {
             ///
             date_time operator+(date_time_period const &v) const;
             ///
-            /// substract date_time_period from the current date_time
+            /// subtract date_time_period from the current date_time
             ///
             date_time operator-(date_time_period const &v) const;
             ///
@@ -711,7 +711,7 @@ namespace booster {
             ///
             date_time const &operator+=(date_time_period const &v);
             ///
-            /// substract date_time_period from the current date_time
+            /// subtract date_time_period from the current date_time
             ///
             date_time const &operator-=(date_time_period const &v);
 
@@ -737,7 +737,7 @@ namespace booster {
             ///
             date_time operator+(date_time_period_set const &v) const;
             ///
-            /// substract date_time_period_set v from the current date_time
+            /// subtract date_time_period_set v from the current date_time
             ///
             date_time operator-(date_time_period_set const &v) const;
             ///
@@ -745,7 +745,7 @@ namespace booster {
             ///
             date_time const &operator+=(date_time_period_set const &v);
             ///
-            /// substract date_time_period_set v from the current date_time
+            /// subtract date_time_period_set v from the current date_time
             ///
             date_time const &operator-=(date_time_period_set const &v);
 
@@ -776,32 +776,32 @@ namespace booster {
             /// set POSIX time
             ///
             /// The POSIX time is number of seconds since January 1st, 1970 00:00 UTC, ignoring leap seconds.
-            /// This time can be fetched from Operating system clock using C function time, gettimeofdat and others.
+            /// This time can be fetched from Operating system clock using C function time, gettimeofday and others.
             ///
             void time(double v);
 
             ///
-            /// compare date_time in the timeline (ingnores difference in calendar, timezone etc)
+            /// compare date_time in the timeline (ignores difference in calendar, timezone etc)
             ///
             bool operator==(date_time const &other) const;
             ///
-            /// compare date_time in the timeline (ingnores difference in calendar, timezone etc)
+            /// compare date_time in the timeline (ignores difference in calendar, timezone etc)
             ///
             bool operator!=(date_time const &other) const;
             ///
-            /// compare date_time in the timeline (ingnores difference in calendar, timezone etc)
+            /// compare date_time in the timeline (ignores difference in calendar, timezone etc)
             ///
             bool operator<(date_time const &other) const;
             ///
-            /// compare date_time in the timeline (ingnores difference in calendar, timezone etc)
+            /// compare date_time in the timeline (ignores difference in calendar, timezone etc)
             ///
             bool operator>(date_time const &other) const;
             ///
-            /// compare date_time in the timeline (ingnores difference in calendar, timezone etc)
+            /// compare date_time in the timeline (ignores difference in calendar, timezone etc)
             ///
             bool operator<=(date_time const &other) const;
             ///
-            /// compare date_time in the timeline (ingnores difference in calendar, timezone etc)
+            /// compare date_time in the timeline (ignores difference in calendar, timezone etc)
             ///
             bool operator>=(date_time const &other) const;
 
@@ -816,17 +816,17 @@ namespace booster {
             int difference(date_time const &other,period::period_type f) const;
 
             ///
-            /// Get minimal possible value for current time point for a period \a f.
+            /// Get minimal possible value for *this time point for a period \a f.
             ///
             int minimum(period::period_type f) const;
             ///
-            /// Get minimal possible value for current time point for a period \a f. For example
+            /// Get minimal possible value for *this time point for a period \a f. For example
             /// in February maximum(day) may be 28 or 29, in January maximum(day)==31
             ///
             int maximum(period::period_type f) const;
 
             ///
-            /// Check if the current time is in daylight saving time 
+            /// Check if *this time point is in daylight saving time 
             ///
             bool is_in_daylight_saving_time() const;
 
@@ -893,7 +893,8 @@ namespace booster {
                 in >> v;
                 ios_info::get(in).display_flags(display_flags);
             }
-            t.time(v);
+            if(!in.fail())
+                t.time(v);
             return in;
         }
 
@@ -1025,7 +1026,7 @@ namespace booster {
             ///
             inline int week_of_year(date_time const &dt) { return dt.get(week_of_year()); } 
             ///
-            ///  Extract from date_time numerical value of The week number withing current month
+            ///  Extract from date_time numerical value of The week number within current month
             ///
             inline int week_of_month(date_time const &dt) { return dt.get(week_of_month()); } 
             ///
@@ -1094,7 +1095,7 @@ namespace booster {
             ///
             inline int week_of_year(date_time_duration const &dt) { return dt.get(week_of_year()); } 
             ///
-            ///  Extract from date_time_duration numerical value of duration in  The week number withing current month
+            ///  Extract from date_time_duration numerical value of duration in  The week number within current month
             ///
             inline int week_of_month(date_time_duration const &dt) { return dt.get(week_of_month()); } 
             ///

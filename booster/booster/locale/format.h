@@ -158,8 +158,8 @@ namespace booster {
         /// -   \c num or \c number -- format a number. Optional values are:
         ///     -  \c hex -- display hexadecimal number
         ///     -  \c oct -- display in octal format
-        ///     -  \c sci or `scientific` -- display in scientific format
-        ///     -  \c fix or `fixed` -- display in fixed format
+        ///     -  \c sci or \c scientific -- display in scientific format
+        ///     -  \c fix or \c fixed -- display in fixed format
         ///     .      
         ///     For example \c number=sci
         /// -  \c cur or \c currency -- format currency. Optional values are:
@@ -183,6 +183,9 @@ namespace booster {
         /// -  \c precision or \c p -- set precision (requires parameter).
         /// -  \c locale -- with parameter -- switch locale for current operation. This command generates locale
         ///     with formatting facets giving more fine grained control of formatting. For example:
+        ///    \code
+        ///    cout << format("Today {1,date} ({1,date,locale=he_IL.UTF-8@calendar=hebrew,date} Hebrew Date)") % date;
+        ///    \endcode
         /// -  \c timezone or \c tz -- the name of the timezone to display the time in. For example:\n
         ///    \code
         ///    cout << format("Time is: Local {1,time}, ({1,time,tz=EET} Eastern European Time)") % date;
@@ -231,7 +234,8 @@ namespace booster {
             }
 
             ///
-            /// Add new parameter to format list
+            /// Add new parameter to format list. The object should be a type
+            /// with defined expression out << object where \c out is \c std::basic_ostream.
             ///
             template<typename Formattible>
             basic_format &operator % (Formattible const &object)
@@ -449,7 +453,7 @@ namespace booster {
         ///
         /// Write formatted message to stream.
         ///
-        /// This operator actually causes actual text formatting. It use locale and of \a out stream
+        /// This operator actually causes actual text formatting. It uses the locale of \a out stream
         ///
         template<typename CharType>
         std::basic_ostream<CharType> &operator<<(std::basic_ostream<CharType> &out,basic_format<CharType> const &fmt)
@@ -460,25 +464,25 @@ namespace booster {
 
 
         ///
-        /// Definiton of char based format
+        /// Definition of char based format
         ///
         typedef basic_format<char> format;
 
         ///
-        /// Definiton of wchar_t based format
+        /// Definition of wchar_t based format
         ///
         typedef basic_format<wchar_t> wformat;
 
         #ifdef BOOSTER_HAS_CHAR16_T
         ///
-        /// Definiton of char16_t based format
+        /// Definition of char16_t based format
         ///
         typedef basic_format<char16_t> u16format;
         #endif
 
         #ifdef BOOSTER_HAS_CHAR32_T
         ///
-        /// Definiton of char32_t based format
+        /// Definition of char32_t based format
         ///
         typedef basic_format<char32_t> u32format;
         #endif

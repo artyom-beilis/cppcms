@@ -9,6 +9,7 @@
 #define BOOSTER_CONFIG_H
 
 #if defined(__WIN32) || defined(_WIN32) || defined(WIN32) || defined(__CYGWIN__)
+#	define BOOSTER_SYMBOL_VISIBLE
 #	if defined(DLL_EXPORT)
 #		if defined(BOOSTER_SOURCE)
 #			define BOOSTER_API __declspec(dllexport)
@@ -21,8 +22,10 @@
 #else // ELF BINARIES
 #	if defined(BOOSTER_SOURCE) && defined(BOOSTER_VISIBILITY_SUPPORT)
 #		define BOOSTER_API __attribute__ ((visibility("default")))
+#		define BOOSTER_SYMBOL_VISIBLE __attribute__ ((visibility("default")))
 #	else
 #		define BOOSTER_API
+#		define BOOSTER_SYMBOL_VISIBLE
 #	endif
 #endif
 
@@ -52,7 +55,7 @@
 #undef BOOSTER_HAS_CHAR16_T
 #undef BOOSTER_HAS_CHAR32_T
 #undef BOOSTER_NO_STD_WSTRING
-#undef BOOST_NO_SWPRINTF
+#undef BOOSTER_NO_SWPRINTF
 
 #ifdef __GNUC__ 
 #  define BOOSTER_GCC

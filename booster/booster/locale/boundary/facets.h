@@ -178,12 +178,6 @@ namespace booster {
     } // locale
 } // boost
 
-///
-/// \example boundary.cpp
-/// Example of using boundary iterator
-/// \example wboundary.cpp
-/// Example of using boundary iterator over wide strings
-///
 
 #ifdef BOOSTER_MSVC
 #pragma warning(pop)
