@@ -669,9 +669,6 @@ namespace booster {
                             string_type value = cvt_value(tmp.first,tmp.second);
                             catalogs_[id][key].swap(value);
                         }
-                        for(typeof(catalogs_[id].begin()) p =catalogs_[id].begin();p!=catalogs_[id].end();++p){
-                                key_type key=p->first;
-                        }
                     }
                     return true;
 
