@@ -9,10 +9,10 @@
 #define BOOSTER_LOCALE_BOUNDARY_H_INCLUDED
 
 #include <booster/locale/boundary/types.h>
-#include <booster/locale/boundary/bound.h>
 #include <booster/locale/boundary/facets.h>
+#include <booster/locale/boundary/segment.h>
+#include <booster/locale/boundary/boundary_point.h>
 #include <booster/locale/boundary/index.h>
-#include <booster/locale/boundary/token.h>
 
 #endif
 // vim: tabstop=4 expandtab shiftwidth=4 softtabstop=4

@@ -36,7 +36,7 @@ namespace booster {
 
             
             ///
-            /// This structure is used for representing boundary point
+            /// \brief This structure is used for representing boundary point
             /// that follows the offset.
             ///
             struct break_info {
@@ -80,7 +80,7 @@ namespace booster {
             };
             
             ///
-            /// This type holds the alalisys of the text - all its break points
+            /// This type holds the analysis of the text - all its break points
             /// with marks
             ///
             typedef std::vector<break_info> index_type;
@@ -89,12 +89,15 @@ namespace booster {
             template<typename CharType>
             class boundary_indexing;
 
+            #ifdef BOOSTER_LOCALE_DOXYGEN
             ///
-            /// The facet that allows us to create an index for boundary analisys
-            /// of the text.
+            /// \brief This facet generates an index for boundary analysis
+            /// for a given text.
             ///
-            template<>
-            class BOOSTER_API boundary_indexing<char> : public std::locale::facet {
+            /// It is specialized for 4 types of characters \c char_t, \c wchar_t, \c char16_t and \c char32_t
+            ///
+            template<typename Char>
+            class BOOSTER_API boundary_indexing : public std::locale::facet {
             public:
                 ///
                 /// Default constructor typical for facets
@@ -105,33 +108,44 @@ namespace booster {
                 ///
                 /// Create index for boundary type \a t for text in range [begin,end)
                 ///
-                virtual index_type map(boundary_type t,char const *begin,char const *end) const = 0;
+                /// The returned value is an index of type \ref index_type. Note that this
+                /// index is never empty, even if the range [begin,end) is empty it consists
+                /// of at least one boundary point with the offset 0.
+                ///
+                virtual index_type map(boundary_type t,Char const *begin,Char const *end) const = 0;
+                ///
                 /// Identification of this facet
+                ///
+                static std::locale::id id;
+                
+                #if defined (__SUNPRO_CC) && defined (_RWSTD_VER)
+                std::locale::id& __get_id (void) const { return id; }
+                #endif
+            };
+
+            #else
+
+            template<>
+            class BOOSTER_API boundary_indexing<char> : public std::locale::facet {
+            public:
+                boundary_indexing(size_t refs=0) : std::locale::facet(refs)
+                {
+                }
+                virtual index_type map(boundary_type t,char const *begin,char const *end) const = 0;
                 static std::locale::id id;
                 #if defined (__SUNPRO_CC) && defined (_RWSTD_VER)
                 std::locale::id& __get_id (void) const { return id; }
                 #endif
             };
             
-            ///
-            /// The facet that allows us to create an index for boundary analisys
-            /// of the text.
-            ///
             template<>
             class BOOSTER_API boundary_indexing<wchar_t> : public std::locale::facet {
             public:
-                ///
-                /// Default constructor typical for facets
-                ///
                 boundary_indexing(size_t refs=0) : std::locale::facet(refs)
                 {
                 }
-                ///
-                /// Create index for boundary type \a t for text in range [begin,end)
-                ///
                 virtual index_type map(boundary_type t,wchar_t const *begin,wchar_t const *end) const = 0;
 
-                /// Identification of this facet
                 static std::locale::id id;
                 #if defined (__SUNPRO_CC) && defined (_RWSTD_VER)
                 std::locale::id& __get_id (void) const { return id; }
@@ -166,6 +180,8 @@ namespace booster {
                 std::locale::id& __get_id (void) const { return id; }
                 #endif
             };
+            #endif
+
             #endif
 
             ///

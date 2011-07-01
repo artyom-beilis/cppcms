@@ -27,6 +27,7 @@ namespace booster {
             /// \brief This namespace holds a enum of various period types like era, year, month, etc..
             ///
             namespace marks {
+                /// \brief the type that defines a flag that holds a period identifier
                 enum period_mark {
                     invalid,                    ///< Special invalid value, should not be used directly
                     era,                        ///< Era i.e. AC, BC in Gregorian and Julian calendar, range [0,1]
@@ -83,10 +84,16 @@ namespace booster {
                     return mark_;
                 }
 
+                ///
+                /// Check if two periods are the same
+                ///
                 bool operator==(period_type const &other) const
                 {
                     return mark()==other.mark();
                 }
+                ///
+                /// Check if two periods are different
+                ///
                 bool operator!=(period_type const &other) const
                 {
                     return mark()!=other.mark();

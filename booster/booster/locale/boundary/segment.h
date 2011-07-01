@@ -5,8 +5,8 @@
 //  accompanying file LICENSE_1_0.txt or copy at
 //  http://www.boost.org/LICENSE_1_0.txt)
 //
-#ifndef BOOSTER_LOCALE_BOUNDARY_TOKEN_H_INCLUDED
-#define BOOSTER_LOCALE_BOUNDARY_TOKEN_H_INCLUDED
+#ifndef BOOSTER_LOCALE_BOUNDARY_SEGMENT_H_INCLUDED
+#define BOOSTER_LOCALE_BOUNDARY_SEGMENT_H_INCLUDED
 #include <booster/config.h>
 #ifdef BOOSTER_MSVC
 #  pragma warning(push)
@@ -27,11 +27,26 @@ namespace boundary {
     /// @{
 
     ///
-    /// \brief a token object that represents a pair of two iterators that define the range where
-    /// this token exits and a rule that defines it.
+    /// \brief a segment object that represents a pair of two iterators that define the range where
+    /// this segment exits and a rule that defines it.
+    ///
+    /// This type of object is dereferenced by the iterators of segment_index. Using a rule() member function
+    /// you can get a specific rule this segment was selected with. For example, when you use
+    /// word boundary analysis, you can check if the specific word contains Kana letters by checking (rule() & \ref word_kana)!=0
+    /// For a sentence analysis you can check if the sentence is selected because a sentence terminator is found (\ref sentence_term) or
+    /// there is a line break (\ref sentence_sep).
+    ///
+    /// This object can be automatically converted to std::basic_string with the same type of character. It is also
+    /// valid range that has begin() and end() member functions returning iterators on the location of the segment.
+    ///
+    /// \see
+    ///
+    /// - \ref segment_index
+    /// - \ref boundary_point 
+    /// - \ref boundary_point_index 
     ///
     template<typename IteratorType>
-    class token : public std::pair<IteratorType,IteratorType> {
+    class segment : public std::pair<IteratorType,IteratorType> {
     public:
         ///
         /// The type of the underlying character 
@@ -61,11 +76,11 @@ namespace boundary {
         ///
         /// Default constructor
         ///
-        token() {}
+        segment() {}
         ///
-        /// Create a token using two iterators and a rule that represents this point
+        /// Create a segment using two iterators and a rule that represents this point
         ///
-        token(iterator b,iterator e,rule_type r) :
+        segment(iterator b,iterator e,rule_type r) :
             std::pair<IteratorType,IteratorType>(b,e),
             rule_(r)
         {
@@ -127,7 +142,7 @@ namespace boundary {
         }
 
         ///
-        /// Check if the token is empty
+        /// Check if the segment is empty
         ///
         bool empty() const
         {
@@ -135,14 +150,14 @@ namespace boundary {
         }
 
         ///
-        /// Get the rule that is used for selection of this token.
+        /// Get the rule that is used for selection of this segment.
         ///
         rule_type rule() const
         {
             return rule_;
         }
         ///
-        /// Set a rule that is used for token selection
+        /// Set a rule that is used for segment selection
         ///
         void rule(rule_type r)
         {
@@ -155,12 +170,12 @@ namespace boundary {
     
     
     ///
-    /// Write the token to the stream character by character
+    /// Write the segment to the stream character by character
     ///
     template<typename CharType,typename TraitsType,typename Iterator>
     std::basic_ostream<CharType,TraitsType> &operator<<(
             std::basic_ostream<CharType,TraitsType> &out,
-            token<Iterator> const &tok)
+            segment<Iterator> const &tok)
     {
         for(Iterator p=tok.begin(),e=tok.end();p!=e;++p)
             out << *p;

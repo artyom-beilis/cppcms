@@ -22,7 +22,7 @@ namespace booster {
     namespace locale {
         
         ///
-        /// \brief This namespae contains all operations required for boundary analysis of text
+        /// \brief This namespase contains all operations required for boundary analysis of text
         ///
         namespace boundary {
             ///
@@ -34,25 +34,27 @@ namespace booster {
             ///
 
             ///
-            /// The enum that describes possible break types
+            /// This type describes a possible boundary analysis alternatives.
             ///
             enum boundary_type {
-                character,  ///< Find character boundaries
-                word,       ///< Find word boundaries
-                sentence,   ///< Find sentence boundaries
-                line        ///< Find a positions suitable for line breaks
+                character,  ///< Analyse the text for character boundaries
+                word,       ///< Analyse the text for word boundaries
+                sentence,   ///< Analyse the text for Find sentence boundaries
+                line        ///< Analyse the text for positions suitable for line breaks
             };
 
             ///
-            /// Flags used with word boundary analysis -- the type of the word, line or sentense boundary found
+            /// \brief Flags used with word boundary analysis -- the type of the word, line or sentence boundary found.
+            ///
+            /// It is a bit-mask that represents various combinations of rules used to select this specific boundary.
             ///
             typedef uint32_t rule_type;
 
             ///
-            /// Flags that describe a type of word selected
-            ///
+            /// \name Flags that describe a type of word selected
+            /// @{
             static const rule_type
-                word_none       =  0x0000F,   ///< Not a word
+                word_none       =  0x0000F,   ///< Not a word, like white space or punctuation mark
                 word_number     =  0x000F0,   ///< Word that appear to be a number
                 word_letter     =  0x00F00,   ///< Word that contains letters, excluding kana and ideographic characters 
                 word_kana       =  0x0F000,   ///< Word that contains kana characters
@@ -60,34 +62,45 @@ namespace booster {
                 word_any        =  0xFFFF0,   ///< Any word including numbers, 0 is special flag, equivalent to 15
                 word_letters    =  0xFFF00,   ///< Any word, excluding numbers but including letters, kana and ideograms.
                 word_kana_ideo  =  0xFF000,   ///< Word that includes kana or ideographic characters
-                word_mask       =  0xFFFFF;    ///< Maximal used mask
+                word_mask       =  0xFFFFF;   ///< Full word mask - select all possible variants
+            /// @}
+
             ///
-            /// Flags that describe a type of line break
-            ///
+            /// \name Flags that describe a type of line break
+            /// @{
             static const rule_type 
                 line_soft       =  0x0F,   ///< Soft line break: optional but not required
                 line_hard       =  0xF0,   ///< Hard line break: like break is required (as per CR/LF)
                 line_any        =  0xFF,   ///< Soft or Hard line break
-                line_mask       =  0xFF;
+                line_mask       =  0xFF;   ///< Select all types of line breaks
+            
+            /// @}
             
             ///
-            /// Flags that describe a type of sentence break
+            /// \name Flags that describe a type of sentence break
             ///
+            /// @{
             static const rule_type
-                sentence_term   =  0x0F,    ///< The sentence was terminated with a sentence terminator 
+                sentence_term   =  0x0F,    ///< \brief The sentence was terminated with a sentence terminator 
                                             ///  like ".", "!" possible followed by hard separator like CR, LF, PS
-                sentence_sep    =  0xF0,    ///< The sentence does not contain terminator like ".", "!" but ended with hard separator
+                sentence_sep    =  0xF0,    ///< \brief The sentence does not contain terminator like ".", "!" but ended with hard separator
                                             ///  like CR, LF, PS or end of input.
                 sentence_any    =  0xFF,    ///< Either first or second sentence break type;.
-                sentence_mask   =  0xFF;
+                sentence_mask   =  0xFF;    ///< Select all sentence breaking points
+
+            ///@}
 
             ///
-            /// Flags that describe a type of character break. At this point break iterator does not distinguish different
-            /// kinds of characters so it is used for consistency.
+            /// \name  Flags that describe a type of character break.
             ///
+            /// At this point break iterator does not distinguish different
+            /// kinds of characters so it is used for consistency.
+            ///@{
             static const rule_type
                 character_any   =  0xF,     ///< Not in use, just for consistency
-                character_mask  =  0xF;
+                character_mask  =  0xF;     ///< Select all character breaking points
+
+            ///@}
 
             ///
             /// This function returns the mask that covers all variants for specific boundary type

@@ -56,8 +56,8 @@ int main()
 
     wcout<<text<<endl;
 
-    boundary::wstoken_index index(boundary::word,text.begin(),text.end());
-    boundary::wstoken_index::iterator p,e;
+    boundary::wssegment_index index(boundary::word,text.begin(),text.end());
+    boundary::wssegment_index::iterator p,e;
 
     for(p=index.begin(),e=index.end();p!=e;++p) {
         wcout<<L"Part ["<<*p<<L"] has ";

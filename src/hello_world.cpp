@@ -320,9 +320,9 @@ public:
 	{
 		response().out()<<name<<":";
 		using namespace cppcms::locale::boundary;
-		stoken_index ind(type,str.begin(),str.end(),context().locale());
+		ssegment_index ind(type,str.begin(),str.end(),context().locale());
 
-		stoken_index::iterator p;
+		ssegment_index::iterator p;
 
 		for(p=ind.begin();p!=ind.end();++p) {
 			response().out()<<"|"<<*p;

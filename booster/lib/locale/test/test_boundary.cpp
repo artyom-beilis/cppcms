@@ -87,11 +87,11 @@ void test_word_container(Iterator begin,Iterator end,
         }
 
         //
-        // token iterator tests
+        // segment iterator tests
         //
         {
-            lb::token_index<Iterator> map(bt,begin,end,l);
-            typedef typename lb::token_index<Iterator>::iterator iter_type;
+            lb::segment_index<Iterator> map(bt,begin,end,l);
+            typedef typename lb::segment_index<Iterator>::iterator iter_type;
 
             map.rule(mask);
 
@@ -200,11 +200,11 @@ void test_word_container(Iterator begin,Iterator end,
                 }
             }
 
-        } // token iterator tests
+        } // segment iterator tests
 
         { // break iterator tests
-            lb::bound_index<Iterator> map(bt,begin,end,l);
-            typedef typename lb::bound_index<Iterator>::iterator iter_type;
+            lb::boundary_point_index<Iterator> map(bt,begin,end,l);
+            typedef typename lb::boundary_point_index<Iterator>::iterator iter_type;
 
             map.rule(mask);
         
@@ -235,9 +235,9 @@ void test_word_container(Iterator begin,Iterator end,
         } // break iterator tests
 
         { // copy test
-            typedef lb::token_index<Iterator> ti_type;
-            typedef lb::bound_index<Iterator> bi_type;
-            {   // token to bound
+            typedef lb::segment_index<Iterator> ti_type;
+            typedef lb::boundary_point_index<Iterator> bi_type;
+            {   // segment to bound
                 ti_type ti(bt,begin,end,l);
                 ti.rule(mask);
                 {
@@ -261,7 +261,7 @@ void test_word_container(Iterator begin,Iterator end,
                         TEST(p->rule()==bmasks[i]);
                     }
                 }
-                // bound to bound
+                // boundary_point to bound
                 bi_type bi_2(bt,begin,end,l);
                 bi_2.rule(mask);
                 {
@@ -284,7 +284,7 @@ void test_word_container(Iterator begin,Iterator end,
                     }
                 }
             }
-            {   // bound to token
+            {   // boundary_point to segment
                 bi_type bi(bt,begin,end,l);
                 {
                     ti_type ti(bi);

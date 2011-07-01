@@ -337,6 +337,9 @@ namespace booster {
                 return date_time_period(f,v);
             }
 
+            ///
+            /// Create date_time_period of type \a f with value \a v. 
+            ///
             template<typename T>
             date_time_period operator*(T v,period::period_type f)
             {
@@ -351,6 +354,9 @@ namespace booster {
                 return date_time_period(f.type,f.value*v);
             }
 
+            ///
+            /// Create date_time_period of type \a f with value \a v. 
+            ///
             template<typename T>
             date_time_period operator*(date_time_period f,T v)
             {

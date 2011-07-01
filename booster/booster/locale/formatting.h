@@ -24,7 +24,7 @@
 namespace booster {
     namespace locale {
         ///
-        /// This namespace holds additional formatting
+        /// \brief This namespace holds additional formatting
         /// flags that can be set using ios_info.
         ///
         namespace flags {

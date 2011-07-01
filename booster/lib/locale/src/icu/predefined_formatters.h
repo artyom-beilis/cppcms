@@ -99,12 +99,21 @@ namespace locale {
                     ap.reset(icu::NumberFormat::createScientificInstance(locale_,err));
                     break;
                 #if U_ICU_VERSION_MAJOR_NUM*100 + U_ICU_VERSION_MINOR_NUM >= 402
-                case fmt_curr_nat:
-                    ap.reset(icu::NumberFormat::createInstance(locale_,icu::NumberFormat::kCurrencyStyle,err));
-                    break;
-                case fmt_curr_iso:
-                    ap.reset(icu::NumberFormat::createInstance(locale_,icu::NumberFormat::kIsoCurrencyStyle,err));
-                    break;
+                    #if U_ICU_VERSION_MAJOR_NUM*100 + U_ICU_VERSION_MINOR_NUM >= 408
+                    case fmt_curr_nat:
+                        ap.reset(icu::NumberFormat::createInstance(locale_,UNUM_CURRENCY,err));
+                        break;
+                    case fmt_curr_iso:
+                        ap.reset(icu::NumberFormat::createInstance(locale_,UNUM_CURRENCY_ISO,err));
+                        break;
+                    #else
+                    case fmt_curr_nat:
+                        ap.reset(icu::NumberFormat::createInstance(locale_,icu::NumberFormat::kCurrencyStyle,err));
+                        break;
+                    case fmt_curr_iso:
+                        ap.reset(icu::NumberFormat::createInstance(locale_,icu::NumberFormat::kIsoCurrencyStyle,err));
+                        break;
+                    #endif
                 #else
                 case fmt_curr_nat:
                 case fmt_curr_iso:

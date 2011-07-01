@@ -11,7 +11,8 @@
 #include <booster/config.h>
 #include <booster/locale/boundary/types.h>
 #include <booster/locale/boundary/facets.h>
-#include <booster/locale/boundary/token.h>
+#include <booster/locale/boundary/segment.h>
+#include <booster/locale/boundary/boundary_point.h>
 #include <booster/iterator/iterator_facade.h>
 #include <booster/shared_ptr.h>
 #include <booster/cstdint.h>
@@ -33,14 +34,11 @@ namespace booster {
 
     namespace locale {
         
-        ///
-        /// \brief This namespae contains all operations required for boundary analysis of text
-        ///
         namespace boundary {
             ///
             /// \defgroup boundary Boundary Analysis
             ///
-            /// This module contains all operations required for boundary analysis of text: character, word, like and sentence boundaries
+            /// This module contains all operations required for %boundary analysis of text: character, word, like and sentence boundaries
             ///
             /// @{
             ///
@@ -175,31 +173,31 @@ namespace booster {
                 };
 
                 template<typename BaseIterator>
-                class token_index_iterator : 
+                class segment_index_iterator : 
                     public booster::iterator_facade<
-                        token_index_iterator<BaseIterator>,
-                        token<BaseIterator>,
+                        segment_index_iterator<BaseIterator>,
+                        segment<BaseIterator>,
                         booster::bidirectional_traversal_tag,
-                        token<BaseIterator> const &
+                        segment<BaseIterator> const &
                     >
                 {
                 public:
                     typedef BaseIterator base_iterator;
                     typedef mapping<base_iterator> mapping_type;
-                    typedef token<base_iterator> token_type;
+                    typedef segment<base_iterator> segment_type;
                     
-                    token_index_iterator() : current_(0,0),map_(0)
+                    segment_index_iterator() : current_(0,0),map_(0)
                     {
                     }
 
-                    token_index_iterator(base_iterator p,mapping_type const *map,rule_type mask,bool full_select) :
+                    segment_index_iterator(base_iterator p,mapping_type const *map,rule_type mask,bool full_select) :
                         map_(map),
                         mask_(mask),
                         full_select_(full_select)
                     {
                         set(p);
                     }
-                    token_index_iterator(bool is_begin,mapping_type const *map,rule_type mask,bool full_select) :
+                    segment_index_iterator(bool is_begin,mapping_type const *map,rule_type mask,bool full_select) :
                         map_(map),
                         mask_(mask),
                         full_select_(full_select)
@@ -210,12 +208,12 @@ namespace booster {
                             set_end();
                     }
 
-                    token_type const &dereference() const
+                    segment_type const &dereference() const
                     {
                         return value_;
                     }
 
-                    bool equal(token_index_iterator const &other) const
+                    bool equal(segment_index_iterator const &other) const
                     {
                         return map_ == other.map_ && current_.second == other.current_.second;
                     }
@@ -277,12 +275,12 @@ namespace booster {
                     {
                         current_.first  = size() - 1;
                         current_.second = size();
-                        value_ = token_type(map_->end(),map_->end(),0);
+                        value_ = segment_type(map_->end(),map_->end(),0);
                     }
                     void set_begin()
                     {
                         current_.first = current_.second = 0;
-                        value_ = token_type(map_->begin(),map_->begin(),0);
+                        value_ = segment_type(map_->begin(),map_->begin(),0);
                         increment();
                     }
 
@@ -291,11 +289,11 @@ namespace booster {
                         size_t dist=std::distance(map_->begin(),p);
                         index_type::const_iterator b=map_->index().begin(),e=map_->index().end();
                         index_type::const_iterator 
-                            bound=std::upper_bound(b,e,break_info(dist));
-                        while(bound != e && (bound->rule & mask_)==0)
-                            bound++;
+                            boundary_point=std::upper_bound(b,e,break_info(dist));
+                        while(boundary_point != e && (boundary_point->rule & mask_)==0)
+                            boundary_point++;
 
-                        current_.first = current_.second = bound - b;
+                        current_.first = current_.second = boundary_point - b;
                         
                         if(full_select_) {
                             while(current_.first > 0) {
@@ -357,7 +355,7 @@ namespace booster {
                     }
                 
                     
-                    token_type value_;
+                    segment_type value_;
                     std::pair<size_t,size_t> current_;
                     mapping_type const *map_;
                     rule_type mask_;
@@ -365,24 +363,24 @@ namespace booster {
                 };
                             
                 template<typename BaseIterator>
-                class bound_index_iterator : 
+                class boundary_point_index_iterator : 
                     public booster::iterator_facade<
-                        bound_index_iterator<BaseIterator>,
-                        bound<BaseIterator>,
+                        boundary_point_index_iterator<BaseIterator>,
+                        boundary_point<BaseIterator>,
                         booster::bidirectional_traversal_tag,
-                        bound<BaseIterator> const &
+                        boundary_point<BaseIterator> const &
                     >
                 {
                 public:
                     typedef BaseIterator base_iterator;
                     typedef mapping<base_iterator> mapping_type;
-                    typedef bound<base_iterator> bound_type;
+                    typedef boundary_point<base_iterator> boundary_point_type;
                     
-                    bound_index_iterator() : current_(0),map_(0)
+                    boundary_point_index_iterator() : current_(0),map_(0)
                     {
                     }
 
-                    bound_index_iterator(bool is_begin,mapping_type const *map,rule_type mask) :
+                    boundary_point_index_iterator(bool is_begin,mapping_type const *map,rule_type mask) :
                         map_(map),
                         mask_(mask)
                     {
@@ -391,19 +389,19 @@ namespace booster {
                         else
                             set_end();
                     }
-                    bound_index_iterator(base_iterator p,mapping_type const *map,rule_type mask) :
+                    boundary_point_index_iterator(base_iterator p,mapping_type const *map,rule_type mask) :
                         map_(map),
                         mask_(mask)
                     {
                         set(p);
                     }
 
-                    bound_type const &dereference() const
+                    boundary_point_type const &dereference() const
                     {
                         return value_;
                     }
 
-                    bool equal(bound_index_iterator const &other) const
+                    bool equal(boundary_point_index_iterator const &other) const
                     {
                         return map_ == other.map_ && current_ == other.current_;
                     }
@@ -434,12 +432,12 @@ namespace booster {
                     void set_end()
                     {
                         current_ = size();
-                        value_ = bound_type(map_->end(),0);
+                        value_ = boundary_point_type(map_->end(),0);
                     }
                     void set_begin()
                     {
                         current_ = 0;
-                        value_ = bound_type(map_->begin(),0);
+                        value_ = boundary_point_type(map_->begin(),0);
                     }
 
                     void set(base_iterator p)
@@ -505,7 +503,7 @@ namespace booster {
                     }
                 
                     
-                    bound_type value_;
+                    boundary_point_type value_;
                     size_t current_;
                     mapping_type const *map_;
                     rule_type mask_;
@@ -517,45 +515,119 @@ namespace booster {
             /// \endcond
 
             template<typename BaseIterator>
-            class token_index;
+            class segment_index;
 
             template<typename BaseIterator>
-            class bound_index;
+            class boundary_point_index;
             
 
             ///
-            /// \brief This class holds an index of tokens in the text range and allows to iterate over them 
+            /// \brief This class holds an index of segments in the text range and allows to iterate over them 
             ///
-            /// When the object is created it creates index and provides access to it with iterators.
+            /// This class is provides \ref begin() and \ref end() member functions that return bidirectional iterators
+            /// to the \ref segment objects.
             ///
-            /// It is used mostly with break_iterator and token_iterator. For each boundary point it
-            /// provides the description mark that allows distinguishing between different types of boundaries.
-            /// For example, it marks whether a sentence terminates because a mark like "?" or "." was found or because
-            /// a new line symbol is present in the text.
+            /// It provides two options on way of selecting segments:
             ///
-            /// These marks can be read out with the token_iterator::mark() and break_iterator::mark() member functions.
+            /// -   \ref rule(rule_type mask) - a mask that allows to select only specific types of segments according to
+            ///     various masks %as \ref word_any.
+            ///     \n
+            ///     The default is to select any types of boundaries.
+            ///     \n 
+            ///     For example: using word %boundary analysis, when the provided mask is \ref word_kana then the iterators
+            ///     would iterate only over the words containing Kana letters and \ref word_any would select all types of
+            ///     words excluding ranges that consist of white space and punctuation marks. So iterating over the text
+            ///     "to be or not to be?" with \ref word_any rule would return segments "to", "be", "or", "not", "to", "be", instead
+            ///     of default "to", " ", "be", " ", "or", " ", "not", " ", "to", " ", "be", "?".
+            /// -   \ref full_select(bool how) - a flag that defines the way a range is selected if the rule of the previous
+            ///     %boundary point does not fit the selected rule.
+            ///     \n
+            ///     For example: We want to fetch all sentences from the following text: "Hello! How\nare you?".
+            ///     \n
+            ///     This text contains three %boundary points separating it to sentences by different rules:
+            ///     - The exclamation mark "!" ends the sentence "Hello!"
+            ///     - The line feed that splits the sentence "How\nare you?" into two parts.
+            ///     - The question mark that ends the second sentence.
+            ///     \n
+            ///     If you would only change the \ref rule() to \ref sentence_term then the segment_index would
+            ///     provide two sentences "Hello!" and "are you?" %as only them actually terminated with required
+            ///     terminator "!" or "?". But changing \ref full_select() to true, the selected segment would include
+            ///     all the text up to previous valid %boundary point and would return two expected sentences:
+            ///     "Hello!" and "How\nare you?".
+            ///     
+            /// This class allows to find a segment according to the given iterator in range using \ref find() member
+            /// function.
             ///
-            /// This class stores iterators to the original text, so you should be careful about iterator
-            /// invalidation. If the iterators on the original text are invalid, you can't use this mapping any more.
+            /// \note
+            ///
+            /// -   Changing any of the options - \ref rule() or \ref full_select() and of course re-indexing the text
+            ///     invalidates existing iterators and they can't be used any more.
+            /// -   segment_index can be created from boundary_point_index or other segment_index that was created with
+            ///     same \ref boundary_type.  This is very fast operation %as they shared same index
+            ///     and it does not require its regeneration.
+            ///
+            /// \see
+            ///
+            /// - \ref boundary_point_index
+            /// - \ref segment
+            /// - \ref boundary_point
             ///
 
             template<typename BaseIterator>
-            class token_index {
+            class segment_index {
             public:
+                
+                ///
+                /// The type of the iterator used to iterate over the original text
+                ///
                 typedef BaseIterator base_iterator;
                 #ifdef BOOSTER_LOCALE_DOXYGEN
+                ///
+                /// The bidirectional iterator that iterates over \ref value_type objects.
+                ///
+                /// -   The iterators may be invalidated by use of any non-const member function
+                ///     including but not limited to \ref rule(rule_type) and \ref full_select(bool).
+                /// -   The returned value_type object is valid %as long %as iterator points to it.
+                ///     So this following code is wrong %as t used after p was updated:
+                ///     \code
+                ///     segment_index<some_iterator>::iterator p=index.begin();
+                ///     segment<some_iterator> &t = *p;
+                ///     ++p;
+                ///     cout << t.str() << endl;
+                ///     \endcode
+                ///
                 typedef unspecified_iterator_type iterator;
+                ///
+                /// \copydoc iterator
+                ///
                 typedef unspecified_iterator_type const_iterator;
                 #else
-                typedef details::token_index_iterator<base_iterator> iterator;
-                typedef details::token_index_iterator<base_iterator> const_iterator;
+                typedef details::segment_index_iterator<base_iterator> iterator;
+                typedef details::segment_index_iterator<base_iterator> const_iterator;
                 #endif
-                typedef token<base_iterator> value_type;
+                ///
+                /// The type dereferenced by the \ref iterator and \ref const_iterator. It is
+                /// an object that represents selected segment.
+                ///
+                typedef segment<base_iterator> value_type;
 
-                token_index() : mask_(0xFFFFFFFFu),full_select_(false)
+                ///
+                /// Default constructor. 
+                ///
+                /// \note
+                ///
+                /// When this object is constructed by default it does not include a valid index, thus
+                /// calling \ref begin(), \ref end() or \ref find() member functions would lead to undefined
+                /// behavior
+                ///
+                segment_index() : mask_(0xFFFFFFFFu),full_select_(false)
                 {
                 }
-                token_index(boundary_type type,
+                ///
+                /// Create a segment_index for %boundary analysis \ref boundary_type "type" of the text
+                /// in range [begin,end) using a rule \a mask for locale \a loc.
+                ///
+                segment_index(boundary_type type,
                             base_iterator begin,
                             base_iterator end,
                             rule_type mask,
@@ -566,7 +638,11 @@ namespace booster {
                         full_select_(false)
                 {
                 }
-                token_index(boundary_type type,
+                ///
+                /// Create a segment_index for %boundary analysis \ref boundary_type "type" of the text
+                /// in range [begin,end) selecting all possible segments (full mask) for locale \a loc.
+                ///
+                segment_index(boundary_type type,
                             base_iterator begin,
                             base_iterator end,
                             std::locale const &loc=std::locale()) 
@@ -577,42 +653,134 @@ namespace booster {
                 {
                 }
 
-                token_index(bound_index<base_iterator> const &);
-                token_index const &operator = (bound_index<base_iterator> const &);
+                ///
+                /// Create a segment_index from a \ref boundary_point_index. It copies all indexing information
+                /// and used default rule (all possible segments)
+                ///
+                /// This operation is very cheap, so if you use boundary_point_index and segment_index on same text
+                /// range it is much better to create one from another rather then indexing the same
+                /// range twice.
+                ///
+                /// \note \ref rule() flags are not copied
+                ///
+                segment_index(boundary_point_index<base_iterator> const &);
+                ///
+                /// Copy an index from a \ref boundary_point_index. It copies all indexing information
+                /// and uses the default rule (all possible segments)
+                ///
+                /// This operation is very cheap, so if you use boundary_point_index and segment_index on same text
+                /// range it is much better to create one from another rather then indexing the same
+                /// range twice.
+                ///
+                /// \note \ref rule() flags are not copied
+                ///
+                segment_index const &operator = (boundary_point_index<base_iterator> const &);
 
+                
+                ///
+                /// Create a new index for %boundary analysis \ref boundary_type "type" of the text
+                /// in range [begin,end) for locale \a loc.
+                ///
+                /// \note \ref rule() and \ref full_select() remain unchanged.
+                ///
                 void map(boundary_type type,base_iterator begin,base_iterator end,std::locale const &loc=std::locale())
                 {
                     map_ = mapping_type(type,begin,end,loc);
                 }
 
+                ///
+                /// Get the \ref iterator on the beginning of the segments range.
+                ///
+                /// Preconditions: the segment_index should have a mapping
+                ///
+                /// \note
+                ///
+                /// The returned iterator is invalidated by access to any non-const member functions of this object
+                ///
                 iterator begin() const
                 {
                     return iterator(true,&map_,mask_,full_select_);
                 }
 
+                ///
+                /// Get the \ref iterator on the ending of the segments range.
+                ///
+                /// Preconditions: the segment_index should have a mapping
+                ///
+                /// The returned iterator is invalidated by access to any non-const member functions of this object
+                ///
                 iterator end() const
                 {
                     return iterator(false,&map_,mask_,full_select_);
                 }
 
+                ///
+                /// Find a first valid segment following a position \a p. 
+                ///
+                /// If \a p is inside a valid segment this segment is selected:
+                ///
+                /// For example: For \ref word %boundary analysis with \ref word_any rule():
+                ///
+                /// - "to| be or ", would point to "be",
+                /// - "t|o be or ", would point to "to",
+                /// - "to be or| ", would point to end.
+                ///
+                ///                 
+                /// Preconditions: the segment_index should have a mapping and \a p should be valid iterator
+                /// to the text in the mapped range.
+                ///
+                /// The returned iterator is invalidated by access to any non-const member functions of this object
+                ///
                 iterator find(base_iterator p) const
                 {
                     return iterator(p,&map_,mask_,full_select_);
                 }
-                
+               
+                ///
+                /// Get the mask of rules that are used
+                /// 
                 rule_type rule() const
                 {
                     return mask_;
                 }
+                ///
+                /// Set the mask of rules that are used
+                /// 
                 void rule(rule_type v)
                 {
                     mask_ = v;
                 }
 
+                ///
+                /// Get the full_select property value -  should segment include in the range
+                /// values that not belong to specific \ref rule() or not.
+                ///
+                /// The default value is false.
+                ///
+                /// For example for \ref sentence %boundary with rule \ref sentence_term the segments
+                /// of text "Hello! How\nare you?" are "Hello!\", "are you?" when full_select() is false
+                /// because "How\n" is selected %as sentence by a rule spits the text by line feed. If full_select()
+                /// is true the returned segments are "Hello! ", "How\nare you?" where "How\n" is joined with the
+                /// following part "are you?"
+                ///
+
                 bool full_select()  const 
                 {
                     return full_select_;
                 }
+
+                ///
+                /// Set the full_select property value -  should segment include in the range
+                /// values that not belong to specific \ref rule() or not.
+                ///
+                /// The default value is false.
+                ///
+                /// For example for \ref sentence %boundary with rule \ref sentence_term the segments
+                /// of text "Hello! How\nare you?" are "Hello!\", "are you?" when full_select() is false
+                /// because "How\n" is selected %as sentence by a rule spits the text by line feed. If full_select()
+                /// is true the returned segments are "Hello! ", "How\nare you?" where "How\n" is joined with the
+                /// following part "are you?"
+                ///
 
                 void full_select(bool v) 
                 {
@@ -620,31 +788,116 @@ namespace booster {
                 }
                 
             private:
-                friend class bound_index<base_iterator>;
+                friend class boundary_point_index<base_iterator>;
                 typedef details::mapping<base_iterator> mapping_type;
                 mapping_type  map_;
                 rule_type mask_;
                 bool full_select_;
             };
 
+            ///
+            /// \brief This class holds an index of \ref boundary_point "boundary points" and allows iterating
+            /// over them.
+            ///
+            /// This class is provides \ref begin() and \ref end() member functions that return bidirectional iterators
+            /// to the \ref boundary_point objects.
+            ///
+            /// It provides an option that affects selecting %boundary points according to different rules:
+            /// using \ref rule(rule_type mask) member function. It allows to set a mask that select only specific
+            /// types of %boundary points like \ref sentence_term.
+            ///
+            /// For example for a sentence %boundary analysis of a text "Hello! How\nare you?" when the default
+            /// rule is used the %boundary points would be:
+            ///
+            /// - "|Hello! How\nare you?"
+            /// - "Hello! |How\nare you?"
+            /// - "Hello! How\n|are you?"
+            /// - "Hello! How\nare you?|"
+            ///
+            /// However if \ref rule() is set to \ref sentence_term then the selected %boundary points would be: 
+            ///
+            /// - "|Hello! How\nare you?"
+            /// - "Hello! |How\nare you?"
+            /// - "Hello! How\nare you?|"
+            /// 
+            /// Such that a %boundary point defined by a line feed character would be ignored.
+            ///     
+            /// This class allows to find a boundary_point according to the given iterator in range using \ref find() member
+            /// function.
+            ///
+            /// \note
+            /// -   Even an empty text range [x,x) considered to have a one %boundary point x.
+            /// -   \a a and \a b points of the range [a,b) are always considered %boundary points
+            ///     regardless the rules used.
+            /// -   Changing any of the option \ref rule() or course re-indexing the text
+            ///     invalidates existing iterators and they can't be used any more.
+            /// -   boundary_point_index can be created from segment_index or other boundary_point_index that was created with
+            ///     same \ref boundary_type.  This is very fast operation %as they shared same index
+            ///     and it does not require its regeneration.
+            ///
+            /// \see
+            ///
+            /// - \ref segment_index
+            /// - \ref boundary_point
+            /// - \ref segment
+            ///
+
+
             template<typename BaseIterator>
-            class bound_index {
+            class boundary_point_index {
             public:
+                ///
+                /// The type of the iterator used to iterate over the original text
+                ///
                 typedef BaseIterator base_iterator;
                 #ifdef BOOSTER_LOCALE_DOXYGEN
+                ///
+                /// The bidirectional iterator that iterates over \ref value_type objects.
+                ///
+                /// -   The iterators may be invalidated by use of any non-const member function
+                ///     including but not limited to \ref rule(rule_type) member function.
+                /// -   The returned value_type object is valid %as long %as iterator points to it.
+                ///     So this following code is wrong %as t used after p was updated:
+                ///     \code
+                ///     boundary_point_index<some_iterator>::iterator p=index.begin();
+                ///     boundary_point<some_iterator> &t = *p;
+                ///     ++p;
+                ///     rule_type r = t->rule();
+                ///     \endcode
+                ///
                 typedef unspecified_iterator_type iterator;
+                ///
+                /// \copydoc iterator
+                ///
                 typedef unspecified_iterator_type const_iterator;
                 #else
-                typedef details::bound_index_iterator<base_iterator> iterator;
-                typedef details::bound_index_iterator<base_iterator> const_iterator;
+                typedef details::boundary_point_index_iterator<base_iterator> iterator;
+                typedef details::boundary_point_index_iterator<base_iterator> const_iterator;
                 #endif
-                typedef bound<base_iterator> value_type;
+                ///
+                /// The type dereferenced by the \ref iterator and \ref const_iterator. It is
+                /// an object that represents the selected \ref boundary_point "boundary point".
+                ///
+                typedef boundary_point<base_iterator> value_type;
                 
-                bound_index() : mask_(0xFFFFFFFFu)
+                ///
+                /// Default constructor. 
+                ///
+                /// \note
+                ///
+                /// When this object is constructed by default it does not include a valid index, thus
+                /// calling \ref begin(), \ref end() or \ref find() member functions would lead to undefined
+                /// behavior
+                ///
+                boundary_point_index() : mask_(0xFFFFFFFFu)
                 {
                 }
                 
-                bound_index(boundary_type type,
+                ///
+                /// Create a segment_index for %boundary analysis \ref boundary_type "type" of the text
+                /// in range [begin,end) using a rule \a mask for locale \a loc.
+                ///
+                boundary_point_index(boundary_type type,
                             base_iterator begin,
                             base_iterator end,
                             rule_type mask,
@@ -654,7 +907,11 @@ namespace booster {
                         mask_(mask)
                 {
                 }
-                bound_index(boundary_type type,
+                ///
+                /// Create a segment_index for %boundary analysis \ref boundary_type "type" of the text
+                /// in range [begin,end) selecting all possible %boundary points (full mask) for locale \a loc.
+                ///
+                boundary_point_index(boundary_type type,
                             base_iterator begin,
                             base_iterator end,
                             std::locale const &loc=std::locale()) 
@@ -664,33 +921,96 @@ namespace booster {
                 {
                 }
 
-                bound_index(token_index<base_iterator> const &other);
-                bound_index const &operator=(token_index<base_iterator> const &other);
+                ///
+                /// Create a boundary_point_index from a \ref segment_index. It copies all indexing information
+                /// and uses the default rule (all possible %boundary points)
+                ///
+                /// This operation is very cheap, so if you use boundary_point_index and segment_index on same text
+                /// range it is much better to create one from another rather then indexing the same
+                /// range twice.
+                ///
+                /// \note \ref rule() flags are not copied
+                ///
+                boundary_point_index(segment_index<base_iterator> const &other);
+                ///
+                /// Copy a boundary_point_index from a \ref segment_index. It copies all indexing information
+                /// and keeps the current \ref rule() unchanged
+                ///
+                /// This operation is very cheap, so if you use boundary_point_index and segment_index on same text
+                /// range it is much better to create one from another rather then indexing the same
+                /// range twice.
+                ///
+                /// \note \ref rule() flags are not copied
+                ///
+                boundary_point_index const &operator=(segment_index<base_iterator> const &other);
 
+                ///
+                /// Create a new index for %boundary analysis \ref boundary_type "type" of the text
+                /// in range [begin,end) for locale \a loc.
+                ///
+                /// \note \ref rule() remains unchanged.
+                ///
                 void map(boundary_type type,base_iterator begin,base_iterator end,std::locale const &loc=std::locale())
                 {
                     map_ = mapping_type(type,begin,end,loc);
                 }
 
+                ///
+                /// Get the \ref iterator on the beginning of the %boundary points range.
+                ///
+                /// Preconditions: this boundary_point_index should have a mapping
+                ///
+                /// \note
+                ///
+                /// The returned iterator is invalidated by access to any non-const member functions of this object
+                ///
                 iterator begin() const
                 {
                     return iterator(true,&map_,mask_);
                 }
 
+                ///
+                /// Get the \ref iterator on the ending of the %boundary points range.
+                ///
+                /// Preconditions: this boundary_point_index should have a mapping
+                ///
+                /// \note
+                ///
+                /// The returned iterator is invalidated by access to any non-const member functions of this object
+                ///
                 iterator end() const
                 {
                     return iterator(false,&map_,mask_);
                 }
 
+                ///
+                /// Find a first valid %boundary point on a position \a p or following it.
+                ///
+                /// For example: For \ref word %boundary analysis of the text "to be or"
+                ///
+                /// - "|to be", would return %boundary point at "|to be",
+                /// - "t|o be", would point to "to| be"
+                ///                 
+                /// Preconditions: the boundary_point_index should have a mapping and \a p should be valid iterator
+                /// to the text in the mapped range.
+                ///
+                /// The returned iterator is invalidated by access to any non-const member functions of this object
+                ///
                 iterator find(base_iterator p) const
                 {
                     return iterator(p,&map_,mask_);
                 }
                 
+                ///
+                /// Get the mask of rules that are used
+                /// 
                 rule_type rule() const
                 {
                     return mask_;
                 }
+                ///
+                /// Set the mask of rules that are used
+                /// 
                 void rule(rule_type v)
                 {
                     mask_ = v;
@@ -698,14 +1018,14 @@ namespace booster {
 
             private:
 
-                friend class token_index<base_iterator>;
+                friend class segment_index<base_iterator>;
                 typedef details::mapping<base_iterator> mapping_type;
                 mapping_type  map_;
                 rule_type mask_;
             };
             
             template<typename BaseIterator>
-            token_index<BaseIterator>::token_index(bound_index<BaseIterator> const &other) :
+            segment_index<BaseIterator>::segment_index(boundary_point_index<BaseIterator> const &other) :
                 map_(other.map_),
                 mask_(0xFFFFFFFFu),
                 full_select_(false)
@@ -713,60 +1033,60 @@ namespace booster {
             }
             
             template<typename BaseIterator>
-            bound_index<BaseIterator>::bound_index(token_index<BaseIterator> const &other) :
+            boundary_point_index<BaseIterator>::boundary_point_index(segment_index<BaseIterator> const &other) :
                 map_(other.map_),
                 mask_(0xFFFFFFFFu)
             {
             }
 
             template<typename BaseIterator>
-            token_index<BaseIterator> const &token_index<BaseIterator>::operator=(bound_index<BaseIterator> const &other)
+            segment_index<BaseIterator> const &segment_index<BaseIterator>::operator=(boundary_point_index<BaseIterator> const &other)
             {
                 map_ = other.map_;
                 return *this;
             }
             
             template<typename BaseIterator>
-            bound_index<BaseIterator> const &bound_index<BaseIterator>::operator=(token_index<BaseIterator> const &other)
+            boundary_point_index<BaseIterator> const &boundary_point_index<BaseIterator>::operator=(segment_index<BaseIterator> const &other)
             {
                 map_ = other.map_;
                 return *this;
             }
           
-            typedef token_index<std::string::const_iterator> stoken_index;
-            typedef token_index<std::wstring::const_iterator> wstoken_index;
+            typedef segment_index<std::string::const_iterator> ssegment_index;      ///< convenience typedef
+            typedef segment_index<std::wstring::const_iterator> wssegment_index;    ///< convenience typedef
             #ifdef BOOSTER_HAS_CHAR16_T
-            typedef token_index<std::u16string::const_iterator> u16stoken_index;
+            typedef segment_index<std::u16string::const_iterator> u16ssegment_index;///< convenience typedef
             #endif
             #ifdef BOOSTER_HAS_CHAR32_T
-            typedef token_index<std::u32string::const_iterator> u32stoken_index;
+            typedef segment_index<std::u32string::const_iterator> u32ssegment_index;///< convenience typedef
             #endif
            
-            typedef token_index<char const *> ctoken_index;
-            typedef token_index<wchar_t const *> wctoken_index;
+            typedef segment_index<char const *> csegment_index;                     ///< convenience typedef
+            typedef segment_index<wchar_t const *> wcsegment_index;                 ///< convenience typedef
             #ifdef BOOSTER_HAS_CHAR16_T
-            typedef token_index<char16_t const *> u16ctoken_index;
+            typedef segment_index<char16_t const *> u16csegment_index;              ///< convenience typedef
             #endif
             #ifdef BOOSTER_HAS_CHAR32_T
-            typedef token_index<char32_t const *> u32ctoken_index;
+            typedef segment_index<char32_t const *> u32csegment_index;              ///< convenience typedef
             #endif
 
-            typedef bound_index<std::string::const_iterator> sbound_index;
-            typedef bound_index<std::wstring::const_iterator> wsbound_index;
+            typedef boundary_point_index<std::string::const_iterator> sboundary_point_index;///< convenience typedef
+            typedef boundary_point_index<std::wstring::const_iterator> wsboundary_point_index;///< convenience typedef
             #ifdef BOOSTER_HAS_CHAR16_T
-            typedef bound_index<std::u16string::const_iterator> u16sbound_index;
+            typedef boundary_point_index<std::u16string::const_iterator> u16sboundary_point_index;///< convenience typedef
             #endif
             #ifdef BOOSTER_HAS_CHAR32_T
-            typedef bound_index<std::u32string::const_iterator> u32sbound_index;
+            typedef boundary_point_index<std::u32string::const_iterator> u32sboundary_point_index;///< convenience typedef
             #endif
            
-            typedef bound_index<char const *> cbound_index;
-            typedef bound_index<wchar_t const *> wcbound_index;
+            typedef boundary_point_index<char const *> cboundary_point_index;       ///< convenience typedef
+            typedef boundary_point_index<wchar_t const *> wcboundary_point_index;   ///< convenience typedef
             #ifdef BOOSTER_HAS_CHAR16_T
-            typedef bound_index<char16_t const *> u16cbound_index;
+            typedef boundary_point_index<char16_t const *> u16cboundary_point_index;///< convenience typedef
             #endif
             #ifdef BOOSTER_HAS_CHAR32_T
-            typedef bound_index<char32_t const *> u32cbound_index;
+            typedef boundary_point_index<char32_t const *> u32cboundary_point_index;///< convenience typedef
             #endif
 
 
@@ -778,9 +1098,9 @@ namespace booster {
 
 ///
 /// \example boundary.cpp
-/// Example of using boundary iterator
+/// Example of using segment_index
 /// \example wboundary.cpp
-/// Example of using boundary iterator over wide strings
+/// Example of using segment_index over wide strings
 ///
 
 #ifdef BOOSTER_MSVC

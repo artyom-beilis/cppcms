@@ -26,8 +26,8 @@ int main()
 
     cout<<text<<endl;
 
-    boundary::stoken_index index(boundary::word,text.begin(),text.end());
-    boundary::stoken_index::iterator p,e;
+    boundary::ssegment_index index(boundary::word,text.begin(),text.end());
+    boundary::ssegment_index::iterator p,e;
 
     for(p=index.begin(),e=index.end();p!=e;++p) {
         cout<<"Part ["<<*p<<"] has ";

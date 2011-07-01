@@ -13,6 +13,9 @@
 #include <iomanip>
 #include "test_locale.h"
 
+#include <unicode/uversion.h>
+#define BOOSTER_ICU_VER (U_ICU_VERSION_MAJOR_NUM*100 + U_ICU_VERSION_MINOR_NUM)
+
 #ifdef BOOSTER_MSVC
 #  pragma warning(disable : 4244) // loose data 
 #endif
@@ -187,16 +190,51 @@ int main()
                 TEST(time_point.get(week_of_year()) == 2);
                 TEST(time_point.get(week_of_month()) == 2);
                 time_point = february() + day() * 2;
+                
+
                 TEST(time_point.get(week_of_year()) == 6);
-                TEST(time_point.get(week_of_month()) == 1);
+                
+                if(backend_name!="icu" || BOOSTER_ICU_VER<408) {
+                    TEST(time_point.get(week_of_month()) == 1);
+                }
+                else {
+                    // cldr changes
+                    TEST(time_point.get(week_of_month()) == 2);
+                }
+
                 time_point = year(2010) + january() + day() * 3;
-                TEST(time_point.get(week_of_year()) == 53);
+                
+                if(backend_name!="icu" || BOOSTER_ICU_VER<408) {
+                    TEST(time_point.get(week_of_year()) == 53);
+                }
+                else {
+                    TEST(time_point.get(week_of_year()) == 1);
+                }
+                
                 time_point = year()*2010 + january() + day() * 4;
-                TEST(time_point.get(week_of_year()) == 1);
+                
+                if(backend_name!="icu" || BOOSTER_ICU_VER<408) {
+                    TEST(time_point.get(week_of_year()) == 1);
+                }
+                else {
+                    TEST(time_point.get(week_of_year()) == 2);
+                }
                 time_point = year()*2010 + january() + day() * 10;
-                TEST(time_point.get(week_of_year()) == 1);
+                
+                if(backend_name!="icu" || BOOSTER_ICU_VER<408) {
+                    TEST(time_point.get(week_of_year()) == 1);
+                }
+                else {
+                    TEST(time_point.get(week_of_year()) == 2);
+                }
+
                 time_point = year()*2010 + january() + day() * 11;
-                TEST(time_point.get(week_of_year()) == 2);
+                if(backend_name!="icu" || BOOSTER_ICU_VER<408) {
+                    TEST(time_point.get(week_of_year()) == 2);
+                }
+                else {
+                    TEST(time_point.get(week_of_year()) == 3);
+                }
                 RESET();
                 TEST(time_point.get(hour()) == 15);
                 TEST(date_time(a_datetime,calendar("GMT+01:00")).get(hour()) ==16);

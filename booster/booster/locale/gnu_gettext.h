@@ -14,6 +14,10 @@
 
 namespace booster {
 namespace locale {
+/// \addtogroup message
+/// @{
+
+
 ///
 /// \brief This namespace holds classes that provide GNU Gettext message catalogs support.
 ///
@@ -40,10 +44,25 @@ namespace gnu_gettext {
         std::string encoding;   ///< Required target charset encoding. Ignored for wide characters.
                                 ///< For narrow, should specify the correct encoding required for this catalog
         std::string locale_category; ///< Locale category, is set by default to LC_MESSAGES, but may be changed
+        ///
+        /// \brief This type represents GNU Gettext domain name for the messages.
+        ///
+        /// It consists of two parameters: 
+        ///
+        /// - name - the name of the domain - used for opening the file name
+        /// - encoding - the encoding of the keys in the sources, default - UTF-8
+        ///
         struct domain {
-            std::string name;
-            std::string encoding;
+
+            std::string name; ///< The name of the domain
+            std::string encoding;   ///< The character encoding for the domain
             domain() {}
+            ///
+            /// Create a domain object from the name that can hold an encoding after symbol "/"
+            /// such that if n is "hello/cp1255" then the name would be "hello" and "encoding" would
+            /// be "cp1255" and if n is "hello" then the name would be the same but encoding would be
+            /// "UTF-8"
+            ///
             domain(std::string const &n) 
             {
                 size_t pos = n.find("/");
@@ -58,17 +77,25 @@ namespace gnu_gettext {
 
             }
 
+            ///
+            /// Check whether two objects are equivalent, only names are compared, encoding is ignored
+            ///
             bool operator==(domain const &other) const
             {
                 return name==other.name;
             }
+            ///
+            /// Check whether two objects are distinct, only names are compared, encoding is ignored
+            ///
             bool operator!=(domain const &other) const
             {
                 return !(*this==other);
             }
 
         };
-        typedef std::vector<domain> domains_type;
+        
+        typedef std::vector<domain> domains_type;   ///< Type that defines a list of domains that are loaded
+                                                    ///< The first one is the default one
         domains_type domains;           ///< Message domains - application name, like my_app. So files named my_app.mo
                                         ///< would be loaded
         std::vector<std::string> paths; ///< Paths to search files in. Under MS Windows it uses encoding
@@ -128,6 +155,9 @@ namespace gnu_gettext {
     /// \endcond
 
 } // gnu_gettext
+
+/// @}
+
 } // locale
 } // boost
 

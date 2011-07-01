@@ -153,6 +153,8 @@ do { \
     }while(0)
 
 
+#define BOOSTER_ICU_VER (U_ICU_VERSION_MAJOR_NUM*100 + U_ICU_VERSION_MINOR_NUM)
+
 template<typename CharType>
 void test_manip(std::string e_charset="UTF-8")
 {
@@ -221,18 +223,19 @@ void test_manip(std::string e_charset="UTF-8")
     TEST_NOPAR(as::currency,"$",double);
 
 
-    #if U_ICU_VERSION_MAJOR_NUM*100 + U_ICU_VERSION_MINOR_NUM >= 402
+    #if BOOSTER_ICU_VER >= 402
     TEST_FP2(as::currency,as::currency_national,1345,"$1,345.00",int,1345);
     TEST_FP2(as::currency,as::currency_national,1345.34,"$1,345.34",double,1345.34);
     TEST_FP2(as::currency,as::currency_iso,1345,"USD1,345.00",int,1345);
     TEST_FP2(as::currency,as::currency_iso,1345.34,"USD1,345.34",double,1345.34);
     #endif
     TEST_FP1(as::spellout,10,"ten",int,10);
-    #if U_ICU_VERSION_MAJOR_NUM * 100 + U_ICU_VERSION_MINOR_NUM  >= 402
-    if(e_charset=="UTF-8")
-       TEST_FMT(as::ordinal,1,"1\xcb\xa2\xe1\xb5\x97"); // 1st with st as ligatures
+    #if 402 <= BOOSTER_ICU_VER && BOOSTER_ICU_VER < 408
+    if(e_charset=="UTF-8") {
+        TEST_FMT(as::ordinal,1,"1\xcb\xa2\xe1\xb5\x97"); // 1st with st as ligatures
+    }
     #else
-       TEST_FMT(as::ordinal,1,"1st");
+        TEST_FMT(as::ordinal,1,"1st");
     #endif
 
     time_t a_date = 3600*24*(31+4); // Feb 5th
@@ -251,8 +254,16 @@ void test_manip(std::string e_charset="UTF-8")
     TEST_FP2(as::time,                as::gmt,a_datetime,"3:33:13 PM",time_t,a_time+a_timesec);
     TEST_FP3(as::time,as::time_short ,as::gmt,a_datetime,"3:33 PM",time_t,a_time);
     TEST_FP3(as::time,as::time_medium,as::gmt,a_datetime,"3:33:13 PM",time_t,a_time+a_timesec);
+    #if BOOSTER_ICU_VER >= 408
+    TEST_FP3(as::time,as::time_long  ,as::gmt,a_datetime,"3:33:13 PM GMT",time_t,a_time+a_timesec);
+        #if BOOSTER_ICU_VER !=408
+            // know bug #8675
+            TEST_FP3(as::time,as::time_full  ,as::gmt,a_datetime,"3:33:13 PM GMT",time_t,a_time+a_timesec);
+        #endif
+    #else
     TEST_FP3(as::time,as::time_long  ,as::gmt,a_datetime,"3:33:13 PM GMT+00:00",time_t,a_time+a_timesec);
     TEST_FP3(as::time,as::time_full  ,as::gmt,a_datetime,"3:33:13 PM GMT+00:00",time_t,a_time+a_timesec);
+    #endif
     
     TEST_NOPAR(as::time,"AM",double);
 
@@ -260,7 +271,7 @@ void test_manip(std::string e_charset="UTF-8")
     TEST_FP3(as::time,as::time_short ,as::time_zone("GMT+01:00"),a_datetime,"4:33 PM",time_t,a_time);
     TEST_FP3(as::time,as::time_medium,as::time_zone("GMT+01:00"),a_datetime,"4:33:13 PM",time_t,a_time+a_timesec);
     TEST_FP3(as::time,as::time_long  ,as::time_zone("GMT+01:00"),a_datetime,"4:33:13 PM GMT+01:00",time_t,a_time+a_timesec);
-    #if (U_ICU_VERSION_MAJOR_NUM*100 + U_ICU_VERSION_MINOR_NUM == 308) && defined(__CYGWIN__)
+    #if BOOSTER_ICU_VER == 308 && defined(__CYGWIN__)
     // Known faliture ICU issue
     #else
     TEST_FP3(as::time,as::time_full  ,as::time_zone("GMT+01:00"),a_datetime,"4:33:13 PM GMT+01:00",time_t,a_time+a_timesec);
@@ -269,8 +280,16 @@ void test_manip(std::string e_charset="UTF-8")
     TEST_FP2(as::datetime,                                as::gmt,a_datetime,"Feb 5, 1970 3:33:13 PM",time_t,a_datetime);
     TEST_FP4(as::datetime,as::date_short ,as::time_short ,as::gmt,a_datetime,"2/5/70 3:33 PM",time_t,a_date+a_time);
     TEST_FP4(as::datetime,as::date_medium,as::time_medium,as::gmt,a_datetime,"Feb 5, 1970 3:33:13 PM",time_t,a_datetime);
+    #if BOOSTER_ICU_VER >= 408
+    TEST_FP4(as::datetime,as::date_long  ,as::time_long  ,as::gmt,a_datetime,"February 5, 1970 3:33:13 PM GMT",time_t,a_datetime);
+        #if BOOSTER_ICU_VER != 408
+            // know bug #8675
+            TEST_FP4(as::datetime,as::date_full  ,as::time_full  ,as::gmt,a_datetime,"Thursday, February 5, 1970 3:33:13 PM GMT",time_t,a_datetime);
+        #endif
+    #else
     TEST_FP4(as::datetime,as::date_long  ,as::time_long  ,as::gmt,a_datetime,"February 5, 1970 3:33:13 PM GMT+00:00",time_t,a_datetime);
     TEST_FP4(as::datetime,as::date_full  ,as::time_full  ,as::gmt,a_datetime,"Thursday, February 5, 1970 3:33:13 PM GMT+00:00",time_t,a_datetime);
+    #endif
 
     time_t now=time(0);
     time_t lnow = now + 3600 * 4;
@@ -292,12 +311,22 @@ void test_manip(std::string e_charset="UTF-8")
 
     std::string result[]= { 
         "Thu","Thursday","Feb","February",  // aAbB
-        "Thursday, February 5, 1970 3:33:13 PM GMT+00:00","05","5","Feb", // cdeh
+        #if BOOSTER_ICU_VER >= 408
+        "Thursday, February 5, 1970 3:33:13 PM GMT", // c
+        #else
+        "Thursday, February 5, 1970 3:33:13 PM GMT+00:00", // c
+        #endif
+        "05","5","Feb", // deh
         "15","03","36","02", // HIjm
         "33","\n","PM", "03:33:13 PM",// Mnpr
         "15:33","13","\t","15:33:13", // RStT
         "Feb 5, 1970","3:33:13 PM","70","1970", // xXyY
-        "GMT+00:00","%" }; /// Z%
+        #if BOOSTER_ICU_VER >= 408
+        "GMT" // Z
+        #else
+        "GMT+00:00" // Z
+        #endif
+        ,"%" }; // %
 
     for(unsigned i=0;i<marks.size();i++) {
         format_string.clear();
@@ -353,14 +382,14 @@ void test_format(std::string charset="UTF-8")
         else
             FORMAT("{1,cur,locale=de_DE}",10,"10,00 €");
     }
-    #if U_ICU_VERSION_MAJOR_NUM*100 + U_ICU_VERSION_MINOR_NUM >= 402
+    #if BOOSTER_ICU_VER >= 402
     FORMAT("{1,cur=nat}",1234,"$1,234.00");
     FORMAT("{1,cur=national}",1234,"$1,234.00");
     FORMAT("{1,cur=iso}",1234,"USD1,234.00");
     #endif
     FORMAT("{1,spell}",10,"ten");
     FORMAT("{1,spellout}",10,"ten");
-    #if U_ICU_VERSION_MAJOR_NUM * 100 + U_ICU_VERSION_MINOR_NUM  >= 402
+    #if 402 <= BOOSTER_ICU_VER && BOOSTER_ICU_VER < 408
     if(charset=="UTF-8") {
         FORMAT("{1,ord}",1,"1\xcb\xa2\xe1\xb5\x97");
         FORMAT("{1,ordinal}",1,"1\xcb\xa2\xe1\xb5\x97");
@@ -387,10 +416,17 @@ void test_format(std::string charset="UTF-8")
     time_t a_datetime = a_date + a_time + a_timesec;
     FORMAT("{1,date,gmt};{1,time,gmt};{1,datetime,gmt};{1,dt,gmt}",a_datetime,
             "Feb 5, 1970;3:33:13 PM;Feb 5, 1970 3:33:13 PM;Feb 5, 1970 3:33:13 PM");
+    #if BOOSTER_ICU_VER >= 408
+    FORMAT("{1,time=short,gmt};{1,time=medium,gmt};{1,time=long,gmt};{1,date=full,gmt}",a_datetime,
+            "3:33 PM;3:33:13 PM;3:33:13 PM GMT;Thursday, February 5, 1970");
+    FORMAT("{1,time=s,gmt};{1,time=m,gmt};{1,time=l,gmt};{1,date=f,gmt}",a_datetime,
+            "3:33 PM;3:33:13 PM;3:33:13 PM GMT;Thursday, February 5, 1970");
+    #else
     FORMAT("{1,time=short,gmt};{1,time=medium,gmt};{1,time=long,gmt};{1,date=full,gmt}",a_datetime,
             "3:33 PM;3:33:13 PM;3:33:13 PM GMT+00:00;Thursday, February 5, 1970");
     FORMAT("{1,time=s,gmt};{1,time=m,gmt};{1,time=l,gmt};{1,date=f,gmt}",a_datetime,
             "3:33 PM;3:33:13 PM;3:33:13 PM GMT+00:00;Thursday, February 5, 1970");
+    #endif
     FORMAT("{1,time=s,tz=GMT+01:00}",a_datetime,"4:33 PM");
     FORMAT("{1,time=s,timezone=GMT+01:00}",a_datetime,"4:33 PM");
 

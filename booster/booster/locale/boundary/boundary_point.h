@@ -5,8 +5,8 @@
 //  accompanying file LICENSE_1_0.txt or copy at
 //  http://www.boost.org/LICENSE_1_0.txt)
 //
-#ifndef BOOSTER_LOCALE_BOUNDARY_BOUND_H_INCLUDED
-#define BOOSTER_LOCALE_BOUNDARY_BOUND_H_INCLUDED
+#ifndef BOOSTER_LOCALE_BOUNDARY_BOUNDARY_POINT_H_INCLUDED
+#define BOOSTER_LOCALE_BOUNDARY_BOUNDARY_POINT_H_INCLUDED
 
 #include <booster/locale/boundary/types.h>
 
@@ -24,20 +24,43 @@ namespace boundary {
     /// It represents a pair - an iterator and a rule that defines this 
     /// point.
     ///
+    /// This type of object is dereference by the iterators of boundary_point_index. Using a rule()
+    /// member function you can get the reason why this specific boundary point was selected. 
+    ///
+    /// For example, When you use a sentence boundary analysis, the (rule() & \ref sentence_term) != 0 means
+    /// that this boundary point was selected because a sentence terminator (like .?!) was spotted
+    /// and the (rule() & \ref sentence_sep)!=0 means that a separator like line feed or carriage
+    /// return was observed.
+    ///
+    /// \note
+    ///
+    /// -   The beginning of analyzed range is always considered a boundary point and its rule is always 0.
+    /// -   when using a word boundary analysis the returned rule relates to a chunk of text preceding
+    ///     this point.
+    ///
+    /// \see
+    ///
+    /// -   \ref boundary_point_index
+    /// -   \ref segment
+    /// -   \ref segment_index
+    ///
     template<typename IteratorType>
-    class bound  {
+    class boundary_point  {
     public:
+        ///
+        /// The type of the base iterator that iterates the original text
+        ///
         typedef IteratorType iterator_type;
 
         ///
         /// Empty default constructor
         ///
-        bound() : rule_(0) {}
+        boundary_point() : rule_(0) {}
         
         ///
-        /// Create a new bound using iterator \p and a rule \a r
+        /// Create a new boundary_point using iterator \p and a rule \a r
         ///
-        bound(iterator_type p,rule_type r) :
+        boundary_point(iterator_type p,rule_type r) :
             iterator_(p),
             rule_(r)
         {
@@ -73,14 +96,14 @@ namespace boundary {
         ///
         /// Check if two boundary points are the same
         ///
-        bool operator==(bound const &other) const
+        bool operator==(boundary_point const &other) const
         {
             return iterator_ == other.iterator_ && rule_ = other.rule_;
         }
         ///
         /// Check if two boundary points are different
         ///
-        bool operator!=(bound const &other) const
+        bool operator!=(boundary_point const &other) const
         {
             return !(*this==other);
         }
@@ -116,7 +139,7 @@ namespace boundary {
     /// Check if the boundary point \a r points to same location as an iterator \a l
     ///
     template<typename BaseIterator>
-    bool operator==(BaseIterator const &l,bound<BaseIterator> const &r)
+    bool operator==(BaseIterator const &l,boundary_point<BaseIterator> const &r)
     {
         return r==l;
     }
@@ -124,7 +147,7 @@ namespace boundary {
     /// Check if the boundary point \a r points to different location from an iterator \a l
     ///
     template<typename BaseIterator>
-    bool operator!=(BaseIterator const &l,bound<BaseIterator> const &r)
+    bool operator!=(BaseIterator const &l,boundary_point<BaseIterator> const &r)
     {
         return r!=l;
     }
