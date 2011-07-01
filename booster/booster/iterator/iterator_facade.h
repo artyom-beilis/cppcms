@@ -8,6 +8,8 @@
 #ifndef BOOSTER_ITERATOR_ITERATOR_FACADE_H
 #define BOOSTER_ITERATOR_ITERATOR_FACADE_H
 
+#include <cstddef>
+
 namespace booster { 
 
 	struct bidirectional_traversal_tag {};
@@ -17,7 +19,7 @@ namespace booster {
 		typename Value,
 		typename Category,
 		typename Reference = Value &,
-		typename Difference = ptrdiff_t
+		typename Difference = std::ptrdiff_t
 	>
 	class iterator_facade;
 
