@@ -57,6 +57,7 @@ namespace booster { namespace system {
 	#ifdef BOOSTER_WIN_NATIVE
 	class system_error_impl : public windows_error_impl {
 	public:
+		system_error_impl(){}
 		virtual char const *name() const
 		{
 			return "system";

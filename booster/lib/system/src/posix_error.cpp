@@ -47,6 +47,7 @@ namespace booster { namespace system {
 
 	class system_error_impl : public posix_error_impl {
 	public:
+		system_error_impl() {}
 		virtual char const *name() const
 		{
 			return "system";
@@ -55,7 +56,7 @@ namespace booster { namespace system {
 	};
 	error_category const &get_system_category()
 	{
-		static const system_error_impl se = system_error_impl();
+		static const system_error_impl se;
 		return se;
 	}
 
