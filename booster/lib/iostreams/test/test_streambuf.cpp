@@ -281,6 +281,7 @@ int main()
 			io >> tmp;
 			TEST(tmp=="txst");
 			TEST(io);
+			io.clear();
 			TEST(int(io.tellg())==4);
 			TEST(int(io.tellp())==4);
 			io.clear();

@@ -13,8 +13,10 @@
 #include <iomanip>
 #include "test_locale.h"
 
+#ifdef BOOSTER_LOCALE_WITH_ICU
 #include <unicode/uversion.h>
 #define BOOSTER_ICU_VER (U_ICU_VERSION_MAJOR_NUM*100 + U_ICU_VERSION_MINOR_NUM)
+#endif
 
 #ifdef BOOSTER_MSVC
 #  pragma warning(disable : 4244) // loose data 

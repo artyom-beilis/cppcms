@@ -154,6 +154,22 @@ do { \
 
 
 #define BOOSTER_ICU_VER (U_ICU_VERSION_MAJOR_NUM*100 + U_ICU_VERSION_MINOR_NUM)
+#define BOOSTER_ICU_EXACT_VER (U_ICU_VERSION_MAJOR_NUM*10000 + U_ICU_VERSION_MINOR_NUM  * 100 + U_ICU_VERSION_PATCHLEVEL_NUM)
+
+bool short_parsing_fails()
+{
+    static bool fails = false;
+    static bool get_result = false;
+    if(get_result)
+        return fails;
+    std::stringstream ss("65000");
+    ss.imbue(std::locale::classic());
+    short v=0;
+    ss >> v;
+    fails = ss.fail();
+    get_result = true;
+    return fails;
+}
 
 template<typename CharType>
 void test_manip(std::string e_charset="UTF-8")
@@ -171,7 +187,9 @@ void test_manip(std::string e_charset="UTF-8")
         TEST_MIN_MAX(short,"-32,768","32,767");
         TEST_MIN_MAX(unsigned short,"0","65,535");
         TEST_NOPAR(as::number,"-1",unsigned short);
-        TEST_NOPAR(as::number,"65,535",short);
+        if(short_parsing_fails()) {
+            TEST_NOPAR(as::number,"65,535",short);
+        }
     }
     if(sizeof(int)==4) {
         TEST_MIN_MAX(int,"-2,147,483,648","2,147,483,647");
@@ -256,7 +274,7 @@ void test_manip(std::string e_charset="UTF-8")
     TEST_FP3(as::time,as::time_medium,as::gmt,a_datetime,"3:33:13 PM",time_t,a_time+a_timesec);
     #if BOOSTER_ICU_VER >= 408
     TEST_FP3(as::time,as::time_long  ,as::gmt,a_datetime,"3:33:13 PM GMT",time_t,a_time+a_timesec);
-        #if BOOSTER_ICU_VER !=408
+        #if BOOSTER_ICU_EXACT_VER != 40800
             // know bug #8675
             TEST_FP3(as::time,as::time_full  ,as::gmt,a_datetime,"3:33:13 PM GMT",time_t,a_time+a_timesec);
         #endif
@@ -282,7 +300,7 @@ void test_manip(std::string e_charset="UTF-8")
     TEST_FP4(as::datetime,as::date_medium,as::time_medium,as::gmt,a_datetime,"Feb 5, 1970 3:33:13 PM",time_t,a_datetime);
     #if BOOSTER_ICU_VER >= 408
     TEST_FP4(as::datetime,as::date_long  ,as::time_long  ,as::gmt,a_datetime,"February 5, 1970 3:33:13 PM GMT",time_t,a_datetime);
-        #if BOOSTER_ICU_VER != 408
+        #if BOOSTER_ICU_EXACT_VER != 40800
             // know bug #8675
             TEST_FP4(as::datetime,as::date_full  ,as::time_full  ,as::gmt,a_datetime,"Thursday, February 5, 1970 3:33:13 PM GMT",time_t,a_datetime);
         #endif
