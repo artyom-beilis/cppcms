@@ -154,6 +154,24 @@ namespace boundary {
 
     /// @}
     
+    typedef boundary_point<std::string::const_iterator> sboundary_point;      ///< convenience typedef
+    typedef boundary_point<std::wstring::const_iterator> wsboundary_point;    ///< convenience typedef
+    #ifdef BOOSTER_HAS_CHAR16_T
+    typedef boundary_point<std::u16string::const_iterator> u16sboundary_point;///< convenience typedef
+    #endif
+    #ifdef BOOSTER_HAS_CHAR32_T
+    typedef boundary_point<std::u32string::const_iterator> u32sboundary_point;///< convenience typedef
+    #endif
+   
+    typedef boundary_point<char const *> cboundary_point;                     ///< convenience typedef
+    typedef boundary_point<wchar_t const *> wcboundary_point;                 ///< convenience typedef
+    #ifdef BOOSTER_HAS_CHAR16_T
+    typedef boundary_point<char16_t const *> u16cboundary_point;              ///< convenience typedef
+    #endif
+    #ifdef BOOSTER_HAS_CHAR32_T
+    typedef boundary_point<char32_t const *> u32cboundary_point;              ///< convenience typedef
+    #endif
+    
 
 } // boundary
 } // locale

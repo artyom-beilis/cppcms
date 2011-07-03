@@ -51,6 +51,7 @@ namespace booster {
             typedef uint32_t rule_type;
 
             ///
+            /// \anchor bl_boundary_word_rules 
             /// \name Flags that describe a type of word selected
             /// @{
             static const rule_type
@@ -66,6 +67,7 @@ namespace booster {
             /// @}
 
             ///
+            /// \anchor bl_boundary_line_rules 
             /// \name Flags that describe a type of line break
             /// @{
             static const rule_type 
@@ -77,6 +79,7 @@ namespace booster {
             /// @}
             
             ///
+            /// \anchor bl_boundary_sentence_rules 
             /// \name Flags that describe a type of sentence break
             ///
             /// @{

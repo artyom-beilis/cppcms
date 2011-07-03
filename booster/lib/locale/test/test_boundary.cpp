@@ -439,11 +439,76 @@ void word_boundary()
     run_word<char32_t>(all3,none3,zero,word3,zero,zero,g("en_US.UTF-8"));
     #endif 
 }
+void test_op_one_side(std::string const &sl,std::string const &sr,int val)
+{
+    booster::locale::boundary::ssegment l(sl.begin(),sl.end(),0),r(sr.begin(),sr.end(),0);
 
+    // segment
+    TEST( (l==r) == (val==0));
+    TEST( (l!=r) == (val!=0));
+    TEST( (l<=r) == (val<=0));
+    TEST( (l< r) == (val<0));
+    TEST( (l>=r) == (val>=0));
+    TEST( (l> r) == (val>0));
+
+    // C string
+    TEST( (l==sr.c_str()) == (val==0));
+    TEST( (l!=sr.c_str()) == (val!=0));
+    TEST( (l<=sr.c_str()) == (val<=0));
+    TEST( (l< sr.c_str()) == (val<0));
+    TEST( (l>=sr.c_str()) == (val>=0));
+    TEST( (l> sr.c_str()) == (val>0));
+    
+    TEST( (sl.c_str()==r) == (val==0));
+    TEST( (sl.c_str()!=r) == (val!=0));
+    TEST( (sl.c_str()<=r) == (val<=0));
+    TEST( (sl.c_str()< r) == (val<0));
+    TEST( (sl.c_str()>=r) == (val>=0));
+    TEST( (sl.c_str()> r) == (val>0));
+
+
+    // C++ string
+    TEST( (l==sr) == (val==0));
+    TEST( (l!=sr) == (val!=0));
+    TEST( (l<=sr) == (val<=0));
+    TEST( (l< sr) == (val<0));
+    TEST( (l>=sr) == (val>=0));
+    TEST( (l> sr) == (val>0));
+    
+    TEST( (sl==r) == (val==0));
+    TEST( (sl!=r) == (val!=0));
+    TEST( (sl<=r) == (val<=0));
+    TEST( (sl< r) == (val<0));
+    TEST( (sl>=r) == (val>=0));
+    TEST( (sl> r) == (val>0));
+    // self check
+    TEST( (sl==sr) == (val==0));
+    TEST( (sl!=sr) == (val!=0));
+    TEST( (sl<=sr) == (val<=0));
+    TEST( (sl< sr) == (val<0));
+    TEST( (sl>=sr) == (val>=0));
+    TEST( (sl> sr) == (val>0));
+
+}
+
+void test_op(std::string const &sl,std::string const &sr,int val)
+{
+    test_op_one_side(sl,sr,val);
+    test_op_one_side(sr,sl,-val);
+}
+void segment_operator()
+{
+    test_op("","a",-1);
+    test_op("","",0);
+    test_op("aa","aaa",-1);
+    test_op("aa","ab",-1);
+}
 
 int main()
 {
     try {
+        std::cout << "Testing segment operators" << std::endl;
+        segment_operator();
         std::cout << "Testing word boundary" << std::endl;
         word_boundary();
         std::cout << "Testing character boundary" << std::endl;
