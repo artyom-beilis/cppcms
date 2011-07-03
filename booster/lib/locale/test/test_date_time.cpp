@@ -16,6 +16,8 @@
 #ifdef BOOSTER_LOCALE_WITH_ICU
 #include <unicode/uversion.h>
 #define BOOSTER_ICU_VER (U_ICU_VERSION_MAJOR_NUM*100 + U_ICU_VERSION_MINOR_NUM)
+#else
+#define BOOSTER_ICU_VER 406
 #endif
 
 #ifdef BOOSTER_MSVC
