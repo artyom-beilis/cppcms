@@ -49,7 +49,7 @@ namespace impl {
         virtual string_type convert(char const *begin,char const *end) 
         {
             try {
-                return cvt_to_->std(cvt_from_->icu(begin,end));
+                return cvt_to_->std(cvt_from_->icu_checked(begin,end));
             }
             catch(std::exception const &/*e*/) {
                 throw conversion_error();
@@ -93,7 +93,7 @@ namespace impl {
         virtual std::string convert(CharType const *begin,CharType const *end) 
         {
             try {
-                return cvt_to_->std(cvt_from_->icu(begin,end));
+                return cvt_to_->std(cvt_from_->icu_checked(begin,end));
             }
             catch(std::exception const &/*e*/) {
                 throw conversion_error();

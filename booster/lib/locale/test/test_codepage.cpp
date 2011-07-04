@@ -242,6 +242,60 @@ void test_with_0()
     TEST(booster::locale::conv::from_utf<Char>(booster::locale::conv::to_utf<Char>(a,"ISO8859-1"),"ISO8859-1") == a);
 }
 
+template<typename Char,int n=sizeof(Char)>
+struct utfutf;
+
+template<>
+struct utfutf<char,1> {
+    static char const *ok() {return "grüßen";}
+    static char const *bad() { return "gr\xFFüßen"; }
+};
+
+template<>
+struct utfutf<wchar_t,2> {
+    static wchar_t const *ok(){ return  L"\x67\x72\xfc\xdf\x65\x6e"; }
+    static wchar_t const *bad() { 
+        static wchar_t buf[256] = L"\x67\x72\xFF\xfc\xFE\xFD\xdf\x65\x6e"; 
+        buf[2]=0xDC01; // second surrogate must not be
+        buf[4]=0xD801; // First
+        buf[5]=0xD801; // Must be surrogate trail
+        return buf;
+    }
+};
+template<>
+struct utfutf<wchar_t,4> {
+    static wchar_t const *ok(){ return  L"\x67\x72\xfc\xdf\x65\x6e"; }
+    static wchar_t const *bad() { 
+        static wchar_t buf[256] = L"\x67\x72\xFF\xfc\xdf\x65\x6e"; 
+        buf[2]=0x1000000; // > 10FFFF
+        return buf;
+    }
+};
+
+
+template<typename CharOut,typename CharIn>
+void test_combinations()
+{
+    using booster::locale::conv::utf_to_utf;
+    typedef utfutf<CharOut> out;
+    typedef utfutf<CharIn> in;
+    TEST( (utf_to_utf<CharOut,CharIn>(in::ok())==out::ok()) );
+    TESTF( (utf_to_utf<CharOut,CharIn>(in::bad(),booster::locale::conv::stop)) );
+    TEST( (utf_to_utf<CharOut,CharIn>(in::bad())==out::ok()) );
+}
+
+void test_all_combinations()
+{
+    std::cout << "Testing utf_to_utf" << std::endl;
+    std::cout <<"  char<-char"<<std::endl;
+    test_combinations<char,char>();
+    std::cout <<"  char<-wchar"<<std::endl;
+    test_combinations<char,wchar_t>();
+    std::cout <<"  wchar<-char"<<std::endl;
+    test_combinations<wchar_t,char>();
+    std::cout <<"  wchar<-wchar"<<std::endl;
+    test_combinations<wchar_t,wchar_t>();
+}
 
 template<typename Char>
 void test_to()
@@ -371,6 +425,8 @@ int main()
                 test_to<char32_t>();
             }
             #endif
+
+            test_all_combinations();
         }
     }
     catch(std::exception const &e) {

@@ -217,10 +217,7 @@ namespace booster {
             {
                 return booster::locale::conv::between(text.c_str(),text.c_str()+text.size(),to_encoding,from_encoding,how);
             }
-
-
-            /// @}
-
+          
             /// \cond INTERNAL
 
             template<>
@@ -251,7 +248,80 @@ namespace booster {
             BOOSTER_API std::string from_utf(char32_t const *begin,char32_t const *end,std::string const &charset,method_type how);
             #endif
 
+            namespace details {
+                template<typename CharOut,typename CharIn>
+                struct utf_to_utf_traits {
+                    static std::basic_string<CharOut>
+                    convert(CharIn const *begin,CharIn const *end,method_type how)
+                    {
+                        return to_utf<CharOut>(from_utf(begin,end,"UTF-8",how),"UTF-8",how);
+                    }
+                };
+                template<typename CharOut>
+                struct utf_to_utf_traits<CharOut,char> {
+                    static std::basic_string<CharOut>
+                    convert(char const *begin,char const *end,method_type how)
+                    {
+                        return to_utf<CharOut>(begin,end,"UTF-8",how);
+                    }
+                };
+                template<typename CharIn>
+                struct utf_to_utf_traits<char,CharIn> {
+                    static std::string
+                    convert(CharIn const *begin,CharIn const *end,method_type how)
+                    {
+                        return from_utf(begin,end,"UTF-8",how);
+                    }
+                };
+                template<>
+                struct utf_to_utf_traits<char,char> { // just test valid
+                    static std::string
+                    convert(char const *begin,char const *end,method_type how)
+                    {
+                        return from_utf(begin,end,"UTF-8",how);
+                    }
+                };
+            }
+
             /// \endcond
+           
+            ///
+            /// Convert a Unicode text in range [begin,end) to other Unicode encoding
+            ///
+            template<typename CharOut,typename CharIn>
+            std::basic_string<CharOut>
+            utf_to_utf(CharIn const *begin,CharIn const *end,method_type how = default_method)
+            {
+                return details::utf_to_utf_traits<CharOut,CharIn>::convert(begin,end,how);
+            }
+
+            ///
+            /// Convert a Unicode NUL terminated string \a str other Unicode encoding
+            ///
+            template<typename CharOut,typename CharIn>
+            std::basic_string<CharOut>
+            utf_to_utf(CharIn const *str,method_type how = default_method)
+            {
+                CharIn const *end = str;
+                while(*end)
+                    end++;
+                return utf_to_utf<CharOut,CharIn>(str,end,how);
+            }
+
+
+            ///
+            /// Convert a Unicode string \a str other Unicode encoding
+            ///
+            template<typename CharOut,typename CharIn>
+            std::basic_string<CharOut>
+            utf_to_utf(std::basic_string<CharIn> const &str,method_type how = default_method)
+            {
+                return utf_to_utf<CharOut,CharIn>(str.c_str(),str.c_str()+str.size(),how);
+            }
+
+
+            /// @}
+
         } // conv
 
     } // locale

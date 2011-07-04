@@ -16,6 +16,42 @@ namespace booster {
         namespace conv {
             namespace impl {
 
+                template<typename CharType>
+                char const *utf_name()
+                {
+                    union {
+                        char first;
+                        uint16_t u16;
+                        uint32_t u32;
+                    } v;
+
+                    if(sizeof(CharType) == 1) {
+                        return "UTF-8";
+                    }
+                    else if(sizeof(CharType) == 2) {
+                        v.u16 = 1;
+                        if(v.first == 1) {
+                            return "UTF-16LE";
+                        }
+                        else {
+                            return "UTF-16BE";
+                        }
+                    }
+                    else if(sizeof(CharType) == 4) {
+                        v.u32 = 1;
+                        if(v.first == 1) {
+                            return "UTF-32LE";
+                        }
+                        else {
+                            return "UTF-32BE";
+                        }
+
+                    }
+                    else {
+                        return "Unknown Character Encoding";
+                    }
+                }
+
                 std::string normalize_encoding(char const *encoding);
                 
                 inline int compare_encodings(char const *l,char const *r)

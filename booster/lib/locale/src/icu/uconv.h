@@ -10,6 +10,8 @@
 #include <unicode/unistr.h>
 #include <unicode/ucnv.h>
 #include <unicode/ustring.h>
+#include <unicode/utf.h>
+#include <unicode/utf16.h>
 
 #include <booster/locale/encoding.h>
 
@@ -46,6 +48,10 @@ namespace impl_icu {
         typedef std::basic_string<char_type> string_type;
 
         
+        icu::UnicodeString icu_checked(char_type const *vb,char_type const *ve) const
+        {
+            return icu(vb,ve); // Already done
+        }
         icu::UnicodeString icu(char_type const *vb,char_type const *ve) const
         {
             char const *begin=reinterpret_cast<char const *>(vb);
@@ -168,6 +174,37 @@ namespace impl_icu {
         typedef std::basic_string<char_type> string_type;
 
         
+        icu::UnicodeString icu_checked(char_type const *begin,char_type const *end) const
+        {
+            icu::UnicodeString tmp(end-begin,0,0); // make inital capacity
+            while(begin!=end) {
+                UChar cl = *begin++;
+                if(U16_IS_SINGLE(cl))
+                    tmp.append(static_cast<UChar32>(cl));
+                else if(U16_IS_LEAD(cl)) {
+                    if(begin==end) {
+                        throw_if_needed();
+                    }
+                    else {
+                        UChar ct=*begin++;
+                        if(!U16_IS_TRAIL(ct))
+                            throw_if_needed();
+                        else {
+                            UChar32 c=U16_GET_SUPPLEMENTARY(cl,ct);
+                            tmp.append(c);
+                        }
+                    }
+                }
+                else
+                    throw_if_needed();
+            }
+            return tmp;
+        }     
+        void throw_if_needed() const
+        {
+            if(mode_ == cvt_stop)
+                throw conv::conversion_error();
+        }
         icu::UnicodeString icu(char_type const *vb,char_type const *ve) const
         {
             UChar const *begin=reinterpret_cast<UChar const *>(vb);
@@ -188,7 +225,12 @@ namespace impl_icu {
             return n;
         }
         
-        icu_std_converter(std::string /*charset*/,cpcvt_type /*unused*/=cvt_skip) {}
+        icu_std_converter(std::string /*charset*/,cpcvt_type mode=cvt_skip) :
+            mode_(mode)
+        {
+        }
+    private:
+        cpcvt_type mode_;
 
     };
     
@@ -199,15 +241,31 @@ namespace impl_icu {
         typedef CharType char_type;
         typedef std::basic_string<char_type> string_type;
 
-        
-        icu::UnicodeString icu(char_type const *vb,char_type const *ve) const
+        icu::UnicodeString icu_checked(char_type const *begin,char_type const *end) const
         {
-            UChar32 const *begin=reinterpret_cast<UChar32 const *>(vb);
-            UChar32 const *end  =reinterpret_cast<UChar32 const *>(ve);
-
             icu::UnicodeString tmp(end-begin,0,0); // make inital capacity
-            while(begin!=end)
-                tmp.append(*begin++);
+            while(begin!=end) {
+                UChar32 c = static_cast<UChar32>(*begin++);
+                if(U_IS_UNICODE_CHAR(c))
+                        tmp.append(c);
+                else
+                    throw_if_needed();
+            }
+            return tmp;
+        }     
+        void throw_if_needed() const
+        {
+            if(mode_ == cvt_stop)
+                throw conv::conversion_error();
+        }
+ 
+        icu::UnicodeString icu(char_type const *begin,char_type const *end) const
+        {
+            icu::UnicodeString tmp(end-begin,0,0); // make inital capacity
+            while(begin!=end) {
+                UChar32 c=static_cast<UChar32>(*begin++);
+                tmp.append(c);
+            }
             return tmp;
 
         }
@@ -240,7 +298,12 @@ namespace impl_icu {
             return str.countChar32(from_u,n);
         }
 
-        icu_std_converter(std::string /*charset*/,cpcvt_type /*unused*/=cvt_skip) {}
+        icu_std_converter(std::string /*charset*/,cpcvt_type mode=cvt_skip) :
+            mode_(mode)
+        {
+        }
+    private:
+        cpcvt_type mode_;
 
     };
 } /// impl_icu

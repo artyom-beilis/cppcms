@@ -1023,7 +1023,8 @@ namespace booster {
                 mapping_type  map_;
                 rule_type mask_;
             };
-            
+           
+            /// \cond INTERNAL  
             template<typename BaseIterator>
             segment_index<BaseIterator>::segment_index(boundary_point_index<BaseIterator> const &other) :
                 map_(other.map_),
@@ -1052,6 +1053,7 @@ namespace booster {
                 map_ = other.map_;
                 return *this;
             }
+            /// \endcond
           
             typedef segment_index<std::string::const_iterator> ssegment_index;      ///< convenience typedef
             typedef segment_index<std::wstring::const_iterator> wssegment_index;    ///< convenience typedef
