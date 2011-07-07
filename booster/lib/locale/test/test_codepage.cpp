@@ -248,7 +248,8 @@ struct utfutf;
 template<>
 struct utfutf<char,1> {
     static char const *ok() {return "grüßen";}
-    static char const *bad() { return "gr\xFFüßen"; }
+    static char const *bad() { return "gr\xFF" "üßen"; }
+                                // split into 2 to make SunCC happy
 };
 
 template<>
@@ -267,7 +268,7 @@ struct utfutf<wchar_t,4> {
     static wchar_t const *ok(){ return  L"\x67\x72\xfc\xdf\x65\x6e"; }
     static wchar_t const *bad() { 
         static wchar_t buf[256] = L"\x67\x72\xFF\xfc\xdf\x65\x6e"; 
-        buf[2]=0x1000000; // > 10FFFF
+        buf[2]=static_cast<wchar_t>(0x1000000); // > 10FFFF
         return buf;
     }
 };

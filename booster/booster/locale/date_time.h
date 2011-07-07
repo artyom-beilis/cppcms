@@ -476,22 +476,33 @@ namespace booster {
             ///
             /// Create calendar taking locale and timezone information from ios_base instance.
             /// 
+            /// \note throws std::bad_cast if ios does not have a locale with installed \ref calendar_facet
+            /// facet installed
+            /// 
             calendar(std::ios_base &ios);
             ///
             /// Create calendar with locale \a l and time_zone \a zone
             ///
+            /// \note throws std::bad_cast if loc does not have \ref calendar_facet facet installed
+            /// 
             calendar(std::locale const &l,std::string const &zone);
             ///
             /// Create calendar with locale \a l and default timezone
             ///
+            /// \note throws std::bad_cast if loc does not have \ref calendar_facet facet installed
+            /// 
             calendar(std::locale const &l);
             ///
             /// Create calendar with default locale and timezone \a zone
             ///
+            /// \note throws std::bad_cast if global locale does not have \ref calendar_facet facet installed
+            /// 
             calendar(std::string const &zone);
             ///
             /// Create calendar with default locale and timezone 
             ///
+            /// \note throws std::bad_cast if global locale does not have \ref calendar_facet facet installed
+            /// 
             calendar();
             ~calendar();
 
@@ -582,6 +593,8 @@ namespace booster {
             ///
             /// Dafault constructor, uses default calendar initialized date_time object to current time.
             ///
+            /// \note throws std::bad_cast if the global locale does not have \ref calendar_facet facet installed
+            /// 
             date_time();
             ///
             /// copy date_time
@@ -600,6 +613,8 @@ namespace booster {
             ///
             /// Create a date_time object using POSIX time \a time and default calendar
             ///
+            /// \note throws std::bad_cast if the global locale does not have \ref calendar_facet facet installed
+            /// 
             date_time(double time);
             ///
             /// Create a date_time object using POSIX time \a time and calendar \a cal
@@ -613,6 +628,8 @@ namespace booster {
             ///
             /// Create a date_time object using default calendar and define values given in \a set
             ///
+            /// \note throws std::bad_cast if the global locale does not have \ref calendar_facet facet installed
+            /// 
             date_time(date_time_period_set const &set);
             ///
             /// Create a date_time object using calendar \a cal and define values given in \a set

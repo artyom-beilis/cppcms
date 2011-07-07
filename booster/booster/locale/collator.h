@@ -220,6 +220,8 @@ namespace locale {
         ///
         /// Create a comparator class for locale \a l and with collation leval \a level
         ///
+        /// \note throws std::bad_cast if l does not have \ref collator facet installed
+        /// 
         comparator(std::locale const &l=std::locale(),collator_base::level_type level=default_level) : 
             locale_(l),
             level_(level)

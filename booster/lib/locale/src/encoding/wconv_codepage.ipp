@@ -187,22 +187,51 @@ namespace impl {
         
     }
 
-    bool validate_utf16(uint16_t const *str,unsigned len)
+    template<typename CharType>
+    bool validate_utf16(CharType const *str,unsigned len)
     {
         for(unsigned i=0;i<len;i++) {
-           if(0xD800 <= str[i] && str[i]<= 0xDBFF) {
-               i++;
-               if(i>=len)
-                   return false;
-                if(0xDC00 <= str[i] && str[i]<=0xDFFF)
+            uint16_t c = static_cast<uint16_t>(str[i]);
+
+            if(0xD800 <= c && c<= 0xDBFF) {
+                i++;
+                if(i>=len)
+                    return false;
+                c=static_cast<uint16_t>(str[i]);
+                if(0xDC00 <= c && c <= 0xDFFF)
                     continue;
                 return false;
-           }
-           else if(0xDC00 <= str[i] && str[i]<=0xDFFF)
-               return false;
+            }
+            else if(0xDC00 <= c && c <=0xDFFF)
+                return false;
         }
         return true;
     }
+
+    template<typename CharType,typename OutChar>
+    void clean_invalid_utf16(CharType const *str,unsigned len,std::vector<OutChar> &out)
+    {
+        out.reserve(len);
+        for(unsigned i=0;i<len;i++) {
+            uint16_t c = static_cast<uint16_t>(str[i]);
+
+            if(0xD800 <= c && c<= 0xDBFF) {
+                i++;
+                if(i>=len)
+                    return;
+                uint16_t c2=static_cast<uint16_t>(str[i]);
+                if(0xDC00 <= c2 && c2 <= 0xDFFF) {
+                    out.push_back(static_cast<OutChar>(c));
+                    out.push_back(static_cast<OutChar>(c2));
+                }
+            }
+            else if(0xDC00 <= c && c <=0xDFFF)
+                continue;
+            else
+                out.push_back(static_cast<OutChar>(c));
+        }
+    }
+
 
     class wconv_between : public converter_between {
     public:
@@ -330,16 +359,32 @@ namespace impl {
 
         virtual std::string convert(CharType const *begin,CharType const *end) 
         {
+            wchar_t const *wbegin = 0;
+            wchar_t const *wend = 0;
+            std::vector<wchar_t> buffer; // if needed
             if(begin==end)
                 return std::string();
-            if(how_ == stop && !validate_utf16(reinterpret_cast<uint16_t const *>(begin),end-begin)) {
-                throw conversion_error();
+            if(validate_utf16(begin,end-begin)) {
+                wbegin =  reinterpret_cast<wchar_t const *>(begin);
+                wend = reinterpret_cast<wchar_t const *>(end);
             }
-            std::vector<char> ctmp;
-			wchar_t const *wbegin = reinterpret_cast<wchar_t const *>(begin);
-			wchar_t const *wend = reinterpret_cast<wchar_t const *>(end);
-            wide_to_multibyte(code_page_,wbegin,wend,how_ == skip,ctmp);
+            else {
+                if(how_ == stop) {
+                        throw conversion_error();
+                }
+                else {
+                    clean_invalid_utf16(begin,end-begin,buffer);
+                    if(!buffer.empty()) {
+                        wbegin = &buffer[0];
+                        wend = wbegin + buffer.size();
+                    }
+                }
+            }
             std::string res;
+            if(wbegin==wend)
+                return res;
+            std::vector<char> ctmp;
+            wide_to_multibyte(code_page_,wbegin,wend,how_ == skip,ctmp);
             if(ctmp.empty())
                 return res;
             res.assign(&ctmp.front(),ctmp.size());

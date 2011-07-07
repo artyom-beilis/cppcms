@@ -78,6 +78,8 @@ namespace booster {
             ///
             /// convert string to UTF string from text in range [begin,end) encoded according to locale \a loc according to policy \a how
             ///
+            /// \note throws std::bad_cast if the loc does not have \ref info facet installed
+            /// 
             template<typename CharType>
             std::basic_string<CharType> to_utf(char const *begin,char const *end,std::locale const &loc,method_type how=default_method)
             {
@@ -87,6 +89,8 @@ namespace booster {
             ///
             /// convert UTF text in range [begin,end) to a text encoded according to locale \a loc according to policy \a how
             ///
+            /// \note throws std::bad_cast if the loc does not have \ref info facet installed
+            /// 
             template<typename CharType>
             std::string from_utf(CharType const *begin,CharType const *end,std::locale const &loc,method_type how=default_method)
             {
@@ -139,6 +143,8 @@ namespace booster {
             ///
             /// Convert a \a text in locale encoding given by \a loc to UTF
             ///
+            /// \note throws std::bad_cast if the loc does not have \ref info facet installed
+            /// 
             template<typename CharType>
             std::basic_string<CharType> to_utf(std::string const &text,std::locale const &loc,method_type how=default_method)
             {
@@ -148,6 +154,8 @@ namespace booster {
             ///
             /// Convert a \a text in UTF to locale encoding given by \a loc
             ///
+            /// \note throws std::bad_cast if the loc does not have \ref info facet installed
+            /// 
             template<typename CharType>
             std::string from_utf(std::basic_string<CharType> const &text,std::locale const &loc,method_type how=default_method)
             {
@@ -157,6 +165,8 @@ namespace booster {
             ///
             /// Convert a \a text in locale encoding given by \a loc to UTF
             ///
+            /// \note throws std::bad_cast if the loc does not have \ref info facet installed
+            /// 
             template<typename CharType>
             std::basic_string<CharType> to_utf(char const *text,std::locale const &loc,method_type how=default_method)
             {
@@ -169,6 +179,8 @@ namespace booster {
             ///
             /// Convert a \a text in UTF to locale encoding given by \a loc
             ///
+            /// \note throws std::bad_cast if the loc does not have \ref info facet installed
+            /// 
             template<typename CharType>
             std::string from_utf(CharType const *text,std::locale const &loc,method_type how=default_method)
             {
@@ -249,11 +261,14 @@ namespace booster {
             #endif
 
             namespace details {
+
                 template<typename CharOut,typename CharIn>
                 struct utf_to_utf_traits {
                     static std::basic_string<CharOut>
                     convert(CharIn const *begin,CharIn const *end,method_type how)
                     {
+                        // Make more efficient in fututre - UTF-16/UTF-32 should be quite
+                        // simple and fast
                         return to_utf<CharOut>(from_utf(begin,end,"UTF-8",how),"UTF-8",how);
                     }
                 };
