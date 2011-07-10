@@ -606,9 +606,9 @@ namespace booster {
 
         /// @}
 
-        // 
-        // gettext compatibility functions
-        //
+        /// 
+        /// \anchor boost_locale_gettext_family \name Direct message translation functions family 
+        ///
 
         ///
         /// Translate message \a id according to locale \a loc
