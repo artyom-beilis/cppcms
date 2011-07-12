@@ -52,10 +52,11 @@ cache_pool::cache_pool(json::value const &settings) :
 #elif defined(CPPCMS_NO_PREFOK_CACHE)
 		throw cppcms_error("The 'process_shared' backend is disabled during build procedure");
 #else // has prefork cache
-		size_t memory = settings.get("cache.memory",16384) * 1024;
-		if(memory < 65536)
+		size_t memory = settings.get("cache.memory",16384);
+		if(memory < 64)
 			throw cppcms_error("'process_shared' cache backend requires at least 64 KB of cache memory: cache.memory >= 64");
-		d->module=impl::process_cache_factory(memory);
+		unsigned items = settings.get("cache.limit",memory);
+		d->module=impl::process_cache_factory(memory*1024,items);
 #endif // prefork cache
 	}	
 	else

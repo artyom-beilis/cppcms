@@ -26,7 +26,7 @@ namespace cppcms {
 namespace impl {
 	booster::intrusive_ptr<base_cache> CPPCMS_API thread_cache_factory(unsigned items);
 	#ifndef CPPCMS_WIN32
-	booster::intrusive_ptr<base_cache> CPPCMS_API process_cache_factory(size_t memory);
+	booster::intrusive_ptr<base_cache> CPPCMS_API process_cache_factory(size_t memory,unsigned items);
 	#endif
 } // impl
 } // cppcms

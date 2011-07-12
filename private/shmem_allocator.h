@@ -92,10 +92,11 @@ public :
 
 
 	template<typename U> shmem_allocator (const shmem_allocator< U, mm > &) { };
+
 	shmem_allocator (const shmem_allocator &){ };
 	shmem_allocator() {};
 
-	inline pointer allocate(size_type cnt, std::allocator<void>::const_pointer = 0) const
+	pointer allocate(size_type cnt, std::allocator<void>::const_pointer = 0) const
 	{
 		void *memory=mm->malloc(cnt*sizeof(T));
 		if(!memory) {
@@ -103,15 +104,35 @@ public :
 		}
 		return (pointer)memory;
 	};
-	inline void deallocate(pointer p, size_type) const
+	void deallocate(pointer p, size_type) const
 	{
 		mm->free(p);
 	};
-	inline void construct(pointer p, const T& t) const { new(p) T(t); }
-	inline void destroy(pointer p) const { p->~T(); }
+	void construct(pointer p, const T& t) const 
+	{
+		new(p) T(t); 
+	}
+	void destroy(pointer p) const 
+	{
+		p->~T(); 
+	}
+	pointer address(reference x) const
+	{
+		return &x;
+	}
+	const_pointer address(const_reference x) const
+	{
+		return &x;
+	}
 
-	inline bool operator==(shmem_allocator const&) const { return true; }
-	inline bool operator!=(shmem_allocator const& a) const { return false; }
+	bool operator==(shmem_allocator const&) const 
+	{
+		return true;
+	}
+	bool operator!=(shmem_allocator const& a) const 
+	{
+		return false; 
+	}
 };
 
 

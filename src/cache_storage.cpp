@@ -22,6 +22,8 @@
 #include "cache_storage.h"
 #include <booster/thread.h>
 
+
+
 #if defined CPPCMS_WIN32 
 # ifndef CPPCMS_NO_PREFOK_CACHE
 #   define CPPCMS_NO_PREFOK_CACHE
@@ -36,9 +38,12 @@
 #include <map>
 #include <list>
 #include <limits>
-#include <iostream>
 #include <time.h>
 #include <cppcms/cstdint.h>
+
+
+#include <cppcms_boost/unordered/unordered_map.hpp>
+namespace boost = cppcms_boost;
 
 namespace cppcms {
 namespace impl {
@@ -143,10 +148,11 @@ class mem_cache : public base_cache {
 
 	typedef std::basic_string<char,std::char_traits<char>,allocator > string_type;
 
-	typedef std::map<
+	typedef boost::unordered_map<
 			string_type,
 			container,
-			std::less<string_type>,
+			boost::hash<string_type>,
+			std::equal_to<string_type>,
 			typename allocator::template rebind<std::pair<const string_type,container> >::other
 		> map_type;
 
@@ -227,11 +233,16 @@ public:
 		refs(0),
 		generation(0)
 	{
+		nl_clear();
 	}
 	~mem_cache()
 	{
 	}
-	void set_size(unsigned l) { limit=l; };
+	void set_size(unsigned l) 
+	{ 
+		limit = l; 
+		nl_clear();
+	};
 	virtual bool fetch(std::string const &key,std::string *a,std::set<std::string> *triggers,time_t *timeout_out,uint64_t *gen)
 	{
 		rdlock_guard lock(*access_lock);
@@ -290,6 +301,7 @@ public:
 		lru.clear();
 		primary.clear();
 		triggers.clear();
+		primary.rehash( (limit+1) / primary.max_load_factor() + 1);
 		size = 0;
 	}
 	virtual void clear()
@@ -412,10 +424,10 @@ booster::intrusive_ptr<base_cache> thread_cache_factory(unsigned items)
 }
 
 #if !defined(CPPCMS_NO_PREFOK_CACHE)
-booster::intrusive_ptr<base_cache> process_cache_factory(size_t memory)
+booster::intrusive_ptr<base_cache> process_cache_factory(size_t memory,unsigned items)
 {
 	process_settings::init(memory);
-	return new mem_cache<process_settings>(0);
+	return new mem_cache<process_settings>(items);
 }
 #endif
 
