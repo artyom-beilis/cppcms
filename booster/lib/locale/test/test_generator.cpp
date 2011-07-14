@@ -5,25 +5,17 @@
 //  accompanying file LICENSE_1_0.txt or copy at
 //  http://www.boost.org/LICENSE_1_0.txt)
 //
-#ifndef BOOSTER_LOCALE_WITH_ICU
-#include <iostream>
-int main()
-{
-        std::cout << "ICU is not build... Skipping" << std::endl;
-}
-#else
 
 #include <booster/locale/generator.h>
 #include <booster/locale/info.h>
-#include <booster/locale/collator.h>
+#include <booster/locale/message.h>
 #include <iomanip>
 #include "test_locale.h"
 
 
-bool has_collator(std::locale const &l)
+bool has_message(std::locale const &l)
 {
-    return std::has_facet<std::collate<char> >(l) 
-        && dynamic_cast<booster::locale::collator<char> const *>(&std::use_facet<std::collate<char> >(l));
+    return std::has_facet<booster::locale::message_format<char> >(l);
 }
 
 struct test_facet : public std::locale::facet {
@@ -39,24 +31,24 @@ int main()
     try {
         booster::locale::generator g;
         std::locale l=g("en_US.UTF-8");
-        TEST(has_collator(l));
+        TEST(has_message(l));
 
-        g.categories(g.categories() ^ booster::locale::collation_facet);
+        g.categories(g.categories() ^ booster::locale::message_facet);
         g.locale_cache_enabled(true);
         g("en_US.UTF-8");
-        g.categories(g.categories() | booster::locale::collation_facet);
+        g.categories(g.categories() | booster::locale::message_facet);
         l=g("en_US.UTF-8");
-        TEST(!has_collator(l));
+        TEST(!has_message(l));
         g.clear_cache();
         g.locale_cache_enabled(false);
         l=g("en_US.UTF-8");
-        TEST(has_collator(l));
+        TEST(has_message(l));
         g.characters(g.characters() ^ booster::locale::char_facet);
         l=g("en_US.UTF-8");
-        TEST(!has_collator(l));
+        TEST(!has_message(l));
         g.characters(g.characters() | booster::locale::char_facet);
         l=g("en_US.UTF-8");
-        TEST(has_collator(l));
+        TEST(has_message(l));
 
         l=g("en_US.ISO8859-1");
         TEST(std::use_facet<booster::locale::info>(l).language()=="en");
@@ -104,5 +96,4 @@ int main()
     FINALIZE();
 
 }
-#endif // NOICU
 // vim: tabstop=4 expandtab shiftwidth=4 softtabstop=4

@@ -25,6 +25,7 @@ find boost_locale -regextype posix-extended -regex '.*\.(cpp|h|ipp)' -exec sed -
 find boost_locale -regextype posix-extended -regex '.*\.(cpp|h|ipp)' -exec sed -i 's/.hpp>/.h>/' '{}' \;
 find boost_locale -regextype posix-extended -regex '.*\.(cpp|h|ipp)' -exec sed -i 's/.hpp"/.h"/' '{}' \;
 find boost_locale -regextype posix-extended -regex '.*\.(cpp|h|ipp)' -exec sed -i 's/booster\/locale\/config.h/booster\/config.h/' '{}' \;
+find boost_locale -regextype posix-extended -regex '.*\.(cpp|h|ipp)' -exec sed -i 's/booster\/thread\/mutex.h/booster\/thread.h/' '{}' \;
 find boost_locale -regextype posix-extended -regex '.*\.(cpp|h|ipp)' -exec sed -i 's/BOOSTER_LOCALE_DECL/BOOSTER_API/' '{}' \;
 find boost_locale -regextype posix-extended -regex '.*\.(cpp|h|ipp)' -exec sed -i 's/BOOSTER_LOCALE_SOURCE/BOOSTER_SOURCE/' '{}' \;
 find boost_locale -regextype posix-extended -regex '.*\.(cpp|h|ipp)' -exec sed -i 's/BOOSTER_WINDOWS/BOOSTER_WIN_NATIVE/' '{}' \;
