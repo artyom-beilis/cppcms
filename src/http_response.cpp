@@ -273,15 +273,14 @@ std::ostream &response::out()
 	if(finalized_)
 		throw cppcms_error("Request for output stream for finalized request is illegal");
 	
-	ostream_requested_=1;
-
-	std::ostream *real_sink = 0;
-
 	if(io_mode_ == asynchronous || io_mode_ == asynchronous_raw) 
-		real_sink = &d->buffered;
+		stream_ = &d->buffered;
 	else 
-		real_sink = &d->output;
-
+		stream_ = &d->output;
+	
+	ostream_requested_=1;
+	
+	bool use_filter = false;
 
 	#ifndef CPPCMS_NO_GZIP
 	bool gzip = need_gzip();
@@ -293,7 +292,7 @@ std::ostream &response::out()
 
 	// Now we shoulde write headers -- before comrpession
 	if(io_mode_ != raw && io_mode_ != asynchronous_raw)
-		write_http_headers(*real_sink);
+		write_http_headers(*stream_);
 	
 	#ifndef CPPCMS_NO_GZIP
 	if(gzip) {
@@ -308,19 +307,19 @@ std::ostream &response::out()
 		else
 			d->filter.push(gzip_compressor(params));
 
-		stream_ = &d->filter;
+		use_filter = true;
 	}
 	#endif
 	
 	if(copy_to_cache_) {
 		d->filter.push(tee_filter<std::ostream>(d->cached));
-		stream_ = &d->filter;
+		use_filter = true;
 	}
 	
-	if(stream_)
-		d->filter.push(*real_sink);
-	else
-		stream_=real_sink;
+	if(use_filter) {
+		d->filter.push(*stream_);
+		stream_ = &d->filter;
+	}
 
 	stream_->imbue(context_.locale());
 	return *stream_;
