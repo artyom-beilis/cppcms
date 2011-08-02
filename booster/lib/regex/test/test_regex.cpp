@@ -154,6 +154,7 @@ int main()
 			TEST(!search("foo","bar"));
 
 			TEST(match("foo","foo"));
+			TEST(match("(http|https|ftp|mailto)","https"));
 			TEST(!match("foo","zeefoo"));
 			TEST(!match("foo","foobar"));
 			TEST(match("(foo)","foo"));

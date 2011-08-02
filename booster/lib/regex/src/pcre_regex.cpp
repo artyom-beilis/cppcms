@@ -10,53 +10,83 @@
 #include <string.h>
 #include <pcre.h>
 #include <sstream>
+#include <algorithm>
 
 namespace booster {
 	struct regex::data {
 		std::string expression;
 		int flags;
 		pcre *re;
-		int re_size;
+		pcre *are;
+		size_t re_size;
+		size_t are_size;
 		int match_size;
 
 
-		data() : flags(0), re(0), re_size(0),match_size(0) 
+		data() : 
+			flags(0),
+			re(0),
+			are(0),
+			re_size(0),
+			are_size(0),
+			match_size(0) 
 		{
+		}
+
+		void swap(data &other)
+		{
+			expression.swap(other.expression);
+			std::swap(flags,	other.flags);
+			std::swap(re,		other.re);
+			std::swap(are,		other.are);
+			std::swap(re_size,	other.re_size);
+			std::swap(are_size,	other.are_size);
+			std::swap(match_size,	other.match_size);
 		}
 
 		data(data const &other) :
 			expression(other.expression),
 			flags(other.flags),
-			re(other.re),
+			re(0),
+			are(0),
 			re_size(other.re_size),
+			are_size(other.are_size),
 			match_size(other.match_size)
 		{
-			if(re!=0) {
-				re = (pcre *)(pcre_malloc(re_size));
-				if(!re) {
-					throw std::bad_alloc();
+			try {
+				if(other.re!=0) {
+					re = (pcre *)(pcre_malloc(re_size));
+					if(!re) {
+						throw std::bad_alloc();
+					}
+					memcpy(re,other.re,re_size);
 				}
-				memcpy(re,other.re,re_size);
+				if(other.are!=0) {
+					are = (pcre *)(pcre_malloc(are_size));
+					if(!are) {
+						throw std::bad_alloc();
+					}
+					memcpy(are,other.are,are_size);
+				}
+			}
+			catch(...) {
+				if(re) pcre_free(re);
+				if(are) pcre_free(are);
+				throw;
 			}
 		}
 		data const &operator=(data const &other) 
 		{
 			if(this != &other) {
-				if(re) pcre_free(re);
-				re=0;
-				re = (pcre*)pcre_malloc(other.re_size);
-				if(!re) throw std::bad_alloc();
-				expression = other.expression;
-				flags = other.flags;
-				memcpy(re,other.re,other.re_size);
-				re_size = other.re_size;
-				match_size = other.match_size;
+				data tmp(other);
+				swap(tmp);
 			}
 			return *this;
 		}
 		~data()
 		{
 			if(re) pcre_free(re);
+			if(are) pcre_free(are);
 		}
 			
 	};
@@ -97,6 +127,22 @@ namespace booster {
 		d->re = p;
 		if(	pcre_fullinfo(d->re,NULL,PCRE_INFO_SIZE,&d->re_size) < 0
 			|| pcre_fullinfo(d->re,NULL,PCRE_INFO_CAPTURECOUNT,&d->match_size) < 0)
+		{
+			throw regex_error("Internal error");
+		}
+		
+		std::string anchored;
+		anchored.reserve(pattern.size()+6);
+		anchored+= "(?:";
+		anchored+=pattern;
+		anchored+=")\\z";
+
+		p=pcre_compile(anchored.c_str(),0,&err_ptr,&offset,0);
+		if(!p) {
+			throw regex_error("Internal error");
+		}
+		d->are = p;
+		if(!pcre_fullinfo(d->are,NULL,PCRE_INFO_SIZE,&d->are_size) < 0)
 		{
 			throw regex_error("Internal error");
 		}
@@ -154,27 +200,25 @@ namespace booster {
 	
 	bool regex::match(char const *begin,char const *end,int /*flags*/) const
 	{
-		if(!d->re)
+		if(!d->are)
 			throw regex_error("Empty expression");
-		int ovec[3];
-		int res = pcre_exec(d->re,0,begin,end-begin,0,PCRE_ANCHORED,ovec,3);
+		
+		int res = pcre_exec(d->are,0,begin,end-begin,0,PCRE_ANCHORED,0,0);
 		if(res < 0)
-			return false;
-		if(ovec[0]!=0 || ovec[1]!=end-begin)
 			return false;
 		return true;
 	}
 
 	bool regex::match(char const *begin,char const *end,std::vector<std::pair<int,int> > &marks,int /*flags*/) const
 	{
-		if(!d->re)
+		if(!d->are)
 			throw regex_error("Empty expression");
 		marks.clear();
 		int pat_size = mark_count() + 1;
 		marks.resize(pat_size,std::pair<int,int>(-1,-1));
 
 		std::vector<int> ovec((mark_count()+1)*3,0);
-		int res = pcre_exec(d->re,0,begin,end-begin,0,PCRE_ANCHORED,&ovec.front(),ovec.size());
+		int res = pcre_exec(d->are,0,begin,end-begin,0,PCRE_ANCHORED,&ovec.front(),ovec.size());
 		if(res < 0)
 			return false;
 		if(ovec[0]!=0 || ovec[1]!=end-begin)
