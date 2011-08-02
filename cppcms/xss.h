@@ -21,6 +21,7 @@
 
 #include <booster/copy_ptr.h>
 #include <booster/regex.h>
+#include <booster/function.h>
 #include <cppcms/defs.h>
 
 #include <string.h>
@@ -246,6 +247,11 @@ namespace cppcms {
 			void numeric_entities_allowed(bool v);
 
 			///
+			/// Functor that allows to provide custom validations for different properties
+			///
+			typedef booster::function<bool(char const *begin,char const *end)> validator_type;
+
+			///
 			/// Add the property that should be allowed to appear for specific tag as boolean property like
 			/// checked="checked", when the type
 			/// is HTML it is case insensitive.
@@ -254,11 +260,16 @@ namespace cppcms {
 			///
 			void add_boolean_property(std::string const &tag_name,std::string const &property);
 			///
+			/// Add the property that should be checked using custom functor
+			///
+			void add_property(std::string const &tag_name,std::string const &property,validator_type const &val);
+			///
 			/// Add the property that should be checked using regular expression.
 			///
 			void add_property(std::string const &tag_name,std::string const &property,booster::regex const &r);
 			///
-			/// Add numeric property, same as add_property(tag_name,property,booster::regex("-?[0-9]+")
+			/// Add numeric property, same as add_property(tag_name,property,booster::regex("-?[0-9]+") but
+			/// little bit more efficient
 			///
 			void add_integer_property(std::string const &tag_name,std::string const &property);
 
@@ -267,7 +278,7 @@ namespace cppcms {
 			/// It should be used for properties like like "href" or "src".
 			/// It is very good idea to use it in order to prevent urls like javascript:alert('XSS')
 			/// 
-			/// It's behavior is same as add_property(tag_name,property,rules::uri_matcher());
+			/// It's behavior is same as add_property(tag_name,property,rules::uri_validator());
 			///
 			void add_uri_property(std::string const &tag_name,std::string const &property);
 			///
@@ -275,10 +286,12 @@ namespace cppcms {
 			/// It should be used for properties like like "href" or "src".
 			/// It is very good idea to use it in order to prevent urls like javascript:alert('XSS')
 			/// 
-			/// It's behavior is same as add_property(tag_name,property,rules::uri_matcher(schema));
+			/// It's behavior is same as add_property(tag_name,property,rules::uri_validator(schema));
 			///
 			void add_uri_property(std::string const &tag_name,std::string const &property,std::string const &schema);
 
+			///
+			/// \deprecated use uri_validator 
 			///
 			/// Create a regular expression that checks URI for safe inclusion in the property. 
 			/// By default it allows only: http, https, ftp, mailto, news, nntp.
@@ -286,6 +299,8 @@ namespace cppcms {
 			/// If you need finer control over allowed schemas, use uri_matcher(std::string const&).
 			///
 			static booster::regex uri_matcher();
+			///
+			/// \deprecated use uri_validator 
 			///
 			/// Create a regular expression that checks URI for safe inclusion in the text, where
 			/// schema is a regular expression that matches specific protocols that can be used.
@@ -299,6 +314,36 @@ namespace cppcms {
 			/// \endcode
 			///
 			static booster::regex uri_matcher(std::string const &schema);
+
+			////
+			/// Create a validator that checks URI for safe inclusion in the property. 
+			/// By default it allows only: http, https, ftp, mailto, news, nntp.
+			///
+			/// If you need finer control over allowed schemas, use uri_validator(std::string const&).
+			///
+			static validator_type uri_validator();
+			////
+			/// Create a validator that checks URI for safe inclusion in the property.
+			/// - schema is a regular expression that matches specific protocols that can be used.
+			/// - absolute_only - set to true to prevent accepting relative URIs like "/files/img.png" or "test.html"
+			///
+			/// \note You don't need to add "^" or "$" tags to \a scheme
+			///
+			/// For example:
+			/// \code
+			/// uri_validator("(http|https)");
+			/// \endcode
+			///
+			///
+			/// If you need finer control over allowed schemas, use uri_validator(std::string const&).
+			///
+			static validator_type uri_validator(std::string const &scheme,bool absolute_only = false);
+
+			///
+			/// Create a validator that checks that this URI is relative and it is safe for inclusion
+			/// in URI property like href or src
+			///
+			static validator_type relative_uri_validator();
 
 			///
 			/// Check if the comments are allowed in the text

@@ -36,104 +36,97 @@ namespace utf {
 }
 
 namespace utf8 {
+        inline int trail_length(unsigned char c) 
+        {
+            if(c < 128)
+                return 0;
+            if(c < 194)
+                return -1;
+            if(c < 224)
+                return 1;
+            if(c < 240)
+                return 2;
+            if(c <=244)
+                return 3;
+            return -1;
+        }
+        inline int width(uint32_t value)
+        {
+            if(value <=0x7F) {
+                return 1;
+            }
+            else if(value <=0x7FF) {
+                return 2;
+            }
+            else if(value <=0xFFFF) {
+                return 3;
+            }
+            else {
+                return 4;
+            }
+        }
+
 	// See RFC 3629
 	// Based on: http://www.w3.org/International/questions/qa-forms-utf-8
 	template<typename Iterator>
-	uint32_t next(Iterator &p,Iterator e,bool html=false,bool decode=false)
+	uint32_t next(Iterator &p,Iterator e,bool html=false,bool /*decode*/=false)
 	{
-		unsigned char c=*p++;
-		unsigned char seq0,seq1=0,seq2=0,seq3=0;
-		seq0=c;
-		int len=1;
-		if((c & 0xC0) == 0xC0) {
-			if(p==e)
-				return utf::illegal;
-			seq1=*p++;
-			len=2;
-		}
-		if((c & 0xE0) == 0xE0) {
-			if(p==e)
-				return utf::illegal;
-			seq2=*p++;
-			len=3;
-		}
-		if((c & 0xF0) == 0xF0) {
-			if(p==e)
-				return utf::illegal;
-			seq3=*p++;
-			len=4;
-		}
-		switch(len) {
-		case 1: // ASCII -- remove codes for HTML only
-			if(seq0 > 0x7F)
-				return utf::illegal;
-			if(!html || seq0==0x9 || seq0==0x0A || seq0==0x0D || (0x20<=seq0 && seq0<=0x7E))
-				break;
-			return utf::illegal;
-		case 2: // non-overloading 2 bytes
-			if(0xC2 <= seq0 && seq0 <= 0xDF) {
-				if(html && seq0==0xC2 && seq1<=0x9F)
-					return utf::illegal; // C1 is illegal
-				if(0x80 <= seq1 && seq1<= 0xBF)
-					break;
-			}
-			return utf::illegal;
-		case 3: 
-			if(seq0==0xE0) { // exclude overloadings
-				if(0xA0 <=seq1 && seq1<= 0xBF && 0x80 <=seq2 && seq2<=0xBF)
-					break;
-			}
-			else if( (0xE1 <= seq0 && seq0 <=0xEC) || seq0==0xEE || seq0==0xEF) { // stright 3 bytes
-				if(	0x80 <=seq1 && seq1<=0xBF &&
-					0x80 <=seq2 && seq2<=0xBF)
-					break;
-			}
-			else if(seq0 == 0xED) { // exclude surrogates
-				if(	0x80 <=seq1 && seq1<=0x9F &&
-					0x80 <=seq2 && seq2<=0xBF)
-					break;
-			}
-			return utf::illegal;
-		case 4:
-			switch(seq0) {
-			case 0xF0: // planes 1-3
-				if(	0x90 <=seq1 && seq1<=0xBF &&
-					0x80 <=seq2 && seq2<=0xBF &&
-					0x80 <=seq3 && seq3<=0xBF)
-					break;
-				return utf::illegal;
-			case 0xF1: // planes 4-15
-			case 0xF2:
-			case 0xF3:
-				if(	0x80 <=seq1 && seq1<=0xBF &&
-					0x80 <=seq2 && seq2<=0xBF &&
-					0x80 <=seq3 && seq3<=0xBF)
-					break;
-				return utf::illegal;
-			case 0xF4: // pane 16
-				if(	0x80 <=seq1 && seq1<=0x8F &&
-					0x80 <=seq2 && seq2<=0xBF &&
-					0x80 <=seq3 && seq3<=0xBF)
-					break;
-				return utf::illegal;
-			default:
-				return utf::illegal;
-			}
+		using utf::illegal;
+		if(p==e)
+			return illegal;
 
+		unsigned char lead = *p++;
+
+		// First byte is fully validated here
+		int trail_size = trail_length(lead);
+
+		if(trail_size < 0)
+			return illegal;
+
+		//
+		// Ok as only ASCII may be of size = 0
+		// also optimize for ASCII text
+		//
+		if(trail_size == 0) {
+			if(!html || (lead >= 0x20 && lead!=0x7F) || lead==0x9 || lead==0x0A || lead==0x0D)
+				return lead;
+			return illegal;
 		}
-		if(!decode)
-			return 1;
-		switch(len) {
-		case 1:
-			return seq0;
-		case 2:
-			return ((seq0 & 0x1F) << 6) | (seq1 & 0x3F);
-		case 3:
-			return ((seq0 & 0x0F) << 12) | ((seq1 & 0x3F) << 6) | (seq2 & 0x3F)  ;
-		case 4:
-			return ((seq0 & 0x07) << 18) | ((seq1 & 0x3F) << 12) | ((seq2 & 0x3F) << 6) | (seq3 & 0x3F) ;
+
+		uint32_t c = lead & ((1<<(6-trail_size))-1);
+
+		// Read the rest
+		unsigned char tmp;
+		switch(trail_size) {
+			case 3:
+				if(p==e)
+					return illegal;
+				tmp = *p++;
+				c = (c << 6) | ( tmp & 0x3F);
+			case 2:
+				if(p==e)
+					return illegal;
+				tmp = *p++;
+				c = (c << 6) | ( tmp & 0x3F);
+			case 1:
+				if(p==e)
+					return illegal;
+				tmp = *p++;
+				c = (c << 6) | ( tmp & 0x3F);
 		}
-		return utf::illegal;
+
+		// Check code point validity: no surrogates and
+		// valid range
+		if(!utf::valid(c))
+			return illegal;
+
+		// make sure it is the most compact representation
+		if(width(c)!=trail_size + 1)
+			return illegal;
+		
+		if(html && c<0xA0)
+			return illegal;
+		return c;
 	} // valid
 
 
@@ -158,21 +151,6 @@ namespace utf8 {
 	}
 
 
-	inline int width(uint32_t value)
-	{
-		if(value <=0x7F) {
-			return 1;
-		}
-		else if(value <=0x7FF) {
-			return 2;
-		}
-		else if(value <=0xFFFF) {
-			return 3;
-		}
-		else {
-			return 4;
-		}
-	}
 	struct seq {
 		char c[4];
 		unsigned len;

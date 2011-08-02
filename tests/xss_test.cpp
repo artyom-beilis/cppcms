@@ -22,6 +22,11 @@
 #include <iostream>
 #include <string.h>
 
+#ifdef TEST
+#undef TEST
+#define TEST(x) do { if(!(x)) std::cerr <<__LINE__<<": "<< #x << std::endl; } while(0)
+#endif
+
 void test_rules()
 {
 	std::cout << "- Testing rules" << std::endl;

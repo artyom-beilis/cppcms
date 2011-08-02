@@ -25,6 +25,7 @@
 #include <map>
 #include <set>
 #include <stdlib.h>
+#include <string.h>
 
 #include <iostream>
 
@@ -46,10 +47,39 @@ namespace cppcms { namespace xss {
 		}
 	};
 
+	struct regex_functor {
+	public:
+		regex_functor(booster::regex const &r=booster::regex()) :
+			r_(r)
+		{
+		}
+		bool operator()(char const *b,char const *e) const
+		{
+			return booster::regex_match(b,e,r_);
+		}
+	private:
+		booster::regex r_;
+	};
+
+	bool integer_property_functor(char const *begin,char const *end) 
+	{
+		if(begin!=end && *begin=='-')
+			begin++;
+		if(begin==end)
+			return false;
+		while(begin!=end) {
+			char c= *begin++;
+			if(c<'0' || '9'<c)
+				return false;
+		}
+		return true;
+	}
+
 	
 	struct basic_rules_holder {
 		
 		typedef std::set<details::c_string,compare_c_string> entities_type;
+		typedef rules::validator_type validator_type;
 		entities_type entities;
 		
 		bool valid_entity(c_string const &name) const
@@ -61,7 +91,7 @@ namespace cppcms { namespace xss {
 			entities.insert(c_string(name));
 		}
 		virtual void add_tag(std::string const &name,rules::tag_type type) = 0;
-		virtual void add_property(std::string const &tname,std::string const &pname,booster::regex const &r) = 0;
+		virtual void add_property(std::string const &tname,std::string const &pname,validator_type const &r) = 0;
 		virtual rules::tag_type valid_tag(c_string const &t) const = 0;
 		virtual bool valid_boolean_property(c_string const &tname,c_string const &pname) const = 0;
 		virtual bool valid_property(c_string const &tname,c_string const &pname,c_string const &value) const = 0;
@@ -79,7 +109,7 @@ namespace cppcms { namespace xss {
 			add_entity("quot");
 		}
 		
-		typedef std::map<details::c_string,booster::regex,Comp> properties_type;
+		typedef std::map<details::c_string,validator_type,Comp> properties_type;
 		struct tag {
 			properties_type properties;
 			rules::tag_type type;
@@ -91,7 +121,7 @@ namespace cppcms { namespace xss {
 		{
 			tags[c_string(name)].type=type;
 		}
-		void add_property(std::string const &tname,std::string const &pname,booster::regex const &r)
+		void add_property(std::string const &tname,std::string const &pname,validator_type const &r)
 		{
 			c_string cname(tname);
 			if(tags.find(cname)==tags.end())
@@ -141,7 +171,7 @@ namespace cppcms { namespace xss {
 					return false; // Should be boolean in HTML
 				}
 			}
-			if(booster::regex_match(value.begin(),value.end(),pp->second))
+			if(pp->second(value.begin(),value.end()))
 				return true;
 			return false;
 		}
@@ -247,16 +277,19 @@ namespace cppcms { namespace xss {
 	
 	void rules::add_boolean_property(std::string const &tag_name,std::string const &property)
 	{
-		add_property(tag_name,property,booster::regex());
+		add_property(tag_name,property,validator_type());
 	}
 	void rules::add_property(std::string const &tag_name,std::string const &property,booster::regex const &r)
 	{
-		impl().add_property(tag_name,property,r);
+		impl().add_property(tag_name,property,regex_functor(r));
+	}
+	void rules::add_property(std::string const &tag_name,std::string const &property,rules::validator_type const &v)
+	{
+		impl().add_property(tag_name,property,v);
 	}
 	void rules::add_integer_property(std::string const &tag_name,std::string const &property)
 	{
-		booster::regex r("-?[0-9]+");
-		add_property(tag_name,property,r);
+		add_property(tag_name,property,integer_property_functor);
 	}
 	
 	bool rules::comments_allowed() const
@@ -378,16 +411,548 @@ namespace cppcms { namespace xss {
 		return booster::regex(uri_reference);
 	}
 
+	// second implementation
+
+	class uri_parser {
+
+		struct save_point;
+		friend struct save_point;
+		char const *scheme_start_;
+		char const *scheme_end_;
+		char const *begin_;
+		char const *end_;
+		bool is_relative_;
+
+		struct save_point {
+			save_point(uri_parser *self) : 
+				self_(self) ,
+				sp_(self_->begin_)
+			{
+			}
+			void commit()
+			{
+				sp_ = self_->begin_;
+			}
+			~save_point()
+			{
+				self_->begin_ = sp_;
+			}
+			uri_parser *self_;
+			char const *sp_;
+		};
+
+
+
+		bool follows(char c)
+		{
+			if(begin_ != end_ && *begin_ == c){
+				begin_++;
+				return true;
+			}
+			return false;
+		}
+
+		bool follows(char const *s)
+		{
+			int n = strlen(s);
+			if(end_ - begin_ >= n && memcmp(begin_,s,n) == 0) {
+				begin_ +=n;
+				return true;
+			}
+			return false;
+		}
+
+		// RFC 3305
+
+		//	sub-delims    = "!" / "$" / "&" / "'" / "(" / ")"
+		//	/ "*" / "+" / "," / ";" / "="
+
+		bool sub_delims()
+		{
+			if(begin_ == end_)
+				return false;
+			if(follows("&amp;") || follows("&apos;"))
+				return true;
+			switch(*begin_) {
+			case '!' : case '$' : case '(' :
+			case ')' : case '*' : case '+' : 
+			case ',' : case ';' : case '=' :
+			case '\'':
+				begin_ ++;
+				return true;
+			}
+			return false;
+		}
+
+		//	gen-delims    = ":" / "/" / "?" / "#" / "[" / "]" / "@"
+		bool gen_delims()
+		{
+			if(begin_ == end_)
+				return false;
+			switch(*begin_) {
+			case ':' : case '/' : case '?' : case '#' :
+			case '[' : case ']' : case '@' :
+				begin_ ++;
+				return true;
+			}
+			return false;
+		}
+
+		//	reserved      = gen-delims / sub-delims
+		bool reserverd()
+		{
+			return gen_delims() || sub_delims();
+		}
+		static bool is_digit(char c)
+		{
+			return '0'<=c && c<='9';
+		}
+		static bool is_alapha(char c)
+		{
+			return ('a'<=c && c<='z') || ('A'<=c && c<='Z');
+		}
+
+		//	unreserved    = ALPHA / DIGIT / "-" / "." / "_" / "~"
+		bool unreserved()
+		{
+			if(begin_ == end_)
+				return false;
+			char c=*begin_;
+			if(	is_alapha(c) || is_digit(c) 
+				|| c=='-' || c=='.' || c=='_' || c=='~')
+			{
+				begin_++;
+				return true;
+			}
+			return false;
+		}
+
+		static bool is_hex(char c)
+		{
+			return is_digit(c) || ('a'<=c && c<='f') || ('A'<=c && c<='F');
+		}
+
+		//	pct-encoded   = "%" HEXDIG HEXDIG
+		bool pct_encoded()
+		{
+			if(end_ - begin_ >=3 && begin_[0]=='%' && is_hex(begin_[1]) && is_hex(begin_[2])) {
+				begin_+=3;
+				return true;
+			}
+			return false;
+		}
+
+		//	pchar         = unreserved / pct-encoded / sub-delims / ":" / "@"
+		bool pchar()
+		{
+			return unreserved() || pct_encoded() || sub_delims() || follows(':') || follows('@');
+		}
+
+		//	query         = *( pchar / "/" / "?" )
+		//	fragment      = *( pchar / "/" / "?" )
+
+		bool query()
+		{
+			while(pchar() || follows('/') || follows('?'))
+				;
+			return true;
+		}
+		bool fragment()
+		{
+			return query();
+		}
+		//	segment       = *pchar
+
+		bool segment()
+		{
+			while(pchar())
+				;
+			return true;
+		}
+
+		//	segment-nz    = 1*pchar
+		//	; non-zero-length segment without any colon ":"
+		bool segment_nz()
+		{
+			if(!pchar())
+				return false;
+			while(pchar())
+				;
+			return true;
+		}
+		//	segment-nz-nc = 1*( unreserved / pct-encoded / sub-delims / "@" )
+		bool segment_nz_nc()
+		{
+			int count = 0;
+			while(unreserved() || pct_encoded() || sub_delims() || follows('@'))
+				count++;
+			return count != 0;
+		}
+		//	path-rootless = segment-nz *( "/" segment )
+		bool path_rootless()
+		{
+			if(!segment_nz())
+				return false;
+			save_point sp(this);
+			while(follows('/') && segment())
+				sp.commit();
+			return true;
+		}
+
+		//	path-noscheme = segment-nz-nc *( "/" segment )
+		bool path_noscheme()
+		{
+			if(!segment_nz_nc())
+				return false;
+			save_point sp(this);
+			while(follows('/') && segment())
+				sp.commit();
+			return true;
+		}
+		//	path-absolute = "/" [ segment-nz *( "/" segment ) ]
+		bool path_absolute()
+		{
+			if(!follows('/'))
+				return false;
+			save_point sp(this);
+			if(segment_nz()) {
+				sp.commit();
+				while(follows('/') && segment())
+					sp.commit();
+			}
+			return true;
+		}
+		//	path-abempty  = *( "/" segment )
+		bool path_abempty()
+		{
+			save_point sp(this);
+			while(follows('/') && segment())
+				sp.commit();
+			return true;
+		}
+		//	path          = path-abempty    ; begins with "/" or is empty
+		//	/ path-absolute   ; begins with "/" but not "//"
+		//	/ path-noscheme   ; begins with a non-colon segment
+		//	/ path-rootless   ; begins with a segment
+		//	/ path-empty      ; zero characters
+
+		bool path()
+		{
+			return path_absolute() || path_noscheme() || path_rootless() || path_abempty() || true;
+		}
+
+		// reg-name      = *( unreserved / pct-encoded / sub-delims )
+		bool reg_name()
+		{
+			while(unreserved() || pct_encoded() || sub_delims())
+				;
+			return true;
+		}
+		// dec-octet     = DIGIT                 ; 0-9
+		// / %x31-39 DIGIT         ; 10-99
+		// / "1" 2DIGIT            ; 100-199
+		// / "2" %x30-34 DIGIT     ; 200-249
+		// / "25" %x30-35          ; 250-255
+		bool dec_octet()
+		{
+			save_point sp(this);
+			int count =0;
+			int value = 0;
+			char c;
+			while(begin_!=end_ && is_digit((c=*begin_)) && count<3) {
+				count ++;
+				value = value * 10 + c-'0';
+			}
+			if(count == 0) 
+				return false;
+			if(value <= 9 && count !=1)
+				return false;
+			if(value <= 99 && count !=2)
+				return false;
+			if(value >255)
+				return false;
+			sp.commit();
+			return true;
+		}
+
+		// IPv4address   = dec-octet "." dec-octet "." dec-octet "." dec-octet
+		bool ipv4addr()
+		{
+			save_point sp(this);
+			bool r= dec_octet() 
+				&& follows('.')
+				&& dec_octet()
+				&& follows('.')
+				&& dec_octet()
+				&& follows('.')
+				&& dec_octet();
+			if(r) {
+				sp.commit();
+				return true;
+			}
+			return false;
+		}
+
+		// port          = *DIGIT
+		bool port()
+		{
+			while((begin_!=end_) && is_digit(*begin_))
+				begin_++;
+			return true;
+		}
+
+		// host          = IP-literal / IPv4address / reg-name
+		bool host()
+		{
+			return ipv4addr() || reg_name(); // TODO fix ipv6
+		}
+
+		// userinfo      = *( unreserved / pct-encoded / sub-delims / ":" )
+		bool userinfo()
+		{
+			while(unreserved() || pct_encoded() || sub_delims() || follows(':'))
+				;
+			return true;
+		}
+
+		/// authority     = [ userinfo "@" ] host [ ":" port ]
+		bool authority()
+		{
+			{
+				save_point sp(this);
+				if(userinfo() && follows('@') && host()) {
+					sp.commit();
+				}
+				else if(host()) {
+					sp.commit();
+				}
+				else {
+					return false;
+				}
+			}
+			{
+				save_point sp(this);
+				if(follows(':')  &&  port()) {
+					sp.commit();
+					return true;
+				}
+			}
+			return true;
+				
+		}
+
+		// relative-part = "//" authority path-abempty
+		// 	/ path-absolute
+		// 	/ path-noscheme
+		// 	path-empty
+
+		bool relative_part()
+		{
+			
+			{
+				save_point sp(this);
+				if(authority() && path_abempty()) {
+					sp.commit();
+					return true;
+				}
+			}
+			return path_absolute()  || path_noscheme() || true;
+		}
+
+		// relative-ref  = relative-part [ "?" query ] [ "#" fragment ]
+
+		bool relative_ref()
+		{
+			if(!relative_part())
+				return false;
+
+			{
+				save_point sp2(this);
+				if(follows('?') && query())
+					sp2.commit();
+			}
+
+			{
+				save_point sp2(this);
+				if(follows('#') && fragment())
+					sp2.commit();
+			}
+			return true;
+		}
+
+		// hier-part     = "//" authority path-abempty
+		//	/ path-absolute
+		//	/ path-rootless
+		//	/ path-empty
+
+
+		bool hier_part()
+		{
+			{
+				save_point sp(this);
+				if(follows("//")) {
+					if(!authority() || !path_abempty()) 
+						return false;
+					sp.commit();
+					return true;
+				}
+			}
+
+			return path_absolute() || path_rootless() || true;
+		}
+
+		// scheme        = ALPHA *( ALPHA / DIGIT / "+" / "-" / "." )
+		bool scheme()
+		{
+			if(begin_==end_ || !is_alapha(*begin_))
+				return false;
+			scheme_start_ = begin_;
+			begin_++;
+			char c;
+			while(begin_!=end_ && (is_alapha((c=*begin_)) || is_digit(c) || c=='+' || c=='-' || c=='.'))
+				begin_++;
+			scheme_end_ = begin_;
+			return true;
+		}
+
+		//URI           = scheme ":" hier-part [ "?" query ] [ "#" fragment ]
+		bool uri()
+		{
+			save_point sp(this);
+			
+			if(!scheme() || !follows(':') || ! hier_part()){
+				return false;
+			}
+			{
+				save_point sp2(this);
+				if(follows('?') && query())
+					sp2.commit();
+			}
+
+			{
+				save_point sp2(this);
+				if(follows('#') && fragment())
+					sp2.commit();
+			}
+
+			sp.commit();
+			return true;
+
+		}
+
+
+		// URI-reference = URI / relative-ref
+		bool uri_reference()
+		{
+			return uri() || (is_relative_ = relative_ref())!=false;
+		}
+	public:
+		uri_parser(char const *begin,char const *end) :
+			scheme_start_(0),
+			scheme_end_(0),
+			begin_(begin),
+			end_(end),
+			is_relative_(false)
+		{
+		}
+		bool parse()
+		{
+			is_relative_ = false;
+			return uri_reference() && begin_ == end_;
+		}
+		bool parse_relative()
+		{
+			is_relative_ = true;
+			return relative_ref() && begin_ == end_;
+		}
+
+		bool parse_full()
+		{
+			is_relative_ = false;
+			return uri_reference() && begin_ == end_;
+		}
+
+		bool has_scheme() const
+		{
+			return !is_relative_;
+		}
+		bool is_relative() const
+		{
+			return is_relative_;
+		}
+		char const *scheme_begin() const
+		{
+			return scheme_start_;
+		}
+
+		char const *scheme_end() const
+		{
+			return scheme_end_;
+		}
+
+	}; // uri_parser
+
+
 	void rules::add_uri_property(std::string const &tag_name,std::string const &property)
 	{
-		add_property(tag_name,property,uri_matcher());
+		add_property(tag_name,property,uri_validator());
 	}
 
 	void rules::add_uri_property(std::string const &tag_name,std::string const &property,std::string const &schema)
 	{
-		add_property(tag_name,property,uri_matcher(schema));
+		add_property(tag_name,property,uri_validator(schema));
 	}
 	
+	struct uri_validator_functor {
+	public:
+		enum uri_type { both, relative, full };
+		uri_validator_functor(uri_type type,booster::regex const &scheme = booster::regex()) :
+			type_(type),
+			scheme_(scheme)
+		{
+		}
+		bool operator()(char const *begin,char const *end) const
+		{
+			//std::cout << ">>>>>>>>>>>>>>> " << std::string(begin,end) << std::endl;
+			uri_parser parser(begin,end);
+			switch(type_) {
+			case both:
+				if(!parser.parse())
+					return false;
+				if(parser.has_scheme()) {
+					std::string scheme(parser.scheme_begin(),parser.scheme_end());
+					//std::cout << "Scheme=" << scheme << " " << scheme_.str()<< std::endl;
+					return booster::regex_match(parser.scheme_begin(),parser.scheme_end(),scheme_);
+				}
+				return true;
+			case relative:
+				return parser.parse_relative();
+			case full:
+				if(!parser.parse_full())
+					return false;
+				return booster::regex_match(parser.scheme_begin(),parser.scheme_end(),scheme_);
+			};
+			return false;
+		}
+	private:
+		uri_type type_;
+		booster::regex scheme_;
+	};
+
+	rules::validator_type rules::uri_validator()
+	{
+		return uri_validator("^(http|https|ftp|mailto|news|nntp)$");
+	}
+	rules::validator_type rules::uri_validator(std::string const &scheme,bool absolute_only )
+	{
+		return uri_validator_functor(
+				absolute_only ? uri_validator_functor::full : uri_validator_functor::both,
+				booster::regex(scheme));
+	}
+	rules::validator_type rules::relative_uri_validator()
+	{
+		return uri_validator_functor(uri_validator_functor::relative);
+	}
 
 	
 	namespace {
@@ -782,7 +1347,7 @@ namespace cppcms { namespace xss {
 
 				case '<':
 
-					if(p+4 < end && memcmp(p,"<!--",4)==0) {
+					if(p+4 < end && p[1]=='!' && p[2]=='-' && p[3]=='-') {
 						char const *e =p + 4;
 						while(e<end-1) {
 							if(e[0]=='-' && e[1]=='-') 
@@ -963,7 +1528,7 @@ namespace cppcms { namespace xss {
 						break;
 					
 					bool xhtml = r.html()==rules::xhtml_input;
-// 	
+ 	
 					std::set<c_string,compare_c_string> xhtml_properties_found;
 					std::set<c_string,icompare_c_string> html_properties_found;
 
