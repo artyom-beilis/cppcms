@@ -113,9 +113,9 @@ void applications_pool::mount(booster::intrusive_ptr<application> app,mount_poin
 		booster::shared_ptr<long_running_app_data>(new long_running_app_data(p));
 }
 
-booster::intrusive_ptr<application> applications_pool::get(	std::string const &host,
-								std::string const &script_name,
-								std::string const &path_info,
+booster::intrusive_ptr<application> applications_pool::get(	char const *host,
+								char const *script_name,
+								char const *path_info,
 								std::string &m)
 {
 	lock_it lock(d->mutex);

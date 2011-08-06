@@ -210,7 +210,7 @@ bool response::need_gzip()
 		return false;
 	if(context_.service().cached_settings().gzip.enable==false)
 		return false;
-	if(context_.request().http_accept_encoding().find("gzip")==std::string::npos)
+	if(strstr(context_.request().cgetenv("HTTP_ACCEPT_ENCODING"),"gzip")==0)
 		return false;
 	if(!get_header("Content-Encoding").empty())
 		// User had defined its own content encoding

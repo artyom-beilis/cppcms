@@ -180,6 +180,10 @@ mount_point::selection_type mount_point::selection() const
 
 std::pair<bool,std::string> mount_point::match(std::string const &h,std::string const &s,std::string const &p) const
 {
+	return match(h.c_str(),s.c_str(),p.c_str());
+}
+std::pair<bool,std::string> mount_point::match(char const *h,char const *s,char const *p) const
+{
 	std::pair<bool,std::string> res;
 	res.first = false;
 
@@ -203,7 +207,7 @@ std::pair<bool,std::string> mount_point::match(std::string const &h,std::string 
 			return res;
 		}
 		else {
-			booster::smatch m;
+			booster::cmatch m;
 			if(!booster::regex_match(p,m,path_info_))
 				return res;
 			res.second=m[group_];
@@ -227,7 +231,7 @@ std::pair<bool,std::string> mount_point::match(std::string const &h,std::string 
 			return res;
 		}
 		else {
-			booster::smatch m;
+			booster::cmatch m;
 			if(!booster::regex_match(s,m,script_name_))
 				return res;
 			res.second=m[group_];

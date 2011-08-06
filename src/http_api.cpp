@@ -42,6 +42,8 @@
 #include <booster/log.h>
 
 #include "cached_settings.h"
+#include "format_number.h"
+#include "string_map.h"
 
 namespace io = booster::aio;
 
@@ -63,6 +65,9 @@ namespace cgi {
 		int port_;
 	};
 
+	namespace {
+		char non_const_empty_string[1]={0};
+	}
 	class http : public connection {
 	public:
 		http(cppcms::service &srv,std::string const &ip,int port) :
@@ -72,19 +77,20 @@ namespace cgi {
 			input_parser_(input_body_,input_body_ptr_),
 			output_body_ptr_(0),
 			output_parser_(output_body_,output_body_ptr_),
+			request_method_(non_const_empty_string),
+			request_uri_(non_const_empty_string),
 			headers_done_(false),
 			first_header_observerd_(false),
 			total_read_(0)
 		{
 
-			env_["SERVER_SOFTWARE"]=CPPCMS_PACKAGE_NAME "/" CPPCMS_PACKAGE_VERSION;
-			env_["SERVER_NAME"]=ip;
-			std::ostringstream ss;
-			ss.imbue(std::locale::classic());
-			ss << port;
-			env_["SERVER_PORT"]=ss.str();
-			env_["GATEWAY_INTERFACE"]="CGI/1.0";
-			env_["SERVER_PROTOCOL"]="HTTP/1.0";
+			env_.add("SERVER_SOFTWARE",CPPCMS_PACKAGE_NAME "/" CPPCMS_PACKAGE_VERSION);
+			env_.add("SERVER_NAME",pool_.add(ip));
+			char *sport = pool_.alloc(10);
+			format_number(port,sport,10);
+			env_.add("SERVER_PORT",sport);
+			env_.add("GATEWAY_INTERFACE","CGI/1.0");
+			env_.add("SERVER_PROTOCOL","HTTP/1.0");
 
 		}
 		~http()
@@ -134,15 +140,17 @@ namespace cgi {
 				case parser::got_header:
 					if(!first_header_observerd_) {
 						first_header_observerd_=true;
-						std::string::iterator rmethod,query=input_parser_.header_.end();
-						rmethod=std::find(	input_parser_.header_.begin(),
-									input_parser_.header_.end(),
-									' ');
-						if(rmethod!=input_parser_.header_.end()) 
-							query=std::find(rmethod+1,input_parser_.header_.end(),' ');
-						if(query!=input_parser_.header_.end()) {
-							request_method_.assign(input_parser_.header_.begin(),rmethod);
-							request_uri_.assign(rmethod+1,query);
+						char const *header_begin = input_parser_.header_.c_str();
+						char const *header_end   = header_begin + input_parser_.header_.size();
+						char const *query=header_end;
+						char const *rmethod=std::find(	header_begin,
+										header_end,
+										' ');
+						if(rmethod!=header_end) 
+							query=std::find(rmethod+1,header_end,' ');
+						if(query!=header_end) {
+							request_method_ = pool_.add(header_begin,rmethod);
+							request_uri_ = pool_.add(rmethod+1,query);
 							first_header_observerd_=true;
 							BOOSTER_INFO("cppcms_http") << request_method_ <<" " << request_uri_;
 						}
@@ -152,16 +160,20 @@ namespace cgi {
 						}
 					}
 					else { // Any other header
-						std::string name;
-						std::string value;
+						char const *name = "";
+						char const *value = "";
 						if(!parse_single_header(input_parser_.header_,name,value))  {
 							h(booster::system::error_code(errc::protocol_violation,cppcms_category));
 							return;
 						}
-						if(name=="CONTENT_LENGTH" || name=="CONTENT_TYPE")
-							env_[name]=value;
-						else
-							env_["HTTP_"+name]=value;
+						if(strcmp(name,"CONTENT_LENGTH")==0 || strcmp(name,"CONTENT_TYPE")==0)
+							env_.add(name,value);
+						else {
+							char *updated_name =pool_.alloc(strlen(name) + 5 + 1);
+							strcpy(updated_name,"HTTP_");
+							strcat(updated_name,name);
+							env_.add(updated_name,value);
+						}
 					}
 					break;
 				case parser::end_of_headers:
@@ -176,19 +188,6 @@ namespace cgi {
 
 		}
 
-		// should be called only after headers are read
-		virtual std::string getenv(std::string const &key)
-		{
-			std::map<std::string,std::string>::const_iterator p;
-			p=env_.find(key);
-			if(p==env_.end())
-				return std::string();
-			return p->second;
-		}
-		virtual std::map<std::string,std::string> const &getenv()
-		{
-			return env_;
-		}
 		virtual void async_read_some(void *p,size_t s,io_handler const &h)
 		{
 			if(input_body_ptr_==input_body_.size()) {
@@ -283,14 +282,16 @@ namespace cgi {
 					return s;
 				case parser::got_header:
 					{
-						std::string name,value;
+						char const *name="";
+						char const *value="";
 						if(!parse_single_header(output_parser_.header_,name,value))  {
 							h(booster::system::error_code(errc::protocol_violation,cppcms_category),s);
 							return s;
 						}
-						if(name=="STATUS") {
-							response_line_ = "HTTP/1.0 "+value+"\r\n";
-
+						if(strcmp(name,"STATUS")==0) {
+							response_line_ = "HTTP/1.0 ";
+							response_line_ +=value;
+							response_line_ +="\r\n";
 							return write_response(h,s);
 						}
 					}
@@ -341,15 +342,19 @@ namespace cgi {
 
 		void process_request(handler const &h)
 		{
-			if(request_method_!="GET" && request_method_!="POST" && request_method_!="HEAD") {
+			if(	strcmp(request_method_,"GET")!=0 
+				&& strcmp(request_method_,"POST")!=0
+				&& strcmp(request_method_,"HEAD")!=0) 
+			{
 				response("HTTP/1.0 501 Not Implemented\r\n\r\n",h);
 				return;
 			}
 
-			env_["REQUEST_METHOD"]=request_method_;
-			std::string remote_addr;
+			env_.add("REQUEST_METHOD",request_method_);
+
+			char const *remote_addr="";
 			if(service().cached_settings().http.proxy.behind==false) {
-				remote_addr=socket_.remote_endpoint().ip();
+				remote_addr=pool_.add(socket_.remote_endpoint().ip());
 			}
 			else {
 				std::vector<std::string> const &headers = 
@@ -357,45 +362,50 @@ namespace cgi {
 
 				for(unsigned i=0;i<headers.size();i++) {
 					std::map<std::string,std::string>::const_iterator p;
-					if((p=env_.find(headers[i]))!=env_.end()) {
-						remote_addr=p->second;
+					char const *s=env_.get(headers[i].c_str());
+					if(s!=0) {
+						remote_addr=s;
 						break;
 					}
 				}
 			}
-			env_["REMOTE_HOST"] = env_["REMOTE_ADDR"] = remote_addr;
+			
+			env_.add("REMOTE_HOST",remote_addr);
+			env_.add("REMOTE_ADDR",remote_addr);
 
-			if(request_uri_.empty() || request_uri_[0]!='/') {
+			if(request_uri_[0]!='/') {
 				response("HTTP/1.0 400 Bad Request\r\n\r\n",h);
 				return;
 			}
 			
-			std::string path;
-			size_t pos=request_uri_.find('?');
-			if(pos==std::string::npos) {
+			char *path=non_const_empty_string;
+			char *query = strchr(request_uri_,'?');
+			if(query == 0) {
 				path=request_uri_;
 			}
 			else {
-				path=request_uri_.substr(0,pos);
-				env_["QUERY_STRING"]=request_uri_.substr(pos+1);
+				path=pool_.add(request_uri_,query - request_uri_);
+				env_.add("QUERY_STRING",query + 1);
 			}
 			
 			std::vector<std::string> const &script_names = 
 				service().cached_settings().http.script_names;
 
+			size_t path_size = strlen(path);
 			for(unsigned i=0;i<script_names.size();i++) {
 				std::string const &name=script_names[i];
 				size_t name_size = name.size();
-				if(path.compare(0,name_size,name) == 0 
-				   && (path.size() <= name_size || path.compare(name_size,1,"/") == 0))
+				if(path_size >= name_size && memcmp(path,name.c_str(),name_size) == 0 
+				   && (path_size == name_size || path[name_size]=='/'))
 				{
-					env_["SCRIPT_NAME"] = name;
-					path = path.substr(name_size);
+					env_.add("SCRIPT_NAME",pool_.add(name));
+					path = path + name_size;
 					break;
 				}
 			}
 			
-			env_["PATH_INFO"] = util::urldecode(path);
+			env_.add("PATH_INFO",pool_.add(util::urldecode(path,path+strlen(path)))); 
+
 			h(booster::system::error_code());
 
 		}
@@ -405,28 +415,35 @@ namespace cgi {
 					boost::bind(h,booster::system::error_code()));
 		}
 
-		bool parse_single_header(std::string const &header,std::string &name,std::string &value)
+		bool parse_single_header(std::string const &header,char const *&o_name,char const *&o_value)
 		{
-			std::string::const_iterator p=header.begin(),e=header.end(),name_end;
+			char const *p=header.c_str();
+			char const *e=p + header.size();
+			char const *name_end = p;
 
 			p=cppcms::http::protocol::skip_ws(p,e);
 			name_end=cppcms::http::protocol::tocken(p,e);
 			if(name_end==p)
 				return false;
-			name.assign(p,name_end);
+			size_t name_size = name_end - p;
+			char *name = pool_.alloc(name_size + 1);
+			*std::copy(p,name_end,name) = 0;
 			p=name_end;
 			p=cppcms::http::protocol::skip_ws(p,e);
 			if(p==e || *p!=':')
 				return false;
 			++p;
 			p=cppcms::http::protocol::skip_ws(p,e);
-			value.assign(p,e);
-			for(unsigned i=0;i<name.size();i++) {
+			char *value = pool_.alloc(e-p+1);
+			*std::copy(p,e,value) = 0;
+			for(unsigned i=0;i<name_size;i++) {
 				if(name[i] == '-') 
 					name[i]='_';
 				else if('a' <= name[i] && name[i] <='z')
 					name[i]=name[i]-'a' + 'A';
 			}
+			o_name = name;
+			o_value = value;
 			return true;
 		}
 
@@ -448,11 +465,9 @@ namespace cgi {
 		::cppcms::http::impl::parser output_parser_;
 
 
-		std::map<std::string,std::string> env_;
-		std::string script_name_;
 		std::string response_line_;
-		std::string request_method_;
-		std::string request_uri_;
+		char *request_method_;
+		char *request_uri_;
 		bool headers_done_;
 		bool first_header_observerd_;
 		unsigned total_read_;

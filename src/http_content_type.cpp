@@ -20,6 +20,7 @@
 #include <cppcms/http_content_type.h>
 #include "http_protocol.h"
 #include <algorithm>
+#include <string.h>
 
 namespace cppcms { namespace http {
 	struct content_type::data {
@@ -90,11 +91,8 @@ namespace cppcms { namespace http {
 			return std::string();
 		return p->second;
 	}
-	content_type::content_type(std::string const &ct) :
-		d(new content_type::data())
+	void content_type::parse(char const *begin,char const *end)
 	{
-		char const *begin = ct.c_str();
-		char const *end = begin + ct.size();
 		begin = protocol::skip_ws(begin,end);	
 		if(begin == end)
 			return;
@@ -147,6 +145,25 @@ namespace cppcms { namespace http {
 			}
 			d->parameters.insert(std::make_pair(param,value));
 		}
+	}
+	content_type::content_type(char const *begin,char const *end) :
+		d(new content_type::data())
+	{
+		parse(begin,end);
+	}
+	content_type::content_type(char const *s) :
+		d(new content_type::data())
+	{
+		char const *begin = s;
+		char const *end = s + strlen(s);
+		parse(begin,end);
+	}
+	content_type::content_type(std::string const &ct) :
+		d(new content_type::data())
+	{
+		char const *begin = ct.c_str();
+		char const *end = begin + ct.size();
+		parse(begin,end);
 	}
 } // http
 } // cppcms

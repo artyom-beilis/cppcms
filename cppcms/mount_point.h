@@ -105,6 +105,12 @@ namespace cppcms {
 		/// Otherwise return false and empty string
 		/// 
 		std::pair<bool,std::string> match(std::string const &h,std::string const &s,std::string const &p) const;
+		///
+		/// Match \a h - HTTP_HOST, \a s - SCRIPT_NAME, \a p - PATH_INFO against mount point and return
+		/// true and selected URL path for application
+		/// Otherwise return false and empty string
+		/// 
+		std::pair<bool,std::string> match(char const *h,char const *s,char const *p) const;
 
 		///
 		/// Create default mount point, it uses PATH_INFO for url-dispatching and gives no restriction on URL

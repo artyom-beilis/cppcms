@@ -201,9 +201,9 @@ void connection::on_headers_read(booster::system::error_code const &e,http::cont
 		return;
 	}
 	forwarder::address_type addr = service().forwarder().check_forwading_rules(
-		getenv("HTTP_HOST"),
-		getenv("SCRIPT_NAME"),
-		getenv("PATH_INFO"));
+		cgetenv("HTTP_HOST"),
+		cgetenv("SCRIPT_NAME"),
+		cgetenv("PATH_INFO"));
 	
 	if(addr.second != 0 && !addr.first.empty()) {
 		booster::shared_ptr<cgi_forwarder> f(new cgi_forwarder(self(),addr.first,addr.second));
@@ -241,9 +241,9 @@ void connection::load_content(booster::system::error_code const &e,http::context
 	}
 
 	http::content_type content_type = context->request().content_type_parsed();
-	std::string s_content_length=getenv("CONTENT_LENGTH");
+	char const *s_content_length=cgetenv("CONTENT_LENGTH");
 
-	long long content_length = s_content_length.empty() ? 0 : atoll(s_content_length.c_str());
+	long long content_length = *s_content_length == 0 ? 0 : atoll(s_content_length);
 
 	if(content_length < 0)  {
 		set_error(h,"Incorrect content length");

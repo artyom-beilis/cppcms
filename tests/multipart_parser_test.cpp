@@ -140,7 +140,7 @@ int main(int argc,char **argv)
 				std::cout << "Testing for max-block-size = " << block_size[i] << " mem file size = " << max_mem_size[j] << std::endl;
 				{
 					cppcms::impl::multipart_parser parser("",max_mem_size[j]);
-					TEST(parser.set_content_type(test_1_content));
+					TEST(parser.set_content_type(std::string(test_1_content)));
 					cppcms::impl::multipart_parser::files_type files;
 					random_consumer c(block_size[i],parser,files);
 					TEST(c(test_1_file,strlen(test_1_file))==cppcms::impl::multipart_parser::eof);
@@ -162,7 +162,7 @@ int main(int argc,char **argv)
 				}
 				{
 					cppcms::impl::multipart_parser parser("",max_mem_size[j]);
-					TEST(parser.set_content_type(test_2_content));
+					TEST(parser.set_content_type(std::string(test_2_content)));
 					cppcms::impl::multipart_parser::files_type files;
 					random_consumer c(block_size[i],parser,files);
 					TEST(c(test_2_file,strlen(test_2_file))==cppcms::impl::multipart_parser::eof);

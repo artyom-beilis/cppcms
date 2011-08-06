@@ -99,7 +99,7 @@ namespace cppcms {
 		/// \cond INTERNAL
 
 		booster::intrusive_ptr<application> 
-		get(std::string const &h,std::string const &s,std::string const &path_info,std::string &match);
+		get(char const *h,char const *s,char const *path_info,std::string &match);
 
 		void put(application *app);
 		applications_pool(service &srv,int pool_size_limit);

@@ -34,6 +34,13 @@ public:
 	{
 	}
 
+	virtual char const *cgetenv(char const *key)
+	{
+		std::map<std::string,std::string>::const_iterator p = env_.find(key);
+		if(p==env_.end())
+			return "";
+		return p->second.c_str();
+	}
 	virtual std::string getenv(std::string const &key)
 	{
 		std::map<std::string,std::string>::const_iterator p = env_.find(key);

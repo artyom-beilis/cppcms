@@ -25,6 +25,7 @@
 #include <cppcms/util.h>
 
 #include <stdio.h>
+#include <string.h>
 #include <stdlib.h>
 #include <booster/shared_ptr.h>
 
@@ -194,12 +195,12 @@ bool request::parse_form_urlencoded(char const *begin,char const *end,form_type 
 
 bool request::prepare()
 {
-	std::string query=query_string();
-	if(!parse_form_urlencoded(query.c_str(),query.c_str()+query.size(),get_))  {
+	char const *query=cgetenv("QUERY_STRING");
+	if(!parse_form_urlencoded(query,query + strlen(query),get_))  {
 		get_.clear();
 	}
 	parse_cookies();
-	content_type_ = cppcms::http::content_type(conn_->getenv("CONTENT_TYPE"));
+	content_type_ = cppcms::http::content_type(conn_->cgetenv("CONTENT_TYPE"));
 	return true;
 }
 
@@ -298,9 +299,13 @@ std::map<std::string,std::string> request::getenv()
 {
 	return conn_->getenv();
 }
-std::string request::getenv(std::string const &s)
+std::string request::getenv(char const *s)
 {
-	return conn_->getenv(s.c_str());
+	return conn_->getenv(s);
+}
+char const *request::cgetenv(char const *s)
+{
+	return conn_->cgetenv(s);
 }
 std::map<std::string,cookie> const &request::cookies()
 {

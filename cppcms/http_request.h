@@ -226,7 +226,14 @@ namespace http {
 		/// Get CGI environment variable by name. Returns empty string if the variable is not set
 		///
 		std::string getenv(std::string const &);
-
+		///
+		/// Get CGI environment variable by name. Returns empty string if the variable is not set
+		///
+		std::string getenv(char const *);
+		///
+		/// Get CGI environment variable by name. Returns empty string if the variable is not set
+		///
+		char const *cgetenv(char const *);
 		///
 		/// Get map of all CGI environment variable as key-value pairs.
 		///

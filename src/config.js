@@ -41,7 +41,7 @@
 	},
 	"http" : {
 		"proxy" : {
-			"behind" : true,
+			//"behind" : true,
 			"remote_addr_headers" : 
 				[ 
 			 		"X-Real-IP", // Nginx One
@@ -125,7 +125,7 @@
 	},
 	"logging" : {
 		//"level" : "info", // "debug",
-		"level" : "debug",
+		//"level" : "debug",
 		"stderr" : true,
 		"file" : {
 			"name" : "cppcms.log" ,

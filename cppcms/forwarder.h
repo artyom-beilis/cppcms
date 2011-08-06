@@ -29,6 +29,7 @@ namespace cppcms {
 		
 		typedef std::pair<std::string,int> address_type;
 		address_type check_forwading_rules(std::string const &h,std::string const &s,std::string const &p);
+		address_type check_forwading_rules(char const *h,char const *s,char const *p);
 		
 		/// \endcond 
 

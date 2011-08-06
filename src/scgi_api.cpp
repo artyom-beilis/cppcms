@@ -32,6 +32,7 @@
     namespace boost = cppcms_boost;
 #endif
 #include <booster/aio/buffer.h>
+#include <string.h>
 
 namespace io = booster::aio;
 
@@ -107,32 +108,19 @@ namespace cgi {
 
 			char const *p=&buffer_[sep_ + 1];
 			while(p < &buffer_.back()) {
-				std::string key=p;
-				p+=key.size()+1;
+				char *key=pool_.add(p);
+				p+=strlen(p)+1;
 				if(p>=&buffer_.back())
 					break;
-				std::string value=p;
-				p+=value.size()+1;
-				env_[key].swap(value);
+				char *value=pool_.add(p);
+				p+=strlen(p)+1;
+				env_.add(key,value);
 			}
 			buffer_.clear();
 
 			h(booster::system::error_code());
 		}
 
-		// should be called only after headers are read
-		virtual std::string getenv(std::string const &key)
-		{
-			std::map<std::string,std::string>::const_iterator p;
-			p=env_.find(key);
-			if(p==env_.end())
-				return std::string();
-			return p->second;
-		}
-		virtual std::map<std::string,std::string> const &getenv()
-		{
-			return env_;
-		}
 		virtual void async_read_some(void *p,size_t s,io_handler const &h)
 		{
 			socket_.async_read_some(io::buffer(p,s),h);
@@ -200,7 +188,6 @@ namespace cgi {
 		friend class socket_acceptor<scgi>;
 		io::stream_socket socket_;
 		std::vector<char> buffer_;
-		std::map<std::string,std::string> env_;
 	};
 
 	

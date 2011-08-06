@@ -29,6 +29,7 @@
 
 #include <cppcms/defs.h>
 #include <cppcms/config.h>
+#include "string_map.h"
 
 namespace booster {
 	namespace aio { 
@@ -92,8 +93,27 @@ namespace cgi {
 		
 		void aync_wait_for_close_by_peer(callback const &on_eof);
 
-		virtual std::string getenv(std::string const &key) = 0;
-		virtual std::map<std::string,std::string> const &getenv() = 0;
+		std::string getenv(std::string const &key)
+		{
+			return env_.get_safe(key.c_str());
+		}
+		char const *cgetenv(char const *key)
+		{
+			return env_.get_safe(key);
+		}
+		std::string getenv(char const *key) 
+		{
+			return env_.get_safe(key);
+		}
+		virtual std::map<std::string,std::string> const &getenv()
+		{
+			if(map_env_.empty() && env_.begin()!=env_.end()) {
+				for(string_map::iterator p=env_.begin();p!=env_.end();++p) {
+					map_env_[p->key]=p->value;
+				}
+			}
+			return map_env_;
+		}
 		size_t write(void const *data,size_t n,booster::system::error_code &e);
 		bool is_reuseable();
 	
@@ -123,6 +143,10 @@ namespace cgi {
 		/****************************************************************************/
 
 	protected:
+		
+		string_pool pool_;
+		string_map env_;
+
 		booster::shared_ptr<connection> self();
 		void async_read(void *,size_t,io_handler const &h);
 		void async_write(void const *,size_t,io_handler const &h);
@@ -152,6 +176,8 @@ namespace cgi {
 		bool request_in_progress_;
 		long long read_size_;
 		std::auto_ptr<multipart_parser> multipart_parser_;
+
+		std::map<std::string,std::string> map_env_;
 
 	};
 

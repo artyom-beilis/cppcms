@@ -83,19 +83,6 @@ namespace cgi {
 			async_read_record(boost::bind(&fastcgi::on_start_request,self(),_1,h));
 		}
 
-		// should be called only after headers are read
-		virtual std::string getenv(std::string const &key)
-		{
-			std::map<std::string,std::string>::const_iterator p;
-			p=env_.find(key);
-			if(p==env_.end())
-				return std::string();
-			return p->second;
-		}
-		virtual std::map<std::string,std::string> const &getenv()
-		{
-			return env_;
-		}
 		virtual void async_read_some(void *p,size_t s,io_handler const &h)
 		{
 			if(read_length_ == content_length_) {
@@ -503,19 +490,37 @@ namespace cgi {
 			}
 		}
 
-		void insert_to_container(std::map<std::string,std::string> &map,std::string &name,std::string &value)
+		bool parse_pairs()
 		{
-			map[name].swap(value);
-		}
-		void insert_to_container(std::vector<std::pair<std::string,std::string> > &v,std::string &name,std::string &value)
-		{
-			v.resize(v.size()+1);
-			v.back().first.swap(name);
-			v.back().second.swap(value);
+			unsigned char const *p=reinterpret_cast<unsigned char const *>(&body_.front());
+			unsigned char const *e=p + body_.size();
+			while(p<e) {
+				uint32_t nlen=read_len(p,e);
+				uint32_t vlen=read_len(p,e);
+				if(nlen == 0xFFFFFFFFu || vlen == 0xFFFFFFFFu)
+					return false;
+				char *name=0;
+				if(uint32_t(e - p) >= nlen) { // don't chage order -- prevent integer overflow
+					name = pool_.add(reinterpret_cast<char const *>(p),nlen);
+					p+=nlen;
+				}
+				else {
+					return false;
+				}
+				char *value = 0;
+				if(uint32_t(e - p) >= vlen) { // don't chage order -- prevent integer overflow
+					value = pool_.add(reinterpret_cast<char const *>(p),vlen);
+					p+=vlen;
+				}
+				else {
+					return false;
+				}
+				env_.add(name,value);
+			}
+			return true;
 		}
 
-		template<typename Container>
-		bool parse_pairs(Container &container)
+		bool parse_pairs(std::vector<std::pair<std::string,std::string> > &container)
 		{
 			unsigned char const *p=reinterpret_cast<unsigned char const *>(&body_.front());
 			unsigned char const *e=p + body_.size();
@@ -540,7 +545,9 @@ namespace cgi {
 				else {
 					return false;
 				}
-				insert_to_container(container,name,value);
+				container.resize(container.size()+1);
+				container.back().first.swap(name);
+				container.back().second.swap(value);
 			}
 			return true;
 		}
@@ -575,12 +582,12 @@ namespace cgi {
 			}
 
 
-			parse_pairs(env_);
+			parse_pairs();
 
 			body_.clear();
 
-			std::map<std::string,std::string>::const_iterator p = env_.find("CONTENT_LENGTH");
-			if(p==env_.end() || p->second.empty() || (content_length_ =  atoll(p->second.c_str())) <=0)
+			char const *s_length = env_.get("CONTENT_LENGTH");
+			if(!s_length || *s_length == 0 || (content_length_ =  atoll(s_length)) <=0)
 				content_length_=0;
 			if(content_length_==0) {
 				if(non_blocking_read_record()) {
@@ -741,7 +748,6 @@ namespace cgi {
 		bool keep_alive_;
 		int cuncurrency_hint_;
 
-		std::map<std::string,std::string> env_;
 		struct eof_str {
 			fcgi_header headers_[2];
 			fcgi_end_request_body record_;
@@ -759,6 +765,7 @@ namespace cgi {
 			request_id_=0;
 			keep_alive_=false;
 			env_.clear();
+			pool_.clear();
 			memset(&eof_,0,sizeof(eof_));
 			if(cache_.empty()) {
 				cache_start_ = 0;

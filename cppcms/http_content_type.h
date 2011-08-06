@@ -68,6 +68,14 @@ public:
 	///
 	content_type(std::string const &ct);
 	///
+	/// Parse content type \a ct and create the class
+	///
+	content_type(char const *ct);
+	///
+	/// Parse content type in range [begin,end) and create the class
+	///
+	content_type(char const *begin,char const *end);
+	///
 	/// Empty one... 
 	///
 	content_type();
@@ -85,6 +93,7 @@ public:
 	~content_type();
 private:
 	struct data;
+	void parse(char const *b,char const *e);
 	booster::shared_ptr<data> d;
 };
 

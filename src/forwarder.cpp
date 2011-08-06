@@ -205,6 +205,15 @@ namespace cppcms {
 		booster::unique_lock<booster::shared_mutex> lock(mutex_);
 		rules_.erase(p);
 	}
+	forwarder::address_type forwarder::check_forwading_rules(char const *h,char const *s,char const *p)
+	{
+		booster::shared_lock<booster::shared_mutex> lock(mutex_);
+		for(rules_type::const_iterator it=rules_.begin();it!=rules_.end();++it) {
+			if(it->first->match(h,s,p).first)
+				return it->second;
+		}
+		return address_type(std::string(),0);
+	}
 	forwarder::address_type forwarder::check_forwading_rules(std::string const &h,std::string const &s,std::string const &p)
 	{
 		booster::shared_lock<booster::shared_mutex> lock(mutex_);

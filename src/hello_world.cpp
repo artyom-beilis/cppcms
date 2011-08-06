@@ -255,6 +255,7 @@ public:
 		dispatcher().assign("^/(\\d+)$",&hello::num,this,1);
 		dispatcher().assign("^/view(/(\\w+))?$",&hello::view_test,this,2);
 		dispatcher().assign("^/get$",&hello::gform,this);
+		dispatcher().assign("^/env$",&hello::env,this);
 		dispatcher().assign("^/post$",&hello::pform,this);
 		dispatcher().assign("^/err$",&hello::err,this);
 		dispatcher().assign("^/forward$",&hello::forward,this);
@@ -268,6 +269,14 @@ public:
 	}
 	~hello()
 	{
+	}
+
+	void env()
+	{
+		std::map<std::string,std::string> m(request().getenv());
+		for(std::map<std::string,std::string>::const_iterator p = m.begin();p!=m.end();++p) {
+			response().out() << p->first <<"="<<p->second <<"<br>\n";
+		}
 	}
 
 	void verylong()
@@ -432,7 +441,7 @@ public:
 	}
 	void init()
 	{
-		std::cout << "There" << std::endl;
+		//std::cout << "There" << std::endl;
 	}
 	void num(std::string s)
 	{
