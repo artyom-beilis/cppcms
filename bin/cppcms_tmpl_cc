@@ -142,7 +142,7 @@ class template_block:
         while m:
             global tmpl_seq
             id=m.group(6)
-            if tmpl_seq.has_key(id):
+            if id in tmpl_seq:
                 error_exit("Duplicate definition of patameter %s" % id)
                 for v in self.plist:
                     del tmpl_seq[v] 
@@ -228,7 +228,7 @@ def to_string(s):
 def make_ident(val):
     m=re.match('^'+variable_match+'$',val)
     global tmpl_seq
-    if tmpl_seq.has_key(m.group(1)):
+    if m.group(1) in tmpl_seq:
         return val
     m2=re.match('^\*(.*)$',val)
     if m2:
@@ -249,7 +249,7 @@ class foreach_block:
         self.seq_name=make_ident(m.group(6))
         self.type_name = m.group(3)
         global tmpl_seq
-        if tmpl_seq.has_key(self.ident):
+        if self.ident in tmpl_seq:
             error_exit("Nested sequences with same name")
         tmpl_seq[self.ident]='';
         output( "if((%s).begin()!=(%s).end()) {" % (self.seq_name,self.seq_name) )
@@ -651,15 +651,12 @@ def fetch_content(content):
     yield tmp
 
 def help():
-    print    "Usage cppcms_tmpl_cc [-o filename.cpp] [-s skin] [-d domain] file1.tmpl ... \n" \
+    print( "Usage cppcms_tmpl_cc [-o filename.cpp] [-s skin] [-d domain] file1.tmpl ... \n" \
         "      -o filename.cpp     file name that implements this template\n" \
         "      -s skin             define skin name\n" \
         "      -d domain           setup gettext domain for this template\n" \
         "      -u                  use unsafe static casting instead of dynamic casing for dlls\n" \
-        "      -h/--help           show this help message\n"
-
-
-    
+        "      -h/--help           show this help message\n")
 
 def main():
     global stack
