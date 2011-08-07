@@ -19,6 +19,7 @@
 #include <cppcms/xss.h>
 #include <booster/locale/encoding.h>
 #include "test.h"
+#include "c_string.h"
 #include <iostream>
 #include <string.h>
 

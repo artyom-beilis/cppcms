@@ -29,6 +29,8 @@
 
 #include <iostream>
 
+#include "c_string.h"
+
 namespace cppcms { namespace xss { 
 
 	using namespace details;
