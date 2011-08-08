@@ -1,4 +1,7 @@
 cmake_minimum_required(VERSION 2.6)
+set(CMAKE_LEGACY_CYGWIN_WIN32 0)
+
+
 project(cppcms)
 set(CPPCMS_PACKAGE_NAME "CppCMS")
 set(CPPCMS_PACKAGE_STRING "CppCMS/0.99.8")
@@ -452,7 +455,7 @@ foreach(ALIB ${CPPCMS_LIBS})
 endforeach(ALIB)
 
 
-find_program(PYTHON python)
+find_program(PYTHON NAMES python2 python)
 if(NOT PYTHON)
 	message(FATAL "Can't build without Python interpreter")
 endif(NOT PYTHON)
