@@ -20,6 +20,7 @@
 #define CPPCMS_URL_MAPPER_H
 
 #include <cppcms/defs.h>
+#include <cppcms/string_key.h>
 #include <booster/noncopyable.h>
 #include <booster/hold_ptr.h>
 #include <cppcms/filters.h>
@@ -233,6 +234,66 @@ namespace cppcms {
 		/// Write the URL to output stream \a out for the URL \a path with 0 parameters
 		///	
 		void map(	std::ostream &out,
+				char const *path);
+
+		///
+		/// Write the URL to output stream \a out for the URL \a path with 1 parameters
+		///	
+		void map(	std::ostream &out,
+				char const *path,
+				filters::streamable const &p1);
+
+		///
+		/// Write the URL to output stream \a out for the URL \a path with 2 parameters
+		///	
+		void map(	std::ostream &out,
+				char const *path,
+				filters::streamable const &p1,
+				filters::streamable const &p2);
+
+		///
+		/// Write the URL to output stream \a out for the URL \a path with 3 parameters
+		///	
+		void map(	std::ostream &out,
+				char const *path,
+				filters::streamable const &p1,
+				filters::streamable const &p2,
+				filters::streamable const &p3);
+
+		///
+		/// Write the URL to output stream \a out for the URL \a path with 4 parameters
+		///	
+		void map(	std::ostream &out,
+				char const *path,
+				filters::streamable const &p1,
+				filters::streamable const &p2,
+				filters::streamable const &p3,
+				filters::streamable const &p4);
+		///
+		/// Write the URL to output stream \a out for the URL \a path with 5 parameters
+		///	
+		void map(	std::ostream &out,
+				char const *path,
+				filters::streamable const &p1,
+				filters::streamable const &p2,
+				filters::streamable const &p3,
+				filters::streamable const &p4,
+				filters::streamable const &p5);
+		///
+		/// Write the URL to output stream \a out for the URL \a path with 6 parameters
+		///	
+		void map(	std::ostream &out,
+				char const *path,
+				filters::streamable const &p1,
+				filters::streamable const &p2,
+				filters::streamable const &p3,
+				filters::streamable const &p4,
+				filters::streamable const &p5,
+				filters::streamable const &p6);
+		///
+		/// Write the URL to output stream \a out for the URL \a path with 0 parameters
+		///	
+		void map(	std::ostream &out,
 				std::string const &path);
 
 		///
@@ -314,9 +375,9 @@ namespace cppcms {
 
 	private:
 		void real_assign(std::string const &key,std::string const &url,application *child = 0);
-		url_mapper &get_mapper_for_key(std::string const &key,std::string &real_key,std::vector<std::string> &direct);
+		url_mapper &get_mapper_for_key(string_key const &key,string_key &real_key,std::vector<string_key> &direct);
 		url_mapper *root_mapper();
-		void real_map(	std::string const &key,
+		void real_map(	char const *key,
 				filters::streamable const *const *params,
 				size_t params_no,
 				std::ostream &output);

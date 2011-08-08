@@ -18,6 +18,7 @@
 ///////////////////////////////////////////////////////////////////////////////
 #define CPPCMS_SOURCE
 #include <cppcms/filters.h>
+#include <cppcms/steal_buf.h>
 #include <cppcms/base64.h>
 #include <cppcms/util.h>
 #include <iostream>
@@ -135,7 +136,10 @@ namespace cppcms { namespace filters {
 	escape const &escape::operator=(escape const &other){ obj_ = other.obj_; return *this; }
 	void escape::operator()(std::ostream &out) const
 	{
-		out << util::escape(obj_.get(out));
+		util::steal_buffer<> sb(out);
+		obj_(out);
+		sb.release();
+		util::escape(sb.begin(),sb.end(),out);
 	}
 
 	struct urlencode::_data {};
@@ -146,7 +150,10 @@ namespace cppcms { namespace filters {
 	urlencode const &urlencode::operator=(urlencode const &other){ obj_ = other.obj_; return *this; }
 	void urlencode::operator()(std::ostream &out) const
 	{
-		out << util::urlencode(obj_.get(out));
+		util::steal_buffer<> sb(out);
+		obj_(out);
+		sb.release();
+		util::urlencode(sb.begin(),sb.end(),out);
 	}
 
 	struct raw::_data {};

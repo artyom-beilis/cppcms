@@ -20,6 +20,7 @@
 #define CPPCMS_JSON_H
 
 #include <cppcms/defs.h>
+#include <cppcms/string_key.h>
 #include <booster/copy_ptr.h>
 #include <booster/backtrace.h>
 #include <vector>
@@ -60,7 +61,7 @@ namespace json {
 	///
 	/// The json::object - std::map of json::value's
 	///
-	typedef std::map<std::string,value> object;
+	typedef std::map<string_key,value> object;
 
 	#ifdef CPPCMS_DOXYGEN_DOCS
 
@@ -263,6 +264,14 @@ namespace json {
 		/// that holds an object { "y" : 10 } and find("foo") would return value of undefined type.
 		///
 		value const &find(std::string const &path) const; 		
+		///
+		/// Searches a value in the path \a path
+		///
+		/// For example if the json::value represents { "x" : { "y" : 10 } }, then find("x.y") would return
+		/// a reference to value that hold a number 10, find("x") returns a reference to a value
+		/// that holds an object { "y" : 10 } and find("foo") would return value of undefined type.
+		///
+		value const &find(char const *path) const; 		
 
 		///
 		/// Searches a value in the path \a path, if not found throw bad_value_cast.
@@ -279,12 +288,32 @@ namespace json {
 		/// a reference to value that hold a number 10, find("x") returns a reference to a value
 		/// that holds an object { "y" : 10 } and find("foo") throws
 		///
+		value const &at(char const *path) const;  
+		///
+		/// Searches a value in the path \a path, if not found throw bad_value_cast.
+		///
+		/// For example if the json::value represents { "x" : { "y" : 10 } }, then find("x.y") would return
+		/// a reference to value that hold a number 10, find("x") returns a reference to a value
+		/// that holds an object { "y" : 10 } and find("foo") throws
+		///
 		value &at(std::string const &path);
+		///
+		/// Searches a value in the path \a path, if not found throw bad_value_cast.
+		///
+		/// For example if the json::value represents { "x" : { "y" : 10 } }, then find("x.y") would return
+		/// a reference to value that hold a number 10, find("x") returns a reference to a value
+		/// that holds an object { "y" : 10 } and find("foo") throws
+		///
+		value &at(char const *path);
 
 		///
 		/// Sets the value \a v at the path \a path, if the path invalid, creates it.
 		///
 		void at(std::string const &path,value const &v);
+		///
+		/// Sets the value \a v at the path \a path, if the path invalid, creates it.
+		///
+		void at(char const *path,value const &v);
 
 		
 		///
@@ -305,6 +334,15 @@ namespace json {
 		{
 			return find(path).type();
 		}
+		///
+		/// Returns the type of variable in path, if not found returns undefined
+		///
+		/// Same as find(path).type()
+		///
+		json_type type(char const *path) const
+		{
+			return find(path).type();
+		}
 
 		///
 		/// Convert an object \a v of type T to a value at specific path, same as at(path,value(v))
@@ -314,12 +352,36 @@ namespace json {
 		{
 			at(path,value(v));
 		}
+		///
+		/// Convert an object \a v of type T to a value at specific path, same as at(path,value(v))
+		///
+		template<typename T>
+		void set(char const *path,T const &v)
+		{
+			at(path,value(v));
+		}
 
 		///
 		/// Get a string value from a path \a path. If the path is not invalid or the object
 		/// is not of type string at this path, returns \a def instead
 		///
 		std::string get(std::string const &path,char const *def) const
+		{
+			value const &v=find(path);
+			if(v.is_undefined())
+				return def;
+			try {
+				return v.get_value<std::string>();
+			}
+			catch(std::bad_cast const &e) {
+				return def;
+			}
+		}
+		///
+		/// Get a string value from a path \a path. If the path is not invalid or the object
+		/// is not of type string at this path, returns \a def instead
+		///
+		std::string get(char const *path,char const *def) const
 		{
 			value const &v=find(path);
 			if(v.is_undefined())
@@ -341,7 +403,33 @@ namespace json {
 		{
 			return at(path).get_value<T>();
 		}
+		///
+		/// Get an object of type T from the path \a path. Throws bad_value_cast if such path does not
+		/// exists of conversion can't be done
+		///
+		template<typename T>
+		T get(char const *path) const
+		{
+			return at(path).get_value<T>();
+		}
 
+		///
+		/// Get an object of type T from the path \a path. Returns \a def if such path does not
+		/// exists of conversion can't be done
+		///
+		template<typename T>
+		T get(char const *path,T const &def) const
+		{
+			value const &v=find(path);
+			if(v.is_undefined())
+				return def;
+			try {
+				return v.get_value<T>();
+			}
+			catch(std::bad_cast const &e) {
+				return def;
+			}
+		}
 		///
 		/// Get an object of type T from the path \a path. Returns \a def if such path does not
 		/// exists of conversion can't be done

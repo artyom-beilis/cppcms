@@ -42,9 +42,25 @@ namespace cppcms {
 		///
 		std::string CPPCMS_API escape(std::string const &s);
 		///
+		/// Escape string for inclusion in HTML page, i.e.
+		///
+		/// - < - \&lt;
+		/// - > - \&gt;
+		/// - \& - \&amp;
+		/// - &quot; - \&quot;
+		///
+		/// Note, this function does not deal with encodings, so it's up to you to
+		/// provide valid text encoding
+		///
+		void CPPCMS_API escape(char const *begin,char const *end,std::ostream &output);
+		///
 		/// Encode string for URL (percent encoding)
 		///
 		std::string CPPCMS_API urlencode(std::string const &s);
+		///
+		/// Encode string for URL (percent encoding)
+		///
+		void CPPCMS_API urlencode(char const *begin,char const *end,std::ostream &output);
 		///
 		/// Decode string from URL-encoding (percent-encoding)
 		///

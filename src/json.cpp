@@ -402,15 +402,16 @@ namespace json {
 
 
 	// returns empty if not found
-	value const &value::find(std::string const &path) const
+	value const &value::find(char const *cpath) const
 	{
+		string_key path=string_key::unowned(cpath);
 		static value const empty;
 		value const *ptr=this;
 		size_t pos=0;
 		size_t new_pos;
 		do {
 			new_pos=path.find('.',pos);
-			std::string const part=path.substr(pos,new_pos - pos);
+			string_key const part=path.unowned_substr(pos,new_pos - pos);
 			if(new_pos!=std::string::npos)
 				new_pos++;
 			if(part.empty())
@@ -427,23 +428,37 @@ namespace json {
 		} while(new_pos < path.size());
 		return *ptr;
 	}
+	// returns empty if not found
+	value const &value::find(std::string const &path) const
+	{
+		return find(path.c_str());
+	}
 	
 	// throws if not found
 	value const &value::at(std::string const &path) const
 	{
+		return at(path.c_str());
+	}
+	value const &value::at(char const *path) const
+	{
 		value const &v=find(path);
 		if(v.is_undefined())
-			throw bad_value_cast("Value not found at "+path );
+			throw bad_value_cast(std::string("Value not found at ")+path );
 		return v;
 	}
 	value &value::at(std::string const &path)
 	{
+		return at(path.c_str());
+	}
+	value &value::at(char const *cpath)
+	{
+		string_key path=string_key::unowned(cpath);
 		value *ptr=this;
 		size_t pos=0;
 		size_t new_pos;
 		do {
 			new_pos=path.find('.',pos);
-			std::string part=path.substr(pos,new_pos - pos);
+			string_key part=path.unowned_substr(pos,new_pos - pos);
 			if(new_pos!=std::string::npos)
 				new_pos++;
 			if(part.empty())
@@ -453,7 +468,7 @@ namespace json {
 			json::object &obj=ptr->object();
 			json::object::iterator p;
 			if((p=obj.find(part))==obj.end())
-				throw bad_value_cast("Member "+part+" not found");
+				throw bad_value_cast("Member "+part.str()+" not found");
 			ptr=&p->second;
 			pos=new_pos;
 
@@ -462,12 +477,17 @@ namespace json {
 	}
 	void value::at(std::string const &path,value const &v)
 	{
+		at(path.c_str(),v);
+	}
+	void value::at(char const *cpath,value const &v)
+	{
+		string_key path=string_key::unowned(cpath);
 		value *ptr=this;
 		size_t pos=0;
 		size_t new_pos;
 		do {
 			new_pos=path.find('.',pos);
-			std::string part=path.substr(pos,new_pos - pos);
+			string_key part=path.unowned_substr(pos,new_pos - pos);
 
 
 			if(new_pos!=std::string::npos)
@@ -480,7 +500,7 @@ namespace json {
 			json::object &obj=ptr->object();
 			json::object::iterator p;
 			if((p=obj.find(part))==obj.end()) {
-				ptr=&obj.insert(std::make_pair(part,json::value())).first->second;
+				ptr=&obj.insert(std::make_pair(part.str(),json::value())).first->second;
 			}
 			else
 				ptr=&p->second;
@@ -497,7 +517,7 @@ namespace json {
 
 		json::object &self=object();
 
-		json::object::iterator p=self.find(name);
+		json::object::iterator p=self.find(string_key::unowned(name));
 		if(p==self.end())
 			return self.insert(std::make_pair(name,value())).first->second;
 		return p->second;
@@ -508,7 +528,7 @@ namespace json {
 		if(type()!=json::is_object)
 			throw bad_value_cast("",type(),json::is_object);
 		json::object const &self=object();
-		json::object::const_iterator p=self.find(name);
+		json::object::const_iterator p=self.find(string_key::unowned(name));
 		if(p==self.end())
 			throw bad_value_cast("Member "+name+" not found");
 		return p->second;

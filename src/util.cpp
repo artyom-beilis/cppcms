@@ -20,6 +20,7 @@
 #include <cppcms/util.h>
 #include "http_protocol.h"
 #include <stdio.h>
+#include <iterator>
 #include "md5.h"
 
 namespace cppcms {
@@ -43,18 +44,31 @@ std::string escape(std::string const &s)
 	return content;
 }
 
-std::string urlencode(std::string const &s)
+
+void escape(char const *begin,char const *end,std::ostream &output)
 {
-	std::string content;
-	unsigned i,len=s.size();
-	content.reserve(3*len);
-	for(i=0;i<len;i++){
-		char c=s[i];
+	while(begin!=end) {
+		char c=*begin++;
+		switch(c){
+			case '<': output << "&lt;"; break;
+			case '>': output << "&gt;"; break;
+			case '&': output << "&amp;"; break;
+			case '\"': output<<"&quot;"; break;
+			default: output << c;
+		}
+	}
+}
+
+template<typename Iterator>
+void urlencode_impl(char const *b,char const *e,Iterator out)
+{
+	while(b!=e){
+		char c=*b++;
 		if(	('a'<=c && c<='z')
 			|| ('A'<=c && c<='Z')
 			|| ('0'<=c && c<='9'))
 		{
-			content+=c;
+			*out++ = c;
 		}
 		else {
 			switch(c) {
@@ -62,20 +76,33 @@ std::string urlencode(std::string const &s)
 				case '_':
 				case '.':
 				case '~':
-					content+=c;
+					*out++ = c;
 					break;
 				default:
 				{
 					static char const hex[]="0123456789abcdef";
 					unsigned char uc = c;
-					content += '%';
-					content += hex[(uc >> 4) & 0xF];
-					content += hex[ uc & 0xF];
+					*out++ = '%';
+					*out++ = hex[(uc >> 4) & 0xF];
+					*out++ = hex[ uc & 0xF];
 					
 				}
 			};
 		}
 	};
+}
+
+void urlencode(char const *b,char const *e,std::ostream &out)
+{
+	std::ostream_iterator<char> it(out);
+	urlencode_impl(b,e,it);
+}
+std::string urlencode(std::string const &s)
+{
+	std::string content;
+	content.reserve(3*s.size());
+	std::back_insert_iterator<std::string> out(content);
+	urlencode_impl(s.c_str(),s.c_str()+s.size(),out);
 	return content;
 }
 
