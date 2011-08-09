@@ -31,14 +31,14 @@ namespace cppcms {
 	template<typename Data,typename Entry>
 	struct stream_it {
 		Data const *self;
-		Entry const &formatting;
+		Entry const *formatting;
 		filters::streamable const * const *params;
 		size_t params_no;
-		std::map<string_key,std::string> const &data_helpers_default;
-		std::map<string_key,std::string> const &data_helpers_override;
+		std::map<string_key,std::string> const *data_helpers_default;
+		std::map<string_key,std::string> const *data_helpers_override;
 		void write(std::ostream &out) const
 		{
-			self->write(formatting,params,params_no,data_helpers_default,data_helpers_override,out);
+			self->write(*formatting,params,params_no,*data_helpers_default,*data_helpers_override,out);
 		}
 	};
 
@@ -168,11 +168,11 @@ namespace cppcms {
 				stream_it<data,entry> url = 
 				{ 
 					this,
-					formatting,
+					&formatting,
 					params,
 					params_no,
-					data_helpers_default,
-					data_helpers_override
+					&data_helpers_default,
+					&data_helpers_override
 				};
 
 				filters::streamable stream_url(url);

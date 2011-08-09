@@ -31,7 +31,7 @@ namespace cppcms {
 
 		typedef char const *const_iterator;
 
-		static const size_t npos = std::string::npos;
+		static const size_t npos = -1;
 		
 		string_key() : 
 			begin_(0),
