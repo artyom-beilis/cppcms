@@ -16,30 +16,21 @@
 //  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 ///////////////////////////////////////////////////////////////////////////////
-#ifndef CPPCMS_CACHE_POOL_H
-#define CPPCMS_CACHE_POOL_H
+#ifndef CPPCMS_BASE_CACHE_FWD_H
+#define CPPCMS_BASE_CACHE_FWD_H
 
+#include <string>
+#include <set>
 #include <cppcms/defs.h>
-#include <booster/noncopyable.h>
 #include <booster/intrusive_ptr.h>
-#include <booster/hold_ptr.h>
-#include <cppcms/base_cache_fwd.h>
+#include <cppcms/cstdint.h>
 
 namespace cppcms {
-	namespace json { class value; }
-	namespace impl { class base_cache; }
-
-	/// \cond INTERNAL
-	class CPPCMS_API cache_pool {
-	public:
-		cache_pool(json::value const &settings);
-		~cache_pool();
-		booster::intrusive_ptr<impl::base_cache> get();
-	private:
-		struct _data;
-		booster::hold_ptr<_data> d;
-	};
-	/// \endcond
-}
+	namespace impl {
+		class base_cache;
+		inline void intrusive_ptr_add_ref(base_cache *ptr);
+		inline void intrusive_ptr_release(base_cache *ptr);
+	} // impl
+} //cppcms
 
 #endif

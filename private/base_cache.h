@@ -24,6 +24,7 @@
 #include <cppcms/defs.h>
 #include <booster/intrusive_ptr.h>
 #include <cppcms/cstdint.h>
+#include <cppcms/base_cache_fwd.h>
 
 namespace cppcms {
 	namespace impl {
@@ -45,19 +46,15 @@ namespace cppcms {
 			{
 			}
 		};
+		inline void intrusive_ptr_add_ref(cppcms::impl::base_cache *ptr)
+		{
+			ptr->add_ref();
+		}
+		inline void intrusive_ptr_release(cppcms::impl::base_cache *ptr)
+		{
+			if(ptr && ptr->del_ref())
+				delete ptr;
+		}
 	} // impl
 } //cppcms
-namespace booster {
-
-	inline void intrusive_ptr_add_ref(cppcms::impl::base_cache *ptr)
-	{
-		ptr->add_ref();
-	}
-	inline void intrusive_ptr_release(cppcms::impl::base_cache *ptr)
-	{
-		if(ptr && ptr->del_ref())
-			delete ptr;
-	}
-} // booster
-
 #endif

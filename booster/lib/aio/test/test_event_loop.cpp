@@ -115,7 +115,7 @@ struct timer {
 	};
 };
 
-bool cancel_called = 0;
+int cancel_called = 0;
 bool post_executed = false;
 
 struct cancel_handler {
