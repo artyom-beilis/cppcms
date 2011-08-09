@@ -113,13 +113,6 @@ namespace cppcms {
 			return fmt.child->mapper();
 		}
 
-		struct map_stream {
-			filters::streamable const * const *params;
-			size_t params_no;
-			std::map<string_key,std::string> const &data_helpers_default;
-			std::map<string_key,std::string> const &data_helpers_override;
-		};
-
 		void write(	entry const &formatting,
 				filters::streamable const * const *params,
 				size_t params_no,
