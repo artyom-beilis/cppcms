@@ -420,6 +420,18 @@ public:
 		response().out() <<
 			"<html><body>\n"
 			"<h1>Hello World!</h1>\n";
+		std::string t1="text";
+		std::string t2="text text";
+		std::string t3="<text>";
+		response().out()<<cppcms::filters::date(time(0)) << "<br>\n";
+		response().out()<<cppcms::filters::time(time(0)) << "<br>\n";
+		response().out()<<cppcms::filters::datetime(time(0)) << "<br>\n";
+		response().out()<<cppcms::filters::to_upper(t1) << "<br>\n";
+		response().out()<<cppcms::filters::to_lower(t1) << "<br>\n";
+		response().out()<<cppcms::filters::to_title(t1) << "<br>\n";
+		response().out()<<cppcms::filters::escape(t3) << "<br>\n";
+		response().out()<<cppcms::filters::urlencode(t2) << "<br>\n";
+		response().out()<<cppcms::filters::base64_urlencode(t1) << "<br>\n";
 		response().out()<<locale::format("{1,datetime=f}") % time(0) << "<br>\n";
 		response().out()<<locale::format("{1,datetime=f}") % cppcms::filters::escape(time(0)) << "<br>\n";
 		response().out()<<std::use_facet<locale::info>(response().out().getloc()).language()<<"<br>\n";

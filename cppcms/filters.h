@@ -185,8 +185,6 @@ namespace cppcms {
 			return out;
 		}
 		
-		#ifndef CPPCMS_DISABLE_ICU_LOCALIZATION
-
 		///
 		/// \brief Output filter to_title
 		///
@@ -213,8 +211,6 @@ namespace cppcms {
 			obj(out);
 			return out;
 		}
-
-		#endif
 	
 		///
 		/// \brief Output filter escape

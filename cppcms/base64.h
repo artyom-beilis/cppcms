@@ -21,6 +21,7 @@
 
 #include <cppcms/defs.h>
 #include <string>
+#include <iosfwd>
 
 
 namespace cppcms {
@@ -49,6 +50,10 @@ namespace b64url {
 	/// Pointer to the first character directly after text string ends is returned.
 	///
 	unsigned char CPPCMS_API *encode(unsigned char const *begin,unsigned char const *end,unsigned char *target);
+	///
+	/// Perform base64 URL encoding of the binary data in range [\a begin,\a end), and write it to output stream
+	///
+	void encode(unsigned char const *begin,unsigned char const *end,std::ostream &output);
 
 	///
 	/// Perform base64 URL decoding of the binary data in range [\a begin,\a end), and store it to output buffer

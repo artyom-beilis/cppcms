@@ -58,7 +58,7 @@
 		// "buffer" : 4096
 	},
 	"localization" : {
-		"backend" : "winapi",
+		//"backend" : "winapi",
 		"messages" : {
 			"paths" : [ "./transtext/locale" ],
 			"domains" : [ "test", "app" ]

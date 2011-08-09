@@ -97,9 +97,10 @@ namespace cppcms { namespace filters {
 	to_upper const &to_upper::operator=(to_upper const &other){ obj_ = other.obj_; return *this; }
 	void to_upper::operator()(std::ostream &out) const
 	{
-		std::string tmp =obj_.get(out) ;
-		std::locale loc = out.getloc(); 
-		out << ::cppcms::locale::to_upper( tmp,loc);
+		util::steal_buffer<> sb(out);
+		obj_(out);
+		sb.release();
+		out << ::cppcms::locale::to_upper( sb.begin(),sb.end(),out.getloc());
 	}
 
 	struct to_lower::_data {};
@@ -110,10 +111,11 @@ namespace cppcms { namespace filters {
 	to_lower const &to_lower::operator=(to_lower const &other){ obj_ = other.obj_; return *this; }
 	void to_lower::operator()(std::ostream &out) const
 	{
-		out << locale::to_lower(obj_.get(out),out.getloc());
+		util::steal_buffer<> sb(out);
+		obj_(out);
+		sb.release();
+		out << ::cppcms::locale::to_lower( sb.begin(),sb.end(),out.getloc());
 	}
-
-	#ifndef CPPCMS_DISABLE_ICU_LOCALIZATION
 
 	struct to_title::_data {};
 	to_title::to_title() {}
@@ -123,10 +125,11 @@ namespace cppcms { namespace filters {
 	to_title const &to_title::operator=(to_title const &other){ obj_ = other.obj_; return *this; }
 	void to_title::operator()(std::ostream &out) const
 	{
-		out << locale::to_title(obj_.get(out),out.getloc());
+		util::steal_buffer<> sb(out);
+		obj_(out);
+		sb.release();
+		out << ::cppcms::locale::to_title( sb.begin(),sb.end(),out.getloc());
 	}
-
-	#endif
 
 	struct escape::_data {};
 	escape::escape() {}
@@ -173,17 +176,15 @@ namespace cppcms { namespace filters {
 	base64_urlencode::base64_urlencode(base64_urlencode const &other) : obj_(other.obj_) {}
 	base64_urlencode::base64_urlencode(streamable const &obj) : obj_(obj) {}
 	base64_urlencode const &base64_urlencode::operator=(base64_urlencode const &other){ obj_ = other.obj_; return *this; }
-	void base64_urlencode::operator()(std::ostream &os) const
+	void base64_urlencode::operator()(std::ostream &out) const
 	{
-		std::string const s=obj_.get(os);
+		util::steal_buffer<> sb(out);
+		obj_(out);
+		sb.release();
 		using namespace cppcms::b64url;
-		unsigned char const *begin=reinterpret_cast<unsigned char const *>(s.c_str());
-		unsigned char const *end=begin+s.size();
-		std::vector<unsigned char> out(encoded_size(s.size())+1);
-		encode(begin,end,&out.front());
-		out.back()=0;
-		char const *buf=reinterpret_cast<char const *>(&out.front());
-		os<<buf;
+		unsigned char const *begin=reinterpret_cast<unsigned char const *>(sb.begin());
+		unsigned char const *end=  reinterpret_cast<unsigned char const *>(sb.end());
+		b64url::encode(begin,end,out);
 	}
 
 	struct date::_data {};

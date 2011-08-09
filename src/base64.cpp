@@ -9,6 +9,7 @@
 #define CPPCMS_SOURCE
 #include <cppcms/base64.h>
 #include <vector>
+#include <ostream>
 
 
 namespace {
@@ -111,6 +112,21 @@ unsigned char *encode(unsigned char const *begin,unsigned char const *end,unsign
 		target+=bencode(begin,target,end-begin);
 	return target;
 }
+
+void encode(unsigned char const *begin,unsigned char const *end,std::ostream &out)
+{
+	unsigned char target[4];
+	while(end - begin >=3) {
+		bencode(begin,target,3);
+		begin += 3;
+		out.write(reinterpret_cast<char *>(target),4);
+	}
+	if(end!=begin) {
+		int n = bencode(begin,target,end-begin);
+		out.write(reinterpret_cast<char *>(target),n);
+	}
+}
+
 
 unsigned char *decode(unsigned char const *begin,unsigned char const *end,unsigned char *target)
 {
