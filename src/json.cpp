@@ -186,7 +186,7 @@ namespace json {
 	}
 	bool value::is_null() const
 	{
-		return d->value().which()==json::is_undefined;
+		return d->value().which()==json::is_null;
 	}
 
 

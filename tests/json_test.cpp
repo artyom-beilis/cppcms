@@ -69,6 +69,7 @@ int main()
 		json::value v;
 		json::value const &vc=v;
 		TEST(v.type()==json::is_undefined);
+		TEST(v.is_undefined());
 		v=10;
 		TEST(v.type()==json::is_number);
 		TEST(v.number()==10);
@@ -82,6 +83,7 @@ int main()
 		TEST(v.type()==json::is_boolean);
 		TEST(v.boolean()==true);
 		v=json::null();
+		TEST(v.is_null());
 		TEST(v.type()==json::is_null);
 		v=json::array();
 		TEST(v.type()==json::is_array);
