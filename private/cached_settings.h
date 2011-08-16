@@ -30,6 +30,7 @@ namespace impl {
 			int port;
 			int output_buffer_size;
 			bool disable_xpowered_by;
+			bool generate_http_headers;
 			int worker_threads;
 			int worker_processes;
 			cached_service(json::value const &v)
@@ -43,6 +44,7 @@ namespace impl {
 					cpus = 1;
 				worker_threads = v.get("service.worker_threads",5 * cpus);
 				worker_processes = v.get("service.worker_processes",0);
+				generate_http_headers = v.get("service.generate_http_headers",false);
 			}
 		} service;
 		struct cached_localization {

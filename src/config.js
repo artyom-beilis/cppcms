@@ -17,6 +17,7 @@
 	//	 "socket" : "/tmp/scgi.socket",
 	//	"disable_global_exit_handling" , false
 	//	"reactor" : "default" , // "select", "poll", "epoll", "devpoll", "kqueue"
+	//	"generate_http_headers" : false,
 		"nodes" : [
 			{
 				"id" : 1,

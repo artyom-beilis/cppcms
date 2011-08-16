@@ -240,13 +240,26 @@ void response::io_mode(response::io_mode_type mode)
 void response::write_http_headers(std::ostream &out)
 {
 	context_.session().save();
+	
+	_data::headers_type::const_iterator p = d->headers.end();
 
-	for(_data::headers_type::const_iterator h=d->headers.begin();h!=d->headers.end();++h) {
-		out<<h->first<<": "<<h->second<<"\r\n";
+	if(context_.service().cached_settings().service.generate_http_headers) {
+		p=d->headers.find("Status");
+		if(p == d->headers.end())
+			out << "HTTP/1.0 200 Ok\r\n";
+		else
+			out << "HTTP/1.0 " << p->second <<"\r\n";
 	}
+	else {
+		for(_data::headers_type::const_iterator h=d->headers.begin();h!=d->headers.end();++h) {
+			out<<h->first<<": "<<h->second<<"\r\n";
+		}
+	}
+	
 	for(unsigned i=0;i<d->cookies.size();i++) {
 		out<<d->cookies[i]<<"\r\n";
 	}
+
 	out<<"\r\n";
 	out<<std::flush;
 }
