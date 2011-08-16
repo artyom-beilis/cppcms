@@ -250,10 +250,11 @@ void response::write_http_headers(std::ostream &out)
 		else
 			out << "HTTP/1.0 " << p->second <<"\r\n";
 	}
-	else {
-		for(_data::headers_type::const_iterator h=d->headers.begin();h!=d->headers.end();++h) {
-			out<<h->first<<": "<<h->second<<"\r\n";
-		}
+	
+	for(_data::headers_type::const_iterator h=d->headers.begin();h!=d->headers.end();++h) {
+		if(h==p)
+			continue;
+		out<<h->first<<": "<<h->second<<"\r\n";
 	}
 	
 	for(unsigned i=0;i<d->cookies.size();i++) {
