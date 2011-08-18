@@ -261,6 +261,7 @@ public:
 		dispatcher().assign("^/forward$",&hello::forward,this);
 		dispatcher().assign("^/form$",&hello::form,this);
 		dispatcher().assign("^/cache/?$",&hello::cached,this);
+		dispatcher().assign("^/csrf/?$",&hello::csrf,this);
 		dispatcher().assign("^/throw/?$",&hello::throw_it,this);
 		dispatcher().assign("^/foo$",&foo::bar,&foo_instance);
 		dispatcher().assign("^/session/?$",&hello::session_test,this);
@@ -277,6 +278,19 @@ public:
 		for(std::map<std::string,std::string>::const_iterator p = m.begin();p!=m.end();++p) {
 			response().out() << p->first <<"="<<p->second <<"<br>\n";
 		}
+	}
+
+	void csrf()
+	{
+		session().set("name","me");
+		view::csrf c;
+		if(request().request_method() == "POST") {
+			c.my_form.load(context());
+			if(c.my_form.validate()) {
+				c.valid=true;
+			}
+		}
+		render("csrf",c);
 	}
 
 	void verylong()

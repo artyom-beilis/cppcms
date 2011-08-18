@@ -29,27 +29,111 @@
 namespace cppcms {
 namespace util {
 
-	template<size_t on_stack_size = 128>
-	class steal_buffer : public std::streambuf {
-		steal_buffer(steal_buffer const &);
-		void operator=(steal_buffer const &);
+	///
+	/// \brief Very simple output stream buffer that uses stack for small chunks of 
+	/// text and then allocates memory of the default buffer is too small.
+	///
+	/// It is something like std::stringbuf with small string optimization, it also
+	/// allows to access the memory without actually creating the string itself.
+	///
+	/// The template parameter defines how many characters should be allocated
+	/// on stack by default before heap is used.
+	///
+	template<size_t OnStackSize = 128>
+	class stackbuf : public std::streambuf {
+		stackbuf(stackbuf const &);
+		void operator=(stackbuf const &);
 	public:
+		///
+		/// get the pointer to the beginning of the output buffer
+		///
 		char *begin()
 		{
 			return pbase();
 		}
+		///
+		/// get the pointer to the end of the output buffer
+		///
 		char *end()
 		{
 			return pptr();
 		}
-		steal_buffer(std::ostream &out) 
+		///
+		/// get the 0 terminated string from the buffer.
+		///
+		char *c_str()
+		{
+			*pptr() = 0;
+			return begin();
+		}
+		///
+		/// get the std::string from the buffer.
+		///
+		std::string str()
+		{
+			return std::string(begin(),size_t(end()-begin()));
+		}
+		stackbuf() 
 		{
 			init();
+		}
+		~stackbuf()
+		{
+			free(on_heap_);
+		}
+	protected:
+
+		int overflow(int c)
+		{
+			size_t current_size;
+			size_t new_size;
+			if(pbase() == on_stack_) {
+				current_size = OnStackSize;
+				new_size = OnStackSize * 2;
+				on_heap_ = (char *)malloc(new_size + 1);
+				if(!on_heap_)
+					throw std::bad_alloc();
+				memcpy(on_heap_,on_stack_,current_size);
+			}
+			else {
+				current_size = pptr() - pbase();
+				new_size = current_size * 2;
+				char *new_ptr = (char *)realloc(on_heap_,new_size + 1);
+				if(!new_ptr)
+					throw std::bad_alloc();
+				on_heap_ = new_ptr;
+
+			}
+			setp(on_heap_,on_heap_ + new_size);
+			pbump(current_size);
+			if(c!=EOF)
+				sputc(c);
+			return 0;
+		}
+	private:
+		void init()
+		{
+			on_heap_ = 0;
+			setp(on_stack_,on_stack_+OnStackSize);
+		}
+		char *on_heap_;
+		char on_stack_[OnStackSize + 1];
+	};
+
+	
+	template<size_t Size = 128>
+	class steal_buffer : public stackbuf<Size> {
+	public:
+		steal_buffer(std::ostream &out) 
+		{
+			stolen_ = 0;
+			stream_ = 0;
 			steal(out);
 		}
 		steal_buffer() 
 		{
-			init();
+			stolen_ = 0;
+			stream_ = 0;
 		}
 		void steal(std::ostream &out)
 		{
@@ -68,47 +152,37 @@ namespace util {
 		~steal_buffer()
 		{
 			release();
-			free(on_heap_);
-		}
-		int overflow(int c)
-		{
-			size_t current_size;
-			size_t new_size;
-			if(pbase() == on_stack_) {
-				current_size = on_stack_size;
-				new_size = on_stack_size * 2;
-				on_heap_ = (char *)malloc(new_size);
-				if(!on_heap_)
-					throw std::bad_alloc();
-				memcpy(on_heap_,on_stack_,current_size);
-			}
-			else {
-				current_size = pptr() - pbase();
-				new_size = current_size * 2;
-				char *new_ptr = (char *)realloc(on_heap_,new_size);
-				if(!new_ptr)
-					throw std::bad_alloc();
-				on_heap_ = new_ptr;
-
-			}
-			setp(on_heap_,on_heap_ + new_size);
-			pbump(current_size);
-			if(c!=EOF)
-				sputc(c);
-			return 0;
 		}
 	private:
-		void init()
-		{
-			on_heap_ = 0;
-			stolen_ = 0;
-			stream_ = 0;
-			setp(on_stack_,on_stack_+on_stack_size);
-		}
-		char *on_heap_;
 		std::streambuf *stolen_;
 		std::ostream *stream_;
-		char on_stack_[on_stack_size];
+	};
+
+	template<size_t Size = 128>
+	class stackstream : public std::ostream {
+	public:
+		stackstream() : std::ostream(0)
+		{
+			rbbuf(&buf_);
+		}
+		char *begin()
+		{
+			return buf_->begin();
+		}
+		char *end()
+		{
+			return buf_->end();
+		}
+		char *c_str()
+		{
+			return buf_.c_str();
+		}
+		std::string str()
+		{
+			return buf_.str();
+		}
+	private:
+		stackbuf<Size> buf_;
 	};
 	
 } // util

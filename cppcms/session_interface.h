@@ -24,6 +24,7 @@
 #include <booster/hold_ptr.h>
 #include <booster/shared_ptr.h>
 #include <cppcms/cstdint.h>
+#include <cppcms/cppcms_error.h>
 #include <cppcms/serialization_classes.h>
 #include <string>
 #include <map>
@@ -39,6 +40,18 @@ namespace http {
 }
 
 class session_api;
+
+///
+/// \brief This exception is thrown when CSRF attempt is suspected:
+///
+class CPPCMS_API request_forgery_error : public cppcms_error {
+public:
+	/// Create an exception object
+	request_forgery_error() : 
+		cppcms_error("Cross site request forgery detected")
+	{
+	}
+};
 
 ///
 /// \brief This class provides an access to an application for session management
@@ -287,6 +300,52 @@ public:
 	///
 	void reset_session();
 
+
+	///
+	/// Check that the CSRF token is the same as in the session object, it does not do any checks, whether
+	/// CSRF enabled or the request method is correct. It should be used for custom request handling (like
+	/// custom content types for RESTful services.
+	///	
+	/// Returns true if the token is valid, otherwise returns false
+	/// 
+	bool validate_csrf_token(std::string const &str);
+	///
+	/// Check that there is no Cross Site Request Forgery Attempt.
+	///
+	/// If CSRF checks enabled it validates that there is a valid CSRF token is submitted via POST request
+	/// or via X-CSRF-Token header for AJAX requests.
+	///
+	/// \note it is checked for POST requests only.
+	/// 
+	void validate_request_origin();
+
+	///
+	/// Set CSRF validation mode.
+	///
+	/// If \a required \c is true then validate_request_origin() would throw \ref request_forgery_error
+	/// if the CSRF token is not valid.
+	///
+	/// Setting it to false would prevent from validate_request_origin() to do any checks.
+	///
+	/// \note The default is defined in the configuration property \c security.csrf.automatic. If
+	/// its value is not set the default is \c true
+	///
+	/// It is useful when some parts of the application do not require CSRF validation regardless
+	/// the status of sepecifc session owner
+	///
+	void request_origin_validation_is_required(bool required);
+
+	///
+	/// Get CSRF token that is stored in the session that can be used for validation
+	/// of the request origin
+	///
+	std::string get_csrf_token();
+	///
+	/// Get the cooke name that holds CSRF token. Note it can be used only if security.csrf.exposed
+	/// is set to true (which is not by default)
+	///
+	std::string get_csrf_token_cookie_name();
+
 private:
 	friend class http::response;
 	friend class http::request;
@@ -315,7 +374,10 @@ private:
 	uint32_t on_server_ : 1;
 	uint32_t loaded_ : 1;
 	uint32_t reset_ : 1;
-	uint32_t reserved_ : 27;
+	uint32_t csrf_checked_ : 1;
+	uint32_t csrf_do_validation_ : 1;
+	uint32_t csrf_validation_ : 1;
+	uint32_t reserved_ : 24;
 
 	std::string temp_cookie_;
 
@@ -336,6 +398,7 @@ private:
 
 	void save_data(std::map<std::string,entry> const &data,std::string &s);
 	void load_data(std::map<std::string,entry> &data,std::string const &s);
+	std::string generate_csrf_token();
 };
 
 } // cppcms

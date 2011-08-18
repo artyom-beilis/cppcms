@@ -9,7 +9,22 @@ namespace impl {
 			int file_in_memory_limit;
 			std::string uploads_path;
 			bool display_error_message;
-			cached_security(json::value const &v) 
+			
+			struct cached_csrf {
+				bool enable;
+				bool automatic;
+				bool exposed;
+
+				cached_csrf(json::value const &v)
+				{
+					enable = v.get("security.csrf.enable",false);
+					automatic = v.get("security.csrf.automatic",true);
+					exposed = v.get("security.csrf.exposed",false);
+				}
+			} csrf;
+
+			cached_security(json::value const &v) :
+				csrf(v)
 			{
 				multipart_form_data_limit = v.get("security.multipart_form_data_limit",64*1024);
 				content_length_limit = v.get("security.content_length_limit",1024);

@@ -674,6 +674,13 @@ namespace cppcms {
 			///
 			virtual form *parent();
 
+			///
+			/// This function should be called before actual loading
+			/// of widgets, it performs cross widgets validation
+			/// and causes automatic generation of undefined names
+			///
+			void pre_load(http::context &);
+
 		protected:
 			///
 			/// This function should be called by overloaded load/render methods
@@ -1043,7 +1050,7 @@ namespace cppcms {
 			
 			virtual void load(http::context &context)
 			{
-				auto_generate();
+				pre_load(context);
 
 				loaded_string_.clear();
 

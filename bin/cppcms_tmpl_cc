@@ -624,6 +624,39 @@ class url_block:
         else:
             output( "content.app().mapper().map(out(),%s, %s);" % (s , ', '.join(params)))
 
+class csrf_block:
+    pattern=r'^<%\s*csrf(\s+(token|cookie|script))?\s*%>$'
+    def use(self,m):
+        s=m.group(2)
+
+        if not s:
+            output(r'out() << "<input type=\"hidden\" name=\"_csrf\" value=\"" << content.app().session().get_csrf_token() <<"\" />\n";')
+        elif s == 'token':
+            output(r'out() << content.app().session().get_csrf_token();')
+        elif s == 'cookie':
+            output(r'out() << content.app().session().get_csrf_token_cookie_name();')
+        else: # script
+            script="""
+            <script type='text/javascript'>
+            <!--
+                {
+                    var cppcms_cs = document.cookie.indexOf("$=");
+                    if(cppcms_cs != -1) {
+                        cppcms_cs += '$='.length;
+                        var cppcms_ce = document.cookie.indexOf(";",cppcms_cs);
+                        if(cppcms_ce == -1) {
+                            cppcms_ce = document.cookie.length;
+                        }
+                        var cppcms_token = document.cookie.substring(cppcms_cs,cppcms_ce);
+                        document.write('<input type="hidden" name="_csrf" value="' + cppcms_token + '" />');
+                    }
+                }
+            -->
+            </script>
+            """ 
+            script = to_string(script).replace('$','"<< content.app().session().get_csrf_token_cookie_name() <<"')
+            output('out() << "' + script +'";')
+
 
 class include_block:
     pattern=r'^<%\s*include\s+([a-zA_Z]\w*(::\w+)?)\s*\(\s*(.*)\)\s*%>$';
@@ -738,7 +771,7 @@ def main():
                     include_block(), \
                     cache_block(), \
                     trigger_block(), \
-                    html_type(), form_block(), \
+                    html_type(), form_block(), csrf_block(), \
                     filters_show_block(), error_com() ]:
                 m = re.match(c.pattern,x)
                 if m :

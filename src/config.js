@@ -154,7 +154,12 @@
 		// "multipart_form_data_limit" : 65536, // KB
 		// "content_length_limit" : 1024, // KB
 		// "uploads_path" : "" // temporary directory
-		"display_error_message" : true
+		"display_error_message" : true,
+		"csrf" : {
+			"enable" : true, 	// enable CSRF prevention support - default off
+			//"automatic" : false,	// check of all widgets automatically or manually - defaut - true=automatic
+			"exposed" : true,	// expose CSRF token in the cookie
+		}
 	}
 	
 }

@@ -23,6 +23,7 @@
 #include <cppcms/filters.h>
 #include <cppcms/cppcms_error.h>
 #include <cppcms/http_file.h>
+#include <cppcms/session_interface.h>
 #include <stack>
 #ifdef CPPCMS_USE_EXTERNAL_BOOST
 #   include <boost/format.hpp>
@@ -436,6 +437,12 @@ void base_widget::generate(int position,form_context * /*context*/)
 	is_generation_done_ = 1;
 }
 
+void base_widget::pre_load(http::context &context)
+{
+	context.session().validate_request_origin();
+	auto_generate();
+}
+
 void base_widget::auto_generate(form_context *context)
 {
 	if(is_generation_done_)
@@ -602,7 +609,7 @@ bool base_text::validate_charset()
 
 void base_text::load(http::context &context)
 {
-	auto_generate();
+	pre_load(context);
 	value_.clear();
 	code_points_ = 0;
 	set(true); // we don't care if the value was set
@@ -862,7 +869,7 @@ void checkbox::render_value(form_context &context)
 
 void checkbox::load(http::context &context)
 {
-	auto_generate();
+	pre_load(context);
 	set(true);
 	std::pair<http::request::form_type::const_iterator,http::request::form_type::const_iterator> 
 		range=context.request().post_or_get().equal_range(name());
@@ -963,7 +970,7 @@ void select_multiple::clear()
 
 void select_multiple::load(http::context &context)
 {
-	auto_generate();
+	pre_load(context);
 	set(true);
 	std::pair<http::request::form_type::const_iterator,http::request::form_type::const_iterator> 
 		range=context.request().post_or_get().equal_range(name());
@@ -1199,7 +1206,7 @@ bool select_base::validate()
 
 void select_base::load(http::context &context)
 {
-	auto_generate();
+	pre_load(context);
 	set(true);
 	std::pair<http::request::form_type::const_iterator,http::request::form_type::const_iterator> 
 		range=context.request().post_or_get().equal_range(name());
@@ -1364,7 +1371,7 @@ void submit::render_value(form_context &context)
 
 void submit::load(http::context &context)
 {
-	auto_generate();
+	pre_load(context);
 	set(true);
 	pressed_ = context.request().post_or_get().find(name()) != context.request().post_or_get().end();
 }
@@ -1461,7 +1468,7 @@ void file::add_valid_magic(std::string const &m)
 
 void file::load(http::context &context)
 {
-	auto_generate();
+	pre_load(context);
 	set(false);
 	valid(true);
 	if(name().empty())

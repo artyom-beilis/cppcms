@@ -28,6 +28,9 @@
 #include <cppcms/cppcms_error.h>
 #include <cppcms/service.h>
 #include <cppcms/json.h>
+#include <cppcms/urandom.h>
+#include <cppcms/base64.h>
+#include <booster/log.h>
 
 #include "cached_settings.h"
 
@@ -57,8 +60,13 @@ namespace cppcms {
 session_interface::session_interface(http::context &context) :
 	context_(&context),
 	loaded_(0),
-	reset_(0)
+	reset_(0),
+	csrf_checked_(0),
+	csrf_do_validation_(0),
+	csrf_validation_(0)
 {
+	csrf_validation_ = context.service().cached_settings().security.csrf.enable;
+	csrf_do_validation_ = context.service().cached_settings().security.csrf.automatic;
 	timeout_val_def_=context.service().cached_settings().session.timeout;
 	string s_how=context.service().cached_settings().session.expire;
 	if(s_how=="fixed") {
@@ -79,6 +87,49 @@ session_interface::session_interface(http::context &context) :
 
 session_interface::~session_interface()
 {
+}
+
+void session_interface::request_origin_validation_is_required(bool v)
+{
+	csrf_do_validation_ = v;
+}
+
+bool session_interface::validate_csrf_token(std::string const &token)
+{
+	std::string session_token = get("_csrf","");
+	return session_token.empty() || session_token == token;
+}
+
+void session_interface::validate_request_origin()
+{
+	if(csrf_checked_)
+		return;
+	csrf_checked_ = 1;
+
+	if(!csrf_validation_)
+		return;
+	if(!csrf_do_validation_)
+		return;
+	if(context_->request().request_method()!="POST")
+		return;
+	
+	std::string token;
+	
+	typedef http::request::form_type::const_iterator iterator_type;
+	std::pair<iterator_type,iterator_type> pair=context_->request().post().equal_range("_csrf");
+
+	if(pair.first != pair.second && std::distance(pair.first,pair.second)==1)
+		token = pair.first->second;
+	else
+		token = context_->request().getenv("HTTP_X_CSRFTOKEN");
+	
+	if(!validate_csrf_token(token)) {
+		BOOSTER_WARNING("cppcms")	<<"CSRF validation failed"
+						<<" IP="<< context_->request().remote_addr() 
+						<<" SCRIPT_NAME=" << context_->request().script_name() 
+						<<" PATH_INFO="<<context_->request().path_info();  
+		throw request_forgery_error();
+	}
 }
 
 bool session_interface::load()
@@ -211,6 +262,18 @@ void session_interface::update_exposed(bool force)
 	}
 }
 
+
+std::string session_interface::generate_csrf_token()
+{
+	unsigned char binary[6];
+	unsigned char text[16];
+	urandom_device dev; 
+	dev.generate(binary,sizeof(binary));
+	unsigned char *text_begin = text;
+	unsigned char *text_end = b64url::encode(binary,binary+sizeof(binary),text_begin);
+	return std::string(text_begin,text_end);
+}
+
 void session_interface::save()
 {
 	if(storage_.get()==NULL || !loaded_ || saved_)
@@ -223,6 +286,14 @@ void session_interface::save()
 		update_exposed(true);
 		return;
 	}
+
+	if(new_session_ && context_->service().cached_settings().security.csrf.enable)
+	{
+		set("_csrf",generate_csrf_token());
+		if(context_->service().cached_settings().security.csrf.exposed)
+			expose("_csrf");
+	}
+
 
 	time_t now = time(NULL);
 
@@ -437,7 +508,15 @@ void session_interface::reset_session()
 	reset_ = 1;
 }
 
+std::string session_interface::get_csrf_token()
+{
+	return get("_csrf","");
+}
 
+std::string session_interface::get_csrf_token_cookie_name()
+{
+	return context_->service().cached_settings().session.cookies.prefix + "__csrf"; // one for suffix and one for _csrf
+}
 
 
 } // cppcms

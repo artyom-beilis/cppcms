@@ -26,5 +26,6 @@
 #include <cppcms/url_mapper.h>
 #include <cppcms/copy_filter.h>
 #include <cppcms/cache_interface.h>
+#include <cppcms/session_interface.h>
 #endif
 

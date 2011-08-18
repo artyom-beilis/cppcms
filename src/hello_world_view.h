@@ -87,5 +87,18 @@ struct hello : public master {
 	a_form form;
 };
 
+struct csrf : public cppcms::base_content {
+	cppcms::widgets::text text;
+	cppcms::widgets::submit button;
+	cppcms::form my_form;
+	bool valid;
+	csrf() {
+		valid = false;
+		my_form.add(text);
+		my_form.add(button);
+	}
+};
+
+
 };
 

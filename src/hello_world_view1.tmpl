@@ -1,7 +1,31 @@
 <% xhtml %>
 <% skin %>
+	<% view csrf uses view::csrf %>
+	<% template render() %>
+		<% if valid %>
+			<p>Valid</p>
+		<% else %>
+			<p>Not Valid</p>
+		<% end %>
+		<p> Token: <% csrf token %></p>
+		<p> Cookie name: <% csrf cookie %></p>
+		<h2>Form Forgery</h2>
+		<form action="." method="post">
+		<% form as_p my_form %>
+		</form>
+		<h2>Form Post</h2>
+		<form action="." method="post"><% csrf %>
+		<% form as_p my_form %>
+		</form>
+		<h2>Form Script</h2>
+		<form action="." method="post"><% csrf script %>
+		<% form as_p my_form %>
+		</form>
+	<% end %>
+	<% end %>
 	<% view hello uses view::hello extends master %>
 	<% template body() %>
+
 	<form action="" method="post">
 	<ul>
 	<% form as_ul form %>
