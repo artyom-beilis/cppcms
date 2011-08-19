@@ -65,9 +65,10 @@ namespace booster {
 		}
 		else {
 			// failed to create - delete the object
+			int err = errno;
 			delete ptr;
 			ptr = 0;
-			throw runtime_error("booster::thread: failed to create a thread");
+			throw system::system_error(system::error_code(err,system::system_category),"booster::thread: failed to create a thread");
 		}
 	}
 	thread::~thread()
