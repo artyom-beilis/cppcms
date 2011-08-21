@@ -86,14 +86,14 @@
 			<dd><%= content | ext text2html %></dd>
 		</dl>
 	<% end %>
-	<form action="" method="post" >
+	<form action="" method="post" ><% csrf %>
 	<table>
 		<% form as_table form.author %>
 		<tr>
 			<th>
-			<% form.comment.message() %>: 
+			<%= form.comment.message() %>: 
 			<% if form.comment.valid() %>
-				<% form.comment.error_message() %>
+				<%= form.comment.error_message() %>
 			<% end %>
 			</th>
 			<td>

@@ -34,6 +34,12 @@
 		"backend" : "thread_shared",
 		"limit" : 100,
 	},
+	"security" : {
+		"csrf" : {
+			"enable" : true,
+			"exposed" : true
+		}
+	},
 	"localization" : {
 		"messages" : {
 			"paths" : [ "./locale" ],

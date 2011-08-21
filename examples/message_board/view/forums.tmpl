@@ -11,7 +11,7 @@
 		<h2><% gt "No Topics" %></h2>
 	<% end %>
 	<h2><% gt "Create New Disussion" %></h2>
-	<form action="<% url "/forums" %>" method="post" >
+	<form action="<% url "/forums" %>" method="post" ><% csrf script %>
 	<% form as_p form %>
 	</form>
 <% end template %>

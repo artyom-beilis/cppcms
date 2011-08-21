@@ -110,13 +110,15 @@ service::service(json::value const &v) :
 service::service(int argc,char *argv[]) :
 	impl_(new impl::service())
 {
+	json::value val = load_settings(argc,argv);
 	impl_->settings_.reset(new json::value());
-	load_settings(argc,argv);
+	impl_->settings_->swap(val);
 	setup();
 }
 
-void service::load_settings(int argc,char *argv[])
+json::value service::load_settings(int argc,char *argv[])
 {
+	json::value val;
 	using std::string;
 	std::string file_name;
 	
@@ -140,9 +142,6 @@ void service::load_settings(int argc,char *argv[])
 		if(e) file_name = e;
 	}
 	
-	json::value &val=*impl_->settings_;
-
-
 	if(!file_name.empty()) {
 		booster::nowide::ifstream fin(file_name.c_str());
 		if(!fin)
@@ -196,6 +195,7 @@ void service::load_settings(int argc,char *argv[])
 	if(val.is_undefined()) {
 		throw cppcms_error("No configuration defined");
 	}
+	return val;
 
 }
 

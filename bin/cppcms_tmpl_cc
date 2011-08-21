@@ -188,6 +188,11 @@ def inline_content(s):
     if not ignore_inline:
         output( 'out()<<"%s";' % to_string(s))
 
+def warning(x):
+    global file_name
+    global line_number
+    sys.stderr.write("Warning: %s in file %s, line %d\n" % (x,file_name,line_number))
+
 def error_exit(x):
     global exit_flag
     global file_name
@@ -506,9 +511,11 @@ class render_block:
 
 
 class filters_show_block(base_show):
-    pattern=r'^<%=?\s*('+ variable_match + r'\s*(\|.*)?)%>$'
+    pattern=r'^<%(=)?\s*('+ variable_match + r'\s*(\|.*)?)%>$'
     def use(self,m):
-        expr=self.prepare(m.group(1));
+        if not m.group(1):
+            warning("Variables syntax like <% foo %> is depricated, use <%= foo %> syntax");
+        expr=self.prepare(m.group(2));
         if expr!="":
             output('out()<<%s;' % expr)
 
@@ -629,8 +636,15 @@ class csrf_block:
     def use(self,m):
         s=m.group(2)
 
+        global html_type_code
+
+        if html_type_code == 'as_xhtml':
+            suffix = '/'
+        else:
+            suffix =''
+
         if not s:
-            output(r'out() << "<input type=\"hidden\" name=\"_csrf\" value=\"" << content.app().session().get_csrf_token() <<"\" />\n";')
+            output(r'out() << "<input type=\"hidden\" name=\"_csrf\" value=\"" << content.app().session().get_csrf_token() <<"\" %s>\n";' % suffix)
         elif s == 'token':
             output(r'out() << content.app().session().get_csrf_token();')
         elif s == 'cookie':
@@ -648,12 +662,12 @@ class csrf_block:
                             cppcms_ce = document.cookie.length;
                         }
                         var cppcms_token = document.cookie.substring(cppcms_cs,cppcms_ce);
-                        document.write('<input type="hidden" name="_csrf" value="' + cppcms_token + '" />');
+                        document.write('<input type="hidden" name="_csrf" value="' + cppcms_token + '" %s>');
                     }
                 }
             -->
             </script>
-            """ 
+            """ % suffix; 
             script = to_string(script).replace('$','"<< content.app().session().get_csrf_token_cookie_name() <<"')
             output('out() << "' + script +'";')
 

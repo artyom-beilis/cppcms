@@ -2,14 +2,14 @@
 <% skin %>
 	<% view master uses view::master %>
 	<% template test(std::string &v,int p) %>
-	<% p %>
+	<%= p %>
 	<% foreach c as std::string::iterator in v %>
-		<% item %><% c %><% end %>
+		<% item %><%= c %><% end %>
 	<% end %>
 	<% end %>
 	<% template render() %>
 		<html>
-		<title>Skin1 :: <% title %></title>
+		<title>Skin1 :: <%= title %></title>
 		<body>
 		<h1>That is cool</h1>
 		<% include body() %>

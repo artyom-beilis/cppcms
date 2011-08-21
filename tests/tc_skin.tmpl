@@ -17,8 +17,8 @@ TBD
 
 <% view master_tmpl uses data::master %>
 <% template a() %>A<% end %>
-<% template b(int x) %>x=<% x %><% end %>
-<% template c(int x,std::string const &y) %>x=<%x%> y=<%y%><% end %>
+<% template b(int x) %>x=<%= x %><% end %>
+<% template c(int x,std::string const &y) %>x=<%=x%> y=<%=y%><% end %>
 <% template render() %>
 <% include a() %>
 <% include b(10) %>

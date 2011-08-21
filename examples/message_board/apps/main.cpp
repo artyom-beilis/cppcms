@@ -7,6 +7,7 @@
 int main(int argc,char ** argv)
 {
 	try {
+
 		cppcms::service app(argc,argv);
 		app.applications_pool().mount(cppcms::applications_factory<apps::mb>());
 		app.run();

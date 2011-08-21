@@ -36,20 +36,20 @@
 	<p>
 		<% foreach w as cppcms::form::iterator in form %>
 			<% separator %><br/><% item %>
-				<% if w.has_message() %><% w.message() %>:<% end %>
+				<% if w.has_message() %><%= w.message() %>:<% end %>
 				<% form input w %>
-				<% if not w.valid() %>:<% w.error_message() %><% end %>
+				<% if not w.valid() %>:<%= w.error_message() %><% end %>
 			<% end %>
 		<% end %>
 		<input type="submit" value="Submit" />
 
 	</p>
 	<% if rtl %><% end %>
-		<% if not empty title %><h1><% title %></h1><% end %>
-		<p><% msg %></p>
+		<% if not empty title %><h1><%= title %></h1><% end %>
+		<p><%= msg %></p>
 		<% if not empty username %>
-		<p> The form was: nik=<% username %>, name=<% realname %>, Ok is <% if not ok%>not<% end %> checked,
-			password=<% password %></p>
+		<p> The form was: nik=<%= username %>, name=<%= realname %>, Ok is <% if not ok%>not<% end %> checked,
+			password=<%= password %></p>
 		<% end %>
 		<% foreach x as view::hello::numbers_type::iterator in numbers %>
 			<ul>

@@ -7,6 +7,10 @@ include_directories(${CMAKE_SOURCE_DIR})
 
 option(STATIC_VIEW "Build Static View instead of dynamically loaded one" OFF)
 
+if(WIN32 OR CYGWIN)
+	add_definitions(-DDLL_EXPORT)
+endif()
+
 
 # Dependencies
 
