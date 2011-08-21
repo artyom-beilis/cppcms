@@ -141,6 +141,11 @@ void context::dispatch(booster::intrusive_ptr<application> app,std::string url,b
 			app->context().session().load();
 		app->main(url);
 	}
+	catch(request_forgery_error const &e) {
+		if(app->get_context() && !app->response().some_output_was_written()) {
+			app->response().make_error_response(http::response::forbidden);
+		}
+	}
 	catch(std::exception const &e){
 		BOOSTER_ERROR("cppcms") << "Caught exception ["<<e.what()<<"]\n" << booster::trace(e)  ;
 		if(app->get_context()) {
