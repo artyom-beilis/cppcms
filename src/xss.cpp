@@ -19,11 +19,16 @@
 #define CPPCMS_SOURCE
 #include <cppcms/xss.h>
 #include <cppcms/encoding.h>
+#include <cppcms/json.h>
+#include <cppcms/cppcms_error.h>
 #include <booster/locale/encoding.h>
+#include <booster/nowide/fstream.h>
 #include <booster/regex.h>
 #include <stack>
 #include <map>
 #include <set>
+#include <vector>
+#include <sstream>
 #include <stdlib.h>
 #include <string.h>
 
@@ -32,6 +37,8 @@
 #include "c_string.h"
 
 namespace cppcms { namespace xss { 
+
+	static char const *basic_allowed_schemes = "(http|https|ftp|mailto|news|nntp)";
 
 	using namespace details;
 	
@@ -213,9 +220,129 @@ namespace cppcms { namespace xss {
 		else
 			return d->html_rules;
 	}
+
+
+	namespace {
+		void load_tags_from_json(rules &r,json::value const &v,std::string const &name,rules::tag_type type,std::set<std::string> &all)
+		{
+			std::vector<std::string> tags = v.get("tags." + name,std::vector<std::string>());
+			for(size_t i = 0 ; i<tags.size();i++) {
+				if(!all.insert(tags[i]).second) {
+					throw cppcms_error("xss::rules: duplicate tag" + tags[i]);
+				}
+				r.add_tag(tags[i],type);
+			}
+		}
+		
+		void load_from_json(rules &r,json::value const &v)
+		{
+			r.html(v.get("xhtml",true) ? rules::xhtml_input : rules::html_input);
+			r.comments_allowed(v.get("comments",false));
+			r.numeric_entities_allowed(v.get("numeric_entities",false));
+			typedef std::vector<std::string> str_vec;
+			str_vec entities = v.get("entities",str_vec());
+			for(size_t i=0;i<entities.size();i++) {
+				r.add_entity(entities[i]);
+			}
+			std::string encoding = v.get("encoding","");
+			if(!encoding.empty()) {
+				r.encoding(encoding);
+			}
+			std::set<std::string> all_tags;
+			load_tags_from_json(r,v,"opening_and_closing",rules::opening_and_closing,all_tags);
+			load_tags_from_json(r,v,"stand_alone",rules::stand_alone,all_tags);
+			load_tags_from_json(r,v,"any_tag",rules::any_tag,all_tags);
+			json::value attrs_val = v.find("attributes");
+			if(attrs_val.is_undefined())
+				return;
+			if(attrs_val.type()!=json::is_array) {
+				throw cppcms_error("xss::rules: attributes is expected to be an array");
+			}
+			json::array const &attributes = attrs_val.array();
+			std::set<std::pair<std::string,std::string> > all_tags_attrs;
+			for(size_t i=0;i< attributes.size();i++) {
+				if(attributes[i].type()!=json::is_object) {
+					throw cppcms_error("xss::rules: attributes is expected to be an array of objects");
+				}
+				json::value const &attr = attributes[i];
+				str_vec tags = attr.get("tags",str_vec());
+				str_vec names = attr.get("attr",str_vec());
+				if(tags.empty()) {
+					throw cppcms_error("xss::rules: invalid value for attributes.[].tags");
+				}
+				if(names.empty()) {
+					throw cppcms_error("xss::rules: invalid value for attributes.[].attr");
+				}
+				std::string type = attr.get<std::string>("type");
+
+				for(size_t j=0;j<tags.size();j++) {
+					for(size_t k=0;j<names.size();k++) {
+						std::string const &name = names[i];
+						if(all_tags.count(tags[j])!=1)
+							throw cppcms_error("xss::rules: tags " + tags[j] + " enlisted in attributes set"
+								"is not defined in tags part");
+						if(all_tags_attrs.insert(std::pair<std::string,std::string>(tags[j],name)).second == false) 
+							throw cppcms_error("xss::rules: duplicate tag/attribute pair: " + tags[j] + ":" + name);
+					}
+				}
+				
+				if(type == "boolean") {
+					for(size_t j=0;j<tags.size();j++)
+						for(size_t k=0;k<names.size();k++)
+							r.add_boolean_property(tags[j],names[k]);
+				}
+				else if(type == "integer") {
+					for(size_t j=0;j<tags.size();j++)
+						for(size_t k=0;k<names.size();k++)
+							r.add_integer_property(tags[j],names[k]);
+				}
+				else if(type == "expression") {
+					booster::regex rg(attr.get<std::string>("expression"));
+					for(size_t j=0;j<tags.size();j++)
+						for(size_t k=0;k<names.size();k++)
+							r.add_property(tags[j],names[k],rg);
+				}
+				else if(type == "relative_uri") {
+					for(size_t j=0;j<tags.size();j++)
+						for(size_t k=0;k<names.size();k++)
+						r.add_property(tags[j],names[k],rules::relative_uri_validator());
+				}
+				else if(type == "uri" || type == "absolute_uri") {
+					bool absolute_only = type != "uri";
+					std::string scheme = attr.get<std::string>("scheme",basic_allowed_schemes);
+					rules::validator_type validator = rules::uri_validator(scheme,absolute_only);
+					for(size_t j=0;j<tags.size();j++)
+						for(size_t k=0;k<names.size();k++)
+							r.add_property(tags[j],names[k],validator);
+				}
+				else {
+					throw cppcms_error("xss::rules: invalid attribute type:" + type);
+				}
+			} // for attributes
+		} // load_from_json
+	} // anonymous
 	
 	rules::rules() : d(new data())
 	{
+	}
+	rules::rules(json::value const &v) : d(new data())
+	{
+		load_from_json(*this,v);
+	}
+	rules::rules(std::string const &file_name) : d(new data())
+	{
+		json::value v;
+		booster::nowide::ifstream f(file_name.c_str());
+		if(!f) {
+			throw cppcms_error("xss::rules: failed to open file: " + file_name);
+		}
+		int line_number = 0;
+		if(!v.load(f,true,&line_number)) {
+			std::ostringstream ss;
+			ss << "xss::rules: error parsing JSON file " << file_name << " in line " << line_number;
+			throw cppcms_error(ss.str());
+		}
+		load_from_json(*this,v);
 	}
 	rules::rules(rules const &other) : d(other.d)
 	{
@@ -327,7 +454,7 @@ namespace cppcms { namespace xss {
 
 	booster::regex rules::uri_matcher()
 	{
-		return uri_matcher("(http|https|ftp|mailto|news|nntp)");
+		return uri_matcher(basic_allowed_schemes);
 	}
 
 	booster::regex rules::uri_matcher(std::string const &scheme)
@@ -943,7 +1070,7 @@ namespace cppcms { namespace xss {
 
 	rules::validator_type rules::uri_validator()
 	{
-		return uri_validator("^(http|https|ftp|mailto|news|nntp)$");
+		return uri_validator(basic_allowed_schemes);
 	}
 	rules::validator_type rules::uri_validator(std::string const &scheme,bool absolute_only )
 	{

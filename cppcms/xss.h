@@ -29,6 +29,9 @@
 #include <algorithm>
 
 namespace cppcms {
+	namespace json {
+		class value;
+	}
 	///
 	/// \brief Namespace that holds Anti-Cross Site Scripting Filter support
 	///
@@ -101,6 +104,99 @@ namespace cppcms {
 			rules(rules const &);
 			rules const &operator=(rules const &);
 			~rules();
+
+			/// Create rules from JSON object \a r
+			/// 
+			/// The json object the defines the XSS prevention rules.
+			/// This object has following properties:
+			/// 
+			/// - "xhtml" - boolean; default true - use XHTML (true) or HTML input
+			/// - "comments" - boolean; setting it to true allows comments, default false
+			/// - "numeric_entities" - boolean; setting it to true allows numeric_entities, default false
+			/// - "entities" - array of strings: list of allowed HTML entities besides lt, gt and amp
+			/// - "encoding" - string; the encoding of the text to validate, by default not checked and the
+			/// 	input is assumed to be ASCII compatible. Always specifiy it for multibyte encodings
+			/// 	like Shift-JIS or GBK as they are not ASCII compatible.
+			/// - "tags" - object with 3 properties of type array of string: 
+			/// 	- "opening_and_closing" - the tags that should come in pair like "<b></b>"
+			/// 	- "stand_alone" - the tags that should appear stand alone like "<br/>"
+			/// 	- "any_tag" - the tags that can be both like "<input>"
+			/// - "attributes" - array of objects that define HTML attributes. Each object consists
+			/// 	of following properties:
+			/// 	- "tags" - array of strings - list of tags that this attribute is allowed for.
+			/// 	- "attr" - array of strings - lisf of names of the attribute
+			/// 	- "type" - string - the type of the attribute one of: "boolean", "uri", "relative_uri", "absolute_uri",
+			/// 		"integer", "regex".
+			/// 	- "scheme" - string the allowed URI scheme - regular expression like "(http|ftp)". Used with
+			/// 		"uri" and "absolute_uri" type
+			/// 	- "expression"  - string the regular expression that defines the value that the attribute
+			/// 		should match.
+			///
+			/// The extra properties that are not defined by this scheme are ingored
+			///
+			/// For example:
+			/// \code
+			/// {
+			/// 	"xhtml" : true,
+			/// 	"encoding" : "UTF-8",
+			/// 	"entities" : [ "nbsp" , "copy" ],
+			/// 	"comments" : false,
+			/// 	"numeric_entities" : false,
+			/// 	"tags" : {
+			/// 		"opening_and_closing" : [
+			/// 			"p", "b", "i", "tt",
+			/// 			"a",
+			/// 			"strong", "em",
+			/// 			"sub", "sup",
+			/// 			"ol", "ul", "li",
+			/// 			"dd", "dt", "dl",
+			/// 			"blockquote","code", "pre",
+			///			"span", "div"
+			/// 		],
+			/// 		"stand_alone" : [ "br", "hr", "img" ]
+			/// 	],
+			/// 	"attributes": [
+			/// 		{
+			/// 			"tags" : [ "a" ],
+			/// 			"attr" : [ "herf" ],
+			/// 			"type" : "uri",
+			/// 			"scheme" : "(http|https|ftp)"
+			/// 		},
+			/// 		{
+			/// 			"tags" : [ "img" ],
+			/// 			"attr" : [ "src" ],
+			/// 			"type" : "relative_uri"
+			/// 		},
+			///		{
+			///			"tags" : [ "img" ],
+			///			"attr" : [ "alt" ],
+			///			"type" : "regex",
+			///			"expression" : ".*"
+			///		},
+			/// 		{
+			/// 			"tags" : [ "p", "li", "ul" ]
+			/// 			"attr" : [ "style" ],
+			/// 			"type" : "regex",
+			/// 			"expression" : "\\s*text-algin:\\s*(center|left|right|justify);?\\s*"
+			/// 		},
+			/// 		{
+			/// 			"tags" : [ "span", "div" ]
+			/// 			"attr" : [ "class", "id" ],
+			/// 			"type" : "regex",
+			/// 			"expression" : "[a-zA-Z_0-9]+"
+			/// 		},
+			/// 	]
+			/// }
+			/// \endcode
+			///
+			rules(json::value const &r);
+
+			///
+			/// Create rules from the JSON object stored in the file \a file_name
+			///
+			/// \see rules(json::value const&)
+			///
+			rules(std::string const &file_name);
 
 			///
 			/// How to treat in input
