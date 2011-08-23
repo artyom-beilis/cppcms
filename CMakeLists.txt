@@ -4,8 +4,8 @@ set(CMAKE_LEGACY_CYGWIN_WIN32 0)
 
 project(cppcms)
 set(CPPCMS_PACKAGE_NAME "CppCMS")
-set(CPPCMS_PACKAGE_STRING "CppCMS/0.99.9")
-set(CPPCMS_PACKAGE_VERSION "0.99.9")
+set(CPPCMS_PACKAGE_STRING "CppCMS/0.99.10")
+set(CPPCMS_PACKAGE_VERSION "0.99.10")
 
 include(CheckFunctionExists)
 include(CheckCXXSourceCompiles)
@@ -552,6 +552,9 @@ if(NOT DISABLE_TCPCACHE)
 	add_executable(cppcms_scale src/cache_server_main.cpp)
 	target_link_libraries(cppcms_scale ${CPPCMS_LIB})
 endif()
+
+add_executable(cppcms_make_key src/make_key.cpp)
+target_link_libraries(cppcms_make_key ${CPPCMS_LIB})
 
 add_executable(cppcms_config_find_param src/cppcms_config_find_param.cpp src/json.cpp)
 if(DISABLE_SHARED)
