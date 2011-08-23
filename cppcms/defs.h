@@ -48,4 +48,12 @@
 #define CPPCMS_POSIX
 #endif
 
+#if defined __GNUC__ || defined __clang__ 
+#define CPPCMS_DEPRECATED __attribute__((deprecated))
+#elif defined _MSC_VER
+#define CPPCMS_DEPRECATED __declspec(deprecated)
+#else
+#define CPPCMS_DEPRECATED
+#endif
+
 #endif /// CPPCMS_DEFS_H

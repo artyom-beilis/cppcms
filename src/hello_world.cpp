@@ -238,7 +238,17 @@ public:
 		gif.add_valid_magic("GIF87a");
 		gif.add_valid_magic("\x89PNG\r\n\x1a\n");
 		text.mime(booster::regex("text/.*"));
-		*this + name + age + p1 + p2 + description + sel + sel1 + sel2 + gif + text + secret ;
+		add(name);
+		add(age);
+		add(p1);
+		add(p2);
+		add(description);
+		add(sel);
+		add(sel1);
+		add(sel2);
+		add(gif);
+		add(text);
+		add(secret);
 	}
 };
 

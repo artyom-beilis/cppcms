@@ -279,18 +279,22 @@ namespace cppcms {
 		void attach(widgets::base_widget *widget);
 
 		///
+		/// \deprecated Use add(form &) instead
+		///
 		/// Shortcut to \a add.
 		///
-		inline form &operator + (form &f)
+		CPPCMS_DEPRECATED inline form &operator + (form &f)
 		{
 			add(f);
 			return *this;
 		}
 		
 		///
+		/// \deprecated Use add(widgets::base_widget &) instead
+		///
 		/// Shortcut to \a add.
 		///
-		inline form &operator + (widgets::base_widget &f)
+		CPPCMS_DEPRECATED inline form &operator + (widgets::base_widget &f)
 		{
 			add(f);
 			return *this;

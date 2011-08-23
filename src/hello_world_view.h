@@ -56,8 +56,14 @@ struct a_form : public cppcms::form {
 		integer.message(translate("Integer"));
 		real.message(translate("Real"));
 		ok.message(translate("Never Save"));
-		*this + username + mail + name + p1 + p2 +
-			integer + real + ok;
+		add(username);
+		add(mail);
+		add(name);
+		add(p1);
+		add(p2);
+		add(integer);
+		add(real);
+		add(ok);
 		username.non_empty();
 		name.non_empty();
 		p2.check_equal(p1);

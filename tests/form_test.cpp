@@ -98,14 +98,23 @@ public:
 		cppcms::form X,a,a1,a2,b;
 
 		if(a_case.empty() || a_case == "/non_empty" || a_case=="/sub"){
-			X+text+a+b;
-			a+a1;
-			a+a2;
-			a1+textarea;
-			a2+integer;
-			a2+real;
-			b+p1+p2+regex+email+checkbox+select_multiple;
-			X+select+radio+submit;
+			X.add(text);
+			X.add(a);
+			X.add(b);
+			a.add(a1);
+			a.add(a2);
+			a1.add(textarea);
+			a2.add(integer);
+			a2.add(real);
+			b.add(p1);
+			b.add(p2);
+			b.add(regex);
+			b.add(email);
+			b.add(checkbox);
+			b.add(select_multiple);
+			X.add(select);
+			X.add(radio);
+			X.add(submit);
 
 			if(!a_case.empty()) {
 				text.non_empty();
@@ -176,7 +185,7 @@ public:
 
 		}
 		else if(a_case == "/text") {
-			X+text;
+			X.add(text);
 			text.limits(2,5);
 			load(X);
 			if(text.set()) {
@@ -185,7 +194,7 @@ public:
 
 		}
 		else if(a_case == "/number") {
-			X+real;
+			X.add(real);
 			real.range(5,100);
 			load(X);
 			if(real.set()) {
@@ -194,18 +203,19 @@ public:
 
 		}
 		else if(a_case == "/pass") {
-			X+p1+p2;
+			X.add(p1);
+			X.add(p2);
 			p1.non_empty();
 			p2.check_equal(p1);
 			load(X);
 		}
 		else if(a_case == "/checkbox") {
-			X+checkbox;
+			X.add(checkbox);
 			load(X);
 			response().out() << checkbox.value();
 		}
 		else if(a_case == "/sm") {
-			X+select_multiple;
+			X.add(select_multiple);
 			select_multiple.non_empty();
 			select_multiple.at_most(2);
 			load(X);
@@ -220,19 +230,19 @@ public:
 			out<< std::endl;
 		}
 		else if(a_case == "/select") {
-			X+select;
+			X.add(select);
 			select.non_empty();
 			load(X);
 			response().out() << select.selected() <<" " << select.selected_id();
 		}
 		else if(a_case == "/radio") {
-			X+radio;
+			X.add(radio);
 			radio.non_empty();
 			load(X);
 			response().out() << radio.selected() <<" " << radio.selected_id();
 		}
 		else if(a_case == "/submit") {
-			X+submit;
+			X.add(submit);
 			load(X);
 			response().out() << submit.value();
 		}
@@ -245,7 +255,7 @@ public:
 			s.message(cppcms::locale::translate("message"));
 			s.valid(false);
 			s.value(cppcms::locale::translate("test"));
-			X+s;
+			X.add(s);
 			cppcms::form_context context(response().out());
 			X.render(context);
 		}
