@@ -17,16 +17,14 @@
 //
 ///////////////////////////////////////////////////////////////////////////////
 #include <cppcms/xss.h>
+#include <cppcms/json.h>
 #include <booster/locale/encoding.h>
 #include "test.h"
 #include "c_string.h"
 #include <iostream>
 #include <string.h>
-
-#ifdef TEST
-#undef TEST
-#define TEST(x) do { if(!(x)) std::cerr <<__LINE__<<": "<< #x << std::endl; } while(0)
-#endif
+#include <fstream>
+#include <cstdlib>
 
 void test_rules()
 {
@@ -481,12 +479,207 @@ void test_encoding()
 	}
 }
 
+void test_json()
+{
+	std::cout << "- Testing json format" << std::endl;
+	using namespace cppcms::xss;
+	
+	{
+		std::cout << "-- Testing basic properties" << std::endl;
+		{
+			cppcms::json::value v;
+			v["xhtml"]=true;
+			v["comments"]=true;
+			v["numeric_entities"]=true;
+			rules r(v);
+			TEST(r.html() == rules::xhtml_input);
+			TEST(r.comments_allowed());
+			TEST(r.numeric_entities_allowed());
+		}
+		{
+			cppcms::json::value v;
+			v["xhtml"]=false;
+			v["comments"]=false;
+			v["numeric_entities"]=false;
+			rules r(v);
+			TEST(r.html() == rules::html_input);
+			TEST(!r.comments_allowed());
+			TEST(!r.numeric_entities_allowed());
+		}
+		{
+			cppcms::json::value v=cppcms::json::object();
+			rules r(v);
+			TEST(r.html() == rules::xhtml_input);
+			TEST(!r.comments_allowed());
+			TEST(!r.numeric_entities_allowed());
+		}
+	}
+	{
+		std::cout << "-- Testing entities" << std::endl;
+		cppcms::json::value v;
+		v["entities"][0]="copy";
+		v["entities"][1]="nbsp";
+		rules r(v);
+		TEST(r.valid_entity(details::c_string("copy")));
+		TEST(r.valid_entity(details::c_string("nbsp")));
+		TEST(!r.valid_entity(details::c_string("foo")));
+	}
+	{
+		std::cout <<"-- Testing tags" << std::endl;
+		{
+			cppcms::json::value v;
+			v["tags"]["opening_and_closing"][0]="b";
+			v["tags"]["opening_and_closing"][1]="i";
+			v["tags"]["stand_alone"][0]="br";
+			v["tags"]["stand_alone"][1]="hr";
+			v["tags"]["any_tag"][0]="input";
+			rules r(v);
+			TEST(r.valid_tag("b")==rules::opening_and_closing);
+			TEST(r.valid_tag("i")==rules::opening_and_closing);
+			TEST(r.valid_tag("hr")==rules::stand_alone);
+			TEST(r.valid_tag("br")==rules::stand_alone);
+			TEST(r.valid_tag("input")==rules::any_tag);
+		}
+	}
+	{
+		std::cout <<"-- Testing properties" << std::endl;
+		{
+			std::cout <<"--- Testing properties setting" << std::endl;
+			cppcms::json::value v;
+			
+			v["tags"]["opening_and_closing"][0]="b";
+			v["tags"]["opening_and_closing"][1]="i";
+			v["tags"]["opening_and_closing"][2]="a";
+			
+			v["attributes"][0]["tags"][0]="b";
+			v["attributes"][0]["tags"][1]="i";
+			
+			v["attributes"][0]["attributes"][0]="class";
+			v["attributes"][0]["attributes"][1]="id";
+			
+			v["attributes"][0]["pairs"][0]["tag"]="a";
+			v["attributes"][0]["pairs"][0]["attr"]="name";
+			
+			v["attributes"][0]["pairs"][1]["tag"]="b";
+			v["attributes"][0]["pairs"][1]["attr"]="foo";
+
+			v["attributes"][0]["type"]="regex";
+			v["attributes"][0]["expression"]="[a-z]+";
+
+			rules r(v);
+			TEST(r.valid_property("b","class","x"));
+			TEST(r.valid_property("b","id","x"));
+
+			TEST(r.valid_property("i","class","x"));
+			TEST(r.valid_property("i","id","x"));
+
+
+			TEST(!r.valid_property("a","class","x"));
+			TEST(r.valid_property("a","name","x"));
+			TEST(r.valid_property("b","foo","x"));
+		}
+		{
+			std::cout <<"--- Testing properties options" << std::endl;
+			cppcms::json::value basic;
+			basic["xhtml"]=false;
+			basic["tags"]["opening_and_closing"][0]="foo";
+			basic["attributes"][0]["tags"][0]="foo";
+			basic["attributes"][0]["attributes"][0]="bar";
+			{
+				cppcms::json::value v=basic;
+				v["attributes"][0]["type"]="boolean";
+				rules r(v);
+				TEST(r.valid_boolean_property("foo","bar"));
+			}
+			{
+				cppcms::json::value v=basic;
+				v["attributes"][0]["type"]="integer";
+				rules r(v);
+				TEST(r.valid_property("foo","bar","10"));
+				TEST(!r.valid_property("foo","bar","xxx"));
+			}
+			{
+				cppcms::json::value v=basic;
+				v["attributes"][0]["type"]="regex";
+				v["attributes"][0]["expression"]="[0-9a-fA-F]+";
+				rules r(v);
+				TEST(r.valid_property("foo","bar","10f"));
+				TEST(!r.valid_property("foo","bar","x"));
+			}
+
+			{
+				cppcms::json::value v=basic;
+				v["attributes"][0]["type"]="uri";
+				rules r(v);
+				TEST(r.valid_property("foo","bar","/foo"));
+				TEST(r.valid_property("foo","bar","http://www.google.com/foo"));
+				TEST(!r.valid_property("foo","bar","javascript://www.google.com/foo"));
+			}
+			{
+				cppcms::json::value v=basic;
+				v["attributes"][0]["type"]="uri";
+				v["attributes"][0]["scheme"]="(http|https)";
+				rules r(v);
+				TEST(r.valid_property("foo","bar","http://www.google.com/foo"));
+				TEST(r.valid_property("foo","bar","/foo"));
+				TEST(!r.valid_property("foo","bar","ftp://www.google.com/foo"));
+			}
+			{
+				cppcms::json::value v=basic;
+				v["attributes"][0]["type"]="absolute_uri";
+				rules r(v);
+				TEST(r.valid_property("foo","bar","http://www.google.com/foo"));
+				TEST(!r.valid_property("foo","bar","/foo"));
+				TEST(!r.valid_property("foo","bar","javascript://www.google.com/foo"));
+			}
+			{
+				cppcms::json::value v=basic;
+				v["attributes"][0]["type"]="absolute_uri";
+				v["attributes"][0]["scheme"]="(http|https)";
+				rules r(v);
+				TEST(r.valid_property("foo","bar","http://www.google.com/foo"));
+				TEST(!r.valid_property("foo","bar","/foo"));
+				TEST(!r.valid_property("foo","bar","javascript://www.google.com/foo"));
+				TEST(!r.valid_property("foo","bar","ftp://www.google.com/foo"));
+			}
+			{
+				cppcms::json::value v=basic;
+				v["attributes"][0]["type"]="relative_uri";
+				rules r(v);
+				TEST(r.valid_property("foo","bar","/foo"));
+				TEST(r.valid_property("foo","bar","foo.txt"));
+				TEST(!r.valid_property("foo","bar","http://www.google.com/foo"));
+				TEST(!r.valid_property("foo","bar","javascript://www.google.com/foo"));
+
+			}
+
+		}
+		std::cout << "-- From file" << std::endl;
+		{
+			cppcms::json::value v;
+			v["xhtml"]=false;
+			v["comments"]=true;
+			v["numeric_entities"]=true;
+			std::ofstream f("test.txt");
+			f << v;
+			f.close();
+			rules r(std::string("test.txt"));
+			TEST(r.html() == rules::html_input);
+			TEST(r.comments_allowed());
+			TEST(r.numeric_entities_allowed());
+			std::remove("test.txt");
+		}
+	}
+
+}
+
 int main()
 {
 	try {
 		test_rules();
 		test_validation();
 		test_encoding();
+		test_json();
 	}
 	catch(std::exception const &e){
 		std::cerr << "Fail " << e.what() << std::endl;

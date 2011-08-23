@@ -123,14 +123,17 @@ namespace cppcms {
 			/// 	- "any_tag" - the tags that can be both like "<input>"
 			/// - "attributes" - array of objects that define HTML attributes. Each object consists
 			/// 	of following properties:
-			/// 	- "tags" - array of strings - list of tags that this attribute is allowed for.
-			/// 	- "attr" - array of strings - lisf of names of the attribute
-			/// 	- "type" - string - the type of the attribute one of: "boolean", "uri", "relative_uri", "absolute_uri",
-			/// 		"integer", "regex".
+			/// 	- "type" - string - the type of the attribute one of: "boolean", "uri", "relative_uri",
+			///		"absolute_uri", "integer", "regex".
 			/// 	- "scheme" - string the allowed URI scheme - regular expression like "(http|ftp)". Used with
 			/// 		"uri" and "absolute_uri" type
 			/// 	- "expression"  - string the regular expression that defines the value that the attribute
 			/// 		should match.
+			/// 	- "tags" - array of strings - list of tags that this attribute is allowed for.
+			/// 	- "attributes" - array of strings - lisf of names of the attribute
+			///     - "pairs" - array of objects that consists of two properities "tag" and "attr" of
+			///		type string that define tag and attributed that such type of property
+			///		should be allowed for.
 			///
 			/// The extra properties that are not defined by this scheme are ingored
 			///
@@ -157,23 +160,6 @@ namespace cppcms {
 			/// 	],
 			/// 	"attributes": [
 			/// 		{
-			/// 			"tags" : [ "a" ],
-			/// 			"attr" : [ "herf" ],
-			/// 			"type" : "uri",
-			/// 			"scheme" : "(http|https|ftp)"
-			/// 		},
-			/// 		{
-			/// 			"tags" : [ "img" ],
-			/// 			"attr" : [ "src" ],
-			/// 			"type" : "relative_uri"
-			/// 		},
-			///		{
-			///			"tags" : [ "img" ],
-			///			"attr" : [ "alt" ],
-			///			"type" : "regex",
-			///			"expression" : ".*"
-			///		},
-			/// 		{
 			/// 			"tags" : [ "p", "li", "ul" ]
 			/// 			"attr" : [ "style" ],
 			/// 			"type" : "regex",
@@ -185,6 +171,20 @@ namespace cppcms {
 			/// 			"type" : "regex",
 			/// 			"expression" : "[a-zA-Z_0-9]+"
 			/// 		},
+			/// 		{
+			///			"pairs" : [ 
+			///				{ "tag" : "a",   "attr" : "href" },
+			///				{ "tag" : "img", "attr" : "src"  }
+			///			],
+			/// 			"type" : "absolute_uri",
+			/// 			"scheme" : "(http|https|ftp)"
+			/// 		},
+			///		{
+			///			"tags" : [ "img" ],
+			///			"attr" : [ "alt" ],
+			///			"type" : "regex",
+			///			"expression" : ".*"
+			///		}
 			/// 	]
 			/// }
 			/// \endcode
@@ -302,7 +302,7 @@ namespace cppcms {
 			///
 			/// If you need finer control over allowed schemas, use uri_matcher(std::string const&).
 			///
-			static booster::regex uri_matcher();
+			CPPCMS_DEPRECATED static booster::regex uri_matcher();
 			///
 			/// \deprecated use uri_validator 
 			///
@@ -317,7 +317,7 @@ namespace cppcms {
 			/// booster::regex uri = uri_matcher("(http|https)");
 			/// \endcode
 			///
-			static booster::regex uri_matcher(std::string const &schema);
+			CPPCMS_DEPRECATED static booster::regex uri_matcher(std::string const &schema);
 
 			////
 			/// Create a validator that checks URI for safe inclusion in the property. 
