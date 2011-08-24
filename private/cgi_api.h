@@ -133,6 +133,7 @@ namespace cgi {
 		// Concept implementation headers		
 		
 		virtual void async_read_some(void *,size_t,io_handler const &h) = 0;
+		virtual void on_async_read_complete() {}
 		virtual void async_read_eof(callback const &h) = 0;
 		virtual void async_write_some(void const *,size_t,io_handler const &h) = 0;
 		virtual void async_write_eof(handler const &h) = 0;

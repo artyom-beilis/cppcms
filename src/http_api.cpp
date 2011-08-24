@@ -29,6 +29,7 @@
 #include <cppcms/util.h>
 #include <string.h>
 #include <iostream>
+#include <list>
 #include <sstream>
 #include <algorithm>
 #ifdef CPPCMS_USE_EXTERNAL_BOOST
@@ -39,11 +40,13 @@
 #endif
 
 #include <booster/aio/buffer.h>
+#include <booster/aio/deadline_timer.h>
 #include <booster/log.h>
 
 #include "cached_settings.h"
 #include "format_number.h"
 #include "string_map.h"
+#include "send_timeout.h"
 
 namespace io = booster::aio;
 
@@ -53,24 +56,57 @@ namespace impl {
 namespace cgi {
 
 	class http;
+
+	class http_watchdog : public booster::enable_shared_from_this<http_watchdog> {
+	public:
+		typedef booster::shared_ptr<http> http_ptr;
+		typedef booster::weak_ptr<http> weak_http_ptr;
+
+		http_watchdog(booster::aio::io_service &srv) :
+			timer_(srv)
+		{
+		}
+
+		void check(booster::system::error_code const &e=booster::system::error_code());
+
+		void add(weak_http_ptr p)
+		{
+			connections_.insert(p);
+		}
+
+		void remove(weak_http_ptr p)
+		{
+			connections_.erase(p);
+		}
+
+	private:
+		typedef std::set<weak_http_ptr> connections_type;
+		connections_type connections_;
+		booster::aio::deadline_timer timer_;
+	};
+	
 	class http_creator {
 	public:
-		http_creator(std::string const &ip="0.0.0.0",int port = 8080) :
-			ip_(ip),port_(port)
+		http_creator() {} // for concept
+		http_creator(booster::aio::io_service &srv,std::string const &ip="0.0.0.0",int port = 8080) :
+			ip_(ip),port_(port),watchdog_(new http_watchdog(srv))
 		{
+			watchdog_->check();
 		}
 		http *operator()(cppcms::service &srv) const;
 	private:
 		std::string ip_;
 		int port_;
+		booster::shared_ptr<http_watchdog> watchdog_;
 	};
+
 
 	namespace {
 		char non_const_empty_string[1]={0};
 	}
 	class http : public connection {
 	public:
-		http(cppcms::service &srv,std::string const &ip,int port) :
+		http(cppcms::service &srv,std::string const &ip,int port,booster::shared_ptr<http_watchdog> wd) :
 			connection(srv),
 			socket_(srv.impl().get_io_service()),
 			input_body_ptr_(0),
@@ -81,7 +117,11 @@ namespace cgi {
 			request_uri_(non_const_empty_string),
 			headers_done_(false),
 			first_header_observerd_(false),
-			total_read_(0)
+			total_read_(0),
+			time_to_die_(0),
+			timeout_(0),
+			sync_option_is_set_(false),
+			watchdog_(wd)
 		{
 
 			env_.add("SERVER_SOFTWARE",CPPCMS_PACKAGE_NAME "/" CPPCMS_PACKAGE_VERSION);
@@ -91,6 +131,7 @@ namespace cgi {
 			env_.add("SERVER_PORT",sport);
 			env_.add("GATEWAY_INTERFACE","CGI/1.0");
 			env_.add("SERVER_PROTOCOL","HTTP/1.0");
+			timeout_ = srv.cached_settings().http.timeout;
 
 		}
 		~http()
@@ -110,12 +151,51 @@ namespace cgi {
 			booster::shared_ptr<http> self_;
 			handler h_;
 		};
-		virtual void async_read_headers(handler const &h)
+
+		void update_time()
 		{
+			time_to_die_ = time(0) + timeout_;
+		}
+
+		void log_timeout()
+		{
+			char const *uri = request_uri_;
+			if(!uri || *uri==0)
+				uri = "unknown";
+			booster::system::error_code e;
+			BOOSTER_INFO("cppcms_http") << "Timeout on connection for URI: " << uri << " from " << socket_.remote_endpoint(e).ip();
+		}
+
+		void die()
+		{
+			log_timeout();
+			close();
+		}
+		void async_die()
+		{
+			socket_.cancel();
+			die();
+		}
+
+		time_t time_to_die()
+		{
+			return time_to_die_;
+		}
+
+		void async_read_some_headers(handler const &h)
+		{
+
 			input_body_.reserve(8192);
 			input_body_.resize(8192,0);
 			input_body_ptr_=0;
 			socket_.async_read_some(io::buffer(input_body_),binder(self(),h));
+			update_time();
+		}
+		virtual void async_read_headers(handler const &h)
+		{
+			update_time();
+			watchdog_->add(self());
+			async_read_some_headers(h);
 		}
 
 		void some_headers_data_read(booster::system::error_code const &e,size_t n,handler const &h)
@@ -135,7 +215,7 @@ namespace cgi {
 				switch(input_parser_.step()) {
 				case parser::more_data:
 					// Assuming body_ptr == body.size()
-					async_read_headers(h);
+					async_read_some_headers(h);
 					return;
 				case parser::got_header:
 					if(!first_header_observerd_) {
@@ -190,6 +270,7 @@ namespace cgi {
 
 		virtual void async_read_some(void *p,size_t s,io_handler const &h)
 		{
+			update_time();
 			if(input_body_ptr_==input_body_.size()) {
 				input_body_.clear();
 				input_body_ptr_=0;
@@ -211,6 +292,7 @@ namespace cgi {
 		}
 		virtual void async_write_eof(handler const &h)
 		{
+			watchdog_->remove(self());
 			booster::system::error_code e;
 			socket_.shutdown(io::stream_socket::shut_wr,e);
 			socket_.get_io_service().post(boost::bind(h,booster::system::error_code()));
@@ -223,27 +305,53 @@ namespace cgi {
 		}
 		virtual void async_write_some(void const *p,size_t s,io_handler const &h)
 		{
+			update_time();
+			watchdog_->add(self());
 			if(headers_done_)
 				socket_.async_write_some(io::buffer(p,s),h);
 			else
 				process_output_headers(p,s,h);
 		}
-		virtual size_t write_some(void const *buffer,size_t n,booster::system::error_code &e)
+		virtual size_t write_some(void const *p,size_t n,booster::system::error_code &e)
 		{
-			if(headers_done_) {
-				booster::system::error_code err;
-				size_t res = socket_.write_some(io::buffer(buffer,n),err);
-				if(err) {
-					if(io::basic_socket::would_block(err)) {
-						socket_.set_non_blocking(false);
-						return socket_.write_some(io::buffer(buffer,n),e);
-					}
-					e = err;
-					return res;
-				}
-				return res;
+			if(headers_done_) 
+				return write_some_to_socket(io::buffer(p,n),e);	
+			return process_output_headers(p,n);
+		}
+		size_t write_some_to_socket(booster::aio::const_buffer const &buf,booster::system::error_code &e)
+		{
+			set_sync_options(e);
+			if(e) return 0;
+			size_t n = socket_.write_some(buf,e);
+			if(e && io::basic_socket::would_block(e)) { 
+				// handle timeout with SO_SNDTIMEO
+				// that responds with EAGIAN or EWOULDBLOCK
+				die();
 			}
-			return process_output_headers(buffer,n);
+			return n;
+		}
+		size_t write_to_socket(booster::aio::const_buffer buf,booster::system::error_code &e)
+		{
+			set_sync_options(e);
+			size_t res = 0;
+			while(!buf.empty() && !e) {
+				size_t n = socket_.write_some(buf,e);
+				buf += n;
+				res += n;
+			}
+			return res;
+		}
+		void set_sync_options(booster::system::error_code &e)
+		{
+			socket_.set_non_blocking(false,e);
+			if(e) return;
+			if(!sync_option_is_set_) {
+				cppcms::impl::set_send_timeout(socket_,timeout_,e);
+				if(e)
+					return;
+				sync_option_is_set_ = true;
+			}
+
 		}
 		virtual booster::aio::io_service &get_io_service()
 		{
@@ -262,6 +370,7 @@ namespace cgi {
 		}
 		virtual void async_read_eof(callback const &h)
 		{
+			watchdog_->add(self());
 			static char a;
 			socket_.async_read_some(io::buffer(&a,1),boost::bind(h));
 		}
@@ -269,7 +378,7 @@ namespace cgi {
 	private:
 		size_t process_output_headers(void const *p,size_t s,io_handler const &h=io_handler())
 		{
-			char const *ptr=reinterpret_cast<char const *>(p);
+			char const *ptr=static_cast<char const *>(p);
 			output_body_.insert(output_body_.end(),ptr,ptr+s);
 
 			using cppcms::http::impl::parser;
@@ -325,7 +434,7 @@ namespace cgi {
 			headers_done_=true;
 			if(!h) {
 				booster::system::error_code e;
-				socket_.write(packet,e);
+				write_to_socket(packet,e);
 				if(e) return 0;
 				return s;
 			}
@@ -346,7 +455,7 @@ namespace cgi {
 				&& strcmp(request_method_,"POST")!=0
 				&& strcmp(request_method_,"HEAD")!=0) 
 			{
-				response("HTTP/1.0 501 Not Implemented\r\n\r\n",h);
+				error_response("HTTP/1.0 501 Not Implemented\r\n\r\n",h);
 				return;
 			}
 
@@ -354,7 +463,13 @@ namespace cgi {
 
 			char const *remote_addr="";
 			if(service().cached_settings().http.proxy.behind==false) {
-				remote_addr=pool_.add(socket_.remote_endpoint().ip());
+				booster::system::error_code e;
+				remote_addr=pool_.add(socket_.remote_endpoint(e).ip());
+				if(e) {
+					close();
+					h(e);
+					return;
+				}
 			}
 			else {
 				std::vector<std::string> const &headers = 
@@ -374,7 +489,7 @@ namespace cgi {
 			env_.add("REMOTE_ADDR",remote_addr);
 
 			if(request_uri_[0]!='/') {
-				response("HTTP/1.0 400 Bad Request\r\n\r\n",h);
+				error_response("HTTP/1.0 400 Bad Request\r\n\r\n",h);
 				return;
 			}
 			
@@ -406,13 +521,27 @@ namespace cgi {
 			
 			env_.add("PATH_INFO",pool_.add(util::urldecode(path,path+strlen(path)))); 
 
+			update_time();
 			h(booster::system::error_code());
 
 		}
-		void response(char const *message,handler const &h)
+		void on_async_read_complete()
+		{
+			watchdog_->remove(self());
+		}
+		void error_response(char const *message,handler const &h)
 		{
 			socket_.async_write(io::buffer(message,strlen(message)),
-					boost::bind(h,booster::system::error_code()));
+					boost::bind(&http::on_error_response_written,self(),_1,h));
+		}
+		void on_error_response_written(booster::system::error_code const &e,handler const &h)
+		{
+			if(e) {
+				h(e);
+				return;
+			}
+			close();
+			h(booster::system::error_code(errc::protocol_violation,cppcms_category));
 		}
 
 		bool parse_single_header(std::string const &header,char const *&o_name,char const *&o_value)
@@ -471,18 +600,59 @@ namespace cgi {
 		bool headers_done_;
 		bool first_header_observerd_;
 		unsigned total_read_;
+		time_t time_to_die_;
+		int timeout_;
+		bool sync_option_is_set_;
+
+		booster::shared_ptr<http_watchdog> watchdog_;
 	};
+	void http_watchdog::check(booster::system::error_code const &e)
+	{
+		if(e)
+			return;
+
+		std::list<http_ptr> kill;
+
+		time_t now = time(0);
+
+		for(connections_type::iterator p=connections_.begin(),e=connections_.end();p!=e;) {
+			booster::shared_ptr<http> ptr = p->lock();
+			if(!ptr) {
+				connections_type::iterator tmp = p;
+				++p;
+				connections_.erase(tmp);
+			}
+			else {
+				if(ptr->time_to_die() < now) {
+					kill.push_back(ptr);
+					connections_type::iterator tmp = p;
+					++p;
+					connections_.erase(tmp);
+				}
+				else {
+					++p;
+				}
+			}
+		}
+
+		for(std::list<http_ptr>::iterator p=kill.begin();p!=kill.end();++p) {
+			(*p)->async_die();
+		}
+
+		timer_.expires_from_now(booster::ptime(1));
+		timer_.async_wait(boost::bind(&http_watchdog::check,shared_from_this(),_1));
+	}
 
 	http *http_creator::operator()(cppcms::service &srv) const
 	{
-		return new http(srv,ip_,port_);
+		return new http(srv,ip_,port_,watchdog_);
 	}
 
 	std::auto_ptr<acceptor> http_api_factory(cppcms::service &srv,std::string ip,int port,int backlog)
 	{
 		typedef socket_acceptor<http,http_creator> acceptor_type;
 		std::auto_ptr<acceptor_type> acc(new acceptor_type(srv,ip,port,backlog));
-		acc->factory(http_creator(ip,port));
+		acc->factory(http_creator(srv.get_io_service(),ip,port));
 		std::auto_ptr<acceptor> a(acc);
 		return a;
 	}

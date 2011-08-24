@@ -111,6 +111,7 @@ namespace cppcms { namespace impl { namespace cgi {
 		void on_post_data_read(booster::system::error_code const &e,size_t len)
 		{
 			if(e)  { cleanup(); return; }
+			conn_->on_async_read_complete();
 			scgi_.async_write(
 				booster::aio::buffer(&post_.front(),len),
 				boost::bind(&cgi_forwarder::on_post_data_written,shared_from_this(),_1,_2));
@@ -345,6 +346,7 @@ void connection::on_post_data_loaded(booster::system::error_code const &e,http::
 {
 	if(e) { set_error(h,e.message()); return; }
 	context->request().set_post_data(content_);
+	on_async_read_complete();
 	h(false);
 }
 

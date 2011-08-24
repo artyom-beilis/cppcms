@@ -86,6 +86,7 @@ namespace impl {
 				std::vector<std::string> remote_addr_headers;
 			} proxy;
 			std::vector<std::string> script_names;
+			int timeout;
 			cached_http(json::value const &v) 
 			{
 				proxy.behind=v.get("http.proxy.behind",false);
@@ -96,6 +97,7 @@ namespace impl {
 				std::string script = v.get("http.script","");
 				if(!script.empty())
 					script_names.push_back(script);
+				timeout = v.get("http.timeout",30);
 			}
 		} http;
 		struct cached_session {

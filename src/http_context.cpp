@@ -96,7 +96,7 @@ void context::run()
 void context::on_request_ready(bool error)
 {
 	if(error) return;
-	
+
 	char const *host = conn_->cgetenv("HTTP_HOST");
 	char const *path_info = conn_->cgetenv("PATH_INFO");
 	char const *script_name = conn_->cgetenv("SCRIPT_NAME");
