@@ -40,6 +40,7 @@ namespace impl {
 
 		bool allow_deflate_;
 		std::string document_root_;
+		std::vector<std::pair<std::string,std::string> > alias_;
 		typedef std::map<std::string,std::string> mime_type;
 		mime_type mime_;
 	};

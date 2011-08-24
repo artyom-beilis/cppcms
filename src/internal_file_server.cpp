@@ -33,6 +33,8 @@
 #include <cppcms/util.h>
 #include <sstream>
 #include <booster/nowide/fstream.h>
+#include <booster/locale/encoding.h>
+
 #include <string.h>
 
 #include <sys/types.h>
@@ -58,6 +60,23 @@ file_server::file_server(cppcms::service &srv) : application(srv)
 
 	allow_deflate_ = settings().get("file_server.allow_deflate",false);
 
+	if(settings().find("file_server.alias").type()==json::is_array) {
+		json::array const &alias = settings().find("file_server.alias").array();
+		for(unsigned i=0;i<alias.size();i++) {
+			std::string url = alias[i].get<std::string>("url");
+			if(url.size() < 2 || url[0]!='/') {
+				throw cppcms_error("Invalid alias URL:" + url);
+			}
+			if(url[url.size()-1]=='/')
+				url.resize(url.size()-1);
+			std::string input_path = alias[i].get<std::string>("path");
+			std::string canon_path;
+			if(!canonical(input_path,canon_path)) {
+				throw cppcms_error("Invalid alias path" + input_path);
+			}
+			alias_.push_back(std::make_pair(url,canon_path));
+		}
+	}
 
 	if(mime_file.empty()) {
 		mime_[".pdf"]	=      "application/pdf";
@@ -149,7 +168,14 @@ bool file_server::canonical(std::string normal,std::string &real)
 
 		char *canon=::canonicalize_file_name(normal.c_str());
 		if(!canon) return false;
-		real=canon;
+		try { 
+			real=canon;
+		}
+		catch(...)
+		{
+			free(canon);
+			throw; 
+		}
 		free(canon);
 		canon=0;
 
@@ -179,18 +205,32 @@ bool file_server::canonical(std::string normal,std::string &real)
 
 #else
 		int size=4096;
-		std::vector<char> buffer(size,0);
+		std::vector<wchar_t> buffer(size,0);
+		std::wstring wnormal;
+		std::wstring wreal;
+		try {
+			wnormal = booster::locale::conv::utf_to_utf<wchar_t>(normal,booster::locale::conv::stop);
+		}
+		catch(booster::locale::conv::conversion_error const &) {
+			return false;
+		}
 		for(;;) {
-			DWORD res = ::GetFullPathName(normal.c_str(),buffer.size(),&buffer.front(),0);
+			DWORD res = ::GetFullPathNameW(wnormal.c_str(),buffer.size(),&buffer.front(),0);
 			if(res == 0)
 				return false;
 			if(res >= buffer.size()) {
 				buffer.resize(buffer.size()*2,0);
 			}
 			else {
-				real=&buffer.front();
+				wreal=&buffer.front();
 				break;
 			}
+		}
+		try {
+			real = booster::locale::conv::utf_to_utf<char>(wreal,booster::locale::conv::stop);
+		}
+		catch(booster::locale::conv::conversion_error const &) {
+			return false;
 		}
 #endif
 	return true;
@@ -198,25 +238,44 @@ bool file_server::canonical(std::string normal,std::string &real)
 
 bool file_server::check_in_document_root(std::string normal,std::string &real) 
 {
-	normal=document_root_ + "/" + normal;
+	std::string root = document_root_;
+	for(unsigned i=0;i<alias_.size();i++) {
+		std::string const &ref=alias_[i].first;
+		if(	normal.size() >= ref.size() 
+			&& memcmp(normal.c_str(),ref.c_str(),ref.size()) == 0
+			&& (normal.size() == ref.size() || normal[ref.size()]=='/'))
+		{
+			root = alias_[i].second;
+			normal = normal.substr(ref.size());
+			break;
+		}
+	}
+	normal=root + "/" + normal;
 	if(!canonical(normal,real))
 		return false;
-	if(real.size() < document_root_.size() || memcmp(real.c_str(),document_root_.c_str(),document_root_.size()) !=0)
+	if(real.size() < root.size() || memcmp(real.c_str(),root.c_str(),root.size()) !=0)
 		return false;
 	return true;
 }
 
 int file_server::file_mode(std::string const &file_name)
 {
+#ifdef CPPCMS_WIN_NATIVE
+	struct _stat st;
+	std::wstring wname = booster::locale::conv::utf_to_utf<wchar_t>(file_name,booster::locale::conv::stop);
+	if(::_wstat(wname.c_str(),&st) < 0)
+		return 0;
+#else
 	struct stat st;
 	if(::stat(file_name.c_str(),&st) < 0)
 		return 0;
+#endif
 	return st.st_mode;
+
 }
 
 void file_server::main(std::string file_name)
 {
-	file_name = util::urldecode(file_name);
 	if(file_name.empty() || file_name[file_name.size()-1]=='/')
 		file_name+="/index.html";
 
