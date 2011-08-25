@@ -40,25 +40,27 @@ def test_unfinished_out(msg,chunks=[]):
     test(passed > timeout_time - 2)
     test(passed < timeout_time + 2)
 
-def test_unfinished_read(msg,reads,read_size):
-    print "Tesing %s with %d reads of %d" % (msg,reads,read_size)
+def test_unfinished_read(msg,reads,ignore):
+    print "Tesing %s with %d reads" % (msg,reads)
     s=make_sock();
+    read_size = s.getsockopt(socket.SOL_SOCKET, socket.SO_RCVBUF)
+    print "SO_RCVBUF=%d" % read_size
     s.send(msg + '\r\n\r\n')
     for n in xrange(0,reads):
         time.sleep(1)
         text = s.recv(read_size)
         l = len(text)
-        test(l == read_size)
+        test(l >= read_size / 2)
     global timeout_time
     time.sleep(timeout_time + 2)
-    n = reads + read_size;
+    n=0
     while 1:
         text = s.recv(read_size);
         if len(text) > 0:
             n = n + len(text)
         else:
             break
-    test(n < 1000000)
+    test(n < read_size * 8)
 
 print 'Read from client timeouts'
 test_unfinished_out('')
@@ -73,9 +75,9 @@ test_unfinished_out('GET /async/goteof HTTP/1.0\r\n\r\n')
 print 'Write to the client timeout'
 
 test_unfinished_read('GET /async/long HTTP/1.0',0,0)
-test_unfinished_read('GET /async/long HTTP/1.0',20,20000)
+test_unfinished_read('GET /async/long HTTP/1.0',20,1000)
 test_unfinished_read('GET /sync/long HTTP/1.0',0,0)
-test_unfinished_read('GET /sync/long HTTP/1.0',20,20000)
+test_unfinished_read('GET /sync/long HTTP/1.0',20,1000)
 
 time.sleep(1)
 

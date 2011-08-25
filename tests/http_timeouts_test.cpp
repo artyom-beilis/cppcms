@@ -134,7 +134,7 @@ public:
 
 void print_count_report(std::ostream &out)
 {
-	out 	<< "Failed:" << std::endl
+	out 	<< "Statistics:" << std::endl
 		<< " sync_bad_count =" << sync_bad_count << std::endl
 		<< " async_bad_count =" << async_bad_count << std::endl
 		<< " count_timeouts =" << count_timeouts << std::endl
@@ -175,9 +175,14 @@ int main(int argc,char **argv)
 	  ) 
 	{
 		print_count_report(std::cerr);
+		std::cerr << "Failed" << std::endl;
 		return EXIT_FAILURE;
 	}
 	print_count_report(std::cout);
+	if(!run_ok ) {
+		std::cerr << "Python script failed" << std::endl;
+		return EXIT_FAILURE;
+	}
 	std::cout << "Ok" << std::endl;
 	return EXIT_SUCCESS;
 }

@@ -323,7 +323,13 @@ namespace cgi {
 			set_sync_options(e);
 			if(e) return 0;
 			size_t n = socket_.write_some(buf,e);
-			if(e && io::basic_socket::would_block(e)) { 
+			if(e  && 
+				(io::basic_socket::would_block(e) 
+				#ifdef CPPCMS_WIN32
+				|| e.value() == 10060   // WSAETIMEDOUT - do not want to include windows.h
+				#endif
+				)
+				) { 
 				// handle timeout with SO_SNDTIMEO
 				// that responds with EAGIAN or EWOULDBLOCK
 				die();

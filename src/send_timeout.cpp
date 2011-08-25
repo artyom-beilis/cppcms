@@ -18,7 +18,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 #define CPPCMS_SOURCE
 #include <cppcms/defs.h>
-#include "send_timeout.h"
 #ifndef CPPCMS_WIN32
 #include <sys/types.h>
 #include <sys/socket.h>
@@ -27,6 +26,7 @@
 #include <winsock2.h>
 #include <windows.h>
 #endif
+#include "send_timeout.h"
 
 namespace cppcms {
 namespace impl {
