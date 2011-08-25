@@ -305,7 +305,6 @@ public:
 
 	void verylong()
 	{
-		sleep(10);
 		for(int i=0;i<10000000;i++) {
 			if(!(response().out() << i << '\n')) {
 				BOOSTER_DEBUG("hello") << "Bad output!";
