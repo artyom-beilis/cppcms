@@ -573,6 +573,7 @@ set(ALL_TESTS
 	proto_test
 	disco_test
 	http_timeouts_test
+	file_server_test
 	encryptor_test
 	storage_test
 	json_test
@@ -716,6 +717,12 @@ add_test(http_timeouts_test
 	http_timeouts_test "-c" "${CNF}/proto_test.js" 
 	"--service-api=http" "--service-port=8080" "--service-ip=127.0.0.1" "--http-timeout=5" "--logging-level=debug"
 	"--test-exec=${PYTHON} ${CNF}/http_timeouts_test.py")
+
+add_test(file_server_test
+	file_server_test "-c" "${CNF}/file_server_test.js" 
+	"--test-exec=${PYTHON} ${CNF}/file_server_test.py"
+	"-U" "${CNF}"
+	)
 
 add_test(disco_test_http 
 	disco_test "-c" "${CNF}/proto_test.js" 

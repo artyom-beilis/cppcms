@@ -16,36 +16,49 @@
 //  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 ///////////////////////////////////////////////////////////////////////////////
+#include <cppcms/service.h>
 #include <cppcms/application.h>
 #include <cppcms/applications_pool.h>
-#include <string>
-#include <map>
-
-namespace cppcms {
-	class service;
-namespace impl {
-	class file_server : public application
-	{
-	public:
-		file_server(cppcms::service &srv);
-		~file_server();
-		virtual void main(std::string file_name);
-
-	private:
-		void show404();
-		void load_mime_types(std::string);
-		bool canonical(std::string normal,std::string &real);
-		bool is_in_root(std::string const &normal,std::string const &root,std::string &real);
-		bool check_in_document_root(std::string normal,std::string &real);
-		int file_mode(std::string const &path);
-
-		bool allow_deflate_;
-		std::string document_root_;
-		std::vector<std::pair<std::string,std::string> > alias_;
-		typedef std::map<std::string,std::string> mime_type;
-		mime_type mime_;
-	};
+#include <cppcms/http_request.h>
+#include <cppcms/http_response.h>
+#include <cppcms/http_context.h>
+#include <cppcms/url_dispatcher.h>
+#include <cppcms/mount_point.h>
+#include <cppcms/json.h>
+#include <cppcms/copy_filter.h>
+#include <iostream>
+#include "client.h"
+#include "test.h"
+#ifdef CPPCMS_WIN_NATIVE
+#include <direct.h>
+#else
+#include <unistd.h>
+#endif
 
 
-}
+int main(int argc,char **argv)
+{
+	if(argc<5 || argv[argc-2]!=std::string("-U"))  {
+		std::cerr <<"Usage -c config -U dir";
+		return 1;
+	}
+	if(chdir(argv[argc-1])!=0) {
+		std::cerr << "Failed to chdir to " << argv[argc-1] << std::endl;
+		return EXIT_FAILURE;
+	}
+	try {
+		cppcms::service srv(argc,argv);
+		srv.after_fork(submitter(srv));
+		srv.run();
+	}
+	catch(std::exception const &e) {
+		std::cerr << e.what() << std::endl;
+		return EXIT_FAILURE;
+	}
+	if(!run_ok ) {
+		std::cerr << "Python script failed" << std::endl;
+		return EXIT_FAILURE;
+	}
+	std::cout << "Ok" << std::endl;
+	return EXIT_SUCCESS;
 }

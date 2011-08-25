@@ -236,24 +236,76 @@ bool file_server::canonical(std::string normal,std::string &real)
 	return true;
 }
 
+static bool is_directory_separator(char c)
+{
+#ifdef CPPCMS_WIN32
+	return c=='\\'  || c=='/';
+#else
+	return c=='/';
+#endif
+}
+
+static bool is_file_prefix(std::string const &prefix,std::string const &full)
+{
+	size_t prefix_size = prefix.size();
+	if(prefix_size > full.size())
+		return false;
+	if(memcmp(prefix.c_str(),full.c_str(),prefix_size) != 0)
+		return false;
+	if(prefix_size == 0 || is_directory_separator(prefix[prefix_size-1]))
+		return true;
+	if(full.size() > prefix_size && !is_directory_separator(full[prefix_size]))
+		return false;
+	return true;
+}
+
+bool file_server::is_in_root(std::string const &input_path,std::string const &root,std::string &real)
+{
+	std::string normal=root + "/" + input_path;
+	if(!canonical(normal,real))
+		return false;
+	if(!is_file_prefix(root,real))
+		return false;
+	return true;
+}
+
 bool file_server::check_in_document_root(std::string normal,std::string &real) 
 {
+	// Use only Unix file names
+	for(size_t i=0;i<normal.size();i++)
+		if(is_directory_separator(normal[i]))
+			normal[i]='/';
+
 	std::string root = document_root_;
 	for(unsigned i=0;i<alias_.size();i++) {
 		std::string const &ref=alias_[i].first;
-		if(	normal.size() >= ref.size() 
-			&& memcmp(normal.c_str(),ref.c_str(),ref.size()) == 0
-			&& (normal.size() == ref.size() || normal[ref.size()]=='/'))
+		if(is_file_prefix(ref,normal))
 		{
 			root = alias_[i].second;
 			normal = normal.substr(ref.size());
+			if(normal.empty())
+				normal="/";
 			break;
 		}
 	}
-	normal=root + "/" + normal;
-	if(!canonical(normal,real))
+	if(normal.empty())
 		return false;
-	if(real.size() < root.size() || memcmp(real.c_str(),root.c_str(),root.size()) !=0)
+	if(normal[0]!='/')
+		return false;
+	// Prevent the access to any valid file below like
+	// detecting that the files placed in /var/www
+	// by providing a path /../../var/www/known.txt 
+	// whuch would be valid as known is placed in /var/www
+	// but yet we don't want user to detect that files
+	// exist in /var/www
+	for(size_t pos = 1;pos != std::string::npos; pos = normal.find('/',pos)) {
+		std::string sub_path = normal.substr(0,pos);
+		std::string tmp;
+		if(!is_in_root(sub_path,root,tmp))
+			return false;
+		pos++;
+	}
+	if(!is_in_root(normal,root,real))
 		return false;
 	return true;
 }
