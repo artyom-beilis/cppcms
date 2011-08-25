@@ -32,6 +32,7 @@ namespace impl {
 		virtual void main(std::string file_name);
 
 	private:
+		void list_dir(std::string const &url,std::string const &path);
 		void show404();
 		void load_mime_types(std::string);
 		bool canonical(std::string normal,std::string &real);
@@ -44,6 +45,7 @@ namespace impl {
 		std::vector<std::pair<std::string,std::string> > alias_;
 		typedef std::map<std::string,std::string> mime_type;
 		mime_type mime_;
+		bool list_directories_;
 	};
 
 

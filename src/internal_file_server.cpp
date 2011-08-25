@@ -47,6 +47,7 @@
 #include <limits.h>
 #endif
 
+#include "dir.h"
 
 namespace cppcms {
 namespace impl {
@@ -55,6 +56,8 @@ file_server::file_server(cppcms::service &srv) : application(srv)
 {
 	if(!canonical(settings().get("file_server.document_root","."),document_root_))
 		throw cppcms_error("Invalid document root");
+
+	list_directories_ = settings().get("file_server.list",false);
 
 	std::string mime_file=settings().get("file_server.mime_types","");
 
@@ -326,12 +329,37 @@ int file_server::file_mode(std::string const &file_name)
 
 }
 
+void file_server::list_dir(std::string const &url,std::string const &path)
+{
+	cppcms::impl::directory d;
+	if(!d.open(path)) {
+		show404();
+		return;
+	}
+#ifdef CPPCMS_WIN_NATIVE
+	response().content_type("text/html; charset=UTF-8");
+#endif
+	std::ostream &out = response().out();
+	out << "<html><head><title>Directory Listring</title></head>\n"
+		"<body><h1>Directory Listring</h1>\n"
+		"<ul>\n";
+	if(url!="/" && !url.empty()) {
+		out << "<li><a href='" << util::urlencode(url.substr(0,url.rfind('/',url.size()-1)+1)) 
+			<< "'>Parent Directory</a></li>\n";
+	}
+	while(d.next()) {
+		if(memcmp(d.name(),".",1) == 0)
+			continue;
+		out << "<li><a href='" 
+			<< util::urlencode(d.name()) << "'>" << d.name() << "</a></li>\n";
+	}
+	out <<"</body>\n";
+}
+
 void file_server::main(std::string file_name)
 {
-	if(file_name.empty() || file_name[file_name.size()-1]=='/')
-		file_name+="/index.html";
-
 	std::string path;
+
 
 	if(!check_in_document_root(file_name,path)) {
 		show404();
@@ -340,10 +368,28 @@ void file_server::main(std::string file_name)
 	
 	int s=file_mode(path);
 	
-	if((s & S_IFDIR) && (file_mode(path+"/index.html") & S_IFREG)) {
-		response().set_redirect_header(file_name + "/");
-		response().out()<<std::flush;
-		return;
+	if((s & S_IFDIR)) {
+		std::string path2;
+		
+		bool have_index = check_in_document_root(file_name+"/index.html",path2);
+
+		if(!file_name.empty() && file_name[file_name.size()-1]!='/' && (have_index || list_directories_)) {
+			response().set_redirect_header(file_name + "/");
+			response().out()<<std::flush;
+			return;
+		}
+		if(have_index) {
+			path = path2;
+			s=file_mode(path); // rebuild file mode
+		}
+		else {
+			if(list_directories_) 
+				list_dir(file_name,path);
+			else
+				show404();
+			return;
+		}
+
 	}
 
 	if(!(s & S_IFREG)) {
