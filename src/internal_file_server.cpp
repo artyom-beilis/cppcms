@@ -58,7 +58,7 @@ file_server::file_server(cppcms::service &srv) : application(srv)
 	if(!canonical(settings().get("file_server.document_root","."),document_root_))
 		throw cppcms_error("Invalid document root");
 
-	list_directories_ = settings().get("file_server.list",false);
+	list_directories_ = settings().get("file_server.listing",false);
 
 	std::string mime_file=settings().get("file_server.mime_types","");
 
@@ -345,13 +345,21 @@ void file_server::list_dir(std::string const &url,std::string const &path)
 		"<body><h1>Directory Listing</h1>\n"
 		"<ul>\n";
 	if(url!="/" && !url.empty()) {
-		out << "<li><a href='..' >Parent Directory</a></li>\n";
+		out << "<li><a href='..' >..</a></li>\n";
 	}
 	while(d.next()) {
 		if(memcmp(d.name(),".",1) == 0)
 			continue;
+		int mode = file_mode(path + "/" + d.name());
+		char const *add="";
+		if(mode & S_IFDIR)
+			add="/";
+		else if(mode & S_IFREG)
+			;
+		else 
+			continue;
 		out << "<li><a href='" 
-			<< util::urlencode(d.name()) << "'>" << util::escape(d.name()) << "</a></li>\n";
+			<< util::urlencode(d.name()) << add << "'>" << util::escape(d.name()) << add << "</a></li>\n";
 	}
 	out <<"</body>\n";
 }
