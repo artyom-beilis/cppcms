@@ -322,7 +322,7 @@ typedef struct _stat port_stat;
 int get_stat(char const *name,port_stat *st)
 {
 	std::wstring wname = booster::locale::conv::utf_to_utf<wchar_t>(name,booster::locale::conv::stop);
-	return ::_wstat(wname.c_str(),&st);
+	return ::_wstat(wname.c_str(),st);
 }
 #else
 typedef struct stat port_stat;
