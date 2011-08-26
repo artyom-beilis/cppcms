@@ -724,6 +724,13 @@ add_test(file_server_test
 	"-U" "${CNF}"
 	)
 
+add_test(file_server_with_listing_test
+	file_server_test "-c" "${CNF}/file_server_test.js" 
+	"--file_server-listing=true"
+	"--test-exec=${PYTHON} ${CNF}/file_server_test.py listing"
+	"-U" "${CNF}"
+	)
+
 add_test(disco_test_http 
 	disco_test "-c" "${CNF}/proto_test.js" 
 	"--service-api=http" "--service-port=8080" "--service-ip=127.0.0.1"

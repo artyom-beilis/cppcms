@@ -22,7 +22,7 @@ def make_sock():
     return s;
 
 
-def test_request(url,status,content='ignore'):
+def test_request(url,status,content='ignore',valid=[],notvalid=[]):
     print "-- Testing %s" % url
     s=make_sock();
     s.send('GET %s HTTP/1.0\r\n\r\n' % url);
@@ -34,20 +34,45 @@ def test_request(url,status,content='ignore'):
         text = text + tmp;
     exp = 'HTTP/1.0 ' + str(status) + ' '
     test(text[:len(exp)]==exp)
+    parts = text.split('\r\n\r\n');
+    real_content = ''
+    if len(parts)>=2:
+        real_content = parts[1]
     if content != 'ignore':
-        test(text.split('\r\n\r\n')[1] == content + '\n')
+        test(real_content == content + '\n')
+    for v in valid:
+        test(real_content.find(v) >= 0)
+    for v in notvalid:
+        test(real_content.find(v) == -1)
+
+
+
+do_listing = False 
+if len(sys.argv) == 2:
+    do_listing = sys.argv[1] == 'listing'
+
 
 
 print "- Testing normal requests"
 
-test_request('/',404)
+if not do_listing:
+    test_request('/',404)
+else:
+    test_request('/',200,valid=['foo/','bar/','test.txt'],notvalid=['..','test.txt/'])
+    
 test_request('/test.txt',200,'/test.txt')
 test_request('/foo/test.txt',200,'/foo/test.txt')
 test_request('/bar/test.txt',200,'/bar/test.txt')
 test_request('/bar/index.html',200,'/bar/index.html')
 test_request('/bar/',200,'/bar/index.html')
 test_request('/bar',302)
-test_request('/foo',404)
+if not do_listing:
+    test_request('/foo',404)
+    test_request('/foo/',404)
+else:
+    test_request('/foo',302)
+    test_request('/foo/',200,valid=['..','ooooooong_fiiiiii']);
+
 test_request('/file+with+space.txt',200,'file with space')
 test_request('/file%20with%20space.txt',200,'file with space')
 
@@ -65,10 +90,6 @@ if os.name == 'posix':
     test_request('/yes.txt',200,'/yes')
 
 print "- Testing directory traversal"
-
-test_type = 'nolist'
-if len(sys.argv) == 2:
-    test_type = sys.argv[1]
 
 
 test_request('/foo/../bar/test.txt',200,'/bar/test.txt')
