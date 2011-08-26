@@ -52,7 +52,7 @@ def test_unfinished_read(msg,reads,ignore):
         l = len(text)
         test(l >= read_size / 2)
     global timeout_time
-    time.sleep(timeout_time + 2)
+    time.sleep(timeout_time * 2)
     n=0
     while 1:
         text = s.recv(read_size);
@@ -60,7 +60,10 @@ def test_unfinished_read(msg,reads,ignore):
             n = n + len(text)
         else:
             break
-    test(n < read_size * 8)
+    test(n < read_size * 16 or n < 1000000)
+
+
+
 
 print 'Read from client timeouts'
 test_unfinished_out('')
