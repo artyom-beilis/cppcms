@@ -36,6 +36,7 @@
 #include <sstream>
 #include <booster/nowide/fstream.h>
 #include <booster/locale/encoding.h>
+#include <booster/locale/formatting.h>
 
 #include <string.h>
 
@@ -314,20 +315,31 @@ bool file_server::check_in_document_root(std::string normal,std::string &real)
 	return true;
 }
 
+namespace {
+
+#ifdef CPPCMS_WIN_NATIVE
+typedef struct _stat port_stat;
+int get_stat(char const *name,port_stat *st)
+{
+	std::wstring wname = booster::locale::conv::utf_to_utf<wchar_t>(name,booster::locale::conv::stop);
+	return ::_wstat(wname.c_str(),&st);
+}
+#else
+typedef struct stat port_stat;
+int get_stat(char const *name,port_stat *st)
+{
+	return ::stat(name,st);
+}
+#endif
+
+}
+
 int file_server::file_mode(std::string const &file_name)
 {
-#ifdef CPPCMS_WIN_NATIVE
-	struct _stat st;
-	std::wstring wname = booster::locale::conv::utf_to_utf<wchar_t>(file_name,booster::locale::conv::stop);
-	if(::_wstat(wname.c_str(),&st) < 0)
+	port_stat st;
+	if(get_stat(file_name.c_str(),&st) < 0)
 		return 0;
-#else
-	struct stat st;
-	if(::stat(file_name.c_str(),&st) < 0)
-		return 0;
-#endif
 	return st.st_mode;
-
 }
 
 void file_server::list_dir(std::string const &url,std::string const &path)
@@ -337,30 +349,50 @@ void file_server::list_dir(std::string const &url,std::string const &path)
 		show404();
 		return;
 	}
+	
 #ifdef CPPCMS_WIN_NATIVE
 	response().content_type("text/html; charset=UTF-8");
 #endif
 	std::ostream &out = response().out();
+	out << "<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.01 Transitional//EN\"\n"
+	       "     \"http://www.w3.org/TR/html4/loose.dtd\">\n";
+
 	out << "<html><head><title>Directory Listing</title></head>\n"
-		"<body><h1>Directory Listing</h1>\n"
-		"<ul>\n";
+		"<body><h1>Index of " << util::escape(url) << "</h1>\n";
+	out << booster::locale::as::gmt;
+	//out <<"<table cellpadding='0' cellspacing='2' border='0' >\n";
+	out <<"<table>\n";
+	out <<"<thead><tr><td width='60%'>File</td><td width='20%' >Date</td><td width='5%'>&nbsp;</td><td width='15%'>Size</td></tr></thead>\n"
+		"<tbody>\n";
 	if(url!="/" && !url.empty()) {
-		out << "<li><a href='..' >..</a></li>\n";
+		out << "<tr><td><code><a href='../' >..</a></code></td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td></tr>\n";
 	}
+	out << booster::locale::as::ftime("%Y-%m-%d %H:%M:%S");
 	while(d.next()) {
 		if(memcmp(d.name(),".",1) == 0)
 			continue;
-		int mode = file_mode(path + "/" + d.name());
+		port_stat st;
+		if(get_stat((path + "/" + d.name()).c_str(),&st) < 0)
+			continue;
 		char const *add="";
-		if(mode & S_IFDIR)
+		if(st.st_mode & S_IFDIR)
 			add="/";
-		else if(mode & S_IFREG)
+		else if(st.st_mode & S_IFREG)
 			;
 		else 
 			continue;
-		out << "<li><a href='" 
-			<< util::urlencode(d.name()) << add << "'>" << util::escape(d.name()) << add << "</a></li>\n";
+		out << "<tr>";
+		out << "<td><code><a href='" 
+			<< util::urlencode(d.name()) << add << "'>" << util::escape(d.name()) << add << "</a></code></td>";
+		out << "<td>" << booster::locale::as::strftime << st.st_mtime <<"</td><td>&nbsp;</td>";
+		if(st.st_mode & S_IFREG)
+			out << "<td>" << booster::locale::as::number << st.st_size <<"</td>";
+		else
+			out << "<td> <strong>-</strong> </td>";
+		out <<"</tr>\n";
 	}
+	out <<"</tbody>\n</table>\n";
+	out <<"<p>CppCMS-Embedded/" CPPCMS_PACKAGE_VERSION "</p>\n";
 	out <<"</body>\n";
 }
 

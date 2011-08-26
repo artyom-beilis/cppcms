@@ -66,6 +66,10 @@ if os.name == 'posix':
 
 print "- Testing directory traversal"
 
+test_type = 'nolist'
+if len(sys.argv) == 2:
+    test_type = sys.argv[1]
+
 
 test_request('/foo/../bar/test.txt',200,'/bar/test.txt')
 test_request('/../al/test.txt','404')
