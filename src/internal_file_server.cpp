@@ -17,6 +17,8 @@
 //
 ///////////////////////////////////////////////////////////////////////////////
 #define CPPCMS_SOURCE
+// make sure we all defines are given
+#include "dir.h"
 #include <cppcms/config.h>
 # if defined(CPPCMS_HAVE_CANONICALIZE_FILE_NAME) && !defined(_GNU_SOURCE)
 # define _GNU_SOURCE
@@ -47,7 +49,6 @@
 #include <limits.h>
 #endif
 
-#include "dir.h"
 
 namespace cppcms {
 namespace impl {
@@ -340,18 +341,17 @@ void file_server::list_dir(std::string const &url,std::string const &path)
 	response().content_type("text/html; charset=UTF-8");
 #endif
 	std::ostream &out = response().out();
-	out << "<html><head><title>Directory Listring</title></head>\n"
-		"<body><h1>Directory Listring</h1>\n"
+	out << "<html><head><title>Directory Listing</title></head>\n"
+		"<body><h1>Directory Listing</h1>\n"
 		"<ul>\n";
 	if(url!="/" && !url.empty()) {
-		out << "<li><a href='" << util::urlencode(url.substr(0,url.rfind('/',url.size()-1)+1)) 
-			<< "'>Parent Directory</a></li>\n";
+		out << "<li><a href='..' >Parent Directory</a></li>\n";
 	}
 	while(d.next()) {
 		if(memcmp(d.name(),".",1) == 0)
 			continue;
 		out << "<li><a href='" 
-			<< util::urlencode(d.name()) << "'>" << d.name() << "</a></li>\n";
+			<< util::urlencode(d.name()) << "'>" << util::escape(d.name()) << "</a></li>\n";
 	}
 	out <<"</body>\n";
 }
@@ -370,17 +370,27 @@ void file_server::main(std::string file_name)
 	
 	if((s & S_IFDIR)) {
 		std::string path2;
+		int mode_2=0;
 		
 		bool have_index = check_in_document_root(file_name+"/index.html",path2);
+		if(have_index)
+			mode_2 = file_mode(path2);
 
-		if(!file_name.empty() && file_name[file_name.size()-1]!='/' && (have_index || list_directories_)) {
+		if(     !file_name.empty() 
+			&& file_name[file_name.size()-1]!='/'  // not ending with "/" as should
+			&& (
+				(have_index && (mode_2 & S_IFREG)) // has index file in root which is normal file
+				|| list_directories_               // or we can list all files
+			   )
+		) 
+		{
 			response().set_redirect_header(file_name + "/");
 			response().out()<<std::flush;
 			return;
 		}
 		if(have_index) {
 			path = path2;
-			s=file_mode(path); // rebuild file mode
+			s=mode_2;
 		}
 		else {
 			if(list_directories_) 

@@ -19,6 +19,9 @@
 
 #ifndef CPPCMS_IMPL_DIR_H
 #define CPPCMS_IMPL_DIR_H
+#if defined(__sun)
+#define _POSIX_PTHREAD_SEMANTICS
+#endif
 
 #include <cppcms/defs.h>
 
@@ -60,7 +63,13 @@ private:
 	std::string utf_name_;
 	#else  // POSIX
 	DIR *dir_;
-	struct dirent *de_,*entry_p_;
+	#if defined(__linux) || defined(__FreeBSD__) || defined(__APPLE__)
+	struct dirent de_;
+	#else
+	#define CPPCMS_DIR_ALLOCATE_DE
+	struct dirent *de_;
+	#endif
+	struct dirent *entry_p_;
 	#endif
 };
 
@@ -114,8 +123,11 @@ inline char const *directory::name()
 
 #else  // POSIX
 
-inline directory::directory() : dir_(0), de_(0), entry_p_(0)
+inline directory::directory() : dir_(0), entry_p_(0)
 {
+#ifdef CPPCMS_DIR_ALLOCATE_DE
+	de_ = 0;
+#endif
 }
 
 
@@ -128,6 +140,7 @@ inline bool directory::open(std::string const &dir_name)
 
 	if(!dir_)
 		return false;
+	#ifdef CPPCMS_DIR_ALLOCATE_DE
 	//
 	// This pathconf/opendir exploit can be used with only file systems
 	// with small file names like fat... So we require
@@ -144,15 +157,18 @@ inline bool directory::open(std::string const &dir_name)
 	de_ = static_cast<struct dirent*>(malloc(sizeof(struct dirent) + name_len + 1 - sizeof(de_->d_name)));
 	if(!de_)
 		throw std::bad_alloc();
+	#endif // alloc de
 	return true;
 }
 
 inline void directory::close()
 {
+	#ifdef CPPCMS_DIR_ALLOCATE_DE
 	if(de_)  {
 		free(de_);
 		de_ = 0;
 	}
+	#endif
 	entry_p_ = 0;
 	if(dir_) {
 		closedir(dir_);
@@ -163,7 +179,12 @@ inline void directory::close()
 inline bool directory::next()
 {
 	assert(dir_);
-	return readdir_r(dir_,de_,&entry_p_) == 0 && entry_p_ != 0;
+	#ifdef CPPCMS_DIR_ALLOCATE_DE
+	struct dirent *d = de_;
+	#else
+	struct dirent *d = &de_;
+	#endif
+	return readdir_r(dir_,d,&entry_p_) == 0 && entry_p_ != 0;
 }
 
 inline char const *directory::name()
