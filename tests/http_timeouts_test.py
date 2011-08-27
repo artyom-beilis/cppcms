@@ -50,7 +50,7 @@ def test_unfinished_read(msg,reads,ignore):
         time.sleep(1)
         text = s.recv(read_size)
         l = len(text)
-        test(l >= read_size / 2)
+        test(l > 0)
     global timeout_time
     time.sleep(timeout_time * 2)
     n=0
