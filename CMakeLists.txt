@@ -713,10 +713,17 @@ add_test(jsonrpc_test
 	jsonrpc_test "-c" "${CNF}/jsonrpc_test.js"
 	"--test-exec=${PYTHON} ${CNF}/jsonrpc_test.py")
 
-add_test(http_timeouts_test
+add_test(http_timeouts_test_read
 	http_timeouts_test "-c" "${CNF}/proto_test.js" 
 	"--service-api=http" "--service-port=8080" "--service-ip=127.0.0.1" "--http-timeout=5" "--logging-level=debug"
-	"--test-exec=${PYTHON} ${CNF}/http_timeouts_test.py")
+	"--test-write=false"
+	"--test-exec=${PYTHON} ${CNF}/http_timeouts_test.py read")
+
+add_test(http_timeouts_test_write
+	http_timeouts_test "-c" "${CNF}/proto_test.js" 
+	"--service-api=http" "--service-port=8080" "--service-ip=127.0.0.1" "--http-timeout=5" "--logging-level=debug"
+	"--test-write=true"
+	"--test-exec=${PYTHON} ${CNF}/http_timeouts_test.py write")
 
 add_test(file_server_test
 	file_server_test "-c" "${CNF}/file_server_test.js" 

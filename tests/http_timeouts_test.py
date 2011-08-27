@@ -65,25 +65,24 @@ def test_unfinished_read(msg,reads,ignore):
     test(n < read_size * 16 or n < 1000000)
 
 
+write = sys.argv[1] == 'write'
 
-
-print 'Read from client timeouts'
-test_unfinished_out('')
-test_unfinished_out('GET /')
-test_unfinished_out('POST / HTTP/1.0\r\nContent-Length:10000\r\n\r\nbla bla')
-test_unfinished_out('POST / HTTP/1.0\r\nContent-Length:10000\r\n\r\n', ['ss','ss','ss','ss'])
-
-print 'Disconnect the client timeout'
-
-test_unfinished_out('GET /async/goteof HTTP/1.0\r\n\r\n')
-
-
-if sys.platform != 'sunos5':
+if write:
     print 'Write to the client timeout'
     test_unfinished_read('GET /async/long HTTP/1.0',0,0)
     test_unfinished_read('GET /async/long HTTP/1.0',20,1000)
     test_unfinished_read('GET /sync/long HTTP/1.0',0,0)
     test_unfinished_read('GET /sync/long HTTP/1.0',20,1000)
+else:
+    print 'Read from client timeouts'
+    test_unfinished_out('')
+    test_unfinished_out('GET /')
+    test_unfinished_out('POST / HTTP/1.0\r\nContent-Length:10000\r\n\r\nbla bla')
+    test_unfinished_out('POST / HTTP/1.0\r\nContent-Length:10000\r\n\r\n', ['ss','ss','ss','ss'])
+
+    print 'Disconnect the client timeout'
+
+    test_unfinished_out('GET /async/goteof HTTP/1.0\r\n\r\n')
 
 time.sleep(1)
 

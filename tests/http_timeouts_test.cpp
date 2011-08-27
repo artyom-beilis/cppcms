@@ -39,6 +39,9 @@ int count_timeouts = 0;
 int above_15 = 0;
 int below_10 = 0;
 
+bool write_tests = false;
+
+
 class sync_test : public cppcms::application {
 public:
 	sync_test(cppcms::service &s) : cppcms::application(s)
@@ -148,6 +151,7 @@ int main(int argc,char **argv)
 	std::string captured;
 	try {
 		cppcms::service srv(argc,argv);
+		write_tests = srv.settings().get("test.write",false);
 		booster::intrusive_ptr<cppcms::application> async = new async_test(srv);
 		srv.applications_pool().mount( async, cppcms::mount_point("/async") );
 		srv.applications_pool().mount( cppcms::applications_factory<sync_test>(), cppcms::mount_point("/sync"));
@@ -166,20 +170,19 @@ int main(int argc,char **argv)
 		count_timeouts++;
 	}
 	if(
-#ifdef __sun
-		// under solaris due to OS problem
-		// it is impossible to make sockets block
-		// on write operation
-		!eof_detected 
-		|| count_timeouts != 5
-#else
-		async_bad_count != 2 
-		|| sync_bad_count != 2 
-		|| !eof_detected 
-		|| count_timeouts != 9
-		|| above_15 != 2
-		|| below_10 != 2
-#endif
+		write_tests ?
+		(
+			async_bad_count != 2 
+			|| sync_bad_count != 2 
+			|| count_timeouts != 4
+			|| above_15 != 2
+			|| below_10 != 2
+		)
+		:
+		(
+			!eof_detected 
+			|| count_timeouts != 5
+		)
 	  ) 
 	{
 		print_count_report(std::cerr);
