@@ -47,6 +47,7 @@ then
 		echo $TEST - pass >>/tmp/report.txt
 	else
 		echo $TEST - fail >>/tmp/report.txt
+		ssh -p 2224 artik@localhost "cat /tmp/nb/build/Testing/Temporary/LastTest.log" >> $FILE
 	fi
 
 	ssh -p 2224 root@localhost "poweroff"
