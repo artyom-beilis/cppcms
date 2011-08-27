@@ -45,6 +45,8 @@ def test_unfinished_read(msg,reads,ignore):
     s=make_sock();
     read_size = s.getsockopt(socket.SOL_SOCKET, socket.SO_RCVBUF)
     print "SO_RCVBUF=%d" % read_size
+    if read_size < 32768:
+        read_size = 32768
     s.send(msg + '\r\n\r\n')
     for n in xrange(0,reads):
         time.sleep(1)
@@ -75,12 +77,13 @@ print 'Disconnect the client timeout'
 
 test_unfinished_out('GET /async/goteof HTTP/1.0\r\n\r\n')
 
-print 'Write to the client timeout'
 
-test_unfinished_read('GET /async/long HTTP/1.0',0,0)
-test_unfinished_read('GET /async/long HTTP/1.0',20,1000)
-test_unfinished_read('GET /sync/long HTTP/1.0',0,0)
-test_unfinished_read('GET /sync/long HTTP/1.0',20,1000)
+if sys.platform != 'sunos5':
+    print 'Write to the client timeout'
+    test_unfinished_read('GET /async/long HTTP/1.0',0,0)
+    test_unfinished_read('GET /async/long HTTP/1.0',20,1000)
+    test_unfinished_read('GET /sync/long HTTP/1.0',0,0)
+    test_unfinished_read('GET /sync/long HTTP/1.0',20,1000)
 
 time.sleep(1)
 

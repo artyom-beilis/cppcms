@@ -166,12 +166,20 @@ int main(int argc,char **argv)
 		count_timeouts++;
 	}
 	if(
+#ifdef __sun
+		// under solaris due to OS problem
+		// it is impossible to make sockets block
+		// on write operation
+		!eof_detected 
+		|| count_timeouts != 5
+#else
 		async_bad_count != 2 
 		|| sync_bad_count != 2 
 		|| !eof_detected 
 		|| count_timeouts != 9
 		|| above_15 != 2
 		|| below_10 != 2
+#endif
 	  ) 
 	{
 		print_count_report(std::cerr);
