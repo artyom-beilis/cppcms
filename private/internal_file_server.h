@@ -46,6 +46,7 @@ namespace impl {
 		typedef std::map<std::string,std::string> mime_type;
 		mime_type mime_;
 		bool list_directories_;
+		std::string index_file_;
 	};
 
 

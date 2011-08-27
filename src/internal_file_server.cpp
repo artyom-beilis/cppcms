@@ -60,6 +60,7 @@ file_server::file_server(cppcms::service &srv) : application(srv)
 		throw cppcms_error("Invalid document root");
 
 	list_directories_ = settings().get("file_server.listing",false);
+	index_file_ = settings().get("file_server.index","index.html");
 
 	std::string mime_file=settings().get("file_server.mime_types","");
 
@@ -412,7 +413,7 @@ void file_server::main(std::string file_name)
 		std::string path2;
 		int mode_2=0;
 	
-		bool have_index = check_in_document_root(file_name+"/index.html",path2);
+		bool have_index = check_in_document_root(file_name+"/" + index_file_ ,path2);
 		if(have_index) {
 			mode_2 = file_mode(path2);
 			have_index = (mode_2  & S_IFREG) != 0;
