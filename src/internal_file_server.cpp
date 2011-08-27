@@ -43,9 +43,7 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 
-#ifdef CPPCMS_WIN_NATIVE
-#include <windows.h>
-#else
+#ifndef CPPCMS_WIN_NATIVE
 #include <unistd.h>
 #include <limits.h>
 #endif
@@ -210,34 +208,25 @@ bool file_server::canonical(std::string normal,std::string &real)
 	#endif
 
 #else
-		int size=4096;
-		std::vector<wchar_t> buffer(size,0);
-		std::wstring wnormal;
-		std::wstring wreal;
+		wchar_t *wreal = 0;
 		try {
-			wnormal = booster::locale::conv::utf_to_utf<wchar_t>(normal,booster::locale::conv::stop);
-		}
-		catch(booster::locale::conv::conversion_error const &) {
-			return false;
-		}
-		for(;;) {
-			DWORD res = ::GetFullPathNameW(wnormal.c_str(),buffer.size(),&buffer.front(),0);
-			if(res == 0)
+			std::wstring wnormal = booster::locale::conv::utf_to_utf<wchar_t>(normal,booster::locale::conv::stop);
+			wchar_t *wreal = _wfullpath(0,wnormal.c_str(),0);
+			if(!wreal)
 				return false;
-			if(res >= buffer.size()) {
-				buffer.resize(buffer.size()*2,0);
-			}
-			else {
-				wreal=&buffer.front();
-				break;
-			}
-		}
-		try {
 			real = booster::locale::conv::utf_to_utf<char>(wreal,booster::locale::conv::stop);
+			free(wreal);
+			wreal = 0;
 		}
 		catch(booster::locale::conv::conversion_error const &) {
+			if(wreal)
+				free(wreal);
 			return false;
 		}
+		// stat would not work on files like foo/ so remove the last slash as realpath
+		// and canonicalize does
+		if(real.size()>1 && real[real.size()-1]=='\\')
+			real.resize(real.size()-1);
 #endif
 	return true;
 }
