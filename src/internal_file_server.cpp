@@ -411,17 +411,16 @@ void file_server::main(std::string file_name)
 	if((s & S_IFDIR)) {
 		std::string path2;
 		int mode_2=0;
-		
+	
 		bool have_index = check_in_document_root(file_name+"/index.html",path2);
-		if(have_index)
+		if(have_index) {
 			mode_2 = file_mode(path2);
+			have_index = (mode_2  & S_IFREG) != 0;
+		}
 
 		if(     !file_name.empty() 
 			&& file_name[file_name.size()-1]!='/'  // not ending with "/" as should
-			&& (
-				(have_index && (mode_2 & S_IFREG)) // has index file in root which is normal file
-				|| list_directories_               // or we can list all files
-			   )
+			&& (have_index || list_directories_)
 		) 
 		{
 			response().set_redirect_header(file_name + "/");
