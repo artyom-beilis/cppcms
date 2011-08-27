@@ -58,7 +58,7 @@ print "- Testing normal requests"
 if not do_listing:
     test_request('/',404)
 else:
-    test_request('/',200,valid=['foo/','bar/','test.txt'],notvalid=['..','test.txt/'])
+    test_request('/',200,valid=['foo/','bar/','test.txt'],notvalid=['..','test.txt/','.svn'])
     
 test_request('/test.txt',200,'/test.txt')
 test_request('/foo/test.txt',200,'/foo/test.txt')
