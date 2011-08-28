@@ -34,12 +34,9 @@ namespace aio {
 	/// Sinlge or multiple threads may execute run() member function and dispatch its handlers, this class
 	/// also can be safely created before fork and used after it
 	///
-	class BOOSTER_API io_service : public noncopyable {
+	class BOOSTER_API io_service : public noncopyable, public io_events {
 	public:
 
-		static const int in = 	1 << 0;
-		static const int out =	1 << 1;
-		
 		///
 		/// Create io service using specific reactor type and not default one (see reactor's class  use_* constants) 
 		///
@@ -54,7 +51,8 @@ namespace aio {
 		~io_service();
 
 		///
-		/// Set event handler \a h for file descriptor \fd. \a event can be in, out or in.
+		/// Set event handler \a h for file descriptor \a fd. \a event can be \ref io_events::in, \ref io_events::out 
+		/// or \ref io_events::in | \ref io_events::out.
 		///
 		/// Error handling: 
 		/// 

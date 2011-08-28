@@ -15,6 +15,10 @@ namespace booster {
 	template<typename Type>
 	class function;
 
+	///
+	/// \brief This exception is thrown in case of an attempt to call to
+	/// unassigned \ref booster::function
+	///
 	class bad_function_call : public booster::runtime_error {
 	public:
 		bad_function_call() : 

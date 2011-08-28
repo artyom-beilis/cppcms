@@ -49,6 +49,16 @@ namespace booster {
 			sock_stream,
 			sock_datagram
 		} socket_type;
+		
+		///
+		/// \brief the struct that collects multiple event
+		/// types for polling.
+		///
+		struct io_events {
+			static const int in   = 1 << 0; //< Event socket readability
+			static const int out  = 1 << 1;	//< Event socket writability
+			static const int err  = 1 << 2; //< Error on socket or OOB data
+		};
 	}
 } 
 
