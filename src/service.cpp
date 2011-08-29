@@ -111,6 +111,7 @@ service::service(json::value const &v) :
 service::service(int argc,char *argv[]) :
 	impl_(new impl::service())
 {
+	impl_->args_.assign(argv,argv+argc);
 	json::value val = load_settings(argc,argv);
 	impl_->settings_.reset(new json::value());
 	impl_->settings_->swap(val);
@@ -555,7 +556,8 @@ void service::install_service()
 	std::wstring display_name = booster::nowide::convert(settings().get<std::string>("winservice.display_name"));
 	std::string start_type = settings().get("winservice.start","auto");
 	std::wstring cmd_line;
-
+	
+	
 	std::wstring user_name,password;
 	wchar_t const *cuser_name=0,*cpassword=0;
 	if(!settings().find("winservice.username").is_undefined()) {
@@ -567,18 +569,18 @@ void service::install_service()
 		cpassword = password.c_str();
 	}
 
-
-	wchar_t *exe = _wfullpath(0,__wargv[0],0);
-	if(!exe) {
-		throw cppcms_error("Failed to get root path name!");
+	wchar_t exe[ MAX_PATH + 1];
+	if(GetModuleFileNameW(0,exe,MAX_PATH+1) == 0) {
+		booster::system::error_code e(GetLastError(),booster::system::windows_category);
+		throw booster::system::system_error(e,"Failed to get exe name");
 	}
 	cmd_line = L"\"";
 	cmd_line +=exe;
-	free(exe);
 	cmd_line +=L"\"";
 	bool found = false;
-	for(int i=1;i<__argc;i++) {
-		std::wstring parameter = __wargv[i];
+
+	for(size_t i=1;i<impl_->args_.size();i++) {
+		std::wstring parameter = booster::nowide::convert(impl_->args_[i]);
 		if(parameter==L"--winservice-mode=install") {
 			parameter = L"--winservice-mode=run";
 			found = true;
@@ -590,6 +592,9 @@ void service::install_service()
 	if(!found) {
 		throw cppcms_error("Parameter --winservice-mode=install is not provided via command line!");
 	}
+
+	BOOSTER_DEBUG("cppcms") << "Installing with parameters" << booster::nowide::convert(cmd_line);
+
 	DWORD start_type_flag = 0;
 	if(start_type == "auto")
 		start_type_flag= SERVICE_AUTO_START;
@@ -598,6 +603,7 @@ void service::install_service()
 	else
 		throw cppcms_error("Parameter winservice.mode should be one of auto or demand");
 
+		
 	SC_HANDLE schm = OpenSCManagerW(0,0,SC_MANAGER_ALL_ACCESS);
 	if(!schm) {
 		booster::system::error_code e(GetLastError(),booster::system::windows_category);
@@ -637,11 +643,14 @@ namespace {
 	void WINAPI win_service_handler_proc(DWORD code)
 	{
 		if(code == SERVICE_CONTROL_SHUTDOWN  || code == SERVICE_CONTROL_STOP) {
-			the_service->shutdown();
 			status.dwCurrentState = SERVICE_STOP_PENDING;
+			status.dwControlsAccepted = 0;
 			status.dwWaitHint = 10000;
 			SetServiceStatus(status_handle,&status);
+			the_service->shutdown();
+			return ;
 		}
+		SetServiceStatus(status_handle,&status);
 
 	}
 	void WINAPI win_service_main(DWORD,wchar_t **)
@@ -656,6 +665,7 @@ namespace {
 		try {
 			status.dwWaitHint = 10000;
 			status.dwCurrentState = SERVICE_START_PENDING;
+			status.dwControlsAccepted = (SERVICE_ACCEPT_STOP | SERVICE_ACCEPT_SHUTDOWN);
 			SetServiceStatus(status_handle,&status);
 			
 			the_service->impl_run_prepare();
@@ -666,14 +676,14 @@ namespace {
 			
 			the_service->impl_run_event_loop();
 
-			status.dwWin32ExitCode = 1;
-
 		}
 		catch(std::exception const &e ){
 			BOOSTER_ERROR("cppcms") << "Main loop stopped:" << e.what();
+			status.dwWin32ExitCode = 1;
 		}
 		catch(...) {
 			BOOSTER_ERROR("cppcms") << "Main loop stopped for unknown expeiton";
+			status.dwWin32ExitCode = 1;
 		}
 		
 		status.dwCurrentState = SERVICE_STOPPED;

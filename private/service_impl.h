@@ -75,6 +75,8 @@ namespace impl {
 
 		booster::aio::native_type notification_socket_;
 		std::auto_ptr<booster::aio::stream_socket> sig_,breaker_;
+		
+		std::vector<std::string> args_;
 
 
 	};
