@@ -195,9 +195,19 @@ namespace cppcms {
 		int process_id();
 
 		/// \cond INTERNAL
+		
+		// internal functions never call it directly
+
 		cppcms::impl::service &impl();
 
 		impl::cached_settings const &cached_settings();
+		
+		#ifdef CPPCMS_WIN_NATIVE
+		void impl_run_as_windows_service();
+		#endif
+		void impl_run_prepare();
+		void impl_run_event_loop();
+		
 		/// \endcond
 
 	private:
@@ -208,6 +218,11 @@ namespace cppcms {
 		void start_acceptor(bool after_fork=false);
 		void setup_exit_handling();
 		bool prefork();
+		void impl_run();
+		#ifdef CPPCMS_WIN_NATIVE
+		void install_service();
+		void uninstall_service();
+		#endif
 		booster::hold_ptr<impl::service> impl_;
 	};
 

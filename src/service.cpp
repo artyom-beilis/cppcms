@@ -22,6 +22,7 @@
 #define NOMINMAX
 #include <winsock2.h>
 #include <windows.h>
+#include <winsvc.h>
 #include <process.h>
 #else
 #include <errno.h>
@@ -463,7 +464,7 @@ cppcms::forwarder &service::forwarder()
 }
 
 
-void service::run()
+void service::impl_run_prepare()
 {
 	generator();
 	forwarder();
@@ -491,6 +492,10 @@ void service::run()
 		impl_->acceptors_[i]->async_accept();
 
 	setup_exit_handling();
+}
+
+void service::impl_run_event_loop()
+{
 
 	try {
 		impl_->get_io_service().run();
@@ -502,6 +507,217 @@ void service::run()
 	the_service = 0;
 
 }
+void service::impl_run()
+{
+	impl_run_prepare();
+	impl_run_event_loop();
+}
+
+#ifndef CPPCMS_WIN_NATIVE
+
+void service::run()
+{
+	impl_run();
+}
+
+#else // Windows service crap
+
+void service::uninstall_service()
+{
+	std::wstring name = booster::nowide::convert(settings().get<std::string>("winservice.name"));
+
+	SC_HANDLE schm = OpenSCManagerW(0,0,SC_MANAGER_ALL_ACCESS);
+	if(!schm) {
+		booster::system::error_code e(GetLastError(),booster::system::windows_category);
+		throw booster::system::system_error(e,"Failed to open sevice imager");
+	}
+
+	SC_HANDLE service_handle = OpenServiceW(schm,name.c_str(),DELETE);
+	if(service_handle == NULL) {
+		booster::system::error_code e(GetLastError(),booster::system::windows_category);
+		CloseServiceHandle(schm);
+		throw booster::system::system_error(e,"Failed to open the service");
+	}
+	if(!DeleteService(service_handle)) {
+		booster::system::error_code e(GetLastError(),booster::system::windows_category);
+		CloseServiceHandle(service_handle);
+		CloseServiceHandle(schm);
+		throw booster::system::system_error(e,"Failed to delete the service");
+	}
+	CloseServiceHandle(service_handle);
+	CloseServiceHandle(schm);
+	std::cout << "The service uninstalled sucessefully" << std::endl;
+}
+
+void service::install_service()
+{
+	std::wstring name = booster::nowide::convert(settings().get<std::string>("winservice.name"));
+	std::wstring display_name = booster::nowide::convert(settings().get<std::string>("winservice.display_name"));
+	std::string start_type = settings().get("winservice.start","auto");
+	std::wstring cmd_line;
+
+	std::wstring user_name,password;
+	wchar_t const *cuser_name=0,*cpassword=0;
+	if(!settings().find("winservice.username").is_undefined()) {
+		user_name = booster::nowide::convert(settings().get<std::string>("winservice.username"));
+		cuser_name = user_name.c_str();
+	}
+	if(!settings().find("winservice.password").is_undefined()) {
+		password = booster::nowide::convert(settings().get<std::string>("winservice.password"));
+		cpassword = password.c_str();
+	}
+
+
+	wchar_t *exe = _wfullpath(0,__wargv[0],0);
+	if(!exe) {
+		throw cppcms_error("Failed to get root path name!");
+	}
+	cmd_line = L"\"";
+	cmd_line +=exe;
+	free(exe);
+	cmd_line +=L"\"";
+	bool found = false;
+	for(int i=1;i<__argc;i++) {
+		std::wstring parameter = __wargv[i];
+		if(parameter==L"--winservice-mode=install") {
+			parameter = L"--winservice-mode=run";
+			found = true;
+		}
+		cmd_line+=L" \"";
+		cmd_line+=parameter;
+		cmd_line+=L"\"";
+	}
+	if(!found) {
+		throw cppcms_error("Parameter --winservice-mode=install is not provided via command line!");
+	}
+	DWORD start_type_flag = 0;
+	if(start_type == "auto")
+		start_type_flag= SERVICE_AUTO_START;
+	else if(start_type == "demand")
+		start_type_flag= SERVICE_DEMAND_START;
+	else
+		throw cppcms_error("Parameter winservice.mode should be one of auto or demand");
+
+	SC_HANDLE schm = OpenSCManagerW(0,0,SC_MANAGER_ALL_ACCESS);
+	if(!schm) {
+		booster::system::error_code e(GetLastError(),booster::system::windows_category);
+		throw booster::system::system_error(e,"Failed to open sevice imager");
+	}
+
+	SC_HANDLE service_handle = CreateServiceW(
+		schm,
+		name.c_str(),
+		display_name.c_str(),
+		SERVICE_ALL_ACCESS,
+		SERVICE_WIN32_OWN_PROCESS,
+		start_type_flag,
+		SERVICE_ERROR_NORMAL,
+		cmd_line.c_str(),
+		0, // load order group
+		0, // tagid
+		0, // dependencies
+		cuser_name,
+		cpassword
+	);
+
+	if(service_handle == NULL) {
+		booster::system::error_code e(GetLastError(),booster::system::windows_category);
+		CloseServiceHandle(schm);
+		throw booster::system::system_error(e,"Failed to install service");
+	}
+	CloseServiceHandle(service_handle);
+	CloseServiceHandle(schm);
+	std::cout << "The service installed sucessefully" << std::endl;
+}
+
+namespace {
+	SERVICE_STATUS_HANDLE status_handle;
+	SERVICE_STATUS status;
+
+	void WINAPI win_service_handler_proc(DWORD code)
+	{
+		if(code == SERVICE_CONTROL_SHUTDOWN  || code == SERVICE_CONTROL_STOP) {
+			the_service->shutdown();
+			status.dwCurrentState = SERVICE_STOP_PENDING;
+			status.dwWaitHint = 10000;
+			SetServiceStatus(status_handle,&status);
+		}
+
+	}
+	void WINAPI win_service_main(DWORD,wchar_t **)
+	{
+		status_handle = RegisterServiceCtrlHandlerW(L"",win_service_handler_proc);
+		if(status_handle==0) {
+			booster::system::error_code e(GetLastError(),booster::system::windows_category);
+			BOOSTER_ERROR("cppcms") << "Failed to register windows service handle:" << e.message();
+			return;
+		}
+		status.dwServiceType = SERVICE_WIN32_OWN_PROCESS;
+		try {
+			status.dwWaitHint = 10000;
+			status.dwCurrentState = SERVICE_START_PENDING;
+			SetServiceStatus(status_handle,&status);
+			
+			the_service->impl_run_prepare();
+			
+			status.dwWaitHint = 0;
+			status.dwCurrentState = SERVICE_RUNNING;
+			SetServiceStatus(status_handle,&status);
+			
+			the_service->impl_run_event_loop();
+
+			status.dwWin32ExitCode = 1;
+
+		}
+		catch(std::exception const &e ){
+			BOOSTER_ERROR("cppcms") << "Main loop stopped:" << e.what();
+		}
+		catch(...) {
+			BOOSTER_ERROR("cppcms") << "Main loop stopped for unknown expeiton";
+		}
+		
+		status.dwCurrentState = SERVICE_STOPPED;
+		status.dwWaitHint = 0;
+		SetServiceStatus(status_handle,&status);
+		return;
+
+	}
+} // anonymous
+
+void service::impl_run_as_windows_service()
+{
+	impl_->settings_->set("service.disable_global_exit_handling",true);
+	the_service = this;
+	static wchar_t empty_wide_string = 0;
+	SERVICE_TABLE_ENTRYW entry[2] = {
+		{ &empty_wide_string ,win_service_main },
+		{ 0,0 }
+	};
+	if(!StartServiceCtrlDispatcherW(entry)) {
+		booster::system::error_code e(GetLastError(),booster::system::windows_category);
+		throw booster::system::system_error(e,"Failed to start windows service");
+	}
+}
+
+void service::run()
+{
+	std::string mode = settings().get("winservice.mode","console");
+	if(mode == "console")
+		impl_run();
+	else if(mode == "install")
+		install_service();
+	else if(mode == "uninstall")
+		uninstall_service();
+	else if(mode == "run") {
+		impl_run_as_windows_service();
+	}
+	else
+		throw cppcms_error("Invalid option winservice.mode=" + mode);
+}
+
+#endif // End of windows service crap
+
+
 
 int service::procs_no()
 {
