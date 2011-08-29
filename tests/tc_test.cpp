@@ -72,7 +72,74 @@ public:
 		m.integers.push_back(21);
 		m.integers.push_back(22);
 		render("master_tmpl",m);
-		TEST(str()=="\nA\nx=10\nx=1\nx=10 y=test\nx=1 y=str\nx=21,x=22\n");
+		TEST(str()=="\nA\nx=10\nx=1\nx=10 y=test\nx=1 y=str\n");
+	}
+	void test_foreach()
+	{
+		std::cout << "- Testing foreach" << std::endl;
+		data::master m;
+		m.integers.push_back(21);
+		m.integers.push_back(22);
+		render("foreach_tmpl",m);
+		TEST(str() ==	"\n"
+				"{21,22}\n"
+				"{22,21}\n"
+				"{21 0,22 1}\n"
+				"{22 0,21 1}\n"
+				"{21 1,22 2}\n"
+				"{22 1,21 2}\n"
+				"\n"
+				"{ 21 22}\n"
+				"{ 22 21}\n"
+				"{ 21 0 22 1}\n"
+				"{ 22 0 21 1}\n"
+				"{ 21 1 22 2}\n"
+				"{ 22 1 21 2}\n"
+				"\n"
+				"{21,22}\n"
+				"{22,21}\n"
+				"{21 0,22 1}\n"
+				"{22 0,21 1}\n"
+				"{21 1,22 2}\n"
+				"{22 1,21 2}\n"
+				"\n"
+				"{ 21 22}\n"
+				"{ 22 21}\n"
+				"{ 21 0 22 1}\n"
+				"{ 22 0 21 1}\n"
+				"{ 21 1 22 2}\n"
+				"{ 22 1 21 2}\n");
+		m.integers.clear();
+		render("foreach_tmpl",m);
+		TEST(str()=="\n"
+			"-\n"
+			"-\n"
+			"-\n"
+			"-\n"
+			"-\n"
+			"-\n"
+			"\n"
+			"-\n"
+			"-\n"
+			"-\n"
+			"-\n"
+			"-\n"
+			"-\n"
+			"\n"
+			"\n"
+			"\n"
+			"\n"
+			"\n"
+			"\n"
+			"\n"
+			"\n"
+			"\n"
+			"\n"
+			"\n"
+			"\n"
+			"\n"
+			"\n"
+		);
 	}
 	void test_if()
 	{
@@ -129,6 +196,7 @@ int main()
 		app.test_templates();
 		app.test_if();
 		app.test_url();
+		app.test_foreach();
 
 	}
 	catch(std::exception const &e)

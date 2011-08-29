@@ -242,7 +242,10 @@ def make_ident(val):
         return "content." + val
 
 class foreach_block:
-    pattern=r'^<%\s*foreach\s+([a-zA-Z]\w*)(\s+as\s+((:?:?\w+)(::\w+)*))?\s+in\s+(' + variable_match +')\s*%>$'
+    pattern=r'^<%\s*foreach\s+([a-zA-Z]\w*)(\s+as\s+((:?:?\w+)(::\w+)*))?' \
+        + r'(?:\s+rowid\s+([a-zA-Z]\w*)(?:\s+from\s+(\d+))?)?' \
+        + r'(?:\s+(reverse))?' \
+        + '\s+in\s+(' + variable_match +')\s*%>$'
     type='foreach'
     has_item=0
     has_separator=0
@@ -251,13 +254,29 @@ class foreach_block:
     type_name=0
     def use(self,m):
         self.ident=m.group(1)
-        self.seq_name=make_ident(m.group(6))
+        self.seq_name=make_ident(m.group(9))
+        self.rowid = m.group(6)
+        if m.group(7):
+            self.rowid_begin = int(m.group(7))
+        else:
+            self.rowid_begin = 0
+        if m.group(8):
+            self.reverse = 'r'
+        else:
+            self.reverse = ''
         self.type_name = m.group(3)
         global tmpl_seq
         if self.ident in tmpl_seq:
-            error_exit("Nested sequences with same name")
+            error_exit("Nested sequences with same name %s" % self.ident)
+        if self.rowid == self.ident:
+            error_exit("Nested sequence and rowid has same name %s" % self.ident)
+        if self.rowid and (self.rowid in tmpl_seq):
+            error_exit("Nested sequences with same rowid name %s" % self.rowid )
         tmpl_seq[self.ident]='';
-        output( "if((%s).begin()!=(%s).end()) {" % (self.seq_name,self.seq_name) )
+        output( "if((%s).%sbegin()!=(%s).%send()) {" % (self.seq_name,self.reverse,self.seq_name,self.reverse) )
+        if self.rowid:
+            tmpl_seq[self.rowid]='';
+            output("    int %s = %s;" % (self.rowid,self.rowid_begin))
         global stack
         stack.append(self)
 
@@ -267,21 +286,27 @@ class foreach_block:
 
         global tmpl_seq
         del tmpl_seq[self.ident]
-        output( "}" )
+        if self.rowid:
+            del tmpl_seq[self.rowid]
 
-def prepare_foreach(type_of,seq,ident,has_separator):
-    if not type_of:
-        ptr_type = 'CPPCMS_TYPEOF((%(s)s).begin())'
-    else:
-        ptr_type = type_of
-    output( ("for("+ptr_type+" %(i)s_ptr=(%(s)s).begin(),%(i)s_ptr_end=(%(s)s).end();%(i)s_ptr!=%(i)s_ptr_end;++%(i)s_ptr) {") \
-      % { 's' :seq, 'i' : ident })
-    if not type_of:
-        output( "CPPCMS_TYPEOF(*%s_ptr) &%s=*%s_ptr;" % (ident,ident,ident))
-    else:
-        output( "std::iterator_traits< %s >::value_type &%s=*%s_ptr;" % (type_of,ident,ident))
-    if has_separator:
-        output( "if(%s_ptr!=(%s).begin()) {" % (ident,seq))
+        output( "}" )
+    def prepare_foreach(self):
+        if not self.type_name:
+            ptr_type = 'CPPCMS_TYPEOF((%(s)s).%(r)sbegin())'
+        else:
+            ptr_type = self.type_name
+        incr = ''
+        if self.rowid:
+            incr = ',++%s' % self.rowid;
+        fmt = "for("+ptr_type+" %(i)s_ptr=(%(s)s).%(r)sbegin(),%(i)s_ptr_end=(%(s)s).%(r)send();%(i)s_ptr!=%(i)s_ptr_end;++%(i)s_ptr%(u)s) {";
+        fmt = fmt %  { 's' : self.seq_name, 'i' : self.ident , 'r' : self.reverse, 'u' : incr };
+        output(fmt)
+        if not self.type_name:
+            output( "CPPCMS_TYPEOF(*%s_ptr) &%s=*%s_ptr;" % (self.ident,self.ident,self.ident))
+        else:
+            output( "std::iterator_traits< %s >::value_type &%s=*%s_ptr;" % (self.type_name,self.ident,self.ident))
+        if self.has_separator:
+            output( "if(%s_ptr!=(%s).%sbegin()) {" % (self.ident,self.seq_name,self.reverse))
         
         
 
@@ -297,7 +322,8 @@ class separator_block:
         if foreachb.has_separator:
             error_exit("two separators for one foreach")
         foreachb.has_separator=1
-        prepare_foreach(foreachb.type_name,foreachb.seq_name,foreachb.ident,1)
+        foreachb.prepare_foreach()
+
         
 
 class item_block:
@@ -314,7 +340,7 @@ class item_block:
         if foreachb.has_separator:
             output( "} // end of separator")
         else:
-            prepare_foreach(foreachb.type_name,foreachb.seq_name,foreachb.ident,0)
+            foreachb.prepare_foreach()
         foreachb.has_item=1
         stack.append(self)
     def on_end(self):
@@ -333,11 +359,14 @@ class empty_block:
             error_exit("Unexpected empty - item missed?")
         output( " } else {")
         self.ident=forb.ident
+        self.rowid=forb.rowid
         stack.append(self)
     def on_end(self):
         output( "} // end of empty")
         global tmpl_seq
         del tmpl_seq[self.ident]
+        if self.rowid:
+            del tmpl_seq[self.rowid]
 
 
 class else_block:

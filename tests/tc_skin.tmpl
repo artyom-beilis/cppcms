@@ -19,16 +19,52 @@ TBD
 <% template a() %>A<% end %>
 <% template b(int x) %>x=<%= x %><% end %>
 <% template c(int x,std::string const &y) %>x=<%=x%> y=<%=y%><% end %>
+<% template d(int x,int y) %>x=<%= x %> r=<%= y %><% end %>
 <% template render() %>
 <% include a() %>
 <% include b(10) %>
 <% include b(integer) %>
 <% include c(10,"test") %>
 <% include c(integer,text) %>
-<% foreach x as data::master::integers_type::iterator in integers %><% separator %>,<% item %><% include b(x) %><% end %><% end %>
 <% end template %>
 <% end view %>
+<% view foreach_tmpl uses data::master %>
+<% template auto_test() %>
+<% c++ #ifdef __GNUC__ %>
+<% foreach x in integers %><% item %><%= x %><% end %><%end%>
+<% foreach x reverse in integers %><% item %><%= x %><% end %><%end%>
+<% c++ #endif %>
+<% end template %>
+<% template render() %><% c++ typedef data::master::integers_type::iterator it; typedef data::master::integers_type::reverse_iterator rit;  %>
+<% foreach x as it in integers %>{<% separator %>,<% item %><%= x %><% end %>}<%empty%>-<% end %>
+<% foreach x as rit reverse in integers %>{<% separator %>,<% item %><%= x %><% end %>}<%empty%>-<% end %>
+<% foreach x as it rowid y in integers %>{<% separator %>,<% item %><%= x %> <%= y %><% end %>}<%empty%>-<% end %>
+<% foreach x as rit rowid y reverse in integers %>{<% separator %>,<% item %><%= x %> <%= y %><% end %>}<%empty%>-<% end %>
+<% foreach x as it rowid y from 1 in integers %>{<% separator %>,<% item %><%= x %> <%= y %><% end %>}<%empty%>-<% end %>
+<% foreach x as rit rowid y from 1 reverse in integers %>{<% separator %>,<% item %><%= x %> <%= y %><% end %>}<%empty%>-<% end %>
 
+<% foreach x as it in integers %>{<% item %> <%= x %><% end %>}<%empty%>-<% end %>
+<% foreach x as rit reverse in integers %>{<% item %> <%= x %><% end %>}<%empty%>-<% end %>
+<% foreach x as it rowid y in integers %>{<% item %> <%= x %> <%= y %><% end %>}<%empty%>-<% end %>
+<% foreach x as rit rowid y reverse in integers %>{<% item %> <%= x %> <%= y %><% end %>}<%empty%>-<% end %>
+<% foreach x as it rowid y from 1 in integers %>{<% item %> <%= x %> <%= y %><% end %>}<%empty%>-<% end %>
+<% foreach x as rit rowid y from 1 reverse in integers %>{<% item %> <%= x %> <%= y %><% end %>}<%empty%>-<% end %>
+
+<% foreach x as it in integers %>{<% separator %>,<% item %><%= x %><% end %>}<% end %>
+<% foreach x as rit reverse in integers %>{<% separator %>,<% item %><%= x %><% end %>}<% end %>
+<% foreach x as it rowid y in integers %>{<% separator %>,<% item %><%= x %> <%= y %><% end %>}<% end %>
+<% foreach x as rit rowid y reverse in integers %>{<% separator %>,<% item %><%= x %> <%= y %><% end %>}<% end %>
+<% foreach x as it rowid y from 1 in integers %>{<% separator %>,<% item %><%= x %> <%= y %><% end %>}<% end %>
+<% foreach x as rit rowid y from 1 reverse in integers %>{<% separator %>,<% item %><%= x %> <%= y %><% end %>}<% end %>
+
+<% foreach x as it in integers %>{<% item %> <%= x %><% end %>}<% end %>
+<% foreach x as rit reverse in integers %>{<% item %> <%= x %><% end %>}<% end %>
+<% foreach x as it rowid y in integers %>{<% item %> <%= x %> <%= y %><% end %>}<% end %>
+<% foreach x as rit rowid y reverse in integers %>{<% item %> <%= x %> <%= y %><% end %>}<% end %>
+<% foreach x as it rowid y from 1 in integers %>{<% item %> <%= x %> <%= y %><% end %>}<% end %>
+<% foreach x as rit rowid y from 1 reverse in integers %>{<% item %> <%= x %> <%= y %><% end %>}<% end %>
+<% end %>
+<% end view %>
 <% view master_if uses data::master %>
 <% template render() %>
 <% if integer %>integer<%else%>!integer<% end %>
