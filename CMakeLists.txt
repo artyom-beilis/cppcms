@@ -637,7 +637,7 @@ endif(MSVC AND NOT DISABLE_STATIC)
 
 configure_file(config.cmake.h cppcms/config.h)
 
-set(CPPCMS_INSTALL_TARGETS ${CPPCMS_LIBS} cppcms_config_find_param)
+set(CPPCMS_INSTALL_TARGETS ${CPPCMS_LIBS} cppcms_config_find_param cppcms_make_key)
 if(NOT DISABLE_TCPCACHE)
 	set(CPPCMS_INSTALL_TARGETS ${CPPCMS_INSTALL_TARGETS} cppcms_scale)
 endif()
