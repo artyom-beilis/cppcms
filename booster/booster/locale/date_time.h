@@ -36,7 +36,7 @@ namespace booster {
         ///
         /// \brief This error is thrown in case of invalid state that occurred
         ///
-        class BOOSTER_SYMBOL_VISIBLE date_time_error : public booster::runtime_error {
+        class  date_time_error : public booster::runtime_error {
         public:
             ///
             /// Constructor of date_time_error class

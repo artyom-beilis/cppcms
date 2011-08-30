@@ -22,6 +22,7 @@ int main()
 #include <iomanip>
 #include "test_locale.h"
 #include "test_locale_tools.h"
+#include "../src/win32/lcid.h"
 #include <iostream>
 
 #include <time.h>
@@ -141,12 +142,12 @@ void test_by_char(std::locale const &l,std::string name,int lcid)
         ss << as::currency;
         ss << 1043.34;
         TEST(ss);
-		
-		wchar_t buf[256];
-		GetCurrencyFormatW(lcid,0,L"1043.34",0,buf,256);
         
-		TEST(equal(ss.str(),buf));
-	}
+        wchar_t buf[256];
+        GetCurrencyFormatW(lcid,0,L"1043.34",0,buf,256);
+        
+        TEST(equal(ss.str(),buf));
+    }
 
     {
         std::cout << "--- Testing as::date/time" << std::endl;
@@ -168,13 +169,13 @@ void test_by_char(std::locale const &l,std::string name,int lcid)
         ss << as::time_zone("GMT+00:15");
         ss << as::ftime(conv_to_char<CharType>("%M")) << a_datetime << CharType('\n');
 
-		wchar_t time_buf[256];
-		wchar_t date_buf[256];
-		
-		SYSTEMTIME st= { 1970, 2,5, 5,15,33,13,0 };
-		GetTimeFormatW(lcid,0,&st,0,time_buf,256);
-		GetDateFormatW(lcid,0,&st,0,date_buf,256);
-		TEST(equal(ss.str(),std::wstring(date_buf)+L"\n" + time_buf +L"\n" + date_buf + L" " + time_buf + L"\n16\n48\n"));
+        wchar_t time_buf[256];
+        wchar_t date_buf[256];
+        
+        SYSTEMTIME st= { 1970, 2,5, 5,15,33,13,0 };
+        GetTimeFormatW(lcid,0,&st,0,time_buf,256);
+        GetDateFormatW(lcid,0,&st,0,date_buf,256);
+        TEST(equal(ss.str(),std::wstring(date_buf)+L"\n" + time_buf +L"\n" + date_buf + L" " + time_buf + L"\n16\n48\n"));
 
     }
 
@@ -183,45 +184,45 @@ void test_by_char(std::locale const &l,std::string name,int lcid)
 
 void test_date_time(std::locale l)
 {
-	std::ostringstream ss;
-	ss.imbue(l);
+    std::ostringstream ss;
+    ss.imbue(l);
 
     ss << booster::locale::as::time_zone("GMT");
 
-	time_t a_date = 3600*24*(31+4); // Feb 5th
-	time_t a_time = 3600*15+60*33; // 15:33:13
-	time_t a_timesec = 13;
-	time_t a_datetime = a_date + a_time + a_timesec;
+    time_t a_date = 3600*24*(31+4); // Feb 5th
+    time_t a_time = 3600*15+60*33; // 15:33:13
+    time_t a_timesec = 13;
+    time_t a_datetime = a_date + a_time + a_timesec;
 
-	std::string pat[] = {
-		"a", "Thu",
-		"A", "Thursday",
-		"b", "Feb",
-		"B", "February",
-		"d", "05",
-		"D", "02/05/70",
-		"e", "5",
-		"h", "Feb",
-		"H", "15",
-		"I", "03",
-		"m", "02",
-		"M", "33",
-		"n", "\n",
-		"p", "PM",
-		"r", "03:33:13 PM",
-		"R", "15:33",
-		"S", "13",
-		"t", "\t",
-		"y", "70",
-		"Y", "1970",
-		"%", "%"
-	};
+    std::string pat[] = {
+        "a", "Thu",
+        "A", "Thursday",
+        "b", "Feb",
+        "B", "February",
+        "d", "05",
+        "D", "02/05/70",
+        "e", "5",
+        "h", "Feb",
+        "H", "15",
+        "I", "03",
+        "m", "02",
+        "M", "33",
+        "n", "\n",
+        "p", "PM",
+        "r", "03:33:13 PM",
+        "R", "15:33",
+        "S", "13",
+        "t", "\t",
+        "y", "70",
+        "Y", "1970",
+        "%", "%"
+    };
 
-	for(unsigned i=0;i<sizeof(pat)/sizeof(pat[0]);i+=2) {
-		ss.str("");
-		ss << booster::locale::as::ftime("%" + pat[i]) << a_datetime;
-		TEST(equal(ss.str(),pat[i+1]));
-	}
+    for(unsigned i=0;i<sizeof(pat)/sizeof(pat[0]);i+=2) {
+        ss.str("");
+        ss << booster::locale::as::ftime("%" + pat[i]) << a_datetime;
+        TEST(equal(ss.str(),pat[i+1]));
+    }
 }
 
 int main()
@@ -233,19 +234,23 @@ int main()
         booster::locale::generator gen;
         std::string name;
         std::string names[] = { "en_US.UTF-8", "he_IL.UTF-8", "ru_RU.UTF-8" };
-		int lcids[] = { 0x0409, 0x040D ,0x0419 };
+        int lcids[] = { 0x0409, 0x040D ,0x0419 };
 
         for(unsigned i=0;i<sizeof(names)/sizeof(names[9]);i++) {
             name = names[i];
             std::cout << "- " << name << " locale" << std::endl;
+            if(booster::locale::impl_win::locale_to_lcid(name) == 0) {
+                std::cout << "-- not supported, skipping" << std::endl;
+                continue;
+            }
             std::locale l1=gen(name);
             std::cout << "-- UTF-8" << std::endl;
             test_by_char<char>(l1,name,lcids[i]);
             std::cout << "-- UTF-16" << std::endl;
             test_by_char<wchar_t>(l1,name,lcids[i]);
         }
-		std::cout << "- Testing strftime" <<std::endl;
-		test_date_time(gen("en_US.UTF-8"));
+        std::cout << "- Testing strftime" <<std::endl;
+        test_date_time(gen("en_US.UTF-8"));
     }
     catch(std::exception const &e) {
         std::cerr << "Failed " << e.what() << std::endl;
@@ -259,3 +264,4 @@ int main()
 
 // vim: tabstop=4 expandtab shiftwidth=4 softtabstop=4
 
+// boostinspect:noascii 

@@ -77,26 +77,20 @@ int main()
     std::cout << "  LC_ALL="<< env("LC_ALL") << std::endl;
     std::cout << "  LC_CTYPE="<< env("LC_CTYPE") << std::endl;
     std::cout << "  TZ="<< env("TZ") << std::endl;
-    std::cout << "- Detected Boost locale: ";
-    try {
-        booster::locale::generator gen;
-        std::locale l = gen("");
-        std::cout << std::use_facet<booster::locale::info>(l).name() << std::endl;
-    }
-    catch(std::exception const &) {
-        std::cout << " undetected" << std::endl;
-    }
+
     char const *clocale=setlocale(LC_ALL,"");
     if(!clocale)
         clocale= "undetected";
-    std::cout <<"- Detected C locale: " << clocale << std::endl;
+    std::cout <<"- C locale: " << clocale << std::endl;
+
     try {
         std::locale loc("");
-        std::cout << "- Detected C++ locale: " << loc.name() << std::endl;
+        std::cout << "- C++ locale: " << loc.name() << std::endl;
     }
     catch(std::exception const &) {
-        std::cout << "- Detected C++ locale: is not supported" << std::endl;
+        std::cout << "- C++ locale: is not supported" << std::endl;
     }
+
     char const *locales_to_check[] = {
         "en_US.UTF-8", "en_US.ISO8859-1", "English_United States.1252",
         "he_IL.UTF-8", "he_IL.ISO8859-8", "Hebrew_Israel.1255",
@@ -107,6 +101,7 @@ int main()
     };
     std::cout << "- Testing locales availability on the operation system:" << std::endl;
     check_locale(locales_to_check);
+
     std::cout << "- Testing timezone and time " << std::endl;
     {
         setlocale(LC_ALL,"C");
@@ -117,7 +112,19 @@ int main()
         strftime(buf,sizeof(buf),"%%c=%c; %%Z=%Z; %%z=%z",gmtime(&now));
         std::cout << "  Universal Time:" << buf << std::endl;
     }
+    std::cout << "- Boost.Locale's locale: ";
+    try {
+        booster::locale::generator gen;
+        std::locale l = gen("");
+        std::cout << std::use_facet<booster::locale::info>(l).name() << std::endl;
+    }
+    catch(std::exception const &) {
+        std::cout << " undetected" << std::endl;
+        return EXIT_FAILURE;
+    }
+    return EXIT_SUCCESS;
 
 }
 
 // vim: tabstop=4 expandtab shiftwidth=4 softtabstop=4
+// boostinspect:noascii 

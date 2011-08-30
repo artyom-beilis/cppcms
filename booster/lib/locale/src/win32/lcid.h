@@ -9,12 +9,13 @@
 #define BOOSTER_LOCALE_IMPL_WIN32_LCID_HPP
 
 #include <string>
+#include <booster/config.h>
 
 namespace booster {
     namespace locale {
         namespace impl_win {
 
-            unsigned locale_to_lcid(std::string const &locale_name);
+            BOOSTER_API unsigned locale_to_lcid(std::string const &locale_name);
 
         } // impl_win
     } // locale

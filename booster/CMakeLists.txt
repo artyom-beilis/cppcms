@@ -600,6 +600,7 @@ add_booster_test(locale codepage_converter)
 add_booster_test(locale date_time)
 add_booster_test(locale generator)
 add_booster_test(locale config)
+add_booster_test(locale utf)
 
 if(NOT DISABLE_ICU_LOCALE)
 	add_booster_test(locale collate)

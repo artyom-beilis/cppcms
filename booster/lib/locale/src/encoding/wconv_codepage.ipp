@@ -31,6 +31,7 @@ namespace impl {
     struct windows_encoding {
         char const *name;
         unsigned codepage;
+        unsigned was_tested;
     };
 
     bool operator<(windows_encoding const &l,windows_encoding const &r)
@@ -39,50 +40,50 @@ namespace impl {
     }
 
     windows_encoding all_windows_encodings[] = {
-        { "big5",       950 },
-        { "cp1250",     1250 },
-        { "cp1251",     1251 },
-        { "cp1252",     1252 },
-        { "cp1253",     1253 },
-        { "cp1254",     1254 },
-        { "cp1255",     1255 },
-        { "cp1256",     1256 },
-        { "cp1257",     1257 },
-        { "cp874",      874 },
-        { "cp932",      932 },
-        { "eucjp",      20932 },
-        { "euckr",      51949 },
-        { "gb18030",    54936 },
-        { "gb2312",     936 },
-        { "iso2022jp",  50220 },
-        { "iso2022kr",  50225 },
-        { "iso88591",   28591 },
-        { "iso885913",  28603 },
-        { "iso885915",  28605 },
-        { "iso88592",   28592 },
-        { "iso88593",   28593 },
-        { "iso88594",   28594 },
-        { "iso88595",   28595 },
-        { "iso88596",   28596 },
-        { "iso88597",   28597 },
-        { "iso88598",   28598 },
-        { "iso88599",   28599 },
-        { "koi8r",      20866 },
-        { "koi8u",      21866 },
-        { "shiftjis",   932 },
-        { "sjis",       932 },
-        { "usascii",    20127 },
-        { "utf8",       65001 },
-        { "windows1250",        1250 },
-        { "windows1251",        1251 },
-        { "windows1252",        1252 },
-        { "windows1253",        1253 },
-        { "windows1254",        1254 },
-        { "windows1255",        1255 },
-        { "windows1256",        1256 },
-        { "windows1257",        1257 },
-        { "windows874",         874 },
-        { "windows932",         932 },
+        { "big5",       950, 0 },
+        { "cp1250",     1250, 0 },
+        { "cp1251",     1251, 0 },
+        { "cp1252",     1252, 0 },
+        { "cp1253",     1253, 0 },
+        { "cp1254",     1254, 0 },
+        { "cp1255",     1255, 0 },
+        { "cp1256",     1256, 0 },
+        { "cp1257",     1257, 0 },
+        { "cp874",      874, 0 },
+        { "cp932",      932, 0 },
+        { "eucjp",      20932, 0 },
+        { "euckr",      51949, 0 },
+        { "gb18030",    54936, 0 },
+        { "gb2312",     936, 0 },
+        { "iso2022jp",  50220, 0 },
+        { "iso2022kr",  50225, 0 },
+        { "iso88591",   28591, 0 },
+        { "iso885913",  28603, 0 },
+        { "iso885915",  28605, 0 },
+        { "iso88592",   28592, 0 },
+        { "iso88593",   28593, 0 },
+        { "iso88594",   28594, 0 },
+        { "iso88595",   28595, 0 },
+        { "iso88596",   28596, 0 },
+        { "iso88597",   28597, 0 },
+        { "iso88598",   28598, 0 },
+        { "iso88599",   28599, 0 },
+        { "koi8r",      20866, 0 },
+        { "koi8u",      21866, 0 },
+        { "shiftjis",   932, 0 },
+        { "sjis",       932, 0 },
+        { "usascii",    20127, 0 },
+        { "utf8",       65001, 0 },
+        { "windows1250",        1250, 0 },
+        { "windows1251",        1251, 0 },
+        { "windows1252",        1252, 0 },
+        { "windows1253",        1253, 0 },
+        { "windows1254",        1254, 0 },
+        { "windows1255",        1255, 0 },
+        { "windows1256",        1256, 0 },
+        { "windows1257",        1257, 0 },
+        { "windows874",         874, 0 },
+        { "windows932",         932, 0 },
     };
 
     size_t remove_substitutions(std::vector<wchar_t> &v)
@@ -181,7 +182,18 @@ namespace impl {
         windows_encoding *end = all_windows_encodings + n;
         windows_encoding *ptr = std::lower_bound(begin,end,ref);
         if(ptr!=end && strcmp(ptr->name,charset.c_str())==0) {
-            return ptr->codepage;
+            if(ptr->was_tested) {
+                return ptr->codepage;
+            }
+            else if(IsValidCodePage(ptr->codepage)) {
+                // the thread safety is not an issue, maximum
+                // it would be checked more then once
+                ptr->was_tested=1;
+                return ptr->codepage;
+            }
+            else {
+                return -1;
+            }
         }
         return -1;
         
@@ -190,19 +202,11 @@ namespace impl {
     template<typename CharType>
     bool validate_utf16(CharType const *str,unsigned len)
     {
-        for(unsigned i=0;i<len;i++) {
-            uint16_t c = static_cast<uint16_t>(str[i]);
-
-            if(0xD800 <= c && c<= 0xDBFF) {
-                i++;
-                if(i>=len)
-                    return false;
-                c=static_cast<uint16_t>(str[i]);
-                if(0xDC00 <= c && c <= 0xDFFF)
-                    continue;
-                return false;
-            }
-            else if(0xDC00 <= c && c <=0xDFFF)
+        CharType const *begin = str;
+        CharType const *end = str+len;
+        while(begin!=end) {
+            utf::code_point c = utf::utf_traits<CharType,2>::template decode<CharType const *>(begin,end);
+            if(c==utf::illegal || c==utf::incomplete)
                 return false;
         }
         return true;
@@ -424,30 +428,10 @@ namespace impl {
             multibyte_to_wide(code_page_,begin,end,how_ == skip,buf);
             remove_substitutions(buf);
 
-            size_t n=buf.size();
-            string_type res;
-            res.reserve(n);
-            for(unsigned i=0;i<n;i++) {
-                wchar_t cur = buf[i];
-                if(0xD800 <= cur && cur<= 0xDBFF) {
-                    i++;
-                    if(i>=n)
-                        throw conversion_error();
-                    if(0xDC00 <= buf[i] && buf[i]<=0xDFFF) {
-                        uint32_t w1 = cur;
-                        uint32_t w2 = buf[i];
-                        uint32_t norm = ((uint32_t(w1 & 0x3FF) << 10) | (w2 & 0x3FF)) + 0x10000;
-                        res+=char_type(norm);
-                    }
-                    else 
-                        throw conversion_error();
-                }
-                else if(0xDC00 <= cur && cur<=0xDFFF)
-                    throw conversion_error();
-                else
-                    res+=char_type(cur);
-            }
-            return res;
+            if(buf.empty())
+                return string_type();
+
+            return utf_to_utf<CharType>(&buf[0],&buf[0]+buf.size(),how_);
         }
     private:
         method_type how_;
@@ -476,27 +460,7 @@ namespace impl {
 
         virtual std::string convert(CharType const *begin,CharType const *end) 
         {
-            std::wstring tmp;
-            tmp.reserve(end-begin);
-            while(begin!=end) {
-                uint32_t cur = *begin++;
-                if(cur > 0x10FFFF  || (0xD800 <=cur && cur <=0xDFFF)) {
-                    if(how_ == skip)
-                        continue;
-                    else
-                        throw conversion_error();
-                }
-                if(cur > 0xFFFF) {
-                    uint32_t u = cur - 0x10000;
-                    wchar_t first  = 0xD800 | (u>>10);
-                    wchar_t second = 0xDC00 | (u & 0x3FF);
-                    tmp+=first;
-                    tmp+=second;
-                }
-                else {
-                    tmp+=wchar_t(cur);
-                }
-            }
+            std::wstring tmp = utf_to_utf<wchar_t>(begin,end,how_);
 
             std::vector<char> ctmp;
             wide_to_multibyte(code_page_,tmp.c_str(),tmp.c_str()+tmp.size(),how_ == skip,ctmp);

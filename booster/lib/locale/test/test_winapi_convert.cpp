@@ -86,10 +86,10 @@ int main()
         std::cout << "Testing Unicode normalization" << std::endl;
         test_norm("\xEF\xAC\x81","\xEF\xAC\x81",booster::locale::norm_nfd); /// ligature fi
         test_norm("\xEF\xAC\x81","\xEF\xAC\x81",booster::locale::norm_nfc);
-		#if defined(_WIN32_NT) && _WIN32_NT >= 0x600
+        #if defined(_WIN32_NT) && _WIN32_NT >= 0x600
         test_norm("\xEF\xAC\x81","fi",booster::locale::norm_nfkd);
         test_norm("\xEF\xAC\x81","fi",booster::locale::norm_nfkc);
-		#endif
+        #endif
         test_norm("ä","ä",booster::locale::norm_nfd); // ä to a and accent
         test_norm("ä","ä",booster::locale::norm_nfc);
     }
@@ -105,3 +105,4 @@ int main()
 // vim: tabstop=4 expandtab shiftwidth=4 softtabstop=4
 
 
+// boostinspect:noascii 

@@ -210,7 +210,7 @@ public:
     {
         while(begin!=end) {
             char c= *begin++;
-            mask r=0;
+            mask r=mask();
             if(isspace_l(c,*lc_))
                 r|=space;
             if(isprint_l(c,*lc_))
@@ -305,7 +305,7 @@ public:
     {
         while(begin!=end) {
             wchar_t c= *begin++;
-            mask r=0;
+            mask r=mask();
             if(iswspace_l(c,*lc_))
                 r|=space;
             if(iswprint_l(c,*lc_))

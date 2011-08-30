@@ -25,9 +25,9 @@ namespace booster {
         {
             return ptr(d,in,insize,out,outsize);
         }
-        inline size_t iconv(iconv_t d,char **in,size_t *insize,char **out,size_t *outsize)
+        inline size_t call_iconv(iconv_t d,char **in,size_t *insize,char **out,size_t *outsize)
         {
-            return do_iconv( :: iconv, d, in,insize,out,outsize);
+            return do_iconv( iconv, d, in,insize,out,outsize);
         }
 
     } // locale 

@@ -281,3 +281,4 @@ int main()
 #endif // posix
 // vim: tabstop=4 expandtab shiftwidth=4 softtabstop=4
 
+// boostinspect:noascii 

@@ -51,143 +51,30 @@ namespace util {
 
         virtual uint32_t to_unicode(char const *&begin,char const *end)
         {
-            unsigned char const *p=reinterpret_cast<unsigned char const *>(begin);
-            unsigned char const *e=reinterpret_cast<unsigned char const *>(end);
-            if(p==e)
+            char const *p=begin;
+                        
+            utf::code_point c = utf::utf_traits<char>::decode(p,end);
+
+            if(c==utf::illegal)
+                return illegal;
+
+            if(c==utf::incomplete)
                 return incomplete;
-            unsigned char c=*p++;
-            unsigned char seq0,seq1=0,seq2=0,seq3=0;
-            seq0=c;
-            int len=1;
-            if((c & 0xC0) == 0xC0) {
-                if(p==e)
-                    return incomplete;
-                seq1=*p++;
-                len=2;
-            }
-            if((c & 0xE0) == 0xE0) {
-                if(p==e)
-                    return incomplete;
-                seq2=*p++;
-                len=3;
-            }
-            if((c & 0xF0) == 0xF0) {
-                if(p==e)
-                    return incomplete;
-                seq3=*p++;
-                len=4;
-            }
-            switch(len) {
-            case 1:
-                if(seq0 <= 0x7F)
-                    break;
-                return illegal;
-            case 2: // non-overloading 2 bytes
-                if( 0xC2 <= seq0 && seq0 <= 0xDF
-                    && 0x80 <= seq1 && seq1<= 0xBF)
-                {
-                        break;
-                }
-                return illegal;
-            case 3: 
-                if(seq0==0xE0) { // exclude overloading
-                    if(0xA0 <=seq1 && seq1<= 0xBF && 0x80 <=seq2 && seq2<=0xBF)
-                        break;
-                }
-                else if( (0xE1 <= seq0 && seq0 <=0xEC) || seq0==0xEE || seq0==0xEF) { // stright 3 bytes
-                    if(0x80 <=seq1 && seq1<=0xBF &&
-                       0x80 <=seq2 && seq2<=0xBF)
-                        break;
-                }
-                else if(seq0 == 0xED) { // exclude surrogates
-                    if( 0x80 <=seq1 && seq1<=0x9F &&
-                        0x80 <=seq2 && seq2<=0xBF)
-                        break;
-                }
-                return illegal;
-            case 4:
-                switch(seq0) {
-                case 0xF0: // planes 1-3
-                    if( 0x90 <=seq1 && seq1<=0xBF &&
-                        0x80 <=seq2 && seq2<=0xBF &&
-                        0x80 <=seq3 && seq3<=0xBF)
-                        break;
-                    return illegal;
-                case 0xF1: // planes 4-15
-                case 0xF2:
-                case 0xF3:
-                    if( 0x80 <=seq1 && seq1<=0xBF &&
-                        0x80 <=seq2 && seq2<=0xBF &&
-                        0x80 <=seq3 && seq3<=0xBF)
-                        break;
-                    return illegal;
-                case 0xF4: // pane 16
-                    if( 0x80 <=seq1 && seq1<=0x8F &&
-                        0x80 <=seq2 && seq2<=0xBF &&
-                        0x80 <=seq3 && seq3<=0xBF)
-                        break;
-                    return illegal;
-                default:
-                    return illegal;
-                }
-            }
-            begin=reinterpret_cast<char const *>(p);
-            switch(len) {
-            case 1:
-                return seq0;
-            case 2:
-                return ((seq0 & 0x1F) << 6) | (seq1 & 0x3F);
-            case 3:
-                return ((seq0 & 0x0F) << 12) | ((seq1 & 0x3F) << 6) | (seq2 & 0x3F)  ;
-            default: // can be only 4
-                return ((seq0 & 0x07) << 18) | ((seq1 & 0x3F) << 12) | ((seq2 & 0x3F) << 6) | (seq3 & 0x3F) ;
-            }
+
+            begin = p;
+            return c;
         }
+
         virtual uint32_t from_unicode(uint32_t u,char *begin,char const *end) 
         {
-            if(u>0x10ffff)
+            if(!utf::is_valid_codepoint(u))
                 return illegal;
-            if(0xd800 <=u && u<= 0xdfff) // surrogates
-                return illegal;
+            int width = utf::utf_traits<char>::width(u);
             ptrdiff_t d=end-begin;
-            if(u <=0x7F) { 
-                if(d>=1) {
-                    *begin++=u;
-                    return 1;
-                }
-                else
-                    return incomplete;
-            }
-            else if(u <= 0x7FF) {
-                if(d>=2) {
-                    *begin++=(u >> 6) | 0xC0;
-                    *begin++=(u & 0x3F) | 0x80;
-                    return 2;
-                }
-                else
-                    return incomplete;
-            }
-            else if(u <= 0xFFFF) {
-                if(d>=3) {
-                    *begin++=(u >> 12) | 0xE0;
-                    *begin++=((u >> 6) & 0x3F) | 0x80;
-                    *begin++=(u & 0x3F) | 0x80;
-                    return 3;
-                }
-                else
-                    return incomplete;
-            }
-            else {
-                if(d>=4) {
-                    *begin++=(u >> 18) | 0xF0;
-                    *begin++=((u >> 12) & 0x3F) | 0x80;
-                    *begin++=((u >> 6) & 0x3F) | 0x80;
-                    *begin++=(u & 0x3F) | 0x80;
-                    return 4;
-                }
-                else
-                    return incomplete;
-            }
+            if(d < width)
+                return incomplete;
+            utf::utf_traits<char>::encode(u,begin);
+            return width;
         }
     }; // utf8_converter
 

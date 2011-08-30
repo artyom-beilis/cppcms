@@ -37,7 +37,7 @@ public:
                 char **outbuf,size_t *outchar_left)
     {
         char **inbuf = const_cast<char **>(inbufc);
-        return iconv(cvt_,inbuf,inchar_left,outbuf,outchar_left);
+        return call_iconv(cvt_,inbuf,inchar_left,outbuf,outchar_left);
     }
 
     bool open(char const *to,char const *from,method_type how)

@@ -10,6 +10,7 @@
 #include <booster/locale/generator.h>
 #include <booster/locale/localization_backend.h>
 #include <booster/locale/info.h>
+#include <booster/config.h>
 #include <fstream>
 #include "test_locale.h"
 #include "test_locale_tools.h"
@@ -22,7 +23,16 @@
 # include <locale.h>
 #endif
 
+#if !defined(BOOSTER_LOCALE_WITH_ICU) && !defined(BOOSTER_LOCALE_WITH_ICONV) && (defined(BOOSTER_WIN_NATIVE) || defined(__CYGWIN__))
+#ifndef NOMINMAX
+# define NOMINMAX
+#endif
+#include <windows.h>
+#endif
+
+
 bool test_iso;
+bool test_iso_8859_8 = true;
 bool test_utf;
 bool test_sjis;
 
@@ -125,8 +135,10 @@ void test_for_char()
     }
     
     if(test_iso) {
-        std::cout << "    ISO8859-8" << std::endl;
-        test_ok<Char>("hello \xf9\xec\xe5\xed",g(he_il_8bit),to<Char>("hello שלום"));
+        if(test_iso_8859_8) {
+            std::cout << "    ISO8859-8" << std::endl;
+            test_ok<Char>("hello \xf9\xec\xe5\xed",g(he_il_8bit),to<Char>("hello שלום"));
+        }
         std::cout << "    ISO8859-1" << std::endl;
         test_ok<Char>(to<char>("grüße\nn i"),g(en_us_8bit),to<Char>("grüße\nn i"));
         test_wfail<Char>("grüßen שלום",g(en_us_8bit),7);
@@ -302,7 +314,8 @@ template<typename Char>
 void test_to()
 {
     test_pos<Char>(to<char>("grüßen"),utf<Char>("grüßen"),"ISO8859-1");
-    test_pos<Char>("\xf9\xec\xe5\xed",utf<Char>("שלום"),"ISO8859-8");
+    if(test_iso_8859_8)
+        test_pos<Char>("\xf9\xec\xe5\xed",utf<Char>("שלום"),"ISO8859-8");
     test_pos<Char>("grüßen",utf<Char>("grüßen"),"UTF-8");
     test_pos<Char>("abc\"\xf0\xa0\x82\x8a\"",utf<Char>("abc\"\xf0\xa0\x82\x8a\""),"UTF-8");
     
@@ -328,6 +341,10 @@ int main()
         #endif
         #ifndef BOOSTER_LOCALE_NO_POSIX_BACKEND
         def.push_back("posix");
+        #endif
+
+        #if !defined(BOOSTER_LOCALE_WITH_ICU) && !defined(BOOSTER_LOCALE_WITH_ICONV) && (defined(BOOSTER_WIN_NATIVE) || defined(__CYGWIN__))
+        test_iso_8859_8 = IsValidCodePage(28598)!=0;
         #endif
         
         
@@ -438,3 +455,4 @@ int main()
 }
 
 // vim: tabstop=4 expandtab shiftwidth=4 softtabstop=4
+// boostinspect:noascii 

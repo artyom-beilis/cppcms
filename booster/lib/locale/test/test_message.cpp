@@ -252,12 +252,12 @@ void test_cntranslate(std::string c,std::string s,std::string p,int n,std::strin
     strings_equal<char>(c,s,p,n,expected,l,domain);
     strings_equal<wchar_t>(c,s,p,n,expected,l,domain);
     #ifdef BOOSTER_HAS_CHAR16_T
-	if(backend=="icu" || backend=="std")
-		strings_equal<char16_t>(c,s,p,n,expected,l,domain);
+    if(backend=="icu" || backend=="std")
+        strings_equal<char16_t>(c,s,p,n,expected,l,domain);
     #endif
     #ifdef BOOSTER_HAS_CHAR32_T
-	if(backend=="icu" || backend=="std")
-		strings_equal<char32_t>(c,s,p,n,expected,l,domain);
+    if(backend=="icu" || backend=="std")
+        strings_equal<char32_t>(c,s,p,n,expected,l,domain);
     #endif
 }
 
@@ -267,12 +267,12 @@ void test_ntranslate(std::string s,std::string p,int n,std::string expected,std:
     strings_equal<char>(s,p,n,expected,l,domain);
     strings_equal<wchar_t>(s,p,n,expected,l,domain);
     #ifdef BOOSTER_HAS_CHAR16_T
-	if(backend=="icu" || backend=="std")
-		strings_equal<char16_t>(s,p,n,expected,l,domain);
+    if(backend=="icu" || backend=="std")
+        strings_equal<char16_t>(s,p,n,expected,l,domain);
     #endif
     #ifdef BOOSTER_HAS_CHAR32_T
     if(backend=="icu" || backend=="std")
-		strings_equal<char32_t>(s,p,n,expected,l,domain);
+        strings_equal<char32_t>(s,p,n,expected,l,domain);
     #endif
 }
 
@@ -282,11 +282,11 @@ void test_ctranslate(std::string c,std::string original,std::string expected,std
     strings_equal<wchar_t>(c,original,expected,l,domain);
     #ifdef BOOSTER_HAS_CHAR16_T
     if(backend=="icu" || backend=="std")
-		strings_equal<char16_t>(c,original,expected,l,domain);
+        strings_equal<char16_t>(c,original,expected,l,domain);
     #endif
     #ifdef BOOSTER_HAS_CHAR32_T
     if(backend=="icu" || backend=="std")
-	    strings_equal<char32_t>(c,original,expected,l,domain);
+        strings_equal<char32_t>(c,original,expected,l,domain);
     #endif
 }
 
@@ -298,14 +298,15 @@ void test_translate(std::string original,std::string expected,std::locale const 
     strings_equal<wchar_t>(original,expected,l,domain);
     #ifdef BOOSTER_HAS_CHAR16_T
     if(backend=="icu" || backend=="std")
-	    strings_equal<char16_t>(original,expected,l,domain);
+        strings_equal<char16_t>(original,expected,l,domain);
     #endif
     #ifdef BOOSTER_HAS_CHAR32_T
     if(backend=="icu" || backend=="std")
-	    strings_equal<char32_t>(original,expected,l,domain);
+        strings_equal<char32_t>(original,expected,l,domain);
     #endif
 }
 
+bool iso_8859_8_not_supported = false;
 
 
 int main(int argc,char **argv)
@@ -324,13 +325,13 @@ int main(int argc,char **argv)
         #ifndef BOOSTER_LOCALE_NO_WINAPI_BACKEND
             "winapi",
         #endif
-		};
+        };
         for(int type = 0 ; type < int(sizeof(def)/sizeof(def[0])) ; type ++ ) {
             booster::locale::localization_backend_manager tmp_backend = booster::locale::localization_backend_manager::global();
             tmp_backend.select(def[type]);
             booster::locale::localization_backend_manager::global(tmp_backend);
-			
-			backend = def[type];
+            
+            backend = def[type];
             
             std::cout << "Testing for backend --------- " << def[type] << std::endl;
 
@@ -348,7 +349,21 @@ int main(int argc,char **argv)
             std::string locales[] = { "he_IL.UTF-8", "he_IL.ISO8859-8" };
 
             for(unsigned i=0;i<sizeof(locales)/sizeof(locales[0]);i++){
-                std::locale l=g(locales[i]);
+                std::locale l;
+                
+                if(i==1) {
+                    try {
+                        l = g(locales[i]);
+                    }
+                    catch(booster::locale::conv::invalid_charset_error const &e) {
+                        std::cout << "Looks like ISO-8859-8 is not supported! skipping" << std::endl;
+                        iso_8859_8_not_supported = true;
+                        continue;
+                    }
+                }
+                else {
+                        l = g(locales[i]);
+                }
                 
                 std::cout << "  Testing "<<locales[i]<<std::endl;
                 std::cout << "    single forms" << std::endl;
@@ -406,13 +421,13 @@ int main(int argc,char **argv)
             TEST(same_w(bl::translate(to<wchar_t>("hello")))==to<wchar_t>("שלום"));
             
             #ifdef BOOSTER_HAS_CHAR16_T
-			if(backend=="icu" || backend=="std")
-				TEST(same_u16(bl::translate(to<char16_t>("hello")))==to<char16_t>("שלום"));
+            if(backend=="icu" || backend=="std")
+                TEST(same_u16(bl::translate(to<char16_t>("hello")))==to<char16_t>("שלום"));
             #endif
             
             #ifdef BOOSTER_HAS_CHAR32_T
-			if(backend=="icu" || backend=="std")
-				TEST(same_u32(bl::translate(to<char32_t>("hello")))==to<char32_t>("שלום"));
+            if(backend=="icu" || backend=="std")
+                TEST(same_u32(bl::translate(to<char32_t>("hello")))==to<char32_t>("שלום"));
             #endif
 
         }
@@ -435,8 +450,13 @@ int main(int argc,char **argv)
             TEST(file_loader_is_actually_called);
             TEST(bl::translate("hello").str(l)=="שלום");
         }
-        std::cout << "Testing non-US-ASCII keys" << std::endl; 
+        if(iso_8859_8_not_supported)
         {
+            std::cout << "ISO 8859-8 not supported so skipping non-US-ASCII keys" << std::endl; 
+        }
+        else 
+        {
+            std::cout << "Testing non-US-ASCII keys" << std::endl; 
             std::cout << "  UTF-8 keys" << std::endl; 
             {
                 booster::locale::generator g;
@@ -512,3 +532,4 @@ int main(int argc,char **argv)
 }
 
 // vim: tabstop=4 expandtab shiftwidth=4 softtabstop=4
+// boostinspect:noascii 

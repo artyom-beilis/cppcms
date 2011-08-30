@@ -1,8 +1,15 @@
 #!/bin/bash
 
 # 
+if [ a == b ] ; then
 rm -fr trunk
-svn export https://cppcms.svn.sourceforge.net/svnroot/cppcms/boost_locale/trunk
+mkdir -p trunk/boost
+mkdir -p trunk/libs
+URL=https://svn.boost.org/svn/boost/trunk
+svn export $URL/boost/locale  trunk/boost/locale
+svn export $URL/boost/locale.hpp  trunk/boost/locale.hpp
+svn export $URL/libs/locale trunk/libs/locale
+fi
 # 
 
 rm -fr boost_locale
@@ -25,8 +32,10 @@ find boost_locale -regextype posix-extended -regex '.*\.(cpp|h|ipp)' -exec sed -
 find boost_locale -regextype posix-extended -regex '.*\.(cpp|h|ipp)' -exec sed -i 's/.hpp>/.h>/' '{}' \;
 find boost_locale -regextype posix-extended -regex '.*\.(cpp|h|ipp)' -exec sed -i 's/.hpp"/.h"/' '{}' \;
 find boost_locale -regextype posix-extended -regex '.*\.(cpp|h|ipp)' -exec sed -i 's/booster\/locale\/config.h/booster\/config.h/' '{}' \;
+find boost_locale -regextype posix-extended -regex '.*\.(cpp|h|ipp)' -exec sed -i 's/booster\/locale\/definitions.h/booster\/config.h/' '{}' \;
 find boost_locale -regextype posix-extended -regex '.*\.(cpp|h|ipp)' -exec sed -i 's/booster\/thread\/mutex.h/booster\/thread.h/' '{}' \;
 find boost_locale -regextype posix-extended -regex '.*\.(cpp|h|ipp)' -exec sed -i 's/BOOSTER_LOCALE_DECL/BOOSTER_API/' '{}' \;
+find boost_locale -regextype posix-extended -regex '.*\.(cpp|h|ipp)' -exec sed -i 's/BOOSTER_SYMBOL_VISIBLE//' '{}' \;
 find boost_locale -regextype posix-extended -regex '.*\.(cpp|h|ipp)' -exec sed -i 's/BOOSTER_LOCALE_SOURCE/BOOSTER_SOURCE/' '{}' \;
 find boost_locale -regextype posix-extended -regex '.*\.(cpp|h|ipp)' -exec sed -i 's/BOOSTER_WINDOWS/BOOSTER_WIN_NATIVE/' '{}' \;
 find boost_locale -regextype posix-extended -regex '.*\.(cpp|h|ipp)' -exec sed -i 's/<stdexcept>/<booster\/backtrace.h>/' '{}' \;
@@ -43,5 +52,6 @@ mkdir -p booster/lib/locale
 cp -a boost_locale/libs/locale/examples/  boost_locale/libs/locale/src/ boost_locale/libs/locale/test/ booster/lib/locale/
 cp -a boost_locale/booster booster/
 rm booster/booster/locale/config.h
-
+rm booster/booster/locale/definitions.h
+rm lib/locale/test/Jamfile.v2
 
