@@ -1,7 +1,6 @@
 #!/bin/bash
 
 # 
-if [ a == b ] ; then
 rm -fr trunk
 mkdir -p trunk/boost
 mkdir -p trunk/libs
@@ -9,7 +8,6 @@ URL=https://svn.boost.org/svn/boost/trunk
 svn export $URL/boost/locale  trunk/boost/locale
 svn export $URL/boost/locale.hpp  trunk/boost/locale.hpp
 svn export $URL/libs/locale trunk/libs/locale
-fi
 # 
 
 rm -fr boost_locale
