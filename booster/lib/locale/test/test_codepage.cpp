@@ -87,8 +87,15 @@ void test_rfail(std::string file,std::locale const &l,int pos)
     stream_type f1("testi.txt",stream_type::in);
     f1.imbue(l);
     Char c;
-    for(int i=0;i<pos;i++)
-        TEST(f1.get(c));
+    for(int i=0;i<pos;i++) {
+        f1.get(c);
+        if(f1.fail()) { // failed before as detected errors at forward;
+            return;
+        }
+        TEST(f1);
+    }
+    // if the pos above suceed, at this point
+    // it MUST fail
     TEST(f1.get(c).fail());
 }
 
