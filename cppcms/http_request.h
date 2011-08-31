@@ -263,6 +263,16 @@ namespace http {
 		///
 		cookie const &cookie_by_name(std::string const &name);
 		///
+		/// Fetch GET value by name, if name not exists or more then one
+		/// entry with same name exists, empty string is returned
+		///
+		std::string get(std::string const &name);
+		///
+		/// Fetch POST value by name, if name not exists or more then one
+		/// entry with same name exists, empty string is returned
+		///
+		std::string post(std::string const &name);
+		///
 		/// form-data GET part of request
 		///
 		form_type const &get();

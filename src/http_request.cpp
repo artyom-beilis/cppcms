@@ -322,6 +322,24 @@ cookie const &request::cookie_by_name(std::string const &name)
 	else
 		return p->second;
 }
+
+std::string request::get(std::string const &name)
+{
+	std::pair<form_type::iterator,form_type::iterator> pair = get_.equal_range(name);
+	form_type::iterator p = pair.first;
+	if(pair.first == pair.second || ++pair.first != pair.second)
+		return std::string();
+	return p->second;
+}
+
+std::string request::post(std::string const &name)
+{
+	std::pair<form_type::iterator,form_type::iterator> pair = post_.equal_range(name);
+	form_type::iterator p = pair.first;
+	if(pair.first == pair.second || ++pair.first != pair.second)
+		return std::string();
+	return p->second;
+}
 		
 request::form_type const &request::get()
 {
