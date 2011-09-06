@@ -22,7 +22,11 @@ struct info_form : public cppcms::form {
         marital.message("Marital Status");
         age.message("Your Age");
         submit.value("Send");
-        *this + name + sex + marital + age + submit;
+        add(name);
+        add(sex);
+        add(marital);
+        add(age);
+        add(submit);
         sex.add("Male","male");
         sex.add("Female","female");
         marital.add("Single","single");

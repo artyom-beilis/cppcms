@@ -22,7 +22,11 @@ struct info_form : public cppcms::form {
         martial.message("Martial State");
         age.message("Your Age");
         submit.value("Send");
-        *this + name + sex + martial + age + submit;
+        add(name);
+        add(sex);
+        add(martial);
+        add(age);
+        add(submit);
         sex.add("Male","m");
         sex.add("Female","f");
         martial.add("Single","s");

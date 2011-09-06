@@ -15,7 +15,9 @@ reply_form::reply_form()
 	author.message(translate("Author"));
 	comment.message(translate("Comment"));
 	send.value(translate("Send"));
-	*this + author + comment + send;
+	add(author);
+	add(comment);
+	add(send);
 	author.limits(1,64);
 	comment.limits(1,256);
 }

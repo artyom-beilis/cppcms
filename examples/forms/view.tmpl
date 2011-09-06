@@ -5,9 +5,9 @@
 <html>
     <body>
     <% if not empty name %>
-	    <h1>Hello <% name %></h1>
-	    <p>You are <% sex %>, <% state %></p>
-	    <p>Your age is <% age %></p>
+	    <h1>Hello <%= name %></h1>
+	    <p>You are <%= sex %>, <%= state %></p>
+	    <p>Your age is <%= age %></p>
     <% else %>
     	<h1>Input your details</h1>
     <% end %>

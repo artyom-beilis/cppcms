@@ -17,7 +17,8 @@ struct input_form : public cppcms::form {
     {
         arg.message("N");
         submit.value("Calc");
-        *this + arg + submit;
+        add(arg);
+        add(submit);
         arg.non_empty();
     }
 };
