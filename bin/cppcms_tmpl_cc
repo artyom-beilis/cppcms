@@ -543,7 +543,7 @@ class filters_show_block(base_show):
     pattern=r'^<%(=)?\s*('+ variable_match + r'\s*(\|.*)?)%>$'
     def use(self,m):
         if not m.group(1):
-            warning("Variables syntax like <% foo %> is depricated, use <%= foo %> syntax");
+            warning("Variables syntax like <% foo %> is deprecated, use <%= foo %> syntax");
         expr=self.prepare(m.group(2));
         if expr!="":
             output('out()<<%s;' % expr)
