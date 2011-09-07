@@ -5,6 +5,7 @@
 	},
 	"http" : {
 		"script" : "/rpc"
-	}
+	},
+	"file_server" : { "enable" : true }
 }
 
