@@ -56,19 +56,20 @@ def write_class_loader(unsafe = False):
     global class_list
     global namespace_name
     output("namespace {")
+    output(" cppcms::views::generator my_generator; ")
     output(" struct loader { ")
     output("  loader() { ")
-    output("    cppcms::views_pool::mapping_type mapping;" )
+    output('   my_generator.name("%s");' % namespace_name)
     if  unsafe:
-        builder = 'unsafe_view_builder'
+        safe = 'false'
     else:
-        builder = 'view_builder'
+        safe = 'true'
     for class_def in class_list:
-        output( '   mapping["%s"]=&cppcms::views_pool::%s<%s::%s,%s>;' \
-                % (class_def.name,builder,class_def.namespace,class_def.name,class_def.content_name))
-    output('    cppcms::views_pool::static_instance().add_view("%s",mapping); ' % namespace_name)
+        output( '   my_generator.add_view<%s::%s,%s>("%s",%s);' \
+                % (class_def.namespace,class_def.name,class_def.content_name,class_def.name,safe))
+    output('    cppcms::views::pool::instance().add(my_generator);')
     output(' }')
-    output(' ~loader() {  cppcms::views_pool::static_instance().remove_view("%s"); }' % namespace_name)
+    output(' ~loader() {  cppcms::views::pool::instance().remove(my_generator); }')
     output('} a_loader;')
     output('} // anon ')
 

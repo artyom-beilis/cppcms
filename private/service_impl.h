@@ -62,7 +62,7 @@ namespace impl {
 		std::auto_ptr<applications_pool> applications_pool_;
 		std::auto_ptr<thread_pool> thread_pool_;
 		std::auto_ptr<locale::generator> locale_generator_;
-		std::auto_ptr<views_pool> views_pool_;
+		std::auto_ptr<views::manager> views_pool_;
 		std::auto_ptr<cache_pool> cache_pool_;
 		std::auto_ptr<session_pool> session_pool_;
 		std::auto_ptr<cppcms::forwarder> forwarder_;

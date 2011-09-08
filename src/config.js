@@ -108,9 +108,11 @@
 	},
 	"views" : {
 		"default_skin" : "skin1",
-		 "paths" : [ "./" ],
+		 "paths" : [ "." ],
 		 //"skins" : [ "skin3" ],
-		 //"auto_reload" : true
+		 //"auto_reload" : true,
+		 // pattern for naming shared objects dlls 
+		 // "shared_object_pattern" : "lib{1}.dylib"   
 	},
 	"cache" : {
 		"backend" : "thread_shared", 

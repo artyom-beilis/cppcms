@@ -50,11 +50,13 @@ namespace cppcms {
 	class thread_pool;
 	class session_pool;
 	class cache_pool;
-	class views_pool;
 	class forwarder; 
 	
 	namespace json {
 		class value;
+	}
+	namespace views {
+		class manager;
 	}
 
 	///
@@ -126,9 +128,9 @@ namespace cppcms {
 		///
 		cppcms::session_pool &session_pool();
 		///
-		/// Get the cppcms::views_pool instance, note the skins management is still performed in the singleton instance of cppcms::views_pool
+		/// Get the cppcms::views::manager instance
 		///
-		cppcms::views_pool &views_pool();
+		cppcms::views::manager &views_pool();
 		///
 		/// Get the cppcms::cache_pool instance of this service, never used directly by user level applications
 		///
