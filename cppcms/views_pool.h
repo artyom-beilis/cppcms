@@ -42,7 +42,7 @@ namespace cppcms {
 		///
 		/// Usually used by templates compiler
 		///
-		class generator : public booster::noncopyable {
+		class CPPCMS_API generator : public booster::noncopyable {
 		public:
 			/// The callback that creates a single view
 			typedef std::auto_ptr<base_view> view_factory_type(std::ostream &,base_content *c);
