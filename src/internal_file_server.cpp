@@ -456,12 +456,7 @@ void file_server::main(std::string file_name)
 		show404();
 		return;
 	}
-	std::vector<char> buffer(4096);
-	while(!file.eof()) {
-		file.read(&buffer.front(),buffer.size());
-		response().out().write(&buffer.front(),file.gcount());
-	}
-	response().out()<<std::flush;
+	response().out()<<file.rdbuf(); // write stream to stream
 }
 
 void file_server::show404()
