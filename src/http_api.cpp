@@ -57,6 +57,7 @@ namespace boost = cppcms_boost;
 #include "format_number.h"
 #include "string_map.h"
 #include "send_timeout.h"
+#include "rewrite.h"
 
 namespace io = booster::aio;
 
@@ -99,9 +100,12 @@ namespace cgi {
 	class http_creator {
 	public:
 		http_creator() {} // for concept
-		http_creator(booster::aio::io_service &srv,std::string const &ip="0.0.0.0",int port = 8080) :
+		http_creator(booster::aio::io_service &srv,json::value const &settings,std::string const &ip="0.0.0.0",int port = 8080) :
 			ip_(ip),port_(port),watchdog_(new http_watchdog(srv))
 		{
+			if(settings.find("http.rewrite").type()==json::is_array) {
+				rewrite_.reset(new url_rewriter(settings.find("http.rewrite").array()));
+			}
 			watchdog_->check();
 		}
 		http *operator()(cppcms::service &srv) const;
@@ -109,6 +113,7 @@ namespace cgi {
 		std::string ip_;
 		int port_;
 		booster::shared_ptr<http_watchdog> watchdog_;
+		booster::shared_ptr<url_rewriter> rewrite_;
 	};
 
 
@@ -117,7 +122,13 @@ namespace cgi {
 	}
 	class http : public connection {
 	public:
-		http(cppcms::service &srv,std::string const &ip,int port,booster::shared_ptr<http_watchdog> wd) :
+		http(	cppcms::service &srv,
+			std::string const &ip,
+			int port,
+			booster::shared_ptr<http_watchdog> wd,
+			booster::shared_ptr<url_rewriter> rw
+			) 
+		:
 			connection(srv),
 			socket_(srv.impl().get_io_service()),
 			input_body_ptr_(0),
@@ -132,7 +143,8 @@ namespace cgi {
 			time_to_die_(0),
 			timeout_(0),
 			sync_option_is_set_(false),
-			watchdog_(wd)
+			watchdog_(wd),
+			rewrite_(rw)
 		{
 
 			env_.add("SERVER_SOFTWARE",CPPCMS_PACKAGE_NAME "/" CPPCMS_PACKAGE_VERSION);
@@ -528,13 +540,20 @@ namespace cgi {
 		{
 			if(	strcmp(request_method_,"GET")!=0 
 				&& strcmp(request_method_,"POST")!=0
-				&& strcmp(request_method_,"HEAD")!=0) 
+				&& strcmp(request_method_,"HEAD")!=0
+				&& strcmp(request_method_,"PUT")!=0
+				&& strcmp(request_method_,"DELETE")!=0
+				&& strcmp(request_method_,"OPTIONS")!=0
+			  ) 
 			{
 				error_response("HTTP/1.0 501 Not Implemented\r\n\r\n",h);
 				return;
 			}
 
 			env_.add("REQUEST_METHOD",request_method_);
+
+			if(rewrite_)
+				request_uri_ = rewrite_->rewrite(request_uri_,pool_);
 
 			char const *remote_addr="";
 			if(service().cached_settings().http.proxy.behind==false) {
@@ -680,6 +699,7 @@ namespace cgi {
 		bool sync_option_is_set_;
 
 		booster::shared_ptr<http_watchdog> watchdog_;
+		booster::shared_ptr<url_rewriter> rewrite_;
 	};
 	void http_watchdog::check(booster::system::error_code const &e)
 	{
@@ -720,14 +740,14 @@ namespace cgi {
 
 	http *http_creator::operator()(cppcms::service &srv) const
 	{
-		return new http(srv,ip_,port_,watchdog_);
+		return new http(srv,ip_,port_,watchdog_,rewrite_);
 	}
 
 	std::auto_ptr<acceptor> http_api_factory(cppcms::service &srv,std::string ip,int port,int backlog)
 	{
 		typedef socket_acceptor<http,http_creator> acceptor_type;
 		std::auto_ptr<acceptor_type> acc(new acceptor_type(srv,ip,port,backlog));
-		acc->factory(http_creator(srv.get_io_service(),ip,port));
+		acc->factory(http_creator(srv.get_io_service(),srv.settings(),ip,port));
 		std::auto_ptr<acceptor> a(acc);
 		return a;
 	}

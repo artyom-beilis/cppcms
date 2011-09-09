@@ -2,7 +2,7 @@
 	
 	"mb" : {
 		"media" : "/media",
-		"root" : "/mb",
+		"root" : "",
 		"connection_string" : "sqlite3:db=mb.db;@pool_size=10"
 		//"connection_string" : "mysql:database=test;user=root;password=root;@pool_size=10"
 	},
@@ -11,7 +11,12 @@
 		"port" : 8080
 	},
 	"http" : {
-		"script" : "/mb" 
+		"script" : "/mb",
+		"rewrite" : [
+			{ "regex" : "/media(/.*)?", "pattern" : "$0" },
+			{ "regex" : "/favion\\.ico", "pattern" : "$0" },
+			{ "regex" : ".*" , "pattern" : "/mb$0" }
+		]
 	},
 	"views" : {
 		 "paths" : [ "./" ],

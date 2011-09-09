@@ -586,6 +586,7 @@ set(ALL_TESTS
 	serialization_test
 	status_test
 	xss_test
+	rewrite_test
 	url_mapper_test
 	copy_filter_test
 	tc_test
@@ -678,6 +679,7 @@ if(NOT DISABLE_TCPCACHE)
 endif()
 add_test(serialization_test serialization_test)
 add_test(xss_test xss_test)
+add_test(rewrite_test rewrite_test)
 add_test(url_mapper_test url_mapper_test)
 add_test(copy_filter_test copy_filter_test)
 add_test(tc_test tc_test)
