@@ -122,7 +122,17 @@ namespace nowide {
 		basic_filebuf *open(char const *s,std::ios_base::openmode mode)
 		{
 			reset_device();
-			FILE *f = fopen(s,get_mode(mode));
+			wchar_t const *smode = get_mode(mode);
+			if(!smode)
+				return 0;
+			std::wstring name;
+			try {
+				name = convert(s);
+			}
+			catch(bad_utf const &) {
+				return 0;
+			}
+			FILE *f = _wfopen(name.c_str(),smode);
 			if(!f)
 				return 0;
 			std::auto_ptr<io_device> dev(new details::stdio_iodev(f));
@@ -143,37 +153,51 @@ namespace nowide {
 			return opened_;
 		}
 	private:
-		static char const *get_mode(std::ios_base::openmode mode)
+		static wchar_t const *get_mode(std::ios_base::openmode mode)
 		{
-			if(mode==(std::ios_base::in))
-				return "r";
-			if(mode==(std::ios_base::out))
-				return "w";
-			if(mode==(std::ios_base::out | std::ios_base::trunc))
-				return "w";
-			if(mode==(std::ios_base::out | std::ios_base::app))
-				return "a";
-			if(mode==(std::ios_base::out | std::ios_base::in))
-				return "r+";
-			if(mode==(std::ios_base::out | std::ios_base::trunc | std::ios_base::in))
-				return "w+";
-			if(mode==(std::ios_base::out | std::ios_base::app | std::ios_base::in))
-				return "a+";
-			if(mode==(std::ios_base::binary | std::ios_base::in))
-				return "rb";
-			if(mode==(std::ios_base::binary | std::ios_base::out))
-				return "wb";
-			if(mode==(std::ios_base::binary | std::ios_base::out | std::ios_base::trunc))
-				return "wb";
-			if(mode==(std::ios_base::binary | std::ios_base::out | std::ios_base::app))
-				return "ab";
-			if(mode==(std::ios_base::binary | std::ios_base::out | std::ios_base::in))
-				return "r+b";
-			if(mode==(std::ios_base::binary | std::ios_base::out | std::ios_base::trunc | std::ios_base::in))
-				return "w+b";
-			if(mode==(std::ios_base::binary | std::ios_base::out | std::ios_base::app | std::ios_base::in))
-				return "a+b";
-			return "";	
+			//
+			// done according to n2914 table 106 27.9.1.4
+			//
+
+			// note can't use switch case as overload operator can't be used
+			// in constant expression
+			if(mode == (std::ios_base::out))
+				return L"w";
+			if(mode == (std::ios_base::out | std::ios_base::app))
+				return L"a";
+			if(mode == (std::ios_base::app))
+				return L"a";
+			if(mode == (std::ios_base::out | std::ios_base::trunc))
+				return L"w";
+			if(mode == (std::ios_base::in))
+				return L"r";
+			if(mode == (std::ios_base::in | std::ios_base::out))
+				return L"r+";
+			if(mode == (std::ios_base::in | std::ios_base::out | std::ios_base::trunc))
+				return L"w+";
+			if(mode == (std::ios_base::in | std::ios_base::out | std::ios_base::app))
+				return L"a+";
+			if(mode == (std::ios_base::in | std::ios_base::app))
+				return L"a+";
+			if(mode == (std::ios_base::binary | std::ios_base::out))
+				return L"wb";
+			if(mode == (std::ios_base::binary | std::ios_base::out | std::ios_base::app))
+				return L"ab";
+			if(mode == (std::ios_base::binary | std::ios_base::app))
+				return L"ab";
+			if(mode == (std::ios_base::binary | std::ios_base::out | std::ios_base::trunc))
+				return L"wb";
+			if(mode == (std::ios_base::binary | std::ios_base::in))
+				return L"rb";
+			if(mode == (std::ios_base::binary | std::ios_base::in | std::ios_base::out))
+				return L"r+b";
+			if(mode == (std::ios_base::binary | std::ios_base::in | std::ios_base::out | std::ios_base::trunc))
+				return L"w+b";
+			if(mode == (std::ios_base::binary | std::ios_base::in | std::ios_base::out | std::ios_base::app))
+				return L"a+b";
+			if(mode == (std::ios_base::binary | std::ios_base::in | std::ios_base::app))
+				return L"a+b";
+			return 0;	
 		}
 
 		bool opened_;
