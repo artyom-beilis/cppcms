@@ -353,24 +353,27 @@ namespace {
 	{
 		typedef intrusive_ptr<reader_all> pointer;
 		reader_all(stream_socket *s,mutable_buffer const &b,io_handler const &handler) :
+			buf(b),
 			count(0),
-			self(s)
+			self(s),
+			h(handler)
+		{
+		}
+
+		void run()
 		{
 			#ifdef BOOSTER_AIO_FORCE_POLL
-			buf = b;
-			h=handler;
 			self->on_readable(intrusive_ptr<reader_all>(this));
 			#else
 			system::error_code e;
-			size_t n = s->read_some(b,e);
+			size_t n = self->read_some(buf,e);
 			count+=n;
-			buf=b+n;
+			buf+=n;
 			if(buf.empty() || (e && !basic_io_device::would_block(e))) {
-				io_binder::pointer binder(new io_binder( handler, count, e));
+				io_binder::pointer binder(new io_binder( h, count, e));
 				self->get_io_service().post(binder);
 			}
 			else {
-				h=handler;
 				self->on_readable(intrusive_ptr<reader_all>(this));
 			}
 			#endif
@@ -399,33 +402,37 @@ namespace {
 		size_t count;
 		stream_socket *self;
 		io_handler h;
+		bool via_poll;
 	};
 
 	struct writer_all : public callable<void(system::error_code const &e)> 
 	{
 		typedef intrusive_ptr<writer_all> pointer;
 		writer_all(stream_socket *s,const_buffer const &b,io_handler const &handler) :
+			buf(b),
 			count(0),
-			self(s)
+			self(s),
+			h(handler)
+		{
+		}
+
+		void run()
 		{
 			#ifdef BOOSTER_AIO_FORCE_POLL
 
-			h=handler;
-			buf = b;
 			self->on_writeable(intrusive_ptr<writer_all>(this));
 
 			#else
 
 			system::error_code e;
-			size_t n = s->write_some(b,e);
+			size_t n = self->write_some(buf,e);
 			count+=n;
-			buf=b+n;
+			buf+=n;
 			if(buf.empty() || (e && !basic_io_device::would_block(e))) {
-				io_binder::pointer binder(new io_binder( handler, count, e ));
+				io_binder::pointer binder(new io_binder( h, count, e ));
 				self->get_io_service().post(binder);
 			}
 			else {
-				h=handler;
 				self->on_writeable(intrusive_ptr<writer_all>(this));
 			}
 
@@ -523,6 +530,7 @@ void stream_socket::async_read(mutable_buffer const &buffer,io_handler const &h)
 	if(!dont_block(h))
 		return;
 	reader_all::pointer r(new reader_all(this,buffer,h));
+	r->run();
 }
 
 
@@ -531,6 +539,7 @@ void stream_socket::async_write(const_buffer const &buffer,io_handler const &h)
 	if(!dont_block(h))
 		return;
 	writer_all::pointer r(new writer_all(this,buffer,h));
+	r->run();
 }
 
 

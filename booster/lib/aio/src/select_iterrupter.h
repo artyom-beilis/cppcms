@@ -57,6 +57,7 @@ namespace booster {
 				//
 				void close();
 			private:
+				void set_non_blocking(native_type fd);
 				native_type read_,write_;
 			};
 

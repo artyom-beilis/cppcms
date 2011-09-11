@@ -16,7 +16,9 @@
 #include <arpa/inet.h>
 #include <netinet/in.h>
 #include <netinet/tcp.h>
+#include <sys/ioctl.h>
 #include <unistd.h>
+#include <fcntl.h>
 #include <errno.h>
 #endif
 
@@ -119,7 +121,25 @@ namespace booster { namespace aio { namespace impl {
 		#endif
 		read_ = fds[0];
 		write_=fds[1];
+
+		set_non_blocking(read_);	
+		set_non_blocking(write_);	
+
 		return true;
+	}
+	void select_interrupter::set_non_blocking(native_type fd)
+	{
+		#if defined BOOSTER_WIN32
+		unsigned long opt =  nonblocking;
+		check(::ioctlsocket(fd_,FIONBIO,&opt));
+		#elif defined O_NONBLOCK
+		int flags = ::fcntl(fd,F_GETFL,0);
+		check(flags);
+		check(::fcntl(fd,F_SETFL,flags | O_NONBLOCK));
+		#else
+		int opt = 1;
+		check(::ioctl(fd,FIONBIO,&opt));
+		#endif
 	}
 
 	native_type select_interrupter::get_fd()

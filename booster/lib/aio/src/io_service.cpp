@@ -584,6 +584,10 @@ private:
 				map_.erase(evs[i].fd);
 		}
 
+		if(stop_) {
+			wake();
+		}
+
 		return true;
 
 	}
