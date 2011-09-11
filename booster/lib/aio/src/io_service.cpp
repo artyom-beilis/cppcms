@@ -113,12 +113,9 @@ typedef unique_lock<recursive_mutex> lock_guard;
 class event_loop_impl {
 public:
 	
-	static const int in = 1;
-	static const int out = 2;
-
 	void set_io_event(native_type fd,int event,event_handler const &h)
 	{
-		if(event != in && event !=out)
+		if(event != io_events::in && event !=io_events::out)
 			throw booster::invalid_argument("Invalid argument to set_io_event");
 		io_event_setter setter = { fd,event,h,this };
 		set_event(setter);
@@ -207,18 +204,19 @@ public:
 
 		for(;;) {
 			int pos = rand(timer_events_index_.size());
-			if(timer_events_index_[pos] == end) {
-				ev.second.event_id = pos;
-				break;
-			}
-			attempts++;
-			if(attempts > 10 && timer_events_index_.size() < rand_max) {
+			if(timer_events_index_[pos] != end) {
+				attempts++;
+				if(attempts < 10 || timer_events_index_.size() >= rand_max)
+					continue;
+				// this must be empty so stop looping
+				pos = timer_events_index_.size();
 				timer_events_index_.resize(timer_events_index_.size()*2,end);
-				attempts = 0;
 			}
+			ev.second.event_id = pos;
+			timer_events_index_[pos] = timer_events_.insert(ev);
+			break;
 		}
 
-		timer_events_index_[ev.second.event_id] = timer_events_.insert(ev);
 		if(polling_ && timer_events_.begin()->first >= point)
 			wake();
 		return ev.second.event_id;
@@ -251,15 +249,42 @@ private:
 		io_data() : current_event(0) {}
 	};
 
-	recursive_mutex data_mutex_,poll_mutex_;
+	//
+	// Protected by poll mutex
+	//
+	recursive_mutex poll_mutex_;
+	//
+	// The reactor itself so multiple threads
+	// can dispatch events on same reactor
+	//
 	std::auto_ptr<reactor> reactor_;
+	
+	//
+	// Rest of the data protected by the
+	// data_mutex
+	//
+	recursive_mutex data_mutex_;
+	
 	int reactor_type_;
 	impl::select_interrupter interrupter_;;
+	//
+	// Stop flag identifies that
+	// the service should go down
+	//
+	bool stop_;
 
-	bool stop_,polling_;
+	// 
+	// Marks that pollong in progress so we can't
+	// just set parameters we need also to wake the 
+	// polling loop
+	//
+	bool polling_;
 
+	//
+	// I/O - selectable events
+	//
 	socket_map<io_data> map_;
-
+	// events dispatch queue
 	std::deque<handler> dispatch_queue_;
 
 	void closesocket(native_type fd)
@@ -336,7 +361,7 @@ private:
 			self_->reactor_->select(fd,new_event,e);
 			if(!e) {
 				self_->map_[fd].current_event = new_event;
-				if(event == in)
+				if(event == io_events::in)
 					self_->map_[fd].readable = h;
 				else
 					self_->map_[fd].writeable = h;
@@ -352,11 +377,21 @@ private:
 		event_handler h;
 	};
 
+	//
+	// Timer events
+	//
 	typedef std::multimap<ptime,timer_event> timer_events_type;
 	typedef std::vector<timer_events_type::iterator> timer_events_index_type;
 
+	//
+	// The events semself
+	//
 	timer_events_type timer_events_;
 	timer_events_index_type timer_events_index_;
+
+	//
+	// Random number generator
+	//
 	unsigned seed_;
 	static const unsigned rand_max = 32768;
 
