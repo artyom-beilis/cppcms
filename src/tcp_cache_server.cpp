@@ -252,18 +252,11 @@ public:
 		default:
 			hout.opcode=opcodes::error;
 		}
-		socket_.async_write(io::buffer(&hout,sizeof(hout)),
-			boost::bind(&session::on_header_out,shared_from_this(),
-				_1));
-	}
-	void on_header_out(booster::system::error_code const &e)
-	{
-		if(e) return;
-		if(hout.size==0) {
-			run();
-			return ;
+		io::const_buffer packet = io::buffer(&hout,sizeof(hout));
+		if(hout.size > 0) {
+			packet += io::buffer(data_out.c_str(),hout.size);
 		}
-		socket_.async_write(io::buffer(data_out.c_str(),hout.size),
+		socket_.async_write(packet,
 			boost::bind(&session::on_data_out,shared_from_this(),
 				_1));
 	}

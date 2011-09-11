@@ -59,11 +59,11 @@ void messenger::transmit(tcp_operation_header &h,std::string &data)
 	int times=0;
 	do {
 		try {
-			// FIXME use buffers
-			socket_.write(booster::aio::buffer(&h,sizeof(h)));
-			if(h.size>0) {
-				socket_.write(booster::aio::buffer(data.c_str(),h.size));
-			}
+			booster::aio::const_buffer packet = booster::aio::buffer(&h,sizeof(h));
+			if(h.size > 0)
+				packet += booster::aio::buffer(data.c_str(),h.size);
+				
+			socket_.write(packet);
 			socket_.read(booster::aio::buffer(&h,sizeof(h)));
 			if(h.size>0) {
 				std::vector<char> d(h.size);
