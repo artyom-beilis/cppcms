@@ -130,8 +130,8 @@ namespace booster { namespace aio { namespace impl {
 	void select_interrupter::set_non_blocking(native_type fd)
 	{
 		#if defined BOOSTER_WIN32
-		unsigned long opt =  nonblocking;
-		check(::ioctlsocket(fd_,FIONBIO,&opt));
+		unsigned long opt =  1;
+		check(::ioctlsocket(fd,FIONBIO,&opt));
 		#elif defined O_NONBLOCK
 		int flags = ::fcntl(fd,F_GETFL,0);
 		check(flags);
