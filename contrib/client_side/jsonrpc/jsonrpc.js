@@ -1,62 +1,80 @@
-function JsonRPC(uri,methods) {
+function JsonRPC(uri,function_methods,notification_methods) {
 	this.uri = uri;
+
+	// Create new XMLHttpRequest for all browsers
 	this.getXHR = function() {
-		if(typeof  XMLHttpRequest != "undefined")
-			return new XMLHttpRequest();
-		try { return new ActiveXObject("Msxml2.XMLHTTP.6.0"); }catch(e){}
-		try { return new ActiveXObject("Msxml2.XMLHTTP.3.0"); }catch(e){}
-		try { return new ActiveXObject("Microsoft.XMLHTTP"); }catch(e){}
-		throw new Error("No XML HTTP Rewquest support");
+		var xhr;
+		if(typeof  XMLHttpRequest != "undefined") {
+			xhr = new XMLHttpRequest();
+		}
+		else {
+			try { xhr = new ActiveXObject("Msxml2.XMLHTTP.6.0"); }catch(e){}
+			try { xhr = new ActiveXObject("Msxml2.XMLHTTP.3.0"); }catch(e){}
+			try { xhr = new ActiveXObject("Microsoft.XMLHTTP"); }catch(e){}
+			throw new Error("No XML HTTP Rewquest support");
+		}
+		return xhr;
 	};
-	this.syncCall = function(name,params) {
-		xhr = this.getXHR();
+
+	// Synchronous method call name = method name
+	// id null for notifcation something for functions
+	// params - array of parameters
+	this.syncCall = function(name,id,params) {
+		var xhr = this.getXHR();
 		xhr.open("post",this.uri,false);
-		this.runXHR(xhr,name,params);
+		this.runXHR(xhr,name,id,params);
 		if(xhr.status!=200) 
 			throw Error('Invalid response:' + xhr.status);
-		response = JSON.parse(xhr.responseText);
-		if(response.error != null) {
-			throw Error(response.error);
+		if(id!=null) {
+			var response = JSON.parse(xhr.responseText);
+			if(response.error != null) 
+				throw Error(response.error);
+			return response.result;
 		}
-		return response.result;
 	};
-	this.runXHR = function(xhr,name,params) {
+	this.runXHR = function(xhr,name,id,params) {
 		xhr.setRequestHeader("Content-Type","application/json");
-		request = {'id' : 1,'method' : name, 'params' : params };
-		requestText = JSON.stringify(request);
+		var request = {'id' : id,'method' : name, 'params' : params };
+		var requestText = JSON.stringify(request);
 		xhr.send(requestText);
-
 	};
-	this.asyncCall = function(name,params,on_result,on_error) {
-		xhr = this.getXHR();
+	this.asyncCall = function(name,id,params,on_result,on_error) {
+		var xhr = this.getXHR();
 		xhr.open("post",this.uri,true);
 		xhr.onreadystatechange = function() {
 			if(xhr.readyState!=4)
 				return;
 			if(xhr.status==200) {
-				response = JSON.parse(xhr.responseText);
-				if(response.error == null)
-					on_result(response.result);
-				else
-					on_error({'type': 'response', 'error' : response.error });
+				if(id!=null) {
+					var response = JSON.parse(xhr.responseText);
+					if(response.error != null) {
+						on_error({'type': 'response', 'error' : response.error });
+					}
+					else {
+						on_result(response.result);
+					}
+				}
+				else {
+					on_result();
+				}
 			}
 			else {
 				on_error( { 'type' : 'transport', 'error' : xhr.status } );
 			}
 		}
-		this.runXHR(xhr,name,params);
+		this.runXHR(xhr,name,id,params);
 	}
-	this.addRPCMethod = function(method) {
+	this.addRPCMethod = function(method,id) {
 		var call = function() {
-			args = new Array();
+			var args = new Array();
 			for(var i=0;i<arguments.length;i++) {
 				args[i]=arguments[i];
 			}
 			if(call.on_result != null) {
-				this.asyncCall(method,args,call.on_result,call.on_error);
+				this.asyncCall(method,id,args,call.on_result,call.on_error);
 			}
 			else
-				return this.syncCall(method,args);
+				return this.syncCall(method,id,args);
 		};
 		call.on_error = function(e) {
 			throw Error(e.error);
@@ -64,9 +82,17 @@ function JsonRPC(uri,methods) {
 		call.on_result = null;
 		this[method]=call;
 	}
-	for(i=0;i<methods.length;i++)
-	{
-		this.addRPCMethod(methods[i]);
+	if(typeof function_methods != 'undefined') {
+		for(var i=0;i<function_methods.length;i++)
+		{
+			this.addRPCMethod(function_methods[i],i);
+		}
+	}
+	if(typeof notification_methods != 'undefined') {
+		for(var i=0;i<notification_methods.length;i++) 
+		{
+			this.addRPCMethod(notification_methods[i],null);
+		}
 	}
 }
 
