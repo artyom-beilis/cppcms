@@ -25,6 +25,7 @@
 
 #include <sstream>
 #include <booster/nowide/fstream.h>
+#include <booster/log.h>
 #include <streambuf>
 
 namespace cppcms {
@@ -59,9 +60,9 @@ namespace rpc {
 		else {
 			notification_ = false;
 			id_.swap(request["id"]);
-			params_.swap(request["params"].array());
-			method_ = request.get<std::string>("method");
 		}
+		params_.swap(request["params"].array());
+		method_ = request.get<std::string>("method");
 	}
 
 	json_call::~json_call()
@@ -169,6 +170,7 @@ namespace rpc {
 
 		try {
 			current_call_.reset(new json_call(context()));
+			BOOSTER_DEBUG("cppcms") << "JSON-RPC Method call:" << method();
 			methods_map_type::iterator p=methods_.find(method());
 			if(p==methods_.end()) {
 				if(!notification())
