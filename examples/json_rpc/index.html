@@ -9,13 +9,13 @@ function call() {
 	xhr.setRequestHeader("Content-Type","application/json");
 
 	// It is better to use real formatter like JSON.js
-	x=parseInt(document.getElementById('x').value);
-	y=parseInt(document.getElementById('y').value);
+	var x=parseInt(document.getElementById('x').value);
+	var y=parseInt(document.getElementById('y').value);
 	var request = '{"method":"div","params":[' + x + ',' + y +'],"id":1}';
 
 	xhr.onreadystatechange = function() {
 		if (xhr.readyState === 4) {
-			res = 'Unknown Error';
+			var res;
 			if(xhr.status === 200) {
 				// Don't call eval in real code use some parser
 				var result = eval('(' + xhr.responseText + ')');
@@ -26,6 +26,9 @@ function call() {
 					res = result.error;
 				}
 			}
+			else {
+				res = 'Invalid Status ' + xhr.status;
+			}
 			document.getElementById('result').innerHTML = res;
 		}
 	}
@@ -33,6 +36,7 @@ function call() {
 	return false;
 }
 </script>
+<p><a href="usingrpc.html">Using jsonrpc.js</a></p>
 <form onsubmit="return call();">
 <p>
 <input type="text" id="x" />

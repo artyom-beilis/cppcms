@@ -6,6 +6,14 @@
 	"http" : {
 		"script" : "/rpc"
 	},
-	"file_server" : { "enable" : true }
+	"file_server" : { 
+		"enable" : true,
+		"alias" : [
+			{ 
+				"url" : "/scripts" ,
+				"path" : "../../contrib/client_side/jsonrpc" 
+			}
+		]
+	}
 }
 

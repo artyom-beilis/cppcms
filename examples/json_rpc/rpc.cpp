@@ -10,15 +10,17 @@ public:
     {
     	bind("sum",cppcms::rpc::json_method(&json_service::sum,this),method_role);
     	bind("div",cppcms::rpc::json_method(&json_service::div,this),method_role);
-    	bind("notify",cppcms::rpc::json_method(&json_service::div,this),notification_role);
+    	bind("notify",cppcms::rpc::json_method(&json_service::notify,this),notification_role);
     	bind("both",cppcms::rpc::json_method(&json_service::both,this));
     }
     void sum(int x,int y)
     {
+        std::cout << "Sum Called" << std::endl;
     	return_result(x+y);
     }
     void div(int x,int y)
     {
+        std::cout << "Div Called" << std::endl;
     	if(y==0)
     		return_error("Division by zero");
     	else

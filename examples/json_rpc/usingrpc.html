@@ -1,0 +1,72 @@
+<html>
+<head>
+<script type="text/javascript" src="/scripts/json2.js"></script>
+<script type="text/javascript" src="/scripts/jsonrpc.js"></script>
+</head>
+<body>
+<script type="text/javascript">
+
+var rpc = new JsonRPC('/rpc',['div','sum'], ['notify']);
+
+function getX()
+{
+	return parseInt(document.getElementById('x').value);
+}
+function getY()
+{
+	return parseInt(document.getElementById('y').value);
+}
+
+function setResult(r)
+{
+	document.getElementById('result').innerHTML += r + '<br>';
+}
+
+function call() 
+{
+	var x = getX();
+	var y = getY();
+	//  Synchronous call
+	
+	/*	
+	try {
+		setResult(x+'/'+y+ '=' + rpc.div(x,y));
+		setResult(x+'+'+y+ '=' + rpc.sum(x,y));
+		rpc.notify('test');
+	}
+	catch(e) {
+		setResult(e.message);
+	}
+	*/
+
+	// Asynchronous call
+	
+	
+	rpc.div.on_error = function(e) { setResult(e.error); }
+	rpc.div.on_result = function(r) { setResult(x + '/' + y + '=' + r ); }
+	
+	rpc.sum.on_error = function(e) { setResult(e.error); }
+	rpc.sum.on_result = function(r) { setResult(x + '+' + y + '='  + r); }
+
+	rpc.notify.on_error = function() { setResult('Notification error:' + e.error); }
+	rpc.notify.on_result = function() { setResult('Notification Called'); }
+	
+	rpc.div(x,y);
+	rpc.sum(x,y);
+	rpc.notify('test');
+	
+	return false;
+}
+</script>
+<p><a href="/">Using plain XMLHttpRequest</a></p>
+<form onsubmit="return call();">
+<p>
+<input type="text" id="x" />
+<input type="submit" value="?" />
+<input type="text" id="y" /> = 
+</p>
+<p id="result"></p>
+</form>
+</body>
+</html>
+

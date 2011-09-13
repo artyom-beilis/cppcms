@@ -25,6 +25,8 @@
 ///       and it should be some integer or string for function methods
 ///
 function JsonRPC(uri,function_methods,notification_methods) {
+	if(!(this instanceof JsonRPC)) 
+		return new JsonRPC(uri,function_methods,notification_methods);
 	this.uri = uri;
 	if(typeof function_methods != 'undefined') {
 		for(var i=0;i<function_methods.length;i++)
