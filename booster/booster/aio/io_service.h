@@ -29,14 +29,10 @@ namespace aio {
 	///
 	/// \brief this is the central event loop that dispatches all requests. 
 	/// 
-	/// The event loop is started by calling run() member function.
+	/// This all this class member functions are thread safe unless specified otherwise.
 	///
-	/// \note Unlike Boost.Asio's io_service only one thread is allowed to
-	/// call run() member function. All event setting/unsetting operations
-	/// with an exception of posting event by post()  must be executed in
-	/// same thread that executes run() member function
-	/// 
-	/// This class can be safely created before fork and used after it
+	/// Sinlge or multiple threads may execute run() member function and dispatch its handlers, this class
+	/// also can be safely created before fork and used after it
 	///
 	class BOOSTER_API io_service : public noncopyable, public io_events {
 	public:
@@ -55,7 +51,8 @@ namespace aio {
 		~io_service();
 
 		///
-		/// Set event handler \a h for file descriptor \a fd. \a event can be \ref io_events::in or \ref io_events::out 
+		/// Set event handler \a h for file descriptor \a fd. \a event can be \ref io_events::in, \ref io_events::out 
+		/// or \ref io_events::in | \ref io_events::out.
 		///
 		/// Error handling: 
 		/// 
@@ -105,14 +102,12 @@ namespace aio {
 		void run(system::error_code &e);
 
 		///
-		/// Prepare the service after it was stopped.
+		/// Prepare the service after it was stopped. This function is not thread safe.
 		///
 		void reset();
 		///
 		/// Stop the service. All threads executing run() function will exit from it. You can't use this service
 		/// till you call reset() function.
-		///
-		/// \note It is thread safe. You can call it from the thread different from that is running the event loop.
 		///
 		void stop();
 
@@ -120,13 +115,12 @@ namespace aio {
 		/// Post a single handler \a h for immediate execution in the event loop queue. Useful for execution of some
 		/// job in the thread that runs the event loop of the io_service.
 		///
-		/// \note It is thread safe. You can call it from the thread different from that is running the event loop.
-		///
 		void post(handler const &h);
 
 		///
 		/// Get the real name of the reactor that io_service uses (calls reactor::name())
 		///
+
 		std::string reactor_name();
 	private:
 		struct data;

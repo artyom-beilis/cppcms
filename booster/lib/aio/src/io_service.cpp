@@ -41,20 +41,7 @@
 namespace booster {
 namespace aio {
 
-typedef unique_lock<mutex> lock_guard;
-class unlock_guard { 
-public:
-	unlock_guard(mutex &m) : m_(&m)
-	{
-		m_->unlock();
-	}
-	~unlock_guard()
-	{
-		m_->lock();
-	}
-private:
-	mutex *m_;
-};
+typedef unique_lock<recursive_mutex> lock_guard;
 
 #ifndef BOOSTER_WIN32
 
@@ -168,7 +155,7 @@ public:
 	
 	void stop()
 	{
-		lock_guard l(queue_lock_);
+		lock_guard l(data_mutex_);
 		stop_ = true;
 		if(polling_)
 			wake();
@@ -179,14 +166,9 @@ public:
 		polling_(false)
 	{
 	}
-	void dispatch(handler const &h)
-	{
-		lock_guard l(queue_lock_);
-		dispatch_queue_.push_back(h);
-	}
 	void post(handler const &h)
 	{
-		lock_guard l(queue_lock_);
+		lock_guard l(data_mutex_);
 		dispatch_queue_.push_back(h);
 		if(polling_)
 			wake();
@@ -194,6 +176,7 @@ public:
 	
 	std::string name() 
 	{
+		lock_guard l(data_mutex_);
 		if(reactor_.get())
 			return reactor_->name();
 		reactor tmp(reactor_type_);
@@ -203,9 +186,14 @@ public:
 	~event_loop_impl()
 	{
 	}
-
-	int allocate_timer_index()
+	
+	int set_timer_event(ptime point,event_handler const &h)
 	{
+		lock_guard l(data_mutex_);
+		
+		std::pair<ptime,timer_event> ev;
+		ev.first = point;
+		ev.second.h = h;
 		timer_events_type::iterator end=timer_events_.end();
 
 		if(timer_events_index_.size() < 1000) {
@@ -216,41 +204,41 @@ public:
 
 		for(;;) {
 			int pos = rand(timer_events_index_.size());
-			if(timer_events_index_[pos] == end)
-				return pos;
-			attempts++;
-			if(attempts < 10 || timer_events_index_.size() >= rand_max)
-				continue;
-			pos = timer_events_index_.size();
-			timer_events_index_.resize(timer_events_index_.size()*2,end);
-			return pos;
+			if(timer_events_index_[pos] != end) {
+				attempts++;
+				if(attempts < 10 || timer_events_index_.size() >= rand_max)
+					continue;
+				// this must be empty so stop looping
+				pos = timer_events_index_.size();
+				timer_events_index_.resize(timer_events_index_.size()*2,end);
+			}
+			ev.second.event_id = pos;
+			timer_events_index_[pos] = timer_events_.insert(ev);
+			break;
 		}
-	}
-	
-	int set_timer_event(ptime point,event_handler const &h)
-	{
-		std::pair<ptime,timer_event> ev;
 
-		ev.first = point;
-		ev.second.h = h;
-		ev.second.event_id = allocate_timer_index();
-		
-		timer_events_index_[ev.second.event_id] = timer_events_.insert(ev);
-
+		if(polling_ && timer_events_.begin()->first >= point)
+			wake();
 		return ev.second.event_id;
 	}
 
 	void cancel_timer_event(int event_id)
 	{
+		lock_guard l(data_mutex_);
+
 		if(timer_events_index_.at(event_id)==timer_events_.end())
 			return;
 
 		timer_events_type::iterator evptr = timer_events_index_[event_id];
 		
 		event_handler_dispatcher evdisp(evptr->second.h,system::error_code(aio_error::canceled,aio_error_cat));
-		dispatch(evdisp);
+		dispatch_queue_.push_back(evdisp);
 		timer_events_.erase(evptr);
 		timer_events_index_[event_id]=timer_events_.end();
+
+		if(polling_)
+			wake();
+
 	}
 
 private:
@@ -262,11 +250,20 @@ private:
 	};
 
 	//
+	// Protected by poll mutex
+	//
+	recursive_mutex poll_mutex_;
+	//
 	// The reactor itself so multiple threads
 	// can dispatch events on same reactor
 	//
 	std::auto_ptr<reactor> reactor_;
 	
+	//
+	// Rest of the data protected by the
+	// data_mutex
+	//
+	recursive_mutex data_mutex_;
 	
 	int reactor_type_;
 	impl::select_interrupter interrupter_;;
@@ -287,11 +284,7 @@ private:
 	// I/O - selectable events
 	//
 	socket_map<io_data> map_;
-	//
 	// events dispatch queue
-	// protected by mutex
-	//
-	mutex queue_lock_;
 	std::deque<handler> dispatch_queue_;
 
 	void closesocket(native_type fd)
@@ -311,8 +304,21 @@ private:
 	struct io_event_canceler {
 		native_type fd;
 		event_loop_impl *self_;
+		bool cancelation_is_needed_with_data_mutex_locked()
+		{
+			if(!self_->dispatch_queue_.empty())
+				return true;
+			io_data &cont=self_->map_[fd];
+			if(cont.current_event == 0 && !cont.readable && !cont.writeable) {
+				self_->map_.erase(fd);
+				return false;
+			}
+			return true;
+		}
 		void operator()() const
 		{
+			lock_guard l(self_->data_mutex_);
+			
 			io_data &cont=self_->map_[fd];
 			cont.current_event = 0;
 			system::error_code e;
@@ -320,9 +326,9 @@ private:
 			e = system::error_code(aio_error::canceled,aio_error_cat);
 			// Maybe it is closed
 			if(cont.readable)
-				self_->dispatch(event_handler_dispatcher(cont.readable,e));
+				self_->dispatch_queue_.push_back(event_handler_dispatcher(cont.readable,e));
 			if(cont.writeable)
-				self_->dispatch(event_handler_dispatcher(cont.writeable,e));
+				self_->dispatch_queue_.push_back(event_handler_dispatcher(cont.writeable,e));
 			self_->map_.erase(fd);
 		}
 	};
@@ -337,6 +343,8 @@ private:
 		event_loop_impl *self_;
 		void operator()()
 		{
+			lock_guard l(self_->data_mutex_);
+			
 			if(!self_->map_.is_valid(fd))
 			{
 				#ifdef BOOSTER_WIN32
@@ -344,7 +352,7 @@ private:
 				#else
 				system::error_code e(EBADF,syscat);
 				#endif
-				self_->dispatch(event_handler_dispatcher(h,e));
+				self_->dispatch_queue_.push_back(event_handler_dispatcher(h,e));
 				return;
 			}
 
@@ -359,7 +367,7 @@ private:
 					self_->map_[fd].writeable = h;
 			}
 			else {
-				self_->dispatch(event_handler_dispatcher(h,e));
+				self_->dispatch_queue_.push_back(event_handler_dispatcher(h,e));
 			}
 		}
 	};
@@ -402,8 +410,11 @@ private:
 	template<typename Functor>
 	void set_event(Functor &f)
 	{
-		if(!reactor_.get()) {
-			dispatch(f);
+		lock_guard l(data_mutex_);
+		if(polling_ || !reactor_.get()) {
+			dispatch_queue_.push_back(f);
+			if(reactor_.get())
+				wake();
 		}
 		else {
 			f();
@@ -411,8 +422,13 @@ private:
 	}
 	void set_event(io_event_canceler &f)
 	{
-		if(!reactor_.get()) {
-			dispatch(f);
+		lock_guard l(data_mutex_);
+		if(!f.cancelation_is_needed_with_data_mutex_locked())
+			return;
+		if(polling_ || !reactor_.get()) {
+			dispatch_queue_.push_back(f);
+			if(reactor_.get())
+				wake();
 		}
 		else {
 			f();
@@ -434,6 +450,7 @@ private:
 
 	bool run_one(reactor::event *evs,size_t evs_size)
 	{
+		lock_guard l(data_mutex_);
 		if(!reactor_.get()) {
 			reactor_.reset(new reactor(reactor_type_));
 		}
@@ -441,20 +458,23 @@ private:
 			reactor_->select(interrupter_.get_fd(),reactor::in);
 		}
 
-		{
-			lock_guard g(queue_lock_);
-			int counter = dispatch_queue_.size();
-			while(!stop_ && !dispatch_queue_.empty() && counter > 0) {
-				handler exec;
-				exec.swap(dispatch_queue_.front());
-				dispatch_queue_.pop_front();
+		int counter = dispatch_queue_.size();
+		while(!stop_ && !dispatch_queue_.empty() && counter > 0) {
+			handler exec;
+			exec.swap(dispatch_queue_.front());
+			dispatch_queue_.pop_front();
+			
+			data_mutex_.unlock();
+			try {
 				
-				{
-					unlock_guard g2(queue_lock_);
-					exec();
-				}
-				counter --;
+				exec();
 			}
+			catch(...) {
+				data_mutex_.lock();
+				throw;
+			}
+			data_mutex_.lock();
+			counter --;
 		}
 
 		ptime now = ptime::now();
@@ -463,7 +483,7 @@ private:
 			timer_events_type::iterator evptr = timer_events_.begin();
 			timer_events_index_[evptr->second.event_id] = timer_events_.end();
 			event_handler_dispatcher disp(evptr->second.h,system::error_code());
-			dispatch(disp);
+			dispatch_queue_.push_back(disp);
 			timer_events_.erase(evptr);
 		}
 
@@ -474,51 +494,53 @@ private:
 
 		if(stop_)
 			return false;
+
+		ptime wait_time = dispatch_queue_.empty() ? ptime::hours(1) : ptime::zero;
+
+		if(!timer_events_.empty()) {
+			ptime diff = timer_events_.begin()->first - now;
+			if(diff < wait_time)
+				wait_time = diff;
+			assert(wait_time >= ptime::zero);
+		}
+
 		
 		int n = 0;
 
-		{ // lock the queue
-			lock_guard g(queue_lock_);
-
-			ptime wait_time = dispatch_queue_.empty() ? ptime::hours(1) : ptime::zero;
-
-			if(!timer_events_.empty()) {
-				ptime diff = timer_events_.begin()->first - now;
-				if(diff < wait_time)
-					wait_time = diff;
-				assert(wait_time >= ptime::zero);
+		{
+			system::error_code poll_error;
+			polling_ = true;
+			try {
+				// refork injection
+				data_mutex_.unlock();
+				lock_guard lg(poll_mutex_);
+				n = reactor_->poll(evs,evs_size,int(ptime::milliseconds(wait_time)),poll_error);
 			}
-
-			{
-				system::error_code poll_error;
-				polling_ = true;
-				try {
-					unlock_guard g2(queue_lock_);
-					n = reactor_->poll(evs,evs_size,int(ptime::milliseconds(wait_time)),poll_error);
-				}
-				catch(...) { polling_ = false; throw; }
+			catch(...) {
+				data_mutex_.lock();
 				polling_ = false;
-			
-				//
-				// We may get EBADF, so if we do not handle it we may loop
-				// forever. However, maybe there is a handler that handles this
-				// in dipatch queue (for example close was executed).
-				// So let's try again
-				//
-				// But if it empty - no handlers, abort.
-				//
-				if(poll_error && poll_error.value()!=EINTR && dispatch_queue_.empty()) {
-					throw system::system_error(poll_error);
-				}
-
+				throw;
 			}
+			data_mutex_.lock();
+			polling_ = false;
+		
+			//
+			// We may get EBADF, so if we do not handle it we may loop
+			// forever. However, maybe there is a handler that handles this
+			// in dipatch queue (for example close was executed).
+			// So let's try again
+			//
+			// But if it empty - no handlers, abort.
+			//
+			if(poll_error && poll_error.value()!=EINTR && dispatch_queue_.empty()) {
+				throw system::system_error(poll_error);
+			}
+
 		}
 
 		if( n > int(evs_size) )
 			n=evs_size;
-
 		randomize_events(evs,n);
-
 		for(int i=0;i<n && i<int(evs_size);i++) {
 			
 			if(evs[i].fd == interrupter_.get_fd()) {
@@ -554,9 +576,9 @@ private:
 			cont.current_event = new_events;
 
 			if(cont.readable && (new_events & reactor::in) == 0)
-				dispatch(event_handler_dispatcher(cont.readable,dispatch_error));
+				dispatch_queue_.push_back(event_handler_dispatcher(cont.readable,dispatch_error));
 			if(cont.writeable && (new_events & reactor::out) == 0)
-				dispatch(event_handler_dispatcher(cont.writeable,dispatch_error));
+				dispatch_queue_.push_back(event_handler_dispatcher(cont.writeable,dispatch_error));
 			
 			if(new_events == 0)
 				map_.erase(evs[i].fd);
