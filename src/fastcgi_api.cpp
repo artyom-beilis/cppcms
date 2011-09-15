@@ -243,7 +243,6 @@ namespace cgi {
 		virtual void write_eof()
 		{
 			prepare_eof();	
-			socket_.cancel();
 			booster::system::error_code e;
 			socket_.write(io::buffer(&eof_,sizeof(eof_)),e);
 		}

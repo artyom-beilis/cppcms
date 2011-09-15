@@ -60,8 +60,6 @@ io_service &basic_io_device::get_io_service()
 
 void basic_io_device::reset_io_service()
 {
-	if(has_io_service())
-		cancel();
 	srv_ = 0;
 }
 
@@ -105,8 +103,6 @@ void basic_io_device::close(system::error_code &e)
 {
 	if(fd_ == invalid_socket)
 		return;
-	if(has_io_service())
-		cancel();
 	if(!owner_)
 		return;
 	if(close_file_descriptor(fd_))

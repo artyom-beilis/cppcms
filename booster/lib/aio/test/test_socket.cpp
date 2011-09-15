@@ -648,9 +648,11 @@ void test_close()
 			srv.run();
 			TEST(calls_no == 2);
 		}
+		#if 0
+		// Not supported any more
 		srv.reset();
 		{
-			std::cout << "-- Cancel close outside poll" << std::endl;
+			std::cout << "-- Close outside poll" << std::endl;
 			reset_glb(srv);
 			io::stream_socket s1(srv),s2(srv);
 			make_pair(s1,s2);
@@ -662,7 +664,7 @@ void test_close()
 		}
 		srv.reset();
 		{
-			std::cout << "-- Cancel close during poll" << std::endl;
+			std::cout << "-- Close during poll" << std::endl;
 			reset_glb(srv);
 			io::stream_socket s1(srv),s2(srv);
 			make_pair(s1,s2);
@@ -676,6 +678,7 @@ void test_close()
 			TEST(!e);
 			TEST(calls_no == 2);
 		}
+		#endif
 	}
 	std::cout << std::endl;
 }

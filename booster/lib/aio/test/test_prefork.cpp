@@ -128,6 +128,8 @@ int main()
 		TEST(called); called=false;
 		srv.reset();
 
+		#if 0
+		// not supported any more
 		std::cout << "Cancel by thread" << std::endl;
 		booster::thread t1(thread_socket_canceler);
 		ac.async_accept(s1,socket_accept_failer);
@@ -135,6 +137,7 @@ int main()
 		TEST(called); called=false;
 		t1.join();
 		srv.reset();
+		#endif
 		
 		std::cout << "Accept by thread" << std::endl;
 		booster::thread t2(thread_socket_connector);

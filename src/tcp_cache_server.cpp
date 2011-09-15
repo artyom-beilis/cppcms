@@ -271,32 +271,50 @@ public:
 class tcp_cache_service::server  {
 	io::acceptor acceptor_;
 	cppcms::impl::base_cache &cache;
+	std::vector<io::io_service *> services_;
+	size_t counter;
 	//session_server_storage &sessions;
 	void on_accept(booster::system::error_code const &e,booster::shared_ptr<tcp_cache_service::session> s)
 	{
 		if(!e) {
 			s->socket_.set_option(io::stream_socket::tcp_no_delay,true);
-			s->run();
+			if(&acceptor_.get_io_service()  == &s->socket_.get_io_service()) {
+				s->run();
+			}
+			else {
+				s->socket_.get_io_service().post(boost::bind(&session::run,s));
+			}
 			start_accept();
 		}
+	}
+	io::io_service &get_next_io_service()
+	{
+		int id = counter++;
+		if(counter >= services_.size())
+			counter = 0;
+		return *services_[id];
 	}
 	void start_accept()
 	{
 		//booster::shared_ptr<session> s(new session(acceptor_.io_service(),cache,sessions));
-		booster::shared_ptr<session> s(new session(acceptor_.get_io_service(),cache));
+		booster::shared_ptr<session> s(new session(get_next_io_service(),cache));
 		acceptor_.async_accept(s->socket_,boost::bind(&server::on_accept,this,_1,s));
 	}
 public:
-	server(	io::io_service &io,
+	server(	std::vector<booster::shared_ptr<io::io_service> > &io,
 		std::string ip,
 		int port,
 		cppcms::impl::base_cache &c
 		//,session_server_storage &s
 		) : 
-		acceptor_(io),
-		cache(c)
+		acceptor_(*io[0]),
+		cache(c),
+		counter(0)
 	//	,sessions(s)
 	{
+		services_.resize(io.size());
+		for(size_t i=0;i<io.size();i++)
+			services_[i] = io[i].get();
 		io::endpoint ep(ip,port);
 		acceptor_.open(ep.family());
 		acceptor_.set_option(io::basic_socket::reuse_address,true);
@@ -357,11 +375,10 @@ static void thread_function(io::io_service *io)
 	catch(...){
 		BOOSTER_ERROR("cache_server") << "Unknown exception" << std::endl;
 	}
-	io->stop();
 }
 
 struct tcp_cache_service::_data {
-	io::io_service io;
+	std::vector<booster::shared_ptr<io::io_service> > io;
 	std::auto_ptr<server> srv_cache;
 	booster::intrusive_ptr<base_cache> cache;
 	std::vector<booster::shared_ptr<booster::thread> > threads;
@@ -370,6 +387,10 @@ struct tcp_cache_service::_data {
 tcp_cache_service::tcp_cache_service(booster::intrusive_ptr<base_cache> cache,int threads,std::string ip,int port) :
 	d(new _data)
 {
+	d->io.resize(threads);
+	for(int i=0;i<threads;i++) {
+		d->io[i].reset(new io::io_service());
+	}
 	d->cache=cache;
 	d->srv_cache.reset(new server(d->io,ip,port,*cache));
 #ifndef CPPCMS_WIN32
@@ -379,10 +400,9 @@ tcp_cache_service::tcp_cache_service(booster::intrusive_ptr<base_cache> cache,in
 	pthread_sigmask(SIG_BLOCK, &new_mask, &old_mask);
 #endif
 
-	int i;
-	for(i=0;i<threads;i++){
+	for(int i=0;i<threads;i++){
 		booster::shared_ptr<booster::thread> thread;
-		thread.reset(new booster::thread(boost::bind(thread_function,&d->io)));
+		thread.reset(new booster::thread(boost::bind(thread_function,d->io[i].get())));
 		d->threads.push_back(thread);
 	}
 #ifndef CPPCMS_WIN32
@@ -393,13 +413,14 @@ tcp_cache_service::tcp_cache_service(booster::intrusive_ptr<base_cache> cache,in
 
 void tcp_cache_service::stop()
 {
-	d->io.stop();
+	for(size_t i=0;i<d->io.size();i++)
+		d->io[i]->stop();
 }
 
 tcp_cache_service::~tcp_cache_service()
 {
 	try {
-		d->io.stop();
+		stop();
 		for(unsigned i=0;i<d->threads.size();i++)
 			d->threads[i]->join();
 		d->srv_cache.reset();
