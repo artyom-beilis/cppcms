@@ -20,6 +20,7 @@
 #include "test.h"
 #include <cppcms/session_storage.h>
 #include "session_memory_storage.h"
+#include "session_sqlite_storage.h"
 #ifdef CPPCMS_WIN_NATIVE
 #include "session_win32_file_storage.h"
 #include <windows.h>
@@ -28,38 +29,56 @@
 #include <sys/types.h>
 #include <dirent.h>
 #endif
+#include <booster/function.h>
 #include <string.h>
+#include <memory>
 #include <iostream>
 #include <vector>
-
+#include <stdio.h>
 #include <time.h>
 
 
 std::string dir = "./sessions";
 std::string bs="0123456789abcdef0123456789abcde";
 
-void test(booster::shared_ptr<cppcms::sessions::session_storage> storage)
+void do_nothing() {}
+
+void test(booster::shared_ptr<cppcms::sessions::session_storage> storage,booster::function<void()> callback=do_nothing)
 {
 	time_t now=time(0)+3;
+	callback();
 	storage->save(bs+"1",now,"");
 	std::string out="xx";
 	time_t tout;
+	callback();
 	TEST(storage->load(bs+"1",tout,out));
 	TEST(out.empty());
 	TEST(tout==now);
+	callback();
 	storage->remove(bs+"1");
+	callback();
 	TEST(!storage->load(bs+"1",tout,out));
+	callback();
 	storage->save(bs+"1",now-4,"hello world");
+	callback();
 	TEST(!storage->load(bs+"1",tout,out));
+	callback();
 	storage->save(bs+"1",now,"hello world");
+	callback();
 	TEST(storage->load(bs+"1",tout,out));
+	callback();
 	TEST(out=="hello world");
 	storage->save(bs+"2",now,"x");
+	callback();
 	storage->remove(bs+"2");
+	callback();
 	TEST(storage->load(bs+"1",tout,out));
 	TEST(out=="hello world");
+	callback();
 	storage->remove(bs+"1");
+	callback();
 	storage->remove(bs+"2");
+	callback();
 }
 
 int count_files()
@@ -118,10 +137,22 @@ void test_files(booster::shared_ptr<cppcms::sessions::session_storage> storage,
 }
 
 
+struct do_gc {
+	cppcms::sessions::session_storage_factory *f;
+	int n;
+	void operator()() const
+	{
+		for(int i=0;i<n;i++) {
+			f->gc_job();
+		}
+	}
+};
+
 int main()
 {
 	try {
 		booster::shared_ptr<cppcms::sessions::session_storage> storage;
+		std::auto_ptr<cppcms::sessions::session_storage_factory> storage_factory;
 		using namespace cppcms::sessions;
 
 		std::cout << "Testing memory storage" << std::endl;
@@ -147,6 +178,31 @@ int main()
 		storage=f.get();
 		test_files(storage,f);
 		#endif
+
+		std::cout << "Testing sqlite storage" << std::endl;
+		remove("test.db");
+		
+		try {
+			storage_factory.reset(cppcms::sessions::sqlite_session::factory("test.db"));
+		}
+		catch(std::exception const &e) {
+			std::string msg = e.what();
+			if(	msg.find("Failed to load library")!=std::string::npos 
+				|| msg.find("3.7 and above required")!=std::string::npos)
+			{
+				std::cout << "Seems that sqlite3 storage not supported" << std::endl;
+			}
+			else
+				throw;
+		}
+		if(storage_factory.get()) {
+			storage=storage_factory->get();
+			for(int i=0;i<3;i++) {
+				std::cout << "- GC " << i << std::endl;
+				do_gc gc = { storage_factory.get(), i};
+				test(storage,gc);
+			}
+		}
 	}
 	catch(std::exception const &e) {
 		std::cerr <<"Fail" << e.what() << std::endl;

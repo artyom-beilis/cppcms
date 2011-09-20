@@ -44,6 +44,7 @@
 #include "session_posix_file_storage.h"
 #endif
 #include "session_memory_storage.h"
+#include "session_sqlite_storage.h"
 
 #include <booster/aio/deadline_timer.h>
 #include <booster/callback.h>
@@ -129,7 +130,7 @@ private:
 
 class session_pool::gc_job : public booster::enable_shared_from_this<gc_job> {
 public:
-	gc_job(service *ser,int freq,session_pool *pool) :
+	gc_job(service *ser,double freq,session_pool *pool) :
 		timer_(new booster::aio::deadline_timer(ser->get_io_service())),
 		service_(ser),
 		freq_(freq),
@@ -143,13 +144,15 @@ public:
 private:
 	void gc() const 
 	{
+		booster::ptime start = booster::ptime::now();
+		booster::ptime restart = start + booster::ptime::from_number(freq_);
 		pool_->backend_->gc();
-		timer_->expires_from_now(booster::ptime(freq_));
+		timer_->expires_at(restart);
 		timer_->async_wait(boost::bind(&gc_job::async_run,shared_from_this()));
 	}
 	booster::shared_ptr<booster::aio::deadline_timer> timer_;
 	service *service_;
-	int freq_;
+	double freq_;
 	session_pool *pool_;
 };
 
@@ -162,7 +165,7 @@ void session_pool::init()
 
 	std::string location=srv.settings().get("session.location","none");
 
-	if(location == "client" || (location=="both" && !encryptor_.get())) {
+	if((location == "client" || location=="both") && !encryptor_.get()) {
 		using namespace cppcms::sessions::impl;
 		std::string enc=srv.settings().get("session.client.encryptor","");
 		std::string mac=srv.settings().get("session.client.hmac","");
@@ -228,7 +231,7 @@ void session_pool::init()
 
 		encryptor(factory);
 	}
-	if(location == "server" || (location == "both" && !storage_.get())) {
+	if((location == "server" || location == "both") && !storage_.get()) {
 		std::string stor=srv.settings().get<std::string>("session.server.storage");
 		std::auto_ptr<sessions::session_storage_factory> factory;
 		if(stor == "files") {
@@ -247,6 +250,19 @@ void session_pool::init()
 			if(srv.procs_no() > 1)
 				throw cppcms_error("Can't use memory storage with more then 1 worker process");
 			factory.reset(new session_memory_storage_factory());
+		}
+		else if(stor == "sqlite") {
+			if(srv.procs_no() > 1)
+				throw cppcms_error("Can't use sqlite storage with more then 1 worker process");
+			if(srv.settings().get("session.gc",0.0) <= 0) {
+				throw cppcms_error("The value of session.gc should be small positive value - like 1.0 - one second");
+			}
+			std::string db = srv.settings().get<std::string>("session.server.sqlite.db");
+			std::string so = srv.settings().get("session.server.sqlite.so","");
+			if(so.empty())
+				factory.reset(sqlite_session::factory(db));
+			else
+				factory.reset(sqlite_session::factory(db,so));
 		}
 		else 
 			throw cppcms_error("Unknown server side storage:"+stor);
@@ -283,7 +299,7 @@ void session_pool::after_fork()
 	if(backend_.get() && backend_->requires_gc()) {
 		if(service_->process_id()!=1)
 			return;
-		int frequency = service_->settings().get("session.gc",0);
+		double frequency = service_->settings().get("session.gc",0.0);
 		if(frequency > 0) {
 			booster::shared_ptr<gc_job> job(new gc_job(service_,frequency,this));
 			job->async_run();

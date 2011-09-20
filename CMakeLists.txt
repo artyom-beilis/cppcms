@@ -29,6 +29,7 @@ option(DISABLE_HTTP		"Disable http web server" OFF)
 option(DISABLE_CACHE		"Disable cache beckend" OFF)
 option(DISABLE_TCPCACHE		"Disable distributed cache beckend" OFF)
 option(DISABLE_GZIP		"Disable support of gzip output compression" OFF)
+option(STATIC_SQLITE		"Link with sqlite library directly, do not load it" OFF)
 
 if(CMAKE_CXX_COMPILER_ID STREQUAL "SunPro")
 	option(DISABLE_PREFORK_CACHE	"Disable prefork-cache beckend" ON)
@@ -326,6 +327,7 @@ set(CPPCMS_SOURCES
 	src/session_sid.cpp
 	src/session_interface.cpp
 	src/session_memory_storage.cpp
+	src/session_sqlite_storage.cpp
 	src/rpc_json.cpp
 	src/mount_point.cpp
 	src/archive.cpp
@@ -377,7 +379,12 @@ if(NOT LIB_CRYPT)
 	message("GNU-TLS Gcrypt or OpenSSL librarys are not found, disabling AES encryption support")
 endif()
 
-
+if(STATIC_SQLITE)
+	set(CPPCMS_SQLITE_LINK_STATIC 1)
+	find_library(LIB_SQLITE sqlite3)
+	find_path(HEADER_SQLITE sqlite3.h)
+	include_directories(${HEADER_SQLITE})
+endif()
 
 if(NOT DISABLE_FCGI)
 	set(CPPCMS_SOURCES ${CPPCMS_SOURCES} src/fastcgi_api.cpp)
@@ -452,6 +459,9 @@ foreach(ALIB ${CPPCMS_LIBS})
 
 	if(NOT DISABLE_GZIP)
 		target_link_libraries(${ALIB} ${ZLIB})
+	endif()
+	if(STATIC_SQLITE)
+		target_link_libraries(${ALIB} ${LIB_SQLITE})
 	endif()
 endforeach(ALIB)
 
