@@ -250,10 +250,6 @@ private:
 	};
 
 	//
-	// Protected by poll mutex
-	//
-	recursive_mutex poll_mutex_;
-	//
 	// The reactor itself so multiple threads
 	// can dispatch events on same reactor
 	//
@@ -511,9 +507,7 @@ private:
 			system::error_code poll_error;
 			polling_ = true;
 			try {
-				// refork injection
 				data_mutex_.unlock();
-				lock_guard lg(poll_mutex_);
 				n = reactor_->poll(evs,evs_size,int(ptime::milliseconds(wait_time)),poll_error);
 			}
 			catch(...) {

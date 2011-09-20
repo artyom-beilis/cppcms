@@ -31,7 +31,7 @@ namespace aio {
 	/// 
 	/// This all this class member functions are thread safe unless specified otherwise.
 	///
-	/// Sinlge or multiple threads may execute run() member function and dispatch its handlers, this class
+	/// However only \b single thread may execute run() member function and dispatch its handlers, this class
 	/// also can be safely created before fork and used after it
 	///
 	class BOOSTER_API io_service : public noncopyable, public io_events {
