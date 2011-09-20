@@ -351,7 +351,9 @@ if(NOT DISABLE_TCPCACHE)
 		src/cache_over_ip.cpp
 		src/tcp_messenger.cpp
 		src/tcp_connector.cpp
-		src/tcp_cache_server.cpp)
+		src/tcp_cache_server.cpp
+		src/session_tcp_storage.cpp
+		)
 endif()
 
 if(NOT DISABLE_GCRYPT)

@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 //                                                                             
-//  Copyright (C) 2008-2010  Artyom Beilis (Tonkikh) <artyomtnk@yahoo.com>     
+//  Copyright (C) 2008-2011  Artyom Beilis (Tonkikh) <artyomtnk@yahoo.com>     
 //                                                                             
 //  This program is free software: you can redistribute it and/or modify       
 //  it under the terms of the GNU Lesser General Public License as published by
@@ -16,46 +16,58 @@
 //  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 ///////////////////////////////////////////////////////////////////////////////
-#include "tcp_messenger.h"
+#define CPPCMS_SOURCE
 #include "session_tcp_storage.h"
+#include "tcp_messenger.h"
 #include <cppcms/session_sid.h>
-#include "global_config.h"
+#include <stdio.h>
 
 namespace cppcms {
+namespace sessions {
+using namespace cppcms::impl;
+class sessions_tcp_connector : public cppcms::impl::tcp_connector {
+public:
+	sessions_tcp_connector(std::vector<std::string> const &ips,std::vector<int> const &ports) :
+		cppcms::impl::tcp_connector(ips,ports)
+	{
+	}
+	unsigned hash(std::string const &key)
+	{
+		if(conns==1) return 0;
+		char buf[5] = { key.at(0) , key.at(1), key.at(2), key.at(3) , 0};
+		unsigned val=0;
+		sscanf(buf,"%x",&val);
+		return val % conns;;
+	}
+};
 
-unsigned session_tcp_storage::hash(string const &key)
+bool tcp_storage::is_blocking()
 {
-	if(conns==1) return 0;
-	char buf[5] = { key.at(0) , key.at(1), key.at(2), key.at(3) , 0};
-	unsigned val=0;
-	sscanf(buf,"%x",&val);
-	return val % conns;;
+	return true;
 }
 
-void session_tcp_storage::save(std::string const &sid,time_t timeout,std::string const &in)
+void tcp_storage::save(std::string const &sid,time_t timeout,std::string const &in)
 {
-	time_t now=time(NULL);
-	if(now > timeout) {
-		return ;
-	}
-	tcp_operation_header h={0};
+	tcp_operation_header h=tcp_operation_header();
 	h.opcode=opcodes::session_save;
 	h.size=in.size() + 32;
-	h.operations.session_save.timeout=timeout - now;
-	string data=sid;
-	data.append(in.begin(),in.end());
-	get(sid).transmit(h,data);
+	h.operations.session_save.timeout=timeout - time(0);
+	std::string data;
+	data.reserve(sid.size() + in.size());
+	data+=sid;
+	data+=in;
+	tcp().get(sid).transmit(h,data);
 }
 
-bool session_tcp_storage::load(std::string const &sid,time_t *timeout,std::string &out)
+bool tcp_storage::load(std::string const &sid,time_t &timeout,std::string &out)
 {
-	tcp_operation_header h={0};
+	tcp_operation_header h=tcp_operation_header();
 	h.opcode=opcodes::session_load;
 	h.size=sid.size();
-	string data=sid;
-	get(sid).transmit(h,data);
+	std::string data=sid;
+	tcp().get(sid).transmit(h,data);
 	if(h.opcode==opcodes::session_load_data) {
-		if(timeout) *timeout=time(NULL) + h.operations.session_data.timeout;
+		timeout = time(NULL) + h.operations.session_data.timeout;
 		out.swap(data);
 		return true;
 	}
@@ -65,37 +77,23 @@ bool session_tcp_storage::load(std::string const &sid,time_t *timeout,std::strin
 	
 }
 
-void session_tcp_storage::remove(std::string const &sid)
+void tcp_storage::remove(std::string const &sid)
 {
-	tcp_operation_header h={0};
+	tcp_operation_header h=tcp_operation_header();
 	h.opcode=opcodes::session_remove;
 	h.size=sid.size();
-	string data=sid;
-	get(sid).transmit(h,data);
+	std::string data=sid;
+	tcp().get(sid).transmit(h,data);
 }
-
-namespace {
-
-struct builder {
-	vector<string> ips;
-	vector<int> ports;
-	builder(vector<string> const &ips_,vector<int> const &ports_) :
-		ips(ips_), ports(ports_)
-	{
-	}
-	booster::shared_ptr<session_api> operator()(worker_thread &w)
-	{
-		booster::shared_ptr<session_server_storage> storage(new session_tcp_storage(ips,ports));
-		return booster::shared_ptr<session_api>(new session_sid(storage));
-	}
-} ;
-
-} // anon
-
-
-session_backend_factory session_tcp_storage::factory(cppcms_config const &conf)
+tcp_connector &tcp_storage::tcp()
 {
-	return builder(conf.slist("session.tcp_ips"),conf.ilist("session.tcp_ports"));
+	tcp_connector *p = tcp_.get();
+	if(!p) {
+		p=new sessions_tcp_connector(ips_,ports_);
+		tcp_.reset(p);
+	}
+	return *p;
 }
 
+} // sessions
 } // cppcms

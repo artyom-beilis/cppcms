@@ -61,11 +61,17 @@ void tcp_connector::broadcast(tcp_operation_header &h,std::string &data)
 unsigned tcp_connector::hash(std::string const &key)
 {
 	if(conns==1) return 0;
-	unsigned val=0,i;
-	for(i=0;i<key.size();i++) {
-		val+=251*key[i]+103 % 307;
+	unsigned h=0;
+	// crc 
+	for(size_t i=0;i<key.size();i++)  {
+		unsigned char c=key[i];
+
+		unsigned highorder = h & 0xf8000000u;
+		h<<=5;
+		h^=highorder >> 27;
+		h^=c;
 	}
-	return val % conns;;
+	return h % conns;
 }
 
 messenger &tcp_connector::get(std::string const &key)
