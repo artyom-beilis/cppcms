@@ -30,6 +30,7 @@
 #include <dirent.h>
 #endif
 #include <booster/function.h>
+#include <booster/backtrace.h>
 #include <string.h>
 #include <memory>
 #include <iostream>
@@ -184,29 +185,31 @@ int main()
 		
 		try {
 			storage_factory.reset(cppcms::sessions::sqlite_session::factory("test.db"));
-		}
-		catch(std::exception const &e) {
-			std::string msg = e.what();
-			if(	msg.find("Failed to load library")!=std::string::npos 
-				|| msg.find("3.7 and above required")!=std::string::npos)
-			{
-				std::cout << "Seems that sqlite3 storage not supported" << std::endl;
-			}
-			else
-				throw;
-		}
-		if(storage_factory.get()) {
 			storage=storage_factory->get();
+
 			for(int i=0;i<3;i++) {
 				std::cout << "- GC " << i << std::endl;
 				do_gc gc = { storage_factory.get(), i};
 				test(storage,gc);
 			}
 		}
+		catch(std::exception const &e) {
+			std::string msg = e.what();
+			if(	msg.find("Failed to load library")!=std::string::npos 
+				|| msg.find("3.7 and above required")!=std::string::npos)
+			{
+				std::cout << "Seems that sqlite3 storage not supported:" << msg << std::endl;
+			}
+			else {
+				throw;
+			}
+		}
 	}
 	catch(std::exception const &e) {
-		std::cerr <<"Fail" << e.what() << std::endl;
+		std::cerr <<"Fail: " << e.what() << std::endl;
+		std::cerr << booster::trace(e) << std::endl;
 		return 1;
 	}
+	std::cout << "Ok" << std::endl;
 	return 0;
 }
