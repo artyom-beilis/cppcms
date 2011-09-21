@@ -21,6 +21,7 @@
 #include "tcp_messenger.h"
 #include <cppcms/session_sid.h>
 #include <stdio.h>
+#include <time.h>
 
 namespace cppcms {
 namespace sessions {
