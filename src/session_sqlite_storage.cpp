@@ -114,6 +114,7 @@ namespace details {
 					dlclose(handle);
 					handle = 0;
 				}
+				throw;
 			}
 			loaded = true;
 		}
