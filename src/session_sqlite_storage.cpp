@@ -16,6 +16,7 @@
 //  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 ///////////////////////////////////////////////////////////////////////////////
+#define CPPCMS_SOURCE
 #include <cppcms/config.h>
 #include <cppcms/session_storage.h>
 #include <booster/thread.h>
