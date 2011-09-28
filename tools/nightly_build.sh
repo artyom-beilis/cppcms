@@ -187,7 +187,7 @@ PID=$!
 
 for x in {1..240}
 do
-	if [ -e /home/storage/faults.tar.gz ] 
+	if [ -e /mnt/raid/storage/faults.tar.gz ] 
 	then
 		sleep 1
 		break
@@ -199,10 +199,10 @@ done
 VBoxManage controlvm XP acpipowerbutton
 wait $PID
 
-if [ -e /home/storage/faults.tar.gz ] 
+if [ -e /mnt/raid/storage/faults.tar.gz ] 
 then
 	mkdir temp
-	cp /home/storage/faults.tar.gz temp
+	cp /mnt/raid/storage/faults.tar.gz temp
 	cd temp
 	tar -xzf faults.tar.gz
 	cat faults/report.txt >>/tmp/report.txt
