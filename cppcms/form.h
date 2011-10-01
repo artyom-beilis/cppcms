@@ -180,7 +180,8 @@ namespace cppcms {
 	class CPPCMS_API base_form : public form_flags {
 	public:
 		///
-		/// Render the widget to std::ostream \a output with the control flags \a flags.
+		/// Render the widget to the output set in \a cppcms::form_context::out()
+		/// according to the control flags set in \a cppcms::form_flags.
 		/// Usually this function is called directly by the template rendering functions.
 		///
 		virtual void render(form_context &context) = 0;
@@ -204,7 +205,7 @@ namespace cppcms {
 		virtual void clear() = 0;
 
 		///
-		/// Set a parent of this form. Used internally. You should not use it.
+		/// Set the parent of this form. Used internally. You should not use it.
 		///
 		virtual void parent(base_form *subform) = 0;
 
@@ -220,8 +221,8 @@ namespace cppcms {
 	///
 	/// \brief The \a form is a container used to collect other widgets and forms into a single unit.
 	///
-	/// Generally various widgets and forms are combined into a single form in order to simplify the rendering
-	/// and validation of forms that include more than one widget.
+	/// Generally various widgets and forms are combined into a single form in order to simplify their rendering
+	/// and validation of the forms that include more than one widget.
 	///
 	class CPPCMS_API form :	public booster::noncopyable,
 				public base_form
@@ -232,7 +233,7 @@ namespace cppcms {
 
 		///
 		/// Render all the widgets and sub-forms to the \a output, using
-		/// the base_form \a flags.
+		/// the flags defined in the \a context.
 		///
 		virtual void render(form_context &context);
 
@@ -307,7 +308,7 @@ namespace cppcms {
 		virtual void parent(base_form *subform);
 
 		///
-		/// Get parent of this form. If this is the topmost form, NULL is returned.
+		/// Get the parent of this form. If this is the topmost form, NULL is returned.
 		/// It is assumed that the parent is always a form.
 		///
 		virtual form *parent();
@@ -316,9 +317,10 @@ namespace cppcms {
 		/// \brief Input iterator used to iterate over all the widgets in a form.
 		///
 		/// This class is mainly used by templates to render widgets. It
-		/// walks over all widgets and subforms recursively.
+		/// recursively iterates over all the widgets and subforms.
 		///
-		/// Note: it walks over widgets only:
+		/// \note it iterates over widgets only and never \ref 
+		///  form objects.
 		///
 		/// \code
 		/// iterator p=f.begin();
@@ -387,8 +389,8 @@ namespace cppcms {
 			}
 
 			///
-			/// Post Increment operator, it forward the iterator no text widget.
-			/// Note it does not point to higher level form container.
+			/// Post increment operator. It forwards the iterator to the next widget.
+			/// Note it does not point to the higher level form container.
 			///
 			/// Note: it is preferable to use ++i rather than i++ as copying iterators is not cheap.
 			///
@@ -400,8 +402,8 @@ namespace cppcms {
 			}
 
 			///
-			/// Increment operator. It forward the iterator no text widget.
-			/// Note it does not point to higher level form container
+			/// Increment operator. It forwards the iterator to the next widget.
+			/// Note it does not point to the higher level form container.
 			///
 			iterator &operator++()
 			{
@@ -427,12 +429,12 @@ namespace cppcms {
 		};
 
 		///
-		/// Returns an iterator to the first widget.
+		/// Returns the iterator to the first widget.
 		///
 		iterator begin();
 
 		///
-		/// Returns the end-iterator for walking over all widgets.
+		/// Returns the end of the range iterator.
 		///
 		iterator end();
 
@@ -441,7 +443,7 @@ namespace cppcms {
 		friend class iterator;
 
 		struct _data;
-		// Widget and ownership true mine
+		// Widget and ownership - true means I own it.
 		typedef std::pair<base_form *,bool> widget_type;
 		std::vector<widget_type> elements_;
 		form *parent_;
@@ -451,16 +453,16 @@ namespace cppcms {
 
 
 	///
-	/// \brief This namespace includes all widgets (html-forms) supported by cppcms
+	/// \brief This namespace includes all the widgets (i.e. parts of HTML forms) supported by cppcms.
 	///
 	namespace widgets {
 
 		///
-		/// \brief this class is the base class of all renderable widgets that can be
-		/// used together with forms
+		/// \brief this class is the base class of all renderable widgets which
+		/// can be used with CppCMS form system.
 		///
-		/// All cppcms widgets are derived from this class. User, who want to create 
-		/// its own custom widgets must derive them from this class
+		/// All cppcms widgets are derived from this class. Users who want to create
+		/// their own custom widgets must derive them from this class.
 		///
 
 		class CPPCMS_API base_widget : 	
@@ -468,213 +470,201 @@ namespace cppcms {
 			public booster::noncopyable
 		{
 		public:
-
 			///
-			/// Default constructor
+			/// Default constructor.
 			///
 			base_widget();
 
 			virtual ~base_widget();
 			
 			/// 
-			/// Check if a value was assigned to widget. Usually becomes true
-			/// when user assignees value to widget or the widget is loaded.
+			/// Check if a value has been assigned to the widget. It is usually true
+			/// when the user has assigned a value to the widget or when the widget is loaded.
 			///
-			/// If there is exist a reasonable default value for a widget 
+			/// If there is a reasonable default value for the widget 
 			/// then set() should be true. For widgets like file or numeric
-			/// where explicit parsing is required the set() value would indecate
-			/// that user provided some value (uploaded a file, had gave a number)
+			/// where explicit parsing is required, the set() value would indicate
+			/// that user provided some value (i.e. uploaded a file or entered a number).
 			///
 			bool set();
 
 			///
-			/// After executing validation, each widget can be tested for validity
+			/// After having executed the validation process, each widget can be tested for validity.
 			///
 			bool valid();
 
 			///
-			/// Get html id attribute
+			/// Get the HTML \a id attribute.
 			///
 			std::string id();
 
 			///
-			/// Get html name attribute
+			/// Get the HTML \a name attribute.
 			/// 
 			std::string name();
 
 			///
-			/// Get short message that would be displayed near the widget
+			/// Get the short message that would be displayed near the widget.
 			/// 
 			locale::message message();
 
 			///
-			/// Check if message is set
+			/// Check if a message is set.
 			///
 			bool has_message();
 
 			///
-			/// Get associated error message that would be displayed near the widget
-			/// if widget validation failed.
+			/// Get the error message that would be displayed near the widget
+			/// if the widget validation failed.
 			/// 
 			locale::message error_message();
 
 			///
-			/// Check if error message is set
+			/// Check if an error message is set.
 			///
-
 			bool has_error_message();
 
 			///
-			/// Get long description for specific widget
+			/// Get the eventual long description of the wigget.
 			///
-
 			locale::message help();
 
 			///
-			/// Check if help message is set
+			/// Check if a help message is set.
 			///
-			
 			bool has_help();
 
 			///
-			/// Get disabled html attribute
+			/// Get the HTML \c disabled attribute.
 			///
-
 			bool disabled();
 
 			///
-			/// Set/Unset disabled html attribute
+			/// Set/Unset the HTML \c disabled attribute.
 			///
-
 			void disabled(bool);
 
 			///
-			/// Get the general user defined attributes string that can be added to widget
+			/// Get the general user defined attribute string that can be added to the widget.
 			/// 
 			std::string attributes_string();
 
 			///
-			/// Set the existence of content for widget. By default the widget is not set.
-			/// Any value fetch from "unset" widget by convention should throw an exception
-			/// Calling set with true -- changes state to "set" and with false to "unset"
+			/// Set the existence of content for the widget. By default the widget is not set.
+			/// By convention, trying to fetch a value from a widget that is "unset" will throw an exception.
+			/// Call set(true) to change the state to "set" and call set(false) to change it to "unset".
 			///
-			
 			void set(bool);
 
 			///
-			/// Set validity state of widget. By default the widget is valid. When it
-			/// passes validation its validity state is changed by calling this function
+			/// Set th validity state of the widget. By default the widget is valid. If it fails to pass
+			/// the validation, its validity state is changed by calling this function.
 			///
-			/// Note: widget maybe not-set but still valid and it may be set but not-valid
+			/// Note: a widget may be "unset" and still be valid. Conversely, it may be set but be not-valid.
 			///
-
 			void valid(bool);
 
 			///
-			/// Set html id attribute of the widget
+			/// Set the HTML \c id attribute of the widget.
 			///
 			void id(std::string);
 
 			///
-			/// Set html name attribute of the widget. Note: if this attribute
-			/// is not set, the widget would not be able to be loaded from POST/GET
+			/// Set the HTML \c name attribute of the widget. Note: if this attribute
+			/// is not set, the widget will not be able to be loaded from the POST/GET
 			/// data.
 			///
-			
 			void name(std::string);
 
 			///
-			/// Set short description for the widget. Generally it is good idea to
+			/// Set a short description for the widget. Generally, it is a good idea to
 			/// define this value.
 			///
-			/// Short message can be also set using base_widget constructor
+			/// The short message can also be set using the base_widget constructor.
 			///
 			void message(std::string);
 
 			///
-			/// Set short translatable description for the widget. Generally it is good idea to
+			/// Set a short translatable description for the widget. Generally, it is a good idea to
 			/// define this value.
 			///
-			/// Short message can be also set using base_widget constructor
+			/// The short message can also be set using the base_widget constructor.
 			///
 			void message(locale::message const &);
 
 			///
-			/// Set error message that is displayed for invalid widgets.
+			/// Set the error message that is displayed for invalid widgets.
 			///
-			/// If it is not set, simple "*" is shown
+			/// If it is not set, a simple "*" is shown instead.
 			///
 			void error_message(std::string);
 
 			///
-			/// Set translatable error message that is displayed for invalid widgets.
+			/// Set the translatable error message that is displayed for invalid widgets.
 			///
-			/// If it is not set, simple "*" is shown
+			/// If it is not set, a simple "*" is shown instead.
 			///
 			void error_message(locale::message const &);
 
 			///
-			/// Set longer help message that describes this widget
+			/// Set a longer help message that describes this widget.
 			///
 			void help(std::string);
 			
 			///
-			/// Set translatable help message that describes this widget
+			/// Set a translatable help message that describes this widget.
 			///
 			void help(locale::message const &msg);
 
 			///
-			/// Set general html attributes that are not supported
-			/// directly. For example:
+			/// Set general HTML attributes that are not directly supported
+			/// For example:
 			///
 			/// \code
 			///  my_widget.attributes_string("style='direction:rtl' onclick='return foo()'");
 			/// \endcode
 			///
-			/// This string is inserted as-is just behind render_input_start
+			/// This string is inserted as-is just after render_input_start.
 			/// 
 			void attributes_string(std::string v);
 
 
 			///
-			/// Render full widget with error messages and decorations as paragraphs
-			/// or table elements to \a output
+			/// Render the full widget together with error messages and decorations as paragraphs
+			/// or table elements to the output set in \a cppcms::form_context::out().
 			///
-
 			virtual void render(form_context &context);
 
 			///
-			/// This is a virtual member function that should be implemented by each widget
-			/// It executes actual rendering of the input HTML form 
+			/// This is a virtual member function that should be implemented by each widget.
+			/// It executes the actual rendering of the HTML form. 
 			///
 			virtual void render_input(form_context &context) = 0;
 
 			///
-			/// Clean the form. Calls set(false) as well
+			/// Clear the form. It also calls set(false).
 			///
 			virtual void clear();
 
 			///
-			/// Validate form. If not overridden it sets widget to valid
+			/// Validate the form. If not overridden, it sets the widget to \a valid.
 			///
 			virtual bool validate();
 
 			///
-			/// Render standard common attributes like id, name, disabled etc.
+			/// Render standard common attributes like \a id, \a name, \a disabled, etc.
 			///
-
 			virtual void render_attributes(form_context &context);
 			
 			///
-			/// Set parent of this widget. Used internaly, should not be used. It is called
-			/// when the form is added or attached to other form.
+			/// Set the parent of this widget. It is used internally; you should not use it. It is called
+			/// when the form is added or attached to another form.
 			///
-			
 			virtual void parent(base_form *subform);
 
 			///
-			/// Get parent of this form. If this is topmost form, NULL is returned
-			/// Note widget is assumed to be assigned to forms only
+			/// Get the parent of this form. If this is the topmost form, NULL is returned.
+			/// It is assumed that the parent is always a form.
 			///
 			virtual form *parent();
 
@@ -687,12 +677,12 @@ namespace cppcms {
 
 		protected:
 			///
-			/// This function should be called by overloaded load/render methods
-			/// before rendering/loading starts
+			/// This function should be called by overloadeding the load/render methods
+			/// before the loading/rendering starts.
 			///
 			void auto_generate(form_context *context = 0);
-		private:
 
+		private:
 			void generate(int position,form_context *context = 0);
 
 			std::string id_;
@@ -717,17 +707,14 @@ namespace cppcms {
 		};
 
 		///
-		/// \brief this is the widget that is used as base for text input field representation
+		/// \brief This widget is used as base for text input fields.
 		///
-		/// This widget is used as base class for other widgets that are used for
-		/// text input like: text, textarea, etc.
+		/// This widget is used as the base class for other widgets that are used for
+		/// text input like: \ref text, \ref textarea, etc.
 		///
-		/// This widget does much more then reading simple filed data from the POST
-		/// or GET form, it performs charset validation and if required conversion
-		/// to and from Unicode charset to locale charset.
+		/// This widget does much more than reading simple text data from the POST
+		/// or GET form. It also performs charset validation.
 		///
-
-
 		class CPPCMS_API base_text : virtual public base_widget {
 		public:
 			
@@ -735,72 +722,70 @@ namespace cppcms {
 			virtual ~base_text();
 
 			///
-			/// Get the string that contains input value of the widget.
+			/// Get the string that contains the input value of the widget.
 			///
-			
-			
 			std::string value();
 			
 			///
-			/// Set the widget content before rendering, the value \a v 
+			/// Set the widget content to the value \a v before rendering.
 			///
-			
 			void value(std::string v);
 			
 			///
-			/// Acknowledge the validator that this text widget should contain some text.
-			/// similar to limits(1,-1)
+			/// Inform the validator that this text widget should contain some text.
+			/// It is similar to limits(1,-1).
 			///
 			void non_empty();
+			
 			///
-			/// Set minimum and maximum limits for text size. Note max == -1 indicates that there
-			/// is no maximal limit, min==0 indicates that there is no minimal limit.
+			/// Set the minimum and maximum limits of the text size. Note: max == -1 indicates that there
+			/// is no maximum limit; min==0 indicates that there is no minimum limit.
 			///
 			/// Note: these numbers represent the length in Unicode code points (even if the encoding
-			/// is not Unicode). If character set validation is disabled, then these number represent
+			/// is not Unicode). If the character set validation is disabled, then these numbers represent
 			/// the number of octets in the string.
 			///
 			void limits(int min,int max);
 
 			///
-			/// Get minimal and maximal size limits, 
+			/// Get the minimum and maximum size limits, 
 			///
-			
 			std::pair<int,int> limits();
 
 			///
-			/// Acknowledge the validator if it should not check the validity of the charset.
-			/// Default -- enabled
+			/// Inform the validator whether it should check the validity of the charset.
+			/// The default is enabled (true).
 			///
-			/// Generally you should not use this option unless you want to load some raw data as
-			/// form input, or the character set is different from the defined in locale.
+			/// Generally you should not use this option to disable the charset validation
+			/// unless you want to load some raw data as
+			/// form input, or the character set is different from the one defined in the locale.
 			///
 			void validate_charset(bool );
 			
 			///
-			/// Returns true if charset validation is enabled.
+			/// Return true if the charset validation is enabled.
 			///
-
 			bool validate_charset();
 
 			///
-			/// Validate the widget content according to rules and charset encoding.
+			/// Validate the widget content according to the rules and to the charset encoding.
 			///
 			/// Notes:
 			/// 
-			/// -  The charset validation is very efficient for variable length UTF-8 encoding, 
-			///    and most popular fixed length ISO-8859-*, windows-125* and koi8* encodings, for other
-			///    encodings iconv conversion is used for actual validation.
-			/// -  Special characters (that not allowed in HTML) are assumed as forbidden, even if they are
+			/// -  The charset validation is very efficient for variable length UTF-8 encoding as well as 
+			///    for most popular fixed length encodings like ISO-8859-*, windows-125* and koi8*.
+			///    For other encodings, character set conversion is used for the actual validation.
+			/// -  Special characters (that are not allowed in HTML) are assumed to be forbidden, even if they are
 			///    valid code points (like NUL = 0 or DEL=127).
 			/// 
 			virtual bool validate();
 
 			///
-			/// Load the widget for http::context. It used the locale given in the context for
-			/// validation of text.
+			/// Load the widget for http::context. It uses the locale given in the context to
+			/// validate the text.
 			///
 			virtual void load(http::context &);
+
 		private:
 			std::string value_;
 			int low_;
@@ -812,36 +797,38 @@ namespace cppcms {
 		};
 
 		///
-		/// This class represents a basic widget that generates html for common widgets
-		/// that use <input \/> HTML tag.
+		/// This class represents a basic widget that generates HTML form elements
+		/// the widgets that use the <input \/> HTML tag.
 		///
-		/// It allows you creating your own widgets easier as it does most of job required for
-		/// generating the HTML and user is required only to generate actual value like
-		/// value="10.34" as for numeric widget.
+		/// It allows you to create your own widgets more easily. It does most of job required to
+		/// generate the HTML. The user is only required to generate the actual value like
+		/// value="10.34" as with a numeric widget.
 		///
 
 		class CPPCMS_API base_html_input : virtual public base_widget {
 		public:
-
 			///
-			/// Creates new instance, \a type is HTML type tag of the input element, for example "text" or
+			/// Create a new instance. \a type is the HTML type tag of the input element, for example "text" or
 			/// "password".
 			///
 			base_html_input(std::string const &type);
+
 			///
-			/// Virtual destructor... 
+			/// Virtual destructor.
 			///
 			virtual ~base_html_input();
+
 			///
-			/// This function is actual HTML generation function that calls render_value where needed.
+			/// This function generates the actual HTML. It calls render_value where needed.
 			///
 			virtual void render_input(form_context &context);
 
 		protected:
 			///
-			/// This is what user actually expected to implement. Write actual value HTML tag.
+			/// Write the actual value of the HTML tag. Derived classes must implement this.
 			/// 
 			virtual void render_value(form_context &context) = 0;
+
 		private:
 			struct _data;
 			booster::hold_ptr<_data> d;
@@ -849,40 +836,38 @@ namespace cppcms {
 		};
 
 		///
-		/// \brief This class represents html input of type text
+		/// \brief This class represents an HTML form input element of type text.
 		/// 
-		
 		class CPPCMS_API text : public base_html_input, public base_text
 		{
 		public:
 			///
-			/// Create text field widget
+			/// Create a text field widget.
 			///
 			text();
 			
 			///
 			/// This constructor is provided for use by derived classes where it is required
-			/// to change the type of widget, like text, password, etc. 
+			/// to change the type of the widget, like text, password, etc. 
 			///
 			text(std::string const &type);
 
 			~text();
 
 			///
-			/// Set html attribute size of the widget
+			/// Set the HTML size attribute of the widget.
 			///
-
 			void size(int n);
 
 			///
-			/// Get html attribute size of the widget, -1 undefined
+			/// Get the HTML size attribute size of the widget. It returns -1 if it is undefined.
 			///
-
 			int size();
 
 
 			virtual void render_attributes(form_context &context);
 			virtual void render_value(form_context &context);
+
 		private:
 			int size_;
 			struct _data;
@@ -890,23 +875,24 @@ namespace cppcms {
 		};
 
 		///
-		/// This widget represents hidden input form type. It is used to provide
-		/// some invisible to user information.
+		/// This widget represents a hidden input form element. It is used to provide
+		/// information invisible to the user.
 		///
-		/// I has same properties that text widget has but it does not render any HTML
-		/// related to message(), help() and other informational types.
+		/// I has the same properties as a text widget has but it does not render any HTML
+		/// for message(), help() and other informational types.
 		///
-		/// When your render the form in templates it is good idea to render it separately
-		/// to make sure that no invalid HTML would be created.
+		/// When you render the form in templates, it is a good idea to render it separately
+		/// to make sure that no invalid HTML is created.
 		///
-
 		class CPPCMS_API hidden : public text 
 		{
 		public:
 			hidden();
 			~hidden();
 			///
-			/// Actual rendering function that is redefined
+			/// Render the HTML of the widget. It overrides
+			/// the default HTML rendering as hidden widget
+			/// is never displayed.
 			///
 			virtual void render(form_context &context);
 		private:
@@ -916,8 +902,8 @@ namespace cppcms {
 
 
 		///
-		/// This text widget behaves similarly to text widget but uses rather HTML
-		/// textarea and not input HTML tags
+		/// This text widget behaves similarly to the text widget but uses
+		/// the \c textarea HTML tag rather than the \c input HTML tag.
 		///
 		class CPPCMS_API textarea : public base_text 
 		{
@@ -926,24 +912,27 @@ namespace cppcms {
 			~textarea();
 
 			///
-			/// Get number of rows in textarea -- default -1 -- undefined
+			/// Get the number of rows in the textarea. The default is -1 -- undefined.
 			///
 			int rows();
+
 			///
-			/// Get number of columns in textarea -- default -1 -- undefined
+			/// Get the number of columns in the textarea. The default is -1 -- undefined.
 			///
 			int cols();
 
 			///
-			/// Set number of rows in textarea
+			/// Set the number of rows in the textarea.
 			///
 			void rows(int n);
+
 			///
-			/// Set number of columns in textarea
+			/// Set the number of columns in the textarea.
 			///
 			void cols(int n);
 
 			virtual void render_input(form_context &context);
+
 		private:
 			int rows_,cols_;
 
@@ -951,16 +940,15 @@ namespace cppcms {
 			booster::hold_ptr<_data> d;
 		};
 
-
 		///
-		/// \brief Widget for number input. It is template class that assumes that T is number
+		/// \brief Widget for number input. It is a template class that assumes that T is a number.
 		///
-		/// This class parses the input and checks if it is value value. If it is set() would
+		/// This class parses the input and checks if it is input text is a valid
+		/// numeric value. If it is valid, the set() would return true
 		/// be true.
 		///
-		/// If the value was not defined access to value() would throw an exception
+		/// If the value was not defined, access to value() will throw an exception.
 		///
-
 		template<typename T>
 		class numeric: public base_html_input {
 		public:
@@ -973,7 +961,7 @@ namespace cppcms {
 			}
 
 			///
-			/// Defines that this widget should have some value
+			/// Inform the validator that this widget should contain some value.
 			///
 			void non_empty()
 			{
@@ -982,7 +970,13 @@ namespace cppcms {
 
 
 			///
-			/// Get loaded widget value
+			/// Get numeric value that was loaded from the POST or
+			/// GET data. 
+			///
+			/// \note if the value was not set (empty field for example)
+			/// then this function will throw. So it is good idea to
+			/// check if \ref set() returns true before using this
+			/// function.
 			///
 			T value()
 			{
@@ -992,7 +986,7 @@ namespace cppcms {
 			}
 
 			///
-			/// Set widget value
+			/// Set the value of the widget.
 			///
 			void value(T v)
 			{
@@ -1001,7 +995,7 @@ namespace cppcms {
 			}
 
 			/// 
-			/// Set minimal input number value
+			/// Set the minimum valid value.
 			///
 			void low(T a)
 			{
@@ -1011,9 +1005,8 @@ namespace cppcms {
 			}
 
 			/// 
-			/// Set maximal input number value
+			/// Set the maximum valid value.
 			///
-
 			void high(T b)
 			{
 				max_=b;
@@ -1031,9 +1024,8 @@ namespace cppcms {
 			}
 
 			///
-			/// Render first part of widget
+			/// Render the first part of the widget.
 			///
-
 			virtual void render_value(form_context &context)
 			{
 				if(set())
@@ -1049,9 +1041,8 @@ namespace cppcms {
 			}
 
 			///
-			/// Load widget data
+			/// Load the widget data.
 			///
-			
 			virtual void load(http::context &context)
 			{
 				pre_load(context);
@@ -1083,7 +1074,7 @@ namespace cppcms {
 			}
 			
 			///
-			/// Validate widget
+			/// Validate the widget.
 			///
 			virtual bool validate()
 			{
@@ -1118,9 +1109,8 @@ namespace cppcms {
 		};
 
 		/// 
-		/// \brief The password widget is a simple text widget with some different
+		/// \brief The password widget is a simple text widget with few, obvious differences.
 		//  
-		
 		class CPPCMS_API password: public text {
 		public:
 			password();
@@ -1128,12 +1118,13 @@ namespace cppcms {
 			~password();
 
 			///
-			/// Set equality constraint to password widget -- this password should be
-			/// equal to other one \a p2. Usefull for creation of new passwords -- if passwords
-			/// are not equal, validation would fail
+			/// Set the equality constraint to another password widget. This password should be
+			/// equal to the one in \a p2. It is usefull when creating new passwords: if the passwords
+			/// are not equal, the validation will fail.
 			///
 			void check_equal(password &p2);
 			virtual bool validate();
+
 		private:
 			struct _data;
 			booster::hold_ptr<_data> d;
@@ -1142,31 +1133,31 @@ namespace cppcms {
 
 		
 		///
-		/// \brief This class is extinction of text widget that validates it using additional regular expression
+		/// \brief This class is extending a simple text widget by using additional regular expression validation.
 		///
-
 		class CPPCMS_API regex_field : public text {
 		public:
 			regex_field();
 			///
-			/// Create widget using regular expression \a e
+			/// Create a widget using the regular expression \a e.
 			///
 			regex_field(booster::regex const &e);
 			
 			///
-			/// Create widget using regular expression \a e
+			/// Create a widget using the regular expression \a e.
 			///
 			regex_field(std::string const &e);
 
 
 			///
-			/// Set regular expression
+			/// Set the regular expression.
 			///
 			void regex(booster::regex const &e);
 
 			~regex_field();
 			
 			virtual bool validate();
+
 		private:
 			booster::regex expression_;
 			struct _data;
@@ -1174,9 +1165,8 @@ namespace cppcms {
 		};
 
 		///
-		/// \brief widget that checks that input is valid e-mail
+		/// \brief This widget checks that the input is a valid email address.
 		///
-		
 		class CPPCMS_API email : public regex_field {
 		public:
 
@@ -1189,42 +1179,47 @@ namespace cppcms {
 		};
 
 		///
-		/// This class represent an html checkbox input widget
+		/// This class represent an HTML checkbox input element.
 		///
 		class CPPCMS_API checkbox: public base_html_input {
 		public:
 			///
-			/// The constructor that allows you to specify other type like "radio"
+			/// The constructor that allows you to specify \c type HTML
+			/// attribute. It is passed to the constructor of the 
+			/// \ref base_html_input class.
 			///
 			checkbox(std::string const &type);
+
 			///
-			/// Default constructor, type checkbox
+			/// Default constructor.
 			///
 			checkbox();
 			virtual ~checkbox();
 			
 			///
-			/// Returns true of box was checked (selected)
+			/// Return true if the checkbox was checked (selected).
 			///
 			bool value();
+
 			///
-			/// Set checked state
+			/// Set the state as \a checked.
 			///
 			void value(bool is_set);
 
 			///
-			/// Get unique identification of the checkbox
+			/// Get the unique identification string of the checkbox.
 			///
 			std::string identification();
 
 			///
-			/// Set unique identification to the checkbox, useful when you want to
-			/// have many options with same name
+			/// Set the unique identification string of the checkbox. It is useful when you want to
+			/// have many options with the same name.
 			///
 			void identification(std::string const &);
 
 			virtual void render_value(form_context &context);
 			virtual void load(http::context &context);
+
 		private:
 			struct _data;
 			booster::hold_ptr<_data> d;
@@ -1233,7 +1228,7 @@ namespace cppcms {
 		};
 	
 		///
-		/// Select multiple elements widget
+		/// This widget represents an HTML multiple select form element.
 		///	
 		class CPPCMS_API select_multiple : public base_widget {
 		public:
@@ -1241,66 +1236,72 @@ namespace cppcms {
 			~select_multiple();
 
 			///
-			/// Add a new option to list with display name \a msg, and specify if it is initially
-			/// selected, default false
+			/// Add to the multiple select a new option with the display name \a msg, and specify if it is initially
+			/// selected. The default is \a false.
 			///
 			void add(std::string const &msg,bool selected=false);
+
 			///
-			/// Add a new option to list with display name \a msg, and specify if it is initially
-			/// selected, default false, providing unique identification for the element \a id
+			/// Add to the multiple select a new option with the display name \a msg, and specify if it is initially
+			/// selected (the default is \a false), providing a unique identification string to use as the element's \a id.
 			///
 			void add(std::string const &msg,std::string const &id,bool selected=false);
+
 			///
-			/// Add a new option to list with localized display name \a msg, and specify if it is initially
-			/// selected, default false
+			/// Add to the multiple select a new option with the localized display name \a msg, and specify if it is initially
+			/// selected. The default is \a false.
 			///
 			void add(locale::message const &msg,bool selected=false);
+
 			///
-			/// Add a new option to list with localized display name \a msg, and specify if it is initially
-			/// selected, default false, providing unique identification for the element \a id
+			/// Add to the multiple select a new option with the localized display name \a msg, and specify if it is initially
+			/// selected (the default is \a false), providing a unique identification string to use as the element's \a id.
 			///
 			void add(locale::message const &msg,std::string const &id,bool selected=false);
 
 			///
-			/// Get the mapping of all selected items according to the order they where added to the list
+			/// Get the mapping of all the selected items according to the order they where added to the multiple select list.
 			///
 			std::vector<bool> selected_map();
+
 			///
-			/// Get all selected items ids according to the order they where added to the list, if no
-			/// specific id was given, strings "0", "1"... would be used
+			/// Get all the selected items ids according to the order they where added to the list. If no
+			/// specific id was given, a string like "0", "1"... will be used.
 			///
 			std::set<std::string> selected_ids();
 
 			///
-			/// Get minimal amount of options that should be chosen, default = 0
+			/// Get the minimum amount of options that can be chosen. The default is \a 0.
 			///
 			unsigned at_least();
 
 			///
-			/// Set minimal amount of options that should be chosen, default = 0
+			/// Set the minimum amount of options that can be chosen. The default is \a 0.
 			///
 			void at_least(unsigned v);
 
 			///
-			/// Get maximal amount of options that should be chosen, default unlimited
+			/// Get the maximum amount of options that can be chosen. The default is unlimited.
 			///
 			unsigned at_most();
+
 			///
-			/// Set maximal amount of options that should be chosen, default unlimited
+			/// Set the maximum amount of options that can be chosen. The default is unlimited.
 			///
 			void at_most(unsigned v);
 
 			///
-			/// Same as at_least(1)
+			/// Same as at_least(1).
 			///
 			void non_empty();
 
 			///
-			/// Get the number of rows used for widget, default 0 -- undefined
+			/// Get the number of rows used to display the widget. The default is \a 0 -- undefined.
 			///
 			unsigned rows();
+
 			///
-			/// Set the number of rows used for widget, default 0 -- undefined
+			/// Set the number of rows used to display the widget. The default is \a 0 -- undefined.
 			///
 			void rows(unsigned n);
 			
@@ -1308,6 +1309,7 @@ namespace cppcms {
 			virtual bool validate();
 			virtual void load(http::context &context);
 			virtual void clear();
+
 		private:
 			struct _data;
 			booster::hold_ptr<_data> d;
@@ -1334,10 +1336,9 @@ namespace cppcms {
 			
 		};
 
-	
 		///
-		/// This is the base class for "select" like widgets which includes dropdown list
-		/// and radio buttons set.
+		/// This is the base class for "select" like widgets which include dropdown lists
+		/// and radio button sets.
 		///
 		class CPPCMS_API select_base : public base_widget {
 		public:
@@ -1345,46 +1346,49 @@ namespace cppcms {
 			virtual ~select_base();
 
 			///
-			/// Add new entry to selection list
+			/// Add a new entry to the selection list.
 			///
 			void add(std::string const &string);
 
 			///
-			/// Add new entry to selection list giving the unique entry identification \a id
+			/// Add to the selection list a new entry with the unique identification string \a id.
 			///
 			void add(std::string const &string,std::string const &id);
+
 			///
-			/// Add new localized entry to selection list
+			/// Add a new localized entry to the selection list.
 			///
 			void add(locale::message const &msg);
+
 			///
-			/// Add new localized entry to selection list giving the unique entry identification \a id
+			/// Add to the selection list a new localized entry with the unique identification string \a id.
 			///
 			void add(locale::message const &msg,std::string const &id);
 
 			///
-			/// Return the selected entry number in the list starting from 0. -1 indicates that nothing
+			/// Return the number of the selected entry in the list. Entries are numbered starting from 0. -1 indicates that nothing
 			/// was selected.
 			/// 
 			int selected();
 
 			///
-			/// Return the identification string of the selected entry, empty string indicates that 
-			/// nothing was selected
+			/// Return the identification string of the selected entry in the list. An empty string indicates that 
+			/// nothing was selected.
 			///
 			std::string selected_id();
 
 			///
-			/// Select entry number \a no in the list for rendering
+			/// Select the entry numbered \a no.
 			///
 			void selected(int no);
+
 			///
-			/// Select entry with identification \a id in the list for rendering
+			/// Select the entry with the identification string \a id.
 			///
 			void selected_id(std::string id);
 
 			///
-			/// Require that item should be selected (for validation)
+			/// Require that one item in the list should be selected (for the validation).
 			///
 			void non_empty();
 			
@@ -1392,8 +1396,8 @@ namespace cppcms {
 			virtual bool validate();
 			virtual void load(http::context &context);
 			virtual void clear();
-		protected:
 
+		protected:
 			struct CPPCMS_API element {
 				
 				element();
@@ -1416,6 +1420,7 @@ namespace cppcms {
 			};
 
 			std::vector<element> elements_;
+
 		private:
 			struct _data;
 			booster::hold_ptr<_data> d;
@@ -1428,21 +1433,21 @@ namespace cppcms {
 		};
 
 		///
-		/// Select widget that uses drop-down list
+		/// The widget that uses a drop-down list for selection.
 		///
-		
 		class CPPCMS_API select : public select_base {
 		public:
 			select();
 			virtual ~select();
 			virtual void render_input(form_context &context);
+
 		private:
 			struct _data;
 			booster::hold_ptr<_data> d;
 		};
 
 		///
-		/// Select widget that uses a set of radio buttons
+		/// The widget that uses a set of radio buttons..
 		///
 		class CPPCMS_API radio : public select_base {
 		public:
@@ -1454,8 +1459,13 @@ namespace cppcms {
 			/// Return the rendering order
 			///
 			bool vertical();
+
 			///
-			/// Set rendering order of the list one behind other (default) or in same line.
+			/// Set rendering order of the list one behind other (default)
+			/// or in same line.
+			///
+			/// Baiscally it defines whether the radio buttons should
+			/// appear in row (false) or in column (true).
 			///
 			void vertical(bool);
 
@@ -1468,71 +1478,75 @@ namespace cppcms {
 		};
 
 		///
-		/// \brief Class that represents file upload form entry
+		/// \brief This class represents a file upload form entry.
 		///
-		/// If the file was not uploaded set() would be false and 
-		/// on attempt to access value() member function it would throw
+		/// If the file was not uploaded, set() will be false and 
+		/// an attempt to access the member function value() will throw.
 		///
 		class CPPCMS_API file : public base_html_input {
 		public:
 			///
-			/// Ensure that file is uploaded.
+			/// Ensure that a file is uploaded (for the validation).
 			///
 			void non_empty();
+
 			///
-			/// Set minimum and maximum limits for file size. Note max == -1 indicates that there
-			/// is no maximal limit, min==0 indicates that there is no minimal limit.
+			/// Set the minimum and maximum limits for the file size. Note: max == -1 indicates that there
+			/// is no maximum limit; min==0 indicates that there is no minimum limit.
 			///
 			///
 			void limits(int min,int max);
 
 			///
-			/// Get minimal and maximal size limits, 
+			/// Get the minimum and maximum size limits.
 			///
-			
 			std::pair<int,int> limits();
 
 			///
-			/// Set filename validation pattern. For example ".*\\.(jpg|jpeg|png)"
+			/// Set the filename validation pattern. For example ".*\\.(jpg|jpeg|png)".
 			///
-			/// Please, note that it is good idea to check magic number as well.
+			/// Please, note that it is a good idea to check magic numbers as well
+			/// and not rely on file name only.
+			///
+			/// See add_valid_magic() function
 			///
 			void filename(booster::regex const &fn);
 
 			///
-			/// Get regular expression for filename validation
+			/// Get the regular expression for the filename validation.
 			///
 			booster::regex filename();
 			
 			///
-			/// Validate the filename's charset (default is on)
+			/// Validate or not the filename's charset. The default is \a true.
 			///
 			void validate_filename_charset(bool);
+
 			///
-			/// Get validation option for filename's charset
+			/// Get the validation option for the filename's charset.
 			///
 			bool validate_filename_charset();
 
 			///
-			/// Get uploaded file, throws cppcms_error if set() == false, i.e. if the file
-			/// was not uploaded
+			/// Get the uploaded file. This throws cppcms_error if set() == false, i.e. if no file
+			/// was uploaded.
 			///
 			booster::shared_ptr<http::file> value();
 
 			///
-			/// Set required file mime type
+			/// Set the required file mime type.
 			///
 			void mime(std::string const &);
 
 			///
-			/// Set regular expression that checks for valid mime type
+			/// Set the regular expression to validate the mime type.
 			///
 			void mime(booster::regex const &expr);
 
 			///
-			/// Add a string that represents a valid magic number that shoud exist on begging of file
+			/// Add a string that represents a valid magic number that shoud exist on begging of file.
 			///
-			/// By default no tests are performed
+			/// By default no tests are performed.
 			///
 			void add_valid_magic(std::string const &);
 
@@ -1566,7 +1580,7 @@ namespace cppcms {
 
 
 		///
-		/// Submit button widget
+		/// Submit button widget.
 		///
 		class CPPCMS_API submit : public base_html_input {
 		public:
@@ -1574,21 +1588,23 @@ namespace cppcms {
 			~submit();
 			
 			///
-			/// Returns true if this specific button was pressed
+			/// Return true if this specific button was pressed.
 			///
 			bool value();
 
 			///
-			/// Sets the text on button
+			/// Set the text on the button.
 			///
 			void value(std::string val);
+
 			///
-			/// Sets the text on button
+			/// Set the text on the button.
 			///
 			void value(locale::message const &msg);
 
 			virtual void render_value(form_context &context);
 			virtual void load(http::context &context);
+
 		private:
 			struct _data;
 			booster::hold_ptr<_data> d;
