@@ -58,7 +58,7 @@ public:
 			return;
 		}
 		is_first_ = total++ == 0;
-		if(total % 100 == 0) {
+		if((total-1) / (max_total / 10) != total / (max_total/10) ) {
 			std::cout << total << std::endl;
 		}
 		socket_.open(booster::aio::pf_inet);
@@ -115,13 +115,53 @@ void bind_handler::operator()(booster::system::error_code const &e) const
 	(c_->*m_)(e);
 }
 
-int main()
+void help()
+{
+	std::cerr <<
+	"benchmark  [options] \n"
+	"--help  display help\n"
+	"--ip    target ip - default 127.0.0.1\n"
+	"--port  target port - default 8080\n"
+	"--url   target url - default \"/\"\n"
+	"--req   requests number - default 10000\n"
+	"--con   concurrency - default 10 connections\n"
+	<< std::endl;
+	exit(1);
+}
+
+int main(int argc, char **argv)
 {
 	std::string ip="127.0.0.1";
 	int port = 8080;
-	std::string url="/hello";
+	std::string url="/";
 	max_total = 10000;
 	max_stopped = 10;
+
+	for(int i=1;i<argc;i++) {
+		std::string curr = argv[i];
+		if(curr == "--help")
+			help();
+		else {
+			if(i+1>= argc) {
+				help();
+				break;
+			}
+			std::string val=argv[i+1];
+			i++;
+			if(curr == "--ip")
+				ip=val;
+			else if(curr == "--port")
+				port = atoi(val.c_str());
+			else if(curr == "--url")
+				url = val;
+			else if(curr == "--req")
+				max_total = atoi(val.c_str());
+			else if(curr == "--con")
+				max_stopped = atoi(val.c_str());
+			else
+				help();
+		}
+	}
 	
 	booster::ptime start,end;
 	
@@ -146,3 +186,4 @@ int main()
 	std::cout << "Req/s:" << total / booster::ptime::to_number(end-start) << std::endl;
 	std::cout << "Size: " << total_read / total << std::endl;
 }
+
