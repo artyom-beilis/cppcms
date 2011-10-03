@@ -333,28 +333,17 @@ namespace booster {
 	namespace details {
 		struct event {
 			HANDLE h;
-			event(HANDLE tmp)
+			event()
 			{
-				if(tmp == 0) {
-					h=CreateEvent(0,FALSE,FALSE,0);
-					if(!h) throw system::system_error(system::error_code(
-								GetLastError(),
-								system::system_category));
-				}
-				else
-					h=tmp;
+				h=CreateEvent(0,FALSE,FALSE,0);
+				if(!h) throw system::system_error(system::error_code(
+									GetLastError(),
+									system::system_category));
 				next = 0;
-			}
-			HANDLE release_handle()
-			{
-				HANDLE tmp = h;
-				h=0;
-				return tmp;
 			}
 			~event()
 			{
-				if(h)
-					CloseHandle(h);
+				CloseHandle(h);
 			}
 			void wait()
 			{
@@ -372,21 +361,16 @@ namespace booster {
 		booster::mutex lock;
 		details::event *first;
 		details::event *last;
-		booster::mutex cache_lock;
-		std::vector<HANDLE> h_cache;
 	};
 
 	condition_variable::condition_variable() : d(new data)
 	{
 		d->first = 0;
 		d->last = 0;
-		d->h_cache.reserve(64);
 	}
 
 	condition_variable::~condition_variable()
 	{
-		for(size_t i=0;i<d->h_cache.size();i++)
-			CloseHandle(d->h_cache[i]);
 	}
 
 
@@ -421,16 +405,7 @@ namespace booster {
 
 	void condition_variable::wait(unique_lock<mutex> &m)
 	{
-		HANDLE my_handle = 0;
-		{
-			booster::unique_lock<booster::mutex> g(d->cache_lock);
-			if(!d->h_cache.empty()) {
-				my_handle = d->h_cache.back();
-				d->h_cache.pop_back();
-				
-			}
-		}
-		details::event ev(my_handle);
+		details::event ev;
 		
 		{
 			booster::unique_lock<booster::mutex> g(d->lock);
@@ -449,11 +424,6 @@ namespace booster {
 
 		
 		m.mutex()->lock();
-		
-		{
-			booster::unique_lock<booster::mutex> g(d->cache_lock);
-			d->h_cache.push_back(ev.release_handle());
-		}
 
 	}
 
