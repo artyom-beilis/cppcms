@@ -163,6 +163,67 @@ int main()
 			t2.join();
 			TEST(variable == 10);
 		}
+		std::cout << "Test thread specific" << std::endl;
+		{
+			booster::thread_specific_ptr<tls_object> p;
+			tls_functor f1(p);
+			tls_functor f2(p);
+			tls_functor f3(p);
+			booster::thread t1(f1);
+			booster::thread t2(f2);
+			booster::thread t3(f3);
+
+			t1.join();
+			t2.join();
+			t3.join();
+
+			TEST(tls_ok);
+			TEST(dtor_called);
+		}
+		std::cout << "Thest conditional variable notify one" << std::endl;
+		{
+			int counter = 0;
+			booster::mutex m;
+			booster::condition_variable c;
+			cond_incrementer inc = { &counter, &m , &c };
+			booster::thread t1(inc);
+			booster::thread t2(inc);
+			booster::thread t3(inc);
+			booster::ptime::millisleep(100);
+			TEST(counter == 0);
+			c.notify_one();
+			booster::ptime::millisleep(100);
+			TEST(counter == 1);
+			c.notify_one();
+			booster::ptime::millisleep(100);
+			TEST(counter == 2);
+			c.notify_one();
+			booster::ptime::millisleep(100);
+			TEST(counter == 3);
+			t1.join();
+			t2.join();
+			t3.join();
+		}
+		std::cout << "Thest conditional variable notify all" << std::endl;
+		{
+			int counter[3] = { 0, 0 , 0 };
+			booster::mutex m;
+			booster::condition_variable c;
+			cond_incrementer inc = { counter, &m , &c };
+			booster::thread t1(inc);
+			inc.counter++;
+			booster::thread t2(inc);
+			inc.counter++;
+			booster::thread t3(inc);
+			booster::ptime::millisleep(100);
+			TEST(counter[0]==0 && counter[1]==0 && counter[2]==0);
+			c.notify_all();
+			booster::ptime::millisleep(100);
+			TEST(counter[0]==1 && counter[1]==1 && counter[2]==1);
+			t1.join();
+			t2.join();
+			t3.join();
+		}
 		std::cout << "Test rw_lock write lock" << std::endl;
 		{
 			variable = 0;
@@ -209,67 +270,6 @@ int main()
 			TEST(mread_happened);
 			TEST(write_happened);
 			TEST(error_occured);
-		}
-		std::cout << "Test thread specific" << std::endl;
-		{
-			booster::thread_specific_ptr<tls_object> p;
-			tls_functor f1(p);
-			tls_functor f2(p);
-			tls_functor f3(p);
-			booster::thread t1(f1);
-			booster::thread t2(f2);
-			booster::thread t3(f3);
-
-			t1.join();
-			t2.join();
-			t3.join();
-
-			TEST(tls_ok);
-			TEST(dtor_called);
-		}
-		std::cout << "Thest conditional variable notify one" << std::endl;
-		{
-			int counter = 0;
-			booster::mutex m;
-			booster::condition_variable c;
-			cond_incrementer inc = { &counter, &m , &c };
-			booster::thread t1(inc);
-			booster::thread t2(inc);
-			booster::thread t3(inc);
-			booster::ptime::millisleep(100);
-			TEST(counter == 0);
-			c.notify_one();
-			booster::ptime::millisleep(100);
-			TEST(counter == 1);
-			c.notify_one();
-			booster::ptime::millisleep(100);
-			TEST(counter == 2);
-			c.notify_one();
-			booster::ptime::millisleep(100);
-			TEST(counter == 3);
-			t1.join();
-			t2.join();
-			t2.join();
-		}
-		std::cout << "Thest conditional variable notify all" << std::endl;
-		{
-			int counter[3] = { 0, 0 , 0 };
-			booster::mutex m;
-			booster::condition_variable c;
-			cond_incrementer inc = { counter, &m , &c };
-			booster::thread t1(inc);
-			inc.counter++;
-			booster::thread t2(inc);
-			inc.counter++;
-			booster::thread t3(inc);
-			booster::ptime::millisleep(100);
-			TEST(counter[0]==0 && counter[1]==0 && counter[2]==0);
-			c.notify_all();
-			booster::ptime::millisleep(100);
-			TEST(counter[0]==1 && counter[1]==1 && counter[2]==1);
-			t1.join();
-			t2.join();
-			t2.join();
 		}
 	}
 	catch(std::exception const &e)

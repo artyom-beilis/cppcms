@@ -44,6 +44,7 @@ endif()
 
 # Options
 
+option(USE_PTHREAD	"Use pthreads API on windows" OFF)
 option(DISABLE_SHARED	"Disable shared libraries build" OFF)
 option(DISABLE_STATIC	"Disable static libraries build" OFF)
 option(DISABLE_ICU_LOCALE	"Disable icu locale backend" OFF)
@@ -418,13 +419,22 @@ endif()
 
 if(USE_WINDOWS6_API)
 	check_cxx_source_compiles(
-		"#include <windows.h>
+		"
+		#ifndef _WIN32_WINNT 
+		#define _WIN32_WINNT 0x600
+		#endif
+		#include <windows.h>
 		int main(){ SRWLOCK l; InitializeSRWLock(&l); }"
 		HAVE_WINDOWS6_API
 		)
 endif()
 
-if(NOT HAVE_WINDOWS6_API)
+if(HAVE_WINDOWS6_API)
+	add_definitions(-D_WIN32_WINNT=0x600)
+	set(BOOSTER_SRC ${BOOSTER_SRC} lib/thread/src/thread_win6.cpp)
+elseif(WINDOWS_NATIVE AND NOT USE_PTHREAD)
+	set(BOOSTER_SRC ${BOOSTER_SRC} lib/thread/src/thread_win5.cpp)
+else()
 	find_path(PTHREAD_INC pthread.h)
 	include_directories(${PTHREAD_INC})
 	if(MSVC)
@@ -432,9 +442,8 @@ if(NOT HAVE_WINDOWS6_API)
 	else()
 		find_library(LIB_PTHREAD NAMES pthread thr kse pthreadGC2)
 	endif()
+
 	set(BOOSTER_SRC ${BOOSTER_SRC} lib/thread/src/pthread.cpp)
-else()
-	set(BOOSTER_SRC ${BOOSTER_SRC} lib/thread/src/thread_win6.cpp)
 endif()
 
 
