@@ -430,7 +430,6 @@ if(USE_WINDOWS6_API)
 endif()
 
 if(HAVE_WINDOWS6_API)
-	add_definitions(-D_WIN32_WINNT=0x600)
 	set(BOOSTER_SRC ${BOOSTER_SRC} lib/thread/src/thread_win6.cpp)
 elseif(WINDOWS_NATIVE AND NOT USE_PTHREAD)
 	set(BOOSTER_SRC ${BOOSTER_SRC} lib/thread/src/thread_win5.cpp)

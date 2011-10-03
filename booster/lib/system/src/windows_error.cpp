@@ -17,6 +17,9 @@
 namespace booster { namespace system {
 	class windows_error_impl : public error_category {
 	public:
+		windows_error_impl()
+		{
+		}
 		virtual char const *name() const
 		{
 			return "windows";
