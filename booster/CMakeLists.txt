@@ -429,10 +429,14 @@ if(USE_WINDOWS6_API)
 		)
 endif()
 
-if(HAVE_WINDOWS6_API)
-	set(BOOSTER_SRC ${BOOSTER_SRC} lib/thread/src/thread_win6.cpp)
+if(USE_WINDOWS6_API AND HAVE_WINDOWS6_API)
+	set(BOOSTER_SRC ${BOOSTER_SRC}
+		lib/thread/src/thread_winapi.cpp
+		lib/thread/src/thread_win6.cpp)
 elseif(WINDOWS_NATIVE AND NOT USE_PTHREAD)
-	set(BOOSTER_SRC ${BOOSTER_SRC} lib/thread/src/thread_win5.cpp)
+	set(BOOSTER_SRC ${BOOSTER_SRC}
+		lib/thread/src/thread_winapi.cpp
+		lib/thread/src/thread_win5.cpp)
 else()
 	find_path(PTHREAD_INC pthread.h)
 	include_directories(${PTHREAD_INC})
