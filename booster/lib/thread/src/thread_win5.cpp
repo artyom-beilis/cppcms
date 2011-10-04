@@ -15,7 +15,7 @@
 #include <booster/system_error.h>
 #include <booster/refcounted.h>
 #include <booster/intrusive_ptr.h>
-#include <map>
+#include <set>
 #include <errno.h>
 #include <string.h>
 
@@ -29,17 +29,7 @@
 namespace booster {
 
 	namespace winthread {
-		struct keeper {
-			typedef std::map<void const *,details::thread_specific_impl::object *> objects_type;
-			objects_type objects;
-			~keeper()
-			{
-				for(objects_type::iterator p=objects.begin();p!=objects.end();++p) {
-					// just in case catch-it-all
-					try { delete p->second; }catch(...){}
-				}
-			}
-		};
+		typedef std::set<DWORD> keeper;
 
 		DWORD index = TLS_OUT_OF_INDEXES;
 
@@ -47,7 +37,7 @@ namespace booster {
 		{
 			index = TlsAlloc();
 			if(index == TLS_OUT_OF_INDEXES) {
-				throw system::system_error(system::error_code(GetLastError(),system::system_category));
+				throw booster::runtime_error("Could not allocate thread local index");
 			}
 		}
 
@@ -76,9 +66,39 @@ namespace booster {
 			if(!ptr)
 				return;
 			keeper *data = static_cast<keeper *>(ptr);
+			for(keeper::iterator p=data->begin();p!=data->end();++p) {
+				void *ptr = TlsGetValue(*p);
+				if(ptr) {
+					delete static_cast<details::tls_object*>(ptr);
+					TlsSetValue(*p,0);
+				}
+			}
 			delete data;
 			TlsSetValue(index,0);
 		}
+		
+		DWORD tls_alloc()
+		{
+			DWORD id = TlsAlloc();
+			if(id == TLS_OUT_OF_INDEXES) {
+				throw booster::runtime_error("Could not allocate thread local key");
+			}
+			return id;
+		}
+		void tls_set(DWORD id,void *p)
+		{
+			get_keeper()->insert(id);
+			TlsSetValue(id,p);
+		}
+		void *tls_get(DWORD id)
+		{
+			return TlsGetValue(id);
+		}
+		void tls_free(DWORD id)
+		{
+			TlsFree(id);
+		}
+
 
 		#ifdef DLL_EXPORT
 		extern "C" BOOL WINAPI DllMain(HINSTANCE, DWORD reason,LPVOID)
@@ -88,6 +108,7 @@ namespace booster {
 					on_process_start();
 					break;
 				case DLL_PROCESS_DETACH:
+					on_thread_end();
 					on_process_end();
 					break;
 				case DLL_THREAD_DETACH:
@@ -428,34 +449,33 @@ namespace booster {
 	}
 
 	namespace details {
-	struct thread_specific_impl::data {
-		std::auto_ptr<object> base;
-	};
+		class wintls_key : public key {
+		public:
+			wintls_key(void (*d)(void *)) : key(d)
+			{
+				key_ = winthread::tls_alloc();
+			}
+			virtual ~wintls_key()
+			{
+				winthread::tls_free(key_);
+			}
+			tls_object *get_object()
+			{
+				void *p=winthread::tls_get(key_);
+				if(p)
+					return static_cast<tls_object*>(p);
+				tls_object *res = new tls_object(intrusive_ptr<key>(this));
+				winthread::tls_set(key_,static_cast<void*>(res));
+				return res;
+			}
+		private:
+			DWORD key_;
+		};
 
-	thread_specific_impl::thread_specific_impl(object *bptr) :
-		d(new data())
-	{
-		d->base.reset(bptr);
-	}
-
-	thread_specific_impl::~thread_specific_impl()
-	{
-	}
-	
-	thread_specific_impl::object *thread_specific_impl::get_object() const
-	{
-		winthread::keeper *k=winthread::get_keeper();
-		winthread::keeper::objects_type::iterator p = k->objects.find(this);
-		if(p==k->objects.end()) {
-			object *new_ob = d->base->clone();
-			k->objects[this]=new_ob;
-			return new_ob;
+		intrusive_ptr<key> make_key(void (*dtor)(void *))
+		{
+			return new wintls_key(dtor);
 		}
-		else {
-			return p->second;
-		}
-	}
-
 	} // details
 
 

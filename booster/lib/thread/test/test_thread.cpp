@@ -41,13 +41,24 @@ struct incrementer {
 };
 
 bool tls_ok = true;
-bool dtor_called = false;
+int dtor_called = 0;
 
 struct tls_object {
 	int counter;
 	tls_object() : counter(0) {}
-	~tls_object() { dtor_called = true; }
+	~tls_object() { dtor_called++; }
 };
+
+struct tls_functor2 {
+	booster::thread_specific_ptr<tls_object> *ptr;
+	tls_functor2(booster::thread_specific_ptr<tls_object> &p) : ptr(&p) {}
+	void operator()() const
+	{
+		ptr->reset(new tls_object());
+		booster::ptime::millisleep(200);
+	}
+};
+
 
 struct tls_functor {
 	booster::thread_specific_ptr<tls_object> *ptr;
@@ -178,7 +189,29 @@ int main()
 			t3.join();
 
 			TEST(tls_ok);
-			TEST(dtor_called);
+			TEST(dtor_called == 3);
+		}
+		std::cout << "Non synchronous thread specific" << std::endl;
+		{
+			dtor_called = 0;
+			booster::thread_specific_ptr<tls_object> *p = new booster::thread_specific_ptr<tls_object>();
+			
+			tls_functor2 f1(*p);
+			tls_functor2 f2(*p);
+			tls_functor2 f3(*p);
+
+			booster::thread t1(f1);
+			booster::thread t2(f2);
+			booster::thread t3(f3);
+
+			booster::ptime::millisleep(100);
+			delete p;
+			
+			t1.join();
+			t2.join();
+			t3.join();
+
+			TEST(dtor_called == 3);
 		}
 		std::cout << "Thest conditional variable notify one" << std::endl;
 		{

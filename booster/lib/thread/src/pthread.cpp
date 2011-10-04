@@ -174,48 +174,44 @@ namespace booster {
 	}
 
 	namespace details {
-	struct thread_specific_impl::data {
-		std::auto_ptr<object> base;
-		pthread_key_t key;
-	};
-
-	extern "C" {
-		void booster_details_thread_specific_impl_deleter(void *pobject)
-		{
-			if(pobject == 0)
-				return;
-			delete reinterpret_cast<thread_specific_impl::object *>(pobject);
-			
-		}
-	}
-
-	thread_specific_impl::thread_specific_impl(object *bptr) :
-		d(new data())
-	{
-		d->base.reset(bptr);
-		if(pthread_key_create(&d->key,booster_details_thread_specific_impl_deleter) < 0)
-			throw system::system_error(system::error_code(errno,system::system_category));
-	}
-
-	thread_specific_impl::~thread_specific_impl()
-	{
-		pthread_key_delete(d->key);
-	}
-	
-	thread_specific_impl::object *thread_specific_impl::get_object() const
-	{
-		void *pobj = pthread_getspecific(d->key);
-		if(!pobj) {
-			pobj = reinterpret_cast<void *>(d->base->clone());
-			if(pthread_setspecific(d->key,pobj) < 0) {
-				int err=errno;
-				delete reinterpret_cast<object *>(pobj);
-				throw system::system_error(system::error_code(err,system::system_category));
+		extern "C" {
+			static void booster_pthread_key_destroyer(void *p)
+			{
+				if(!p)
+					return;
+				delete static_cast<tls_object*>(p);
 			}
 		}
-		return reinterpret_cast<object *>(pobj);
-	}
+		
+		class pthread_key : public key {
+		public:
+			pthread_key(void (*d)(void *)) : key(d)
+			{
+				if(pthread_key_create(&key_,booster_pthread_key_destroyer) < 0) {
+					throw system::system_error(system::error_code(errno,system::system_category));
+				}
+			}
+			virtual ~pthread_key()
+			{
+				pthread_key_delete(key_);
+			}
+			tls_object *get_object()
+			{
+				void *p=pthread_getspecific(key_);
+				if(p)
+					return static_cast<tls_object*>(p);
+				tls_object *res = new tls_object(intrusive_ptr<key>(this));
+				pthread_setspecific(key_,static_cast<void*>(res));
+				return res;
+			}
+		private:
+			pthread_key_t key_;
+		};
 
+		intrusive_ptr<key> make_key(void (*dtor)(void *))
+		{
+			return new pthread_key(dtor);
+		}
 	} // details
 
 #ifdef BOOSTER_POSIX

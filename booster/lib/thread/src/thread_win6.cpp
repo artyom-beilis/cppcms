@@ -230,50 +230,45 @@ namespace booster {
 	}
 
 	namespace details {
-	struct thread_specific_impl::data {
-		std::auto_ptr<object> base;
-		DWORD key;
-	};
-
-	extern "C" {
-		void WINAPI booster_details_thread_specific_impl_deleter(void *pobject)
-		{
-			if(pobject == 0)
-				return;
-			delete reinterpret_cast<thread_specific_impl::object *>(pobject);
-			
-		}
-	}
-
-	thread_specific_impl::thread_specific_impl(object *bptr) :
-		d(new data())
-	{
-		d->base.reset(bptr);
-		d->key = FlsAlloc(booster_details_thread_specific_impl_deleter);
-		
-		if(d->key == FLS_OUT_OF_INDEXES)
-			throw system::system_error(system::error_code(GetLastError(),system::system_category));
-	}
-
-	thread_specific_impl::~thread_specific_impl()
-	{
-		FlsFree(d->key);
-	}
-	
-	thread_specific_impl::object *thread_specific_impl::get_object() const
-	{
-		void *pobj = FlsGetValue(d->key);
-		if(!pobj) {
-			pobj = reinterpret_cast<void *>(d->base->clone());
-			if(!FlsSetValue(d->key,pobj)) {
-				int err=GetLastError();
-				delete reinterpret_cast<object *>(pobj);
-				throw system::system_error(system::error_code(err,system::system_category));
+		extern "C" {
+			static WINAPI void booster_fls_key_destroyer(void *p)
+			{
+				if(!p)
+					return;
+				delete static_cast<tls_object*>(p);
 			}
 		}
-		return reinterpret_cast<object *>(pobj);
-	}
+		
+		class fls_key : public key {
+		public:
+			fls_key(void (*d)(void *)) : key(d)
+			{
+				key_ = FlsAlloc(booster_fls_key_destroyer);
+				if(key_ == FLS_OUT_OF_INDEXES) {
+					throw  booster::runtime_error("Could not allocate Thread specific key");
+				}
+			}
+			virtual ~fls_key()
+			{
+				FlsFree(key_);
+			}
+			tls_object *get_object()
+			{
+				void *p=FlsGetValue(key_);
+				if(p)
+					return static_cast<tls_object*>(p);
+				tls_object *res = new tls_object(intrusive_ptr<key>(this));
+				FlsSetValue(key_,static_cast<void*>(res));
+				return res;
+			}
+		private:
+			DWORD key_;
+		};
 
+		intrusive_ptr<key> make_key(void (*dtor)(void *))
+		{
+			return new fls_key(dtor);
+		}
 	} // details
 
 } // booster

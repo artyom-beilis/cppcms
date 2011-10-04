@@ -10,10 +10,10 @@
 
 #include <booster/hold_ptr.h>
 #include <booster/noncopyable.h>
+#include <booster/refcounted.h>
+#include <booster/intrusive_ptr.h>
 #include <booster/function.h>
 #include <booster/config.h>
-
-#include <memory>
 
 namespace booster {
 
@@ -106,29 +106,61 @@ namespace booster {
 	};
 
 	namespace details {
-		class BOOSTER_API thread_specific_impl : public noncopyable {
+		struct tls_object;
+
+		class key : public refcounted {
 		public:
-			struct object {
-				virtual object *clone() const = 0;
-				virtual ~object()
-				{
-				}
-			};
-			thread_specific_impl(object *p);
-			~thread_specific_impl();
-			
-			object *get_object() const;
+			key(void (*d)(void *)) : 
+				dtor_(d)
+			{
+			}
+			virtual ~key()
+			{
+			}
+			void *get();
+			void set(void *);
+
+			void destroy(void *p)
+			{
+				dtor_(p);
+			}
+			virtual tls_object *get_object() = 0;
 		private:
-			struct data;
-			hold_ptr<data> d;
+			void (*dtor_)(void *);
 		};
-	}
+
+		BOOSTER_API intrusive_ptr<key> make_key(void (*dtor)(void *));
+
+		struct tls_object {
+			tls_object(intrusive_ptr<key> p) :
+				the_key(p),
+				obj(0)
+			{
+			}
+			~tls_object()
+			{
+				the_key->destroy(obj);
+				obj = 0;
+			}
+			intrusive_ptr<key> the_key;
+			void *obj;
+		};
+
+		inline void key::set(void *p)
+		{
+			get_object()->obj = p;
+		}
+		inline void *key::get()
+		{
+			return get_object()->obj;
+		}
+
+	} // details
 
 	template<typename T>
-	class thread_specific_ptr : private details::thread_specific_impl {
-		struct real_object;
+	class thread_specific_ptr {
 	public:
-		thread_specific_ptr() : details::thread_specific_impl(new real_object())
+		thread_specific_ptr() : key_(details::make_key(destructor))
 		{
 		}
 		~thread_specific_ptr()
@@ -136,7 +168,7 @@ namespace booster {
 		}
 		T *get() const
 		{
-			return pointer()->get();
+			return static_cast<T*>(key_->get());
 		}
 		T* operator->() const
 		{
@@ -148,21 +180,23 @@ namespace booster {
 		}
 		void reset(T *new_val = 0)
 		{
-			pointer()->reset(new_val);
+			T *p = get();
+			if(p)
+				destructor(p);
+			key_->set(static_cast<void *>(new_val));
 		}
 		T *release()
 		{
-			return pointer()->release();
+			T *p = get();
+			key_->set(0);
+			return p;
 		}
 	private:
-		std::auto_ptr<T> *pointer() const
+		static void destructor(void *ptr)
 		{
-			return &static_cast<real_object *>(get_object())->ptr;
+			delete static_cast<T*>(ptr);
 		}
-		struct real_object : public object {
-			std::auto_ptr<T> ptr;
-			virtual object *clone() const { return new real_object(); }
-		};
+		intrusive_ptr<details::key> key_;
 	};
 
 
