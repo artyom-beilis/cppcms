@@ -52,9 +52,11 @@ namespace booster {
         static int atomic_exchange_and_add(sp_counted_base_atomic_type volatile * pw, int dv)
         {
             long vo=pw->li,tmp;
-            do {
-                tmp=InterlockedCompareExchange(&pw->li,vo+dv,vo);
-            }while(tmp!=vo);
+            for(;;){
+                if((tmp=InterlockedCompareExchange(&pw->li,vo+dv,vo)) == vo)
+					break;
+				vo = tmp;
+            }
             return tmp;
         }
 
