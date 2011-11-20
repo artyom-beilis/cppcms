@@ -203,7 +203,7 @@ namespace aio {
 		{
 			pollfd_=::open("/dev/poll",O_RDWR);
 			if(!pollfd_)
-				throw system::system_error(system::error_code(errno,syscat));
+				throw system::system_error(errno,syscat,"Failed to open /dev/poll");
 		}
 	
 		
@@ -278,7 +278,7 @@ namespace aio {
 		{
 			pollfd_=::epoll_create(16);
 			if(!pollfd_)
-				throw system::system_error(system::error_code(errno,syscat));
+				throw system::system_error(errno,syscat,"Failed to create epoll descriptor");
 		}
 		virtual ~epoll_reactor()
 		{
@@ -499,7 +499,7 @@ namespace aio {
 			kev_(::kqueue())
 		{
 			if(kev_ < 0)
-				throw system::system_error(system::error_code(errno,syscat));
+				throw system::system_error(errno,syscat,"Failed to create kqueue");
 		}
 		void select(int fd,int new_flags,int &error)
 		{

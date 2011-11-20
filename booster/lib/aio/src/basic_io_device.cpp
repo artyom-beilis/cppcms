@@ -54,7 +54,7 @@ bool basic_io_device::has_io_service()
 io_service &basic_io_device::get_io_service()
 {
 	if(!has_io_service())
-		throw system::system_error(system::error_code(aio_error::no_service_provided,aio_error_cat));
+		throw system::system_error(aio_error::no_service_provided,aio_error_cat);
 	return *srv_;
 }
 

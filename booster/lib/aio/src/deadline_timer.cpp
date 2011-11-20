@@ -35,7 +35,7 @@ deadline_timer::~deadline_timer()
 io_service &deadline_timer::get_io_service()
 {
 	if(!srv_)
-		throw system::system_error(system::error_code(aio_error::no_service_provided,aio_error_cat));
+		throw system::system_error(aio_error::no_service_provided,aio_error_cat);
 	return *srv_;
 }
 

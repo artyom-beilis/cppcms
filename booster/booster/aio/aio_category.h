@@ -19,24 +19,35 @@ namespace aio {
 	///
 	namespace aio_error {
 		enum {
-			ok,
-			canceled,
-			select_failed,
-			eof,
-			invalid_endpoint,
-			no_service_provided,
-			prefork_not_enabled
+			ok,			//< No error
+			canceled,		//< Operation was canceled
+			select_failed,		//< It was impossible to perform select operation on the file descriptor
+			eof,			//< End of file occured
+			invalid_endpoint,	//< The provided endpoint (address) is not valid
+			no_service_provided,	//< The io_service was not assigned
+			prefork_not_enabled	//< Prefork acceptor support is not enabled
 		};
 
+		///
+		/// Error category for booster::aio objects
+		///
 		class BOOSTER_API category : public system::error_category {
 		public:
+			/// Get category name
 			virtual char const *name() const;
+			/// Get message from code
 			virtual std::string message(int cat) const;
 		};
 		
+		///
+		/// get aio category object
+		///
 		BOOSTER_API aio_error::category const &get_category();
 	}
 
+	///
+	/// aio category object reference
+	///
 	static aio_error::category const &aio_error_cat = aio_error::get_category();
 }
 } // booster

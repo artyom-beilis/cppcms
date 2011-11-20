@@ -54,7 +54,7 @@ struct endpoint::data {
 
 void endpoint::throw_invalid() const
 {
-	throw system::system_error(system::error_code(aio_error::invalid_endpoint,aio_error_cat));
+	throw system::system_error(aio_error::invalid_endpoint,aio_error_cat);
 }
 
 

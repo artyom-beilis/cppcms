@@ -45,7 +45,7 @@ namespace booster { namespace aio { namespace impl {
 				#else
 				int ec=errno;
 				#endif
-				throw system::system_error(system::error_code(ec,syscat));
+				throw system::system_error(ec,syscat);
 			}
 		}
 	}

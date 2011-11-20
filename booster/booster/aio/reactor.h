@@ -22,8 +22,8 @@ namespace aio {
 	/// It abstracts platform specific APIs like epoll, /dev/poll, kqueue, poll
 	/// and select.
 	///
-	/// It provides platform indepenent functionality for polling file descriptions
-	/// in efficient way
+	/// It provides platform independent functionality for polling file descriptions
+	/// in an efficient way
 	///
 	class BOOSTER_API reactor : public io_events {
 		reactor(reactor const &);

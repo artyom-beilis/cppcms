@@ -41,7 +41,7 @@ namespace booster {
 	/// a class with operator() or callback pointer that has same signature as
 	/// the callback.
 	///
-	/// See: http://www.boost.org/doc/html/callback.html
+	/// See: http://www.boost.org/doc/html/function.html
 	///
 	/// Notes:
 	///
