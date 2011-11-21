@@ -134,7 +134,7 @@ namespace impl_posix {
 
             // maybe illegal or may be double byte
 
-            char inseq[3] = {seq0 , begin[1], 0};
+            char inseq[3] = { static_cast<char>(seq0) , begin[1], 0};
             char *inbuf = inseq;
             size_t insize = 3;
             uint32_t result[2] = { illegal, illegal };
