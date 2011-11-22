@@ -336,8 +336,10 @@ void test_to()
 void test_skip(char const *enc,char const *utf,char const *name,char const *opt=0)
 {
     if(opt!=0) {
-        if(booster::locale::conv::to_utf<char>(enc,name) == opt)
+        if(booster::locale::conv::to_utf<char>(enc,name) == opt) {
             test_skip(enc,opt,name);
+            return;
+        }
     }
     TEST(booster::locale::conv::to_utf<char>(enc,name) == utf);
     TEST(booster::locale::conv::to_utf<wchar_t>(enc,name) == booster::locale::conv::utf_to_utf<wchar_t>(utf));
