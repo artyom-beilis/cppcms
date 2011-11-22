@@ -184,6 +184,8 @@ if(CMAKE_COMPILER_IS_GNUCXX)
 
 elseif(CMAKE_CXX_COMPILER_ID STREQUAL "Intel")
 	set(CXX_FLAGS "-Wall")
+elseif(CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
+	set(CXX_FLAGS "-Wall -Wextra")
 elseif(MSVC)
 	set(CXX_FLAGS "/EHsc /W3")
 elseif(CMAKE_CXX_COMPILER_ID STREQUAL "SunPro")
