@@ -29,7 +29,6 @@ option(DISABLE_HTTP		"Disable http web server" OFF)
 option(DISABLE_CACHE		"Disable cache beckend" OFF)
 option(DISABLE_TCPCACHE		"Disable distributed cache beckend" OFF)
 option(DISABLE_GZIP		"Disable support of gzip output compression" OFF)
-option(STATIC_SQLITE		"Link with sqlite library directly, do not load it" OFF)
 
 if(CMAKE_CXX_COMPILER_ID STREQUAL "SunPro")
 	option(DISABLE_PREFORK_CACHE	"Disable prefork-cache beckend" ON)
@@ -327,7 +326,6 @@ set(CPPCMS_SOURCES
 	src/session_sid.cpp
 	src/session_interface.cpp
 	src/session_memory_storage.cpp
-	src/session_sqlite_storage.cpp
 	src/rpc_json.cpp
 	src/mount_point.cpp
 	src/archive.cpp
@@ -379,13 +377,6 @@ endif()
 
 if(NOT LIB_CRYPT)
 	message("GNU-TLS Gcrypt or OpenSSL librarys are not found, disabling AES encryption support")
-endif()
-
-if(STATIC_SQLITE)
-	set(CPPCMS_SQLITE_LINK_STATIC 1)
-	find_library(LIB_SQLITE sqlite3)
-	find_path(HEADER_SQLITE sqlite3.h)
-	include_directories(${HEADER_SQLITE})
 endif()
 
 if(NOT DISABLE_FCGI)
@@ -472,6 +463,7 @@ find_program(PYTHON NAMES python2 python)
 if(NOT PYTHON)
 	message(FATAL "Can't build without Python interpreter")
 endif(NOT PYTHON)
+
 
 
 # Templates builds
@@ -602,6 +594,7 @@ set(ALL_TESTS
 	url_mapper_test
 	copy_filter_test
 	tc_test
+	loadable_storage_test
 	)
 
 if(NOT DISABLE_TCPCACHE)
@@ -803,6 +796,35 @@ foreach(TYPE async sync)
 			"--test-exec=${PYTHON} ${CNF}/proto_test.py fastcgi_unix")
 	endif()
 endforeach()
+
+if(NOT DISABLE_SHARED)
+	add_library(loadable_storage SHARED tests/loadable_storage.cpp)
+	target_link_libraries(loadable_storage ${CPPCMS_LIB})
+	if(WIN32 OR CYGWIN)
+		set_target_properties(loadable_storage PROPERTIES COMPILE_DEFINITIONS DLL_EXPORT)
+	endif()
+	add_test(loadable_storage_pass 
+		loadable_storage_test
+		--service-api=http
+		--session-location=server
+		--session-server-storage=external
+		"--session-server-shared_object=${CMAKE_CURRENT_BINARY_DIR}/${CMAKE_SHARED_LIBRARY_PREFIX}loadable_storage${CMAKE_SHARED_LIBRARY_SUFFIX}"
+		--session-server-entry_point=my_sessions_generator
+		--session-server-settings-must_be_set=false
+		)
+	add_test(loadable_storage_fail
+		loadable_storage_test
+		--service-api=http
+		--session-location=server
+		--session-server-storage=external
+		"--session-server-shared_object=${CMAKE_CURRENT_BINARY_DIR}/${CMAKE_SHARED_LIBRARY_PREFIX}loadable_storage${CMAKE_SHARED_LIBRARY_SUFFIX}"
+		--session-server-entry_point=my_sessions_generator
+		--session-server-settings-must_be_set_incorrect=false
+		)
+	set_tests_properties(loadable_storage_fail PROPERTIES WILL_FAIL TRUE)
+endif()
+
+
 
 set(TESTS_WITH_TIMEOUT
 	forwarder_test 

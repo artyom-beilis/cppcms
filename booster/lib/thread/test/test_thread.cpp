@@ -41,12 +41,16 @@ struct incrementer {
 };
 
 bool tls_ok = true;
+booster::mutex dtor_called_mutex;
 int dtor_called = 0;
 
 struct tls_object {
 	int counter;
 	tls_object() : counter(0) {}
-	~tls_object() { dtor_called++; }
+	~tls_object() {
+		booster::unique_lock<booster::mutex> guard(dtor_called_mutex);
+		dtor_called++; 
+	}
 };
 
 struct tls_functor2 {
@@ -204,7 +208,7 @@ int main()
 			booster::thread t2(f2);
 			booster::thread t3(f3);
 
-			booster::ptime::millisleep(500);
+			booster::ptime::millisleep(100);
 			delete p;
 			
 			t1.join();

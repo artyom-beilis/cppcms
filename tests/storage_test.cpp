@@ -20,7 +20,6 @@
 #include "test.h"
 #include <cppcms/session_storage.h>
 #include "session_memory_storage.h"
-#include "session_sqlite_storage.h"
 #ifdef CPPCMS_WIN_NATIVE
 #include "session_win32_file_storage.h"
 #include <windows.h>
@@ -179,31 +178,6 @@ int main()
 		storage=f.get();
 		test_files(storage,f);
 		#endif
-
-		std::cout << "Testing sqlite storage" << std::endl;
-		remove("test.db");
-		
-		try {
-			storage_factory.reset(cppcms::sessions::sqlite_session::factory("test.db"));
-			storage=storage_factory->get();
-
-			for(int i=0;i<3;i++) {
-				std::cout << "- GC " << i << std::endl;
-				do_gc gc = { storage_factory.get(), i};
-				test(storage,gc);
-			}
-		}
-		catch(std::exception const &e) {
-			std::string msg = e.what();
-			if(	msg.find("Failed to load library")!=std::string::npos 
-				|| msg.find("3.7 and above required")!=std::string::npos)
-			{
-				std::cout << "Seems that sqlite3 storage not supported:" << msg << std::endl;
-			}
-			else {
-				throw;
-			}
-		}
 	}
 	catch(std::exception const &e) {
 		std::cerr <<"Fail: " << e.what() << std::endl;

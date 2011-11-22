@@ -27,6 +27,7 @@
 #include <cppcms/json.h>
 #include <cppcms/cppcms_error.h>
 #include <booster/shared_ptr.h>
+#include <booster/shared_object.h>
 #include <booster/enable_shared_from_this.h>
 #include <cppcms/config.h>
 #ifdef CPPCMS_USE_EXTERNAL_BOOST
@@ -44,7 +45,6 @@
 #include "session_posix_file_storage.h"
 #endif
 #include "session_memory_storage.h"
-#include "session_sqlite_storage.h"
 
 #include <booster/aio/deadline_timer.h>
 #include <booster/callback.h>
@@ -54,6 +54,7 @@
 namespace cppcms {
 struct session_pool::_data 
 {
+	booster::shared_object module;
 };
 
 using namespace cppcms::sessions;
@@ -251,21 +252,31 @@ void session_pool::init()
 				throw cppcms_error("Can't use memory storage with more then 1 worker process");
 			factory.reset(new session_memory_storage_factory());
 		}
-		else if(stor == "sqlite") {
-			if(srv.procs_no() > 1)
-				throw cppcms_error("Can't use sqlite storage with more then 1 worker process");
-			if(srv.settings().get("session.gc",0.0) <= 0) {
-				throw cppcms_error("The value of session.gc should be small positive value - like 1.0 - one second");
+		else if(stor == "external") {
+			std::string so = srv.settings().get<std::string>("session.server.shared_object","");
+			std::string module = srv.settings().get<std::string>("session.server.module","");
+			std::string entry_point = srv.settings().get<std::string>("session.server.entry_point","sessions_generator");
+			if(so.empty() && module.empty())
+				throw cppcms_error(	"sessions_pool: session.storage=external "
+							"and neither session.server.shared_object "
+							"nor session.server.module is defined");
+			if(!so.empty() && !module.empty())
+				throw cppcms_error(	"sessions_pool: both session.server.shared_object "
+							"and session.server.module are defined");
+
+			if(so.empty()) {
+				so = booster::shared_object::name(module);
 			}
-			std::string db = srv.settings().get<std::string>("session.server.sqlite.db");
-			std::string so = srv.settings().get("session.server.sqlite.so","");
-			if(so.empty())
-				factory.reset(sqlite_session::factory(db));
-			else
-				factory.reset(sqlite_session::factory(db,so));
+			std::string error;
+			if(!d->module.open(so,error)) {
+				throw cppcms_error("sessions_pool: failed to load shared object " + so + ": " + error);
+			}
+			cppcms_session_storage_generator_type f=0;
+			d->module.symbol(f,entry_point);
+			factory.reset(f(srv.settings().find("session.server.settings")));
 		}
 		else 
-			throw cppcms_error("Unknown server side storage:"+stor);
+			throw cppcms_error("sessions_pool: unknown server side storage:"+stor);
 		storage(factory);
 	}
 	if(location == "server") {
@@ -290,6 +301,7 @@ void session_pool::init()
 }
 
 session_pool::session_pool(service &srv) :
+	d(new _data()),
 	service_(&srv)
 {
 }

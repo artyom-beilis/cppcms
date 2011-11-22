@@ -25,6 +25,9 @@
 #include <string>
 
 namespace cppcms {
+namespace json {
+	class value;
+}
 namespace sessions {
 
 	///
@@ -96,6 +99,10 @@ namespace sessions {
 		///
 		virtual ~session_storage_factory() {}
 	};
+
+	extern "C" {
+		typedef session_storage_factory *(*cppcms_session_storage_generator_type)(cppcms::json::value const &options);
+	}
 
 
 } // sessions

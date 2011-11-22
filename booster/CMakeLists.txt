@@ -347,6 +347,7 @@ set(BOOSTER_SRC
 	lib/aio/src/stream_socket.cpp
 	lib/smart_ptr/src/sp_counted_base.cpp
 	lib/smart_ptr/src/atomic_counter.cpp
+	lib/shared_object/src/shared_object.cpp
 	lib/log/src/log.cpp
 	lib/iostreams/src/streambuf.cpp
 	lib/nowide/src/convert.cpp
@@ -643,6 +644,9 @@ if(NOT DISABLE_WINAPI_LOCALE)
 	add_booster_test(locale winapi_collate)
 	add_booster_test(locale winapi_convert)
 endif()
+
+set(BOOSTER_LIBRARY_PREFIX ${CMAKE_SHARED_LIBRARY_PREFIX})
+set(BOOSTER_LIBRARY_SUFFIX ${CMAKE_SHARED_LIBRARY_SUFFIX})
 
 configure_file(lib/booster_build_config.cmake.h booster/build_config.h)
 

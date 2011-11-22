@@ -100,9 +100,13 @@
 		},
 		"server" : {
 			"storage" : "files",
-			//"storage" : "memory",
+			//"storage" : "memory", "files", "external"
 			"dir" : "./cppcms_sessions",
 			"shared" : true
+			//"module" : "stor",
+			//"shared_object" : "./libstor.so",
+			//"entry_point" : "my_sessions_generator",
+			//"settings" : {} 
 		}
 		
 	},

@@ -63,5 +63,10 @@
  
 #cmakedefine BOOSTER_HAVE_EXECINFO
 
+/* Define to module suffix. */
+#cmakedefine BOOSTER_LIBRARY_SUFFIX "${BOOSTER_LIBRARY_SUFFIX}"
+
+/* Define to module suffix. */
+#cmakedefine BOOSTER_LIBRARY_PREFIX "${BOOSTER_LIBRARY_PREFIX}"
 
 #endif
