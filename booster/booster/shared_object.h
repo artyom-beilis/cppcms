@@ -12,6 +12,7 @@
 #include <booster/noncopyable.h>
 #include <booster/hold_ptr.h>
 #include <booster/backtrace.h>
+#include <booster/cstdint.h>
 #include <string>
 
 namespace booster {
@@ -80,7 +81,7 @@ namespace booster {
 			if(!p) {
 				throw booster::runtime_error("booster::shared_object:failed to resolve symbol:" + name);
 			}
-			s = reinterpret_cast<T>(p);
+			s = reinterpret_cast<T>(reinterpret_cast<size_t>(p));
 		}
 
 		///
