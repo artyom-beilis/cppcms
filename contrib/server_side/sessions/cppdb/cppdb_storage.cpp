@@ -259,7 +259,7 @@ private:
 
 } // anon
 #if defined(CPPCMS_WIN32)
-# define STORAGE_API declspec(__dllexport)
+# define STORAGE_API __declspec(dllexport)
 #else
 # define STORAGE_API
 #endif

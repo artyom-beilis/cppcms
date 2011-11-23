@@ -242,9 +242,14 @@ private:
 	booster::shared_ptr<bdb_storage> storage_;
 };
 
+#if defined(CPPCMS_WIN32)
+# define STORAGE_API __declspec(dllexport)
+#else
+# define STORAGE_API
+#endif
 
 extern "C" {
-	cppcms::sessions::session_storage_factory *session_factory(cppcms::json::value const &v)
+	STORAGE_API cppcms::sessions::session_storage_factory *session_factory(cppcms::json::value const &v)
 	{
 		std::string dir = v.get<std::string>("directory");
 		return new bdb_factory(dir);
