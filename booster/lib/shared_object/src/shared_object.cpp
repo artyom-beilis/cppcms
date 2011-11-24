@@ -123,15 +123,17 @@ namespace booster {
 		return dlsym(d->handle,name.c_str());
 	}
 	#endif
+
+	#ifndef BOOSTER_LIBRARY_PREFIX
+	#define BOOSTER_LIBRARY_PREFIX ""
+	#endif
+
 	std::string shared_object::name(std::string const &module)
 	{
 		return BOOSTER_LIBRARY_PREFIX + module + BOOSTER_LIBRARY_SUFFIX;
 	}
 	std::string shared_object::name(std::string const &module,std::string const &soversion)
 	{
-		#ifndef BOOSTER_LIBRARY_PREFIX
-		#define BOOSTER_LIBRARY_PREFIX ""
-		#endif
 
 		#if defined __APPLE__
 		return BOOSTER_LIBRARY_PREFIX + module + "." + soversion + BOOSTER_LIBRARY_SUFFIX;
