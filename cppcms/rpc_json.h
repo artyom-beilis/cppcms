@@ -205,6 +205,82 @@ namespace rpc {
 	};
 
 
+	namespace details {
+
+		template<typename T> struct fw_ret { typedef T type; };
+		template<typename T> struct fw_ret<T const &> { typedef T type; };
+		template<typename T> struct fw_ret<T const> { typedef T type; };
+		
+		template<> struct fw_ret<json::value>  { typedef json::value const &type; };
+		template<> struct fw_ret<json::object> { typedef json::object const &type; };
+		template<> struct fw_ret<json::array>  { typedef json::array const &type; };
+		template<> struct fw_ret<std::string>  { typedef std::string const &type; };
+		
+		template<> struct fw_ret<json::value const &>  { typedef json::value const &type; };
+		template<> struct fw_ret<json::object const &> { typedef json::object const &type; };
+		template<> struct fw_ret<json::array const &>  { typedef json::array const &type; };
+		template<> struct fw_ret<std::string const &>  { typedef std::string const &type; };
+
+		template<> struct fw_ret<json::value const>  { typedef json::value const &type; };
+		template<> struct fw_ret<json::object const> { typedef json::object const &type; };
+		template<> struct fw_ret<json::array const>  { typedef json::array const &type; };
+		template<> struct fw_ret<std::string const>  { typedef std::string const &type; };
+
+
+		template<typename T>
+		struct fw_ret_handle {
+			static typename fw_ret<T>::type extract(json::value const &v)
+			{
+				return v.get_value<typename fw_ret<T>::type>();
+			}
+		};
+
+		template<>
+		struct fw_ret_handle<json::value const &>
+		{
+			static json::value const &extract(json::value const &v)
+			{
+				return v;
+			}
+		};
+
+		template<>
+		struct fw_ret_handle<json::array const &>
+		{
+			static json::array const &extract(json::value const &v)
+			{
+				return v.array();
+			}
+		};
+
+		template<>
+		struct fw_ret_handle<json::object const &>
+		{
+			static json::object const &extract(json::value const &v)
+			{
+				return v.object();
+			}
+		};
+
+		template<>
+		struct fw_ret_handle<std::string const &>
+		{
+			static std::string const &extract(json::value const &v)
+			{
+				return v.str();
+			}
+		};
+
+
+		template <typename T>
+		inline typename fw_ret<T>::type forward_value(json::value const &v) 
+		{
+			typedef typename fw_ret<T>::type return_type;
+			return fw_ret_handle<return_type>::extract(v);
+		}
+
+	}
+
 	#define CPPCMS_JSON_RPC_BINDER(N)						\
 	namespace details {								\
 		template<typename Class,typename Ptr CPPCMS_TEMPLATE_PARAMS>		\
@@ -236,7 +312,7 @@ namespace rpc {
 
 	#define CPPCMS_TEMPLATE_PARAMS ,typename P1
 	#define CPPCMS_FUNC_PARAMS P1
-	#define CPPCMS_CALL_PARAMS  a[0].get_value<P1>()
+	#define CPPCMS_CALL_PARAMS forward_value<P1>(a[0])
 	#define CPPCMS_BINDER_PARAMS ,P1
 	CPPCMS_JSON_RPC_BINDER(1)
 	#undef CPPCMS_TEMPLATE_PARAMS
@@ -246,7 +322,7 @@ namespace rpc {
 	
 	#define CPPCMS_TEMPLATE_PARAMS ,typename P1,typename P2
 	#define CPPCMS_FUNC_PARAMS P1,P2
-	#define CPPCMS_CALL_PARAMS  a[0].get_value<P1>(),a[1].get_value<P2>()
+	#define CPPCMS_CALL_PARAMS forward_value<P1>(a[0]), forward_value<P2>(a[1])
 	#define CPPCMS_BINDER_PARAMS ,P1,P2
 	CPPCMS_JSON_RPC_BINDER(2)
 	#undef CPPCMS_TEMPLATE_PARAMS
@@ -256,7 +332,7 @@ namespace rpc {
 
 	#define CPPCMS_TEMPLATE_PARAMS ,typename P1,typename P2,typename P3
 	#define CPPCMS_FUNC_PARAMS P1,P2,P3
-	#define CPPCMS_CALL_PARAMS  a[0].get_value<P1>(),a[1].get_value<P2>(),a[2].get_value<P3>()
+	#define CPPCMS_CALL_PARAMS forward_value<P1>(a[0]), forward_value<P2>(a[1]), forward_value<P3>(a[2])
 	#define CPPCMS_BINDER_PARAMS ,P1,P2,P3
 	CPPCMS_JSON_RPC_BINDER(3)
 	#undef CPPCMS_TEMPLATE_PARAMS
@@ -266,8 +342,7 @@ namespace rpc {
 
 	#define CPPCMS_TEMPLATE_PARAMS ,typename P1,typename P2,typename P3,typename P4
 	#define CPPCMS_FUNC_PARAMS P1,P2,P3,P4
-	#define CPPCMS_CALL_PARAMS  a[0].get_value<P1>(),a[1].get_value<P2>(),a[2].get_value<P3>(), \
-				a[3].get_value<P4>()
+	#define CPPCMS_CALL_PARAMS forward_value<P1>(a[0]), forward_value<P2>(a[1]), forward_value<P3>(a[2]), forward_value<P4>(a[3])
 	#define CPPCMS_BINDER_PARAMS ,P1,P2,P3,P4
 	CPPCMS_JSON_RPC_BINDER(4)
 	#undef CPPCMS_TEMPLATE_PARAMS
