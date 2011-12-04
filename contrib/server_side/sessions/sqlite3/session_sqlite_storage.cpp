@@ -370,7 +370,7 @@ private:
 #endif
 
 extern "C" {
-STORAGE_API cppcms::sessions::session_storage_factory *session_generator(cppcms::json::value const &opt)
+STORAGE_API cppcms::sessions::session_storage_factory *sessions_generator(cppcms::json::value const &opt)
 {
 	return new factory_object(opt.get<std::string>("db"));
 }

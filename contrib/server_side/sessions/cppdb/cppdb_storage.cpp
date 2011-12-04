@@ -41,7 +41,7 @@ public:
 			switch(transaction_mode_) {
 			case relaxed:
 			case non_durable:
-				sql << "SET SESSION synchronous_commit OFF" << cppdb::exec;
+				sql << "SET SESSION synchronous_commit = OFF" << cppdb::exec;
 				break;
 			default:
 				;
@@ -112,10 +112,10 @@ public:
 	{
 		cppdb::session sql(conn_str_);
 		set_session_option(sql);
-		sql <<	"DELETE FROM sessions "
+		sql <<	"DELETE FROM cppdb_sessions "
 			"WHERE sid in "
 			"("
-			"  SELECT sid FROM sessions "
+			"  SELECT sid FROM cppdb_sessions "
 			"  WHERE timeout < ?"
 			")" << cppdb::exec;
 	}
@@ -150,13 +150,13 @@ public:
 		switch(engine_) {
 		case sqlite3:
 			{
-				sql <<	"CREATE TABLE IF NOT EXISTS sessions ("
-					" id varchar(32) primary key not null, "
+				sql <<	"CREATE TABLE IF NOT EXISTS cppdb_sessions ("
+					" sid varchar(32) primary key not null, "
 					" timeout bigint not null, "
-					" content blob non null "
+					" content blob not null "
 					")" << cppdb::exec;
 				sql <<	"CREATE INDEX IF NOT EXISTS "
-					"sessions_timeout on sessions(timeout)" << cppdb::exec;
+					"sessions_timeout on cppdb_sessions(timeout)" << cppdb::exec;
 				std::string ver;
 				sql <<	"SELECT sqlite_version()" << cppdb::row >> ver;
 				size_t pos = ver.find('.');
@@ -183,39 +183,40 @@ public:
 			{
 				switch(transaction_mode_) {
 				case acid:
-					sql <<	"CREATE TABLE IF NOT EXISTS sessions ("
-						" id varchar(32) primary key not null, "
+					sql <<	"CREATE TABLE IF NOT EXISTS cppdb_sessions ("
+						" sid varchar(32) primary key not null, "
 						" timeout bigint not null, "
-						" content blob non null "
+						" content blob not null, "
+						" index sessions_timeout (timeout) "
 						") Engine=InnoDB" << cppdb::exec;
 					break;
 				case relaxed:
 				case non_durable:
-					sql <<	"CREATE TABLE IF NOT EXISTS sessions ("
-						" id varchar(32) primary key not null, "
+					sql <<	"CREATE TABLE IF NOT EXISTS cppdb_sessions ("
+						" sid varchar(32) primary key not null, "
 						" timeout bigint not null, "
-						" content blob non null "
+						" content blob not null, "
+						" index sessions_timeout (timeout) "
 						") Engine=MyISAM" << cppdb::exec;
 					break;
 				}
-				sql <<	"CREATE INDEX IF NOT EXISTS "
-					"sessions_timeout on sessions(timeout)" << cppdb::exec;
 			}
+			break;
 		case postgresql:
 			{
 				cppdb::transaction tr(sql);
 				cppdb::result r = sql 
 					<<  "SELECT 1 FROM pg_tables "
-					    "WHERE tablename = 'sessions' " 
+					    "WHERE tablename = 'cppdb_sessions' " 
 					<<cppdb::row;
 				if(r.empty()) {
-					sql <<	"CREATE TABLE sessions ("
-						" id varchar(32) primary key not null, "
+					sql <<	"CREATE TABLE cppdb_sessions ("
+						" sid varchar(32) primary key not null, "
 						" timeout bigint not null, "
-						" content bytea non null "
+						" content bytea not null "
 						")" << cppdb::exec;
-					sql <<	"CREATE INDEX IF NOT EXISTS "
-						"sessions_timeout on sessions(timeout)" << cppdb::exec;
+					sql <<	"CREATE INDEX "
+						"sessions_timeout on cppdb_sessions(timeout)" << cppdb::exec;
 				}
 				tr.commit();
 			}

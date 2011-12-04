@@ -16,6 +16,8 @@
 
 
 
+namespace { // anon
+
 extern "C" {
 	static int get_key(DB *, const DBT *, const DBT *pdata, DBT *skey)
 	{
@@ -159,7 +161,7 @@ private:
 		uint64_t val = val_in;
 		union { char c[8]; int64_t v; } u;
 		for(unsigned i=0;i<8;i++) {
-			u.c[i]=val >> 46;
+			u.c[i]=val >> 56;
 			val <<=8;
 		}
 		return u.v;
@@ -208,9 +210,6 @@ private:
 	booster::thread_specific_ptr<single_storage> ptr_;
 };
 
-///
-/// \brief The factory is an interface to a factory that creates session_storage objects, it should be thread safe.
-///
 class bdb_factory : public cppcms::sessions::session_storage_factory {
 public:
 	virtual booster::shared_ptr<cppcms::sessions::session_storage> get()
@@ -218,17 +217,10 @@ public:
 		return storage_;
 	}
 
-	///
-	/// Return true if session_storage requires garbage collection - removal of expired session time-to-time
-	///
 	virtual bool requires_gc() 
 	{
 		return false;
 	}
-	///
-	/// Actual garbage collection job (if required). If requires_gc returns true it will be called once-in-a-while to remove
-	/// all expired objects from the DB.
-	///
 	virtual void gc_job() 
 	{
 
@@ -248,8 +240,10 @@ private:
 # define STORAGE_API
 #endif
 
+} // namespace
+
 extern "C" {
-	STORAGE_API cppcms::sessions::session_storage_factory *session_factory(cppcms::json::value const &v)
+	STORAGE_API cppcms::sessions::session_storage_factory *sessions_generator(cppcms::json::value const &v)
 	{
 		std::string dir = v.get<std::string>("directory");
 		return new bdb_factory(dir);
