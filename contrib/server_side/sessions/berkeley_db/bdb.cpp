@@ -126,11 +126,19 @@ public:
 			memset(&data,0,sizeof(data));
 			data.flags = DB_DBT_MALLOC;
 		
+			#if DB_VERSION_MAJOR * 100 + DB_VERSION_MINOR >= 406 
 			int ret = cur->get(cur,0,&data,DB_FIRST);
+			#else
+			int ret = cur->c_get(cur,0,&data,DB_FIRST);
+			#endif
 			if(ret == DB_NOTFOUND)
 				break;
 			if(ret!=0) {
+				#if DB_VERSION_MAJOR * 100 + DB_VERSION_MINOR >= 406 
 				cur->close(cur);
+				#else
+				cur->c_close(cur);
+				#endif
 				check(ret,"dbc::get");
 			}
 			
@@ -142,7 +150,11 @@ public:
 				break;
 		}
 
+		#if DB_VERSION_MAJOR * 100 + DB_VERSION_MINOR >= 406 
 		cur->close(cur);
+		#else
+		cur->c_close(cur);
+		#endif
 		cur = 0;
 		
 		check(dbp->sync(dbp,0),"db::sync");
