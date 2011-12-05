@@ -133,9 +133,9 @@ namespace cppcms {
 			typedef enum {
 				operation_completed, ///< Asynchronous operation completed successfully 
 				operation_aborted    ///< Asynchronous operation was canceled
-			} complition_type; 
+			} completion_type; 
 
-			typedef booster::callback<void(complition_type)> handler;
+			typedef booster::callback<void(completion_type)> handler;
 
 			///
 			/// Send all pending output data to the client and

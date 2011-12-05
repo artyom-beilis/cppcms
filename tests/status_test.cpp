@@ -98,7 +98,7 @@ private:
 		binder(booster::intrusive_ptr<unit_test> ptr,void (unit_test::*member)()) : self(ptr),m(member)
 		{
 		}
-		void operator()(cppcms::http::context::complition_type /*t*/) const
+		void operator()(cppcms::http::context::completion_type /*t*/) const
 		{
 			((*self).*m)();
 		}

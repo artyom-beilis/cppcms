@@ -68,7 +68,7 @@ public:
 	struct binder {
 		booster::shared_ptr<cppcms::http::context> context;
 		int counter;
-		void operator()(cppcms::http::context::complition_type ct)
+		void operator()(cppcms::http::context::completion_type ct)
 		{
 			if(ct == cppcms::http::context::operation_aborted) {
 				bad_count++;

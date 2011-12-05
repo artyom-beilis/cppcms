@@ -98,7 +98,7 @@ public:
 		booster::shared_ptr<cppcms::http::context> context;
 		int counter;
 		time_t start;
-		void operator()(cppcms::http::context::complition_type ct)
+		void operator()(cppcms::http::context::completion_type ct)
 		{
 			if(ct == cppcms::http::context::operation_aborted) {
 				async_bad_count++;
