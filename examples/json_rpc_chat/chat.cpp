@@ -65,6 +65,13 @@ public:
         }
         timer_.expires_from_now(booster::ptime::seconds(1));
         timer_.async_wait(boost::bind(&chat::on_timer,booster::intrusive_ptr<chat>(this),_1));
+        std::cout << "Status: \n"
+            << "Waiters: " << waiters_.size() << '\n'
+            << "Messages:" << messages_.size() <<'\n'
+            << "[";
+        for(size_t i=0;i<messages_.size();i++)
+            std::cout << messages_[i] << std::endl;
+        std::cout <<"]" << std::endl;
     }
 
     void get(unsigned from)
@@ -109,6 +116,7 @@ public:
         for(size_t i=n;i<messages_.size();i++) {
             ar.push_back(messages_[i]);
         }
+        std::cout << "Response to client:" << v << std::endl;
         return v;
     }
 private:

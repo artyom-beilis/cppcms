@@ -6,85 +6,75 @@
 	<script type="text/javascript" src="/scripts/json2.js"></script>
 	<script type="text/javascript" src="/scripts/jsonrpc.js"></script>
 	<title>Chat Room</title>
-</head>
-<body>
-<h1>Chat room</h1>
-<script type="text/javascript">
-	var message_count = 0;
-	var rpc = new JsonRPC('/rpc',['get'],['post']);
-	function on_new_data_read(messages)
-	{
-	}
-	function on_error(e)
-	{
-		document.GetElementById('error_message').innerHTML = e;
-		document.GetElementById('reconnect').disabled = false;
-	}
-	function post_failed(e)
-	{
-		document.GetElementById('error_message').innerHTML = e;
-	}
 
-	rpc.get.on_result = function(messages) {
-		var messagesHtml = document.GetElementById('messages');
-		for(message in messages) {
-			messagesHtml.innerHTML+='<dt>' + message.author +'</dt>' +
-				'<dd>' + message.message + '</dd>'
-			message_count++;
+	<script type="text/javascript">
+		message_count = 0;
+		rpc = new JsonRPC('/chat',['get'],['post']);
+
+		function make_error(what,e)
+		{
+			document.getElementById('error_message').innerHTML = what + ': ' + e.type +': ' + e.error;
 		}
-		restart();
-	}
 
-	rpc.get.on_error = function(e) {
-		document.GetElementById('error_message').innerHTML = e;
-		document.GetElementById('reconnect').disabled = false;
-	}
- 
-	rpc.post.on_error = function(e) {
-		document.GetElementById('error_message').innerHTML = e;
-	}
-	rpc.post.on_result = function() {
-		document.GetElementById
-	}
-
-	function restart()
-	{
-		rpc.get(message_count);
-	}
-
-	function send_data() {
-		var kw = {
-			url : "/chat/post",
-			form : "theform"
-		};
-		dojo.xhrPost(kw);
-		dojo.byId("message").value="";
-		return false;
-	}
-	function read_data() {
-		dojo.xhrGet( {
-			url: "/chat/get/" + message_count,
-			timeout: 10000,
-			handleAs: "text",
-			load: function(response, ioArgs) {
-				dojo.byId("messages").innerHTML = response + '<br/>' + dojo.byId("messages").innerHTML;
+		rpc.get.on_result = function(messages) {
+			var messagesHtml = document.getElementById('messages');
+			
+			for(var i=0;i<messages.length;i++) {
+				m=messages[i];
+				messagesHtml.innerHTML+='<dt>' + m.author +'</dt>' +
+					'<dd>' + m.message + '</dd>';
 				message_count++;
-				read_data();
-				return response;
-			},
-			error: function(response,ioArgs) {
-				read_data();
-				return response;
 			}
+			//messagesHtml.innerHTML += '<p>JSON: ' +  JSON.stringify(messages) + '</p>' ;
 
-		});
-	}
-	dojo.addOnLoad(read_data);
-</script>
+			restart();
+		}
+
+		rpc.get.on_error = function(e) {
+			make_error('Getting New Messages',e);
+			document.getElementById('reconnect').disabled = false;
+		}
+	 
+		rpc.post.on_error = function(e) {
+			make_error('Posting New Messages',e);
+		}
+		rpc.post.on_result = function() {
+			document.getElementById("message").value = '';
+		}
+
+		function restart()
+		{
+			rpc.get(message_count);
+		}
+		function reconnect_to_server()
+		{
+			message_count = 0;
+			document.getElementById('error_message').innerHTML = '';
+			restart();
+			return false;
+		}
+
+		function send_data() {
+			author = document.getElementById('author').value;
+			message = document.getElementById("message").value;
+			rpc.post(author,message);
+			return false;
+		}
+	</script>
+
+
+</head>
+<body onload='restart()'>
+<h1>Chat room</h1>
 <form id="theform" >
-	<input id="message" type="text" name="message" value="" />
+	<p>Name: <input id="author" type="text" value="" /></p>
+	<p>
+	Message: <input id="message" type="text" value="" /></p>
 	<input type="submit" value="Send" onclick="return send_data()"/>
+	<input disabled="disabled" id='reconnect' type='submit' value='Reconnect' onclick='return reconnect_to_server()'>
+	</p>
+	<p id='error_message'></p>
 </form>
-<div id="messages">
-</div>
+<dl id="messages">
+</dl>
 </body>

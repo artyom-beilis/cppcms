@@ -8,6 +8,12 @@
 	},
 	"file_server" : {
 		"enable" : true,
+		"alias" : [
+			{ 
+				"url" : "/scripts" ,
+				"path" : "../../contrib/client_side/jsonrpc" 
+			}
+		],
 		"document_root" : "."
 	},
 
