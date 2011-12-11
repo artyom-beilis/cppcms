@@ -1,0 +1,18 @@
+<% c++ #include "content.h" %>
+<% skin view %>
+<% view upload uses content::upload %>
+<% template render() %>
+<html>
+   <body>
+    <!-- Specify enctype="multipart/form-data" to be able to upload files -->
+
+    <form method="post" action="" enctype="multipart/form-data" >
+    <% form as_p info %>
+    </form>
+   <p>Uploaded images</p>
+   <iframe src="/uploads/" width='800' height='300'></iframe>
+  </body>
+<html>
+<% end template %>
+<% end view %>
+<% end skin %>
