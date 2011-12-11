@@ -24,6 +24,33 @@
 ///    - id - JSONRPC id. It should be null for notification methods
 ///       and it should be some integer or string for function methods
 ///
+/// Each method given in the constructor would have following properties:
+///
+/// on_error(e) - Returned error, where e.type is one of 'transport', 'protocol', 'response' and
+///     e.error is the error object. 
+/// on_result(r) - Returned method result, or on_result() - for notifications.
+///
+/// For example
+///
+/// var rpc = new JsonRPC('/chat',['getValue','getStatistics'],['updateValue']);
+///
+/// // Asynchronouse method
+///
+/// rpc.getValue.on_error = function(e) { alert('Error:' + e.error); }
+/// rpc.getValue.on_result = function(r) { alert(r); }
+///
+/// rpc.getValue();
+///
+/// // Synchronous method
+///
+/// // not setting callbacks or setting on_error and on_result to null
+/// // makes them synchronous rpc calls. For example;
+///
+/// alert(rpc.getStatistics());
+/// rpc.updateValue(10);
+///
+///
+
 function JsonRPC(uri,function_methods,notification_methods) {
 	if(!(this instanceof JsonRPC)) 
 		return new JsonRPC(uri,function_methods,notification_methods);
@@ -75,7 +102,13 @@ JsonRPC.prototype.syncCall = function(name,id,params) {
 	if(xhr.status!=200) 
 		throw Error('Invalid response:' + xhr.status);
 	if(id!=null) {
-		var response = JSON.parse(xhr.responseText);
+		var response = null;
+		try {
+			response = JSON.parse(xhr.responseText);
+		}
+		catch(e) {
+			throw Error('Invalid JSON-RPC response');
+		}
 		if(response.error != null) 
 			throw Error(response.error);
 		return response.result;
@@ -95,7 +128,14 @@ JsonRPC.prototype.asyncCall = function(name,id,params,on_result,on_error) {
 			return;
 		if(xhr.status==200) {
 			if(id!=null) {
-				var response = JSON.parse(xhr.responseText);
+				var response = null;
+				try {
+					response = JSON.parse(xhr.responseText);
+				}
+				catch(e) {
+					on_error({'type' : 'protocol', 'error' : 'invalid response'});
+					return;
+				}
 				if(response.error != null) {
 					on_error({'type': 'response', 'error' : response.error });
 				}

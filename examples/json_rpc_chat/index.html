@@ -8,8 +8,16 @@
 	<title>Chat Room</title>
 
 	<script type="text/javascript">
-		message_count = 0;
+		// Global values:
+		
+		// RPC object with two methods:
+		//
+		// get(counter), returns array of objects with properties author and message
+		// post(author,message) posts new chat message
+		//
 		rpc = new JsonRPC('/chat',['get'],['post']);
+		// Messages counter - where to get new messages from, parameter for rpc.get
+		message_count = 0;
 
 		function make_error(what,e)
 		{
@@ -25,7 +33,6 @@
 					'<dd>' + m.message + '</dd>';
 				message_count++;
 			}
-			//messagesHtml.innerHTML += '<p>JSON: ' +  JSON.stringify(messages) + '</p>' ;
 
 			restart();
 		}
@@ -35,25 +42,29 @@
 			document.getElementById('reconnect').disabled = false;
 		}
 	 
+		rpc.post.on_result = function() {
+			// reset the form content
+			document.getElementById("message").value = '';
+		}
 		rpc.post.on_error = function(e) {
 			make_error('Posting New Messages',e);
-		}
-		rpc.post.on_result = function() {
-			document.getElementById("message").value = '';
 		}
 
 		function restart()
 		{
 			rpc.get(message_count);
 		}
+		
 		function reconnect_to_server()
 		{
 			message_count = 0;
 			document.getElementById('error_message').innerHTML = '';
+			document.getElementById('messages').innerHTML = '';
+			document.getElementById('reconnect').disabled = true;
 			restart();
 			return false;
 		}
-
+		
 		function send_data() {
 			author = document.getElementById('author').value;
 			message = document.getElementById("message").value;

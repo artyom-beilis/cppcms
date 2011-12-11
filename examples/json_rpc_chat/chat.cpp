@@ -41,48 +41,55 @@ public:
         cppcms::rpc::json_rpc_server(srv),
         timer_(srv.get_io_service())
     {
+        // Our main methods
         bind("post",cppcms::rpc::json_method(&chat::post,this),notification_role);
         bind("get",cppcms::rpc::json_method(&chat::get,this),method_role);
+        
+        // Add timeouts to the system
         last_wake_ = time(0);
         on_timer(booster::system::error_code());
     }
+
+    // Handle new message call
     void post(std::string const &author,std::string const &message)
     {
         cppcms::json::value obj;
         obj["author"]=author;
         obj["message"]=message;
         messages_.push_back(obj);
-        last_wake_ = time(0);
         broadcast(messages_.size()-1);
     }
 
     void on_timer(booster::system::error_code const &e)
     {
         if(e) return; // cancelation
-        if(last_wake_ - time(0) > 10) {
+
+        // check idle connections for more then 10 seconds
+        if(time(0) - last_wake_ > 10) {
             broadcast(messages_.size());
-            last_wake_ = time(0);
         }
+        // restart timer
         timer_.expires_from_now(booster::ptime::seconds(1));
         timer_.async_wait(boost::bind(&chat::on_timer,booster::intrusive_ptr<chat>(this),_1));
-        std::cout << "Status: \n"
-            << "Waiters: " << waiters_.size() << '\n'
-            << "Messages:" << messages_.size() <<'\n'
-            << "[";
-        for(size_t i=0;i<messages_.size();i++)
-            std::cout << messages_[i] << std::endl;
-        std::cout <<"]" << std::endl;
     }
 
+    // Handle request
     void get(unsigned from)
     {
         if(from < messages_.size()) {
+            // not long polling - return result now
             return_result(make_response(from));
             return;
         }
         else if(from == messages_.size()) {
+            // Can't answer now
+
+            // Add long polling request to the list
+
             booster::shared_ptr<cppcms::rpc::json_call> call=release_call();
             waiters_.insert(call);
+
+            // set disconnect callback
             call->context().async_on_peer_reset(
                 boost::bind(
                     &chat::remove_context,
@@ -93,36 +100,53 @@ public:
             return_error("Invalid position");
         }
     }
+
+    // handle client disconnect
     void remove_context(booster::shared_ptr<cppcms::rpc::json_call> call)
     {
         waiters_.erase(call);
     }
+
     void broadcast(size_t from)
     {
+        // update timeout
+        last_wake_ = time(0);
+        // Prepare response
+        cppcms::json::value response = make_response(from);
+        // Send it to everybody
         for(waiters_type::iterator waiter=waiters_.begin();waiter!=waiters_.end();++waiter) {
             booster::shared_ptr<cppcms::rpc::json_call> call = *waiter;
-            call->return_result(make_response(from));
+            call->return_result(response);
         }
         waiters_.clear();
     }
+
+    // Prepare response to the client
     cppcms::json::value make_response(size_t n)
     {
         cppcms::json::value v;
 
+        // Small optimization
         v=cppcms::json::array();
         cppcms::json::array &ar  = v.array();
-
         ar.reserve(messages_.size() - n);
+
+        // prepare all messages
         for(size_t i=n;i<messages_.size();i++) {
             ar.push_back(messages_[i]);
         }
-        std::cout << "Response to client:" << v << std::endl;
         return v;
     }
 private:
+
+    // message store
     std::vector<cppcms::json::value> messages_;
+
+    // long poll requests
     typedef std::set<booster::shared_ptr<cppcms::rpc::json_call> > waiters_type;
     waiters_type waiters_;
+
+    // timer for resetting idle requests
     booster::aio::deadline_timer timer_;
     time_t last_wake_;
 };
