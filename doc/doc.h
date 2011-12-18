@@ -25,6 +25,7 @@ Or
 
 - http://cppcms.sourceforge.net/
 
+For examples see \subpage examples_page
 
 
 */

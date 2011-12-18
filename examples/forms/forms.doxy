@@ -1,0 +1,15 @@
+/*! \page ex_forms Using CppCMS Forms
+
+Content
+
+\include  forms/content.h
+
+Sources
+
+\include forms/hello.cpp
+
+Template
+
+\include forms/view.tmpl
+
+*/

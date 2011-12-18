@@ -120,27 +120,52 @@ namespace util {
 		char on_stack_[OnStackSize + 1];
 	};
 
-	
+
+	///
+	/// \brief This is a special buffer that allows to "steal" some chunk
+	/// of text from the output stream.
+	///
+	/// It does this by replacing stream's streambuf object with temporary 
+	/// stream buffer that records all data written to the stream and then
+	/// returns the original buffer upon call to release() member function
+	/// it steal_buffer destruction.
+	///
+	/// The \a Size parameter defines the default chunk of memory allocated
+	/// on the stack before heap is used.
+	///	
 	template<size_t Size = 128>
 	class steal_buffer : public stackbuf<Size> {
 	public:
+		///
+		/// Create the buffer and "Steal" the buffer from \a out
+		///
 		steal_buffer(std::ostream &out) 
 		{
 			stolen_ = 0;
 			stream_ = 0;
 			steal(out);
 		}
+		///
+		/// Create an empty buffer
+		///
 		steal_buffer() 
 		{
 			stolen_ = 0;
 			stream_ = 0;
 		}
+		///
+		/// Steal the buffer from \a out
+		///
 		void steal(std::ostream &out)
 		{
 			release();
 			stolen_ = out.rdbuf(this);
 			stream_ = &out;
 		}
+		///
+		/// Release the "stolen" buffer back, now the buffer contains all
+		/// the data that was recorded.
+		///
 		void release()
 		{
 			if(stream_ && stolen_) {
@@ -158,25 +183,45 @@ namespace util {
 		std::ostream *stream_;
 	};
 
+	///
+	/// This is a special ostream that uses stack in order
+	/// to receive the data and faster then std::stringstream for
+	/// small chunks.
+	///
 	template<size_t Size = 128>
 	class stackstream : public std::ostream {
 	public:
+		///
+		/// Create a new stackstream
+		///
 		stackstream() : std::ostream(0)
 		{
 			rbbuf(&buf_);
 		}
+		///
+		/// Get the pointer to the first character in the range
+		///
 		char *begin()
 		{
 			return buf_->begin();
 		}
+		///
+		/// Get the pointer to the one past last character in the range
+		///
 		char *end()
 		{
 			return buf_->end();
 		}
+		///
+		/// Get a NUL terminated recorded string
+		///
 		char *c_str()
 		{
 			return buf_.c_str();
 		}
+		///
+		/// Get a recorded string
+		///
 		std::string str()
 		{
 			return buf_.str();

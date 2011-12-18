@@ -1,0 +1,15 @@
+/*! \page ex_chat Simple Chat
+
+C++ Source Code:
+
+\include chat/chat.cpp
+
+HTML Client
+
+\include chat/the_chat.html
+
+Confuiguration File:
+
+\include chat/config.js
+
+*/

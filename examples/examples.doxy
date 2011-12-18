@@ -1,0 +1,40 @@
+/*!
+\page examples_page Examples
+
+Basics:
+
+- \subpage ex_hello_world
+- \subpage ex_templates
+- \subpage ex_url_mapping
+
+Forms:
+
+- \subpage ex_forms
+- \subpage ex_uploads
+
+Important Tasks:
+
+- \subpage ex_basic_cache
+- \subpage ex_localization
+- \subpage ex_sessions
+
+Security:
+
+- \subpage ex_xss
+
+JSON:
+
+- \subpage ex_json
+- \subpage ex_json_rpc
+
+Comet:
+
+- \subpage ex_chat
+- \subpage ex_json_rpc_chat
+
+Applications:
+
+- \subpage ex_message_board
+
+
+*/
