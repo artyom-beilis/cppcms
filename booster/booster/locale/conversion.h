@@ -367,11 +367,11 @@ namespace booster {
 #endif
 
 ///
-/// \example conversions.cpp
+/// conversions.cpp
 ///
 /// Example of using various text conversion functions.
 ///
-/// \example wconversions.cpp
+/// wconversions.cpp
 ///
 /// Example of using various text conversion functions with wide strings.
 ///

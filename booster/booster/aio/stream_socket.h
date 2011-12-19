@@ -25,7 +25,7 @@ namespace aio {
 	
 	
 	///
-	/// \breif This object represents a stream socket: TCP/IP IPv4 or IPv6 or Unix domain
+	/// \brief This object represents a stream socket: TCP/IP IPv4 or IPv6 or Unix domain
 	/// stream socket
 	///
 	class BOOSTER_API stream_socket : public basic_socket {

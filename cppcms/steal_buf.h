@@ -184,9 +184,11 @@ namespace util {
 	};
 
 	///
+	/// \brief Fast output stream object.
+	///
 	/// This is a special ostream that uses stack in order
 	/// to receive the data and faster then std::stringstream for
-	/// small chunks.
+	/// small chunks, also it is not limited for any particular size.
 	///
 	template<size_t Size = 128>
 	class stackstream : public std::ostream {

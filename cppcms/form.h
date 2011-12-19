@@ -797,7 +797,7 @@ namespace cppcms {
 		};
 
 		///
-		/// This class represents a basic widget that generates HTML form elements
+		/// \brief This class represents a basic widget that generates HTML form elements
 		/// the widgets that use the <input \/> HTML tag.
 		///
 		/// It allows you to create your own widgets more easily. It does most of job required to
@@ -875,7 +875,7 @@ namespace cppcms {
 		};
 
 		///
-		/// This widget represents a hidden input form element. It is used to provide
+		/// \brief This widget represents a hidden input form element. It is used to provide
 		/// information invisible to the user.
 		///
 		/// I has the same properties as a text widget has but it does not render any HTML
@@ -902,7 +902,7 @@ namespace cppcms {
 
 
 		///
-		/// This text widget behaves similarly to the text widget but uses
+		/// \brief This text widget behaves similarly to the text widget but uses
 		/// the \c textarea HTML tag rather than the \c input HTML tag.
 		///
 		class CPPCMS_API textarea : public base_text 
@@ -1179,7 +1179,7 @@ namespace cppcms {
 		};
 
 		///
-		/// This class represent an HTML checkbox input element.
+		/// \brief This class represent an HTML checkbox input element.
 		///
 		class CPPCMS_API checkbox: public base_html_input {
 		public:
@@ -1228,7 +1228,7 @@ namespace cppcms {
 		};
 	
 		///
-		/// This widget represents an HTML multiple select form element.
+		/// \brief This widget represents an HTML multiple select form element.
 		///	
 		class CPPCMS_API select_multiple : public base_widget {
 		public:
@@ -1337,7 +1337,7 @@ namespace cppcms {
 		};
 
 		///
-		/// This is the base class for "select" like widgets which include dropdown lists
+		/// \brief This is the base class for "select" like widgets which include dropdown lists
 		/// and radio button sets.
 		///
 		class CPPCMS_API select_base : public base_widget {
@@ -1433,7 +1433,7 @@ namespace cppcms {
 		};
 
 		///
-		/// The widget that uses a drop-down list for selection.
+		/// \brief The widget that uses a drop-down list for selection.
 		///
 		class CPPCMS_API select : public select_base {
 		public:
@@ -1447,7 +1447,7 @@ namespace cppcms {
 		};
 
 		///
-		/// The widget that uses a set of radio buttons..
+		/// \brief The widget that uses a set of radio buttons..
 		///
 		class CPPCMS_API radio : public select_base {
 		public:
@@ -1580,7 +1580,7 @@ namespace cppcms {
 
 
 		///
-		/// Submit button widget.
+		/// \brief Submit button widget.
 		///
 		class CPPCMS_API submit : public base_html_input {
 		public:

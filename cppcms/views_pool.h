@@ -38,7 +38,7 @@ namespace cppcms {
 	namespace views {
 
 		///
-		/// The class that represents a single skin and generates its views.
+		/// \brief The class that represents a single skin and generates its views.
 		///
 		/// Usually used by templates compiler
 		///
@@ -160,8 +160,6 @@ namespace cppcms {
 			/// Get the singleton instance of the views pool
 			///
 			static pool &instance();
-
-			/// \endcond
 		
 		private:
 			pool();

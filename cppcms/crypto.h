@@ -166,7 +166,7 @@ namespace cppcms {
 		};
 		
 		///
-		/// This object calculates the HMAC signature for the input data
+		/// \brief This object calculates the HMAC signature for the input data
 		///
 		class CPPCMS_API hmac : public booster::noncopyable  {
 		public:

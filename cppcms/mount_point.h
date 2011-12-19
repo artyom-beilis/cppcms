@@ -26,8 +26,10 @@
 
 namespace cppcms {
 	///
-	/// This class represents application's mount point or the rule on which specific application
-	/// is selected to process the query. It is used by applications_pool class for mounting applications,
+	/// \brief This class represents application's mount point or the rule on which specific application
+	/// is selected to process the query.
+	/// 
+	/// It is used by applications_pool class for mounting applications,
 	/// and by forwarding managers to match forwarding requests
 	///
 	class CPPCMS_API mount_point {

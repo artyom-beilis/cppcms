@@ -36,6 +36,8 @@ namespace cppcms {
 	namespace filters {
 
 		///
+		/// \brief A special proxy object for writing any object to a std::ostream
+		///
 		/// This is special object that is used to store a reference to any other object 
 		/// that can be written to std::ostream, giving as easy way to write a filter for
 		/// any object that can be written to stream

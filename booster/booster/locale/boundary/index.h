@@ -1099,9 +1099,9 @@ namespace booster {
 } // boost
 
 ///
-/// \example boundary.cpp
+/// boundary.cpp
 /// Example of using segment_index
-/// \example wboundary.cpp
+/// wboundary.cpp
 /// Example of using segment_index over wide strings
 ///
 

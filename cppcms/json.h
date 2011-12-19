@@ -41,11 +41,11 @@ namespace json {
 	class value;
 
 	///
-	/// Special object that is convertible to null json value
+	/// \brief Special object that is convertible to null json value
 	///
 	struct null {};
 	///
-	/// Special object that is convertible to undefined json value
+	/// \brief Special object that is convertible to undefined json value
 	///
 	struct undefined {};
 
@@ -55,18 +55,18 @@ namespace json {
 	inline bool operator!=(null const &/*l*/,null const &/*r*/) {return false;}
 
 	///
-	/// The json::array - std::vector of json::value's
+	/// \brief The json::array - std::vector of json::value's
 	///
 	typedef std::vector<value> array;
 	///
-	/// The json::object - std::map of json::value's
+	/// \brief The json::object - std::map of json::value's
 	///
 	typedef std::map<string_key,value> object;
 
 	#ifdef CPPCMS_DOXYGEN_DOCS
 
 	///
-	/// The type traits schema for converting json values to/from orinary objects
+	/// \brief The type traits schema for converting json values to/from orinary objects
 	/// i.e. serialization from JSON to C++ object
 	///
 	template<typename T>
@@ -145,8 +145,10 @@ namespace json {
 	std::ostream CPPCMS_API &operator<<(std::ostream &out,json_type);
 
 	///
-	/// This class is central representation of json objects. It can be a value from any type
-	/// including object, array and undefined
+	/// \brief This class is central representation of json objects.
+	///
+	/// It can be a value from any type
+	/// including scalar, object, array and undefined
 	///
 	class CPPCMS_API value {
 	public:

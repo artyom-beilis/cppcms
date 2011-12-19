@@ -255,7 +255,7 @@ namespace locale {
 
 #endif
 ///
-/// \example collate.cpp
+/// collate.cpp
 /// Example of using collation functions
 ///
 // vim: tabstop=4 expandtab shiftwidth=4 softtabstop=4

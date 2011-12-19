@@ -31,7 +31,7 @@ namespace cppcms {
 
 	#ifdef CPPCMS_DOXYGEN_DOCS
 	///
-	/// Special traits class that describes how to serialize various 
+	/// \brief Special traits class that describes how to serialize various 
 	/// objects that are not defived from serializable_base.
 	///
 	template<typename Object>
@@ -55,7 +55,7 @@ namespace cppcms {
 
 
 	///
-	/// Error thrown in case of serialization error
+	/// \brief Error thrown in case of serialization error
 	///
 	class archive_error : public booster::runtime_error {
 	public:
@@ -66,7 +66,7 @@ namespace cppcms {
 
 
 	///
-	/// Class that represents a binary archive that can be stored in persistent storage or
+	/// \brief Class that represents a binary archive that can be stored in persistent storage or
 	/// transfered.
 	/// 
 	class CPPCMS_API archive {
@@ -167,7 +167,7 @@ namespace cppcms {
 	};
 
 	///
-	/// Opererator that performs load or store \a object operations
+	/// Operator that performs load or store \a object operations
 	/// on archive \a 
 	///
 	template<typename Archivable>
@@ -180,6 +180,9 @@ namespace cppcms {
 		return a;
 	}
 
+	///
+	/// Operator that saves an object to the archive
+	///
 	template<typename Archivable>
 	archive & operator <<(archive &a,Archivable const &object)
 	{
@@ -187,6 +190,9 @@ namespace cppcms {
 		return a;
 	}
 
+	///
+	/// Operator that loads an object from the archive
+	///
 	template<typename Archivable>
 	archive & operator >>(archive &a,Archivable &object)
 	{
@@ -198,7 +204,7 @@ namespace cppcms {
 	
 	
 	///
-	/// Base abstract class for object that can be serialized into std::string
+	/// \brief Base abstract class for object that can be serialized into std::string
 	///
 	class serializable_base {
 	public:
@@ -217,7 +223,7 @@ namespace cppcms {
 	};
 
 	///
-	/// Abstract class for serialization object
+	/// \brief Abstract class for serialization object
 	/// 
 	class serializable : public serializable_base {
 	public:
@@ -264,7 +270,9 @@ namespace cppcms {
 	#ifdef CPPCMS_DOXYGEN_DOCS
 	
 	///
-	/// This is the traits class for serialization traits. It allows user to use
+	/// \brief This is the traits class for serialization traits.
+	///
+	/// It allows user to use
 	/// arbitrary serialization libraries or use its own serialization rules,
 	/// for example you can use boost::serialization.
 	///
@@ -314,7 +322,7 @@ namespace cppcms {
 	struct serialization_traits;
 
 	///
-	/// Traits for serializable objects - converts object to and from string
+	/// \brief Traits for serializable objects - converts object to and from string
 	/// using archive class
 	///
 	template<typename D>

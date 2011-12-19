@@ -19,13 +19,13 @@ namespace aio {
 	///
 	namespace aio_error {
 		enum {
-			ok,			//< No error
-			canceled,		//< Operation was canceled
-			select_failed,		//< It was impossible to perform select operation on the file descriptor
-			eof,			//< End of file occured
-			invalid_endpoint,	//< The provided endpoint (address) is not valid
-			no_service_provided,	//< The io_service was not assigned
-			prefork_not_enabled	//< Prefork acceptor support is not enabled
+			ok,			///< No error
+			canceled,		///< Operation was canceled
+			select_failed,		///< It was impossible to perform select operation on the file descriptor
+			eof,			///< End of file occured
+			invalid_endpoint,	///< The provided endpoint (address) is not valid
+			no_service_provided,	///< The io_service was not assigned
+			prefork_not_enabled	///< Prefork acceptor support is not enabled
 		};
 
 		///

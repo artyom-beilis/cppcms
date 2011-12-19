@@ -352,7 +352,7 @@ namespace cppcms {
 				filters::streamable const &p6);
 
 		///
-		/// Mount sub application \a app using name \a name to a \url.
+		/// Mount sub application \a app using name \a name to \a url.
 		///
 		/// The URL format as in assign but it requires a single parameter {1}
 		/// which would be substituted with the mapping of the URL of sub-application

@@ -501,11 +501,11 @@ namespace booster {
 #endif
 
 ///
-/// \example hello.cpp
+/// hello.cpp
 ///
 /// Basic example of using various functions provided by this library
 ///
-/// \example whello.cpp
+/// whello.cpp
 ///
 /// Basic example of using various functions with wide strings provided by this library
 ///

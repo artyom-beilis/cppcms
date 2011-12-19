@@ -53,7 +53,9 @@ namespace nowide {
 	};
 
 	#else  // not msvc
-	/// \cont INTERNAL
+
+	/// \cond INTERNAL
+
 	namespace details {
 		class stdio_iodev : public booster::io_device {
 			stdio_iodev(stdio_iodev const &);

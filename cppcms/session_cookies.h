@@ -80,7 +80,7 @@ namespace sessions {
 	};
 
 	///
-	/// The implementation of session_api using encrypted or signed cookies
+	/// \brief The implementation of session_api using encrypted or signed cookies
 	///
 	class CPPCMS_API session_cookies : public session_api {
 	public:

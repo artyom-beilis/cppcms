@@ -1142,7 +1142,7 @@ namespace booster {
 
 #endif
 ///
-/// \example calendar.cpp
+/// calendar.cpp
 ///
 /// Example of using date_time functions for generating calendar for current year.
 ///

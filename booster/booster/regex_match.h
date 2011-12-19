@@ -103,7 +103,7 @@ namespace booster {
 
 
 	///
-	/// The object that hold the result of matching a regular expression against the text
+	/// \brief The object that hold the result of matching a regular expression against the text
 	/// using regex_match and regex_search functions
 	///
 	template<typename Iterator>

@@ -31,7 +31,7 @@ namespace json {
 namespace sessions {
 
 	///
-	/// \a session_server_storage is an abstract class that allows user to implements
+	/// \brief session_server_storage is an abstract class that allows user to implements
 	/// custom session storage device like, database storage device
 	///
 	/// Note: if the member functions save/load/remove are thread safe -- can be called

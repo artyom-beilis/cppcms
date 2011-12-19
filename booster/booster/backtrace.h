@@ -243,7 +243,6 @@ namespace booster {
     };
 
     /// \cond INTERNAL
-
     namespace details {
         class trace_manip {
         public:
@@ -266,18 +265,21 @@ namespace booster {
             return t.write(out);
         }
     }
-
     /// \endcond
 
     ///
     /// \brief manipulator that print stack trace for the exception \a e if it is derived from backtrace.
     ///
     /// For example:
+    ///
     /// \code
+    ///
     /// catch(std::exception const &e) {
     ///   std::cerr << e.what() << std::endl;
     ///   std::cerr << booster::trace(e);
     /// }
+    ///
+    /// \endcode
     ///
     template<typename E>
     details::trace_manip trace(E const &e)

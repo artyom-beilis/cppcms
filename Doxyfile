@@ -466,7 +466,7 @@ INPUT                  = 	cppcms \
 				booster/booster/aio \
 				booster/booster/locale \
 				booster/booster/nowide \
-				noicu/cppcms \
+				booster/booster/smart_ptr \
 				examples
 
 # If the value of the INPUT tag contains directories, you can use the 
@@ -476,14 +476,13 @@ INPUT                  = 	cppcms \
 # *.c *.cc *.cxx *.cpp *.c++ *.java *.ii *.ixx *.ipp *.i++ *.inl *.h *.hh *.hxx 
 # *.hpp *.h++ *.idl *.odl *.cs *.php *.php3 *.inc *.m *.mm *.py
 
-FILE_PATTERNS          = *.c *.cc *.cxx *.cpp *.c++ *.java *.ii *.ixx *.ipp *.i++ *.inl *.h *.hh *.hxx \
-	*.hpp *.h++ *.idl *.odl *.cs *.php *.php3 *.inc *.m *.mm *.py *.doxy
+FILE_PATTERNS          = *.c *.cpp *.ipp *.inl *.h *.hpp *.doxy
 
 # The RECURSIVE tag can be used to turn specify whether or not subdirectories 
 # should be searched for input files as well. Possible values are YES and NO. 
 # If left blank NO is used.
 
-RECURSIVE              = YES
+RECURSIVE              = NO
 
 # The EXCLUDE tag can be used to specify files and/or directories that should 
 # excluded from the INPUT source files. This way you can easily exclude a 
@@ -523,7 +522,7 @@ EXAMPLE_PATTERNS       =
 # commands irrespective of the value of the RECURSIVE tag. 
 # Possible values are YES and NO. If left blank NO is used.
 
-EXAMPLE_RECURSIVE      = NO
+EXAMPLE_RECURSIVE      = YES
 
 # The IMAGE_PATH tag can be used to specify one or more files or 
 # directories that contain image that are included in the documentation (see 
@@ -1027,7 +1026,8 @@ PREDEFINED             = CPPCMS_DOXYGEN_DOCS \
 			 BOOSTER_DOXYGEN_DOCS \
 			 BOOST_LOCALE_DECL= \
 			 CPPCMS_DEPRECATED= \
-			 CPPCMS_API=
+			 CPPCMS_API= \
+			 BOOSTER_API=
 
 # If the MACRO_EXPANSION and EXPAND_ONLY_PREDEF tags are set to YES then 
 # this tag can be used to specify a list of macro names that should be expanded. 

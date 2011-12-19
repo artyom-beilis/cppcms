@@ -233,7 +233,7 @@ namespace log {
 		BOOSTER_API std::string format_plain_text_message(message const &msg);
 
 		///
-		/// stderr based sink - sends messages to standard error output
+		/// \brief stderr based sink - sends messages to standard error output
 		///
 		class BOOSTER_API standard_error : public sink {
 		public:
@@ -246,7 +246,7 @@ namespace log {
 		};
 		
 		///
-		/// stderr based sink - sends messages to log file
+		/// \brief log file based sink - sends messages to log file
 		///
 		class BOOSTER_API file : public sink {
 		public:
@@ -291,7 +291,9 @@ namespace log {
 
 		#ifdef BOOSTER_POSIX
 		///
-		/// POSIX syslog sink.
+		/// \brief POSIX syslog sink
+		///
+		/// Avalible only on POSIX platforms
 		///
 		class BOOSTER_API syslog : public sink {
 		public:

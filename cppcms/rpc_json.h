@@ -25,10 +25,13 @@
 #include <cppcms/cppcms_error.h>
 
 namespace cppcms {
+///
+/// \brief This namespace holds API for implementing various RPC APIs, like JsonRPC
+///
 namespace rpc {
 
 	///
-	/// The error thrown in case of bad call - parameters mismatch or 
+	/// \brief The error thrown in case of bad call - parameters mismatch or 
 	/// invalid request.
 	///
 	/// User should may throw it case of a error as invalid request inside the
@@ -45,7 +48,9 @@ namespace rpc {
 	class json_rpc_server;
 
 	///
-	/// This class represents single call of json-rpc method. It is used
+	/// \brief This class represents single call of json-rpc method.
+	/// 
+	/// It is used
 	/// for handling asynchronous responses only. Similar API is provided
 	/// in json_rpc_server class for synchronous methods.
 	///
@@ -112,7 +117,10 @@ namespace rpc {
 	};
 
 	///
-	/// JSON-RPC service provider
+	/// \brief JSON-RPC service application.
+	///
+	/// User is expected to derive his own objects from this class in order to implement Json-RPC calls
+	/// similarly to how cppcms::application is used.
 	///
 	class CPPCMS_API json_rpc_server : public application {
 	public:
@@ -204,6 +212,7 @@ namespace rpc {
 		booster::hold_ptr<_data> d;
 	};
 
+	/// \cond INTERNAL
 
 	namespace details {
 
@@ -351,6 +360,8 @@ namespace rpc {
 	#undef CPPCMS_BINDER_PARAMS
 
 	#undef CPPCMS_JSON_RPC_BINDER
+
+	/// \endcond
 
 } // rpc
 } // cppcms

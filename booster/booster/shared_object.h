@@ -34,8 +34,6 @@ namespace booster {
 		/// Create shared object and load it, \see open(std::string const&,bool);
 		///
 		/// \param file_name - the name of the file, UTF-8 encoded under Windows
-		/// \param reloadable - under windows copies the DLL allowing it to be overwritten 
-		///  in the run-time, ignored on all other platforms
 		///
 		/// \throws booster::system::system_error if it is impossible to load it
 		///

@@ -2,6 +2,8 @@
 
 \mainpage CppCMS - C++ Web Development Framework
 
+\section mainpage_intro Introduction
+
 What is CppCMS? CppCMS is Free C++ Web Development Framework (not CMS) aimed for
 Rapid Web Application Development. It differs from most of other web development
 frameworks like: Python Django, Java Servlets or C++ Wt in following:
@@ -10,6 +12,7 @@ frameworks like: Python Django, Java Servlets or C++ Wt in following:
 -# It uses modern C++ as primary development language in order to achieve first goal.
 -# It is aimed on development of Web Sites rather then "GUI Like" web applications.
 
+\section mainpage_docs Documentation
 
 This is reference documentation for CppCMS. It includes two major parts:
 
@@ -25,7 +28,8 @@ Or
 
 - http://cppcms.sourceforge.net/
 
-For examples see \subpage examples_page
+\section mainpage_examples Examples
 
+Multiple examples of using CppCMS can be found at this page \subpage examples_page
 
 */
