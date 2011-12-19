@@ -493,6 +493,9 @@ void service::impl_run_prepare()
 		impl_->acceptors_[i]->async_accept();
 
 	setup_exit_handling();
+	#ifndef CPPCMS_WIN_NATIVE
+	impl_run_event_loop();
+	#endif
 }
 
 void service::impl_run_event_loop()
@@ -511,7 +514,9 @@ void service::impl_run_event_loop()
 void service::impl_run()
 {
 	impl_run_prepare();
+	#ifdef CPPCMS_WIN_NATIVE
 	impl_run_event_loop();
+	#endif
 }
 
 #ifndef CPPCMS_WIN_NATIVE
