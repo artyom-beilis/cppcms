@@ -44,4 +44,4 @@ public:
 };
 
 }
-#endif /* _HTTP_ERROR_H */
+#endif 
