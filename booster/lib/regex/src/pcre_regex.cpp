@@ -142,7 +142,7 @@ namespace booster {
 			throw regex_error("Internal error");
 		}
 		d->are = p;
-		if(!pcre_fullinfo(d->are,NULL,PCRE_INFO_SIZE,&d->are_size) < 0)
+		if(pcre_fullinfo(d->are,NULL,PCRE_INFO_SIZE,&d->are_size) != 0)
 		{
 			throw regex_error("Internal error");
 		}
