@@ -43,42 +43,29 @@ std::string bs="0123456789abcdef0123456789abcde";
 
 void do_nothing() {}
 
-void test(booster::shared_ptr<cppcms::sessions::session_storage> storage,booster::function<void()> callback=do_nothing)
+void test(booster::shared_ptr<cppcms::sessions::session_storage> storage,cppcms::sessions::session_storage_factory &f)
 {
 	time_t now=time(0)+3;
-	callback();
 	storage->save(bs+"1",now,"");
 	std::string out="xx";
 	time_t tout;
-	callback();
 	TEST(storage->load(bs+"1",tout,out));
 	TEST(out.empty());
 	TEST(tout==now);
-	callback();
 	storage->remove(bs+"1");
-	callback();
 	TEST(!storage->load(bs+"1",tout,out));
-	callback();
 	storage->save(bs+"1",now-4,"hello world");
-	callback();
 	TEST(!storage->load(bs+"1",tout,out));
-	callback();
 	storage->save(bs+"1",now,"hello world");
-	callback();
 	TEST(storage->load(bs+"1",tout,out));
-	callback();
 	TEST(out=="hello world");
 	storage->save(bs+"2",now,"x");
-	callback();
 	storage->remove(bs+"2");
-	callback();
 	TEST(storage->load(bs+"1",tout,out));
 	TEST(out=="hello world");
-	callback();
 	storage->remove(bs+"1");
-	callback();
 	storage->remove(bs+"2");
-	callback();
+	f.gc_job();
 }
 
 int count_files()
@@ -113,7 +100,7 @@ int count_files()
 void test_files(booster::shared_ptr<cppcms::sessions::session_storage> storage,
 		cppcms::sessions::session_storage_factory &f)
 {
-	test(storage);
+	test(storage,f);
 	TEST(f.requires_gc());
 	time_t now=time(0);
 	storage->save(bs+"1",now,"test");
@@ -137,16 +124,6 @@ void test_files(booster::shared_ptr<cppcms::sessions::session_storage> storage,
 }
 
 
-struct do_gc {
-	cppcms::sessions::session_storage_factory *f;
-	int n;
-	void operator()() const
-	{
-		for(int i=0;i<n;i++) {
-			f->gc_job();
-		}
-	}
-};
 
 int main()
 {
@@ -158,7 +135,7 @@ int main()
 		std::cout << "Testing memory storage" << std::endl;
 		session_memory_storage_factory mem;
 		storage=mem.get();
-		test(storage);
+		test(storage,mem);
 		std::cout << "Testing file storage" << std::endl;
 		#ifndef CPPCMS_WIN_NATIVE
 		std::cout << "Testing single process" << std::endl;
