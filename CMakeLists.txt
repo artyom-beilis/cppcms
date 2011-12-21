@@ -4,8 +4,8 @@ set(CMAKE_LEGACY_CYGWIN_WIN32 0)
 
 project(cppcms)
 set(CPPCMS_PACKAGE_NAME "CppCMS")
-set(CPPCMS_PACKAGE_STRING "CppCMS/0.99.10")
-set(CPPCMS_PACKAGE_VERSION "0.99.10")
+set(CPPCMS_PACKAGE_STRING "CppCMS/0.99.11")
+set(CPPCMS_PACKAGE_VERSION "0.99.11")
 
 include(CheckFunctionExists)
 include(CheckCXXSourceCompiles)
