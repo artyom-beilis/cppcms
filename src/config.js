@@ -137,7 +137,8 @@
 		"file" : {
 			"name" : "cppcms.log" ,
 			"max_files" : 3,
-			"append" : true
+			"append" : true,
+			//"timezone" : "GMT-3"
 		},
 		"syslog" : {
 			"enable" : false, //true,

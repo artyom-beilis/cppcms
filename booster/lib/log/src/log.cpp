@@ -15,6 +15,7 @@
 #include <sstream>
 #include <booster/nowide/fstream.h>
 #include <booster/nowide/cstdio.h>
+#include "../../locale/src/util/timezone.h"
 #include <locale>
 #include <set>
 #include <string.h>
@@ -266,14 +267,41 @@ namespace log {
 			std::ostringstream ss;
 			ss.imbue(std::locale::classic());
 			ptime now = ptime::now();
-			std::tm formatted = ptime::universal_time(now);
-			static char const format[]="%Y-%m-%d %H:%M:%S GMT; ";
+			std::tm formatted = ptime::local_time(now);
+			static char const format[]="%Y-%m-%d %H:%M:%S; ";
 			std::use_facet<std::time_put<char> >(ss.getloc()).put(ss,ss,' ',&formatted,format,format+sizeof(format)-1);
 			ss << msg.module()<<", " << logger::level_to_string(msg.level()) << ": " << msg.log_message();
 
 			ss <<" (" << msg.file_name() <<":" <<msg.file_line() <<")";
 			return ss.str();
 		}
+
+		std::string format_plain_text_message_tz(message const &msg,int tz_offset)
+		{
+			std::ostringstream ss;
+			ss.imbue(std::locale::classic());
+			ptime now = ptime::now() + ptime::from_number(tz_offset);
+			std::tm formatted = ptime::universal_time(now);
+			static char const format[]="%Y-%m-%d %H:%M:%S";
+			std::use_facet<std::time_put<char> >(ss.getloc()).put(ss,ss,' ',&formatted,format,format+sizeof(format)-1);
+			ss << " GMT";
+			if(tz_offset != 0) {
+				char sign = tz_offset > 0 ? '+' : '-';
+				if(tz_offset < 0)
+					tz_offset = -tz_offset;
+				int hours = tz_offset  / 3600;
+				int minutes = tz_offset / 60 % 60;
+				ss << sign << hours;
+				if(minutes!=0)
+					ss << ':' << minutes;
+			}
+			ss << ";";
+			ss << msg.module()<<", " << logger::level_to_string(msg.level()) << ": " << msg.log_message();
+
+			ss <<" (" << msg.file_name() <<":" <<msg.file_line() <<")";
+			return ss.str();
+		}
+
 		struct standard_error::data{};
 		standard_error::standard_error()
 		{
@@ -293,6 +321,8 @@ namespace log {
 			current_size_(0),
 			opened_(false),
 			append_(false),
+			use_local_time_(true),
+			tz_offset_(0),
 			d(new file::data())
 		{
 			d->stream.imbue(std::locale::classic());
@@ -305,10 +335,17 @@ namespace log {
 		{
 			if(!opened_) max_files_=m;
 		}
-		/*void file::max_size(size_t file_size)
+
+		void file::set_timezone(std::string const &name)
 		{
-			if(!opened_) max_size_ = file_size;
-		}*/
+			if(name.empty()) {
+				use_local_time_=true;
+			}
+			else {
+				tz_offset_ = booster::locale::util::parse_tz(name);
+				use_local_time_=false;
+			}
+		}
 
 		void file::open(std::string file_name)
 		{
@@ -345,7 +382,10 @@ namespace log {
 		}
 		void file::log(message const &msg)
 		{
-			d->stream << format_plain_text_message(msg) << std::endl;
+			if(use_local_time_)
+				d->stream << format_plain_text_message(msg) << std::endl;
+			else
+				d->stream << format_plain_text_message_tz(msg,tz_offset_) << std::endl;
 		}
 		#ifdef BOOSTER_POSIX
 		struct syslog::data {};

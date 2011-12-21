@@ -228,9 +228,17 @@ namespace log {
 		
 		///
 		/// Convert a logging message to a string with all the data that can be
-		/// written to file.
+		/// written to file, the displayed time is local time
 		///
 		BOOSTER_API std::string format_plain_text_message(message const &msg);
+
+		///
+		/// Convert a logging message to a string with all the data that can be
+		/// written to file, the displayed time is GMT+\a timezone_offset.
+		/// timezone_offset should be represented in seconds, for example
+		/// for timezone GMT+2:00 it should be 7200
+		///
+		BOOSTER_API std::string format_plain_text_message_tz(message const &msg,int timezone_offset = 0);
 
 		///
 		/// \brief stderr based sink - sends messages to standard error output
@@ -272,6 +280,16 @@ namespace log {
 			///
 			void append();
 			
+			///
+			/// Set the time-zone name that should be used in the message.
+			///
+			/// It should have a format GMT+XX:YY like "GMT+2:00" or "GMT-3".
+			/// "GMT" can be used as well
+			///
+			/// If name is empty local time is used which is the default
+			///
+			void set_timezone(std::string const &name);
+
 			/// Send message to the log
 			virtual void log(message const &);
 		private:
@@ -284,6 +302,8 @@ namespace log {
 			size_t current_size_;
 			bool opened_;
 			bool append_;
+			bool use_local_time_;
+			int tz_offset_;
 			
 			struct data;
 			hold_ptr<data> d;
@@ -293,7 +313,7 @@ namespace log {
 		///
 		/// \brief POSIX syslog sink
 		///
-		/// Avalible only on POSIX platforms
+		/// Available only on POSIX platforms
 		///
 		class BOOSTER_API syslog : public sink {
 		public:

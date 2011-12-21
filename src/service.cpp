@@ -298,6 +298,8 @@ void service::setup_logging()
 		if((append = settings().get("logging.file.append",false))==true)
 			file->append();
 		file->open(log_file);
+		std::string tz = settings().get("logging.file.timezone","");
+		file->set_timezone(tz);
 		logger::instance().add_sink(file);
 	}
 }
