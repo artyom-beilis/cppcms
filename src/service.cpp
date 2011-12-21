@@ -151,7 +151,7 @@ json::value service::load_settings(int argc,char *argv[])
 		int line_no=0;
 		if(!val.load(fin,true,&line_no)) {
 			std::ostringstream ss;
-			ss<<"Error reading configurarion file "<<file_name<<" in line:"<<line_no;
+			ss<<"Error reading configuration file "<<file_name<<" in line:"<<line_no;
 			throw cppcms_error(ss.str());
 		}
 	}
