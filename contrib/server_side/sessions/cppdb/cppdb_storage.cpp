@@ -1,4 +1,6 @@
 #include <cppdb/frontend.h>
+#include <cppdb/backend.h>
+#include <cppdb/pool.h>
 #include <cppcms/session_storage.h>
 #include <cppcms/json.h>
 #include <sstream>
@@ -21,40 +23,48 @@ public:
 		non_durable
 	};
 
+	struct options_setter;
+	friend struct options_setter;
 
-	void set_session_option(cppdb::session &sql)
-	{
-		switch(engine_) {
-		case sqlite3:
-			switch(transaction_mode_) {
-			case relaxed:
-				sql << "PRAGMA synchronous = NORMAL" << cppdb::exec;
+	struct options_setter {
+		options_setter(cppdb_storage *p);
+		transactivity transaction_mode;
+		engine_type engine;
+		void operator()(cppdb::session &sql) const
+		{
+			switch(engine) {
+			case sqlite3:
+				switch(transaction_mode) {
+				case relaxed:
+					sql << "PRAGMA synchronous = NORMAL" << cppdb::exec;
+					break;
+				case non_durable:
+					sql << "PRAGMA synchronous = OFF" << cppdb::exec;
+					break;
+				default:
+					;
+				}
 				break;
-			case non_durable:
-				sql << "PRAGMA synchronous = OFF" << cppdb::exec;
-				break;
+			case postgresql:
+				switch(transaction_mode) {
+				case relaxed:
+				case non_durable:
+					sql << "SET SESSION synchronous_commit = OFF" << cppdb::exec;
+					break;
+				default:
+					;
+				}
 			default:
 				;
 			}
-			break;
-		case postgresql:
-			switch(transaction_mode_) {
-			case relaxed:
-			case non_durable:
-				sql << "SET SESSION synchronous_commit = OFF" << cppdb::exec;
-				break;
-			default:
-				;
-			}
-		default:
-			;
 		}
-	}
+
+	};
+
 
 	void save(std::string const &sid,time_t timeout,std::string const &in)
 	{
-		cppdb::session sql(conn_str_);
-		set_session_option(sql);
+		cppdb::session sql(pool_->open(),options_setter(this));
 		std::istringstream ss(in);
 		std::istream &si = ss;
 		switch(engine_) {
@@ -79,8 +89,7 @@ public:
 
 	bool load(std::string const &sid,time_t &timeout,std::string &out)
 	{
-		cppdb::session sql(conn_str_);
-		set_session_option(sql);
+		cppdb::session sql(pool_->open(),options_setter(this));
 		cppdb::result r;
 		std::ostringstream ss;
 		std::ostream &os=ss;
@@ -102,27 +111,21 @@ public:
 		
 	virtual void remove(std::string const &sid) 
 	{
-		cppdb::session sql(conn_str_);
-		set_session_option(sql);
+		cppdb::session sql(pool_->open(),options_setter(this));
 		sql << "DELETE FROM cppdb_sessions WHERE sid = ?" 
 			<< sid <<cppdb::exec;
 	}
 
 	void gc()
 	{
-		cppdb::session sql(conn_str_);
-		set_session_option(sql);
-		sql <<	"DELETE FROM cppdb_sessions "
-			"WHERE sid in "
-			"("
-			"  SELECT sid FROM cppdb_sessions "
-			"  WHERE timeout < ?"
-			")" << cppdb::exec;
+		cppdb::session sql(pool_->open(),options_setter(this));
+		sql <<	"DELETE FROM cppdb_sessions WHERE timeout < ?"
+			<< time(0) << cppdb::exec;
 	}
 
 	cppdb_storage(cppcms::json::value const &val) 
 	{
-		conn_str_ = val.get<std::string>("connection_string");
+		std::string conn_str = val.get<std::string>("connection_string");
 		std::string mode = val.get("transactivity","acid");
 
 		if(mode == "acid")
@@ -136,7 +139,7 @@ public:
 						"valid values are acid, relaxed and non_durable");
 		std::string engine;
 
-		cppdb::session sql(conn_str_);
+		cppdb::session sql(conn_str);
 		std::string driver = sql.engine();
 		if(driver == "mysql")
 			engine_ = mysql;
@@ -222,6 +225,8 @@ public:
 			}
 			break;
 		}
+
+		pool_ = cppdb::pool::create(conn_str);
 	}
 	bool is_blocking() 
 	{
@@ -229,10 +234,16 @@ public:
 	}
 private:
 
-	std::string conn_str_;
+	cppdb::pool::pointer pool_;
 	transactivity transaction_mode_;
 	engine_type engine_;
 };
+
+cppdb_storage::options_setter::options_setter(cppdb_storage *p) :
+	transaction_mode(p->transaction_mode_),
+	engine(p->engine_)
+{
+}
 
 
 class cppdb_factory : public cppcms::sessions::session_storage_factory {

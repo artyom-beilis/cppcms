@@ -44,7 +44,7 @@ public:
 	{
 		try {
 			check(db_env_create(&env,0),"db_env_create");
-			check(env->open(env,directory.c_str(),DB_INIT_CDB | DB_INIT_MPOOL |  DB_CREATE,0666),"db_env::open");
+			check(env->open(env,directory.c_str(),DB_INIT_CDB | DB_INIT_MPOOL | DB_CREATE,0666),"db_env::open");
 			check(db_create(&dbp, env, 0),"db_create");
 			check(dbp->open(dbp, NULL, "sid.db", NULL, DB_HASH, DB_CREATE, 0666),"db::open");
 			check(db_create(&dbp_to, env, 0),"db_create");
@@ -122,39 +122,32 @@ public:
 		check(dbp_to->cursor(dbp_to,0,&cur,DB_WRITECURSOR),"db::cursor");
 		
 		for(;;) {
-			DBT data;
+			DBT data,key;
 			memset(&data,0,sizeof(data));
 			data.flags = DB_DBT_MALLOC;
+			memset(&key,0,sizeof(key));
+			key.flags = DB_DBT_MALLOC;
 		
-			#if DB_VERSION_MAJOR * 100 + DB_VERSION_MINOR >= 406 
-			int ret = cur->get(cur,0,&data,DB_FIRST);
-			#else
-			int ret = cur->c_get(cur,0,&data,DB_FIRST);
-			#endif
+			int ret = cur->c_get(cur,&key,&data,DB_FIRST);
+			
 			if(ret == DB_NOTFOUND)
 				break;
 			if(ret!=0) {
-				#if DB_VERSION_MAJOR * 100 + DB_VERSION_MINOR >= 406 
-				cur->close(cur);
-				#else
 				cur->c_close(cur);
-				#endif
 				check(ret,"dbc::get");
 			}
 			
 			int64_t be_time;
 			memcpy(&be_time,data.data,8);
 			free(data.data);
+			free(key.data);
 			time_t to = to_big_endian(be_time);
-			if(to < time(0))
+			if(to > time(0))
 				break;
+			check(cur->c_del(cur,0),"dbc::del");
 		}
 
-		#if DB_VERSION_MAJOR * 100 + DB_VERSION_MINOR >= 406 
-		cur->close(cur);
-		#else
 		cur->c_close(cur);
-		#endif
 		cur = 0;
 		
 		check(dbp->sync(dbp,0),"db::sync");
