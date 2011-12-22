@@ -208,7 +208,7 @@ int main()
 			booster::thread t2(f2);
 			booster::thread t3(f3);
 
-			booster::ptime::millisleep(100);
+			booster::ptime::millisleep(300);
 			delete p;
 			
 			t1.join();
