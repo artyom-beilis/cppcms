@@ -83,7 +83,7 @@ namespace impl {
 		struct cached_http {
 			struct cached_proxy {
 				bool behind;
-				std::vector<std::string> remote_addr_headers;
+				std::vector<std::string> remote_addr_cgi_variables;
 			} proxy;
 			std::vector<std::string> script_names;
 			int timeout;
@@ -92,7 +92,20 @@ namespace impl {
 				proxy.behind=v.get("http.proxy.behind",false);
 				std::vector<std::string> default_headers;
 				default_headers.push_back("X-Forwarded-For");
-				proxy.remote_addr_headers = v.get("http.proxy.remote_addr_headers",default_headers);
+				std::vector<std::string> remote_addr_headers = 
+					v.get("http.proxy.remote_addr_headers",default_headers);
+
+				for(size_t i=0;i<remote_addr_headers.size();i++) {
+					std::string name = "HTTP_" + remote_addr_headers[i];
+					for(unsigned i=0;i<name.size();i++) {
+						if(name[i] == '-') 
+							name[i]='_';
+						else if('a' <= name[i] && name[i] <='z')
+							name[i]=name[i]-'a' + 'A';
+					}
+					proxy.remote_addr_cgi_variables.push_back(name);
+				}
+
 				script_names = v.get("http.script_names",std::vector<std::string>());
 				std::string script = v.get("http.script","");
 				if(!script.empty())

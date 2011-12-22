@@ -555,27 +555,24 @@ namespace cgi {
 			if(rewrite_)
 				request_uri_ = rewrite_->rewrite(request_uri_,pool_);
 
-			char const *remote_addr="";
-			if(service().cached_settings().http.proxy.behind==false) {
+			char const *remote_addr=0;
+			
+			if(service().cached_settings().http.proxy.behind==true) {
+				std::vector<std::string> const &variables = 
+					service().cached_settings().http.proxy.remote_addr_cgi_variables;
+
+				for(unsigned i=0;remote_addr == 0 && i<variables.size();i++) {
+					remote_addr = env_.get(variables[i].c_str());
+				}
+			}
+			
+			if(!remote_addr) {
 				booster::system::error_code e;
 				remote_addr=pool_.add(socket_.remote_endpoint(e).ip());
 				if(e) {
 					close();
 					h(e);
 					return;
-				}
-			}
-			else {
-				std::vector<std::string> const &headers = 
-					service().cached_settings().http.proxy.remote_addr_headers;
-
-				for(unsigned i=0;i<headers.size();i++) {
-					std::map<std::string,std::string>::const_iterator p;
-					char const *s=env_.get(headers[i].c_str());
-					if(s!=0) {
-						remote_addr=s;
-						break;
-					}
 				}
 			}
 			
