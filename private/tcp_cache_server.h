@@ -23,6 +23,7 @@
 #include "base_cache.h"
 #include <booster/noncopyable.h>
 #include <booster/intrusive_ptr.h>
+#include <booster/shared_ptr.h>
 #include <booster/hold_ptr.h>
 
 namespace cppcms {
@@ -34,7 +35,7 @@ namespace impl {
 class CPPCMS_API tcp_cache_service : public booster::noncopyable {
 public:
 	tcp_cache_service(	booster::intrusive_ptr<base_cache> cache,
-				cppcms::sessions::session_storage_factory *f,
+				booster::shared_ptr<cppcms::sessions::session_storage_factory> f,
 				int threads,
 				std::string ip,
 				int port);

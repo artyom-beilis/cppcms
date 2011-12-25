@@ -124,6 +124,7 @@ void test_two_clients(booster::intrusive_ptr<cppcms::impl::base_cache> c1,booste
 
 int main()
 {
+	typedef booster::shared_ptr<cppcms::sessions::session_storage_factory> sfact_type;
 	try {
 		std::cout << "Testing thread cache... "<< std::flush;
 		test_cache(cppcms::impl::thread_cache_factory(20));
@@ -144,7 +145,7 @@ int main()
 				ports.push_back(6001);
 				srv1.reset(new cppcms::impl::tcp_cache_service(
 							cppcms::impl::thread_cache_factory(20),
-							0, 
+							sfact_type(),
 							1,"127.0.0.1",6001));
 
 				test_cache(cppcms::impl::tcp_cache_factory(ips,ports,0),false);
@@ -154,7 +155,7 @@ int main()
 				std::cout << "Ok" << std::endl;
 				srv2.reset(new cppcms::impl::tcp_cache_service(
 						cppcms::impl::thread_cache_factory(20),
-						0,
+						sfact_type(),
 						1,"127.0.0.1",6002));
 				ips.push_back("127.0.0.1");
 				ports.push_back(6002);

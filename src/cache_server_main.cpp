@@ -27,6 +27,7 @@
 #include <iostream>
 #include <stdlib.h>
 #include <stdexcept>
+#include <booster/shared_ptr.h>
 
 struct params {
 	bool en_cache;
@@ -153,12 +154,12 @@ int main(int argc,char **argv)
 		params par(argc,argv);
 
 		booster::intrusive_ptr<cppcms::impl::base_cache> cache;
-		//auto_ptr<session_server_storage> storage;
+		booster::shared_ptr<cppcms::sessions::session_storage_factory> storage;
 
 		if(par.en_cache)
 			cache = cppcms::impl::thread_cache_factory(par.items_limit);
 
-		cppcms::impl::tcp_cache_service srv(cache,0,par.threads,par.ip,par.port);
+		cppcms::impl::tcp_cache_service srv(cache,storage,par.threads,par.ip,par.port);
 		
 #ifndef CPPCMS_WIN32
 		// Wait for signlas for exit

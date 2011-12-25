@@ -39,6 +39,7 @@
 #include <booster/aio/io_service.h>
 #include <booster/aio/endpoint.h>
 #include <booster/aio/buffer.h>
+#include <booster/aio/deadline_timer.h>
 #include <booster/log.h>
 #include <time.h>
 #include <stdlib.h>
@@ -65,13 +66,13 @@ class tcp_cache_service::session : public booster::enable_shared_from_this<tcp_c
 public:
 
 	io::stream_socket socket_;
-	cppcms::impl::base_cache *cache_;
+	booster::intrusive_ptr<cppcms::impl::base_cache> cache_;
 	booster::shared_ptr<cppcms::sessions::session_storage> sessions_;
 
 
 	session(io::io_service &srv,
-		cppcms::impl::base_cache *c,
-		cppcms::sessions::session_storage_factory *f) :
+		booster::intrusive_ptr<cppcms::impl::base_cache> c,
+		booster::shared_ptr<cppcms::sessions::session_storage_factory> f) :
 		socket_(srv),
 		cache_(c)
 	{
@@ -297,9 +298,9 @@ public:
 class tcp_cache_service::server  {
 	io::acceptor acceptor_;
 	size_t counter;
-	cppcms::impl::base_cache *cache_;
+	booster::intrusive_ptr<cppcms::impl::base_cache> cache_;
 	std::vector<io::io_service *> services_;
-	cppcms::sessions::session_storage_factory *sessions_;
+	booster::shared_ptr<cppcms::sessions::session_storage_factory> sessions_;
 	void on_accept(booster::system::error_code const &e,booster::shared_ptr<tcp_cache_service::session> s)
 	{
 		if(!e) {
@@ -326,12 +327,12 @@ class tcp_cache_service::server  {
 		acceptor_.async_accept(s->socket_,boost::bind(&server::on_accept,this,_1,s));
 	}
 public:
-	server(	std::vector<booster::shared_ptr<io::io_service> > &io,
-		std::string ip,
-		int port,
-		cppcms::impl::base_cache *c,
-		cppcms::sessions::session_storage_factory *f
-		) : 
+	server(		std::vector<booster::shared_ptr<io::io_service> > &io,
+			std::string ip,
+			int port,
+			booster::intrusive_ptr<cppcms::impl::base_cache> c,
+			booster::shared_ptr<cppcms::sessions::session_storage_factory> f
+		):
 		acceptor_(*io[0]),
 		counter(0),
 		cache_(c),
@@ -349,32 +350,43 @@ public:
 	}
 };
 
-/*
+
 class garbage_collector
 {
-	aio::deadline_timer timer;
-	booster::shared_ptr<storage::io> io;
-	int seconds;
-	void submit()
-	{
-		timer.expires_from_now(boost::posix_time::seconds(seconds));
-		timer.async_wait(boost::bind(&garbage_collector::gc,this,_1));
-	}
-	void gc(error_code const &e)
-	{
-		session_file_storage::gc(io);
-		submit();
-	}
 public:
-	garbage_collector(io::io_service &srv,int sec,booster::shared_ptr<storage::io> io_) :
-		timer(srv),
-		seconds(sec),
-		io(io_)
+	garbage_collector(	booster::shared_ptr<cppcms::sessions::session_storage_factory> f,
+				int seconds)
+		:	stop_(false),
+			io_(f),
+			seconds_(seconds)
 	{
-		submit();	
+		io_->gc_job();
 	}
+	void stop()
+	{
+		booster::unique_lock<booster::mutex> guard(lock_);
+		stop_ = true;
+	}
+	void operator()()
+	{
+		for(;;){
+			{
+				booster::unique_lock<booster::mutex> guard(lock_);
+				if(stop_)
+					return;
+			}
+			booster::ptime::sleep(booster::ptime::seconds(seconds_));
+			io_->gc_job();
+		}
+	}
+private:
+
+	bool stop_;
+	booster::shared_ptr<cppcms::sessions::session_storage_factory> io_;
+	int seconds_;
+	booster::mutex lock_;
 };
-*/
+
 
 static void thread_function(io::io_service *io)
 {
@@ -410,7 +422,7 @@ struct tcp_cache_service::_data {
 };
 
 tcp_cache_service::tcp_cache_service(	booster::intrusive_ptr<base_cache> cache,
-					cppcms::sessions::session_storage_factory *factory,
+					booster::shared_ptr<cppcms::sessions::session_storage_factory> factory,
 					int threads,
 					std::string ip,
 					int port) :
@@ -421,7 +433,7 @@ tcp_cache_service::tcp_cache_service(	booster::intrusive_ptr<base_cache> cache,
 		d->io[i].reset(new io::io_service());
 	}
 	d->cache=cache;
-	d->srv_cache.reset(new server(d->io,ip,port,cache.get(),factory));
+	d->srv_cache.reset(new server(d->io,ip,port,cache,factory));
 #ifndef CPPCMS_WIN32
 	sigset_t new_mask;
 	sigfillset(&new_mask);
