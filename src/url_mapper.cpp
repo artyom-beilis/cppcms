@@ -19,7 +19,11 @@
 #define CPPCMS_SOURCE
 #include <cppcms/url_mapper.h>
 #include <cppcms/application.h>
+#include <cppcms/service.h>
 #include <cppcms/cppcms_error.h>
+#include <cppcms/steal_buf.h>
+#include <booster/log.h>
+#include "cached_settings.h"
 #include <map>
 
 #include <stdlib.h>
@@ -53,7 +57,10 @@ namespace cppcms {
 	struct url_mapper::data 
 	{
 
-		data() : parent(0),this_application(0) {}
+		data() : throws(true),parent(0),this_application(0) {}
+
+		bool throws;
+
 		std::string this_name;
 		application *parent;
 		application *this_application;
@@ -316,6 +323,7 @@ namespace cppcms {
 	url_mapper::url_mapper(cppcms::application *my_app) : d(new url_mapper::data())
 	{
 		d->this_application = my_app;
+		d->throws = my_app->service().cached_settings().misc.invalid_url_throws;
 	}
 	url_mapper::~url_mapper()
 	{
@@ -400,28 +408,46 @@ namespace cppcms {
 					size_t params_no,
 					std::ostream &output)
 	{
-		string_key key=string_key::unowned(ckey);
-		string_key real_key;
-		std::vector<string_key> direct;
-		url_mapper &mp = get_mapper_for_key(key,real_key,direct);
-		if(params_no < direct.size())
-			throw cppcms_error("url_mapper: number of keywords is larger then number of actual parameters");
-		std::map<string_key,std::string> mappings;
-		if(direct.size() == 0) {
-			mp.d->map(real_key,key,params,params_no,topmost().d->helpers,mappings,output);
-		}
-		else {
-			size_t direct_size = direct.size();
-			filters::streamable const * const *key_params = params;
-			params += direct_size;
-			params_no -= direct_size;
-			for(unsigned i=0;i<direct.size();i++) {
-				std::ostringstream ss;
-				ss.copyfmt(output);
-				(*key_params[i])(ss);
-				mappings[direct[i]]=ss.str();
+		util::steal_buffer<> temp_buf;
+		if(!d->throws)
+			temp_buf.steal(output);
+		try {
+			string_key key=string_key::unowned(ckey);
+			string_key real_key;
+			std::vector<string_key> direct;
+			url_mapper &mp = get_mapper_for_key(key,real_key,direct);
+			if(params_no < direct.size())
+				throw cppcms_error("url_mapper: number of keywords is larger then number of actual parameters");
+			std::map<string_key,std::string> mappings;
+			if(direct.size() == 0) {
+				mp.d->map(real_key,key,params,params_no,topmost().d->helpers,mappings,output);
 			}
-			mp.d->map(real_key,key,params,params_no,topmost().d->helpers,mappings,output);
+			else {
+				size_t direct_size = direct.size();
+				filters::streamable const * const *key_params = params;
+				params += direct_size;
+				params_no -= direct_size;
+				for(unsigned i=0;i<direct.size();i++) {
+					std::ostringstream ss;
+					ss.copyfmt(output);
+					(*key_params[i])(ss);
+					mappings[direct[i]]=ss.str();
+				}
+				mp.d->map(real_key,key,params,params_no,topmost().d->helpers,mappings,output);
+			}
+		}
+		catch(cppcms_error const &e) {
+			if(d->throws) {
+				throw;
+			}
+			BOOSTER_ERROR("cppcms") << e.what() <<'\n' << booster::trace(e);
+			temp_buf.release();
+			output<<"/this_is_an_invalid_url_generated_by_url_mapper";
+			return;
+		}
+		if(!d->throws) {
+			temp_buf.release();
+			output << temp_buf.c_str();
 		}
 	}
 	

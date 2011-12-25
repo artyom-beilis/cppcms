@@ -132,6 +132,15 @@ namespace impl {
 				cookies.secure = v.get("session.cookies.secure",false);
 			}
 		} session;
+		struct cached_misc {
+			bool invalid_url_throws;
+
+			cached_misc(json::value const &v)
+			{
+				invalid_url_throws = v.get("misc.invalid_url_throws",false);
+			}
+
+		} misc;
 		cached_settings(json::value const &v) :
 			security(v),
 			fastcgi(v),
@@ -139,7 +148,8 @@ namespace impl {
 			localization(v),
 			gzip(v),
 			http(v),
-			session(v)	
+			session(v),
+			misc(v)
 		{
 		}
 

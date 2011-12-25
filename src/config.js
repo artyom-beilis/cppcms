@@ -167,6 +167,11 @@
 			//"automatic" : false,	// check of all widgets automatically or manually - defaut - true=automatic
 			"exposed" : true,	// expose CSRF token in the cookie
 		}
-	}
+	},
+	"misc" : {
+		// "invalid_url_throws" : false
+		// Set it to true of you want that invalid URL would
+		// trigger an exception
+	},
 	
 }

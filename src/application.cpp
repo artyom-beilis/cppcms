@@ -28,6 +28,7 @@
 #include <cppcms/applications_pool.h>
 #include <cppcms/http_response.h>
 #include <cppcms/views_pool.h>
+#include <booster/hold_ptr.h>
 
 #include <set>
 #include <vector>
@@ -46,25 +47,25 @@
 namespace cppcms {
 
 struct application::_data {
-	_data(cppcms::service *s,application *app):
+	_data(cppcms::service *s):
 		service(s),
-		pool_id(-1),
-		url_map(app)
+		pool_id(-1)
 	{
 	}
 	cppcms::service *service;
 	booster::shared_ptr<http::context> conn;
 	int pool_id;
 	url_dispatcher url;
-	url_mapper url_map;
+	booster::hold_ptr<url_mapper> url_map;
 	std::vector<application *> managed_children;
 };
 
 application::application(cppcms::service &srv) :
-	d(new _data(&srv,this)),
+	d(new _data(&srv)),
 	refs_(0)
 {
 	parent_=root_=this;
+	d->url_map.reset(new url_mapper(this));
 }
 
 application::~application()
@@ -101,7 +102,7 @@ url_dispatcher &application::dispatcher()
 
 url_mapper &application::mapper()
 {
-	return d->url_map;
+	return *d->url_map;
 }
 
 booster::shared_ptr<http::context> application::get_context()

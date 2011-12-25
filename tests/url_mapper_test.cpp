@@ -32,9 +32,10 @@ std::string value(std::ostringstream &s)
 	return res;
 }
 
-void basic_test()
+void basic_test(cppcms::service &srv,bool throws)
 {
-	cppcms::url_mapper m(0);
+	cppcms::application app(srv);
+	cppcms::url_mapper m(&app);
 
 	std::cout << "-- Basic Mapping" << std::endl;
 
@@ -49,7 +50,7 @@ void basic_test()
 	m.assign("bar","/bar/{2}/{1}");
 	m.assign("test1","{1}x");
 	m.assign("test2","x{1}");
-	m.set_value("lang","en");
+	app.mapper().set_value("lang","en");
 	m.root("test.com");
 	TEST(m.root()=="test.com");
 
@@ -105,26 +106,37 @@ void basic_test()
 	}
 	catch(cppcms::cppcms_error const &e) {}
 	catch(...) { TEST(0); }
-	try {
-		m.map(ss,"undefined");
-		TEST(0);
+
+	if(throws) {
+		try {
+			m.map(ss,"undefined");
+			TEST(!"Should not be there");
+		}
+		catch(cppcms::cppcms_error const &e) {}
+		
+		try {
+			m.map(ss,"undefined");
+			TEST(!"Should not be there");
+		}
+		catch(cppcms::cppcms_error const &e) {}
+		
+		try {
+			m.map(ss,"test1",1,2);
+			TEST(!"Should not be there");
+		}
+		catch(cppcms::cppcms_error const &e) {}
 	}
-	catch(cppcms::cppcms_error const &e) {}
-	catch(...) { TEST(0); }
-	
-	try {
+	else {
+
 		m.map(ss,"undefined");
-		TEST(0);
-	}
-	catch(cppcms::cppcms_error const &e) {}
-	catch(...) { TEST(0); }
-	
-	try {
+		TEST(value(ss)=="/this_is_an_invalid_url_generated_by_url_mapper");
+
+		m.map(ss,"undefined");
+		TEST(value(ss)=="/this_is_an_invalid_url_generated_by_url_mapper");
+
 		m.map(ss,"test1",1,2);
-		TEST(0);
+		TEST(value(ss)=="/this_is_an_invalid_url_generated_by_url_mapper");
 	}
-	catch(cppcms::cppcms_error const &e) {}
-	catch(...) { TEST(0); }
 }
 
 
@@ -286,12 +298,26 @@ struct test_app : public cppcms::application {
 int main()
 {
 	try {
-		std::cout << "- Basics" << std::endl;
-		basic_test();
+
+		std::cout << "- Basics no throw" << std::endl;
+
+		cppcms::json::value cfg;
+		{
+			cppcms::service srv(cfg);
+			basic_test(srv,false);
+		}
+
+		cfg["misc"]["invalid_url_throws"]=true;
+		std::cout << "- Basics throw" << std::endl;
+
+		{
+			cppcms::service srv(cfg);
+			basic_test(srv,true);
+		}
+
+		cppcms::service srv(cfg);
 		
 		std::cout << "- Hierarchy " << std::endl;
-		cppcms::json::value cfg;
-		cppcms::service srv(cfg);
 		test_app app(srv);
 
 		app.test_hierarchy();
