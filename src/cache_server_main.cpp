@@ -158,7 +158,7 @@ int main(int argc,char **argv)
 		if(par.en_cache)
 			cache = cppcms::impl::thread_cache_factory(par.items_limit);
 
-		cppcms::impl::tcp_cache_service srv(cache,par.threads,par.ip,par.port);
+		cppcms::impl::tcp_cache_service srv(cache,0,par.threads,par.ip,par.port);
 		
 #ifndef CPPCMS_WIN32
 		// Wait for signlas for exit

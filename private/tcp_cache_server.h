@@ -26,11 +26,18 @@
 #include <booster/hold_ptr.h>
 
 namespace cppcms {
+namespace sessions {
+	class session_storage_factory;
+}
 namespace impl {
 
 class CPPCMS_API tcp_cache_service : public booster::noncopyable {
 public:
-	tcp_cache_service(booster::intrusive_ptr<base_cache> cache,int threads,std::string ip,int port);
+	tcp_cache_service(	booster::intrusive_ptr<base_cache> cache,
+				cppcms::sessions::session_storage_factory *f,
+				int threads,
+				std::string ip,
+				int port);
 	~tcp_cache_service();
 	void stop();
 private:

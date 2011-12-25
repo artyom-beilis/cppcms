@@ -30,12 +30,8 @@
 #include "cache_storage.h"
 #include <cppcms/cppcms_error.h>
 #include <cppcms/config.h>
-#ifdef CPPCMS_USE_EXTERNAL_BOOST
-#   include <boost/bind.hpp>
-#else // Internal Boost
-#   include <cppcms_boost/bind.hpp>
-    namespace boost = cppcms_boost;
-#endif
+#include <cppcms/session_storage.h>
+#include <cppcms_boost/bind.hpp>
 #include <booster/shared_ptr.h>
 #include <booster/enable_shared_from_this.h>
 #include <booster/thread.h>
@@ -52,38 +48,50 @@
 
 #include "tcp_cache_server.h"
 
+namespace boost = cppcms_boost;
+
+
 namespace cppcms {
 namespace impl {
 
 namespace io = booster::aio;
 
 class tcp_cache_service::session : public booster::enable_shared_from_this<tcp_cache_service::session> {
-	std::vector<char> data_in;
-	std::string data_out;
-	cppcms::impl::tcp_operation_header hout;
-	cppcms::impl::tcp_operation_header hin;
+	std::vector<char> data_in_;
+	std::string data_out_;
+	cppcms::impl::tcp_operation_header hout_;
+	cppcms::impl::tcp_operation_header hin_;
 
 public:
+
 	io::stream_socket socket_;
-	cppcms::impl::base_cache &cache;
-	//cppcms::session_storage &sessions;
-	session(io::io_service &srv,cppcms::impl::base_cache &c): //,session_server_storage &s) : 
-		socket_(srv), cache(c) //,sessions(s)
+	cppcms::impl::base_cache *cache_;
+	booster::shared_ptr<cppcms::sessions::session_storage> sessions_;
+
+
+	session(io::io_service &srv,
+		cppcms::impl::base_cache *c,
+		cppcms::sessions::session_storage_factory *f) :
+		socket_(srv),
+		cache_(c)
 	{
+		if(f) {
+			sessions_ = f->get();
+		}
 	}
 	void run()
 	{
-		socket_.async_read(io::buffer(&hin,sizeof(hin)),
+		socket_.async_read(io::buffer(&hin_,sizeof(hin_)),
 				boost::bind(&session::on_header_in,shared_from_this(),
 						_1));
 	}
 	void on_header_in(booster::system::error_code const &e)
 	{
 		if(e) return;
-		data_in.clear();
-		data_in.resize(hin.size);
-		if(hin.size > 0) {
-			socket_.async_read(io::buffer(data_in),
+		data_in_.clear();
+		data_in_.resize(hin_.size);
+		if(hin_.size > 0) {
+			socket_.async_read(io::buffer(data_in_),
 				boost::bind(&session::on_data_in,shared_from_this(),
 						_1));
 		}
@@ -97,56 +105,56 @@ public:
 		std::string a;
 		std::set<std::string> tags,*ptags=0;
 		std::string key;
-		key.assign(data_in.begin(),data_in.end());
-		if(hin.operations.fetch.transfer_triggers)
+		key.assign(data_in_.begin(),data_in_.end());
+		if(hin_.operations.fetch.transfer_triggers)
 			ptags=&tags;
 		uint64_t generation;
 		time_t timeout;
-		if(!cache.fetch(key,&a,ptags,&timeout,&generation)) {
-			hout.opcode=opcodes::no_data;
+		if(!cache_->fetch(key,&a,ptags,&timeout,&generation)) {
+			hout_.opcode=opcodes::no_data;
 			return;
 		}
-		if(hin.operations.fetch.transfer_if_not_uptodate 
-			&& generation==hin.operations.fetch.current_gen)
+		if(hin_.operations.fetch.transfer_if_not_uptodate 
+			&& generation==hin_.operations.fetch.current_gen)
 		{
-			hout.opcode=opcodes::uptodate;
+			hout_.opcode=opcodes::uptodate;
 			return;
 		}
-		hout.opcode=opcodes::data;
-		data_out.swap(a);
-		hout.operations.data.data_len=data_out.size();
+		hout_.opcode=opcodes::data;
+		data_out_.swap(a);
+		hout_.operations.data.data_len=data_out_.size();
 		if(ptags) {
 			for(std::set<std::string>::iterator p=tags.begin(),e=tags.end();p!=e;++p) {
-				data_out.append(p->c_str(),p->size()+1);
+				data_out_.append(p->c_str(),p->size()+1);
 			}
 		}
-		hout.operations.data.triggers_len=data_out.size()-hout.operations.data.data_len;
-		hout.size=data_out.size();
+		hout_.operations.data.triggers_len=data_out_.size()-hout_.operations.data.data_len;
+		hout_.size=data_out_.size();
 		
-		hout.operations.data.generation=generation;
+		hout_.operations.data.generation=generation;
 		time_t now=time(0);
-		hout.operations.data.timeout = timeout > now ? timeout - now : 0;
+		hout_.operations.data.timeout = timeout > now ? timeout - now : 0;
 	}
 
 	void rise()
 	{
 		std::string key;
-		key.assign(data_in.begin(),data_in.end());
-		cache.rise(key);
-		hout.opcode=opcodes::done;
+		key.assign(data_in_.begin(),data_in_.end());
+		cache_->rise(key);
+		hout_.opcode=opcodes::done;
 	}
 	void clear()
 	{
-		cache.clear();
-		hout.opcode=opcodes::done;
+		cache_->clear();
+		hout_.opcode=opcodes::done;
 	}
 	void stats()
 	{
 		unsigned k,t;
-		cache.stats(k,t);
-		hout.opcode=opcodes::out_stats;
-		hout.operations.out_stats.keys=k;
-		hout.operations.out_stats.triggers=t;
+		cache_->stats(k,t);
+		hout_.opcode=opcodes::out_stats;
+		hout_.operations.out_stats.keys=k;
+		hout_.operations.out_stats.triggers=t;
 	}
 	bool load_triggers(std::set<std::string> &triggers,char const *start,unsigned len)
 	{
@@ -167,94 +175,112 @@ public:
 	void store()
 	{
 		std::set<std::string> triggers;
-		if(	hin.operations.store.key_len
-			+hin.operations.store.data_len
-			+hin.operations.store.triggers_len != hin.size
-			|| hin.operations.store.key_len == 0)
+		if(	hin_.operations.store.key_len
+			+hin_.operations.store.data_len
+			+hin_.operations.store.triggers_len != hin_.size
+			|| hin_.operations.store.key_len == 0)
 		{
-			hout.opcode=opcodes::error;
+			hout_.opcode=opcodes::error;
 			return;
 		}
 		std::string ts;
-		std::vector<char>::iterator p=data_in.begin()
-			+hin.operations.store.key_len
-			+hin.operations.store.data_len;
-		ts.assign(p,p + hin.operations.store.triggers_len);
+		std::vector<char>::iterator p=data_in_.begin()
+			+hin_.operations.store.key_len
+			+hin_.operations.store.data_len;
+		ts.assign(p,p + hin_.operations.store.triggers_len);
 		if(!load_triggers(triggers,ts.c_str(),
-					hin.operations.store.triggers_len))
+					hin_.operations.store.triggers_len))
 		{
-			hout.opcode=opcodes::error;
+			hout_.opcode=opcodes::error;
 			return;
 		}
-		time_t timeout=time(0)+(time_t)hin.operations.store.timeout;
+		time_t timeout=time(0)+(time_t)hin_.operations.store.timeout;
 		std::string key;
-		key.assign(data_in.begin(),data_in.begin()+hin.operations.store.key_len);
+		key.assign(data_in_.begin(),data_in_.begin()+hin_.operations.store.key_len);
 		std::string data;
-		data.assign(data_in.begin()+hin.operations.store.key_len,
-				data_in.begin() + hin.operations.store.key_len + hin.operations.store.data_len);
-		cache.store(key,data,triggers,timeout);
-		hout.opcode=opcodes::done;
+		data.assign(data_in_.begin()+hin_.operations.store.key_len,
+				data_in_.begin() + hin_.operations.store.key_len + hin_.operations.store.data_len);
+		cache_->store(key,data,triggers,timeout);
+		hout_.opcode=opcodes::done;
 	}
-/*	
 	void save()
 	{
-		if(hin.size <= 32)
+		if(hin_.size <= 32)
 		{
-			hout.opcode=opcodes::error;
+			hout_.opcode=opcodes::error;
 			return;
 		}
-		time_t timeout=hin.operations.session_save.timeout + time(NULL);
-		string sid(data_in.begin(),data_in.begin()+32);
-		string value(data_in.begin()+32,data_in.end());
-		sessions.save(sid,timeout,value);
-		hout.opcode=opcodes::done;
+		time_t timeout=hin_.operations.session_save.timeout + time(NULL);
+		std::string sid(data_in_.begin(),data_in_.begin()+32);
+		std::string value(data_in_.begin()+32,data_in_.end());
+		sessions_->save(sid,timeout,value);
+		hout_.opcode=opcodes::done;
 	}
 	void load()
 	{
-		if(hin.size!=32) {
-			hout.opcode=opcodes::error;
+		if(hin_.size!=32) {
+			hout_.opcode=opcodes::error;
 			return;
 		}
 		time_t timeout;
 		int toffset;
-		string sid(data_in.begin(),data_in.end());
-		if(!sessions.load(sid,&timeout,data_out) && (toffset=(timeout-time(NULL))) < 0) {
-			hout.opcode=opcodes::no_data;
+		std::string sid(data_in_.begin(),data_in_.end());
+		if(!sessions_->load(sid,timeout,data_out_) || (toffset=(timeout-time(NULL))) < 0) {
+			hout_.opcode=opcodes::no_data;
 			return;
 		}
-		hout.opcode=opcodes::session_load_data;
-		hout.size=data_out.size();
-		hout.operations.session_data.timeout=toffset;
+		hout_.opcode=opcodes::session_load_data;
+		hout_.size=data_out_.size();
+		hout_.operations.session_data.timeout=toffset;
 	}
 	void remove()
 	{
-		if(hin.size!=32) {
-			hout.opcode=opcodes::error;
+		if(hin_.size!=32) {
+			hout_.opcode=opcodes::error;
 			return;
 		}
-		string sid(data_in.begin(),data_in.end());
-		sessions.remove(sid);
+		std::string sid(data_in_.begin(),data_in_.end());
+		sessions_->remove(sid);
 	}
-	*/
 	void on_data_in(booster::system::error_code const &e)
 	{
 		if(e) return;
-		memset(&hout,0,sizeof(hout));
-		switch(hin.opcode){
-		case opcodes::fetch:		fetch(); break;
-		case opcodes::rise:		rise(); break;
-		case opcodes::clear:		clear(); break;
-		case opcodes::store:		store(); break;
-		case opcodes::stats:		stats(); break;
-		/*case opcodes::session_save:	save(); break;
-		case opcodes::session_load:	load(); break;
-		case opcodes::session_remove:	remove(); break;*/
+		memset(&hout_,0,sizeof(hout_));
+		switch(hin_.opcode) {
+		case opcodes::fetch:
+		case opcodes::rise:
+		case opcodes::clear:
+		case opcodes::store:
+		case opcodes::stats:
+			if(!cache_)
+				hout_.opcode=opcodes::error;
+			break;
+		case opcodes::session_save:
+		case opcodes::session_load:
+		case opcodes::session_remove:
+			if(!sessions_)
+				hout_.opcode=opcodes::error;
+			break;
 		default:
-			hout.opcode=opcodes::error;
+			hout_.opcode=opcodes::error;
 		}
-		io::const_buffer packet = io::buffer(&hout,sizeof(hout));
-		if(hout.size > 0) {
-			packet += io::buffer(data_out.c_str(),hout.size);
+		if(hout_.opcode!=opcodes::error) {
+			switch(hin_.opcode){
+			case opcodes::fetch:		fetch(); break;
+			case opcodes::rise:		rise(); break;
+			case opcodes::clear:		clear(); break;
+			case opcodes::store:		store(); break;
+			case opcodes::stats:		stats(); break;
+			case opcodes::session_save:	save(); break;
+			case opcodes::session_load:	load(); break;
+			case opcodes::session_remove:	remove(); break;
+			default:
+				hout_.opcode=opcodes::error;
+			}
+		}
+		io::const_buffer packet = io::buffer(&hout_,sizeof(hout_));
+		if(hout_.size > 0) {
+			packet += io::buffer(data_out_.c_str(),hout_.size);
 		}
 		socket_.async_write(packet,
 			boost::bind(&session::on_data_out,shared_from_this(),
@@ -270,10 +296,10 @@ public:
 
 class tcp_cache_service::server  {
 	io::acceptor acceptor_;
-	cppcms::impl::base_cache &cache;
-	std::vector<io::io_service *> services_;
 	size_t counter;
-	//session_server_storage &sessions;
+	cppcms::impl::base_cache *cache_;
+	std::vector<io::io_service *> services_;
+	cppcms::sessions::session_storage_factory *sessions_;
 	void on_accept(booster::system::error_code const &e,booster::shared_ptr<tcp_cache_service::session> s)
 	{
 		if(!e) {
@@ -296,21 +322,20 @@ class tcp_cache_service::server  {
 	}
 	void start_accept()
 	{
-		//booster::shared_ptr<session> s(new session(acceptor_.io_service(),cache,sessions));
-		booster::shared_ptr<session> s(new session(get_next_io_service(),cache));
+		booster::shared_ptr<session> s(new session(get_next_io_service(),cache_,sessions_));
 		acceptor_.async_accept(s->socket_,boost::bind(&server::on_accept,this,_1,s));
 	}
 public:
 	server(	std::vector<booster::shared_ptr<io::io_service> > &io,
 		std::string ip,
 		int port,
-		cppcms::impl::base_cache &c
-		//,session_server_storage &s
+		cppcms::impl::base_cache *c,
+		cppcms::sessions::session_storage_factory *f
 		) : 
 		acceptor_(*io[0]),
-		cache(c),
-		counter(0)
-	//	,sessions(s)
+		counter(0),
+		cache_(c),
+		sessions_(f)
 	{
 		services_.resize(io.size());
 		for(size_t i=0;i<io.size();i++)
@@ -370,7 +395,7 @@ static void thread_function(io::io_service *io)
 	}
 	catch(std::exception const &e)
 	{
-		BOOSTER_ERROR("cache_server") << "Fatal" << e.what();
+		BOOSTER_ERROR("cache_server") << "Fatal:" << e.what();
 	}
 	catch(...){
 		BOOSTER_ERROR("cache_server") << "Unknown exception" << std::endl;
@@ -384,7 +409,11 @@ struct tcp_cache_service::_data {
 	std::vector<booster::shared_ptr<booster::thread> > threads;
 };
 
-tcp_cache_service::tcp_cache_service(booster::intrusive_ptr<base_cache> cache,int threads,std::string ip,int port) :
+tcp_cache_service::tcp_cache_service(	booster::intrusive_ptr<base_cache> cache,
+					cppcms::sessions::session_storage_factory *factory,
+					int threads,
+					std::string ip,
+					int port) :
 	d(new _data)
 {
 	d->io.resize(threads);
@@ -392,7 +421,7 @@ tcp_cache_service::tcp_cache_service(booster::intrusive_ptr<base_cache> cache,in
 		d->io[i].reset(new io::io_service());
 	}
 	d->cache=cache;
-	d->srv_cache.reset(new server(d->io,ip,port,*cache));
+	d->srv_cache.reset(new server(d->io,ip,port,cache.get(),factory));
 #ifndef CPPCMS_WIN32
 	sigset_t new_mask;
 	sigfillset(&new_mask);
