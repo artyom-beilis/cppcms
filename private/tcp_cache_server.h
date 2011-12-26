@@ -38,7 +38,8 @@ public:
 				booster::shared_ptr<cppcms::sessions::session_storage_factory> f,
 				int threads,
 				std::string ip,
-				int port);
+				int port,
+				int gc_timeout = 10);
 	~tcp_cache_service();
 	void stop();
 private:

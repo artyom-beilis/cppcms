@@ -356,35 +356,35 @@ class garbage_collector
 public:
 	garbage_collector(	booster::shared_ptr<cppcms::sessions::session_storage_factory> f,
 				int seconds)
-		:	stop_(false),
+		:	timer_(srv_),
 			io_(f),
 			seconds_(seconds)
 	{
+	}
+	void async_run(booster::system::error_code const &e)
+	{
+		if(e) return;
+		
+		timer_.expires_from_now(booster::ptime::seconds(seconds_));
+		timer_.async_wait(boost::bind(&garbage_collector::async_run,this,_1));
+		
 		io_->gc_job();
 	}
 	void stop()
 	{
-		booster::unique_lock<booster::mutex> guard(lock_);
-		stop_ = true;
+		srv_.stop();
 	}
-	void operator()()
+	void run()
 	{
-		for(;;){
-			{
-				booster::unique_lock<booster::mutex> guard(lock_);
-				if(stop_)
-					return;
-			}
-			booster::ptime::sleep(booster::ptime::seconds(seconds_));
-			io_->gc_job();
-		}
+		async_run(booster::system::error_code());
+		srv_.run();
 	}
 private:
 
-	bool stop_;
+	booster::aio::io_service srv_;
+	booster::aio::deadline_timer timer_;
 	booster::shared_ptr<cppcms::sessions::session_storage_factory> io_;
 	int seconds_;
-	booster::mutex lock_;
 };
 
 
@@ -419,13 +419,16 @@ struct tcp_cache_service::_data {
 	std::auto_ptr<server> srv_cache;
 	booster::intrusive_ptr<base_cache> cache;
 	std::vector<booster::shared_ptr<booster::thread> > threads;
+	booster::shared_ptr<booster::thread> gc_thread;
+	booster::shared_ptr<garbage_collector> gc_runner;
 };
 
 tcp_cache_service::tcp_cache_service(	booster::intrusive_ptr<base_cache> cache,
 					booster::shared_ptr<cppcms::sessions::session_storage_factory> factory,
 					int threads,
 					std::string ip,
-					int port) :
+					int port,
+					int gc_timeout) :
 	d(new _data)
 {
 	d->io.resize(threads);
@@ -440,6 +443,10 @@ tcp_cache_service::tcp_cache_service(	booster::intrusive_ptr<base_cache> cache,
 	sigset_t old_mask;
 	pthread_sigmask(SIG_BLOCK, &new_mask, &old_mask);
 #endif
+	if(factory && factory->requires_gc()) {
+		d->gc_runner.reset(new garbage_collector(factory,gc_timeout));
+		d->gc_thread.reset(new booster::thread(boost::bind(&garbage_collector::run,d->gc_runner)));
+	}
 
 	for(int i=0;i<threads;i++){
 		booster::shared_ptr<booster::thread> thread;
@@ -456,6 +463,9 @@ void tcp_cache_service::stop()
 {
 	for(size_t i=0;i<d->io.size();i++)
 		d->io[i]->stop();
+	if(d->gc_runner) {
+		d->gc_runner->stop();
+	}
 }
 
 tcp_cache_service::~tcp_cache_service()
@@ -464,6 +474,8 @@ tcp_cache_service::~tcp_cache_service()
 		stop();
 		for(unsigned i=0;i<d->threads.size();i++)
 			d->threads[i]->join();
+		if(d->gc_thread)
+			d->gc_thread->join();
 		d->srv_cache.reset();
 	}
 	catch(...){}

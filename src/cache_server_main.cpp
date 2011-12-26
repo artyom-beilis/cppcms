@@ -28,138 +28,144 @@
 #include <stdlib.h>
 #include <stdexcept>
 #include <booster/shared_ptr.h>
+#include <booster/intrusive_ptr.h>
+#include <booster/shared_object.h>
+#include <booster/thread.h>
+#include "base_cache.h"
+#include <cppcms/session_storage.h>
+#include <cppcms/json.h>
+#include <cppcms/service.h>
+#include <cppcms/cppcms_error.h>
 
-struct params {
-	bool en_cache;
-	enum { none , files,sqlite3 } en_sessions;
-	std::string session_backend;
-	std::string session_file;
-	std::string session_dir;
-	int items_limit;
-	int gc_frequency;
-	int files_no;
-	int port;
+#ifdef CPPCMS_WIN_NATIVE
+#include "session_win32_file_storage.h"
+#else
+#include "session_posix_file_storage.h"
+#endif
+#include "session_memory_storage.h"
+
+
+struct settings {
 	std::string ip;
+	int port;
 	int threads;
-
+	int gc;
+	
+	booster::shared_ptr<cppcms::sessions::session_storage_factory> sessions;
+	booster::shared_object plugin;
+	booster::intrusive_ptr<cppcms::impl::base_cache> cache;
+	
+	~settings()
+	{
+		sessions.reset(); // ensure that sessions object is destroyed before shared object
+		cache = 0;
+	}
+	
+	settings(int argc,char **argv)
+	{
+		try {
+			cppcms::json::value v = cppcms::service::load_settings(argc,argv);
+			setup(v);
+		}
+		catch(cppcms::cppcms_error const &) {
+			help();
+			throw;
+		}
+	}
 	void help()
 	{
-		std::cerr<<	
-			"Usage cppcms_tcp_scale [parameter]\n"
-			"    --bind IP          ipv4/ipv6 IPto bind (default 0.0.0.0)\n"
-			"    --port N           port to bind -- MANDATORY\n"
-			"    --threads N        number of threads, default 1\n"
-			"    --cache            Enable cache module\n"
-			"    --limit N          maximal Number of items to store\n"
-			"                       mandatory if cache enabled\n"
-			"    --session-files    Enable files bases session backend\n"
-			"    --dir              Directory where files stored\n"
-			"                       mandatory if session-files enabled\n"
-			"    --gc N             gc frequencty seconds (default 600)\n"
-			"                       it is enabled if threads > 1\n"
-			"\n"
-			"    At least one of   --session-files,"
-			" --cache\n"
-			"    should be defined\n"
-			"\n";
+		std::cerr <<
+		"usage: cppcms_scale [ -c config.js ] [ parameters ]\n"
+		"  -c config.js       JSON, Configuration file, also parameters may\n"
+		"                     be set via command line rather then the file\n"
+		" --ip=IP             IP to bind, default 0.0.0.0\n"
+		" --port=N            Port to bind, mandatory\n"
+		" --threads=N         Worker threads, default = # HW CPU\n"
+		" --cache-limit=N     The size of the cache in items\n"
+		" --session-storage=(memory|files|external)\n"
+		"                     Session storage module\n"
+		" --session-gc=N      The frequency of garbage collection\n"
+		" --session-dir=/path The location of files for session storage\n"
+		" --session-shared_object=/path\n"
+		"                     The shared object/dll that is used as external\n"
+		"                     storage"
+		" --session-module=name\n"
+		"                     The name of the module for example mymod for\n"
+		"                     an external storage, renamed to shared object\n"
+		"                     according to OS conventions, like libmymod.so\n"
+		<< std::endl;
 	}
-	params(int /*argc*/,char **argv) :
-		en_cache(false),
-		en_sessions(none),
-		items_limit(-1),
-		gc_frequency(-1),
-		files_no(0),
-		port(-1),
-		ip("0.0.0.0"),
-		threads(1)
-	{
-		using namespace std;
-		argv++;
-		while(*argv) {
-			string param=*argv;
-			char *next= *(argv+1);
-			if(param=="--bind" && next) {
-				ip=next;
-				argv++;
-			}
-			else if(param=="--port" && next) {
-				port=atoi(next);
-				argv++;
-			}
-			else if(param=="--threads" && next) {
-				threads=atoi(next);
-				argv++;
-			}
-/*			else if(param=="--gc" && next) {
-				gc_frequency=atoi(next);
-				argv++;
-			}*/
-			else if(param=="--limit" && next) {
-				items_limit=atoi(next);
-				argv++;
-			}
-			else if(param=="--session-files") {
-				en_sessions=files;
-			}
-			else if(param=="--dir" && next) {
-				session_dir=next;
-				argv++;
-			}
-			else if(param=="--cache") {
-				en_cache=true;
-			}
-			else {
-				help();
-				throw runtime_error("Incorrect parameter:"+param);
-			}
-			argv++;
+	void setup(cppcms::json::value const &v)
+	{		
+		ip=v.get("ip","0.0.0.0");
+		port=v.get<int>("port");
+		threads=v.get("threads",booster::thread::hardware_concurrency());
+		int items = v.get("cache.limit",-1);
+		if(items!=-1){
+			cache = cppcms::impl::thread_cache_factory(items);
 		}
-		if(!en_cache && !en_sessions) {
-			help();
-			throw runtime_error("Neither cache nor sessions mods are defined");
-		}
-		if(en_sessions == files && session_dir.empty()) {
-			help();
-			throw runtime_error("parameter --dir undefined");
-		}
-		if(en_sessions == sqlite3 && session_file.empty()) {
-			help();
-			throw runtime_error("patameter --file undefined");
-		}
-		if(files_no == -1) files_no=1;
-		if(port==-1) {
-			help();
-			throw runtime_error("parameter --port undefined");
-		}
-		if(en_cache && items_limit == -1) {
-			help();
-			throw runtime_error("parameter --limit undefined");
-		}
-		if(gc_frequency != -1) {
-			if(threads == 1) {
-				throw runtime_error("You have to use more then one thread to enable gc");
+		gc=v.get("session.gc",10);
+		std::string stor = v.get("session.storage","");
+		if(!stor.empty()) {
+			if(stor == "files") {
+				std::string dir = v.get("session.dir","");
+				#ifdef CPPCMS_WIN_NATIVE
+				sessions.reset(new session_file_storage_factory(dir));
+				#else
+				sessions.reset(new cppcms::sessions::session_file_storage_factory(dir,threads,1,false));
+				#endif
 			}
-		}
-		if(threads > 1 && gc_frequency==-1) {
-			gc_frequency = 600;
-		}
-	}
-};
+			else if(stor == "memory") {
+				sessions.reset(new cppcms::sessions::session_memory_storage_factory());
+			}
+			else if(stor == "external") {
+				std::string so = v.get<std::string>("session.shared_object","");
+				std::string module = v.get<std::string>("session.module","");
+				std::string entry_point = v.get<std::string>("session.entry_point","sessions_generator");
+				if(so.empty() && module.empty())
+					throw cppcms::cppcms_error(
+								"session.storage=external "
+								"and neither session.shared_object "
+								"nor session.module is defined");
+				if(!so.empty() && !module.empty())
+					throw cppcms::cppcms_error(
+								"both session.shared_object "
+								"and session.module are defined");
 
+				if(so.empty()) {
+					so = booster::shared_object::name(module);
+				}
+				std::string error;
+				if(!plugin.open(so,error)) {
+					throw cppcms::cppcms_error("sessions_pool: failed to load shared object " + so + ": " + error);
+				}
+				cppcms::sessions::cppcms_session_storage_generator_type f=0;
+				plugin.symbol(f,entry_point);
+				sessions.reset(f(v.find("session.settings")));
+			}
+			else 
+				throw cppcms::cppcms_error("Unknown session.storage:"+stor);
+		}
+		if(!sessions && !cache) {
+			throw cppcms::cppcms_error("Neither cache.limit nor session.storage is defined");
+		}
+	}
+
+};
 
 int main(int argc,char **argv)
 {
 	try 
 	{
-		params par(argc,argv);
+		settings par(argc,argv);
 
-		booster::intrusive_ptr<cppcms::impl::base_cache> cache;
-		booster::shared_ptr<cppcms::sessions::session_storage_factory> storage;
-
-		if(par.en_cache)
-			cache = cppcms::impl::thread_cache_factory(par.items_limit);
-
-		cppcms::impl::tcp_cache_service srv(cache,storage,par.threads,par.ip,par.port);
+		cppcms::impl::tcp_cache_service srv(
+			par.cache,
+			par.sessions,
+			par.threads,
+			par.ip,
+			par.port,
+			par.gc);
 		
 #ifndef CPPCMS_WIN32
 		// Wait for signlas for exit
