@@ -16,28 +16,62 @@
 //  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 ///////////////////////////////////////////////////////////////////////////////
-#ifndef CPPCMS_IMPL_DAEMONIZE_H
-#define CPPCMS_IMPL_DAEMONIZE_H
+#ifndef CPPCMS_IMPL_WINSERVICE_H
+#define CPPCMS_IMPL_WINSERVICE_H
 
+#include <booster/function.h>
 #include <cppcms/defs.h>
+#include <cppcms/json.h>
 #include <string>
 
 namespace cppcms {
-namespace json { class value; }
 namespace impl {
 	
-class daemonizer {
-public:
-	daemonizer(json::value const &conf);
-	~daemonizer();
-	static int global_urandom_fd;
-private:
-	int real_pid;
-	std::string unlink_file;
+	class CPPCMS_API winservice {
+		winservice();
+		~winservice();
+	public:
+		typedef booster::function<void()> callback_type;
+		
+		static winservice &instance();
+		// Returns false if it was only install/uninstall process
+		// rather then execution
+		void prepare(callback_type const &callback)
+		{
+			prepare_=callback;
+		}
+		void prepare()
+		{
+			if(prepare_) prepare_();
+		}
+		void stop(callback_type const &callback)
+		{
+			stop_ = callback;
+		}
+		void stop()
+		{
+			if(stop_) stop_();
+		}
+		void exec(callback_type const &callback)
+		{
+			exec_ = callback;
+		}
+		void exec()
+		{
+			if(exec_) exec_();
+		}
+		
+		void run(json::value &conf,int argc,char **argv);
 	
-	void daemonize(json::value const &conf);
-	void cleanup();
-};
+	private:
+		callback_type prepare_,stop_,exec_;
+		std::vector<std::string> args_;
+		void uninstall();
+		void install();
+		void service();
+		void console();
+		json::value settings_;
+	};
 
 } 
 }

@@ -56,9 +56,12 @@
 # include "fastcgi_api.h"
 #endif
 
+#ifdef CPPCMS_WIN_NATIVE
+#include "winservice.h"
+#endif
 
 #include "cached_settings.h"
-
+#include "logging.h"
 #include <cppcms/cache_pool.h>
 #include "internal_file_server.h"
 #include <cppcms/json.h>
@@ -87,7 +90,9 @@
     namespace boost = cppcms_boost;
 #endif
 
+#ifndef CPPCMS_WIN32
 #include "daemonize.h"
+#endif
 
 #include <booster/regex.h>
 
@@ -228,7 +233,7 @@ impl::cached_settings const &service::cached_settings()
 void service::setup()
 {
 	impl_->cached_settings_.reset(new impl::cached_settings(settings()));
-	setup_logging();
+	impl::setup_logging(settings());
 	impl_->id_=0;
 	int reactor=reactor_type(settings().get("service.reactor","default"));
 	impl_->io_service_.reset(new io::io_service(reactor));
@@ -245,29 +250,29 @@ void service::setup()
 	}
 }
 
-void service::setup_logging()
+void impl::setup_logging(json::value const &settings)
 {
 	using namespace booster::log;
-	level_type level = logger::string_to_level(settings().get("logging.level","error"));
+	level_type level = logger::string_to_level(settings.get("logging.level","error"));
 	logger::instance().set_default_level(level);
 	if(	(
-			settings().find("logging.file").is_undefined()
-			&& settings().find("logging.syslog").is_undefined()
-			&& settings().find("logging.stderr").is_undefined()
+			settings.find("logging.file").is_undefined()
+			&& settings.find("logging.syslog").is_undefined()
+			&& settings.find("logging.stderr").is_undefined()
 		)
 		|| 
-		settings().get("logging.stderr",false)==true
+		settings.get("logging.stderr",false)==true
 	  )
 	{
 		logger::instance().add_sink(booster::shared_ptr<sink>(new sinks::standard_error()));
 	}
-	if(settings().get("logging.syslog.enable",false)==true) {
+	if(settings.get("logging.syslog.enable",false)==true) {
 		#ifndef CPPCMS_POSIX
 			throw cppcms_error("Syslog is not availible on Windows");
 		#else
-		std::string id = settings().get("logging.syslog.id","");
-		std::vector<std::string> vops = settings().get("logging.syslog.options",std::vector<std::string>());
-		std::string sfacility = settings().get("logging.syslog.options","");
+		std::string id = settings.get("logging.syslog.id","");
+		std::vector<std::string> vops = settings.get("logging.syslog.options",std::vector<std::string>());
+		std::string sfacility = settings.get("logging.syslog.options","");
 		int ops = 0;
 		for(unsigned i=0;i<vops.size();i++) {
 			std::string const &op=vops[i];
@@ -289,16 +294,16 @@ void service::setup_logging()
 	}
 
 	std::string log_file;
-	if(!(log_file=settings().get("logging.file.name","")).empty()) {
+	if(!(log_file=settings.get("logging.file.name","")).empty()) {
 		booster::shared_ptr<sinks::file> file(new sinks::file());
 		int max_files=0;
-		if((max_files = settings().get("logging.file.max_files",0)) > 0)
+		if((max_files = settings.get("logging.file.max_files",0)) > 0)
 			file->max_files(max_files);
 		bool append = false;
-		if((append = settings().get("logging.file.append",false))==true)
+		if((append = settings.get("logging.file.append",false))==true)
 			file->append();
 		file->open(log_file);
-		std::string tz = settings().get("logging.file.timezone","");
+		std::string tz = settings.get("logging.file.timezone","");
 		file->set_timezone(tz);
 		logger::instance().add_sink(file);
 	}
@@ -443,6 +448,15 @@ void service::after_fork(booster::function<void()> const &cb)
 	impl_->on_fork_.push_back(cb);
 }
 
+void service::after_fork_exec()
+{
+
+	for(unsigned i=0;i<impl_->on_fork_.size();i++)
+		impl_->on_fork_[i]();
+	impl_->on_fork_.clear();
+}
+
+
 cppcms::forwarder &service::forwarder()
 {
 	if(!impl_->forwarder_.get()) {
@@ -467,274 +481,111 @@ cppcms::forwarder &service::forwarder()
 }
 
 
-void service::impl_run_prepare()
+void service::run_prepare()
 {
 	generator();
 	forwarder();
 	session_pool().init();
 	start_acceptor();
+}
+
+void service::run_acceptor()
+{
+	for(unsigned i=0;i<impl_->acceptors_.size();i++)
+		impl_->acceptors_[i]->async_accept();
+}
+
+void service::run_event_loop()
+{
+	impl_->get_io_service().run();
+}
+
+
+#ifdef CPPCMS_WIN32
+
+void service::run_win_console()
+{
+	run_prepare();	
+	prefork(); // not really prefork
+	after_fork_exec();
+	thread_pool();
+	run_acceptor();
+	setup_exit_handling();
+	
+	run_event_loop();
+}
+
+#endif
+
+#ifdef CPPCMS_WIN_NATIVE
+
+void service::win_service_prepare()
+{
+	run_prepare();	
+	prefork(); // not really prefork
+	after_fork_exec();
+	thread_pool();
+	run_acceptor();
+	setup_exit_handling();
+}
+
+void service::win_service_exec()
+{
+	run_event_loop();
+}
+
+void service::run_win_service()
+{
+	impl::winservice::instance().prepare(boost::bind(&service::win_service_prepare,this));
+	impl::winservice::instance().exec(boost::bind(&service::win_service_exec,this));
+	impl::winservice::instance().stop(boost::bind(&service::shutdown,this));
+	
+ 	int argc=impl_->args_.size();
+	std::vector<char*> argv(argc+1,static_cast<char*>(0));
+	for(int i=0;i<argc;i++) {
+		argv[i]=const_cast<char *>(impl_->args_[i].c_str());
+	}
+	
+  	impl::winservice::instance().run(*impl_->settings_,argc,&argv[0]);
+}
+#endif
+
+#ifdef CPPCMS_WIN32
+void service::run()
+{
+#ifdef CPPCMS_WIN_NATIVE
+	if(settings().get("winservice.mode","console") == "console") 
+		run_win_console();
+	else
+		run_win_service();
+#else
+	run_win_console();
+#endif
+}
+#else // POSIX
+void service::run()
+{
+	run_prepare();
 
 	impl::daemonizer godaemon(settings());
 	
 	if(prefork()) {
 		return;
 	}
+
 	thread_pool(); // make sure we start it
 
-	#ifndef CPPCMS_WIN32
 	if(impl_->prefork_acceptor_.get())
 		impl_->prefork_acceptor_->start();
-	#endif
 	
-	for(unsigned i=0;i<impl_->on_fork_.size();i++)
-		impl_->on_fork_[i]();
-
-	impl_->on_fork_.clear();
-
-	for(unsigned i=0;i<impl_->acceptors_.size();i++)
-		impl_->acceptors_[i]->async_accept();
-
+	after_fork_exec();
+	run_acceptor();
 	setup_exit_handling();
-	#ifndef CPPCMS_WIN_NATIVE
-	impl_run_event_loop();
-	#endif
-}
-
-void service::impl_run_event_loop()
-{
-
-	try {
-		impl_->get_io_service().run();
-	}
-	catch(...) {
-		the_service = 0;
-		throw;
-	}
-	the_service = 0;
-
-}
-void service::impl_run()
-{
-	impl_run_prepare();
-	#ifdef CPPCMS_WIN_NATIVE
-	impl_run_event_loop();
-	#endif
-}
-
-#ifndef CPPCMS_WIN_NATIVE
-
-void service::run()
-{
-	impl_run();
-}
-
-#else // Windows service crap
-
-void service::uninstall_service()
-{
-	std::wstring name = booster::nowide::convert(settings().get<std::string>("winservice.name"));
-
-	SC_HANDLE schm = OpenSCManagerW(0,0,SC_MANAGER_ALL_ACCESS);
-	if(!schm) {
-		booster::system::error_code e(GetLastError(),booster::system::windows_category);
-		throw booster::system::system_error(e,"Failed to open sevice imager");
-	}
-
-	SC_HANDLE service_handle = OpenServiceW(schm,name.c_str(),DELETE);
-	if(service_handle == NULL) {
-		booster::system::error_code e(GetLastError(),booster::system::windows_category);
-		CloseServiceHandle(schm);
-		throw booster::system::system_error(e,"Failed to open the service");
-	}
-	if(!DeleteService(service_handle)) {
-		booster::system::error_code e(GetLastError(),booster::system::windows_category);
-		CloseServiceHandle(service_handle);
-		CloseServiceHandle(schm);
-		throw booster::system::system_error(e,"Failed to delete the service");
-	}
-	CloseServiceHandle(service_handle);
-	CloseServiceHandle(schm);
-	std::cout << "The service uninstalled sucessefully" << std::endl;
-}
-
-void service::install_service()
-{
-	std::wstring name = booster::nowide::convert(settings().get<std::string>("winservice.name"));
-	std::wstring display_name = booster::nowide::convert(settings().get<std::string>("winservice.display_name"));
-	std::string start_type = settings().get("winservice.start","auto");
-	std::wstring cmd_line;
 	
-	
-	std::wstring user_name,password;
-	wchar_t const *cuser_name=0,*cpassword=0;
-	if(!settings().find("winservice.username").is_undefined()) {
-		user_name = booster::nowide::convert(settings().get<std::string>("winservice.username"));
-		cuser_name = user_name.c_str();
-	}
-	if(!settings().find("winservice.password").is_undefined()) {
-		password = booster::nowide::convert(settings().get<std::string>("winservice.password"));
-		cpassword = password.c_str();
-	}
-
-	wchar_t exe[ MAX_PATH + 1];
-	if(GetModuleFileNameW(0,exe,MAX_PATH+1) == 0) {
-		booster::system::error_code e(GetLastError(),booster::system::windows_category);
-		throw booster::system::system_error(e,"Failed to get exe name");
-	}
-	cmd_line = L"\"";
-	cmd_line +=exe;
-	cmd_line +=L"\"";
-	bool found = false;
-
-	for(size_t i=1;i<impl_->args_.size();i++) {
-		std::wstring parameter = booster::nowide::convert(impl_->args_[i]);
-		if(parameter==L"--winservice-mode=install") {
-			parameter = L"--winservice-mode=run";
-			found = true;
-		}
-		cmd_line+=L" \"";
-		cmd_line+=parameter;
-		cmd_line+=L"\"";
-	}
-	if(!found) {
-		throw cppcms_error("Parameter --winservice-mode=install is not provided via command line!");
-	}
-
-	BOOSTER_DEBUG("cppcms") << "Installing with parameters" << booster::nowide::convert(cmd_line);
-
-	DWORD start_type_flag = 0;
-	if(start_type == "auto")
-		start_type_flag= SERVICE_AUTO_START;
-	else if(start_type == "demand")
-		start_type_flag= SERVICE_DEMAND_START;
-	else
-		throw cppcms_error("Parameter winservice.mode should be one of auto or demand");
-
-		
-	SC_HANDLE schm = OpenSCManagerW(0,0,SC_MANAGER_ALL_ACCESS);
-	if(!schm) {
-		booster::system::error_code e(GetLastError(),booster::system::windows_category);
-		throw booster::system::system_error(e,"Failed to open sevice imager");
-	}
-
-	SC_HANDLE service_handle = CreateServiceW(
-		schm,
-		name.c_str(),
-		display_name.c_str(),
-		SERVICE_ALL_ACCESS,
-		SERVICE_WIN32_OWN_PROCESS,
-		start_type_flag,
-		SERVICE_ERROR_NORMAL,
-		cmd_line.c_str(),
-		0, // load order group
-		0, // tagid
-		0, // dependencies
-		cuser_name,
-		cpassword
-	);
-
-	if(service_handle == NULL) {
-		booster::system::error_code e(GetLastError(),booster::system::windows_category);
-		CloseServiceHandle(schm);
-		throw booster::system::system_error(e,"Failed to install service");
-	}
-	CloseServiceHandle(service_handle);
-	CloseServiceHandle(schm);
-	std::cout << "The service installed sucessefully" << std::endl;
+	run_event_loop();
 }
 
-namespace {
-	SERVICE_STATUS_HANDLE status_handle;
-	SERVICE_STATUS status;
-
-	void WINAPI win_service_handler_proc(DWORD code)
-	{
-		if(code == SERVICE_CONTROL_SHUTDOWN  || code == SERVICE_CONTROL_STOP) {
-			status.dwCurrentState = SERVICE_STOP_PENDING;
-			status.dwControlsAccepted = 0;
-			status.dwWaitHint = 10000;
-			SetServiceStatus(status_handle,&status);
-			the_service->shutdown();
-			return ;
-		}
-		SetServiceStatus(status_handle,&status);
-
-	}
-	void WINAPI win_service_main(DWORD,wchar_t **)
-	{
-		status_handle = RegisterServiceCtrlHandlerW(L"",win_service_handler_proc);
-		if(status_handle==0) {
-			booster::system::error_code e(GetLastError(),booster::system::windows_category);
-			BOOSTER_ERROR("cppcms") << "Failed to register windows service handle:" << e.message();
-			return;
-		}
-		status.dwServiceType = SERVICE_WIN32_OWN_PROCESS;
-		try {
-			status.dwWaitHint = 10000;
-			status.dwCurrentState = SERVICE_START_PENDING;
-			status.dwControlsAccepted = (SERVICE_ACCEPT_STOP | SERVICE_ACCEPT_SHUTDOWN);
-			SetServiceStatus(status_handle,&status);
-			
-			the_service->impl_run_prepare();
-			
-			status.dwWaitHint = 0;
-			status.dwCurrentState = SERVICE_RUNNING;
-			SetServiceStatus(status_handle,&status);
-			
-			the_service->impl_run_event_loop();
-
-		}
-		catch(std::exception const &e ){
-			BOOSTER_ERROR("cppcms") << "Main loop stopped:" << e.what();
-			status.dwWin32ExitCode = 1;
-		}
-		catch(...) {
-			BOOSTER_ERROR("cppcms") << "Main loop stopped for unknown expeiton";
-			status.dwWin32ExitCode = 1;
-		}
-		
-		status.dwCurrentState = SERVICE_STOPPED;
-		status.dwWaitHint = 0;
-		SetServiceStatus(status_handle,&status);
-		return;
-
-	}
-} // anonymous
-
-void service::impl_run_as_windows_service()
-{
-	impl_->settings_->set("service.disable_global_exit_handling",true);
-	the_service = this;
-	static wchar_t empty_wide_string = 0;
-	SERVICE_TABLE_ENTRYW entry[2] = {
-		{ &empty_wide_string ,win_service_main },
-		{ 0,0 }
-	};
-	if(!StartServiceCtrlDispatcherW(entry)) {
-		booster::system::error_code e(GetLastError(),booster::system::windows_category);
-		throw booster::system::system_error(e,"Failed to start windows service");
-	}
-}
-
-void service::run()
-{
-	std::string mode = settings().get("winservice.mode","console");
-	if(mode == "console")
-		impl_run();
-	else if(mode == "install")
-		install_service();
-	else if(mode == "uninstall")
-		uninstall_service();
-	else if(mode == "run") {
-		impl_run_as_windows_service();
-	}
-	else
-		throw cppcms_error("Invalid option winservice.mode=" + mode);
-}
-
-#endif // End of windows service crap
-
-
+#endif
 
 int service::procs_no()
 {

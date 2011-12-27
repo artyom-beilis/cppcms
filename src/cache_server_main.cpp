@@ -23,6 +23,10 @@
 #include "cache_storage.h"
 #ifndef CPPCMS_WIN32
 #include <signal.h>
+#include "daemonize.h"
+#endif
+#ifdef CPPCMS_WIN_NATIVE
+#include "winservice.h"
 #endif
 #include <iostream>
 #include <stdlib.h>
@@ -31,7 +35,9 @@
 #include <booster/intrusive_ptr.h>
 #include <booster/shared_object.h>
 #include <booster/thread.h>
+#include <booster/log.h>
 #include "base_cache.h"
+#include "logging.h"
 #include <cppcms/session_storage.h>
 #include <cppcms/json.h>
 #include <cppcms/service.h>
@@ -39,6 +45,7 @@
 
 #ifdef CPPCMS_WIN_NATIVE
 #include "session_win32_file_storage.h"
+#include "winservice.h"
 #else
 #include "session_posix_file_storage.h"
 #endif
@@ -50,6 +57,7 @@ struct settings {
 	int port;
 	int threads;
 	int gc;
+	cppcms::json::value config;
 	
 	booster::shared_ptr<cppcms::sessions::session_storage_factory> sessions;
 	booster::shared_object plugin;
@@ -64,8 +72,8 @@ struct settings {
 	settings(int argc,char **argv)
 	{
 		try {
-			cppcms::json::value v = cppcms::service::load_settings(argc,argv);
-			setup(v);
+			config = cppcms::service::load_settings(argc,argv);
+			setup(config);
 		}
 		catch(cppcms::cppcms_error const &) {
 			help();
@@ -93,6 +101,29 @@ struct settings {
 		"                     The name of the module for example mymod for\n"
 		"                     an external storage, renamed to shared object\n"
 		"                     according to OS conventions, like libmymod.so\n"
+#ifndef CPPCMS_WIN32
+		" --daemon-enable=(true|false)\n"
+		"                     Run the process as daemon, default false\n"
+		" --daemon-lock=/path Location of the lock file that keeps process pid\n"
+		" --daemon-user=user  User that the daemon should run under\n"
+		" --daemon-group=grp  Group that the daemon should run under\n"
+		" --daemon-chroot=/path\n"
+		"                     Run the service in chroot jain\n"
+		" --daemon-fdlimit=N  The limit of file descriptors for the service\n"
+#endif
+#ifdef CPPCMS_WIN_NATIVE
+		" --winservice-mode=(install|uninstall)\n"
+		"                     Install or uninstall windows service\n"
+		" --winservice-name=XXX\n"
+		"                     Name of windows service\n"
+		" --winservice-display_name=XXX\n"
+		"                     The service name shown in the UI\n"
+		" --winservice-start=(auto|demand)\n"
+		"                     Windows service start mode\n"
+		" --winservice-user=XXX\n"
+		" --winservice-password=XXX\n"
+		"                     The user and password the service would run under\n"
+#endif
 		<< std::endl;
 	}
 	void setup(cppcms::json::value const &v)
@@ -110,7 +141,7 @@ struct settings {
 			if(stor == "files") {
 				std::string dir = v.get("session.dir","");
 				#ifdef CPPCMS_WIN_NATIVE
-				sessions.reset(new session_file_storage_factory(dir));
+				sessions.reset(new cppcms::sessions::session_file_storage_factory(dir));
 				#else
 				sessions.reset(new cppcms::sessions::session_file_storage_factory(dir,threads,1,false));
 				#endif
@@ -153,43 +184,128 @@ struct settings {
 
 };
 
-int main(int argc,char **argv)
+#if !defined(CPPCMS_WIN32)
+void main_posix(settings &par)
 {
-	try 
-	{
-		settings par(argc,argv);
+	cppcms::impl::daemonizer demon(par.config);
 
-		cppcms::impl::tcp_cache_service srv(
+	cppcms::impl::tcp_cache_service srv(
+		par.cache,
+		par.sessions,
+		par.threads,
+		par.ip,
+		par.port,
+		par.gc);
+	
+	// Wait for signals for exit
+	sigset_t wait_mask;
+	sigemptyset(&wait_mask);
+	sigaddset(&wait_mask, SIGINT);
+	sigaddset(&wait_mask, SIGQUIT);
+	sigaddset(&wait_mask, SIGTERM);
+	pthread_sigmask(SIG_BLOCK, &wait_mask, 0);
+	int sig = 0;
+	sigwait(&wait_mask, &sig);
+	
+	BOOSTER_NOTICE("cppcms_scale")<<"Catch signal: exiting...";
+
+	srv.stop();
+}
+#elif defined(CPPCMS_WIN_NATIVE)
+
+static booster::shared_ptr<cppcms::impl::tcp_cache_service> the_server;
+static settings *the_settings;
+static booster::mutex done_lock;
+static booster::condition_variable done_cond;
+static bool done;
+
+static void win_prepare()
+{
+	BOOSTER_NOTICE("cppcms_scale")<<"Starting service...";
+	settings &par = *the_settings;
+	the_server.reset(
+		new cppcms::impl::tcp_cache_service(
 			par.cache,
 			par.sessions,
 			par.threads,
 			par.ip,
 			par.port,
-			par.gc);
-		
-#ifndef CPPCMS_WIN32
-		// Wait for signlas for exit
-		sigset_t wait_mask;
-		sigemptyset(&wait_mask);
-		sigaddset(&wait_mask, SIGINT);
-		sigaddset(&wait_mask, SIGQUIT);
-		sigaddset(&wait_mask, SIGTERM);
-		pthread_sigmask(SIG_BLOCK, &wait_mask, 0);
-		int sig = 0;
-		sigwait(&wait_mask, &sig);
-		std::cout<<"Catched signal: exiting..."<<std::endl;
-#else
-		std::cout << "Press any key to stop..." << std::flush;
-		std::cin.get();
+			par.gc)
+	);
+	
+}
+
+static void win_stop()
+{
+	booster::unique_lock<booster::mutex> guard(done_lock);
+	done = true;
+	done_cond.notify_all();
+}
+
+static void win_run()
+{
+	{
+		booster::unique_lock<booster::mutex> guard(done_lock);
+		while(!done) {
+			done_cond.wait(guard);
+		}
+	}
+	BOOSTER_NOTICE("cppcms_scale")<<"Stopping service...";
+	the_server->stop();
+	the_server.reset();
+	the_settings = 0;
+}
+
+void main_win(settings &par,int argc,char **argv)
+{
+	using cppcms::impl::winservice;
+	
+	the_settings = &par;
+	winservice::instance().prepare(win_prepare);
+	winservice::instance().stop(win_stop);
+	winservice::instance().exec(win_run);
+	
+	winservice::instance().run(par.config,argc,argv);
+	
+}
+#else // cygwin
+void main_cygwin(settings &par)
+{
+	cppcms::impl::tcp_cache_service srv(
+		par.cache,
+		par.sessions,
+		par.threads,
+		par.ip,
+		par.port,
+		par.gc);
+
+	std::cout << "Press any key to stop..." << std::flush;
+	std::cin.get();
+	
+	srv.stop();
+}
 #endif
-		srv.stop();
+
+
+int main(int argc,char **argv)
+{
+	try 
+	{
+		settings par(argc,argv);	
+		cppcms::impl::setup_logging(par.config);
+#ifndef CPPCMS_WIN32
+		main_posix(par);
+#elif defined CPPCMS_WIN_NATIVE
+		main_win(par,argc,argv);
+#else // cygwin
+		main_cygwin(par);
+#endif
 
 	}
 	catch(std::exception const &e) {
-		std::cerr<<"Error:"<<e.what()<<std::endl;
+		BOOSTER_ERROR("cppcms_scale")<<e.what()<<booster::trace(e);
 		return 1;
 	}
-	std::cout<<"Done"<<std::endl;
 	return 0;
 }
 

@@ -204,26 +204,27 @@ namespace cppcms {
 
 		impl::cached_settings const &cached_settings();
 		
-		#ifdef CPPCMS_WIN_NATIVE
-		void impl_run_as_windows_service();
-		#endif
-		void impl_run_prepare();
-		void impl_run_event_loop();
 		
 		/// \endcond
 
 	private:
 		void setup();
-		void setup_logging();
 		std::auto_ptr<cppcms::impl::cgi::acceptor> setup_acceptor(json::value const &,int,int shift=0);
 		void stop();
 		void start_acceptor(bool after_fork=false);
 		void setup_exit_handling();
 		bool prefork();
-		void impl_run();
+		void run_prepare();
+		void after_fork_exec();
+		void run_acceptor();
+		void run_event_loop();
+		#ifdef CPPCMS_WIN32
+		void run_win_console();
+		#endif
 		#ifdef CPPCMS_WIN_NATIVE
-		void install_service();
-		void uninstall_service();
+		void win_service_prepare();
+		void win_service_exec();
+		void run_win_service();
 		#endif
 		booster::hold_ptr<impl::service> impl_;
 	};

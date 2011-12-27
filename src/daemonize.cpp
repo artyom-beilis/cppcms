@@ -19,16 +19,6 @@
 #define CPPCMS_SOURCE
 #include "daemonize.h"
 
-#ifdef CPPCMS_WIN32
-namespace cppcms {
-namespace impl {
-
-	void daemonize(json::value const &/*conf*/) {}
-	void de_daemonize(json::value const &/*conf*/) {}
-}
-}
-#else // POSIX OS
-
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <sys/time.h>
@@ -243,4 +233,3 @@ namespace impl {
 
 } // impl
 } // cppcms
-#endif // POSIX OS

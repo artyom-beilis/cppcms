@@ -27,6 +27,17 @@ namespace impl {
 		enum {	fetch, rise, clear, store ,stats,
 			error, done, data, no_data, uptodate, out_stats,
 			session_save, session_load, session_load_data, session_remove};
+		inline char const *to_name(int v)
+		{
+			char const *names[] = {
+				"fetch","rise", "clear", "store" ,"stats",
+				"error", "done", "data", "no_data", "uptodate", "out_stats",
+				"session_save", "session_load", "session_load_data", "session_remove"
+			};
+			if(v<0 || v>session_remove) 
+				return "unknown";
+			return names[v];
+		}
 	}
 	struct tcp_operation_header {
 		uint32_t opcode;

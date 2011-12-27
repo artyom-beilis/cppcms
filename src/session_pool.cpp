@@ -30,12 +30,8 @@
 #include <booster/shared_object.h>
 #include <booster/enable_shared_from_this.h>
 #include <cppcms/config.h>
-#ifdef CPPCMS_USE_EXTERNAL_BOOST
-#   include <boost/bind.hpp>
-#else // Internal Boost
-#   include <cppcms_boost/bind.hpp>
-    namespace boost = cppcms_boost;
-#endif
+#include <cppcms_boost/bind.hpp>
+namespace boost = cppcms_boost;
 
 #include "aes_encryptor.h"
 
@@ -44,7 +40,11 @@
 #else
 #include "session_posix_file_storage.h"
 #endif
+
 #include "session_memory_storage.h"
+#ifndef CPPCMS_NO_TCP_CACHE
+#include "session_tcp_storage.h"
+#endif
 
 #include <booster/aio/deadline_timer.h>
 #include <booster/callback.h>
@@ -275,6 +275,21 @@ void session_pool::init()
 			d->module.symbol(f,entry_point);
 			factory.reset(f(srv.settings().find("session.server.settings")));
 		}
+#ifndef CPPCMS_NO_TCP_CACHE
+		else if(stor == "network") {
+			typedef std::vector<std::string> ips_type;
+			typedef std::vector<int> ports_type;
+			ips_type ips = srv.settings().get<ips_type>("session.server.ips");
+			ports_type ports = srv.settings().get<ports_type>("session.server.ports");
+			if(ips.size() != ports.size())
+				throw cppcms_error(	"sessions_pool: session.server.ips and "
+							"session.server.ports are not of the same size");
+			if(ips.empty()) {
+				throw cppcms_error("sessions_pool:session.server.ips is empty");
+			}
+			factory.reset(new tcp_factory(ips,ports));
+		}
+#endif
 		else 
 			throw cppcms_error("sessions_pool: unknown server side storage:"+stor);
 		storage(factory);

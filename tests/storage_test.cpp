@@ -28,6 +28,10 @@
 #include <sys/types.h>
 #include <dirent.h>
 #endif
+#ifndef CPPCMS_NO_TCP_CACHE
+#include "tcp_cache_server.h"
+#include "session_tcp_storage.h"
+#endif
 #include <booster/function.h>
 #include <booster/backtrace.h>
 #include <string.h>
@@ -154,6 +158,20 @@ int main()
 		session_file_storage_factory f(dir);
 		storage=f.get();
 		test_files(storage,f);
+		#endif
+		#ifndef CPPCMS_NO_TCP_CACHE
+		std::cout << "Testing network backend" << std::endl;
+		std::vector<std::string> ips;
+		ips.push_back("127.0.0.1");
+		std::vector<int> ports;
+		ports.push_back(8080);
+		tcp_factory f4(ips,ports);
+		booster::shared_ptr<cppcms::sessions::session_storage_factory> 
+			mem_ptr(new session_memory_storage_factory());
+		cppcms::impl::tcp_cache_service service(0,mem_ptr,1,"127.0.0.1",8080);
+		test(storage,f4);
+		service.stop();
+		mem_ptr.reset();
 		#endif
 	}
 	catch(std::exception const &e) {

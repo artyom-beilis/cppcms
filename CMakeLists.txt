@@ -332,7 +332,6 @@ set(CPPCMS_SOURCES
 	src/mount_point.cpp
 	src/archive.cpp
 	src/crypto.cpp
-	src/daemonize.cpp
 	src/xss.cpp
 	src/copy_filter.cpp
 	src/send_timeout.cpp
@@ -400,8 +399,10 @@ endif()
 
 if(WINDOWS_NATIVE)
 	set(CPPCMS_SOURCES ${CPPCMS_SOURCES} src/session_win32_file_storage.cpp)
+	set(CPPCMS_SOURCES ${CPPCMS_SOURCES} src/winservice.cpp)
 else()
 	set(CPPCMS_SOURCES ${CPPCMS_SOURCES} src/session_posix_file_storage.cpp)
+	set(CPPCMS_SOURCES ${CPPCMS_SOURCES} src/daemonize.cpp)
 endif()
 
 if(NOT DISABLE_SHARED)

@@ -88,7 +88,7 @@ public:
 	}
 	void on_header_in(booster::system::error_code const &e)
 	{
-		if(e) return;
+		if(e) { handle_error(e); return; }
 		data_in_.clear();
 		data_in_.resize(hin_.size);
 		if(hin_.size > 0) {
@@ -243,10 +243,25 @@ public:
 		std::string sid(data_in_.begin(),data_in_.end());
 		sessions_->remove(sid);
 	}
+	void handle_error(booster::system::error_code const &e)
+	{
+		if(e.category() == booster::aio::aio_error_cat && e.value() == booster::aio::aio_error::eof) {
+			BOOSTER_DEBUG("cppcms_scale") << "Client disconnected, fd=" << socket_.native() 
+				<<"; " << e.message();
+			return;
+		}
+		BOOSTER_WARNING("cppcms_scale") << "Error on connection, fd=" << socket_.native() 
+				<<"; " << e.message();
+	}
 	void on_data_in(booster::system::error_code const &e)
 	{
-		if(e) return;
+		if(e) {
+			handle_error(e);
+			return;
+		}
 		memset(&hout_,0,sizeof(hout_));
+		BOOSTER_DEBUG("cppcms_scale") << "Received command " << hin_.opcode << "(" 
+			<< opcodes::to_name(hin_.opcode) <<"); fd="<< socket_.native();
 		switch(hin_.opcode) {
 		case opcodes::fetch:
 		case opcodes::rise:
@@ -279,6 +294,8 @@ public:
 				hout_.opcode=opcodes::error;
 			}
 		}
+		BOOSTER_DEBUG("cppcms_scale") << "Returning answer " << hout_.opcode << "(" 
+			<< opcodes::to_name(hout_.opcode) <<"); fd="<< socket_.native();
 		io::const_buffer packet = io::buffer(&hout_,sizeof(hout_));
 		if(hout_.size > 0) {
 			packet += io::buffer(data_out_.c_str(),hout_.size);
@@ -289,7 +306,7 @@ public:
 	}
 	void on_data_out(booster::system::error_code const &e)
 	{
-		if(e) return;
+		if(e) { handle_error(e); return; }
 		run();
 	}
 
@@ -304,6 +321,7 @@ class tcp_cache_service::server  {
 	void on_accept(booster::system::error_code const &e,booster::shared_ptr<tcp_cache_service::session> s)
 	{
 		if(!e) {
+			BOOSTER_DEBUG("cppcms_scale") << "Accepted connection, fd=" << s->socket_.native();
 			s->socket_.set_option(io::stream_socket::tcp_no_delay,true);
 			if(&acceptor_.get_io_service()  == &s->socket_.get_io_service()) {
 				s->run();
@@ -312,6 +330,9 @@ class tcp_cache_service::server  {
 				s->socket_.get_io_service().post(boost::bind(&session::run,s));
 			}
 			start_accept();
+		}
+		else {
+			BOOSTER_ERROR("cppcms_scale") << "Failed to accept connection:" << e.message();
 		}
 	}
 	io::io_service &get_next_io_service()
@@ -376,8 +397,14 @@ public:
 	}
 	void run()
 	{
-		async_run(booster::system::error_code());
-		srv_.run();
+		try {
+			async_run(booster::system::error_code());
+			srv_.run();
+		}
+		catch(std::exception const &e) {
+			BOOSTER_ERROR("cppcms_scale") << "garbage_collector::run: " << 
+				e.what() << booster::trace(e);
+		}
 	}
 private:
 
@@ -401,16 +428,16 @@ static void thread_function(io::io_service *io)
 				// Not much to do...
 				// Object will be destroyed automatically 
 				// Because it does not resubmit itself
-				BOOSTER_ERROR("cache_server") <<"CppCMS Error "<<e.what();
+				BOOSTER_ERROR("cppcms_scale") << "Error:" << e.what() << booster::trace(e);
 			}
 		}
 	}
 	catch(std::exception const &e)
 	{
-		BOOSTER_ERROR("cache_server") << "Fatal:" << e.what();
+		BOOSTER_ERROR("cppcms_scale") << "Fatal:" << e.what() << booster::trace(e);
 	}
 	catch(...){
-		BOOSTER_ERROR("cache_server") << "Unknown exception" << std::endl;
+		BOOSTER_ERROR("cppcms_scale") << "Unknown exception" << std::endl;
 	}
 }
 
