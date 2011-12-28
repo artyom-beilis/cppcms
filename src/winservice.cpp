@@ -236,19 +236,13 @@ void winservice::service()
 	}
 }
 
-void winservice::console()
-{
-	prepare();
-	exec();
-}
-
 void winservice::run(json::value &conf,int argc,char **argv)
 {
 	args_.assign(argv,argv+argc);
 	settings_=conf;
 	std::string mode = settings_.get("winservice.mode","console");
 	if(mode == "console")
-		console();
+		throw cppcms_error("console mode should not use winservice class");
 	else if(mode == "install")
 		install();
 	else if(mode == "uninstall")

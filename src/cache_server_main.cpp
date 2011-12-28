@@ -268,8 +268,12 @@ void main_win(settings &par,int argc,char **argv)
 	winservice::instance().run(par.config,argc,argv);
 	
 }
-#else // cygwin
-void main_cygwin(settings &par)
+
+#endif
+
+#ifdef CPPCMS_WIN32
+
+void main_console(settings &par)
 {
 	cppcms::impl::tcp_cache_service srv(
 		par.cache,
@@ -284,6 +288,7 @@ void main_cygwin(settings &par)
 	
 	srv.stop();
 }
+
 #endif
 
 
@@ -296,7 +301,10 @@ int main(int argc,char **argv)
 #ifndef CPPCMS_WIN32
 		main_posix(par);
 #elif defined CPPCMS_WIN_NATIVE
-		main_win(par,argc,argv);
+		if(cppcms::impl::winservice::is_console(par.config))
+			main_console(par);
+		else
+			main_win(par,argc,argv);
 #else // cygwin
 		main_cygwin(par);
 #endif

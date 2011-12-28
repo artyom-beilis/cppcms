@@ -62,6 +62,11 @@ namespace impl {
 		}
 		
 		void run(json::value &conf,int argc,char **argv);
+		
+		static bool is_console(json::value &conf)
+		{
+			return conf.get("winservice.mode","console") == "console";
+		}
 	
 	private:
 		callback_type prepare_,stop_,exec_;
