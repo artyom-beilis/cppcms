@@ -89,4 +89,44 @@ TBD
 <% end %>
 <% end view %>
 
+<% view master_filter uses data::master %>
+<% template render() %>
+<%= integer %>
+<% gt "{1,w=3}" using integer %>
+<% gt "{1,w=3} {2}" using integer , text %>
+<% gt "{1}" using text | raw %>
+<% gt "{1}" using text | ext test_filter %>
+<% gt "{1}" using text | ext test_filter | escape %>
+<% gt "{1} {2}" using text | ext test_filter | escape , integer %>
+<%=text %>
+<%=text | raw %>
+<%=text | ext test_filter %>
+<%=text | ext test_filter | escape %>
+<%=text | urlencode %>
+<%=text | base64_urlencode %>
+<% end %>
+<% end view %>
+
+<% view form_test uses data::form_test %>
+<% template render() %>
+<% form as_p f %>
+<% form input t1 %>
+<% form input t2 %>
+<% form begin t2 %> prop <% form end t2 %>
+<% form block t2 %> id='x' <% end form %>
+<% end template %>
+<% end %>
+
+<% view cache_test uses data::master %>
+<% template render() %><% cache "key" for 2 on miss call() %><%= integer %><% trigger "tr" %><% end cache %><% end template %>
+<% end %>
+<% view cache_test_nr uses data::master %>
+<% template render() %><% cache "key" for 2 no recording %><%= integer %><% trigger "tr" %><% end cache %><% end template %>
+<% end %>
+<% view cache_test_nt uses data::master %>
+<% template render() %><% cache "key" for 2 no triggers %><%= integer %><% end cache %><% end template %>
+<% end %>
+
+
+
 <% end skin %>

@@ -501,33 +501,54 @@ class base_show:
         return "";
 
 class form_block:
-    pattern=r'^<%\s*form\s+(as_p|as_table|as_ul|as_dl|as_space|input|begin|end)\s+('\
+    pattern=r'^<%\s*form\s+(as_p|as_table|as_ul|as_dl|as_space|input|block|begin|end)\s+('\
          + variable_match +')\s*%>'
-    def use(self,m):
-        ident=make_ident(m.group(2))
-        type = m.group(1)
+    
+    type = 'form'
+
+    def format_input(self,command_type,ident):
+   
         global html_type_code
-        if type=='input' or type=='begin' or type=='end':
-            flags = 'cppcms::form_flags::' + html_type_code;
-            output('{ cppcms::form_context _form_context(out(),%s);' % flags)
-            render_command = '    (%s).render_input(_form_context);' % ident;
-            if type=='begin':
-                output('    _form_context.widget_part(cppcms::form_context::first_part);')
-                output(render_command)
-            elif type=='end':
-                output('    _form_context.widget_part(cppcms::form_context::second_part);')
-                output(render_command)
+
+        flags = 'cppcms::form_flags::' + html_type_code;
+        output('{ cppcms::form_context _form_context(out(),%s);' % flags)
+        render_command = '    (%s).render_input(_form_context);' % ident;
+
+        if command_type=='begin':
+            output('    _form_context.widget_part(cppcms::form_context::first_part);')
+            output(render_command)
+        elif command_type=='end':
+            output('    _form_context.widget_part(cppcms::form_context::second_part);')
+            output(render_command)
+        else:
+            output('    _form_context.widget_part(cppcms::form_context::first_part);')
+            output(render_command)
+            output('    out() << (%s).attributes_string();' % ident)
+            output('    _form_context.widget_part(cppcms::form_context::second_part);')
+            output(render_command)
+        output('}')
+    
+    def use(self,m):
+
+        ident=make_ident(m.group(2))
+        command_type = m.group(1)
+        global html_type_code
+        if command_type=='input' or command_type=='begin' or command_type=='end' or command_type=='block':
+            if command_type != 'block':
+                self.format_input(command_type,ident)
             else:
-                output('    _form_context.widget_part(cppcms::form_context::first_part);')
-                output(render_command)
-                output('    out() << (%s).attributes_string();' % ident)
-                output('    _form_context.widget_part(cppcms::form_context::second_part);')
-                output(render_command)
-            output('}')
+                self.format_input('begin',ident)
+                self.ident = ident
+                self.command_type = 'end'
+                global stack
+                stack.append(self)
 
         else:
             flags = 'cppcms::form_flags::%s,cppcms::form_flags::%s' % ( html_type_code, m.group(1));
             output('{ cppcms::form_context _form_context(out(),%s); (%s).render(_form_context); }' % (flags , ident))
+
+    def on_end(self):
+        self.format_input(self.command_type,self.ident)
 
 class render_block:
     pattern=r'<%\s*render\s+(?P<name>[a-zA-Z]\w*)(\s+using\s+(?P<content>'+variable_match+r'))?\s*%>'

@@ -8,6 +8,18 @@ namespace data {
 		std::string text;
 		typedef std::vector<int> integers_type;
 		integers_type integers;
+		std::string test_filter(std::string const &s)
+		{
+			std::string tmp = s;
+			for(size_t i=0;i<tmp.size();i++) {
+				switch(tmp[i]) {
+				case 'a' : tmp[i]='b'; break;
+				case 'b' : tmp[i]='a'; break;
+				}
+			}
+			return tmp;
+		}
+		void (*call)();
 	};
 
 	struct foo : public master {
@@ -41,6 +53,19 @@ namespace data {
 				}
 			}
 			return output;
+		}
+	};
+
+	struct form_test : public master {
+		cppcms::form f;
+		cppcms::widgets::text t1;
+		cppcms::widgets::text t2;
+		form_test()
+		{
+			f.add(t1);
+			f.add(t2);
+			t1.message("msg");
+			t1.help("help");
 		}
 	};
 } // data
