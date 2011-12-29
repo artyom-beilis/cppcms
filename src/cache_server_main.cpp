@@ -306,7 +306,7 @@ int main(int argc,char **argv)
 		else
 			main_win(par,argc,argv);
 #else // cygwin
-		main_cygwin(par);
+		main_console(par);
 #endif
 
 	}
