@@ -206,7 +206,7 @@ public:
 	}
 	void save()
 	{
-		if(hin_.size <= 32)
+		if(hin_.size < 32)
 		{
 			hout_.opcode=opcodes::error;
 			return;

@@ -70,6 +70,9 @@ void messenger::transmit(tcp_operation_header &h,std::string &data)
 				socket_.read(booster::aio::buffer(d));
 				data.assign(d.begin(),d.begin()+h.size);
 			}
+			else {
+				data.clear();
+			}
 			done=true;
 		}
 		catch(booster::system::system_error const &e) {

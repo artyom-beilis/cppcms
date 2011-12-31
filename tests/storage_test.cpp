@@ -42,6 +42,7 @@
 #include <time.h>
 
 
+
 std::string dir = "./sessions";
 std::string bs="0123456789abcdef0123456789abcde";
 
@@ -132,6 +133,7 @@ void test_files(booster::shared_ptr<cppcms::sessions::session_storage> storage,
 int main()
 {
 	try {
+
 		booster::shared_ptr<cppcms::sessions::session_storage> storage;
 		std::auto_ptr<cppcms::sessions::session_storage_factory> storage_factory;
 		using namespace cppcms::sessions;
@@ -161,6 +163,7 @@ int main()
 		#endif
 		#ifndef CPPCMS_NO_TCP_CACHE
 		std::cout << "Testing network backend" << std::endl;
+		
 		std::vector<std::string> ips;
 		ips.push_back("127.0.0.1");
 		std::vector<int> ports;
@@ -169,6 +172,7 @@ int main()
 		booster::shared_ptr<cppcms::sessions::session_storage_factory> 
 			mem_ptr(new session_memory_storage_factory());
 		cppcms::impl::tcp_cache_service service(0,mem_ptr,1,"127.0.0.1",8080);
+		storage=f4.get();
 		test(storage,f4);
 		service.stop();
 		mem_ptr.reset();
