@@ -54,7 +54,7 @@ void tcp_connector::broadcast(tcp_operation_header &h,std::string &data)
 	for(i=0;i<conns;i++) {
 		tcp_operation_header ht=h;
 		std::string dt=data;
-		tcp[i].transmit(ht,data);
+		tcp[i].transmit(ht,dt);
 	}
 }
 
