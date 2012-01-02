@@ -3,9 +3,14 @@
 #include <vector>
 
 namespace data {
+	struct helper : public cppcms::base_content  {
+		int x;
+		int y;
+	};
 	struct master  : public cppcms::base_content {
 		int integer;
 		std::string text;
+		helper h;
 		typedef std::vector<int> integers_type;
 		integers_type integers;
 		std::string test_filter(std::string const &s)

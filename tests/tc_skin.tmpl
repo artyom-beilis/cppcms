@@ -127,6 +127,76 @@ TBD
 <% template render() %><% cache "key" for 2 no triggers %><%= integer %><% end cache %><% end template %>
 <% end %>
 
+<% view helper_helper uses data::helper %>
+<% template show_x() %><%= x %><% c++ content.app(); %><% end %>
+<% template show_y() %><%= y %><% end %>
+<% template show_x(int z) %><%= x %>; <%= z %><% end %>
+<% template show_y(int z) %><%= y %>; <%= z %><% end %>
+<% template render() %>r <%=x %>; <%= y %><% end %>
+<% end %>
+
+<% view helper_master uses data::master %>
+<% template show_integer() %>i <%= integer %><% end template %>
+<% template render() %>ri <%= integer %><% end template %>
+<% end view %>
+
+<% view test_using uses data::master %>
+<% template compilation() %>
+<% render text %>
+<% render text with h%>
+<% render text,text %>
+<% render text,text with h %>
+
+<% render "text" %>
+<% render "text" with h%>
+<% render "text","text" %>
+<% render "text","text" with h %>
+
+<% render "text",text with h %>
+<% render text,"text" with h %>
+<% render "text",text %>
+<% render text,"text" %>
+
+<% render "text" ,text with h %>
+<% render text ,"text" with h %>
+<% render "text" ,text %>
+<% render text ,"text" %>
+
+<% render "text" , text with h %>
+<% render text , "text" with h %>
+<% render "text" , text %>
+<% render text , "text" %>
+
+<% render "text", text with h %>
+<% render text, "text" with h %>
+<% render "text", text %>
+<% render text, "text" %>
+
+
+
+<% end template %>
+<% template render() %>
+<% render "tc_skin", "helper_helper" with h %>
+<% render "tc_skin", "helper_master" %>
+<% render "helper_helper" with h %>
+<% render text with h %>
+<% render "helper_master" %>
+<% using helper_helper with h as hlp %>
+<% include show_x() from hlp %>
+<% include show_y() from hlp %>
+<% include show_x(h.y) from hlp %>
+<% include show_y(h.x) from hlp %>
+<% end using %>
+<% using helper_master as hlp %>
+<% include show_integer() from hlp %>
+<% end using %>
+<% include show_x() using helper_helper with h %>
+<% include show_y() using helper_helper with h %>
+<% include show_x(h.y) using helper_helper with h %>
+<% include show_y(h.x) using helper_helper with h %>
+<% include show_integer() using helper_master %>
+<% end %>
+<% end %>
 
 
 <% end skin %>

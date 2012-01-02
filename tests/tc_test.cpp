@@ -330,6 +330,39 @@ public:
 		}
 
 	}
+	
+	void test_using_render()
+	{
+		std::cout << "- Testing using and render" << std::endl;
+		data::master m;
+		m.integer = 10;
+		m.h.x = 1;
+		m.h.y = 2;
+		m.text = "helper_helper";
+		render("test_using", m );
+		compare_strings(str(),"\n"
+			"r 1; 2\n"	// <% render "tc_skin", "helper_helper" with h %>
+			"ri 10\n"	// <% render "tc_skin", "helper_master" %>
+			"r 1; 2\n"	// <% render "helper_helper" with h %>
+			"r 1; 2\n"	// <% render text with h %>
+			"ri 10\n"	// <% render "helper_master" %>
+			"\n"		// <% using helper_helper with h as hlp %>
+			"1\n"		// <% include show_x() from hlp %>
+			"2\n"		// <% include show_y() from hlp %>
+			"1; 2\n"	// <% include show_x(h.y) from hlp %>
+			"2; 1\n"	// <% include show_y(h.x) from hlp %>
+			"\n"		// <% end using %>
+			"\n"		// <% using helper_master as hlp %>
+			"i 10\n"	// <% include show_integer() from hlp %>
+			"\n"		// <% end using %>
+			"1\n"		// <% include show_x() using helper_helper with h %>
+			"2\n"		// <% include show_y() using helper_helper with h %>
+			"1; 2\n"	// <% include show_x(h.y) using helper_helper with h %>
+			"2; 1\n"	// <% include show_y(h.x) using helper_helper with h %>
+			"i 10\n"	// <% include show_integer() using helper_master %>
+		);
+	}
+
 
 private:
 	std::string output_;
@@ -362,7 +395,7 @@ int main()
 		app.test_format();
 		app.test_forms();
 		app.test_cache();
-
+		app.test_using_render();
 	}
 	catch(std::exception const &e)
 	{

@@ -207,21 +207,6 @@ void application::clear()
 {
 }
 
-namespace {
-	class rnd_guard {
-	public:
-		rnd_guard(base_content &cnt,application *app) : cnt_(&cnt)
-		{
-			cnt_->app(*app);
-		}
-		~rnd_guard()
-		{
-			cnt_->reset_app();
-		}
-	private:
-		base_content *cnt_;
-	};
-}
 
 void application::main(std::string url)
 {
@@ -249,25 +234,25 @@ void application::attach(application *app,std::string const &name,std::string co
 
 void application::render(std::string template_name,base_content &content)
 {
-	rnd_guard g(content,this);
+	base_content::app_guard g(content,*this);
 	service().views_pool().render(context().skin(),template_name,response().out(),content);
 }
 
 void application::render(std::string skin,std::string template_name,base_content &content)
 {
-	rnd_guard g(content,this);
+	base_content::app_guard g(content,*this);
 	service().views_pool().render(skin,template_name,response().out(),content);
 }
 
 void application::render(std::string template_name,std::ostream &out,base_content &content)
 {
-	rnd_guard g(content,this);
+	base_content::app_guard g(content,*this);
 	service().views_pool().render(context().skin(),template_name,out,content);
 }
 
 void application::render(std::string skin,std::string template_name,std::ostream &out,base_content &content)
 {
-	rnd_guard g(content,this);
+	base_content::app_guard g(content,*this);
 	service().views_pool().render(skin,template_name,out,content);
 }
 

@@ -31,6 +31,8 @@ class tmpl_descr:
         self.param_num=size
 
 class skin_block:
+    basic_pattern='skin'
+    basic_name='skin'
     pattern=r'^<%\s*skin\s+(\w+)?\s*%>$'
     type='skin'
     def use(self,m):
@@ -75,6 +77,8 @@ def write_class_loader(unsafe = False):
 
 
 class html_type:
+    basic_pattern='x?html'
+    basic_name='xhtml'
     pattern=r'^<%\s*(x)?html\s*%>$'
     def use(self,m):
         global html_type_code
@@ -86,6 +90,8 @@ class html_type:
 
 class view_block:
     pattern=r'^<%\s*view\s+(\w+)\s+uses\s+(:?:?\w+(::\w+)*)(\s+extends\s+(:?:?\w+(::\w+)?))?\s*%>$'
+    basic_pattern='view'
+    basic_name='view'
     type='view'
     topmost = 0
     def declare(self):
@@ -134,6 +140,8 @@ class view_block:
 
 class template_block:
     pattern=r'^<%\s*template\s+([a-zA-Z]\w*)\s*\(([\w\s,:\&]*)\)\s*%>$'
+    basic_pattern = 'template'
+    basic_name='template'
     type='template'
     plist=[]
     def create_parameters(self,lst):
@@ -242,11 +250,41 @@ def make_ident(val):
     else:
         return "content." + val
 
+def print_using_block_start(class_name,variable_name,content_name):
+    if content_name:
+        content=make_ident(content_name)
+        guard=True
+    else:
+        content ='content'
+        guard=False
+    output(r'{')
+    if guard:
+        output(r'  cppcms::base_content::app_guard _g(%s,content);' % content);
+    output(r'  %s %s(out(),%s);' % ( class_name, variable_name, content));
+    
+def print_using_block_end():
+    output('}')
+
+class using_block:
+    pattern=r'^<%\s*using\s+(?P<class>(?:\w+::)*\w+)(?:\s+with\s+(?P<content>' + variable_match + r'))?\s+as\s+(?P<name>[a-zA-Z_]\w*)\s*%>$' 
+    basic_pattern = 'using'
+    basic_name = 'using'
+    type='using'
+    def use(self,m):
+        print_using_block_start(m.group('class'),m.group('name'),m.group('content'))
+        global stack
+        stack.append(self)
+    def on_end(self):
+        print_using_block_end();
+
+
 class foreach_block:
     pattern=r'^<%\s*foreach\s+([a-zA-Z]\w*)(\s+as\s+((:?:?\w+)(::\w+)*))?' \
         + r'(?:\s+rowid\s+([a-zA-Z]\w*)(?:\s+from\s+(\d+))?)?' \
         + r'(?:\s+(reverse))?' \
         + '\s+in\s+(' + variable_match +')\s*%>$'
+    basic_pattern = 'foreach'
+    basic_name = 'foreach'
     type='foreach'
     has_item=0
     has_separator=0
@@ -313,6 +351,8 @@ class foreach_block:
 
 class separator_block:
     pattern=r'^<%\s*separator\s*%>'
+    basic_pattern = 'separator'
+    basic_name = 'separator'
     type='separator'
     def use(self,m):
         global stack
@@ -329,6 +369,8 @@ class separator_block:
 
 class item_block:
     pattern=r'^<%\s*item\s*%>'
+    basic_pattern = 'item'
+    basic_name = 'item'
     type='item'
     def use(self,m):
         global stack
@@ -349,6 +391,8 @@ class item_block:
 
 class empty_block:
     pattern=r'^<%\s*empty\s*%>'
+    basic_pattern = 'empty'
+    basic_name = 'empty'
     type='empty'
     def use(self,m):
         global stack
@@ -372,6 +416,8 @@ class empty_block:
 
 class else_block:
     pattern=r'^<%\s*else\s*%>$'
+    basic_pattern = 'else'
+    basic_name = 'else'
     type='else'
     def on_end(self):
         output("}")
@@ -384,6 +430,8 @@ class else_block:
 
 class if_block:
     pattern=r'^<%\s*(if|elif)\s+((not\s+|not\s+empty\s+|empty\s+)?('+variable_match+')|\((.+)\)|)\s*%>$'
+    basic_pattern = '(if|elif)'
+    basic_name = 'if/elif'
     type='if'
     def prepare(self):
         output( "if(%s) {" % self.ident)
@@ -424,7 +472,9 @@ class if_block:
             
 
 class end_block:
-    pattern=r'^<%\s*end(\s+(\w+))?\s*%>';
+    pattern=r'^<%\s*end(\s+(\w+))?\s*%>$';
+    basic_pattern = 'end'
+    basic_name = 'end'
     def use(self,m):
         global stack
         if not stack:
@@ -438,12 +488,16 @@ class end_block:
 
 class error_com:
     pattern=r'^<%(.*)%>$'
+    basic_pattern = ''
+    basic_name = ''
     def use(self,m):
-        error_exit("unknown command `%s'" % m.group(1))
+        error_exit("Invalid statement `%s'" % m.group(1))
 
 
 class cpp_include_block:
     pattern=r'^<%\s*c\+\+\s+(.*)%>$'
+    basic_pattern = 'c\+\+'
+    basic_name = 'c++'
     def use(self,m):
         output( m.group(1));
 
@@ -502,8 +556,10 @@ class base_show:
 
 class form_block:
     pattern=r'^<%\s*form\s+(as_p|as_table|as_ul|as_dl|as_space|input|block|begin|end)\s+('\
-         + variable_match +')\s*%>'
+         + variable_match +')\s*%>$'
     
+    basic_pattern  = 'form'
+    basic_name = 'form'
     type = 'form'
 
     def format_input(self,command_type,ident):
@@ -551,18 +607,56 @@ class form_block:
         self.format_input(self.command_type,self.ident)
 
 class render_block:
-    pattern=r'<%\s*render\s+(?P<name>[a-zA-Z]\w*)(\s+using\s+(?P<content>'+variable_match+r'))?\s*%>'
+    pattern=r'^<%\s*render\s+' \
+            + r'((?P<fst_str>'+ str_match +r')|(?P<fst_var>' + variable_match + r'))' \
+            + r'(\s*,\s*((?P<snd_str>'+ str_match +r')|(?P<snd_var>' + variable_match + r')))?' \
+            + r'(\s+with\s+(?P<content>' + variable_match + r'))?\s*%>$'
+    basic_pattern = 'render'
+    basic_name = 'render'
     def use(self,m):
         if m.group('content'):
             content = make_ident(m.group('content'))
+            guard=True
         else:
             content = 'content';
-        global namespace_name
-        output('content.app().render("%s","%s",out(),%s);"' % (content,namespace_name,content))
+            guard=False
+        
+        first_str = m.group('fst_str')
+        first_var = m.group('fst_var')
+        if first_var:
+            first = make_ident(first_var)
+        else:
+            first = first_str
+        
+        second_str = m.group('snd_str')
+        second_var = m.group('snd_var')
+        if second_var:
+            second = make_ident(second_var)
+        else:
+            second = second_str
+
+        if first and second:
+            template_name = first
+            view_name = second
+        else:
+            global namespace_name
+            template_name = '"' + namespace_name + '"'
+            view_name = first;
+       
+        output('{')
+
+        if guard:
+            output(r'cppcms::base_content::app_guard _g(%s,content);' % content)
+
+        output(r'cppcms::views::pool::instance().render(%s,%s,out(),%s);' % (template_name,view_name,content))
+
+        output('}')
 
 
 class filters_show_block(base_show):
     pattern=r'^<%(=)?\s*('+ variable_match + r'\s*(\|.*)?)%>$'
+    basic_pattern = '=?'
+    basic_name = 'Inline Variable'
     def use(self,m):
         if not m.group(1):
             warning("Variables syntax like <% foo %> is deprecated, use <%= foo %> syntax");
@@ -587,12 +681,14 @@ def make_format_params(s,default_filter = 'escape'):
     return []
 
 class cache_block:
-    pattern=r'<%\s*cache\s+((?P<str>'+ \
+    pattern=r'^<%\s*cache\s+((?P<str>'+ \
             str_match +')|(?P<var>'+ variable_match +r'))' + \
             r'(\s+for\s+(?P<time>\d+))?(\s+on\s+miss\s+(?P<callback>[a-zA-Z]\w*)\(\))?' \
             + r'(?P<notriggers>\s+no\s+triggers)?' \
             + r'(?P<norecording>\s+no\s+recording)?' \
-            + '\s*%>'        
+            + '\s*%>$'        
+    basic_pattern = 'cache'
+    basic_name = 'cache'
     type = 'cache'
     def use(self,m):
         if(m.group('str')):
@@ -632,7 +728,9 @@ class cache_block:
         output('}} // cache')
 
 class trigger_block:
-    pattern=r'<%\s*trigger\s+((?P<str>'+  str_match +')|(?P<var>'+ variable_match +r'))' + r'\s*%>'
+    pattern=r'^<%\s*trigger\s+((?P<str>'+  str_match +')|(?P<var>'+ variable_match +r'))' + r'\s*%>$'
+    basic_pattern = 'trigger'
+    basic_name = 'trigger'
     def use(self,m):
         if(m.group('str')):
             parameter = m.group('str')
@@ -645,6 +743,8 @@ class trigger_block:
 
 class ngettext_block:
     pattern=r'^<%\s*ngt\s*('+str_match+')\s*,\s*('+str_match+')\s*,\s*('+variable_match+')\s*(using(.*))?\s*%>$'
+    basic_pattern = 'ngt'
+    basic_name = 'ngt'
     def use(self,m):
         s1=m.group(1)
         s2=m.group(3)
@@ -660,6 +760,8 @@ class ngettext_block:
 
 class gettext_block:
     pattern=r'^<%\s*gt\s*('+str_match+')\s*(using(.*))?\s*%>$'
+    basic_pattern = 'gt'
+    basic_name = 'gt'
     def use(self,m):
         s=m.group(1)
         params=[]
@@ -672,6 +774,8 @@ class gettext_block:
 
 class url_block:
     pattern=r'^<%\s*url\s*('+str_match+')\s*(using(.*))?\s*%>$'
+    basic_pattern = 'url'
+    basic_name = 'url'
     def use(self,m):
         s=m.group(1)
         params=[]
@@ -684,6 +788,8 @@ class url_block:
 
 class csrf_block:
     pattern=r'^<%\s*csrf(\s+(token|cookie|script))?\s*%>$'
+    basic_pattern = 'csrf'
+    basic_name = 'csrf'
     def use(self,m):
         s=m.group(2)
 
@@ -724,13 +830,35 @@ class csrf_block:
 
 
 class include_block:
-    pattern=r'^<%\s*include\s+([a-zA_Z]\w*(::\w+)?)\s*\(\s*(.*)\)\s*%>$';
+    basic_pattern = 'include'
+    basic_name = 'include'
+    pattern=r'^<%\s*include\s+([a-zA_Z]\w*(::\w+)?)\s*\(\s*(.*)\)' \
+            + r'(?:\s+' \
+            +   r'(from\s+(?P<from>\w+)' \
+            +    '|' \
+            +   r'using\s+(?P<class>(\w+::)*(\w+))(?:\s+with\s+(?P<content>' + variable_match +r'))?' \
+            + r'))?' \
+            + r'\s*%>$'
+
+    def print_include(self,call,params):
+        output( "%s(%s);" % (call , ','.join(params)))
+        
     def use(self,m):
         if m.group(3):
             params=base_show().get_params(m.group(3))
         else:
             params=[]
-        output( "%s(%s);" % (m.group(1) , ','.join(params)))
+        call=m.group(1)
+        if m.group('from'):
+            call = m.group('from') + '.' + call
+            self.print_include(call,params)
+        elif m.group('class'):
+            print_using_block_start(m.group('class'),'_using',m.group('content'))
+            self.print_include('_using.' + call,params)
+            print_using_block_end()
+        else:
+            self.print_include(call,params)
+
 
 def fetch_content(content):
     tmp=''
@@ -828,7 +956,12 @@ def main():
                     continue
             matched=0
             for c in [\
-                    skin_block(), view_block(), if_block(), template_block(), end_block(), else_block(), \
+                    skin_block(), \
+                    view_block(), \
+                    template_block(), \
+                    end_block(), \
+                    if_block(), \
+                    else_block(), \
                     cpp_include_block(), \
                     gettext_block(),ngettext_block(), \
                     url_block(), \
@@ -836,13 +969,20 @@ def main():
                     include_block(), \
                     cache_block(), \
                     trigger_block(), \
+                    using_block(), \
+                    render_block(), \
                     html_type(), form_block(), csrf_block(), \
                     filters_show_block(), error_com() ]:
-                m = re.match(c.pattern,x)
-                if m :
-                    c.use(m)
+
+                basic_pattern = r'^<%\s*' + c.basic_pattern + r'.*%>$'
+                if re.match(basic_pattern,x):
+                    m = re.match(c.pattern,x)
+                    if m:
+                        c.use(m)
+                    else:
+                        error_exit('Syntax error in command %s : %s' % ( c.basic_name , x))
                     matched=1
-                    break
+                    break;
             if not matched:
                 inline_content(x)
 

@@ -51,10 +51,15 @@ void base_content::app(application &app)
 	app_ = &app;
 }
 
+bool base_content::has_app()
+{
+	return app_;
+}
+
 application &base_content::app()
 {
 	if(!app_) {
-		throw cppcms_error("Attempt to access to application that wasn't set");
+		throw cppcms_error("cppcms::base_content: an attempt to access content's application that wasn't assigned");
 	}
 	return *app_;
 }
