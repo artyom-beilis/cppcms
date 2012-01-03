@@ -48,32 +48,6 @@ namespace booster {
 		LeaveCriticalSection(&d->m);
 	}
 	
-	struct shared_mutex::data { SRWLOCK m; bool ex; };
-	shared_mutex::shared_mutex() : d(new data)
-	{
-		d->ex=false;
-		InitializeSRWLock(&d->m);
-	}
-	shared_mutex::~shared_mutex()
-	{
-	}
-	void shared_mutex::shared_lock() { 
-		AcquireSRWLockShared(&d->m);
-	}
-	void shared_mutex::unique_lock() { 
-		AcquireSRWLockExclusive(&d->m);
-		d->ex=true;
-	}
-	void shared_mutex::unlock() {
-		bool ex = d->ex;
-		if(ex) {
-			d->ex=false;
-			ReleaseSRWLockExclusive(&d->m);
-		}
-		else 
-			ReleaseSRWLockShared(&d->m);
-	}
-
 	struct condition_variable::data { CONDITION_VARIABLE c; };
 
 	condition_variable::condition_variable() : d(new data)

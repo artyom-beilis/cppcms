@@ -141,6 +141,9 @@ namespace booster {
 		///
 		/// Acquire a shared lock on the object.  \see booster::shared_lock
 		///
+		/// Note the shared_lock() member function is recursive, that means that same thread may acquire
+		/// it multiple times.
+		///
 		void shared_lock();
 		///
 		/// Release the lock

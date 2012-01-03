@@ -49,67 +49,6 @@ namespace booster {
 		LeaveCriticalSection(&d->m);
 	}
 	
-	struct shared_mutex::data {
-		mutex lock;
-		condition_variable can_lock;
-
-		int read_lock;
-		int write_lock;
-		int pending_lock;
-
-	};
-	shared_mutex::shared_mutex() : d(new data)
-	{
-		d->read_lock = 0;
-		d->write_lock = 0;
-		d->pending_lock = 0;
-	}
-	shared_mutex::~shared_mutex()
-	{
-	}
-	void shared_mutex::shared_lock() 
-	{ 
-		booster::unique_lock<mutex> g(d->lock);
-		for(;;) {
-			if(d->write_lock == 0 && d->pending_lock == 0) {
-				d->read_lock++;
-				break;
-			}
-			else
-				d->can_lock.wait(g);
-		}
-
-	}
-	void shared_mutex::unique_lock() 
-	{ 
-		booster::unique_lock<mutex> g(d->lock);
-		for(;;) {
-			if(d->write_lock == 0 && d->read_lock==0) {
-				d->write_lock = 1;
-				d->pending_lock = 0;
-				break;
-			}
-			else {
-				if(d->read_lock)
-					d->pending_lock = 1;
-				d->can_lock.wait(g);
-			}
-		}
-	}
-	void shared_mutex::unlock() 
-	{
-		booster::unique_lock<mutex> g(d->lock);
-		if(d->write_lock) {
-			d->write_lock = 0;
-			d->pending_lock = 0;
-			d->can_lock.notify_all();
-		}
-		else if(d->read_lock) {
-			d->read_lock--;
-			if(d->read_lock == 0)
-				d->can_lock.notify_all();
-		}
-	}
 
 	namespace details {
 		struct event {

@@ -267,6 +267,78 @@ namespace booster {
 	}
 	void recursive_mutex::lock() { EnterCriticalSection(&d->m);}
 	void recursive_mutex::unlock() { LeaveCriticalSection(&d->m); }
+
+
+	struct shared_mutex::data {
+		mutex lock;
+		condition_variable can_lock;
+
+		int read_lock;
+		int write_lock;
+		int pending_lock;
+		
+		static const unsigned hash_size = 2048;
+
+		unsigned short recursive_locks[hash_size];
+
+	};
+	shared_mutex::shared_mutex() : d(new data)
+	{
+		d->read_lock = 0;
+		d->write_lock = 0;
+		d->pending_lock = 0;
+		memset(&d->recursive_locks,0,sizeof(d->recursive_locks));
+	}
+	shared_mutex::~shared_mutex()
+	{
+	}
+	void shared_mutex::shared_lock() 
+	{ 
+		size_t id = GetCurrentThreadId() % d->hash_size;
+		booster::unique_lock<mutex> g(d->lock);
+		for(;;) {
+			if(d->write_lock == 0 && (d->pending_lock == 0 || d->recursive_locks[id]>0)) {
+				d->read_lock++;
+				d->recursive_locks[id]++;
+				break;
+			}
+			d->can_lock.wait(g);
+		}
+
+	}
+	void shared_mutex::unique_lock() 
+	{ 
+		booster::unique_lock<mutex> g(d->lock);
+		for(;;) {
+			if(d->write_lock == 0 && d->read_lock==0) {
+				d->write_lock = 1;
+				d->pending_lock = 0;
+				break;
+			}
+			else {
+				if(d->read_lock)
+					d->pending_lock = 1;
+				d->can_lock.wait(g);
+			}
+		}
+	}
+	void shared_mutex::unlock() 
+	{
+		size_t id = GetCurrentThreadId() % d->hash_size;
+		booster::unique_lock<mutex> g(d->lock);
+		if(d->write_lock) {
+			d->write_lock = 0;
+			d->pending_lock = 0;
+			d->can_lock.notify_all();
+		}
+		else if(d->read_lock) {
+			d->read_lock--;
+			d->recursive_locks[id]--;
+			if(d->read_lock == 0)
+				d->can_lock.notify_all();
+		}
+	}
+
 	
 	namespace details {
 		class wintls_key : public key {
