@@ -135,6 +135,38 @@ struct rw_executor {
 };
 
 
+struct rw_shared_thread {
+	booster::shared_mutex *lp;
+	bool *done;
+	void operator()() const
+	{
+		lp->shared_lock();
+		booster::ptime::millisleep(500);
+		booster::ptime start = booster::ptime::now();
+		lp->shared_lock();
+		booster::ptime end = booster::ptime::now();
+		booster::ptime::millisleep(200);
+		lp->unlock();
+		lp->unlock();
+		TEST(end-start < booster::ptime::microseconds(100));
+		*done = true;
+	}
+};
+
+struct rw_unique_thread {
+	booster::shared_mutex *lp;
+	bool *done;
+	void operator()() const
+	{
+		booster::ptime::millisleep(250);
+		booster::ptime start = booster::ptime::now();
+		lp->unique_lock();
+		booster::ptime end = booster::ptime::now();
+		lp->unlock();
+		TEST((end - start) > booster::ptime::milliseconds(100));
+		*done = true;
+	}
+};
 
 
 int main()
@@ -308,7 +340,22 @@ int main()
 			TEST(write_happened);
 			TEST(error_occured);
 		}
-	}
+		std::cout << "Test rw_lock recursive shared lock" << std::endl;
+		{
+			booster::shared_mutex l;
+			bool read  = false;
+			bool write = false;
+			rw_shared_thread t1c = { &l, &read };
+			rw_unique_thread t2c = { &l, &write };
+			booster::thread t1(t1c);
+			booster::thread t2(t2c);
+			t1.join();
+			t2.join();
+			TEST(read);
+			TEST(write);
+		}
+
+}
 	catch(std::exception const &e)
 	{
 		std::cerr << "Fail:" <<e.what();
