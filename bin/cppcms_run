@@ -1,6 +1,12 @@
 #!/usr/bin/env bash
 
-
+############################################################################
+#                                                                             
+#  Copyright (C) 2008-2012  Artyom Beilis (Tonkikh) <artyomtnk@yahoo.com>     
+#                                                                             
+#  See accompanying file COPYING.TXT file for licensing details.
+#
+############################################################################
 
 locate_server()
 {

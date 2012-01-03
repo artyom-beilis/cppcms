@@ -1,3 +1,12 @@
+///////////////////////////////////////////////////////////////////////////////
+//                                                                             
+//  Copyright (C) 2008-2012  Artyom Beilis (Tonkikh) <artyomtnk@yahoo.com>     
+//                                                                             
+//  See accompanying file COPYING.TXT file for licensing details.
+//
+///////////////////////////////////////////////////////////////////////////////
+#ifndef CPPCMS_IMPL_CACHED_SETTINGS
+#define CPPCMS_IMPL_CACHED_SETTINGS
 #include <cppcms/json.h>
 #include <booster/thread.h>
 namespace cppcms {
@@ -156,4 +165,4 @@ namespace impl {
 	};
 } // impl
 } // cppcms
-
+#endif

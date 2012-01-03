@@ -1,5 +1,5 @@
 /*
- *  Copyright: (c) 2008 Artyom Beilise
+ *  Copyright: (c) 2008-2012 Artyom Beilis
  *  License: MIT
  *  Other Copyrights: 
  *    7 lines of code had taken from: http://base64.sourceforge.net/b64.c

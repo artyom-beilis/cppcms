@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2010 Artyom Beilis (Tonkikh)
+// Copyright (C) 2009-2012 Artyom Beilis (Tonkikh)
 //
 // Distributed under the Boost Software License, Version 1.0. (See
 // accompanying file LICENSE_1_0.txt or copy at
