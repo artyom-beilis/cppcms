@@ -281,6 +281,11 @@ namespace booster {
 
 		unsigned short recursive_locks[hash_size];
 
+		unsigned static id() 
+		{
+			return GetCurrentThreadId() % hash_size;
+		}
+
 	};
 	shared_mutex::shared_mutex() : d(new data)
 	{
@@ -294,7 +299,7 @@ namespace booster {
 	}
 	void shared_mutex::shared_lock() 
 	{ 
-		size_t id = GetCurrentThreadId() % d->hash_size;
+		unsigned id = data::id();
 		booster::unique_lock<mutex> g(d->lock);
 		for(;;) {
 			if(d->write_lock == 0 && (d->pending_lock == 0 || d->recursive_locks[id]>0)) {
@@ -324,7 +329,7 @@ namespace booster {
 	}
 	void shared_mutex::unlock() 
 	{
-		size_t id = GetCurrentThreadId() % d->hash_size;
+		unsigned id = data::id();
 		booster::unique_lock<mutex> g(d->lock);
 		if(d->write_lock) {
 			d->write_lock = 0;
