@@ -150,11 +150,11 @@ namespace booster { namespace aio { namespace impl {
 	void select_interrupter::notify()
 	{
 		#ifdef BOOSTER_WIN32
-		char c;
+		char c='A';
 		::send(write_,&c,1,0);
 		#else
 		for(;;) {
-			char c;
+			char c='A';
 			if(::write(write_,&c,1) < 0 && errno==EINTR)
 				continue;
 			break;

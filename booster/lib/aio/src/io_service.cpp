@@ -588,6 +588,8 @@ private:
 
 	void randomize_events(reactor::event *evs,int n)
 	{
+		if(n < 2)
+			return;
 		for(int i=0;i<n;i++) {
 			int new_pos = rand(n-i);
 			std::swap(evs[i],evs[i+new_pos]);
