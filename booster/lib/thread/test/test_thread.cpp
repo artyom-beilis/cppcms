@@ -148,7 +148,7 @@ struct rw_shared_thread {
 		booster::ptime::millisleep(200);
 		lp->unlock();
 		lp->unlock();
-		TEST(end-start < booster::ptime::microseconds(100));
+		TEST(end-start < booster::ptime::milliseconds(100));
 		*done = true;
 	}
 };
