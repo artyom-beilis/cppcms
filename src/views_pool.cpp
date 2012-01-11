@@ -68,7 +68,7 @@ std::auto_ptr<base_view> generator::create(	std::string const &view_name,
 
 // class pool
 struct pool::data {
-	booster::shared_mutex lock;
+	booster::recursive_shared_mutex lock;
 	typedef std::map<std::string,generator const *> generators_type;
 	generators_type generators;
 };
@@ -78,7 +78,7 @@ void pool::add(generator const &g)
 	generator const *ptr = &g;
 	std::string name = ptr->name();
 
-	booster::unique_lock<booster::shared_mutex> guard(d->lock);
+	booster::unique_lock<booster::recursive_shared_mutex> guard(d->lock);
 	for(data::generators_type::iterator p=d->generators.begin();p!=d->generators.end();++p) {
 		if(p->second == ptr)
 			return;
@@ -92,7 +92,7 @@ void pool::remove(generator const &g)
 {
 	generator const *ptr = &g;
 
-	booster::unique_lock<booster::shared_mutex> guard(d->lock);
+	booster::unique_lock<booster::recursive_shared_mutex> guard(d->lock);
 	for(data::generators_type::iterator p=d->generators.begin();p!=d->generators.end();++p) {
 		if(p->second == ptr)  {
 			d->generators.erase(p);
@@ -103,7 +103,7 @@ void pool::remove(generator const &g)
 
 void pool::render(std::string const &skin,std::string const &template_name,std::ostream &out,base_content &content)
 {
-	booster::shared_lock<booster::shared_mutex> guard(d->lock);
+	booster::shared_lock<booster::recursive_shared_mutex> guard(d->lock);
 	data::generators_type::iterator p=d->generators.find(skin);
 	if(p==d->generators.end()) 
 		throw cppcms_error("cppcms::views::pool: no such skin:" + skin);
@@ -118,7 +118,7 @@ void pool::render(std::string const &skin,std::string const &template_name,std::
 
 std::vector<std::string> pool::enumerate()
 {
-	booster::shared_lock<booster::shared_mutex> guard(d->lock);
+	booster::shared_lock<booster::recursive_shared_mutex> guard(d->lock);
 	std::vector<std::string> all;
 	all.reserve(d->generators.size());
 	for(data::generators_type::iterator p=d->generators.begin(),e=d->generators.end();p!=e;++p) {
@@ -254,7 +254,7 @@ struct manager::data {
 	bool auto_reload;
 	std::string default_skin;
 	std::vector<impl::skin> skins;
-	booster::shared_mutex lock;
+	booster::recursive_shared_mutex lock;
 	data() : auto_reload(false) 
 	{
 	}
@@ -320,7 +320,7 @@ void manager::render(std::string const &skin_name,std::string const &template_na
 	if(d->auto_reload) {
 		{	// Check if update
 			bool reload_required = false;
-			booster::shared_lock<booster::shared_mutex> guard(d->lock);
+			booster::shared_lock<booster::recursive_shared_mutex> guard(d->lock);
 			for(size_t i=0;i<d->skins.size();i++) {
 				time_t mtime = impl::get_mtime(d->skins[i].file_name);
 				if(mtime != d->skins[i].mtime) {
@@ -334,7 +334,7 @@ void manager::render(std::string const &skin_name,std::string const &template_na
 			}
 		}
 		// reload all if needed
-		booster::unique_lock<booster::shared_mutex> lock(d->lock);
+		booster::unique_lock<booster::recursive_shared_mutex> lock(d->lock);
 		for(size_t i=0;i<d->skins.size();i++) {
 			impl::skin &current = d->skins[i];
 			time_t mtime = impl::get_mtime(current.file_name);

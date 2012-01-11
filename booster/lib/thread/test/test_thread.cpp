@@ -100,11 +100,12 @@ struct cond_incrementer {
 };
 
 
+template<typename ShM>
 struct rw_executor {
 	bool *flag;
 	bool read;
 	booster::mutex *flags_mutex;
-	booster::shared_mutex *mutex;
+	ShM *mutex;
 	void operator()() const
 	{
 		for(int i=0;i<20;i++) {
@@ -136,7 +137,7 @@ struct rw_executor {
 
 
 struct rw_shared_thread {
-	booster::shared_mutex *lp;
+	booster::recursive_shared_mutex *lp;
 	bool *done;
 	void operator()() const
 	{
@@ -154,7 +155,7 @@ struct rw_shared_thread {
 };
 
 struct rw_unique_thread {
-	booster::shared_mutex *lp;
+	booster::recursive_shared_mutex *lp;
 	bool *done;
 	void operator()() const
 	{
@@ -293,7 +294,7 @@ int main()
 			t2.join();
 			t3.join();
 		}
-		std::cout << "Test rw_lock write lock" << std::endl;
+		std::cout << "Test shared_mutex write lock" << std::endl;
 		{
 			variable = 0;
 			booster::shared_mutex m;
@@ -304,7 +305,18 @@ int main()
 			t2.join();
 			TEST(variable == 10);
 		}
-		std::cout << "Test rw_lock shared/write lock" << std::endl;
+		std::cout << "Test recursive_shared_mutex write lock" << std::endl;
+		{
+			variable = 0;
+			booster::shared_mutex m;
+			incrementer<booster::shared_mutex> inc = { &m };
+			booster::thread t1(inc);
+			booster::thread t2(inc);
+			t1.join();
+			t2.join();
+			TEST(variable == 10);
+		}
+		std::cout << "Test shared_mutex shared/write lock" << std::endl;
 		{
 			booster::mutex fm;
 			booster::shared_mutex sm;
@@ -312,9 +324,9 @@ int main()
 			bool mread_happened  = false;
 			bool write_happened = false;
 			bool error_occured = false ;
-			rw_executor exec1 = { flags + 0, true, &fm, &sm };
-			rw_executor exec2 = { flags + 1, true, &fm, &sm };
-			rw_executor exec3 = { flags + 2, true, &fm, &sm };
+			rw_executor<booster::shared_mutex> exec1 = { flags + 0, true, &fm, &sm };
+			rw_executor<booster::shared_mutex> exec2 = { flags + 1, true, &fm, &sm };
+			rw_executor<booster::shared_mutex> exec3 = { flags + 2, true, &fm, &sm };
 			booster::thread t1(exec1);
 			booster::thread t2(exec2);
 			booster::thread t3(exec3);
@@ -340,9 +352,45 @@ int main()
 			TEST(write_happened);
 			TEST(error_occured);
 		}
-		std::cout << "Test rw_lock recursive shared lock" << std::endl;
+		std::cout << "Test recursive_shared_mutex shared/write lock" << std::endl;
 		{
-			booster::shared_mutex l;
+			booster::mutex fm;
+			booster::recursive_shared_mutex sm;
+			bool flags[3] = {false,false,false};
+			bool mread_happened  = false;
+			bool write_happened = false;
+			bool error_occured = false ;
+			rw_executor<booster::recursive_shared_mutex> exec1 = { flags + 0, true, &fm, &sm };
+			rw_executor<booster::recursive_shared_mutex> exec2 = { flags + 1, true, &fm, &sm };
+			rw_executor<booster::recursive_shared_mutex> exec3 = { flags + 2, true, &fm, &sm };
+			booster::thread t1(exec1);
+			booster::thread t2(exec2);
+			booster::thread t3(exec3);
+
+			for(int i=0;i<100;i++) {
+				booster::ptime::millisleep(1);
+				{
+					booster::unique_lock<booster::mutex> l(fm);
+					if(flags[0] && flags[1])
+						mread_happened = true;
+					if(flags[2])
+						write_happened = true;
+					if((flags[0] || flags[1]) && flags[2])
+						error_occured = true;
+				}
+			}
+
+			t1.join();
+			t2.join();
+			t3.join();
+
+			TEST(mread_happened);
+			TEST(write_happened);
+			TEST(error_occured);
+		}
+		std::cout << "Test recursive_shared_mutex recursive shared lock" << std::endl;
+		{
+			booster::recursive_shared_mutex l;
 			bool read  = false;
 			bool write = false;
 			rw_shared_thread t1c = { &l, &read };

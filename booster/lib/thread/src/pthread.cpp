@@ -139,9 +139,6 @@ namespace booster {
 	void recursive_mutex::lock() { pthread_mutex_lock(&d->m); }
 	void recursive_mutex::unlock() { pthread_mutex_unlock(&d->m); }
 
-	#ifndef __APPLE__
-	/// This is normal implementation
-
 	struct shared_mutex::data { pthread_rwlock_t m; };
 	shared_mutex::shared_mutex() : d(new data)
 	{
@@ -155,9 +152,29 @@ namespace booster {
 	void shared_mutex::unique_lock() { pthread_rwlock_wrlock(&d->m); }
 	void shared_mutex::unlock() { pthread_rwlock_unlock(&d->m); }
 
+	#ifndef __APPLE__
+	//
+	// This is normal implementation
+	//
+	// Same as shared mutex under "Most platforms"
+	//
+	struct recursive_shared_mutex::data { pthread_rwlock_t m; };
+	recursive_shared_mutex::recursive_shared_mutex() : d(new data)
+	{
+		pthread_rwlock_init(&d->m,0);
+	}
+	recursive_shared_mutex::~recursive_shared_mutex()
+	{
+		pthread_rwlock_destroy(&d->m);
+	}
+	void recursive_shared_mutex::shared_lock() { pthread_rwlock_rdlock(&d->m); }
+	void recursive_shared_mutex::unique_lock() { pthread_rwlock_wrlock(&d->m); }
+	void recursive_shared_mutex::unlock() { pthread_rwlock_unlock(&d->m); }
+
+
 	#else // Darwin has broken recursive RW Lock
 	
-	struct shared_mutex::data {
+	struct recursive_shared_mutex::data {
 		thread_specific_ptr<int> k;
 		pthread_rwlock_t m;
 	};
@@ -174,24 +191,24 @@ namespace booster {
 		}
 	}
 
-	shared_mutex::shared_mutex() : d(new data)
+	recursive_shared_mutex::recursive_shared_mutex() : d(new data)
 	{
 		pthread_rwlock_init(&d->m,0);
 	}
-	shared_mutex::~shared_mutex()
+	recursive_shared_mutex::~recursive_shared_mutex()
 	{
 		pthread_rwlock_destroy(&d->m);
 	}
-	void shared_mutex::shared_lock()
+	void recursive_shared_mutex::shared_lock()
 	{
 		int &counter = specific_key(d->k);
 		if(counter++ == 0)
 			pthread_rwlock_rdlock(&d->m);
 	}
-	void shared_mutex::unique_lock() {
+	void recursive_shared_mutex::unique_lock() {
 		pthread_rwlock_wrlock(&d->m); 
 	}
-	void shared_mutex::unlock() { 
+	void recursive_shared_mutex::unlock() { 
 		int &counter = specific_key(d->k);
 		if(counter > 1) {
 			counter --;

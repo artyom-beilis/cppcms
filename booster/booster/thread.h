@@ -121,6 +121,43 @@ namespace booster {
 	};
 
 	///
+	/// \brief Recursuve Shared mutex or a.k.a. Read-Write Lock that can be recursively locked by \b readers
+	/// 
+	/// This class provides two options of locking unique - nobody but me can use the object
+	/// shared anybody with shared lock can use the object.
+	///
+	class BOOSTER_API recursive_shared_mutex : public noncopyable {
+	public:
+		recursive_shared_mutex();
+		~recursive_shared_mutex();
+		///
+		/// Same as unique_lock()
+		///
+		/// \note this function is not recursive
+		///
+		void lock() { unique_lock(); }
+		///
+		/// Acquire a unique lock on the object. \see booster::unique_lock
+		///
+		/// \note this function is not recursive
+		///
+		void unique_lock();
+		///
+		/// Acquire a shared lock on the object.  \see booster::shared_lock
+		///
+		/// \note the shared_lock() member function is recursive, that means that same thread may acquire
+		/// it multiple times.
+		///
+		void shared_lock();
+		///
+		/// Release the lock
+		///
+		void unlock();
+	private:
+		struct data;
+		hold_ptr<data> d;
+	};
+	///
 	/// \brief Shared mutex or a.k.a. Read-Write Lock
 	/// 
 	/// This class provides two options of locking unique - nobody but me can use the object
@@ -141,8 +178,7 @@ namespace booster {
 		///
 		/// Acquire a shared lock on the object.  \see booster::shared_lock
 		///
-		/// Note the shared_lock() member function is recursive, that means that same thread may acquire
-		/// it multiple times.
+		/// Note this function is not recursive
 		///
 		void shared_lock();
 		///

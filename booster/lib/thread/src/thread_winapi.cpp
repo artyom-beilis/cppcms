@@ -269,7 +269,7 @@ namespace booster {
 	void recursive_mutex::unlock() { LeaveCriticalSection(&d->m); }
 
 
-	struct shared_mutex::data {
+	struct recursive_shared_mutex::data {
 		mutex lock;
 		condition_variable can_lock;
 
@@ -287,17 +287,17 @@ namespace booster {
 		}
 
 	};
-	shared_mutex::shared_mutex() : d(new data)
+	recursive_shared_mutex::recursive_shared_mutex() : d(new data)
 	{
 		d->read_lock = 0;
 		d->write_lock = 0;
 		d->pending_lock = 0;
 		memset(&d->recursive_locks,0,sizeof(d->recursive_locks));
 	}
-	shared_mutex::~shared_mutex()
+	recursive_shared_mutex::~recursive_shared_mutex()
 	{
 	}
-	void shared_mutex::shared_lock() 
+	void recursive_shared_mutex::shared_lock() 
 	{ 
 		unsigned id = data::id();
 		booster::unique_lock<mutex> g(d->lock);
@@ -311,7 +311,7 @@ namespace booster {
 		}
 
 	}
-	void shared_mutex::unique_lock() 
+	void recursive_shared_mutex::unique_lock() 
 	{ 
 		booster::unique_lock<mutex> g(d->lock);
 		for(;;) {
@@ -327,7 +327,7 @@ namespace booster {
 			}
 		}
 	}
-	void shared_mutex::unlock() 
+	void recursive_shared_mutex::unlock() 
 	{
 		unsigned id = data::id();
 		booster::unique_lock<mutex> g(d->lock);
