@@ -541,16 +541,19 @@ if(NOT DISABLE_SHARED)
 	set_target_properties(skin3 PROPERTIES
 				COMPILE_DEFINITIONS "${SKIN3_DEFS}")
 	target_link_libraries(skin3 ${CPPCMS_LIB})
+
+	foreach(SKIN tc_skin_a tc_skin_b tc_skin)
+		add_library(${SKIN} SHARED ${CMAKE_CURRENT_BINARY_DIR}/${SKIN}.cpp)
+		target_link_libraries(${SKIN} ${CPPCMS_LIB})
+		if(IS_WINDOWS)
+			set_target_properties(${SKIN} PROPERTIES COMPILE_DEFINITIONS DLL_EXPORT)
+		endif()
+	endforeach()
+
+
+
 endif(NOT DISABLE_SHARED)
 
-
-foreach(SKIN tc_skin_a tc_skin_b tc_skin)
-	add_library(${SKIN} SHARED ${CMAKE_CURRENT_BINARY_DIR}/${SKIN}.cpp)
-	target_link_libraries(${SKIN} ${CPPCMS_LIB})
-	if(IS_WINDOWS)
-		set_target_properties(${SKIN} PROPERTIES COMPILE_DEFINITIONS DLL_EXPORT)
-	endif()
-endforeach()
 
 
 add_executable(hello_world src/hello_world.cpp skin1.cpp skin2.cpp)
@@ -599,12 +602,17 @@ set(ALL_TESTS
 	rewrite_test
 	url_mapper_test
 	copy_filter_test
-	tc_test
-	loadable_storage_test
 	)
 
 if(NOT DISABLE_TCPCACHE)
 	set(ALL_TESTS ${ALL_TESTS} cache_backend_test)
+endif()
+
+if(NOT DISABLE_SHARED)
+	set(ALL_TESTS ${ALL_TESTS} 
+		tc_test
+		loadable_storage_test
+		)
 endif()
 
 foreach(TEST ${ALL_TESTS})
@@ -684,7 +692,9 @@ add_test(xss_test xss_test)
 add_test(rewrite_test rewrite_test)
 add_test(url_mapper_test url_mapper_test)
 add_test(copy_filter_test copy_filter_test)
-add_test(tc_test tc_test)
+if(NOT DISABLE_SHARED)
+	add_test(tc_test tc_test)
+endif()
 
 add_test(status_test
 	status_test "-c" "${CNF}/status_test.js" 

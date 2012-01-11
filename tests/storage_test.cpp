@@ -6,6 +6,7 @@
 //
 ///////////////////////////////////////////////////////////////////////////////
 #include <cppcms/defs.h>
+#include <cppcms/config.h>
 #include "test.h"
 #include <cppcms/session_storage.h>
 #include "session_memory_storage.h"
