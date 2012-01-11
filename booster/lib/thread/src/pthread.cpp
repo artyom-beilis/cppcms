@@ -139,6 +139,9 @@ namespace booster {
 	void recursive_mutex::lock() { pthread_mutex_lock(&d->m); }
 	void recursive_mutex::unlock() { pthread_mutex_unlock(&d->m); }
 
+	#ifndef __APPLE__
+	/// This is normal implementation
+
 	struct shared_mutex::data { pthread_rwlock_t m; };
 	shared_mutex::shared_mutex() : d(new data)
 	{
@@ -151,6 +154,54 @@ namespace booster {
 	void shared_mutex::shared_lock() { pthread_rwlock_rdlock(&d->m); }
 	void shared_mutex::unique_lock() { pthread_rwlock_wrlock(&d->m); }
 	void shared_mutex::unlock() { pthread_rwlock_unlock(&d->m); }
+
+	#else // Darwin has broken recursive RW Lock
+	
+	struct shared_mutex::data {
+		thread_specific_ptr<int> k;
+		pthread_rwlock_t m;
+	};
+
+	namespace {
+		int &specific_key(thread_specific_ptr<int> &k)
+		{
+			int *counter = k.get();
+			if(!counter) {
+				counter = new int(0);
+				k.reset(counter);
+			}
+			return *counter;
+		}
+	}
+
+	shared_mutex::shared_mutex() : d(new data)
+	{
+		pthread_rwlock_init(&d->m,0);
+	}
+	shared_mutex::~shared_mutex()
+	{
+		pthread_rwlock_destroy(&d->m);
+	}
+	void shared_mutex::shared_lock()
+	{
+		int &counter = specific_key(d->k);
+		if(counter++ == 0)
+			pthread_rwlock_rdlock(&d->m);
+	}
+	void shared_mutex::unique_lock() {
+		pthread_rwlock_wrlock(&d->m); 
+	}
+	void shared_mutex::unlock() { 
+		int &counter = specific_key(d->k);
+		if(counter > 1) {
+			counter --;
+			return;
+		}
+		counter = 0;
+		pthread_rwlock_unlock(&d->m);
+	}
+
+	#endif
 
 	struct condition_variable::data { pthread_cond_t c; };
 
