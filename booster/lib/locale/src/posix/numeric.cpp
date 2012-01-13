@@ -210,7 +210,7 @@ public:
     {
         while(begin!=end) {
             char c= *begin++;
-            mask r=mask();
+            int r=0;
             if(isspace_l(c,*lc_))
                 r|=space;
             if(isprint_l(c,*lc_))
@@ -229,7 +229,10 @@ public:
                 r|=xdigit;
             if(ispunct_l(c,*lc_))
                 r|=punct;
-            *m++ = r;
+            // r actually should be mask, but some standard
+            // libraries (like STLPort)
+            // do not define operator | properly so using int+cast
+            *m++ = static_cast<mask>(r);
         }
         return begin;
     }
@@ -305,7 +308,7 @@ public:
     {
         while(begin!=end) {
             wchar_t c= *begin++;
-            mask r=mask();
+            int r=0;
             if(iswspace_l(c,*lc_))
                 r|=space;
             if(iswprint_l(c,*lc_))
@@ -324,7 +327,10 @@ public:
                 r|=xdigit;
             if(iswpunct_l(c,*lc_))
                 r|=punct;
-            *m++ = r;
+            // r actually should be mask, but some standard
+            // libraries (like STLPort)
+            // do not define operator | properly so using int+cast
+            *m++ = static_cast<mask>(r);
         }
         return begin;
     }

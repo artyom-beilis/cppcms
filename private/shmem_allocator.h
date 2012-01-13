@@ -14,6 +14,7 @@
 #include "posix_util.h"
 #include <cppcms/cppcms_error.h>
 #include <string>
+#include <limits>
 
 namespace cppcms {
 namespace impl {
@@ -121,6 +122,11 @@ public :
 	bool operator!=(shmem_allocator const& a) const 
 	{
 		return false; 
+	}
+
+	size_type max_size() const throw()
+	{
+		return std::numeric_limits<size_t>::max();
 	}
 };
 

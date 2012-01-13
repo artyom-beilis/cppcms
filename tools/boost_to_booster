@@ -18,17 +18,18 @@ cp -a trunk boost_locale
 #
 # Linux version
 # 
-#find boost_locale -name '*.hpp' -exec rename 's/\.hpp/\.h/' '{}' \;
+find boost_locale -name '*.hpp' -exec rename 's/\.hpp/\.h/' '{}' \;
 #
 
 # Cygwin version
 # 
-find boost_locale -name '*.hpp' -exec rename .hpp .h '{}' \;
+#find boost_locale -name '*.hpp' -exec rename .hpp .h '{}' \;
 #
 
 find boost_locale -regextype posix-extended -regex '.*\.(cpp|h|ipp)' -exec sed -i 's/_HPP_INCLUDED/_H_INCLUDED/' '{}' \;
 find boost_locale -regextype posix-extended -regex '.*\.(cpp|h|ipp)' -exec sed -i 's/.hpp>/.h>/' '{}' \;
 find boost_locale -regextype posix-extended -regex '.*\.(cpp|h|ipp)' -exec sed -i 's/.hpp"/.h"/' '{}' \;
+find boost_locale -regextype posix-extended -regex '.*\.(cpp|h|ipp)' -exec sed -i 's/booster\/type_traits\/is_same.h/booster\/traits\/is_base_of.h/' '{}' \;
 find boost_locale -regextype posix-extended -regex '.*\.(cpp|h|ipp)' -exec sed -i 's/booster\/locale\/config.h/booster\/config.h/' '{}' \;
 find boost_locale -regextype posix-extended -regex '.*\.(cpp|h|ipp)' -exec sed -i 's/booster\/locale\/definitions.h/booster\/config.h/' '{}' \;
 find boost_locale -regextype posix-extended -regex '.*\.(cpp|h|ipp)' -exec sed -i 's/booster\/thread\/mutex.h/booster\/thread.h/' '{}' \;

@@ -15,6 +15,7 @@
 #include <sys/types.h>
 #include <sys/time.h>
 #include <errno.h>
+#include <unistd.h>
 #endif
 
 #if defined AIO_HAVE_WIN32_SELECT || defined AIO_HAVE_WSAPOLL
@@ -27,6 +28,7 @@
 
 #ifdef AIO_HAVE_POLL
 #include <poll.h>
+#include <unistd.h>
 #endif
 #ifdef AIO_HAVE_DEVPOLL
 #include <sys/devpoll.h>
@@ -38,6 +40,7 @@
 
 #ifdef AIO_HAVE_EPOLL
 #include <sys/epoll.h>
+#include <unistd.h>
 #endif
 
 #ifdef AIO_HAVE_KQUEUE

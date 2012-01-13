@@ -18,6 +18,10 @@
 #include <booster/aio/socket.h>
 #include <booster/aio/endpoint.h>
 
+#ifndef CPPCMS_WIN32
+#include <unistd.h>
+#endif
+
 namespace io = booster::aio;
 
 namespace cppcms {
