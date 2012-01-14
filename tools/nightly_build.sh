@@ -19,7 +19,27 @@ tar -xjf cppcms_boost.tar.bz2
 
 cd /tmp
 
-gcc_43()
+gcc_44_stlport()
+{
+	cd /tmp/nb
+	rm -fr build
+	mkdir build
+	cd build
+
+
+	if cmake $FLAGS -DUSE_STLPORT=ON -DDISABLE_ICU_LOCALE=ON -DDISABLE_STD_LOCALE=ON -DCMAKE_BUILD_TYPE=Debug -DDISABLE_STATIC=ON .. && make && make test
+	then
+		return 0;
+	else
+		if [ -e Testing/Temporary/LastTest.log ]
+		then
+			cat Testing/Temporary/LastTest.log
+		fi
+		return 1
+	fi
+
+}
+gcc_44()
 {
 	cd /tmp/nb
 	rm -fr build
@@ -64,6 +84,31 @@ gcc_45()
 
 }
 
+
+clangcc()
+{
+	source ~/bin/env_clang
+
+	cd /tmp/nb
+	rm -fr build
+	mkdir build
+	cd build
+
+	if cmake $FLAGS -DCMAKE_C_COMPILER=`which clang` -DCMAKE_CXX_COMPILER=`which clang++` -DDISABLE_STATIC=ON -DCMAKE_BUILD_TYPE=Debug .. \
+		 && make && make test
+	then
+		return 0;
+	else
+		if [ -e Testing/Temporary/LastTest.log ]
+		then
+			cat Testing/Temporary/LastTest.log
+		fi
+		return 1
+	fi
+
+}
+
+
 intel()
 {
 	source ~/bin/env_intel
@@ -73,7 +118,7 @@ intel()
 	mkdir build
 	cd build
 
-	if cmake $FLAGS -DCMAKE_C_COMPILER=`which icc` -DCMAKE_CXX_COMPILER=`which icpc` -DCMAKE_CXX_FLAGS:STRING=-gxx-name=gcc-4.1 -DDISABLE_STATIC=ON .. \
+	if cmake $FLAGS -DCMAKE_C_COMPILER=`which icc` -DCMAKE_CXX_COMPILER=`which icpc` -DDISABLE_STATIC=ON .. \
 		 && make && make test
 	then
 		return 0;
@@ -116,7 +161,7 @@ cd /tmp
 # LINUX 
 #####################
 
-for TEST in gcc_43 gcc_45 intel gcc_450x
+for TEST in gcc_44 intel gcc_44_stlport clangcc
 do
 	FILE=/tmp/$TEST.txt
 	if $TEST &> $FILE 
@@ -167,7 +212,7 @@ wait $PID
 # Debian Armel
 #####################
 
-$ROOT_PATH/arm.sh
+# $ROOT_PATH/arm.sh
 
 #####################
 # Windows
