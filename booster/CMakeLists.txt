@@ -44,6 +44,7 @@ endif()
 
 # Options
 
+option(USE_STLPORT		"Build with STLPort library" OFF)
 option(USE_PTHREAD	"Use pthreads API on windows" OFF)
 option(DISABLE_SHARED	"Disable shared libraries build" OFF)
 option(DISABLE_STATIC	"Disable static libraries build" OFF)
@@ -74,6 +75,17 @@ else()
 		option(DISABLE_ICONV	"Disable iconv library (default On on Windows)" ON)
 	else()
 		option(DISABLE_ICONV	"Disable iconv library (default On on Windows)" OFF)
+	endif()
+endif()
+
+
+if(USE_STLPORT) 
+	find_path(STLPORT_INCLUDE stlport/iostream)
+	find_library(STLPORT_LIB stlport)
+	if(NOT STLPORT_INCLUDE OR NOT STLPORT_LIB)
+		message(FATAL_ERROR "Can't find stlport include or library")
+	else()
+		include_directories(${STLPORT_INCLUDE}/stlport)
 	endif()
 endif()
 
@@ -462,9 +474,16 @@ endif()
 if(NOT PCRE_INCLUDE)
 	find_path(PCRE_INCLUDE2 pcre/pcre.h)
 	include_directories(${PCRE_INCLUDE2}/pcre)
+	if(NOT PCRE_INCLUDE2)
+		message(FATAL_ERROR "Can't find PCRE include directory")
+	endif()
+
 endif()
 
 find_library(PCRE_LIB NAMES pcre${PCRE_SUFFIX} pcre)
+if(NOT PCRE_LIB)
+	message(FATAL_ERROR "Can't find PCRE library")
+endif()
 
 
 
@@ -534,6 +553,11 @@ foreach(ALIB ${LINK_LIBS})
   	if(IS_WINDOWS)
 		target_link_libraries(${ALIB} psapi)
 	endif()
+	
+	if(USE_STLPORT AND STLPORT_LIB)
+		target_link_libraries(${ALIB} ${STLPORT_LIB})
+	endif()
+
 
     
 	if(${CMAKE_MAJOR_VERSION}.${CMAKE_MINOR_VERSION} GREATER 2.6)
@@ -547,6 +571,7 @@ foreach(ALIB ${LINK_LIBS})
 	else()
 		set_target_properties(${ALIB} PROPERTIES VERSION 0.0.0 SOVERSION 0)
 	endif()
+
 
 
 endforeach()
@@ -657,4 +682,5 @@ install(TARGETS ${LINK_LIBS}
 	LIBRARY DESTINATION lib
 	ARCHIVE DESTINATION lib
 	PUBLIC_HEADER DESTINATION include/booster)
+
 
