@@ -11,6 +11,7 @@
 #include <cppcms/defs.h>
 #include <booster/noncopyable.h>
 #include <cppcms/base_view.h>
+#include <cppcms/cppcms_error.h>
 
 #include <memory>
 #include <map>
@@ -55,7 +56,7 @@ namespace cppcms {
 				if(safe)
 					factory = view_builder<View,Content>;
 				else
-					factory = view_builder<View,Content>;
+					factory = unsafe_view_builder<View,Content>;
 				add_factory(view_name,factory);
 			}
 			
@@ -83,7 +84,14 @@ namespace cppcms {
 			template<typename View,typename Content>
 			static std::auto_ptr<base_view> view_builder(std::ostream &stream,base_content *c) 
 			{
-				std::auto_ptr<base_view> p(new View(stream,dynamic_cast<Content &>(*c)));
+				std::auto_ptr<base_view> p;
+				
+				try {
+					p.reset(new View(stream,dynamic_cast<Content &>(*c)));
+				}
+				catch(std::bad_cast const &) {
+					throw cppcms_error("cppcms::views::generator: an attempt to use content if invalid type");
+				}
 				return p;
 			}
 			
