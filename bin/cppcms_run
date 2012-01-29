@@ -283,11 +283,6 @@ if [ "$API" != "http" ]; then
 
 cat >>$CONFIG_FILE <<EOF
 
-	set \$path_info "";
-	if ( \$fastcgi_script_name ~ ^$SCRIPT(.*)\$ ) {
-		set \$path_info \$1;
-	}
-
 	location ~ ^$SCRIPT.*$ {
 		fastcgi_pass $SERVICE_POINT;
 		fastcgi_param  QUERY_STRING       \$query_string;
@@ -295,8 +290,9 @@ cat >>$CONFIG_FILE <<EOF
 		fastcgi_param  CONTENT_TYPE       \$content_type;
 		fastcgi_param  CONTENT_LENGTH     \$content_length;
 
+		fastcgi_split_path_info		^($SCRIPT)((?:/.*))?\$;
 		fastcgi_param  SCRIPT_NAME        $SCRIPT;
-		fastcgi_param  PATH_INFO	  \$path_info;
+		fastcgi_param  PATH_INFO	  \$fastcgi_path_info;
 		fastcgi_param  REQUEST_URI        \$request_uri;
 		fastcgi_param  DOCUMENT_URI       \$document_uri;
 		fastcgi_param  DOCUMENT_ROOT      \$document_root;
