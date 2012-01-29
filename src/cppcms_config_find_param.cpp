@@ -33,6 +33,11 @@ int main(int argc,char **argv)
 	}
 	catch(json::bad_value_cast const  &e) {}
 	try {
+		std::cout<< (v.get<bool>(path) ? "true" : "false" );
+		return 0;
+	}
+	catch(json::bad_value_cast const  &e) {}
+	try {
 		std::vector<std::string> vs=v.get<std::vector<std::string> >(path);
 		std::string sep="";
 		for(unsigned i=0;i<vs.size();i++) {

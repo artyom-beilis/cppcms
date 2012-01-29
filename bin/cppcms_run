@@ -179,6 +179,16 @@ locate_server nginx $1
 
 case $API in
 	fastcgi) ;;
+	scgi) 	if [ "$HTTP_HEADERS" != "true" ] ; then
+			if [ "$1" == "exit" ]; then
+				echo "service.generate_http_headers is false, nginx SCGI module requires it to be set to true"
+				exit 1
+			else
+				WEB_SERVER=""
+				return
+			fi
+		fi
+		;;
 	http)	if [ "$SOCKET" != "" ]; then
 			if [ "$1" == "exit" ]; then
 				echo "http is supported over TCP/IP only" ; exit 1 
@@ -279,7 +289,7 @@ http {
         }
 EOF
 
-if [ "$API" != "http" ]; then 
+if [ "$API" == "fastcgi" ]; then 
 
 cat >>$CONFIG_FILE <<EOF
 
@@ -306,6 +316,40 @@ cat >>$CONFIG_FILE <<EOF
 		fastcgi_param  SERVER_ADDR        \$server_addr;
 		fastcgi_param  SERVER_PORT        \$server_port;
 		fastcgi_param  SERVER_NAME        \$server_name;
+	}
+EOF
+
+elif [ "$API" == "scgi" ] ; then
+
+cat >>$CONFIG_FILE <<EOF
+
+	set \$path_info "";
+	if ( \$document_uri ~ ^$SCRIPT(.*)\$ ) {
+		set \$path_info \$1;
+	}
+
+	location ~ ^$SCRIPT.*$ {
+		scgi_pass $SERVICE_POINT;
+		scgi_param  QUERY_STRING       \$query_string;
+		scgi_param  REQUEST_METHOD     \$request_method;
+		scgi_param  CONTENT_TYPE       \$content_type;
+		scgi_param  CONTENT_LENGTH     \$content_length;
+
+		scgi_param  SCRIPT_NAME        $SCRIPT;
+		scgi_param  PATH_INFO	       \$path_info;
+		scgi_param  REQUEST_URI        \$request_uri;
+		scgi_param  DOCUMENT_URI       \$document_uri;
+		scgi_param  DOCUMENT_ROOT      \$document_root;
+		scgi_param  SERVER_PROTOCOL    \$server_protocol;
+		
+		scgi_param  GATEWAY_INTERFACE  CGI/1.1;
+		scgi_param  SERVER_SOFTWARE    nginx;
+
+		scgi_param  REMOTE_ADDR        \$remote_addr;
+		scgi_param  REMOTE_PORT        \$remote_port;
+		scgi_param  SERVER_ADDR        \$server_addr;
+		scgi_param  SERVER_PORT        \$server_port;
+		scgi_param  SERVER_NAME        \$server_name;
 	}
 EOF
 
@@ -595,6 +639,7 @@ SOCKET=`find_param $APP_CONFIG_FILE service.socket`
 SERVICE_IP=`find_param $APP_CONFIG_FILE service.ip`
 SERVICE_PORT=`find_param $APP_CONFIG_FILE service.port`
 API=`find_param $APP_CONFIG_FILE service.api`
+HTTP_HEADERS=`find_param $APP_CONFIG_FILE service.generate_http_headers`
 
 if [ "$API" == "" ] ; then
 	echo "Can't find service.api or service.socket in $APP_CONFIG_FILE"
