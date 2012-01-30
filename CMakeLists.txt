@@ -616,6 +616,7 @@ set(ALL_TESTS
 	rewrite_test
 	url_mapper_test
 	copy_filter_test
+	gzip_test
 	)
 
 if(NOT DISABLE_TCPCACHE)
@@ -792,6 +793,13 @@ if(NOT IS_WINDOWS)
 		"--service-api=scgi" "--service-socket=/tmp/cppcms_test_socket"
 		"--test-exec=${PYTHON} ${CNF}/disco_test.py scgi_unix")
 endif()
+
+if(NOT DISABLE_GZIP)
+	add_test(gzip_test
+		gzip_test "--service-api=http"  "--http-script=/test"
+		"--test-exec=${PYTHON} ${CNF}/gzip_test.py")
+endif()
+
 
 foreach(TYPE async sync)
 	add_test(proto_test_${TYPE}_http 
