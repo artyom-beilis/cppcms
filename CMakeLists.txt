@@ -630,6 +630,10 @@ if(NOT DISABLE_SHARED)
 		)
 endif()
 
+if(NOT IS_WINDOWS)
+	set(ALL_TESTS ${ALL_TESTS} cppcms_service_test)
+endif()
+
 foreach(TEST ${ALL_TESTS})
 	add_executable(${TEST} tests/${TEST}.cpp)
 	target_link_libraries(${TEST} ${CPPCMS_LIB})
@@ -798,6 +802,10 @@ if(NOT DISABLE_GZIP)
 	add_test(gzip_test
 		gzip_test "--service-api=http"  "--http-script=/test"
 		"--test-exec=${PYTHON} ${CNF}/gzip_test.py")
+endif()
+
+if(NOT IS_WINDOWS)
+	add_test(cppcms_service_test "${CNF}/service_test" "${PYTHON}" "${CMAKE_CURRENT_BINARY_DIR}")
 endif()
 
 

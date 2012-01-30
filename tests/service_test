@@ -1,0 +1,103 @@
+#!/usr/bin/env bash
+
+############################################################################
+#                                                                             
+#  Copyright (C) 2008-2012  Artyom Beilis (Tonkikh) <artyomtnk@yahoo.com>     
+#                                                                             
+#  See accompanying file COPYING.TXT file for licensing details.
+#
+############################################################################
+
+EXE=$2/cppcms_service_test
+LOCK=$2/lock.pid
+GET_PID="$1 `dirname $0`/service_test.py"
+
+if killall cppcms_service_test &>/dev/null
+then
+	echo "Some cppcms_service_test processes exists before the test"
+	exit 1
+fi
+
+
+for N in 0 1 5
+do
+	echo "- Testing for worker_processes=$N"
+	if [ "$N" != "0" ]
+	then
+		PROC=--service-worker_processes=$N
+	else
+		PROC=
+	fi
+	if ! $EXE --service-api=http --http-script=/test $PROC --daemon-enable=true --daemon-lock=$LOCK 
+	then
+		echo "Failed to start service"
+		exit 1
+	else
+		echo "-- Service started sucessefully"
+	fi
+	if ! [ -e $LOCK ] 
+	then
+		echo "Lock file was not created"
+		exit 1
+	else
+		echo "-- Lock file created"
+	fi
+	sleep 1
+	if ! kill -0 `cat $LOCK`
+	then
+		echo "The process does not exists"
+		exit 1
+	else
+		echo "-- process exists"
+	fi
+	PROC_PID=`cat $LOCK`
+	RES_PID=`$GET_PID`
+	if ([ "$N" == "0" ] && [ "$PROC_PID" == "$RES_PID" ] ) || ( [ "$N" != "0" ] && [ "$PROC_PID" != "$RES_PID" ] )
+	then
+		echo "-- fork/non-fork PID ok"
+	else
+		echo "Invalid PID!"
+		exit 1
+	fi
+	if ! kill `cat $LOCK`
+	then
+		echo "Failed to kill the process"
+		exit 1
+	else
+		echo "-- stopper process ok"
+	fi
+	sleep 1
+	if [ -e $LOCK ]
+	then
+		echo "Lock file was not removed!"
+		exit 1
+	else
+		echo "-- Lock file removed"
+	fi 
+	
+	if killall cppcms_service_test &>/dev/null
+	then
+		echo "Some cppcms_service_test processes exists after we killed it"
+		exit 1
+	else
+		echo "-- no processes exist"
+	fi
+	
+	echo >$LOCK
+	if $EXE --service-api=http --service-worker_processes=$N --daemon-enable=true --daemon-lock=$LOCK 
+	then
+		echo "Process started regardless lock file!"
+		exit 1
+	else
+		echo "-- process does not start if lock file exists"
+	fi
+	if killall cppcms_service_test &>/dev/null
+	then
+		echo "Some cppcms_service_test processes exists even when $LOCK exists"
+		exit 1
+	else
+		echo "-- process does not start if lock file exists (really)"
+	fi
+	rm $LOCK
+done
+
