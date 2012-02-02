@@ -18,29 +18,12 @@ class dummy_api  : public cppcms::impl::cgi::connection {
 public:
 	dummy_api(cppcms::service &srv,std::map<std::string,std::string> env,std::string &output) :
 		cppcms::impl::cgi::connection(srv),
-		env_(env),
 		output_(&output)
 	{
+		for(std::map<std::string,std::string>::iterator p=env.begin();p!=env.end();++p)
+			env_.add(pool_.add(p->first),pool_.add(p->second));
 	}
 
-	virtual char const *cgetenv(char const *key)
-	{
-		std::map<std::string,std::string>::const_iterator p = env_.find(key);
-		if(p==env_.end())
-			return "";
-		return p->second.c_str();
-	}
-	virtual std::string getenv(std::string const &key)
-	{
-		std::map<std::string,std::string>::const_iterator p = env_.find(key);
-		if(p==env_.end())
-			return std::string();
-		return p->second;
-	}
-	virtual std::map<std::string,std::string> const &getenv() 
-	{
-		return env_;
-	}
 	void async_read_headers(handler const &) 
 	{
 		throw std::runtime_error("dummy_api: unsupported");
@@ -79,7 +62,6 @@ public:
 		throw std::runtime_error("dummy_api: unsupported");
 	}
 private:
-	std::map<std::string,std::string> env_;
 	std::string *output_;
 
 };

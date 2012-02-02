@@ -620,7 +620,7 @@ set(ALL_TESTS
 	)
 
 if(NOT DISABLE_TCPCACHE)
-	set(ALL_TESTS ${ALL_TESTS} cache_backend_test)
+	set(ALL_TESTS ${ALL_TESTS} cache_backend_test cache_frontend_test)
 endif()
 
 if(NOT DISABLE_SHARED)
@@ -802,7 +802,13 @@ if(NOT DISABLE_GZIP)
 	add_test(gzip_test
 		gzip_test "--service-api=http"  "--http-script=/test"
 		"--test-exec=${PYTHON} ${CNF}/gzip_test.py")
+	if(NOT DISABLE_TCPCACHE)
+		add_test(cache_frontend_test cache_frontend_test)
+	endif()
 endif()
+
+
+
 
 if(NOT IS_WINDOWS)
 	add_test(cppcms_service_test "${CNF}/service_test" "${PYTHON}" "${CMAKE_CURRENT_BINARY_DIR}")
