@@ -39,17 +39,23 @@ def load_file(file_name):
     f.close()
     return input
 
+def get_socket():
+    global socket_type
+    s=socket.socket(socket_type,socket.SOCK_STREAM);
+    global target
+    s.connect(target)
+    if socket_type==socket.AF_INET:
+        s.setsockopt(socket.IPPROTO_TCP,socket.TCP_NODELAY,1)
+    return s
+
 def test_io(name,method,input_f,output_f,seed=12,load=load_file,parse=identity):
     result=''
     try:
         input=load(input_f)
         output=load_file(output_f)
-        global socket_type
-        s=socket.socket(socket_type,socket.SOCK_STREAM);
-        global target
-        s.connect(target)
-        if socket_type==socket.AF_INET:
-            s.setsockopt(socket.IPPROTO_TCP,socket.TCP_NODELAY,1)
+
+        s=get_socket()
+
         if method=='normal':
             s.sendall(input)
             while 1:
@@ -114,6 +120,45 @@ def test_scgi(name):
         return toscgi.toscgi(file)
     test_all(name,load)
 
+def transfer_all(s,inp):
+    s.setblocking(1)
+    s.sendall(inp)
+    s.setblocking(0)
+    result = ''
+    slept=0
+    while 1:
+        try:
+            tmp = s.recv(1024)
+            if tmp == '':
+                raise Exception('Unexpected end of file')
+            result+=tmp
+            slept=0
+        except socket.error:
+            if slept:
+                return result
+            else:
+                time.sleep(0.1)
+                slept=1
+
+def test_fcgi_keep_alive(name):
+    input_f = 'proto_test_' + name + '.in'
+    output_f = 'proto_test_' + name + '.out'
+    inp = tofcgi.to_fcgi_request(load_file(input_f),tofcgi.TEST_KEEP_ALIVE)
+    out = load_file(output_f)
+    s=get_socket()
+    res = tofcgi.from_fcgi_response(transfer_all(s,inp),tofcgi.TEST_KEEP_ALIVE)
+    check('fcgi keep alive first ' + name,res,out)
+    res = tofcgi.from_fcgi_response(transfer_all(s,inp),tofcgi.TEST_KEEP_ALIVE)
+    check('fcgi keep alive second ' + name,res,out)
+    if hasattr(socket,'SHUT_RDWR'):
+        s.shutdown(socket.SHUT_RDWR)
+    else:
+        s.shutdown(2) 
+    s.close()
+
+
+
+
 def test_fcgi(name,flags = 0):
     def load(name):
         file=load_file(name)
@@ -124,6 +169,8 @@ def test_fcgi(name,flags = 0):
         test_all(name,load,parse)
     else:
         test_normal(name,load,parse)
+
+
 
 
 global target
@@ -154,10 +201,15 @@ if test=='http':
     test_all('http_4')
     test_all('http_5')
 elif test=='fastcgi_tcp' or test=='fastcgi_unix':
+    test_fcgi_keep_alive('scgi_1')
+    test_fcgi_keep_alive('scgi_2')
+    test_fcgi_keep_alive('scgi_3')
     test_fcgi('scgi_1')
     test_fcgi('scgi_2')
     test_fcgi('scgi_3')
     print "Testing big pairs"
+    test_fcgi_keep_alive('scgi_4')
+    test_fcgi_keep_alive('scgi_5')
     test_fcgi('scgi_4')
     test_fcgi('scgi_5')
     print "Testing chunked pairs"

@@ -1,5 +1,8 @@
 #!/usr/bin/env python
 # coding=utf-8
+#
+# vim: tabstop=4 expandtab shiftwidth=4 softtabstop=4 
+#
 import httplib
 import sys
 
@@ -165,4 +168,39 @@ test_valid('submit1','/submit','_1=1','valid\n1')
 test_valid('submit2','/submit','_2=1','valid\n0')
 body='<p><label for="submit_id">message</label>&nbsp;<span class="cppcms_form_error">error</span> <span class="cppcms_form_input"><input type="submit" id="submit_id" name="submit_name" value="test"  ></span><span class="cppcms_form_help">help</span></p>\n'
 test_valid('submit3','/submitl','',body)
+
+
+def test_upload(name,url,content,ans):
+    h=httplib.HTTPConnection('localhost:8080');
+    headers = {"Content-type": "multipart/form-data; boundary=123456"}
+    h.request('POST','/test' + url,content,headers)
+    r=h.getresponse()
+    test(name,r.read(),ans)
+
+def make_multipart_form_data(content,mime,name='test.txt'):
+    return \
+      '--123456\r\n' + \
+      'Content-Type: ' + mime + '\r\n' + \
+      'Content-Disposition: form-data; name="file"; filename="' + name +'"\r\n' + \
+      '\r\n' + \
+      content + \
+      '\r\n--123456--\r\n' 
+
+
+test_upload('file 1','/upload',make_multipart_form_data('foo','text/plain'),'valid\n')
+test_upload('file 2','/upload',make_multipart_form_data('foob','text/plain'),'valid\n')
+test_upload('file 3','/upload',make_multipart_form_data('P3','text/plain'),'valid\n')
+test_upload('file 4','/upload',make_multipart_form_data('P3 ' + 'x' * 17,'text/plain'),'valid\n')
+test_upload('file 5','/upload_regex',make_multipart_form_data('P3','text/html'),'valid\n')
+
+test_upload('file mime','/upload',make_multipart_form_data('foo','text/html'),'invalid\n')
+test_upload('file magic 1','/upload',make_multipart_form_data('fo','text/plain'),'invalid\n')
+test_upload('file magic 2','/upload',make_multipart_form_data('P','text/plain'),'invalid\n')
+test_upload('file magic 3','/upload',make_multipart_form_data('','text/plain'),'invalid\n')
+
+test_upload('file size','/upload',make_multipart_form_data('P3 ' + 'x' * 18,'text/plain'),'invalid\n')
+test_upload('file regex-mime','/upload_regex',make_multipart_form_data('P3','text/xhtml'),'invalid\n')
+test_upload('file encoding','/upload',make_multipart_form_data('foo','text/plain','\xFF\xFF.txt'),'invalid\n')
+
+test_upload('file empty','/upload','--123456--\r\n','invalid\n')
 

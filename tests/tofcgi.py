@@ -19,6 +19,7 @@ UNKNOWN_TYPE        = 11
 
 TEST_RANDOM = 1
 TEST_GET_VALUES = 2
+TEST_KEEP_ALIVE = 4
 
 def escape(s):
     tmp=''
@@ -80,7 +81,10 @@ def to_fcgi_request(text,flags = 0):
     request = '';
     if flags & TEST_GET_VALUES:
         request+=fcgi_record(GET_VALUES,make_pairs([('FCGI_MPXS_CONNS',''),('FCGI_MAX_CONNS',''),('FCGI_MAX_REQS','')]),0)
-    request+=begin_request()
+    if flags & TEST_KEEP_ALIVE:
+        request+=begin_request(1)
+    else:
+        request+=begin_request()
     headers = make_pairs(get_headers(text))
     if flags & TEST_RANDOM:
         while headers:

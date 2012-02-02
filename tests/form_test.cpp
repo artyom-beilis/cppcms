@@ -51,6 +51,7 @@ public:
 		cppcms::widgets::select select;
 		cppcms::widgets::radio radio;
 		cppcms::widgets::submit submit;
+		cppcms::widgets::file file;
 
 
 		text.message("text");
@@ -247,6 +248,19 @@ public:
 			X.add(s);
 			cppcms::form_context context(response().out());
 			X.render(context);
+		}
+		else if(a_case == "/upload" || a_case== "/upload_regex" ) {
+			file.non_empty();
+			file.name("file");
+			file.limits(0,20);
+			if(a_case=="/upload")
+				file.mime("text/plain");
+			else
+				file.mime(booster::regex("^text/(html|plain)$"));
+			file.add_valid_magic("foo");
+			file.add_valid_magic("P3");
+			X.add(file);
+			load(X);
 		}
 	}
 };

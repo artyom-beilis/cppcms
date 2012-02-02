@@ -205,8 +205,9 @@ namespace cgi {
 		}
 		virtual bool keep_alive()
 		{
+			bool ka_value = keep_alive_;
 			reset_all();
-			return keep_alive_;
+			return ka_value;
 		}
 
 		virtual void close()
