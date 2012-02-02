@@ -61,6 +61,7 @@ else:
     test_request('/',200,valid=['foo/','bar/','test.txt'],notvalid=['..','test.txt/','.svn'])
     
 test_request('/test.txt',200,'/test.txt')
+test_request('/rewrite_me/test.txt',200,'/test.txt')
 test_request('/foo/test.txt',200,'/foo/test.txt')
 test_request('/bar/test.txt',200,'/bar/test.txt')
 test_request('/bar/index.html',200,'/bar/index.html')
