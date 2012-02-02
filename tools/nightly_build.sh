@@ -276,4 +276,7 @@ cp nightly-build-report.tar.gz /home/artik/vserver-www/www/files/
 cp -a nightly-build-report /home/artik/vserver-www/www/files/
 $ROOT_PATH/report_to_html.py < ~/vserver-www/www/files/nightly-build-report.txt >~/vserver-www/www/files/nightly-build-report.html
 
+$HOME/bin/sync_build.sh
+
+
 
