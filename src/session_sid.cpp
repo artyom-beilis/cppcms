@@ -99,6 +99,7 @@ void session_sid::clear(session_interface &session)
 	std::string id;
 	if(valid_sid(session.get_session_cookie(),id))
 		storage_->remove(id);
+	session.clear_session_cookie();
 }
 
 bool session_sid::is_blocking()

@@ -617,6 +617,7 @@ set(ALL_TESTS
 	url_mapper_test
 	copy_filter_test
 	gzip_test
+	session_interface_test
 	)
 
 if(NOT DISABLE_TCPCACHE)
@@ -814,6 +815,15 @@ if(NOT IS_WINDOWS)
 	add_test(cppcms_service_test "${CNF}/service_test" "${PYTHON}" "${CMAKE_CURRENT_BINARY_DIR}")
 endif()
 
+
+foreach(LOC client server both)
+	foreach(EXP renew browser fixed)
+		add_test(session_interface_test_${LOC}_${EXP}
+			 session_interface_test -c "${CNF}/session_interface_test.js"
+			 "--session-expire=${EXP}" "--session-location=${LOC}"
+			 "--test-exec=${PYTHON} ${CNF}/session_interface_test.py ${LOC} ${EXP}")
+	endforeach()
+endforeach()
 
 foreach(TYPE async sync)
 	add_test(proto_test_${TYPE}_http 

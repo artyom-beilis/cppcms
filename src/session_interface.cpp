@@ -21,6 +21,8 @@
 #include <cppcms/base64.h>
 #include <booster/log.h>
 
+#include <iostream>
+
 #include "cached_settings.h"
 
 #include <sstream>
@@ -35,7 +37,9 @@ namespace cppcms {
 	struct session_interface::entry {
 		std::string value;
 		bool exposed;
-		entry(std::string v="",bool exp=false) : value(v) , exposed(exp) {}
+		entry() : exposed(false) {}
+		explicit entry(std::string const &s) : value(s), exposed(false) {}
+		entry(std::string const &v,bool exp) : value(v) , exposed(exp) {}
 		bool operator==(entry const &other) const 
 		{
 			return value==other.value && exposed==other.exposed;
@@ -276,6 +280,7 @@ void session_interface::save()
 		return;
 	}
 
+
 	if(new_session_ && context_->service().cached_settings().security.csrf.enable)
 	{
 		set("_csrf",generate_csrf_token());
@@ -287,7 +292,7 @@ void session_interface::save()
 	time_t now = time(NULL);
 
 	bool force_update=false;
-	if(data_==data_copy_) {
+	if(data_==data_copy_ && !new_session_) {
 		if(how_==fixed) {
 			return;
 		}
@@ -363,7 +368,7 @@ std::string session_interface::get(std::string const &key)
 void session_interface::set(std::string const &key,std::string const &v)
 {
 	check();
-	data_[key]=v;
+	data_[key].value=v;
 }
 
 void session_interface::clear_session_cookie()
