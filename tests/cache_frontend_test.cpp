@@ -275,6 +275,43 @@ public:
 				TEST(tr.detach().size()==0);
 			}
 		}
+		cache().clear();
+		{
+			std::cout << "-- Timeouts" << std::endl;
+			{
+				cache().reset();
+				mydata d1(1,2);
+				mydata d2(4,5);
+				cache().store_frame("foo1","baz1",std::set<std::string>(),2,true);
+				cache().store_data("dat1",d1,std::set<std::string>(),2,true);
+				cache().store_frame("foo2","baz2",2,true);
+				cache().store_data("dat2",d2,2,true);
+			}
+			{
+				cache().reset();
+				mydata d1,d2;
+				std::string t1,t2;
+				TEST(cache().fetch_frame("foo1",t1,true));
+				TEST(cache().fetch_frame("foo2",t2,true));
+				TEST(cache().fetch_data("dat1",d1,true));
+				TEST(cache().fetch_data("dat2",d2,true));
+				TEST(d1.x==1  && d1.y==2);
+				TEST(d2.x==4  && d2.y==5);
+				TEST(t1=="baz1");
+				TEST(t2=="baz2");
+			}
+			booster::ptime::millisleep(3000);
+			{
+				cache().reset();
+				mydata d1,d2;
+				std::string t1,t2;
+				TEST(!cache().fetch_frame("foo1",t1,true));
+				TEST(!cache().fetch_frame("foo2",t2,true));
+				TEST(!cache().fetch_data("dat1",d1,true));
+				TEST(!cache().fetch_data("dat2",d2,true));
+			}
+		}
+
 
 	}
 
