@@ -121,14 +121,14 @@ namespace booster {
 		pcre *p=pcre_compile(pattern.c_str(),0,&err_ptr,&offset,0);
 		if(!p) {
 			std::ostringstream ss;
-			ss << err_ptr <<", at offset "<<offset;
+			ss << "booster::regex:" << err_ptr <<", at offset "<<offset;
 			throw regex_error(ss.str());
 		}
 		d->re = p;
 		if(	pcre_fullinfo(d->re,NULL,PCRE_INFO_SIZE,&d->re_size) < 0
 			|| pcre_fullinfo(d->re,NULL,PCRE_INFO_CAPTURECOUNT,&d->match_size) < 0)
 		{
-			throw regex_error("Internal error");
+			throw regex_error("booster::regex: Internal error");
 		}
 		
 		std::string anchored;
@@ -139,12 +139,12 @@ namespace booster {
 
 		p=pcre_compile(anchored.c_str(),0,&err_ptr,&offset,0);
 		if(!p) {
-			throw regex_error("Internal error");
+			throw regex_error("booster::regex: Internal error");
 		}
 		d->are = p;
 		if(pcre_fullinfo(d->are,NULL,PCRE_INFO_SIZE,&d->are_size) != 0)
 		{
-			throw regex_error("Internal error");
+			throw regex_error("booster::regex: Internal error");
 		}
 	}
 
@@ -167,7 +167,7 @@ namespace booster {
 	bool regex::search(char const *begin,char const *end,int /*flags*/) const
 	{
 		if(!d->re)
-			throw regex_error("Empty expression");
+			throw regex_error("booster::regex: Empty expression");
 		int res = pcre_exec(d->re,0,begin,end-begin,0,0,0,0);
 		if(res < 0)
 			return false;
@@ -177,7 +177,7 @@ namespace booster {
 	bool regex::search(char const *begin,char const *end,std::vector<std::pair<int,int> > &marks,int /* flags */) const
 	{
 		if(!d->re)
-			throw regex_error("Empty expression");
+			throw regex_error("booster::regex: Empty expression");
 		marks.clear();
 		int pat_size = mark_count() + 1;
 		marks.resize(pat_size,std::pair<int,int>(-1,-1));
@@ -201,7 +201,7 @@ namespace booster {
 	bool regex::match(char const *begin,char const *end,int /*flags*/) const
 	{
 		if(!d->are)
-			throw regex_error("Empty expression");
+			throw regex_error("booster::regex: Empty expression");
 		
 		int res = pcre_exec(d->are,0,begin,end-begin,0,PCRE_ANCHORED,0,0);
 		if(res < 0)
@@ -212,7 +212,7 @@ namespace booster {
 	bool regex::match(char const *begin,char const *end,std::vector<std::pair<int,int> > &marks,int /*flags*/) const
 	{
 		if(!d->are)
-			throw regex_error("Empty expression");
+			throw regex_error("booster::regex: Empty expression");
 		marks.clear();
 		int pat_size = mark_count() + 1;
 		marks.resize(pat_size,std::pair<int,int>(-1,-1));
