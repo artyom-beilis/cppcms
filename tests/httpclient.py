@@ -68,11 +68,17 @@ class Session:
                 allcookies+= '; ' + value.pair()
         return allcookies
 
-    def transmit(self,url):
+    def transmit(self,url,post_data=None,content_type='application/x-www-form-urlencoded',headers={}):
         received={}
         conn=httplib.HTTPConnection('127.0.0.1',8080)
-        conn.request('GET','/test' + url,None,{'Cookie':self.getcookies()})
+        headers['Cookie']=self.getcookies()
+        if post_data:
+            headers['Content-Type']=content_type
+            conn.request('POST','/test'+url,post_data,headers)
+        else:
+            conn.request('GET','/test' + url,None,headers)
         r=conn.getresponse()
+        self.status = r.status
         content = r.read();
         self.received=parse_cookies(r)
         self.update_state()

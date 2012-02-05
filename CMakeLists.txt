@@ -618,6 +618,7 @@ set(ALL_TESTS
 	copy_filter_test
 	gzip_test
 	session_interface_test
+	secure_post_test
 	)
 
 if(NOT DISABLE_TCPCACHE)
@@ -786,6 +787,12 @@ add_test(disco_test_scgi_tcp
 	disco_test "-c" "${CNF}/proto_test.js" 
 	"--service-api=scgi" "--service-port=8080" "--service-ip=127.0.0.1"
 	"--test-exec=${PYTHON} ${CNF}/disco_test.py scgi_tcp")
+
+add_test(secure_post_test
+	secure_post_test "-c" "${CNF}/secure_post_test.js" 
+	"--test-exec=${PYTHON} ${CNF}/secure_post_test.py"
+	)
+
 
 if(NOT IS_WINDOWS)
 	add_test(disco_test_fastcgi_unix 
