@@ -12,10 +12,20 @@
 #include <cppcms/http_response.h>
 #include <cppcms/http_context.h>
 #include <cppcms/session_interface.h>
+#include <cppcms/serialization.h>
 #include <cppcms/json.h>
 #include <iostream>
 #include "client.h"
 #include "test.h"
+
+struct mydata : public cppcms::serializable { 
+	int x;
+	int y;
+	void serialize(cppcms::archive &a)
+	{
+		a & x & y;
+	}
+};
 
 class unit_test : public cppcms::application {
 public:
@@ -94,6 +104,26 @@ public:
 		else if(u=="/api") {
 			try {
 				// Fix Me Later
+				session().set("x","10");
+				TEST(session().get<std::string>("x")=="10");
+				TEST(session().get<int>("x")==10);
+				TEST(session().get<double>("x")==10.0);
+				TEST(session().get("z","default")=="default");
+				TEST(session().get("x","default")=="10");
+				TEST(session()["x"]=="10");
+				TEST(session()["z"]=="");
+				session()["z"]="test";
+				TEST(session()["z"]=="test");
+
+				mydata a,b;
+				a.x=10;
+				a.y=20;
+				session().store_data("tmp",a);
+				session().fetch_data("tmp",b);
+				TEST(b.x==10);
+				TEST(b.y==20);
+
+
 				response().out() << "ok";
 			}
 			catch(std::exception const &e) {
