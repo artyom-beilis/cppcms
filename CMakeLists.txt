@@ -619,6 +619,7 @@ set(ALL_TESTS
 	gzip_test
 	session_interface_test
 	secure_post_test
+	mount_point_test
 	)
 
 if(NOT DISABLE_TCPCACHE)
@@ -713,6 +714,7 @@ add_test(xss_test xss_test)
 add_test(rewrite_test rewrite_test)
 add_test(url_mapper_test url_mapper_test)
 add_test(copy_filter_test copy_filter_test)
+add_test(mount_point_test mount_point_test)
 if(NOT DISABLE_SHARED)
 	add_test(tc_test tc_test)
 endif()
