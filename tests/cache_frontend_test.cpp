@@ -18,6 +18,19 @@
 #include <iomanip>
 #include <sstream>
 
+#include <cppcms/serialization.h>
+
+struct mydata : public cppcms::serializable { 
+	int x;
+	int y;
+	mydata(int a=0,int b=0) : x(a), y(b) {}
+	void serialize(cppcms::archive &a)
+	{
+		a & x & y;
+	}
+};
+
+
 class test_app : public cppcms::application {
 public:
 	test_app(cppcms::service &srv) : 
@@ -138,26 +151,133 @@ public:
 		release_context();
 	}
 
-	/*
+
+
 
 	void test_objects()
 	{
+		std::cout << "- Data Object" << std::endl;
 		set_context(false);
 
 		{
-			cppcms::triggers_recorder tr(cache());
-			cache().store_frame("foo","bar",true);
-			TEST(tr.detch().size()==0);
+			std::cout << "-- With Triggers Full API" << std::endl;
+			{
+				cache().reset();
+				cppcms::triggers_recorder tr(cache());
+				mydata d(1,2);
+				std::set<std::string> t1,t2;
+				t1.insert("k1");
+				t2.insert("k2");
+				cache().store_frame("foo","bar",t1);
+				cache().store_data("dat",d,t2);
+				TEST(tr.detach().size()==4);
+			}
+			{
+				cache().reset();
+				cppcms::triggers_recorder tr(cache());
+				mydata d;
+				std::string tmp;
+				TEST(cache().fetch_frame("foo",tmp));
+				TEST(cache().fetch_data("dat",d));
+				TEST(d.x==1  && d.y==2);
+				TEST(tmp=="bar");
+				std::set<std::string> tg=tr.detach();
+				TEST(tg.size()==4);
+				TEST(tg.count("foo")==1);
+				TEST(tg.count("dat")==1);
+				TEST(tg.count("k1")==1);
+				TEST(tg.count("k2")==1);
+			}
+			{
+				cache().reset();
+				cppcms::triggers_recorder tr(cache());
+				mydata d;
+				std::string tmp;
+				TEST(cache().fetch_frame("foo",tmp,true));
+				TEST(cache().fetch_data("dat",d,true));
+				TEST(d.x==1  && d.y==2);
+				TEST(tmp=="bar");
+				TEST(tr.detach().size()==0);
+			}
+			{
+				cache().reset();
+				cppcms::triggers_recorder tr(cache());
+				mydata d(4,5);
+				cache().store_frame("foo","baz",-1);
+				cache().store_data("dat",d,-1);
+				TEST(tr.detach().size()==2);
+			}
+			{
+				cache().reset();
+				cppcms::triggers_recorder tr(cache());
+				mydata d;
+				std::string tmp;
+				TEST(cache().fetch_frame("foo",tmp));
+				TEST(cache().fetch_data("dat",d));
+				TEST(d.x==4  && d.y==5);
+				TEST(tmp=="baz");
+				std::set<std::string> tg=tr.detach();
+				TEST(tg.size()==2);
+				TEST(tg.count("foo")==1);
+				TEST(tg.count("dat")==1);
+			}
 		}
+		cache().clear();
 		{
-			cppcms::triggers_recorder tr(cache());
-			cache().store_frame("foo","bar",true);
-			TEST(tr.detch().size()==0);
+			std::cout << "-- Without Triggers" << std::endl;
+			{
+				cache().reset();
+				cppcms::triggers_recorder tr(cache());
+				mydata d(1,2);
+				cache().store_frame("foo","bar",std::set<std::string>(),-1,true);
+				cache().store_data("dat",d,std::set<std::string>(),-1,true);
+				TEST(tr.detach().size()==0);
+			}
+			{
+				cache().reset();
+				cppcms::triggers_recorder tr(cache());
+				mydata d;
+				std::string tmp;
+				TEST(cache().fetch_frame("foo",tmp,true));
+				TEST(cache().fetch_data("dat",d,true));
+				TEST(d.x==1  && d.y==2);
+				TEST(tmp=="bar");
+				TEST(tr.detach().size()==0);
+			}
+			{
+				cache().reset();
+				cppcms::triggers_recorder tr(cache());
+				mydata d;
+				std::string tmp;
+				TEST(cache().fetch_frame("foo",tmp));
+				TEST(cache().fetch_data("dat",d));
+				TEST(d.x==1  && d.y==2);
+				TEST(tmp=="bar");
+				TEST(tr.detach().size()==2);
+			}
+			{
+				cache().reset();
+				cppcms::triggers_recorder tr(cache());
+				mydata d(4,5);
+				cache().store_frame("foo","baz",-1,true);
+				cache().store_data("dat",d,-1,true);
+				TEST(tr.detach().size()==0);
+			}
+			{
+				cache().reset();
+				cppcms::triggers_recorder tr(cache());
+				mydata d;
+				std::string tmp;
+				TEST(cache().fetch_frame("foo",tmp,true));
+				TEST(cache().fetch_data("dat",d,true));
+				TEST(d.x==4  && d.y==5);
+				TEST(tmp=="baz");
+				TEST(tr.detach().size()==0);
+			}
 		}
 
 	}
 
-	*/
 
 	unsigned cache_size()
 	{
@@ -186,6 +306,7 @@ int main()
 
 		app.test_basic();
 		app.test_gzip();
+		app.test_objects();
 	}
 	catch(std::exception const &e)
 	{
