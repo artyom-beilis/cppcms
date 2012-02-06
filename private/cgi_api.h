@@ -158,6 +158,9 @@ namespace cgi {
 		void on_async_write_written(booster::system::error_code const &e,bool complete_response,ehandler const &h);
 		void on_eof_written(booster::system::error_code const &e,ehandler const &h);
 		void handle_eof(callback const &on_eof);
+		void handle_http_error(int code,http::context *context,ehandler const &h);
+		void handle_http_error_eof(booster::system::error_code const &e,size_t n,int code,ehandler const &h); 
+		void handle_http_error_done(booster::system::error_code const &e,int code,ehandler const &h);
 
 		std::vector<char> content_;
 		cppcms::service *service_;

@@ -55,9 +55,11 @@ def parse_cookies(response):
     return cm
 
 class Session:
-    def __init__(self):
+    api = 'http'
+    def __init__(self,print_cookies = True):
         self.state={}
         self.received={}
+        self.print_cookies = print_cookies
 
     def getcookies(self):
         allcookies=''
@@ -85,9 +87,11 @@ class Session:
         return content
     
     def update_state(self):
-        print "Got following cookies"
+        if self.print_cookies:
+            print "Got following cookies"
         for name,cookie in self.received.items():
-            print cookie
+            if self.print_cookies:
+                print cookie
             if name in self.state:
                 if cookie.max_age=='0':
                     del self.state[name]
@@ -96,6 +100,7 @@ class Session:
             else:
                 if cookie.max_age != '0':
                     self.state[name] = cookie
-        print "---------------------"
+        if self.print_cookies:
+            print "---------------------"
         
 

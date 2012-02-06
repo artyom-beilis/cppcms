@@ -223,6 +223,74 @@ void connection::set_error(ehandler const &h,std::string s)
 	h(true);
 }
 
+void connection::handle_http_error(int code,http::context *context,ehandler const &h)
+{
+	async_chunk_.clear();
+	async_chunk_.reserve(256);
+	std::string status;
+	status.reserve(128);
+	status += char('0' +  code/100);
+	status += char('0' +  code/10 % 10);
+	status += char('0' +  code % 10);
+	status += ' ';
+	status += http::response::status_to_string(code);
+	if(context->service().cached_settings().service.generate_http_headers) {
+		async_chunk_ += "HTTP/1.0 ";
+		async_chunk_ += status;
+		async_chunk_ += "\r\n"
+				"Connection: close\r\n"
+				"Content-Type: text/html\r\n"
+				"\r\n";
+	}
+	else {
+		async_chunk_ += "Content-Type: text/html\r\n"
+				"Status: ";
+		async_chunk_ += status;
+		async_chunk_ += "\r\n"
+				"\r\n";
+	}
+
+
+	async_chunk_ += 	
+		"<html>\r\n"
+		"<body>\r\n"
+		"<h1>";
+	async_chunk_ += status;
+	async_chunk_ += "</h1>\r\n"
+		"</body>\r\n"
+		"</html>\r\n";
+	async_write(async_chunk_.c_str(),async_chunk_.size(),
+		boost::bind(
+			&connection::handle_http_error_eof,
+			self(),
+			_1,
+			_2,
+			code,
+			h));
+}
+
+void connection::handle_http_error_eof(
+	booster::system::error_code const &e,
+	size_t /*n*/,
+	int code,
+	ehandler const &h)
+{
+	if(e)  {
+		set_error(h,e.message());
+		return;
+	}
+	async_write_eof(boost::bind(&connection::handle_http_error_done,self(),_1,code,h));
+}
+
+void connection::handle_http_error_done(booster::system::error_code const &e,int code,ehandler const &h)
+{
+	if(e) {
+		set_error(h,e.message());
+		return;
+	}
+	set_error(h,http::response::status_to_string(code));
+}
+
 void connection::load_content(booster::system::error_code const &e,http::context *context,ehandler const &h)
 {
 	if(e)  {
@@ -236,7 +304,7 @@ void connection::load_content(booster::system::error_code const &e,http::context
 	long long content_length = *s_content_length == 0 ? 0 : atoll(s_content_length);
 
 	if(content_length < 0)  {
-		set_error(h,"Incorrect content length");
+		handle_http_error(400,context,h);
 		return;
 	}
 	
@@ -245,9 +313,9 @@ void connection::load_content(booster::system::error_code const &e,http::context
 			// 64 MB
 			long long allowed=service().cached_settings().security.multipart_form_data_limit*1024;
 			if(content_length > allowed) { 
-				set_error(h,"security violation: multipart/form-data content length too big");
 				BOOSTER_NOTICE("cppcms") << "multipart/form-data size too big " << content_length << 
 					" REMOTE_ADDR = `" << getenv("REMOTE_ADDR") << "' REMOTE_HOST=`" << getenv("REMOTE_HOST") << "'";
+				handle_http_error(413,context,h);
 				return;
 			}
 			multipart_parser_.reset(new multipart_parser(
@@ -255,9 +323,9 @@ void connection::load_content(booster::system::error_code const &e,http::context
 				service().cached_settings().security.file_in_memory_limit));
 			read_size_ = content_length;
 			if(!multipart_parser_->set_content_type(content_type)) {
-				set_error(h,"Invalid multipart/form-data request");
 				BOOSTER_NOTICE("cppcms") << "Invalid multipart/form-data request" << content_length << 
 					" REMOTE_ADDR = `" << getenv("REMOTE_ADDR") << "' REMOTE_HOST=`" << getenv("REMOTE_HOST") << "'";
+				handle_http_error(400,context,h);
 				return;
 			}
 			content_.clear();
@@ -273,9 +341,9 @@ void connection::load_content(booster::system::error_code const &e,http::context
 		else {
 			long long allowed=service().cached_settings().security.content_length_limit*1024;
 			if(content_length > allowed) {
-				set_error(h,"security violation POST content length too big");
 				BOOSTER_NOTICE("cppcms") << "POST data size too big " << content_length << 
 					" REMOTE_ADDR = `" << getenv("REMOTE_ADDR") << "' REMOTE_HOST=`" << getenv("REMOTE_HOST") << "'";
+				handle_http_error(413,context,h);
 				return;
 			}
 			content_.clear();
@@ -294,11 +362,11 @@ void connection::on_some_multipart_read(booster::system::error_code const &e,siz
 {
 	if(e) { set_error(h,e.message()); return; }
 	read_size_-=n;
-	if(read_size_ < 0) { set_error(h,"Bad request"); return ;}
+	if(read_size_ < 0) { handle_http_error(400,context,h); return ;}
 	multipart_parser::parsing_result_type r = multipart_parser_->consume(&content_.front(),n);
 	if(r == multipart_parser::eof) {
 		if(read_size_ != 0)  {
-			set_error(h,"Bad request");
+			handle_http_error(400,context,h);
 			return;
 		}
 		content_.clear();
@@ -306,7 +374,11 @@ void connection::on_some_multipart_read(booster::system::error_code const &e,siz
 		long long allowed=service().cached_settings().security.content_length_limit*1024;
 		for(unsigned i=0;i<files.size();i++) {
 			if(files[i]->mime().empty() && files[i]->size() > allowed) {
-				set_error(h,"Conent Lengths to big");
+				BOOSTER_NOTICE("cppcms") << "multipart/form-data non-file entry size too big " << 
+						files[i]->size() 
+						<< " REMOTE_ADDR = `" << getenv("REMOTE_ADDR") 
+						<< "' REMOTE_HOST=`" << getenv("REMOTE_HOST") << "'";
+				handle_http_error(413,context,h);
 				return;
 			}
 		}
@@ -316,7 +388,7 @@ void connection::on_some_multipart_read(booster::system::error_code const &e,siz
 		return;
 	}
 	else if (r==multipart_parser::parsing_error) {
-		set_error(h,"Bad request");
+		handle_http_error(400,context,h);
 		return;
 	}
 	else {
