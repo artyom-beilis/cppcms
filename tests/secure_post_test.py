@@ -54,11 +54,12 @@ normal_file_data1 = make_multipart_form_data('x'*(2048 - empty_length));
 normal_file_data2 = make_multipart_form_data('x' * 1024,None,None);
 big_file_data1 = make_multipart_form_data('x'*(2048 - empty_length + 1 ));
 big_file_data2 = make_multipart_form_data('x' * 1025,None,None);
+bad_file_data1 = normal_file_data1[0:300]
 
 
 # HTTP
 
-session = httpclient.Session()
+session = httpclient.Session(print_cookies = False)
 
 
 test(session.transmit('/post',post_data = normal_file_data1,content_type = 'multipart/form-data; boundary=123456') == 'ok')
@@ -72,6 +73,9 @@ session.transmit('/post',post_data = normal_file_data1,content_type = 'multipart
 test(session.status==400)
 session.status = 0
 session.transmit('/post',post_data = normal_file_data1,content_type = 'multipart/form-data')
+test(session.status==400)
+session.status = 0
+session.transmit('/post',post_data = bad_file_data1,content_type = 'multipart/form-data; boundary=123456')
 test(session.status==400)
 
 

@@ -391,6 +391,10 @@ void connection::on_some_multipart_read(booster::system::error_code const &e,siz
 		handle_http_error(400,context,h);
 		return;
 	}
+	else if(read_size_ == 0) {
+		handle_http_error(400,context,h);
+		return;
+	}
 	else {
 		async_read_some(&content_.front(),content_.size(),
 			boost::bind(&connection::on_some_multipart_read,
