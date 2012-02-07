@@ -40,6 +40,10 @@ namespace cgi {
 		}
 		~scgi()
 		{
+			if(socket_.native()!=io::invalid_socket) {
+				booster::system::error_code e;
+				socket_.shutdown(io::stream_socket::shut_rdwr,e);
+			}
 		}
 		virtual void async_read_headers(handler const &h)
 		{
@@ -155,13 +159,6 @@ namespace cgi {
 			socket_.get_io_service().post(boost::bind(h,booster::system::error_code()));
 		}
 
-		virtual void close()
-		{
-			booster::system::error_code e;
-			socket_.shutdown(io::stream_socket::shut_rd,e);
-			socket_.close(e);
-		}
-		
 		virtual void async_read_eof(callback const &h)
 		{
 			static char a;

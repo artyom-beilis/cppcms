@@ -148,6 +148,10 @@ namespace cgi {
 		}
 		~http()
 		{
+			if(socket_.native()!=io::invalid_socket) {
+				booster::system::error_code e;
+				socket_.shutdown(io::stream_socket::shut_rdwr,e);
+			}
 		}
 		struct binder {
 			void operator()(booster::system::error_code const &e,size_t n) const
@@ -438,7 +442,7 @@ namespace cgi {
 			return false;
 		}
 
-		virtual void close()
+		void close()
 		{
 			booster::system::error_code e;
 			socket_.shutdown(io::stream_socket::shut_rd,e);

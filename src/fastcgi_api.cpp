@@ -65,6 +65,10 @@ namespace cgi {
 		}
 		~fastcgi()
 		{
+			if(socket_.native()!=io::invalid_socket) {
+				booster::system::error_code e;
+				socket_.shutdown(io::stream_socket::shut_rdwr,e);
+			}
 		}
 		virtual void async_read_headers(handler const &h)
 		{
@@ -210,11 +214,6 @@ namespace cgi {
 			return ka_value;
 		}
 
-		virtual void close()
-		{
-			booster::system::error_code e;
-			socket_.close(e);
-		}
 		void prepare_eof()
 		{
 			memset(&eof_,0,sizeof(eof_));
