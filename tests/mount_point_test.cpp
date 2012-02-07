@@ -29,6 +29,16 @@ void test()
 		TEST(mp.match("www.google.com","/baz","x/test/")==res(0));
 	}
 	{
+		mount_point mp(mount_point::match_path_info,"/foo");
+		TEST(mp.match("www.google.com","/foo","/test")==res("/test"));
+		TEST(mp.match("www.google.com","z/foo","/test")==res(0));
+	}
+	{
+		mount_point mp(mount_point::match_script_name,"/foo");
+		TEST(mp.match("www.google.com","/bar","/foo")==res("/bar"));
+		TEST(mp.match("www.google.com","/bar","/baz")==res(0));
+	}
+	{
 		mount_point mp("/foo","/test(.*)",1);
 		TEST(mp.match("www.google.com","/foo","/test")==res(""));
 		TEST(mp.match("www.google.com","/foo","/test/")==res("/"));
