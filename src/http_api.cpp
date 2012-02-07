@@ -445,7 +445,7 @@ namespace cgi {
 		void close()
 		{
 			booster::system::error_code e;
-			socket_.shutdown(io::stream_socket::shut_rd,e);
+			socket_.shutdown(io::stream_socket::shut_rdwr,e);
 			socket_.close(e);
 		}
 		virtual void async_read_eof(callback const &h)
