@@ -21,14 +21,6 @@ public:
 		cppcms::impl::tcp_connector(ips,ports)
 	{
 	}
-	unsigned hash(std::string const &key)
-	{
-		if(conns==1) return 0;
-		char buf[5] = { key.at(0) , key.at(1), key.at(2), key.at(3) , 0};
-		unsigned val=0;
-		sscanf(buf,"%x",&val);
-		return val % conns;;
-	}
 };
 
 bool tcp_storage::is_blocking()
