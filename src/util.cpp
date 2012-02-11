@@ -11,6 +11,7 @@
 #include <stdio.h>
 #include <iterator>
 #include "md5.h"
+#include "tohex.h"
 
 namespace cppcms {
 namespace util {
@@ -147,11 +148,8 @@ std::string md5hex(std::string const &in)
 	md5_append(&state,reinterpret_cast<unsigned const char *>(in.c_str()),in.size());
 	md5_finish(&state,data);
 	char buf[33]={0};
-	for(int i=0;i<16;i++) {
-		unsigned val=data[i];
-		sprintf(buf+i*2,"%02x",val);
-	}
-	return std::string(buf,32);
+	impl::tohex(data,sizeof(data),buf);
+	return buf;
 }
 
 

@@ -14,6 +14,7 @@
 #include <stdlib.h>
 #include <vector>
 
+#include "tohex.h"
 
 namespace cppcms {
 namespace http {
@@ -155,11 +156,10 @@ void file::move_to_file()
 
 	tmp_file_name_ = tmp_dir + "/cppcms_uploads_";
 	urandom_device rnd;
-	unsigned char buf[16];
+	char buf[16];
 	char rand[33]={0};
 	rnd.generate(buf,16);
-	for(unsigned i=0;i<16;i++)
-		sprintf(rand+i*2,"%02x",buf[i]);
+	impl::tohex(buf,sizeof(buf),rand);
 	tmp_file_name_.append(rand);
 	tmp_file_name_+=".tmp";
 	file_.open(tmp_file_name_.c_str(),

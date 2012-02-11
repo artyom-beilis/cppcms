@@ -15,6 +15,9 @@
 #include <stdio.h>
 #include <time.h>
 
+#include "tohex.h"
+
+
 #include <cppcms/config.h>
 
 namespace cppcms {
@@ -34,19 +37,12 @@ session_sid::~session_sid()
 
 std::string session_sid::get_new_sid()
 {
-	unsigned char sid[16];			
+	char sid[16];			
 	char res[33];
 	urandom_device rnd;
 	rnd.generate(sid,sizeof(sid));
-
-	for(int i=0;i<16;i++) {
-		#ifdef CPPCMS_HAVE_SNPRINTF
-		snprintf(res+i*2,3,"%02x",sid[i]);
-		#else
-		sprintf(res+i*2,"%02x",sid[i]);
-		#endif
-	}
-	return std::string(res);
+	cppcms::impl::tohex(sid,sizeof(sid),res);
+	return res;
 }
 
 bool session_sid::valid_sid(std::string const &cookie,std::string &id)

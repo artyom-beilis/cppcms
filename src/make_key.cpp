@@ -11,6 +11,8 @@
 #include <iostream>
 #include <fstream>
 
+#include "tohex.h"
+
 void help()
 {
 	std::cerr << 
@@ -32,15 +34,12 @@ void help()
 
 std::string make_key(int size)
 {
-	std::vector<unsigned char> key(size,0);
+	std::vector<char> key(size,0);
+	std::vector<char> res(size*2+1,0);
 	cppcms::urandom_device r;
 	r.generate(&key[0],size);
-	std::string s;
-	static const char part[]="0123456789abcdef";
-	for(int i=0;i<size;i++) {
-		s+=part[(key[i]>>4) & 0xF];
-		s+=part[key[i] & 0xF];
-	}
+	cppcms::impl::tohex(&key[0],size,&res[0]);
+	std::string s = &res[0];
 	return s;
 }
 
