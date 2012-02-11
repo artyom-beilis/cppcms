@@ -1,73 +1,90 @@
 
 /*! \page  ex_basic_cache Using CppCMS Cache
 
-- \subpage ex_basic_cache____config__js
-- \subpage ex_basic_cache____content__h
 - \subpage ex_basic_cache____hello__cpp
+- \subpage ex_basic_cache____content__h
 - \subpage ex_basic_cache____Makefile
 - \subpage ex_basic_cache____view__tmpl
+- \subpage ex_basic_cache____config__js
 
-\page ex_basic_cache____config__js basic_cache/config.js Configuration File
-\include basic_cache/config.js
-\page ex_basic_cache____content__h basic_cache/content.h Header File
-\include basic_cache/content.h
 \page ex_basic_cache____hello__cpp basic_cache/hello.cpp Source File
 \include basic_cache/hello.cpp
+\page ex_basic_cache____content__h basic_cache/content.h Header File
+\include basic_cache/content.h
 \page ex_basic_cache____Makefile basic_cache/Makefile Makefile
 \include basic_cache/Makefile
 \page ex_basic_cache____view__tmpl basic_cache/view.tmpl Template File
 \include basic_cache/view.tmpl
+\page ex_basic_cache____config__js basic_cache/config.js Configuration File
+\include basic_cache/config.js
 */
 
 /*! \page  ex_chat Basic Comet Example
 
+- \subpage ex_chat____the_chat__html
+- \subpage ex_chat____Makefile
 - \subpage ex_chat____chat__cpp
 - \subpage ex_chat____config__js
-- \subpage ex_chat____Makefile
-- \subpage ex_chat____the_chat__html
 
+\page ex_chat____the_chat__html chat/the_chat.html Header File
+\include chat/the_chat.html
+\page ex_chat____Makefile chat/Makefile Makefile
+\include chat/Makefile
 \page ex_chat____chat__cpp chat/chat.cpp Source File
 \include chat/chat.cpp
 \page ex_chat____config__js chat/config.js Configuration File
 \include chat/config.js
-\page ex_chat____Makefile chat/Makefile Makefile
-\include chat/Makefile
-\page ex_chat____the_chat__html chat/the_chat.html Header File
-\include chat/the_chat.html
 */
 
 /*! \page  ex_forms Using CppCMS forms
 
-- \subpage ex_forms____config__js
-- \subpage ex_forms____content__h
 - \subpage ex_forms____hello__cpp
+- \subpage ex_forms____content__h
 - \subpage ex_forms____Makefile
 - \subpage ex_forms____view__tmpl
+- \subpage ex_forms____config__js
 
-\page ex_forms____config__js forms/config.js Configuration File
-\include forms/config.js
-\page ex_forms____content__h forms/content.h Header File
-\include forms/content.h
 \page ex_forms____hello__cpp forms/hello.cpp Source File
 \include forms/hello.cpp
+\page ex_forms____content__h forms/content.h Header File
+\include forms/content.h
 \page ex_forms____Makefile forms/Makefile Makefile
 \include forms/Makefile
 \page ex_forms____view__tmpl forms/view.tmpl Template File
 \include forms/view.tmpl
+\page ex_forms____config__js forms/config.js Configuration File
+\include forms/config.js
 */
 
 /*! \page  ex_hello_world Our First 'Hello World' Program
 
-- \subpage ex_hello_world____config__js
 - \subpage ex_hello_world____hello__cpp
 - \subpage ex_hello_world____Makefile
+- \subpage ex_hello_world____a_b_c_d_e_hello__cpp
+- \subpage ex_hello_world____config__js
 
-\page ex_hello_world____config__js hello_world/config.js Configuration File
-\include hello_world/config.js
 \page ex_hello_world____hello__cpp hello_world/hello.cpp Source File
 \include hello_world/hello.cpp
 \page ex_hello_world____Makefile hello_world/Makefile Makefile
 \include hello_world/Makefile
+\page ex_hello_world____a_b_c_d_e_hello__cpp hello_world/a/b/c/d/e/hello.cpp Source File
+\include hello_world/a/b/c/d/e/hello.cpp
+\page ex_hello_world____config__js hello_world/config.js Configuration File
+\include hello_world/config.js
+*/
+
+/*! \page  ex_hierarchy Using applications hierarchy and URL mapping
+
+- \subpage ex_hierarchy____Makefile
+- \subpage ex_hierarchy____config__js
+- \subpage ex_hierarchy____myapp__cpp
+
+\page ex_hierarchy____Makefile hierarchy/Makefile Makefile
+\include hierarchy/Makefile
+\page ex_hierarchy____config__js hierarchy/config.js Configuration File
+\include hierarchy/config.js
+\page ex_hierarchy____myapp__cpp hierarchy/myapp.cpp Source File
+\include hierarchy/myapp.cpp
 */
 
 /*! \page  ex_json Using JSON API
@@ -83,240 +100,312 @@
 
 /*! \page  ex_json_rpc Simple JsonRPC example
 
-- \subpage ex_json_rpc____config__js
+- \subpage ex_json_rpc____usingrpc__html
 - \subpage ex_json_rpc____index__html
 - \subpage ex_json_rpc____Makefile
+- \subpage ex_json_rpc____config__js
 - \subpage ex_json_rpc____rpc__cpp
-- \subpage ex_json_rpc____usingrpc__html
 
-\page ex_json_rpc____config__js json_rpc/config.js Configuration File
-\include json_rpc/config.js
+\page ex_json_rpc____usingrpc__html json_rpc/usingrpc.html Using JsonRPC Object
+\include json_rpc/usingrpc.html
 \page ex_json_rpc____index__html json_rpc/index.html JsonRPC Client Using XMLHttpRequest
 \include json_rpc/index.html
 \page ex_json_rpc____Makefile json_rpc/Makefile Makefile
 \include json_rpc/Makefile
+\page ex_json_rpc____config__js json_rpc/config.js Configuration File
+\include json_rpc/config.js
 \page ex_json_rpc____rpc__cpp json_rpc/rpc.cpp Source File
 \include json_rpc/rpc.cpp
-\page ex_json_rpc____usingrpc__html json_rpc/usingrpc.html Using JsonRPC Object
-\include json_rpc/usingrpc.html
 */
 
 /*! \page  ex_json_rpc_chat Implementing chat using asynchronous JSON RPC calls
 
-- \subpage ex_json_rpc_chat____chat__cpp
-- \subpage ex_json_rpc_chat____config__js
 - \subpage ex_json_rpc_chat____index__html
 - \subpage ex_json_rpc_chat____Makefile
+- \subpage ex_json_rpc_chat____chat__cpp
+- \subpage ex_json_rpc_chat____config__js
 
-\page ex_json_rpc_chat____chat__cpp json_rpc_chat/chat.cpp Source File
-\include json_rpc_chat/chat.cpp
-\page ex_json_rpc_chat____config__js json_rpc_chat/config.js Configuration File
-\include json_rpc_chat/config.js
 \page ex_json_rpc_chat____index__html json_rpc_chat/index.html Header File
 \include json_rpc_chat/index.html
 \page ex_json_rpc_chat____Makefile json_rpc_chat/Makefile Makefile
 \include json_rpc_chat/Makefile
+\page ex_json_rpc_chat____chat__cpp json_rpc_chat/chat.cpp Source File
+\include json_rpc_chat/chat.cpp
+\page ex_json_rpc_chat____config__js json_rpc_chat/config.js Configuration File
+\include json_rpc_chat/config.js
 */
 
 /*! \page  ex_localization Localizing CppCMS Applications
 
-- \subpage ex_localization____config__js
-- \subpage ex_localization____content__h
 - \subpage ex_localization____hello__cpp
+- \subpage ex_localization____content__h
 - \subpage ex_localization____locale_he_LC_MESSAGES_hello__po
 - \subpage ex_localization____Makefile
 - \subpage ex_localization____view__tmpl
+- \subpage ex_localization____config__js
 
-\page ex_localization____config__js localization/config.js Configuration File
-\include localization/config.js
-\page ex_localization____content__h localization/content.h Header File
-\include localization/content.h
 \page ex_localization____hello__cpp localization/hello.cpp Source File
 \include localization/hello.cpp
+\page ex_localization____content__h localization/content.h Header File
+\include localization/content.h
 \page ex_localization____locale_he_LC_MESSAGES_hello__po localization/locale/he/LC_MESSAGES/hello.po Gettext Dictionary File
 \include localization/locale/he/LC_MESSAGES/hello.po
 \page ex_localization____Makefile localization/Makefile Makefile
 \include localization/Makefile
 \page ex_localization____view__tmpl localization/view.tmpl Template File
 \include localization/view.tmpl
+\page ex_localization____config__js localization/config.js Configuration File
+\include localization/config.js
 */
 
 /*! \page  ex_message_board Full Message Board Application Example using Cache, Sessions, CppDB library and more
 
-- \subpage ex_message_board____apps_forums__cpp
-- \subpage ex_message_board____apps_forums__h
-- \subpage ex_message_board____apps_main__cpp
-- \subpage ex_message_board____apps_master__cpp
-- \subpage ex_message_board____apps_master__h
-- \subpage ex_message_board____apps_mb__cpp
-- \subpage ex_message_board____apps_mb__h
-- \subpage ex_message_board____apps_thread__cpp
-- \subpage ex_message_board____apps_thread__h
-- \subpage ex_message_board____CMakeLists__txt
-- \subpage ex_message_board____config__js
-- \subpage ex_message_board____data_data__h
-- \subpage ex_message_board____data_forums__h
-- \subpage ex_message_board____data_master__h
-- \subpage ex_message_board____data_thread__h
-- \subpage ex_message_board____locale_he_LC_MESSAGES_mb__po
-- \subpage ex_message_board____media_style-ltr__css
-- \subpage ex_message_board____media_style-rtl__css
-- \subpage ex_message_board____media_style__css
+- \subpage ex_message_board____view_thread__tmpl
+- \subpage ex_message_board____view_master__tmpl
+- \subpage ex_message_board____view_forums__tmpl
 - \subpage ex_message_board____model_mysql__sql
 - \subpage ex_message_board____model_sqlite3__sql
-- \subpage ex_message_board____view_forums__tmpl
-- \subpage ex_message_board____view_master__tmpl
-- \subpage ex_message_board____view_thread__tmpl
+- \subpage ex_message_board____media_style__css
+- \subpage ex_message_board____media_style-ltr__css
+- \subpage ex_message_board____media_style-rtl__css
+- \subpage ex_message_board____apps_mb__cpp
+- \subpage ex_message_board____apps_thread__cpp
+- \subpage ex_message_board____apps_master__cpp
+- \subpage ex_message_board____apps_mb__h
+- \subpage ex_message_board____apps_main__cpp
+- \subpage ex_message_board____apps_thread__h
+- \subpage ex_message_board____apps_master__h
+- \subpage ex_message_board____apps_forums__cpp
+- \subpage ex_message_board____apps_forums__h
+- \subpage ex_message_board____locale_he_LC_MESSAGES_mb__po
+- \subpage ex_message_board____CMakeLists__txt
+- \subpage ex_message_board____config__js
+- \subpage ex_message_board____data_thread__h
+- \subpage ex_message_board____data_data__h
+- \subpage ex_message_board____data_master__h
+- \subpage ex_message_board____data_forums__h
+- \subpage ex_message_board____stage_CMakeCache__txt
+- \subpage ex_message_board____stage_simple__cpp
+- \subpage ex_message_board____stage_Makefile
+- \subpage ex_message_board____stage_CMakeFiles
+- \subpage ex_message_board____stage_CMakeFiles_mb__dir_cmake_clean__cmake
+- \subpage ex_message_board____stage_CMakeFiles_CMakeCXXCompiler__cmake
+- \subpage ex_message_board____stage_CMakeFiles_Makefile2
+- \subpage ex_message_board____stage_CMakeFiles_Makefile__cmake
+- \subpage ex_message_board____stage_CMakeFiles_CompilerIdCXX_CMakeCXXCompilerId__cpp
+- \subpage ex_message_board____stage_CMakeFiles_CMakeTmp
+- \subpage ex_message_board____stage_CMakeFiles_CMakeTmp_CMakeFiles
+- \subpage ex_message_board____stage_CMakeFiles_CompilerIdC_CMakeCCompilerId__c
+- \subpage ex_message_board____stage_CMakeFiles_CMakeDirectoryInformation__cmake
+- \subpage ex_message_board____stage_CMakeFiles_CMakeRuleHashes__txt
+- \subpage ex_message_board____stage_CMakeFiles_CMakeDetermineCompilerABI_C__bin
+- \subpage ex_message_board____stage_CMakeFiles_CMakeSystem__cmake
+- \subpage ex_message_board____stage_CMakeFiles_cmake__check_cache
+- \subpage ex_message_board____stage_CMakeFiles_CMakeDetermineCompilerABI_CXX__bin
+- \subpage ex_message_board____stage_CMakeFiles_simple__dir_cmake_clean__cmake
+- \subpage ex_message_board____stage_CMakeFiles_CMakeOutput__log
+- \subpage ex_message_board____stage_CMakeFiles_create-mo__dir_cmake_clean__cmake
+- \subpage ex_message_board____stage_CMakeFiles_CMakeCCompiler__cmake
+- \subpage ex_message_board____stage_CMakeFiles_sqlitedb__dir_cmake_clean__cmake
+- \subpage ex_message_board____stage_cmake_install__cmake
 
-\page ex_message_board____apps_forums__cpp message_board/apps/forums.cpp Source File
-\include message_board/apps/forums.cpp
-\page ex_message_board____apps_forums__h message_board/apps/forums.h Header File
-\include message_board/apps/forums.h
-\page ex_message_board____apps_main__cpp message_board/apps/main.cpp Source File
-\include message_board/apps/main.cpp
-\page ex_message_board____apps_master__cpp message_board/apps/master.cpp Source File
-\include message_board/apps/master.cpp
-\page ex_message_board____apps_master__h message_board/apps/master.h Header File
-\include message_board/apps/master.h
-\page ex_message_board____apps_mb__cpp message_board/apps/mb.cpp Source File
-\include message_board/apps/mb.cpp
-\page ex_message_board____apps_mb__h message_board/apps/mb.h Header File
-\include message_board/apps/mb.h
-\page ex_message_board____apps_thread__cpp message_board/apps/thread.cpp Source File
-\include message_board/apps/thread.cpp
-\page ex_message_board____apps_thread__h message_board/apps/thread.h Header File
-\include message_board/apps/thread.h
-\page ex_message_board____CMakeLists__txt message_board/CMakeLists.txt CMake Build Script
-\include message_board/CMakeLists.txt
-\page ex_message_board____config__js message_board/config.js Configuration File
-\include message_board/config.js
-\page ex_message_board____data_data__h message_board/data/data.h Header File
-\include message_board/data/data.h
-\page ex_message_board____data_forums__h message_board/data/forums.h Header File
-\include message_board/data/forums.h
-\page ex_message_board____data_master__h message_board/data/master.h Header File
-\include message_board/data/master.h
-\page ex_message_board____data_thread__h message_board/data/thread.h Header File
-\include message_board/data/thread.h
-\page ex_message_board____locale_he_LC_MESSAGES_mb__po message_board/locale/he/LC_MESSAGES/mb.po Gettext Dictionary File
-\include message_board/locale/he/LC_MESSAGES/mb.po
-\page ex_message_board____media_style-ltr__css message_board/media/style-ltr.css CSS Media File
-\include message_board/media/style-ltr.css
-\page ex_message_board____media_style-rtl__css message_board/media/style-rtl.css CSS Media File
-\include message_board/media/style-rtl.css
-\page ex_message_board____media_style__css message_board/media/style.css CSS Media File
-\include message_board/media/style.css
+\page ex_message_board____view_thread__tmpl message_board/view/thread.tmpl Template File
+\include message_board/view/thread.tmpl
+\page ex_message_board____view_master__tmpl message_board/view/master.tmpl Template File
+\include message_board/view/master.tmpl
+\page ex_message_board____view_forums__tmpl message_board/view/forums.tmpl Template File
+\include message_board/view/forums.tmpl
 \page ex_message_board____model_mysql__sql message_board/model/mysql.sql SQL Script File
 \include message_board/model/mysql.sql
 \page ex_message_board____model_sqlite3__sql message_board/model/sqlite3.sql SQL Script File
 \include message_board/model/sqlite3.sql
-\page ex_message_board____view_forums__tmpl message_board/view/forums.tmpl Template File
-\include message_board/view/forums.tmpl
-\page ex_message_board____view_master__tmpl message_board/view/master.tmpl Template File
-\include message_board/view/master.tmpl
-\page ex_message_board____view_thread__tmpl message_board/view/thread.tmpl Template File
-\include message_board/view/thread.tmpl
+\page ex_message_board____media_style__css message_board/media/style.css CSS Media File
+\include message_board/media/style.css
+\page ex_message_board____media_style-ltr__css message_board/media/style-ltr.css CSS Media File
+\include message_board/media/style-ltr.css
+\page ex_message_board____media_style-rtl__css message_board/media/style-rtl.css CSS Media File
+\include message_board/media/style-rtl.css
+\page ex_message_board____apps_mb__cpp message_board/apps/mb.cpp Source File
+\include message_board/apps/mb.cpp
+\page ex_message_board____apps_thread__cpp message_board/apps/thread.cpp Source File
+\include message_board/apps/thread.cpp
+\page ex_message_board____apps_master__cpp message_board/apps/master.cpp Source File
+\include message_board/apps/master.cpp
+\page ex_message_board____apps_mb__h message_board/apps/mb.h Header File
+\include message_board/apps/mb.h
+\page ex_message_board____apps_main__cpp message_board/apps/main.cpp Source File
+\include message_board/apps/main.cpp
+\page ex_message_board____apps_thread__h message_board/apps/thread.h Header File
+\include message_board/apps/thread.h
+\page ex_message_board____apps_master__h message_board/apps/master.h Header File
+\include message_board/apps/master.h
+\page ex_message_board____apps_forums__cpp message_board/apps/forums.cpp Source File
+\include message_board/apps/forums.cpp
+\page ex_message_board____apps_forums__h message_board/apps/forums.h Header File
+\include message_board/apps/forums.h
+\page ex_message_board____locale_he_LC_MESSAGES_mb__po message_board/locale/he/LC_MESSAGES/mb.po Gettext Dictionary File
+\include message_board/locale/he/LC_MESSAGES/mb.po
+\page ex_message_board____CMakeLists__txt message_board/CMakeLists.txt CMake Build Script
+\include message_board/CMakeLists.txt
+\page ex_message_board____config__js message_board/config.js Configuration File
+\include message_board/config.js
+\page ex_message_board____data_thread__h message_board/data/thread.h Header File
+\include message_board/data/thread.h
+\page ex_message_board____data_data__h message_board/data/data.h Header File
+\include message_board/data/data.h
+\page ex_message_board____data_master__h message_board/data/master.h Header File
+\include message_board/data/master.h
+\page ex_message_board____data_forums__h message_board/data/forums.h Header File
+\include message_board/data/forums.h
+\page ex_message_board____stage_CMakeCache__txt message_board/stage/CMakeCache.txt 
+\include message_board/stage/CMakeCache.txt
+\page ex_message_board____stage_simple__cpp message_board/stage/simple.cpp Source File
+\include message_board/stage/simple.cpp
+\page ex_message_board____stage_Makefile message_board/stage/Makefile Makefile
+\include message_board/stage/Makefile
+\page ex_message_board____stage_CMakeFiles message_board/stage/CMakeFiles 
+\include message_board/stage/CMakeFiles
+\page ex_message_board____stage_CMakeFiles_mb__dir_cmake_clean__cmake message_board/stage/CMakeFiles/mb.dir/cmake_clean.cmake 
+\include message_board/stage/CMakeFiles/mb.dir/cmake_clean.cmake
+\page ex_message_board____stage_CMakeFiles_CMakeCXXCompiler__cmake message_board/stage/CMakeFiles/CMakeCXXCompiler.cmake 
+\include message_board/stage/CMakeFiles/CMakeCXXCompiler.cmake
+\page ex_message_board____stage_CMakeFiles_Makefile2 message_board/stage/CMakeFiles/Makefile2 Makefile
+\include message_board/stage/CMakeFiles/Makefile2
+\page ex_message_board____stage_CMakeFiles_Makefile__cmake message_board/stage/CMakeFiles/Makefile.cmake Makefile
+\include message_board/stage/CMakeFiles/Makefile.cmake
+\page ex_message_board____stage_CMakeFiles_CompilerIdCXX_CMakeCXXCompilerId__cpp message_board/stage/CMakeFiles/CompilerIdCXX/CMakeCXXCompilerId.cpp Source File
+\include message_board/stage/CMakeFiles/CompilerIdCXX/CMakeCXXCompilerId.cpp
+\page ex_message_board____stage_CMakeFiles_CMakeTmp message_board/stage/CMakeFiles/CMakeTmp 
+\include message_board/stage/CMakeFiles/CMakeTmp
+\page ex_message_board____stage_CMakeFiles_CMakeTmp_CMakeFiles message_board/stage/CMakeFiles/CMakeTmp/CMakeFiles 
+\include message_board/stage/CMakeFiles/CMakeTmp/CMakeFiles
+\page ex_message_board____stage_CMakeFiles_CompilerIdC_CMakeCCompilerId__c message_board/stage/CMakeFiles/CompilerIdC/CMakeCCompilerId.c 
+\include message_board/stage/CMakeFiles/CompilerIdC/CMakeCCompilerId.c
+\page ex_message_board____stage_CMakeFiles_CMakeDirectoryInformation__cmake message_board/stage/CMakeFiles/CMakeDirectoryInformation.cmake 
+\include message_board/stage/CMakeFiles/CMakeDirectoryInformation.cmake
+\page ex_message_board____stage_CMakeFiles_CMakeRuleHashes__txt message_board/stage/CMakeFiles/CMakeRuleHashes.txt 
+\include message_board/stage/CMakeFiles/CMakeRuleHashes.txt
+\page ex_message_board____stage_CMakeFiles_CMakeDetermineCompilerABI_C__bin message_board/stage/CMakeFiles/CMakeDetermineCompilerABI_C.bin 
+\include message_board/stage/CMakeFiles/CMakeDetermineCompilerABI_C.bin
+\page ex_message_board____stage_CMakeFiles_CMakeSystem__cmake message_board/stage/CMakeFiles/CMakeSystem.cmake 
+\include message_board/stage/CMakeFiles/CMakeSystem.cmake
+\page ex_message_board____stage_CMakeFiles_cmake__check_cache message_board/stage/CMakeFiles/cmake.check_cache 
+\include message_board/stage/CMakeFiles/cmake.check_cache
+\page ex_message_board____stage_CMakeFiles_CMakeDetermineCompilerABI_CXX__bin message_board/stage/CMakeFiles/CMakeDetermineCompilerABI_CXX.bin 
+\include message_board/stage/CMakeFiles/CMakeDetermineCompilerABI_CXX.bin
+\page ex_message_board____stage_CMakeFiles_simple__dir_cmake_clean__cmake message_board/stage/CMakeFiles/simple.dir/cmake_clean.cmake 
+\include message_board/stage/CMakeFiles/simple.dir/cmake_clean.cmake
+\page ex_message_board____stage_CMakeFiles_CMakeOutput__log message_board/stage/CMakeFiles/CMakeOutput.log 
+\include message_board/stage/CMakeFiles/CMakeOutput.log
+\page ex_message_board____stage_CMakeFiles_create-mo__dir_cmake_clean__cmake message_board/stage/CMakeFiles/create-mo.dir/cmake_clean.cmake 
+\include message_board/stage/CMakeFiles/create-mo.dir/cmake_clean.cmake
+\page ex_message_board____stage_CMakeFiles_CMakeCCompiler__cmake message_board/stage/CMakeFiles/CMakeCCompiler.cmake 
+\include message_board/stage/CMakeFiles/CMakeCCompiler.cmake
+\page ex_message_board____stage_CMakeFiles_sqlitedb__dir_cmake_clean__cmake message_board/stage/CMakeFiles/sqlitedb.dir/cmake_clean.cmake 
+\include message_board/stage/CMakeFiles/sqlitedb.dir/cmake_clean.cmake
+\page ex_message_board____stage_cmake_install__cmake message_board/stage/cmake_install.cmake 
+\include message_board/stage/cmake_install.cmake
 */
 
 /*! \page  ex_sessions Using Sessions
 
-- \subpage ex_sessions____config__js
-- \subpage ex_sessions____content__h
 - \subpage ex_sessions____hello__cpp
+- \subpage ex_sessions____content__h
 - \subpage ex_sessions____Makefile
 - \subpage ex_sessions____view__tmpl
+- \subpage ex_sessions____config__js
 
-\page ex_sessions____config__js sessions/config.js Configuration File
-\include sessions/config.js
-\page ex_sessions____content__h sessions/content.h Header File
-\include sessions/content.h
 \page ex_sessions____hello__cpp sessions/hello.cpp Source File
 \include sessions/hello.cpp
+\page ex_sessions____content__h sessions/content.h Header File
+\include sessions/content.h
 \page ex_sessions____Makefile sessions/Makefile Makefile
 \include sessions/Makefile
 \page ex_sessions____view__tmpl sessions/view.tmpl Template File
 \include sessions/view.tmpl
+\page ex_sessions____config__js sessions/config.js Configuration File
+\include sessions/config.js
 */
 
 /*! \page  ex_templates Using CppCMS template system
 
 - \subpage ex_templates____config-dyn__js
-- \subpage ex_templates____config__js
 - \subpage ex_templates____content__h
 - \subpage ex_templates____first__tmpl
-- \subpage ex_templates____hello-tmpl__cpp
-- \subpage ex_templates____Makefile
 - \subpage ex_templates____Makefile__dyn
+- \subpage ex_templates____Makefile
+- \subpage ex_templates____hello-tmpl__cpp
+- \subpage ex_templates____config__js
 
 \page ex_templates____config-dyn__js templates/config-dyn.js Configuration File for dynamic templates loading
 \include templates/config-dyn.js
-\page ex_templates____config__js templates/config.js Configuration File for static templates linking
-\include templates/config.js
 \page ex_templates____content__h templates/content.h Header File
 \include templates/content.h
 \page ex_templates____first__tmpl templates/first.tmpl Template File
 \include templates/first.tmpl
-\page ex_templates____hello-tmpl__cpp templates/hello-tmpl.cpp Source File
-\include templates/hello-tmpl.cpp
-\page ex_templates____Makefile templates/Makefile Makefile for static templates linking
-\include templates/Makefile
 \page ex_templates____Makefile__dyn templates/Makefile.dyn Makefile for dynamic templates loading
 \include templates/Makefile.dyn
+\page ex_templates____Makefile templates/Makefile Makefile for static templates linking
+\include templates/Makefile
+\page ex_templates____hello-tmpl__cpp templates/hello-tmpl.cpp Source File
+\include templates/hello-tmpl.cpp
+\page ex_templates____config__js templates/config.js Configuration File for static templates linking
+\include templates/config.js
 */
 
 /*! \page  ex_uploads Uploading files with CppCMS
 
-- \subpage ex_uploads____config__js
 - \subpage ex_uploads____content__h
 - \subpage ex_uploads____index__html
 - \subpage ex_uploads____Makefile
-- \subpage ex_uploads____uploader__cpp
 - \subpage ex_uploads____view__tmpl
+- \subpage ex_uploads____uploader__cpp
+- \subpage ex_uploads____config__js
 
-\page ex_uploads____config__js uploads/config.js Configuration File
-\include uploads/config.js
 \page ex_uploads____content__h uploads/content.h Header File
 \include uploads/content.h
 \page ex_uploads____index__html uploads/index.html Header File
 \include uploads/index.html
 \page ex_uploads____Makefile uploads/Makefile Makefile
 \include uploads/Makefile
-\page ex_uploads____uploader__cpp uploads/uploader.cpp Source File
-\include uploads/uploader.cpp
 \page ex_uploads____view__tmpl uploads/view.tmpl Template File
 \include uploads/view.tmpl
+\page ex_uploads____uploader__cpp uploads/uploader.cpp Source File
+\include uploads/uploader.cpp
+\page ex_uploads____config__js uploads/config.js Configuration File
+\include uploads/config.js
 */
 
 /*! \page  ex_url_mapping Using nice URLs and a mapping between modules and URLs
 
-- \subpage ex_url_mapping____config__js
 - \subpage ex_url_mapping____hello__cpp
 - \subpage ex_url_mapping____Makefile
+- \subpage ex_url_mapping____config__js
 
-\page ex_url_mapping____config__js url_mapping/config.js Configuration File
-\include url_mapping/config.js
 \page ex_url_mapping____hello__cpp url_mapping/hello.cpp Source File
 \include url_mapping/hello.cpp
 \page ex_url_mapping____Makefile url_mapping/Makefile Makefile
 \include url_mapping/Makefile
+\page ex_url_mapping____config__js url_mapping/config.js Configuration File
+\include url_mapping/config.js
 */
 
 /*! \page  ex_xss XSS filters and their use example
 
-- \subpage ex_xss____comment_profile__js
-- \subpage ex_xss____config__js
 - \subpage ex_xss____Makefile
+- \subpage ex_xss____comment_profile__js
 - \subpage ex_xss____tinymce_profile__js
+- \subpage ex_xss____config__js
 - \subpage ex_xss____xss__cpp
 
-\page ex_xss____comment_profile__js xss/comment_profile.js Configuration File
-\include xss/comment_profile.js
-\page ex_xss____config__js xss/config.js Configuration File
-\include xss/config.js
 \page ex_xss____Makefile xss/Makefile Makefile
 \include xss/Makefile
+\page ex_xss____comment_profile__js xss/comment_profile.js Configuration File
+\include xss/comment_profile.js
 \page ex_xss____tinymce_profile__js xss/tinymce_profile.js Configuration File
 \include xss/tinymce_profile.js
+\page ex_xss____config__js xss/config.js Configuration File
+\include xss/config.js
 \page ex_xss____xss__cpp xss/xss.cpp Source File
 \include xss/xss.cpp
 */

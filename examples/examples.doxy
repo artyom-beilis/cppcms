@@ -6,6 +6,7 @@ Basics:
 - \subpage ex_hello_world
 - \subpage ex_templates
 - \subpage ex_url_mapping
+- \subpage ex_hierarchy
 
 Forms:
 
