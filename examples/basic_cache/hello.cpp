@@ -21,11 +21,11 @@ public:
             c.info.load(context());
             if(c.info.validate()) {
                 c.arg=c.info.arg.value(); 
-            c.info.clear();
+                c.info.clear();
             }
             else { // No cache should be used
                render("message",c);
-            return;
+               return;
             }
         }
 
