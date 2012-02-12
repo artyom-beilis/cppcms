@@ -10,9 +10,10 @@
 		"expire" : "renew",
 		"timeout" : 604800,
 		"location" : "client",
-		"client" : {
-			"encryptor" : "hmac",
-			"key" : "232074faa0fd37de20858bf8cd0a7d04"
+		"client" :      {
+			"hmac" :        "sha1",
+			"hmac_key" :    "3891bbf7f845fd4277008a63d72640fc13bb9a31"
 		}
+
 	},
 }
