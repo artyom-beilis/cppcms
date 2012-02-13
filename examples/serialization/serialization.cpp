@@ -29,13 +29,15 @@ struct person : public cppcms::serializable {
     std::string family;
     std::string occupation;
     std::string martial_state;
+    double salary;
     physical parameters;
     std::list<child> children;
     std::vector<std::string> friends;
 
     void serialize(cppcms::archive &a)
     {
-        a & name & family & occupation & martial_state & cppcms::as_pod(parameters) & children & friends;
+        a & name & family & occupation & martial_state 
+          & salary & cppcms::as_pod(parameters) & children & friends;
     }
 };
 
@@ -47,6 +49,7 @@ void init_person(person &john)
     john.martial_state = "married";
     john.parameters.age = 30;
     john.parameters.height = 1.80;
+    john.salary = 1500;
     john.children.push_back(child());
     john.children.back().name = "Tom";
     john.children.back().parameters.age = 5;
@@ -63,10 +66,12 @@ public:
     void main(std::string /*url*/)
     {
         {
-            person john;
-            session().fetch_data("me",john);
-            john.parameters.age += 1;
-            session().store_data("me",john);
+            person me;
+            if(session().is_set("me")) {
+                session().fetch_data("me",me);
+                me.salary += 1;
+                session().store_data("me",me);
+            }
         }
         {
             person john;
