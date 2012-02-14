@@ -50,24 +50,6 @@ private:
 };
 
 
-class stop_service {
-public:
-    stop_service(booster::aio::io_service &srv) : stdin_(srv)
-    {
-        stdin_.attach(0); 
-    }
-    void run()
-    {
-        stdin_.on_readable(std::bind(&stop_service::on_input,this));
-    }
-    void on_input()
-    {
-        stdin_.get_io_service().stop();
-    }
-private:
-    booster::aio::basic_io_device stdin_;
-};
-
 class echo_acceptor {
 public:
     echo_acceptor(booster::aio::io_service &srv) : acceptor_(srv)
@@ -106,15 +88,16 @@ int main()
     try {
         booster::aio::io_service srv;
 
+        #if !defined(_WIN32) && !defined(__CYGWIN__)
+        booster::aio::basic_io_device stdin_device(srv);
+        stdin_device.attach(0);
+        std::cout << "Press any key to stop" << std::endl;
+        stdin_device.on_readable(std::bind(&booster::aio::io_service::stop,&srv));
+        #endif
+
         echo_acceptor acc(srv);
         acc.run();
 
-        #if !defined(_WIN32) && !defined(__CYGWIN__)
-        stop_service stop(srv);
-        stop.run();
-        std::cout << "Press any key to stop" << std::endl;
-        #endif
-        
         srv.run();
     }
     catch(std::exception const &e) {
