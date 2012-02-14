@@ -43,13 +43,9 @@ public:
     void post()
     {
         if(request().request_method()=="POST") {
-            if(request().post().find("message")!=request().post().end()) {
-                messages_.push_back(request().post().find("message")->second);
-                broadcast();
-            }
+            messages_.push_back(request().post("message"));
+            broadcast();
         }
-        
-        release_context()->async_complete_response();
     }
     void get(std::string no)
     {
@@ -57,21 +53,20 @@ public:
         if(pos < messages_.size()) {
             response().set_plain_text_header();
             response().out()<<messages_[pos];
-            release_context()->async_complete_response();
+            return;
         }
-        else if(pos == messages_.size()) {
-            booster::shared_ptr<cppcms::http::context> context=release_context();
-            waiters_.insert(context);
-            context->async_on_peer_reset(
-                bind(
-                    &chat::remove_context,
-                    booster::intrusive_ptr<chat>(this),
-                    context));
-        }
-        else {
+        if(pos > messages_.size() ){
             response().status(404);
-            release_context()->async_complete_response();
+            return;
         }
+        
+        booster::shared_ptr<cppcms::http::context> context=release_context();
+        waiters_.insert(context);
+        context->async_on_peer_reset(
+            bind(
+                &chat::remove_context,
+                booster::intrusive_ptr<chat>(this),
+                context));
     }
     void remove_context(booster::shared_ptr<cppcms::http::context> context)
     {
@@ -79,10 +74,13 @@ public:
     }
     void broadcast()
     {
-        for(waiters_type::iterator waiter=waiters_.begin();waiter!=waiters_.end();++waiter) {
-            (*waiter)->response().set_plain_text_header();
-            (*waiter)->response().out() << messages_.back();
-            (*waiter)->async_complete_response();
+        for(waiters_type::iterator it=waiters_.begin();it!=waiters_.end();++it) {
+            booster::shared_ptr<cppcms::http::context> waiter = *it;
+
+            waiter->response().set_plain_text_header();
+            waiter->response().out() << messages_.back();
+            waiter->async_complete_response();
+
         }
         waiters_.clear();
     }
