@@ -74,6 +74,7 @@ public:
     {
         booster::aio::endpoint ep("0.0.0.0",8080);
         acceptor_.open(ep.family());
+        acceptor_.set_option(booster::aio::acceptor::reuse_address,true);
         acceptor_.bind(ep);
         acceptor_.listen(10);
     }
