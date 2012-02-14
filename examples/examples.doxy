@@ -7,6 +7,7 @@ Basics:
 - \subpage ex_templates
 - \subpage ex_url_mapping
 - \subpage ex_hierarchy
+- \subpage ex_templates_inheritance
 
 Forms:
 
@@ -32,6 +33,7 @@ Comet:
 
 - \subpage ex_chat
 - \subpage ex_json_rpc_chat
+- \subpage ex_aio
 
 Applications:
 
