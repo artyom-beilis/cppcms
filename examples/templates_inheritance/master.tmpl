@@ -1,0 +1,21 @@
+<% c++ #include "content.h" %>
+<% skin myskin %>
+<% view master uses content::master %>
+
+<% template title() %><%= title %><% end %>
+<% template page_content() %>Override  Me<% end %>
+<% template render() %>
+<html>
+<head>
+    <title><% include title() %></title>
+</head>
+<body>
+<h1><% include title() %></h1>
+<div id="content">
+<% include page_content() %>
+</div>
+</body>
+</html>
+<% end template %> 
+<% end view %>
+<% end skin %>

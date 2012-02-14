@@ -1,0 +1,9 @@
+<% skin myskin %>
+<% view page uses content::page extends master %>
+
+<% template title() %><% include master::title() %> :: <%= page_title %><% end %>
+<% template page_content() %>
+<%= page_content | raw %>
+<% end template %> 
+<% end view %>
+<% end skin %>

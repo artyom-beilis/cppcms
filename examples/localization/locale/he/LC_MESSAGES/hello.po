@@ -9,7 +9,7 @@ msgstr "RTL"
 
 #: view.tmpl:11
 msgid "We want to say"
-msgstr "אני רוצה לומר"
+msgstr "אנחנו רוצים לומר"
 
 #: hello.cpp:21
 msgid "Hello World"

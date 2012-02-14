@@ -22,7 +22,7 @@ public:
     {
         context().locale(lang + ".UTF-8");
         content::message c;
-        c.message=cppcms::locale::translate("Hello World");
+        c.message=translate("Hello World");
         render("message",c);
     }
 };
