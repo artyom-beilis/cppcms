@@ -243,7 +243,7 @@
 \include message_board/locale/he/LC_MESSAGES/mb.po
 */
 
-/*! \page  ex_serialization serialization
+/*! \page  ex_serialization Using Serialization Services
 
 - \subpage ex_serialization____Makefile
 - \subpage ex_serialization____external_serialization__cpp

@@ -19,6 +19,7 @@ Important Tasks:
 - \subpage ex_basic_cache
 - \subpage ex_localization
 - \subpage ex_sessions
+- \subpage ex_serialization
 
 Security:
 
