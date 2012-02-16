@@ -67,7 +67,7 @@ int tcp_cache::fetch(	std::string const &key,
 	if(h.opcode!=opcodes::data)
 		return not_found;
 
-	timeout = h.operations.data.timeout + time(0);
+	timeout = h.operations.data.timeout;
 	
 	generation=h.operations.data.generation;
 
@@ -115,9 +115,7 @@ void tcp_cache::store(	std::string const &key,
 	h.operations.store.key_len=key.size();
 	data.append(a);
 	h.operations.store.data_len=a.size();
-	time_t now;
-	time(&now);
-	h.operations.store.timeout=timeout-now > 0 ? timeout-now : 0;
+	h.operations.store.timeout=timeout;
 	unsigned tlen=0;
 	for(std::set<std::string>::const_iterator p=triggers.begin(),e=triggers.end();p!=e;++p) {
 		tlen+=p->size()+1;

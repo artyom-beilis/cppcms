@@ -44,26 +44,26 @@ namespace impl {
 				uint32_t trigger_len;
 			} rise;
 			struct {
+				int64_t timeout;
 				uint32_t key_len;
 				uint32_t data_len;
 				uint32_t triggers_len;
-				uint32_t timeout;
 			} store;
 			struct {
 				uint64_t generation;
+				int64_t timeout;
 				uint32_t data_len;
 				uint32_t triggers_len;
-				uint32_t timeout;
 			} data;
 			struct {
 				uint32_t keys;
 				uint32_t triggers;
 			} out_stats;
 			struct {
-				uint32_t timeout;
+				int64_t timeout;
 			} session_save;
 			struct {
-				uint32_t timeout;
+				int64_t timeout;
 			} session_data;
 		} operations;
 	};

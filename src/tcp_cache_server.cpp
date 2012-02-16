@@ -122,8 +122,7 @@ public:
 		hout_.size=data_out_.size();
 		
 		hout_.operations.data.generation=generation;
-		time_t now=time(0);
-		hout_.operations.data.timeout = timeout > now ? timeout - now : 0;
+		hout_.operations.data.timeout = timeout;
 	}
 
 	void rise()
@@ -184,7 +183,7 @@ public:
 			hout_.opcode=opcodes::error;
 			return;
 		}
-		time_t timeout=time(0)+(time_t)hin_.operations.store.timeout;
+		time_t timeout=hin_.operations.store.timeout;
 		std::string key;
 		key.assign(data_in_.begin(),data_in_.begin()+hin_.operations.store.key_len);
 		std::string data;
@@ -200,7 +199,7 @@ public:
 			hout_.opcode=opcodes::error;
 			return;
 		}
-		time_t timeout=hin_.operations.session_save.timeout + time(NULL);
+		time_t timeout=hin_.operations.session_save.timeout;
 		std::string sid(data_in_.begin(),data_in_.begin()+32);
 		std::string value(data_in_.begin()+32,data_in_.end());
 		sessions_->save(sid,timeout,value);
@@ -215,7 +214,7 @@ public:
 		time_t timeout;
 		int toffset;
 		std::string sid(data_in_.begin(),data_in_.end());
-		if(!sessions_->load(sid,timeout,data_out_) || (toffset=(timeout-time(NULL))) < 0) {
+		if(!sessions_->load(sid,timeout,data_out_) || (toffset=(timeout)) < 0) {
 			hout_.opcode=opcodes::no_data;
 			return;
 		}

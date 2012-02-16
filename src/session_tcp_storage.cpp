@@ -33,7 +33,7 @@ void tcp_storage::save(std::string const &sid,time_t timeout,std::string const &
 	tcp_operation_header h=tcp_operation_header();
 	h.opcode=opcodes::session_save;
 	h.size=in.size() + 32;
-	h.operations.session_save.timeout=timeout - time(0);
+	h.operations.session_save.timeout=timeout;
 	std::string data;
 	data.reserve(sid.size() + in.size());
 	data+=sid;
@@ -49,7 +49,7 @@ bool tcp_storage::load(std::string const &sid,time_t &timeout,std::string &out)
 	std::string data=sid;
 	tcp().get(sid).transmit(h,data);
 	if(h.opcode==opcodes::session_load_data) {
-		timeout = time(NULL) + h.operations.session_data.timeout;
+		timeout = h.operations.session_data.timeout;
 		out.swap(data);
 		return true;
 	}
