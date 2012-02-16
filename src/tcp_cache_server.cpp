@@ -183,7 +183,7 @@ public:
 			hout_.opcode=opcodes::error;
 			return;
 		}
-		time_t timeout=hin_.operations.store.timeout;
+		time_t timeout=to_time_t(hin_.operations.store.timeout);
 		std::string key;
 		key.assign(data_in_.begin(),data_in_.begin()+hin_.operations.store.key_len);
 		std::string data;
@@ -199,7 +199,7 @@ public:
 			hout_.opcode=opcodes::error;
 			return;
 		}
-		time_t timeout=hin_.operations.session_save.timeout;
+		time_t timeout=to_time_t(hin_.operations.session_save.timeout);
 		std::string sid(data_in_.begin(),data_in_.begin()+32);
 		std::string value(data_in_.begin()+32,data_in_.end());
 		sessions_->save(sid,timeout,value);

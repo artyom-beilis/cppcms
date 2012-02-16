@@ -9,6 +9,8 @@
 #define TCP_CACHE_PROTO_H
 
 #include <cppcms/cstdint.h>
+#include <time.h>
+#include <limits>
 
 namespace cppcms {
 namespace impl {
@@ -67,6 +69,21 @@ namespace impl {
 			} session_data;
 		} operations;
 	};
+
+	inline time_t to_time_t(int64_t v)
+	{
+		if(sizeof(time_t) <  sizeof(v)) {
+			if(v > static_cast<int64_t>(std::numeric_limits<time_t>::max())) {
+				return std::numeric_limits<time_t>::max();
+			}
+			else {
+				return static_cast<time_t>(v);
+			}
+		}
+		else {
+			return static_cast<time_t>(v);
+		}
+	}
 
 } // namespace impl
 } // Namespace cppcms

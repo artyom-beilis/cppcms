@@ -49,7 +49,7 @@ bool tcp_storage::load(std::string const &sid,time_t &timeout,std::string &out)
 	std::string data=sid;
 	tcp().get(sid).transmit(h,data);
 	if(h.opcode==opcodes::session_load_data) {
-		timeout = h.operations.session_data.timeout;
+		timeout = to_time_t(h.operations.session_data.timeout);
 		out.swap(data);
 		return true;
 	}

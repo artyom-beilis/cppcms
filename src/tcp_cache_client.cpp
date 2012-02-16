@@ -67,7 +67,7 @@ int tcp_cache::fetch(	std::string const &key,
 	if(h.opcode!=opcodes::data)
 		return not_found;
 
-	timeout = h.operations.data.timeout;
+	timeout = to_time_t(h.operations.data.timeout);
 	
 	generation=h.operations.data.generation;
 
