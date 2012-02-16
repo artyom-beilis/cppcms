@@ -95,7 +95,7 @@ def general_tests(method):
     test(dic['age']=='5')
     test_method_is(dic,method)
     session.transmit('/fixed')
-    test(session.received['sc'].max_age=='5')
+    test(int(session.received['sc'].max_age) > 3)
     test_method_is(parse_info(session.transmit('/info')),'fixed')
     time.sleep(2);
     test_method_is(parse_info(session.transmit('/info')),'fixed')
