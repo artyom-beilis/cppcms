@@ -22,10 +22,10 @@ rm -fr $DIRNAME
 
 tar -xjf $DIRNAME.tar.bz2
 cd $DIRNAME
-DOCFILE=cppcms_ref_v`printf $VERSION | sed 's/\./_/g'`
-cp -a doc/doxygen/html/  /home/artik/vserver-www/www/$DOCFILE
-cd /home/artik/vserver-www/www
-rm cppcms_ref_v0_99
-ln -s $DOCFILE cppcms_ref_v0_99
+mkdir -p ../www/$VERSION
+cp -a doc/doxygen/html/*  ../www/$VERSION/
+cd ../www
+rm -f latest
+ln -s $VERSION latest
 
 
