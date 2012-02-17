@@ -12,21 +12,16 @@ frameworks like: Python Django, Java Servlets or C++ Wt in following:
 -# It uses modern C++ as primary development language in order to achieve first goal.
 -# It is aimed on development of Web Sites rather then "GUI Like" web applications.
 
-\section mainpage_docs Documentation
+\section mainpage_docs Reference Documentation
 
 This is reference documentation for CppCMS. It includes two major parts:
 
 - Documentation of cppcms itself
 - Documentation of booster -- helper Boost like library.
 
+\section mainpage_tutorials Tutorials
 
-This is not tutorial. For tutorials please visit CppCMS wiki that can be found at:
-
-- http://art-blog.no-ip.info/wikipp/en/page/main
-
-Or 
-
-- http://cppcms.sourceforge.net/
+You can find multiple tutorails at the <a href="http://cppcms.com">cppcms.com</a> website.
 
 \section mainpage_examples Examples
 
