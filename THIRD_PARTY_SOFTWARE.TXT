@@ -1,0 +1,41 @@
+
+ This framework uses and embeds some third party software:
+
+
+ Embedded Third Party Software:
+ ------------------------------
+ -  cppcms_boost/ -- is modified subset of Boost library released under Boost software
+    license. 
+   
+    See: <http://www.boost.org/LICENSE_1_0.txt>
+
+ -  src/base64.cpp - MIT license (see file for copyright notices)
+ -  src/md5.cpp, private/md5.h - see copyright notices in files (permissive license)
+ -  private/sha1.h - Boost Software License 1.0, see copyright notices in the file.
+ -  booster/ -- sub-project released under Boost Software License 1.0 
+ -  contrib/client_side/jsonrpc/json2.js - Public Domain
+
+ Third Party Software (not embedded)
+ ---------------------------------------------
+
+ Mandatory dependency:
+
+ - libpcre
+ - zlib
+ - At least one of the following:
+   - ICU - International Components for Unicode
+   - iconv
+   - Win32 API
+ 
+ Optional Third Party Software
+
+ - GNU-TLS
+ - OpenSSL 
+
+ Additional software that contribured components
+ may be used with (under contrib/ directory):
+
+ - Berkeley DB - BDB session storage
+ - Sqlite3 - Sqlite3 session storage
+ - CppDB - CppDB session storage
+

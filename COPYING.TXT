@@ -17,18 +17,16 @@
     You should have received a copy of the GNU Lesser General Public License
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-    Exceptions:
-    -----------
 
-    -  cppcms_boost/ -- is modified subset of Boost library released under Boost software
-          license. See <http://www.boost.org/users/license.html>
-    -  src/base64.cpp - MIT license (see file for copyright notices)
-    -  src/md5.cpp, private/md5.h - see copyright notices in files (permissive license)
-    -  private/sha1.h - Boost software license, see copyright notices in the file.
-    -  booster/ -- sub-project released under Boost Software License 1.0 
+    Additional Excemption:
+    ----------------------
 
-    Note:
-    -----
-
-    This software is released under the LGPL with the additional exemption that
+    This software is released under the LGPLv3 with the additional exemption that
     compiling, linking, and/or using OpenSSL is allowed.
+
+    Third Party Software:
+    ---------------------
+
+    This framework uses and embeds some third party software as marked in
+    THIRD_PARTY_SOFTWARE.TXT file.
+
