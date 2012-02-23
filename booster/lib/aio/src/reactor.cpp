@@ -705,7 +705,12 @@ namespace aio {
 	#endif
 
 
-
+	#if defined _MSC_VER  && _MSC_VER  == 1600
+	reactor::reactor(int /*hint*/)
+	{
+		impl_.reset(new w32_select_reactor());
+	}
+	#else // Normal compiler
 	reactor::reactor(int hint)
 	{
 		static const int default_poll = 
@@ -767,8 +772,10 @@ namespace aio {
 					throw booster::runtime_error("Internal error - no poller found");
 			}
 		}
-
 	}
+	
+	#endif
+	
 	reactor::~reactor() {}
 
 	std::string reactor::name() const
