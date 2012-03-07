@@ -19,6 +19,11 @@ enable_testing()
 #
 #############################################################################
 
+if(NOT LIBDIR)
+	set(LIBDIR lib CACHE STRING "Library installation directory" FORCE)
+endif()
+
+
 option(DISABLE_SHARED		"Disable shared libraries build" OFF)
 option(DISABLE_STATIC		"Disable static libraries build" OFF)
 option(DISABLE_GCRYPT		"Disable usage of gcrypt library" OFF)
@@ -682,8 +687,8 @@ endif()
 
 install(TARGETS ${CPPCMS_INSTALL_TARGETS} 
 	RUNTIME DESTINATION bin
-	LIBRARY DESTINATION lib
-	ARCHIVE DESTINATION lib
+	LIBRARY DESTINATION ${LIBDIR}
+	ARCHIVE DESTINATION ${LIBDIR}
 	PUBLIC_HEADER DESTINATION include/cppcms)
 install(PROGRAMS bin/cppcms_tmpl_cc bin/cppcms_run
 	DESTINATION bin)
