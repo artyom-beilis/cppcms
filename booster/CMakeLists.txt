@@ -44,6 +44,10 @@ endif()
 
 # Options
 
+if(NOT LIBDIR)
+	set(LIBDIR lib CACHE STRING "Library installation directory" FORCE)
+endif()
+
 option(USE_STLPORT		"Build with STLPort library" OFF)
 option(USE_PTHREAD	"Use pthreads API on windows" OFF)
 option(DISABLE_SHARED	"Disable shared libraries build" OFF)
@@ -679,8 +683,8 @@ configure_file(lib/booster_build_config.cmake.h booster/build_config.h)
 
 install(TARGETS ${LINK_LIBS}
 	RUNTIME DESTINATION bin
-	LIBRARY DESTINATION lib
-	ARCHIVE DESTINATION lib
+	LIBRARY DESTINATION ${LIBDIR}
+	ARCHIVE DESTINATION ${LIBDIR}
 	PUBLIC_HEADER DESTINATION include/booster)
 
 
