@@ -571,9 +571,9 @@ foreach(ALIB ${LINK_LIBS})
 	endif()
 	
 	if(IS_WINDOWS)
-		set_target_properties(${ALIB} PROPERTIES VERSION 0 SOVERSION 0)
+		set_target_properties(${ALIB} PROPERTIES VERSION ${BOOSTER_SOVERSION} SOVERSION ${BOOSTER_SOVERSION})
 	else()
-		set_target_properties(${ALIB} PROPERTIES VERSION 0.0.0 SOVERSION 0)
+		set_target_properties(${ALIB} PROPERTIES VERSION ${BOOSTER_VERSION} SOVERSION ${BOOSTER_SOVERSION})
 	endif()
 
 
