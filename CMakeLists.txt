@@ -620,6 +620,7 @@ set(ALL_TESTS
 	session_interface_test
 	secure_post_test
 	mount_point_test
+	todec_test
 	)
 
 if(NOT DISABLE_TCPCACHE)
@@ -701,6 +702,7 @@ install(DIRECTORY cppcms DESTINATION include
 set(CNF "${CMAKE_CURRENT_SOURCE_DIR}/tests")
 
 add_test(base64_test base64_test)
+add_test(todec_test todec_test)
 add_test(encryptor_test encryptor_test "${CNF}")
 add_test(storage_test storage_test)
 add_test(json_test json_test)

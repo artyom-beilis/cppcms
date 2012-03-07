@@ -24,16 +24,15 @@
 #include <booster/enable_shared_from_this.h>
 #include <scgi_header.h>
 
+#include "todec.h"
 
 #ifdef CPPCMS_USE_EXTERNAL_BOOST
 #   include <boost/bind.hpp>
-#   include <boost/format.hpp>
 #   if defined(CPPCMS_WIN32) && _WIN32_WINNT <= 0x0501 && !defined(BOOST_ASIO_DISABLE_IOCP)
 #   define NO_CANCELIO
 #   endif
 #else // Internal Boost
 #   include <cppcms_boost/bind.hpp>
-#   include <cppcms_boost/format.hpp>
     namespace boost = cppcms_boost;
 #   if defined(CPPCMS_WIN32) && _WIN32_WINNT <= 0x0501 && !defined(CPPCMS_BOOST_ASIO_DISABLE_IOCP)
 #   define NO_CANCELIO
@@ -152,7 +151,8 @@ namespace cppcms {
 				env_str.append(p->first.c_str(),p->first.size()+1);
 				env_str.append(p->second.c_str(),p->second.size()+1);
 			}
-			std::string header=(boost::format("%1%:",std::locale::classic()) % env_str.size()).str();
+			std::string header=todec_string(env_str.size());
+			header+=':';
 			header.reserve(header.size()+env_str.size()+addon_size);
 			header+=env_str;
 			header+=',';

@@ -14,16 +14,13 @@
 #include <cppcms/http_file.h>
 #include <cppcms/session_interface.h>
 #include <stack>
-#ifdef CPPCMS_USE_EXTERNAL_BOOST
-#   include <boost/format.hpp>
-#else // Internal Boost
-#   include <cppcms_boost/format.hpp>
-    namespace boost = cppcms_boost;
-#endif
-
 #include <booster/regex.h>
 
+#include "todec.h"
+
 namespace cppcms {
+
+using impl::cint;
 
 struct form_context::_data {};
 
@@ -421,7 +418,7 @@ void base_widget::generate(int position,form_context * /*context*/)
 	if(is_generation_done_)
 		return;
 	if(name_.empty()) {
-		name_ = (boost::format("_%1%",std::locale::classic()) % position).str();
+		name_ = "_" + impl::todec_string(position);
 	}
 	is_generation_done_ = 1;
 }
@@ -671,10 +668,10 @@ void text::render_attributes(form_context &context)
 
 	std::ostream &output = context.out();
 	if(size_ >= 0)
-		output << boost::format("size=\"%1%\" ",std::locale::classic()) % size_;
+		output << "size=\"" << cint(size_) <<"\" ";
 	std::pair<int,int> lm=limits();
 	if(lm.second >= 0 && validate_charset()) {
-		output << boost::format("maxlength=\"%1%\" ",std::locale::classic()) % lm.second;
+		output << "maxlength=\"" << cint(lm.second) << "\" ";
 	}
 }
 
@@ -728,11 +725,11 @@ void textarea::render_input(form_context &context)
 		render_attributes(context);
 
 		if(rows_ >= 0) {
-			output<<boost::format("rows=\"%1%\"",std::locale::classic()) % rows_;
+			output<<"rows=\""<< cint(rows_) << "\"";
 		}
 
 		if(cols_ >= 0) {
-			output<<boost::format("cols=\"%1%\"",std::locale::classic()) % cols_;
+			output<<"cols=\"" <<cint(cols_) << "\"";
 		}
 	}
 	else {
@@ -923,13 +920,13 @@ void select_multiple::add(locale::message const &opt,std::string const &id,bool 
 
 void select_multiple::add(std::string const &opt,bool selected)
 {
-	std::string id=(boost::format("%1%",std::locale::classic()) % elements_.size()).str();
+	std::string id=impl::todec_string(elements_.size());
 	elements_.push_back(element(id,opt,selected));
 }
 
 void select_multiple::add(locale::message const &opt,bool selected)
 {
-	std::string id=(boost::format("%1%",std::locale::classic()) % elements_.size()).str();
+	std::string id=impl::todec_string(elements_.size());
 	elements_.push_back(element(id,opt,selected));
 }
 
@@ -996,7 +993,7 @@ void select_multiple::render_input(form_context &context)
 		else
 			out<<"<select multiple ";
 		if(rows_ > 0)
-			out << boost::format(" size=\"%1%\" ",std::locale::classic()) % rows_;
+			out << " size=\"" << cint(rows_) << "\" ";
 		render_attributes(context);
 	}
 	else {
@@ -1127,13 +1124,13 @@ void select_base::add(locale::message const &str,std::string const &id)
 
 void select_base::add(std::string const &str)
 {
-	std::string id=(boost::format("%1%",std::locale::classic()) % elements_.size()).str();
+	std::string id= impl::todec_string(elements_.size());
 	elements_.push_back(element(id,str));
 }
 
 void select_base::add(locale::message const &str)
 {
-	std::string id=(boost::format("%1%",std::locale::classic()) % elements_.size()).str();
+	std::string id= impl::todec_string(elements_.size());
 	elements_.push_back(element(id,str));
 }
 
