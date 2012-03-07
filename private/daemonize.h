@@ -15,7 +15,7 @@ namespace cppcms {
 namespace json { class value; }
 namespace impl {
 	
-class daemonizer {
+class CPPCMS_API daemonizer {
 public:
 	daemonizer(json::value const &conf);
 	~daemonizer();
