@@ -2,6 +2,7 @@
 #include "test.h"
 #include <iostream>
 #include <sstream>
+#include <string>
 
 template<typename T>
 void test_single()
