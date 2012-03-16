@@ -58,14 +58,14 @@ file_server::file_server(cppcms::service &srv) : application(srv)
 		for(unsigned i=0;i<alias.size();i++) {
 			std::string url = alias[i].get<std::string>("url");
 			if(url.size() < 2 || url[0]!='/') {
-				throw cppcms_error("Invalid alias URL:" + url);
+				throw cppcms_error("Invalid alias URL: " + url);
 			}
 			if(url[url.size()-1]=='/')
 				url.resize(url.size()-1);
 			std::string input_path = alias[i].get<std::string>("path");
 			std::string canon_path;
 			if(!canonical(input_path,canon_path)) {
-				throw cppcms_error("Invalid alias path" + input_path);
+				throw cppcms_error("Invalid alias path: " + input_path);
 			}
 			alias_.push_back(std::make_pair(url,canon_path));
 		}
