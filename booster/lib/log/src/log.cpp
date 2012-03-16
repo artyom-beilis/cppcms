@@ -314,6 +314,18 @@ namespace log {
 			std::cerr << format_plain_text_message(msg) << std::endl;
 		}
 
+		struct stream::data {};
+		stream::stream(std::ostream &s) : out_(&s)
+		{
+		}
+		stream::~stream()
+		{
+		}
+		void stream::log(message const &msg)
+		{
+			(*out_) << format_plain_text_message(msg) << std::endl;
+		}
+		
 		struct file::data { booster::nowide::fstream stream; };
 		file::file() :
 			max_files_(0),
@@ -326,6 +338,25 @@ namespace log {
 			d(new file::data())
 		{
 			d->stream.imbue(std::locale::classic());
+		}
+		file::file(std::string const &file_name,int mf) :
+			max_files_(0),
+			max_size_(0),
+			current_size_(0),
+			opened_(false),
+			append_(false),
+			use_local_time_(true),
+			tz_offset_(0),
+			d(new file::data())
+		{
+			if(mf == app) {
+				append();
+			}
+			else if(mf > 0) {
+				max_files(mf);
+			}
+			d->stream.imbue(std::locale::classic());
+			open(file_name);
 		}
 		file::~file()
 		{

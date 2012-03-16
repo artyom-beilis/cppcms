@@ -252,16 +252,53 @@ namespace log {
 			struct data;
 			hold_ptr<data> d;
 		};
+	
+		///
+		/// \brief log sink for a generic std::ostream
+		///
+		/// \note \a s should be valid as long as the object exists
+		///	
+		class BOOSTER_API stream : public sink {
+		public:
+			///
+			/// Create a new sink, \a s output stream
+			///
+			stream(std::ostream &s);
+			///
+			/// Log the message to the file
+			///
+			virtual void log(message const &msg);
+			virtual ~stream();
+		private:
+			std::ostream *out_;
+			struct data;
+			hold_ptr<data> d;
+		};
 		
 		///
 		/// \brief log file based sink - sends messages to log file
 		///
 		class BOOSTER_API file : public sink {
 		public:
+			
+			///
+			/// Flag that can be passed to constructor that specifies that
+			/// the log should be appended to the existing file
+			///
+			static const int app = -1;
+
 			///
 			/// Creates new object but does not open a file
 			///
 			file();
+			
+			///
+			/// Creates new file sink named \a file_name, if max_files = app,
+			/// then no new files created but rather the log is appended to the
+			/// existing file
+			///
+			file(std::string const &file_name,int max_files = 0);
+			
 			virtual ~file();
 
 			///
