@@ -9,7 +9,7 @@ rm -f report.txt
 FLAGS=
 
 rm -fr /tmp/nb
-svn export https://cppcms.svn.sourceforge.net/svnroot/cppcms/framework/trunk nb
+svn export http://cppcms.svn.sourceforge.net/svnroot/cppcms/framework/trunk nb
 cd nb
 tar -xjf cppcms_boost.tar.bz2
 
