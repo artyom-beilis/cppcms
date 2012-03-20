@@ -1,11 +1,16 @@
 #!/bin/bash
 
+if [ "$1" == "" ] ; then
+	echo "Usage (trunk|branches/name)"
+	exit 1;
+fi
+
 SVNROOT=https://cppcms.svn.sourceforge.net/svnroot/cppcms/framework
 
-svn export $SVNROOT/trunk current-release
+svn export $SVNROOT/$1 current-release
 VERSION=`grep CPPCMS_PACKAGE_VERSION current-release/CMakeLists.txt  | sed 's/.*"\(.*\)".*/\1/'`
 
-if ! svn copy $SVNROOT/trunk $SVNROOT/tags/v$VERSION -m "Tagged release $VERSION"
+if ! svn copy $SVNROOT/$1 $SVNROOT/tags/v$VERSION -m "Tagged release $VERSION"
 then
 	echo failed to make a tag
 fi
