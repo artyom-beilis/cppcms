@@ -387,7 +387,7 @@ endif()
 
 if(NOT DISABLE_OPENSSL)
 	find_path(OPENSSL_INCLUDE_DIR openssl/aes.h)
-	find_library(LIB_OPENSSL crypto)
+	find_library(LIB_OPENSSL NAMES crypto libeay32)
 endif()
 
 if(GCRYPT_INCLUDE_DIR AND LIB_GCRYPT)
