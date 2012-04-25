@@ -196,12 +196,31 @@ namespace booster {
 		{
 			return ptime(sec+other.sec,nsec+other.nsec);
 		}
+
+		///
+		/// Add two POSIX time ranges (as numbers)
+		///
+		ptime& operator+=(ptime const &other)
+		{
+			*this = ptime(sec+other.sec,nsec+other.nsec);
+			return *this;
+		}
+		
 		///
 		/// Subtract one time from other (as number)
 		///
 		ptime operator-(ptime const &other) const
 		{
 			return ptime(sec-other.sec,nsec-other.nsec);
+		}
+
+		///
+		/// Subtract one time from other (as number)
+		///
+		ptime& operator-=(ptime const &other)
+		{
+			*this = ptime(sec-other.sec,nsec-other.nsec);
+			return *this;
 		}
 
 		bool operator==(ptime const &other) const
