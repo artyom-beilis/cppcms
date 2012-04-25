@@ -10,6 +10,7 @@
 #ifndef CPPCMS_WIN32
 #include <sys/types.h>
 #include <sys/socket.h>
+#include <sys/time.h> // struct timeval
 #include <errno.h>
 #else
 #include <winsock2.h>
