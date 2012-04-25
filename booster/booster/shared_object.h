@@ -70,7 +70,8 @@ namespace booster {
 		void *resolve_symbol(std::string const &name) const;
 
 		///
-		/// Resolve symbol in the shared object dll. If it can't be 
+		/// Resolve symbol in the shared object dll. If it can't be resolved booster::runtime_error
+		/// is thrown
 		///
 		template<typename T>
 		void symbol(T &s,std::string const &name) const
