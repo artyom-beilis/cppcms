@@ -49,6 +49,7 @@ if(NOT LIBDIR)
 endif()
 
 option(USE_STLPORT		"Build with STLPort library" OFF)
+option(USE_LIBCXX		"Build with CXX library" OFF)
 option(USE_PTHREAD	"Use pthreads API on windows" OFF)
 option(DISABLE_SHARED	"Disable shared libraries build" OFF)
 option(DISABLE_STATIC	"Disable static libraries build" OFF)
@@ -79,6 +80,16 @@ else()
 		option(DISABLE_ICONV	"Disable iconv library (default On on Windows)" ON)
 	else()
 		option(DISABLE_ICONV	"Disable iconv library (default On on Windows)" OFF)
+	endif()
+endif()
+
+if(USE_LIBCXX)
+	find_path(STLPORT_INCLUDE iostream)
+	find_library(STLPORT_LIB c++)
+	if(NOT STLPORT_INCLUDE OR NOT STLPORT_LIB)
+		message(FATAL_ERROR "Can't find stlport include or library")
+	else()
+		include_directories(${STLPORT_INCLUDE})
 	endif()
 endif()
 
@@ -306,6 +317,16 @@ check_cxx_source_compiles(
 	BOOSTER_HAVE_EXECINFO)
 
 check_cxx_source_compiles(
+	"extern \"C\" {
+	   extern void* _Unwind_GetIP (void *);
+	   extern int _Unwind_Backtrace(int (*)(void *,void *),void *);
+	 }
+
+	int main() { _Unwind_Backtrace(0,0); _Unwind_GetIP(0); }"
+	BOOSTER_HAVE_UNWIND_BACKTRACE)
+
+
+Check_cxx_source_compiles(
 	"#include <atomic.h>
 	int main() { volatile unsigned v=0; return atomic_add_int_nv(&v,1); }"
 	BOOSTER_HAVE_SOLARIS_ATOMIC)
@@ -558,8 +579,8 @@ foreach(ALIB ${LINK_LIBS})
 		target_link_libraries(${ALIB} psapi)
 	endif()
 	
-	if(USE_STLPORT AND STLPORT_LIB)
-		target_link_libraries(${ALIB} ${STLPORT_LIB})
+	if(STLPORT_LIB)
+		target_link_libraries(${ALIB} ${STLPORT_LIB} supc++)
 	endif()
 
 

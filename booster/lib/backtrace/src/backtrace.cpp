@@ -10,7 +10,7 @@
 #include <booster/backtrace.h>
 #include <booster/build_config.h>
 
-#if (defined(__linux) && !defined(__UCLIBC__)) || defined(__APPLE__) || defined(__sun)
+#if (defined(__linux) && !defined(__UCLIBC__)) || defined(__APPLE__) || defined(__sun) || defined(__FreeBSD__)
 #  define BOOSTER_HAVE_DLADDR
 #endif
 
@@ -45,12 +45,53 @@
 #include <dbghelp.h>
 #endif
 
+#if defined(BOOSTER_HAVE_UNWIND_BACKTRACE)
 
+extern "C" {
+	extern void * _Unwind_GetIP (void *);
+	extern int _Unwind_Backtrace(int (*)(void *,void *),void *);
+}
+
+#endif
 
 namespace booster {
 
     namespace stack_trace {
-        #if defined(BOOSTER_HAVE_EXECINFO)
+        //
+        // Linux already has backtrace based on _Unwind_Backtrace,
+        // other uses frame pointers that do not work when -fomit-frame-pointer is used
+        // so enable it on Apple, Sun and BSD using libgcc's _Unwind_Backtrace
+        // if present
+        //
+        #if defined(BOOSTER_HAVE_UNWIND_BACKTRACE) && ( defined(__FreeBSD__) || defined(__sun) || defined(__APPLE__) ) 
+
+        namespace {
+            struct trace_data {
+                void **array;
+                int reminder;
+                int total;
+            };
+            extern "C" {
+                static int booster_stacktrace_callback(void *context,void *cookie)
+                {
+                    trace_data *d = static_cast<trace_data *>(cookie);
+                    if(d->reminder > 0) {
+                        d->reminder --;
+                        d->array[d->total++] = _Unwind_GetIP(context);
+                    }
+                    return 0;
+                }
+            }
+        }
+
+        int trace(void **array,int n)
+        {
+            trace_data d = { array, n , 0};
+            _Unwind_Backtrace(booster_stacktrace_callback,&d);
+            return d.total;
+        }
+
+        #elif defined(BOOSTER_HAVE_EXECINFO)
         
         int trace(void **array,int n)
         {
