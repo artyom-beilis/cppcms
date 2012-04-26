@@ -47,6 +47,9 @@ def test_unfinished_read(msg,reads,ignore):
     print "SO_RCVBUF=%d" % read_size
     if read_size < 32768:
         read_size = 32768
+    if read_size > 128*1024:
+        readsize = 65536
+        s.setsockopt(socket.SOL_SOCKET, socket.SO_RCVBUF,readsize)
     s.send(msg + '\r\n\r\n')
     for n in xrange(0,reads):
         time.sleep(1)
