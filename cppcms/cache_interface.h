@@ -19,6 +19,8 @@
 #include <cppcms/cstdint.h>
 
 namespace cppcms {
+	
+	class service;
 
 	namespace impl {
 		class base_cache;
@@ -137,6 +139,12 @@ namespace cppcms {
 	class CPPCMS_API cache_interface : public booster::noncopyable {
 	public:
 
+		///
+		/// Create interface object without a context, everything but
+		/// fetch_page and store_page would work, it is not possible to
+		/// handle pages without full i/o context
+		/// 
+		cache_interface(cppcms::service &srv);
 		///
 		/// \cond INTERNAL
 		///

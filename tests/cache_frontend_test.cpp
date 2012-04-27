@@ -329,6 +329,30 @@ private:
 	cppcms::service &srv_;
 };
 
+void test_independent(cppcms::service &srv)
+{
+	std::cout << "- Context independent cache test\n";
+	// normal ops
+	cppcms::cache_interface cache(srv);
+	cache.clear();
+	unsigned n=0,m;
+	TEST(cache.stats(n,m));
+	TEST(n==0);
+	cache.store_frame("a","b");
+	TEST(cache.stats(n,m));
+	TEST(n==1);
+	std::string tmp;
+	TEST(cache.fetch_frame("a",tmp));
+	TEST(tmp=="b");
+	cache.rise("a");
+	TEST(!cache.fetch_frame("a",tmp));
+	TEST(cache.stats(n,m));
+	TEST(n==0);
+	// Does not crash without a context
+	TEST(cache.fetch_page("x") == false);
+	cache.store_page("y");
+}
+
 
 int main()
 {
@@ -344,6 +368,7 @@ int main()
 		app.test_basic();
 		app.test_gzip();
 		app.test_objects();
+		test_independent(srv);
 	}
 	catch(std::exception const &e)
 	{

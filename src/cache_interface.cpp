@@ -75,6 +75,13 @@ triggers_recorder::~triggers_recorder()
 
 struct cache_interface::_data {};
 
+cache_interface::cache_interface(cppcms::service &srv) :
+	context_(0),
+	page_compression_used_(0)
+{
+	cache_module_ = srv.cache_pool().get();
+}
+
 cache_interface::cache_interface(http::context &context) :
 	context_(&context),
 	page_compression_used_(0)
@@ -101,6 +108,7 @@ cache_interface::~cache_interface()
 bool cache_interface::fetch_page(string const &key)
 {
 	if(nocache()) return false;
+	if(!context_) return false;
 
 	bool gzip = context_->response().need_gzip();
 	page_compression_used_ = gzip;
@@ -124,6 +132,7 @@ bool cache_interface::fetch_page(string const &key)
 void cache_interface::store_page(string const &key,int timeout)
 {
 	if(nocache()) return;
+	if(!context_) return;
 
 	context_->response().finalize();
 
