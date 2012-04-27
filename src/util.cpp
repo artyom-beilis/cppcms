@@ -13,6 +13,8 @@
 #include "md5.h"
 #include "tohex.h"
 
+#include <ostream>
+
 namespace cppcms {
 namespace util {
 
