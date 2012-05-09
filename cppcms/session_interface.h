@@ -139,7 +139,7 @@ public:
 		T value;
 		ss>>value;
 		if(ss.fail() || !ss.eof())
-			throw std::bad_cast();
+			throw booster::bad_cast();
 		return value;
 	}
 
