@@ -53,10 +53,68 @@ namespace details {
 		return ss.str();
 	}
 
+	class copy_buf : public std::streambuf {
+	public:
+		copy_buf(std::streambuf *output = 0) :
+			out_(output)
+		{
+		}
+		void open(std::streambuf *out) 
+		{
+			out_ = out;
+		}
+		void getstr(std::string &out)
+		{
+			buffer_.resize(buffer_.size() -  (epptr() - pptr()));
+			setp(0,0);
+			buffer_.swap(out);
+			buffer_.clear();
+		}
+		int overflow(int c)
+		{
+			// we relay on a fact that std::string is continuous
+			// storage so we can eliminate some memory copying
+			int r=0;
+			if(out_ && pbase()!=pptr()) {
+				int n = pptr()-pbase();
+				if(out_->sputn(pbase(),n)!=n)
+					r=-1;
+			}
+			if(pptr() == 0) {
+				buffer_.resize(1024);
+				setp(&buffer_[0],&buffer_[0]+buffer_.size());
+			}
+			else if(pptr()==epptr()) {
+				size_t size = buffer_.size();
+				buffer_.resize(size * 2);
+				setp(&buffer_[size],&buffer_[size]+size);
+			}
+			else {
+				setp(pptr(),epptr());
+			}
+			if(r==0 && c!=EOF)
+				sputc(c);
+			return r;
+		}
+		int sync()
+		{
+			return overflow(EOF);
+		}
+		void close()
+		{
+			pubsync();
+			out_ = 0;
+		}
+	private:
+		std::string buffer_;
+		std::streambuf *out_;
+	};
+
+
 	template<typename Self>
 	class basic_obuf : public std::streambuf {
 	public:
-		basic_obuf(size_t n = 0) 
+		basic_obuf(size_t n = 0)
 		{
 			if(n==0)
 				n=1024;
@@ -89,39 +147,6 @@ namespace details {
 		std::vector<char> buf_;
 	};
 
-	class copy_buf : public basic_obuf<copy_buf>  {
-	public:
-		copy_buf(std::streambuf *output = 0,size_t n = 0) : 
-			basic_obuf<copy_buf>(n),
-			out_(output)
-		{
-		}
-		void open(std::streambuf *out) 
-		{
-			out_ = out;
-		}
-		void getstr(std::string &out)
-		{
-			buffer_.swap(out);
-			buffer_.clear();
-		}
-		int write(char const *c,int n)
-		{
-			if(!out_)
-				return -1;
-			if(out_->sputn(c,n)!=n)
-				return -1;
-			buffer_.append(c,n);
-			return 0;
-		}
-		void close()
-		{
-			pubsync();
-		}
-	private:
-		std::string buffer_;
-		std::streambuf *out_;
-	};
 
 #ifndef CPPCMS_NO_GZIP
 	class gzip_buf : public basic_obuf<gzip_buf> {
@@ -268,7 +293,7 @@ struct response::_data {
 	headers_type headers;
 	std::vector<cookie> cookies;
 
-	std::stringbuf buffered;
+	details::copy_buf buffered;
 	details::copy_buf cached;
 	#ifndef CPPCMS_NO_GZIP
 	details::gzip_buf zbuf;
@@ -499,8 +524,8 @@ std::ostream &response::out()
 
 std::string response::get_async_chunk()
 {
-	std::string result=d->buffered.str();
-	d->buffered.str("");
+	std::string result;
+	d->buffered.getstr(result);
 	return result;
 }
 
