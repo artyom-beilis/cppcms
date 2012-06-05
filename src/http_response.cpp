@@ -25,20 +25,20 @@
 #include <booster/posix_time.h>
 #include <iostream>
 #include <sstream>
+#include <streambuf>
 #include <iterator>
 #include <map>
+#include <stdio.h>
 
-#include <cppcms_boost/iostreams/stream.hpp>
-#include <cppcms_boost/iostreams/filtering_stream.hpp>
 #ifndef CPPCMS_NO_GZIP
-#include <cppcms_boost/iostreams/filter/gzip.hpp>
+#include <zlib.h>
 #endif
-#include <cppcms_boost/iostreams/tee.hpp>
-namespace boost = cppcms_boost;
+
+//#include <booster/streambuf.h>
 
 namespace cppcms { namespace http {
 
-namespace {
+namespace details {
 
 	bool string_i_comp(std::string const &left,std::string const &right)
 	{
@@ -52,35 +52,212 @@ namespace {
 		ss<<v;
 		return ss.str();
 	}
-} // anon
 
+	template<typename Self>
+	class basic_obuf : public std::streambuf {
+	public:
+		basic_obuf(size_t n = 0) 
+		{
+			if(n==0)
+				n=1024;
+			buf_.resize(n);
+		}
+		Self &self()
+		{
+			return static_cast<Self &>(*this);
+		}
+		int overflow(int c)
+		{
+			int r=0;
+			if(pptr()!=0 && pptr() > pbase()) {
+				if(self().write(pbase(),pptr()-pbase()) < 0) {
+					r = EOF;
+				}
+			}
+			char *begin = 	&buf_[0];
+			char *end = 	begin + buf_.size();
+			setp(begin,end);
+			if(c!=EOF && r!=EOF)
+				sputc(c);
+			return r;
+		}
+		int sync()
+		{
+			return overflow(EOF);
+		}
+	private:
+		std::vector<char> buf_;
+	};
 
+	class copy_buf : public basic_obuf<copy_buf>  {
+	public:
+		copy_buf(std::streambuf *output = 0,size_t n = 0) : 
+			basic_obuf<copy_buf>(n),
+			out_(output)
+		{
+		}
+		void open(std::streambuf *out) 
+		{
+			out_ = out;
+		}
+		void getstr(std::string &out)
+		{
+			buffer_.swap(out);
+			buffer_.clear();
+		}
+		int write(char const *c,int n)
+		{
+			if(!out_)
+				return -1;
+			if(out_->sputn(c,n)!=n)
+				return -1;
+			buffer_.append(c,n);
+			return 0;
+		}
+		void close()
+		{
+			pubsync();
+		}
+	private:
+		std::string buffer_;
+		std::streambuf *out_;
+	};
 
-namespace  {
-	class output_device : public boost::iostreams::sink {
+#ifndef CPPCMS_NO_GZIP
+	class gzip_buf : public basic_obuf<gzip_buf> {
+	public:
+		gzip_buf(size_t n = 0) :
+			basic_obuf<gzip_buf>(n),
+			opened_(false),
+			z_stream_(z_stream()),
+			out_(0),
+			level_(-1),
+			buffer_(4096)
+		{
+		}
+		int write(char const *p,int n)
+		{
+			if(!out_ || !opened_) {
+				return 0;
+			}
+
+			if(n==0) {
+				return 0;
+			}
+
+			z_stream_.avail_in = n;
+			z_stream_.next_in = (Bytef*)(p);
+			z_stream_.avail_out = chunk_.size();
+			z_stream_.next_out = (Bytef*)(&chunk_[0]);
+
+			do {
+				deflate(&z_stream_,Z_NO_FLUSH);
+				int have = chunk_.size() - z_stream_.avail_out;
+				if(out_->sputn(&chunk_[0],have)!=have) {
+					close();
+					return -1;
+				}
+			} while(z_stream_.avail_out == 0);
+
+			return 0;
+		}
+		void close()
+		{
+			if(!opened_)
+				return;
+			if(out_) {
+				z_stream_.avail_in = 0;
+				z_stream_.next_in = 0;
+				z_stream_.avail_out = chunk_.size();
+				z_stream_.next_out = (Bytef*)(&chunk_[0]);
+				do {
+					deflate(&z_stream_,Z_FINISH);
+					int have = chunk_.size() - z_stream_.avail_out;
+					if(out_->sputn(&chunk_[0],have)!=have) {
+						break;
+					}
+				} while(z_stream_.avail_out == 0);
+				out_->pubsync();
+			}
+
+			deflateEnd(&z_stream_);
+			opened_ = false;
+			z_stream_ = z_stream();
+			chunk_.clear();
+			out_ = 0;
+
+		}
+		void open(std::streambuf *out,int level = -1,int buffer_size=-1)
+		{
+			level_ = level;
+			if(buffer_size == -1)
+				buffer_size = 4096;
+			buffer_ = buffer_size;
+			out_ = out;
+			if(deflateInit2(&z_stream_,
+					level_,
+					Z_DEFLATED,
+					15 + 16, // 15 window bits+gzip = 16,
+					8, // memuse
+					Z_DEFAULT_STRATEGY) != Z_OK)
+			{
+				std::string error = "ZLib init failed";
+				if(z_stream_.msg) {
+					error+=":";
+					error+=z_stream_.msg;
+				}
+				throw booster::runtime_error(error);
+			}
+			opened_ = true;
+			chunk_.resize(buffer_,0);
+		}
+		~gzip_buf()
+		{
+			if(opened_)
+				deflateEnd(&z_stream_);
+		}
+	private:
+		bool opened_;
+		std::vector<char> chunk_;
+		z_stream z_stream_;
+		std::streambuf *out_;
+		int level_;
+		size_t buffer_;
+	};
+
+#endif
+
+	class output_device : public basic_obuf<output_device> {
 		booster::weak_ptr<impl::cgi::connection> conn_;
 	public:
-		output_device(impl::cgi::connection *conn) : 
+		output_device(impl::cgi::connection *conn,size_t n) : 
+			basic_obuf<output_device>(n),
 			conn_(conn->shared_from_this())
 		{
 		}
-		std::streamsize write(char const *data,std::streamsize n)
+		void close()
+		{
+			pubsync();
+		}
+		int write(char const *data,int n)
 		{
 			if(n==0)
 				return 0;
 			booster::shared_ptr<impl::cgi::connection> c = conn_.lock();
-			if(!c) {
-				throw std::runtime_error("no writer");
-			}
+			if(!c)
+				return -1;
 			
 			booster::system::error_code e;
 
-			size_t res = c->write(data,n,e);
+			int res = c->write(data,n,e);
 			if(e) {
 				BOOSTER_WARNING("cppcms") << "Failed to write response:" << e.message();
 				conn_.reset();
+				return -1;
 			}
-			return res;
+			if(res!=n)
+				return -1;
+			return 0;
 		}
 	};
 }
@@ -90,18 +267,25 @@ struct response::_data {
 	typedef std::map<std::string,std::string,compare_type> headers_type;
 	headers_type headers;
 	std::vector<cookie> cookies;
-	std::ostringstream cached;
-	std::ostringstream buffered;
-	boost::iostreams::stream<output_device> output;
-	boost::iostreams::filtering_ostream filter;
+
+	std::stringbuf buffered;
+	details::copy_buf cached;
+	#ifndef CPPCMS_NO_GZIP
+	details::gzip_buf zbuf;
+	#endif
+	details::output_device output_buf;
+	std::ostream output;
 
 	_data(impl::cgi::connection *conn) : 
-		headers(string_i_comp),
-		output(output_device(conn),conn->service().cached_settings().service.output_buffer_size)
+		headers(details::string_i_comp),
+		output_buf(conn,conn->service().cached_settings().service.output_buffer_size),
+		output(0)
 	{
 	}
 };
 
+
+using details::itoa;
 
 response::response(context &context) :
 	d(new _data(&context.connection())),
@@ -167,12 +351,11 @@ void response::finalize()
 {
 	if(!finalized_) {
 		out()<<std::flush;
-		try {
-			d->filter.reset();
-		}
-		catch(...) {
-			// device may throw!
-		}
+#ifndef CPPCMS_NO_GZIP
+		d->zbuf.close();
+#endif
+		d->cached.close();
+		d->output_buf.close();
 		finalized_=1;
 	}
 }
@@ -262,29 +445,28 @@ void response::copy_to_cache()
 
 std::string response::copied_data()
 {
+	std::string tmp;
 	if(!copy_to_cache_ || !ostream_requested_)
-		return std::string();
-	return d->cached.str();	
+		return tmp;
+	d->cached.getstr(tmp);
+	return tmp;
 }
 
 std::ostream &response::out()
 {
-	using namespace boost::iostreams;
-
 	if(ostream_requested_)
-		return *stream_;
+		return d->output;
+
 	if(finalized_)
 		throw cppcms_error("Request for output stream for finalized request is illegal");
 	
 	if(io_mode_ == asynchronous || io_mode_ == asynchronous_raw) 
-		stream_ = &d->buffered;
+		d->output.rdbuf(&d->buffered);
 	else 
-		stream_ = &d->output;
+		d->output.rdbuf(&d->output_buf);
 	
 	ostream_requested_=1;
 	
-	bool use_filter = false;
-
 	#ifndef CPPCMS_NO_GZIP
 	bool gzip = need_gzip();
 	
@@ -295,37 +477,24 @@ std::ostream &response::out()
 
 	// Now we shoulde write headers -- before comrpession
 	if(io_mode_ != raw && io_mode_ != asynchronous_raw)
-		write_http_headers(*stream_);
+		write_http_headers(d->output);
+	
+	if(copy_to_cache_) {
+		d->cached.open(d->output.rdbuf());
+		d->output.rdbuf(&d->cached);
+	}
 	
 	#ifndef CPPCMS_NO_GZIP
 	if(gzip) {
-		gzip_params params;
-
 		int level=context_.service().cached_settings().gzip.level;
-		if(level!=-1)
-			params.level=level;
 		int buffer=context_.service().cached_settings().gzip.buffer;
-		if(buffer!=-1)
-			d->filter.push(gzip_compressor(params,buffer));
-		else
-			d->filter.push(gzip_compressor(params));
-
-		use_filter = true;
+		d->zbuf.open(d->output.rdbuf(),level,buffer);
+		d->output.rdbuf(&d->zbuf);
 	}
 	#endif
 	
-	if(copy_to_cache_) {
-		d->filter.push(tee_filter<std::ostream>(d->cached));
-		use_filter = true;
-	}
-	
-	if(use_filter) {
-		d->filter.push(*stream_);
-		stream_ = &d->filter;
-	}
-
-	stream_->imbue(context_.locale());
-	return *stream_;
+	d->output.imbue(context_.locale());
+	return d->output;
 }
 
 std::string response::get_async_chunk()

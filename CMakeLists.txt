@@ -362,13 +362,6 @@ set(CPPCMS_SOURCES
 	src/send_timeout.cpp
 )
 
-if(NOT DISABLE_GZIP)
-	set(CPPCMS_SOURCES ${CPPCMS_SOURCES}
-		cppcms_boost/src/zlib.cpp
-		cppcms_boost/src/gzip.cpp)
-endif()
-
-
 if(NOT DISABLE_TCPCACHE)
 	set(CPPCMS_SOURCES ${CPPCMS_SOURCES}
 		src/tcp_cache_client.cpp
