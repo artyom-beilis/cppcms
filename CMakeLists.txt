@@ -625,6 +625,7 @@ set(ALL_TESTS
 	secure_post_test
 	mount_point_test
 	todec_test
+	hash_map_test
 	)
 
 if(NOT DISABLE_TCPCACHE)
@@ -710,6 +711,7 @@ add_test(todec_test todec_test)
 add_test(encryptor_test encryptor_test "${CNF}")
 add_test(storage_test storage_test)
 add_test(json_test json_test)
+add_test(hash_map_test hash_map_test)
 add_test(multipart_parser_test multipart_parser_test "${CNF}")
 add_test(content_type_parser_test content_type_parser_test)
 if(NOT DISABLE_TCPCACHE)

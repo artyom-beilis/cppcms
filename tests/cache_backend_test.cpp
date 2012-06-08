@@ -25,8 +25,6 @@ void ssleep(int x) { sleep(x); }
 #endif
 
 
-
-
 void test_cache(booster::intrusive_ptr<cppcms::impl::base_cache> cache,bool test_generators=true)
 {
 	std::string tmp;

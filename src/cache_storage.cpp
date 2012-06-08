@@ -31,11 +31,22 @@
 #include <cppcms/cstdint.h>
 
 
-#include <cppcms_boost/unordered/unordered_map.hpp>
+//#include <cppcms_boost/unordered/unordered_map.hpp>
+#include "../booster/lib/locale/src/shared/mo_hash.h"
+#include "hash_map.h"
 namespace boost = cppcms_boost;
 
 namespace cppcms {
 namespace impl {
+
+template<typename String>
+struct hash_function {
+	size_t operator()(String const &s) const
+	{
+		return booster::locale::gnu_gettext::pj_winberger_hash_function(s.c_str(),s.c_str()+s.size());
+	}
+};
+
 
 template<typename String>
 struct copy_traits {
@@ -137,11 +148,10 @@ class mem_cache : public base_cache {
 
 	typedef std::basic_string<char,std::char_traits<char>,allocator > string_type;
 
-	typedef boost::unordered_map<
+	typedef hash_map<
 			string_type,
 			container,
-			boost::hash<string_type>,
-			std::equal_to<string_type>,
+			hash_function<string_type>,
 			typename allocator::template rebind<std::pair<const string_type,container> >::other
 		> map_type;
 
@@ -150,18 +160,23 @@ class mem_cache : public base_cache {
 	typedef std::list<
 			pointer,
 			typename allocator::template rebind<pointer>::other
-		> lru_list_type;
+		> pointer_list_type;
 
-	typedef std::multimap<
+	typedef hash_map<
 			string_type,
-			pointer,
-			std::less<string_type>,
-			typename allocator::template rebind<std::pair<const string_type,pointer> >::other
+			pointer_list_type,
+			hash_function<string_type>,
+			typename allocator::template rebind<std::pair<const string_type,pointer_list_type> >::other
 		> triggers_map_type;
 
-	typedef std::list<
+	typedef std::pair<
 			typename triggers_map_type::iterator,
-			typename allocator::template rebind<typename triggers_map_type::iterator>::other
+			typename pointer_list_type::iterator
+		> trigger_ptr_type;
+
+	typedef std::list<
+			trigger_ptr_type,
+			typename allocator::template rebind<trigger_ptr_type>::other
 		> triggers_list_type;
 
 	typedef std::multimap<
@@ -174,7 +189,7 @@ class mem_cache : public base_cache {
 	struct container {
 		string_type data;
 		typedef typename map_type::iterator pointer;
-		typename lru_list_type::iterator lru;
+		typename pointer_list_type::iterator lru;
 		triggers_list_type triggers;
 		typename timeout_mmap_type::iterator timeout;
 		uint64_t generation;
@@ -185,10 +200,11 @@ class mem_cache : public base_cache {
 	typedef typename triggers_map_type::iterator triggers_ptr;
 	timeout_mmap_type timeout;
 	typedef typename timeout_mmap_type::iterator timeout_ptr;
-	lru_list_type lru;
-	typedef typename lru_list_type::iterator lru_ptr;
+	pointer_list_type lru;
+	typedef typename pointer_list_type::iterator lru_ptr;
 	unsigned limit;
 	size_t size;
+	size_t triggers_count;
 	int refs;
 	uint64_t generation;
 
@@ -207,7 +223,10 @@ class mem_cache : public base_cache {
 		timeout.erase(p->second.timeout);
 		typename triggers_list_type::iterator i;
 		for(i=p->second.triggers.begin();i!=p->second.triggers.end();i++) {
-			triggers.erase(*i);
+			i->first->second.erase(i->second);
+			triggers_count --;
+			if(i->first->second.empty())
+				triggers.erase(i->first);
 		}
 		primary.erase(p);
 		size--;
@@ -256,7 +275,7 @@ public:
 		if(triggers) {
 			typename triggers_list_type::iterator tp;
 			for(tp=p->second.triggers.begin();tp!=p->second.triggers.end();tp++) {
-				triggers->insert(to_std((*tp)->first));
+				triggers->insert(to_std(tp->first->first));
 			}
 		}
 
@@ -272,11 +291,12 @@ public:
 	virtual void rise(std::string const &trigger)
 	{
 		wrlock_guard lock(*access_lock);
-		std::pair<triggers_ptr,triggers_ptr> range=triggers.equal_range(to_int(trigger));
-		triggers_ptr p;
+		triggers_ptr p = triggers.find(to_int(trigger));
+		if(p==triggers.end())
+			return;
 		std::list<pointer> kill_list;
-		for(p=range.first;p!=range.second;p++) {
-			kill_list.push_back(p->second);
+		for(typename pointer_list_type::iterator it=p->second.begin();it!=p->second.end();++it) {
+			kill_list.push_back(*it);
 		}
 		typename std::list<pointer>::iterator lptr;
 
@@ -290,8 +310,8 @@ public:
 		lru.clear();
 		primary.clear();
 		triggers.clear();
-		primary.rehash( (limit+1) / primary.max_load_factor() + 1);
 		size = 0;
+		triggers_count = 0;
 	}
 	virtual void clear()
 	{
@@ -302,7 +322,7 @@ public:
 	{
 		rdlock_guard lock(*access_lock);
 		keys=size;
-		triggers=this->triggers.size();
+		triggers = triggers_count;
 	}
 	void check_limits()
 	{
@@ -330,6 +350,16 @@ public:
 		if(p==primary.end())
 			return;
 		delete_node(p);
+	}
+
+	void add_trigger(pointer p,std::string const &key)
+	{
+		std::pair<string_type,pointer_list_type> tr(to_int(key),pointer_list_type());
+		std::pair<triggers_ptr,bool> r=triggers.insert(tr);
+		triggers_ptr it = r.first;
+		it->second.push_front(p);
+		p->second.triggers.push_back(trigger_ptr_type(it,it->second.begin()));
+		triggers_count++;
 	}
 
 	virtual void store(	std::string const &key,
@@ -362,11 +392,11 @@ public:
 			cont.lru=lru.begin();
 			cont.timeout=timeout.insert(std::pair<time_t,pointer>(timeout_in,main));
 			if(triggers_in.find(key)==triggers_in.end()){
-				cont.triggers.push_back(triggers.insert(std::pair<string_type,pointer>(int_key,main)));
+				add_trigger(main,key);
 			}
 			std::set<std::string>::const_iterator si;
 			for(si=triggers_in.begin();si!=triggers_in.end();si++) {
-				cont.triggers.push_back(triggers.insert(std::pair<string_type,pointer>(to_int(*si),main)));
+				add_trigger(main,*si);
 			}
 		}
 		catch(std::bad_alloc const &e)

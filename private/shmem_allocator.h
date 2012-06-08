@@ -9,6 +9,7 @@
 #define CPPCMS_ALLOCATORS
 #include <cppcms/config.h>
 
+#include "basic_allocator.h"
 #include "boost_interprocess.h"
 
 #include "posix_util.h"
@@ -65,69 +66,38 @@ private:
 };
 
 template<typename T,shmem_control *&mm>
-class shmem_allocator {
+class shmem_allocator : public basic_allocator<shmem_allocator<T,mm>, T > {
 public :
-	typedef T value_type;
-	typedef T *pointer;
-	typedef T &reference;
-	typedef const T &const_reference;
-	typedef const T *const_pointer;
-	typedef std::size_t size_type;
-	typedef std::ptrdiff_t difference_type;
 
+	typedef basic_allocator<shmem_allocator<T,mm>, T > super;
 	template<typename U>
 	struct rebind {
 		typedef shmem_allocator<U,mm> other;
 	};
 
-
-	template<typename U> shmem_allocator (const shmem_allocator< U, mm > &) { };
-
-	shmem_allocator (const shmem_allocator &){ };
-	shmem_allocator() {};
-
-	pointer allocate(size_type cnt, std::allocator<void>::const_pointer = 0) const
+	template<typename U>
+	shmem_allocator (const shmem_allocator< U, mm > &) :
+		super()
 	{
-		void *memory=mm->malloc(cnt*sizeof(T));
-		if(!memory) {
-			throw std::bad_alloc();
-		}
-		return (pointer)memory;
-	};
-	void deallocate(pointer p, size_type) const
-	{
-		mm->free(p);
-	};
-	void construct(pointer p, const T& t) const 
-	{
-		new(p) T(t); 
-	}
-	void destroy(pointer p) const 
-	{
-		p->~T(); 
-	}
-	pointer address(reference x) const
-	{
-		return &x;
-	}
-	const_pointer address(const_reference x) const
-	{
-		return &x;
 	}
 
-	bool operator==(shmem_allocator const&) const 
+	shmem_allocator (const shmem_allocator &) :
+		super()
 	{
-		return true;
 	}
-	bool operator!=(shmem_allocator const& a) const 
+	shmem_allocator()
 	{
-		return false; 
 	}
 
-	size_type max_size() const throw()
+	void *malloc(size_t n) const
 	{
-		return std::numeric_limits<size_t>::max();
+		return mm->malloc(n);
 	}
+	void free(void *p) const
+	{
+		return mm->free(p);
+	}
+
 };
 
 
