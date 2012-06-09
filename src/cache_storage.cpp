@@ -27,26 +27,15 @@
 #include <map>
 #include <list>
 #include <limits>
+#include <memory>
 #include <time.h>
 #include <cppcms/cstdint.h>
 
 
-//#include <cppcms_boost/unordered/unordered_map.hpp>
-#include "../booster/lib/locale/src/shared/mo_hash.h"
 #include "hash_map.h"
-namespace boost = cppcms_boost;
 
 namespace cppcms {
 namespace impl {
-
-template<typename String>
-struct hash_function {
-	size_t operator()(String const &s) const
-	{
-		return booster::locale::gnu_gettext::pj_winberger_hash_function(s.c_str(),s.c_str()+s.size());
-	}
-};
-
 
 template<typename String>
 struct copy_traits {
@@ -151,7 +140,7 @@ class mem_cache : public base_cache {
 	typedef hash_map<
 			string_type,
 			container,
-			hash_function<string_type>,
+			string_hash<string_type>,
 			typename allocator::template rebind<std::pair<const string_type,container> >::other
 		> map_type;
 
@@ -165,7 +154,7 @@ class mem_cache : public base_cache {
 	typedef hash_map<
 			string_type,
 			pointer_list_type,
-			hash_function<string_type>,
+			string_hash<string_type>,
 			typename allocator::template rebind<std::pair<const string_type,pointer_list_type> >::other
 		> triggers_map_type;
 
