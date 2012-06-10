@@ -13,9 +13,35 @@
 #include <vector>
 #include <assert.h>
 
+#include <cppcms/cstdint.h>
 #include <booster/iterator/iterator_facade.h>
 namespace cppcms {
 namespace impl {
+	
+template<typename T>
+struct string_hash {
+public:
+	typedef uint32_t state_type;
+	static const state_type initial_state = 0;
+	static state_type update_state(state_type value,char c)
+	{
+		value = (value << 4) + static_cast<unsigned char>(c);
+		uint32_t high = (value & 0xF0000000U);
+		if(high!=0)
+		value = (value ^ (high >> 24)) ^ high;
+		return value;
+	}
+
+	size_t operator()(T const &v) const
+	{
+		state_type st = initial_state;
+		for(typename T::const_iterator p=v.begin();p!=v.end();++p) {
+			st = update_state(st,*p);
+		}
+		return st;
+	}
+};
+	
 namespace details {
 
 
