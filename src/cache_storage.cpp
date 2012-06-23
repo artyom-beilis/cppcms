@@ -21,7 +21,7 @@
 
 #ifndef CPPCMS_NO_PREFOK_CACHE
 # include "posix_util.h"
-# include "shmem_allocator2.h"
+# include "shmem_allocator.h"
 #endif
 
 #include <map>
