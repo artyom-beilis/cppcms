@@ -18,7 +18,7 @@
 		"connection_string" : "sqlite3:db=cppdb.db;busy_timeout=10000",
 		"clean" : "rm cppdb.db",
 		"transactivity" : "acid",
-		"no_performance" : true,
+		//"no_performance" : true,
 	}, 
 	{
 		"so" : "./cppdb/libcppcms_session_cppdb.so",
@@ -26,7 +26,7 @@
 		"connection_string" : "sqlite3:db=cppdb.db;busy_timeout=10000",
 		"clean" : "rm cppdb.db",
 		"transactivity" : "relaxed",
-		"no_performance" : true,
+		//"no_performance" : true,
 	}, 
 	{
 		"so" : "./cppdb/libcppcms_session_cppdb.so",
@@ -34,7 +34,7 @@
 		"connection_string" : "sqlite3:db=cppdb.db;busy_timeout=10000",
 		"clean" : "rm cppdb.db",
 		"transactivity" : "non_durable",
-		"no_performance" : true,
+		//"no_performance" : true,
 	},
 	{
 		"so" : "./cppdb/libcppcms_session_cppdb.so",
