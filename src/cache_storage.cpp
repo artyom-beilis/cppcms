@@ -21,7 +21,7 @@
 
 #ifndef CPPCMS_NO_PREFOK_CACHE
 # include "posix_util.h"
-# include "shmem_allocator.h"
+# include "shmem_allocator2.h"
 #endif
 
 #include <map>
@@ -54,6 +54,14 @@ struct copy_traits<std::string>
 {
 	static std::string to_int(std::string const &a) { return a; }
 	static std::string to_std(std::string const &a) { return a; }
+};
+
+struct string_equal {
+	template<typename S1,typename S2>
+	bool operator()(S1 const &s1,S2 const &s2) const
+	{
+		return s1.size() == s2.size() && memcmp(s1.c_str(),s2.c_str(),s1.size()) == 0;
+	}
 };
 
 #ifndef CPPCMS_NO_PREFOK_CACHE
@@ -140,7 +148,8 @@ class mem_cache : public base_cache {
 	typedef hash_map<
 			string_type,
 			container,
-			string_hash<string_type>,
+			string_hash,
+			string_equal,
 			typename allocator::template rebind<std::pair<const string_type,container> >::other
 		> map_type;
 
@@ -154,7 +163,8 @@ class mem_cache : public base_cache {
 	typedef hash_map<
 			string_type,
 			pointer_list_type,
-			string_hash<string_type>,
+			string_hash,
+			string_equal,
 			typename allocator::template rebind<std::pair<const string_type,pointer_list_type> >::other
 		> triggers_map_type;
 
@@ -247,7 +257,7 @@ public:
 		time_t now;
 		time(&now);
 
-		if((p=primary.find(to_int(key)))==primary.end() || p->second.timeout->first < now) {
+		if((p=primary.find(key))==primary.end() || p->second.timeout->first < now) {
 			return false;
 		}
 
@@ -280,7 +290,7 @@ public:
 	virtual void rise(std::string const &trigger)
 	{
 		wrlock_guard lock(*access_lock);
-		triggers_ptr p = triggers.find(to_int(trigger));
+		triggers_ptr p = triggers.find(trigger);
 		if(p==triggers.end())
 			return;
 		std::list<pointer> kill_list;
@@ -298,7 +308,9 @@ public:
 		timeout.clear();
 		lru.clear();
 		primary.clear();
+		primary.rehash(limit);
 		triggers.clear();
+		triggers.rehash(limit);
 		size = 0;
 		triggers_count = 0;
 	}
@@ -335,7 +347,7 @@ public:
 	virtual void remove(std::string const &key)
 	{
 		wrlock_guard lock(*access_lock);
-		pointer p=primary.find(to_int(key));
+		pointer p=primary.find(key);
 		if(p==primary.end())
 			return;
 		delete_node(p);
@@ -357,10 +369,19 @@ public:
 				time_t timeout_in,
 				uint64_t const *gen)
 	{
+		string_type ar;
+		try {
+			string_type tmp = to_int(a);
+			ar.swap(tmp);
+		}
+		catch(std::bad_alloc const &) {
+			return;
+		}
+
 		wrlock_guard lock(*access_lock);
 		try {
 			pointer main;
-			main=primary.find(to_int(key));
+			main=primary.find(key);
 			if(main!=primary.end())
 				delete_node(main);
 			if(size > size_limit())
@@ -372,7 +393,7 @@ public:
 			size ++;
 			main=res.first;
 			container &cont=main->second;
-			cont.data=to_int(a);
+			cont.data.swap(ar);
 			if(gen)
 				cont.generation=*gen;
 			else

@@ -40,6 +40,7 @@ option(DISABLE_HTTP		"Disable http web server" OFF)
 option(DISABLE_CACHE		"Disable cache beckend" OFF)
 option(DISABLE_TCPCACHE		"Disable distributed cache beckend" OFF)
 option(DISABLE_GZIP		"Disable support of gzip output compression" OFF)
+option(DISABLE_PREFORK_CACHE	"Disable prefork-cache beckend" OFF)
 option(USE_STLPORT		"Build with STLPort library" OFF)
 
 if(USE_STLPORT) 
@@ -50,12 +51,6 @@ if(USE_STLPORT)
 	else()
 		include_directories(${STLPORT_INCLUDE}/stlport)
 	endif()
-endif()
-
-if(CMAKE_CXX_COMPILER_ID STREQUAL "SunPro")
-	option(DISABLE_PREFORK_CACHE	"Disable prefork-cache beckend" ON)
-else()
-	option(DISABLE_PREFORK_CACHE	"Disable prefork-cache beckend" OFF)
 endif()
 
 add_subdirectory(booster)
@@ -628,6 +623,10 @@ set(ALL_TESTS
 	hash_map_test
 	)
 
+if(NOT DISABLE_PREFORK_CACHE AND NOT IS_WINDOWS)
+	set(ALL_TESTS ${ALL_TESTS} allocator_test)
+endif()
+
 if(NOT DISABLE_TCPCACHE)
 	set(ALL_TESTS ${ALL_TESTS} cache_backend_test cache_frontend_test)
 endif()
@@ -712,6 +711,10 @@ add_test(encryptor_test encryptor_test "${CNF}")
 add_test(storage_test storage_test)
 add_test(json_test json_test)
 add_test(hash_map_test hash_map_test)
+if(NOT DISABLE_PREFORK_CACHE AND NOT IS_WINDOWS)
+	add_test(allocator_test allocator_test)
+endif()
+
 add_test(multipart_parser_test multipart_parser_test "${CNF}")
 add_test(content_type_parser_test content_type_parser_test)
 if(NOT DISABLE_TCPCACHE)

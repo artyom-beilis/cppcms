@@ -119,7 +119,7 @@ static int check_line = 0;
 template<typename Alloc>
 void test_hasher()
 {
-	typedef cppcms::impl::hash_map<std::string,int,hasher,Alloc> hasher_type;
+	typedef cppcms::impl::hash_map<std::string,int,hasher,cppcms::impl::details::are_equal,Alloc> hasher_type;
 	typedef typename hasher_type::iterator iterator;
 	hasher_type h;
 	typedef std::pair<std::string,int> vt;

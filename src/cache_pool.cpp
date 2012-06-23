@@ -42,8 +42,8 @@ cache_pool::cache_pool(json::value const &settings) :
 		throw cppcms_error("The 'process_shared' backend is disabled during build procedure");
 #else // has prefork cache
 		size_t memory = settings.get("cache.memory",16384);
-		if(memory < 64)
-			throw cppcms_error("'process_shared' cache backend requires at least 64 KB of cache memory: cache.memory >= 64");
+		if(memory < 512)
+			throw cppcms_error("'process_shared' cache backend requires at least 512 KB of cache memory: cache.memory >= 512");
 		unsigned items = settings.get("cache.limit",memory);
 		d->module=impl::process_cache_factory(memory*1024,items);
 #endif // prefork cache

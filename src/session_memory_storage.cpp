@@ -22,7 +22,7 @@ class session_memory_storage : public session_storage {
 	typedef cppcms::impl::hash_map<
 		std::string,
 		_data,
-		cppcms::impl::string_hash<std::string>
+		cppcms::impl::string_hash
 		> map_type;
 		
 	typedef map_type::iterator pointer;

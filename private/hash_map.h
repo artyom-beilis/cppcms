@@ -18,7 +18,6 @@
 namespace cppcms {
 namespace impl {
 	
-template<typename T>
 struct string_hash {
 public:
 	typedef uint32_t state_type;
@@ -32,6 +31,7 @@ public:
 		return value;
 	}
 
+	template<typename T>
 	size_t operator()(T const &v) const
 	{
 		state_type st = initial_state;
@@ -43,6 +43,14 @@ public:
 };
 	
 namespace details {
+
+struct are_equal {
+	template<typename T1,typename T2>
+	bool operator()(T1 const &v1,T2 const &v2) const
+	{
+		return v1==v2;
+	}
+};
 
 
 template<typename T>
@@ -126,6 +134,7 @@ public:
 template<	typename Key,
 		typename Value,
 		typename Hash,
+		typename Equals=are_equal,
 		typename Alloc= std::allocator<std::pair<Key,Value> >
 		>
 class basic_map
@@ -182,7 +191,8 @@ public:
 		return size_;
 	}
 
-	iterator find(Key const &k)
+	template<typename Kt>
+	iterator find(Kt const &k)
 	{
 		if(hash_.empty())
 			return 0;
@@ -294,28 +304,6 @@ public:
 		TEST(size_ == count);
 	}
 #endif
-
-
-private:
-	iterator find_in_range(range_type &r,Key const &k)
-	{
-		for(iterator p=r.first;p!=0;p=p->next) {
-			if(p->val.first == k)
-				return p;
-		}
-		return 0;
-	}
-	range_type &get(Key const &k)
-	{
-		Hash hf;
-		size_t h = hf(k) % hash_.size();
-		return hash_[h];
-	}
-
-	size_t next_size()
-	{
-		return (1+size_)*2;
-	}
 	void rehash(size_t new_size)
 	{
 		basic_map tmp;
@@ -336,6 +324,34 @@ private:
 		list_.swap(tmp.list_);
 		hash_.swap(tmp.hash_);
 		tmp.hash_.clear();
+	}
+
+
+private:
+	template<typename Kt>
+	iterator find_in_range(range_type &r,Kt const &k)
+	{
+		for(iterator p=r.first;p!=0;p=p->next) {
+			Equals compare;
+			if(compare(p->val.first,k)) {
+				return p;
+			}
+			if(p==r.second)
+				return 0;
+		}
+		return 0;
+	}
+	template<typename Kt>
+	range_type &get(Kt const &k)
+	{
+		Hash hf;
+		size_t h = hf(k) % hash_.size();
+		return hash_[h];
+	}
+
+	size_t next_size()
+	{
+		return (1+size_)*2;
 	}
 	void rehash_if_needed()
 	{
@@ -390,9 +406,10 @@ private:
 template<	typename Key,
 		typename Value,
 		typename Hash,
+		typename Equals = details::are_equal,
 		typename Alloc= std::allocator<std::pair<Key,Value> > >
 class hash_map {
-	typedef details::basic_map<Key,Value,Hash,Alloc> impl_type;
+	typedef details::basic_map<Key,Value,Hash,Equals,Alloc> impl_type;
 	typedef typename impl_type::iterator impl_iterator;
 public:
 	typedef std::pair<const Key,Value> value_type;
@@ -403,6 +420,11 @@ public:
             impl_.check();
         }
 #endif
+
+	void rehash(size_t n)
+	{
+		impl_.rehash(n);
+	}
 
         ~hash_map()
         {
@@ -448,7 +470,8 @@ public:
 		return iterator(0);
 	}
 
-	iterator find(Key const &k)
+	template<typename Kt>
+	iterator find(Kt const &k)
 	{
 		return iterator(impl_.find(k));
 	}
