@@ -255,6 +255,7 @@ namespace json {
 		}
 		void destroy()
 		{
+			typedef std::string string_type;
 			switch(type) {
 			case is_undefined:
 			case is_null:
@@ -262,7 +263,7 @@ namespace json {
 			case is_number:
 				break;
 			case is_string:
-				static_cast<std::string *>(ptr())->~basic_string();
+				static_cast<string_type *>(ptr())->~string_type();
 				break;
 			case is_object:
 				static_cast<object *>(ptr())->~object();

@@ -31,8 +31,9 @@
 #include <time.h>
 #include <cppcms/cstdint.h>
 
-
 #include "hash_map.h"
+
+#include <string.h>
 
 namespace cppcms {
 namespace impl {
