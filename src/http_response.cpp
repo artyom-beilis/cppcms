@@ -172,10 +172,11 @@ namespace details {
 
 			z_stream_.avail_in = n;
 			z_stream_.next_in = (Bytef*)(p);
-			z_stream_.avail_out = chunk_.size();
-			z_stream_.next_out = (Bytef*)(&chunk_[0]);
 
 			do {
+				z_stream_.avail_out = chunk_.size();
+				z_stream_.next_out = (Bytef*)(&chunk_[0]);
+
 				deflate(&z_stream_,Z_NO_FLUSH);
 				int have = chunk_.size() - z_stream_.avail_out;
 				if(out_->sputn(&chunk_[0],have)!=have) {
@@ -193,9 +194,9 @@ namespace details {
 			if(out_) {
 				z_stream_.avail_in = 0;
 				z_stream_.next_in = 0;
-				z_stream_.avail_out = chunk_.size();
-				z_stream_.next_out = (Bytef*)(&chunk_[0]);
 				do {
+					z_stream_.avail_out = chunk_.size();
+					z_stream_.next_out = (Bytef*)(&chunk_[0]);
 					deflate(&z_stream_,Z_FINISH);
 					int have = chunk_.size() - z_stream_.avail_out;
 					if(out_->sputn(&chunk_[0],have)!=have) {
