@@ -124,10 +124,10 @@ namespace locale {
                     ap.reset(icu::NumberFormat::createPercentInstance(locale_,err));
                     break;
                 case fmt_spell:
-                    ap.reset(new icu::RuleBasedNumberFormat(URBNF_SPELLOUT,locale_,err));
+                    ap.reset(new icu::RuleBasedNumberFormat(icu::URBNF_SPELLOUT,locale_,err));
                     break;
                 case fmt_ord:
-                    ap.reset(new icu::RuleBasedNumberFormat(URBNF_ORDINAL,locale_,err));
+                    ap.reset(new icu::RuleBasedNumberFormat(icu::URBNF_ORDINAL,locale_,err));
                     break;
                 default:
                     throw booster::runtime_error("locale::internal error should not get there");
