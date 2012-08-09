@@ -187,21 +187,21 @@ namespace util {
 		///
 		stackstream() : std::ostream(0)
 		{
-			rbbuf(&buf_);
+			rdbuf(&buf_);
 		}
 		///
 		/// Get the pointer to the first character in the range
 		///
 		char *begin()
 		{
-			return buf_->begin();
+			return buf_.begin();
 		}
 		///
 		/// Get the pointer to the one past last character in the range
 		///
 		char *end()
 		{
-			return buf_->end();
+			return buf_.end();
 		}
 		///
 		/// Get a NUL terminated recorded string
