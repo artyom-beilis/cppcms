@@ -317,7 +317,14 @@ check_cxx_source_compiles(
 	BOOSTER_HAVE_EXECINFO)
 
 check_cxx_source_compiles(
-	"extern \"C\" {
+	"#include <stdexcept>
+	 #include <iostream>
+	 #include <stdlib.h>
+	 #include <string.h>
+	 #include <sstream>
+	 #include <typeinfo>
+	 #include <new>
+	  extern \"C\" {
 	   extern void* _Unwind_GetIP (void *);
 	   extern int _Unwind_Backtrace(int (*)(void *,void *),void *);
 	 }
