@@ -68,7 +68,8 @@ namespace cppcms {
 				parsing_error,
 				continue_input,
 				got_something,
-				eof
+				eof,
+				no_room_left
 			} parsing_result_type;
 
 			parsing_result_type consume(char const *buffer,int size)
@@ -144,9 +145,13 @@ namespace cppcms {
 							position_ = 0;
 							if(*buffer == boundary_[0])
 								position_=1;
+							if(!file_->write_data())
+								return no_room_left;
 						}
 						if(position_ == 0) {
 							file_->write_data() << *buffer;
+							if(!file_->write_data())
+								return no_room_left;
 						}
 						else if(position_ == boundary_.size()) {
 							state_ = expecting_one_crlf_or_eof;

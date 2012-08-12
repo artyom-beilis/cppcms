@@ -52,9 +52,9 @@ void run_test(std::string name,std::string k,bool is_signature = false)
 		}
 	}
 	TEST(!enc->decrypt("",plain));
-	std::string a(0,64);
+	std::string a(64,'\0');
 	TEST(!enc->decrypt(a,plain));
-	std::string b(0xFF,64);
+	std::string b(64,'\xFF');
 	TEST(!enc->decrypt(b,plain));
 	cipher=enc->encrypt("");
 	TEST(enc->decrypt(cipher,plain) && plain=="");

@@ -391,6 +391,10 @@ void connection::on_some_multipart_read(booster::system::error_code const &e,siz
 		handle_http_error(400,context,h);
 		return;
 	}
+	else if(r==multipart_parser::no_room_left) {
+		handle_http_error(413,context,h);
+		return;
+	}
 	else if(read_size_ == 0) {
 		handle_http_error(400,context,h);
 		return;

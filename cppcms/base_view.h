@@ -59,7 +59,28 @@ private:
 } // cppcms
 
 
-#if defined(CPPCMS_HAVE_CPP_0X_AUTO)
+#if defined __clang__
+#	if __has_feature(cxx_auto_type)
+#		define CPPCMS_HAVE_AUTO_TYPE
+#	endif
+#elif defined __GNUC__
+#	if (__GNUC__ >= 4 || (__GNUC__ == 4 &&  __GNUC_MINOR__ >= 4)) && defined(__GXX_EXPERIMENTAL_CXX0X__)
+#		define CPPCMS_HAVE_AUTO_TYPE
+#	endif
+#elif defined _MSC_VER
+#	if _MSC_VER >= 1600
+#		define CPPCMS_HAVE_AUTO_TYPE
+#	endif
+#elif defined __INTEL_COMPILER
+#	if __INTEL_COMPILER >= 1200 && defined(__GXX_EXPERIMENTAL_CXX0X__)
+#		define CPPCMS_HAVE_AUTO_TYPE
+#	endif
+#elif defined CPPCMS_HAVE_CPP_0X_AUTO // detected at compilation stage
+#	define CPPCMS_HAVE_AUTO_TYPE
+#endif
+
+
+#if defined(CPPCMS_HAVE_AUTO_TYPE)
 #	define CPPCMS_TYPEOF(x) auto
 #elif defined(CPPCMS_HAVE_CPP_0X_DECLTYPE)
 #	define CPPCMS_TYPEOF(x) decltype(x)
