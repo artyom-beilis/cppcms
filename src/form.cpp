@@ -507,7 +507,7 @@ void base_widget::render(form_context &context)
 		
 	switch(context.html_list()) {
 	case as_p: output<<"</p>\n"; break;
-	case as_table: output<<"</td><tr>\n"; break;
+	case as_table: output<<"</td></tr>\n"; break;
 	case as_ul: output<<"</li>\n"; break;
 	case as_dl: output<<"</dd>\n"; break;
 	case as_space: output<<"\n";
