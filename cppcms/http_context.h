@@ -14,6 +14,7 @@
 #include <booster/shared_ptr.h>
 #include <booster/enable_shared_from_this.h>
 #include <booster/callback.h>
+#include <booster/noncopyable.h>
 #include <locale>
 
 namespace cppcms {
