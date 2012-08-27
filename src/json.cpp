@@ -130,6 +130,11 @@ namespace json {
 			create(is_undefined);
 		}
 
+		~variant()
+		{
+			destroy();
+		}
+
 		variant(variant const &other) 
 		{
 			create(other.type,other.m);
@@ -277,15 +282,6 @@ namespace json {
 	};
 
 	typedef variant variant_type;
-	/*typedef boost::variant<
-			undefined,
-			null,
-			bool,
-			double,
-			std::string,
-			json::object,
-			json::array
-		>  variant_type;*/
 
 	struct value::_data {
 	public:
