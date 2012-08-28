@@ -611,7 +611,7 @@ void response::content_length(unsigned long long len)
 {
 	set_header("Content-Length",itoa(len));
 }
-void response::content_location(std::string const &s) { set_header("Content-Locaton",s); }
+void response::content_location(std::string const &s) { set_header("Content-Location",s); }
 void response::content_md5(std::string const &s) { set_header("Content-MD5",s); }
 void response::content_range(std::string const &s) { set_header("Content-Range",s); }
 void response::content_type(std::string const &s) { set_header("Content-Type",s); }
