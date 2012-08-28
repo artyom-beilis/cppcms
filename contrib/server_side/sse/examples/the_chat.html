@@ -1,0 +1,42 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+    "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html>
+<head>
+        <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+        <script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/1.7.2/jquery.min.js"></script>
+        <title>Chat Room</title>
+</head>
+<body>
+<h1>Chat room</h1>
+<script type="text/javascript">
+        var message_count = 0;
+        function send_data() {
+                $.post("/chat/post", {'message': $('#message').val()});
+                $("#message").val("");
+                return false;
+        }
+        
+        function read_data() {
+            var stream = new EventSource('/chat/get');
+
+            stream.onmessage = function(e){
+		var text = e.data.replace(/\n/g,'\n<br/>');
+		var text = '<p>' + text + '</p>'
+                $('#messages').html($('#messages').html() + text);
+            };
+            
+            stream.onerror = function(e){
+                console.log(e);
+            };
+        }
+
+        read_data();
+</script>
+<form id="theform" >
+	<textarea id="message" name="message"></textarea>
+        <input type="submit" value="Send" onclick="return send_data()"/>
+</form>
+<div id="messages">
+</div>
+</body>
+
