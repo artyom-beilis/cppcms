@@ -25,8 +25,6 @@ namespace cppcms {
 namespace json {
 
 
-
-
 	class value;
 
 	///
@@ -563,6 +561,27 @@ namespace json {
 		friend struct copyable;
 	};
 
+
+	///
+	/// Convert UTF-8 string to JSON string, i.e. a sring foo is converted to "foo",
+	/// a string bar"baz is converted to "bar\"baz"
+	///
+	std::string CPPCMS_API to_json(std::string const &utf);
+	///
+	/// Convert UTF-8 string to JSON string, i.e. a sring foo is converted to "foo",
+	/// a string bar"baz is converted to "bar\"baz"
+	///
+	std::string CPPCMS_API to_json(char const *begin,char const *end);
+	///
+	/// Convert UTF-8 string to JSON string, i.e. a sring foo is converted to "foo",
+	/// a string bar"baz is converted to "bar\"baz"
+	///
+	void CPPCMS_API to_json(char const *begin,char const *end,std::ostream &out);
+	//
+	/// Convert UTF-8 string to JSON string, i.e. a sring foo is converted to "foo",
+	/// a string bar"baz is converted to "bar\"baz"
+	///
+	void CPPCMS_API to_json(std::string const &str,std::ostream &out);
 
 	
 	/// \cond INTERNAL
