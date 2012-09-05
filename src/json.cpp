@@ -404,45 +404,87 @@ namespace json {
 	{
 		return d->value().which();
 	}
-
-	namespace {
-
-		std::string escape(std::string const &input)
+	namespace details {
+	
+		template<typename Appender>
+		void generic_append(char const *begin,char const *end,Appender &a)
 		{
-			std::string result;
-			result.reserve(input.size());
-			result+='"';
-			std::string::const_iterator i,end=input.end();
-			for(i=input.begin();i!=end;i++) {
-				switch(*i) {
-				case 0x22:
-				case 0x5C:
-					result+='\\';
-					result+=*i;
-					break;
-				case '\b': result+="\\b"; break;
-				case '\f': result+="\\f"; break;
-				case '\n': result+="\\n"; break;
-				case '\r': result+="\\r"; break;
-				case '\t': result+="\\t"; break;
+			a.append('"');
+			char const *i,*last;
+			char buf[8] = "\\u00";
+			for(i=begin,last = begin;i!=end;) {
+				char const *addon = 0;
+				unsigned char c=*i;
+				switch(c) {
+				case 0x22: addon = "\\\""; break;
+				case 0x5C: addon = "\\\\"; break;
+				case '\b': addon = "\\b"; break;
+				case '\f': addon = "\\f"; break;
+				case '\n': addon = "\\n"; break;
+				case '\r': addon = "\\r"; break;
+				case '\t': addon = "\\t"; break;
 				default:
-					if(0x00<=*i && *i<=0x1F) {
-						char buf[8];
-#ifdef CPPCMS_HAVE_SNPRINTF						
-						snprintf(buf,sizeof(buf),"\\u%04X",*i);
-#else
-						sprintf(buf,"\\u%04X",*i);
-#endif
-						result+=buf;
+					if(c<=0x1F) {
+						static char const tohex[]="0123456789abcdef";
+						buf[4]=tohex[c >>  4];
+						buf[5]=tohex[c & 0xF];
+						buf[6]=0;
+						addon = buf;
 					}
-					else {
-						result+=*i;
-					}
+				};
+				if(addon) {
+					a.append(last,i-last);
+					a.append(addon);
+					i++;
+					last = i;
+				}
+				else {
+					i++;
 				}
 			}
-			result+='"';
-			return result;
+			a.append(last,i-last);
+			a.append('"');
 		}
+
+		struct string_append {
+			std::string *out;
+			void append(char c) { *out += c; }
+			void append(char const *s,size_t n) { out->append(s,n); }
+			void append(char const *s) { out->append(s); }
+		};
+
+		struct stream_append {
+			std::ostream *out;
+			void append(char c) { *out << c; }
+			void append(char const *s,size_t n) { out->write(s,n); }
+			void append(char const *s) { *out << s; }
+		};
+	
+	}
+
+	std::string CPPCMS_API to_json(char const *begin,char const *end)
+	{
+		std::string result;
+		result.reserve(end-begin + 2);
+		details::string_append ap = { &result };
+		details::generic_append(begin,end,ap);
+		return result;
+	}
+	std::string CPPCMS_API to_json(std::string const &s)
+	{
+		return to_json(s.c_str(),s.c_str()+s.size());
+	}
+	void CPPCMS_API to_json(char const *begin,char const *end,std::ostream &out)
+	{
+		details::stream_append ap = { &out };
+		details::generic_append(begin,end,ap);
+	}
+	void CPPCMS_API to_json(std::string const &str,std::ostream &out)
+	{
+		to_json(str.c_str(),str.c_str()+str.size(),out);
+	}
+
+	namespace {
 
 		void pad(std::ostream &out,int tb)
 		{
@@ -510,7 +552,7 @@ namespace json {
 			out<<std::setprecision(std::numeric_limits<double>::digits10+1)<<number();
 			break;
 		case json::is_string:
-			out<<escape(str());
+			to_json(str(),out);
 			break;
 		case json::is_boolean:
 			out<< (boolean() ? "true" : "false") ;
@@ -537,7 +579,7 @@ namespace json {
 				end=obj.end();
 				indent(out,'{',tabs);
 				while(p!=end) {
-					out<<escape(p->first);
+					to_json(p->first.begin(),p->first.end(),out);
 					indent(out,':',tabs);
 					p->second.write_value(out,tabs);
 					++p;
