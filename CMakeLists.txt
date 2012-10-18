@@ -542,6 +542,37 @@ add_custom_command(
 
 
 
+add_custom_command(
+	OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/tc_sep_skin_a.cpp ${CMAKE_CURRENT_BINARY_DIR}/tc_sep_skin_a.h
+	COMMAND ${PYTHON} ${CMAKE_CURRENT_SOURCE_DIR}/bin/cppcms_tmpl_cc 
+		-o ${CMAKE_CURRENT_BINARY_DIR}/tc_sep_skin_a.cpp -H ${CMAKE_CURRENT_BINARY_DIR}/tc_sep_skin_a.h
+			${CMAKE_CURRENT_SOURCE_DIR}/tests/tc_skin_a.tmpl
+	DEPENDS 
+		${CMAKE_CURRENT_SOURCE_DIR}/bin/cppcms_tmpl_cc 
+		${CMAKE_CURRENT_SOURCE_DIR}/tests/tc_skin_a.tmpl)
+
+add_custom_command(
+	OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/tc_sep_skin_b.cpp ${CMAKE_CURRENT_BINARY_DIR}/tc_sep_skin_b.h
+	COMMAND ${PYTHON} ${CMAKE_CURRENT_SOURCE_DIR}/bin/cppcms_tmpl_cc 
+		-o ${CMAKE_CURRENT_BINARY_DIR}/tc_sep_skin_b.cpp -H ${CMAKE_CURRENT_BINARY_DIR}/tc_sep_skin_b.h
+			${CMAKE_CURRENT_SOURCE_DIR}/tests/tc_skin_b.tmpl
+	DEPENDS 
+		${CMAKE_CURRENT_SOURCE_DIR}/bin/cppcms_tmpl_cc 
+		${CMAKE_CURRENT_SOURCE_DIR}/tests/tc_skin_b.tmpl)
+
+add_custom_command(
+	OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/tc_sep_skin.cpp ${CMAKE_CURRENT_BINARY_DIR}/tc_sep_skin.h
+	COMMAND ${PYTHON} ${CMAKE_CURRENT_SOURCE_DIR}/bin/cppcms_tmpl_cc 
+		-o ${CMAKE_CURRENT_BINARY_DIR}/tc_sep_skin.cpp -H ${CMAKE_CURRENT_BINARY_DIR}/tc_sep_skin.h
+			${CMAKE_CURRENT_SOURCE_DIR}/tests/tc_skin.tmpl
+	DEPENDS 
+		${CMAKE_CURRENT_SOURCE_DIR}/bin/cppcms_tmpl_cc 
+		${CMAKE_CURRENT_SOURCE_DIR}/tests/tc_skin.tmpl)
+
+
+
+
+
 if(NOT DISABLE_SHARED)
 	add_custom_command(
 		OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/skin3.cpp
@@ -560,7 +591,7 @@ if(NOT DISABLE_SHARED)
 				COMPILE_DEFINITIONS "${SKIN3_DEFS}")
 	target_link_libraries(skin3 ${CPPCMS_LIB})
 
-	foreach(SKIN tc_skin_a tc_skin_b tc_skin)
+	foreach(SKIN tc_skin_a tc_skin_b tc_skin tc_sep_skin_a tc_sep_skin_b tc_sep_skin)
 		add_library(${SKIN} SHARED ${CMAKE_CURRENT_BINARY_DIR}/${SKIN}.cpp)
 		target_link_libraries(${SKIN} ${CPPCMS_LIB})
 		if(IS_WINDOWS)
@@ -732,7 +763,8 @@ add_test(url_mapper_test url_mapper_test)
 add_test(copy_filter_test copy_filter_test)
 add_test(mount_point_test mount_point_test)
 if(NOT DISABLE_SHARED)
-	add_test(tc_test tc_test)
+	add_test(tc_test_shared tc_test "--shared")
+	add_test(tc_test_separate tc_test "--separate")
 endif()
 
 add_test(status_test

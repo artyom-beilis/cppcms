@@ -377,14 +377,29 @@ private:
 };
 
 
-int main()
+int main(int argc,char **argv)
 {
+	std::string type;
+	if(argc!=2 || ((type=argv[1])!="--separate" && type!="--shared")) {
+		std::cerr << "Usage (--separate|--shared)" << std::endl;
+		return 1;
+	}
+	bool separate = type == "--separate";
 	try {
 		cppcms::json::value cfg;
 		cfg["views"]["paths"][0]="./";
-		cfg["views"]["skins"][0]="tc_skin_a";
-		cfg["views"]["skins"][1]="tc_skin_b";
-		cfg["views"]["skins"][2]="tc_skin";
+		if(separate) {
+			std::cout << "Using separate header/body" << std::endl;
+			cfg["views"]["skins"][0]="tc_sep_skin_a";
+			cfg["views"]["skins"][1]="tc_sep_skin_b";
+			cfg["views"]["skins"][2]="tc_sep_skin";
+		}
+		else {
+			std::cout << "Using shared header/body" << std::endl;
+			cfg["views"]["skins"][0]="tc_skin_a";
+			cfg["views"]["skins"][1]="tc_skin_b";
+			cfg["views"]["skins"][2]="tc_skin";
+		}
 		cfg["views"]["default_skin"]="tc_skin";
 		cfg["cache"]["backend"]="thread_shared";
 		cfg["cache"]["limit"]=100;

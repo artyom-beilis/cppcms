@@ -66,10 +66,21 @@ std::auto_ptr<base_view> generator::create(	std::string const &view_name,
 	return result;
 }
 
+std::vector<std::string> generator::enumerate() const
+{
+	std::vector<std::string> all;
+	all.reserve(views_.size());
+	for(views_type::const_iterator p=views_.begin(),e=views_.end();p!=e;++p) {
+		all.push_back(p->first);
+	}
+	return all;
+}
+
 // class pool
 struct pool::data {
 	booster::recursive_shared_mutex lock;
-	typedef std::map<std::string,generator const *> generators_type;
+	typedef std::map<std::string, generator const *> skin_generators_type;
+	typedef std::map<std::string,skin_generators_type> generators_type;
 	generators_type generators;
 };
 
@@ -79,37 +90,62 @@ void pool::add(generator const &g)
 	std::string name = ptr->name();
 
 	booster::unique_lock<booster::recursive_shared_mutex> guard(d->lock);
-	for(data::generators_type::iterator p=d->generators.begin();p!=d->generators.end();++p) {
-		if(p->second == ptr)
-			return;
-		if(p->first==name)
-			return;
+	data::generators_type::iterator s = d->generators.find(name);
+
+	if (s == d->generators.end()) {
+		d->generators[name] = data::skin_generators_type();
+		s = d->generators.find(name);
 	}
-	d->generators[name]=ptr;
+
+	std::vector<std::string> views = ptr->enumerate();
+
+	for(std::vector<std::string>::iterator v=views.begin(), e=views.end();v!=e;++v) {
+		data::skin_generators_type& skin = s->second;
+		skin[*v] = ptr;
+	}
 }
 
 void pool::remove(generator const &g)
 {
 	generator const *ptr = &g;
+	std::string name = ptr->name();
 
 	booster::unique_lock<booster::recursive_shared_mutex> guard(d->lock);
-	for(data::generators_type::iterator p=d->generators.begin();p!=d->generators.end();++p) {
-		if(p->second == ptr)  {
-			d->generators.erase(p);
-			return;
-		}
+
+	data::generators_type::iterator s = d->generators.find(name);
+
+	if (s == d->generators.end())
+		return;
+
+	data::skin_generators_type& skin = s->second;
+
+	std::vector<std::string> views = ptr->enumerate();
+
+	for(std::vector<std::string>::iterator v=views.begin(), e=views.end();v!=e;++v) {
+		if (skin[*v] == ptr)
+			skin.erase(*v);
 	}
+
+	if (skin.empty())
+		d->generators.erase(name);
 }
 
 void pool::render(std::string const &skin,std::string const &template_name,std::ostream &out,base_content &content)
 {
 	booster::shared_lock<booster::recursive_shared_mutex> guard(d->lock);
-	data::generators_type::iterator p=d->generators.find(skin);
-	if(p==d->generators.end()) 
+	data::generators_type::iterator s=d->generators.find(skin);
+	if(s==d->generators.end()) 
 		throw cppcms_error("cppcms::views::pool: no such skin:" + skin);
+
+	data::skin_generators_type const& reg_skin = s->second;
+
+	data::skin_generators_type::const_iterator t=reg_skin.find(template_name);
+	if(t==reg_skin.end())
+		throw cppcms_error("cppcms::view::pool: no suck view:" + template_name + " is registered for skin: " + skin);
+
 	{
 		std::auto_ptr<base_view> v;
-		v = p->second->create(template_name,out,&content);
+		v = t->second->create(template_name,out,&content);
 		if(!v.get())
 			throw cppcms_error("cppcms::views::pool: no such view " + template_name + " in the skin " + skin);
 		v->render();

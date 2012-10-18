@@ -79,6 +79,10 @@ namespace cppcms {
 			std::auto_ptr<base_view> create(std::string const &view_name,
 							std::ostream &output,
 							base_content *content) const;
+			///
+			/// Enumerate view names
+			///
+			std::vector<std::string> enumerate() const;
 		private:
 			
 			template<typename View,typename Content>

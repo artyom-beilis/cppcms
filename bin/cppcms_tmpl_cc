@@ -11,6 +11,7 @@
 import os
 import re
 import sys
+import StringIO
 
 str_match=r'"([^"\\]|\\[^"]|\\")*"'
 single_var_param_match=r'(?:-?\d+|"(?:[^"\\]|\\[^"]|\\")*")'
@@ -25,13 +26,25 @@ def interleave(*args):
             except IndexError:
                 continue
 
-def output(s):
+def output_declaration(s):
     global stack
     global file_name
     global line_number
-    global output_fd
-    output_fd.write('\t' * len(stack) + '#line %d "%s"' % (line_number,file_name)+'\n' + \
-        '\t'*len(stack) + s + '\n')
+    global declarations
+    declarations.write('\t'*len(stack) + '#line %d "%s"' % (line_number,file_name)+'\n')
+    declarations.write('\t'*len(stack) + s + '\n');
+
+def output_definition(s):
+    global stack
+    global file_name
+    global line_number
+    global definitions
+    definitions.write('\t'*(len(stack)-1) + '#line %d "%s"' % (line_number,file_name)+'\n')
+    definitions.write('\t'*(len(stack)-1) + s + '\n');
+
+def output_all(s):
+    output_definition(s)
+    output_declaration(s)
 
 class tmpl_descr:
     def __init__(self,start,size):
@@ -44,7 +57,9 @@ class skin_block:
     pattern=r'^<%\s*skin\s+(\w+)?\s*%>$'
     type='skin'
     def use(self,m):
+        global inline_cpp_to
         global namespace_name
+        inline_cpp_to = output_declaration
         name = m.group(1)
 
         if namespace_name == '':
@@ -54,34 +69,34 @@ class skin_block:
                 namespace_name = name
         elif namespace_name != name and name:
             error_exit("Can't use more then one skin name for same skin: %s, %s" % ( namespace_name,name))
-        output( "namespace %s {" % namespace_name)
+        output_all( "namespace %s {" % namespace_name)
         global stack
         stack.append(self)
     def on_end(self):
         global namespace_name
-        output( "} // end of namespace %s" % namespace_name)
+        output_all( "} // end of namespace %s" % namespace_name)
 
 
 def write_class_loader(unsafe = False):
     global class_list
     global namespace_name
-    output("namespace {")
-    output(" cppcms::views::generator my_generator; ")
-    output(" struct loader { ")
-    output("  loader() { ")
-    output('   my_generator.name("%s");' % namespace_name)
+    output_definition("namespace {")
+    output_definition(" cppcms::views::generator my_generator; ")
+    output_definition(" struct loader { ")
+    output_definition("  loader() { ")
+    output_definition('   my_generator.name("%s");' % namespace_name)
     if  unsafe:
         safe = 'false'
     else:
         safe = 'true'
     for class_def in class_list:
-        output( '   my_generator.add_view<%s::%s,%s>("%s",%s);' \
+        output_definition( '   my_generator.add_view<%s::%s,%s>("%s",%s);' \
                 % (class_def.namespace,class_def.name,class_def.content_name,class_def.name,safe))
-    output('    cppcms::views::pool::instance().add(my_generator);')
-    output(' }')
-    output(' ~loader() {  cppcms::views::pool::instance().remove(my_generator); }')
-    output('} a_loader;')
-    output('} // anon ')
+    output_definition('    cppcms::views::pool::instance().add(my_generator);')
+    output_definition(' }')
+    output_definition(' ~loader() {  cppcms::views::pool::instance().remove(my_generator); }')
+    output_definition('} a_loader;')
+    output_definition('} // anon ')
 
 
 class html_type:
@@ -109,21 +124,24 @@ class view_block:
             self.top_most = 1
         else:
             constructor='%s(_s,_content)' % self.extends;
-        output( "struct %s :public %s" % (self.class_name , self.extends ))
-        output( "{")
+        output_declaration( "struct %s :public %s" % (self.class_name , self.extends ))
+        output_declaration( "{")
         if self.uses!='' : 
-            output( "\t%s &content;" % self.uses)
-            output( "\t%s(std::ostream &_s,%s &_content): %s,content(_content)" % ( self.class_name,self.uses,constructor ))
+            output_declaration( "\t%s &content;" % self.uses)
+            output_declaration( "\t%s(std::ostream &_s,%s &_content): %s,content(_content)" % ( self.class_name,self.uses,constructor ))
         else:
-            output( "\t%s(std::ostream &_s): %s" % ( self.class_name,constructor ))
-        output("\t{")
+            output_declaration( "\t%s(std::ostream &_s): %s" % ( self.class_name,constructor ))
+        output_declaration("\t{")
         global spec_gettext
         if self.topmost and spec_gettext:
-            output('\t\tout() << cppcms::locale::as::domain("%s");' % spec_gettext )
-        output("\t}")
+            output_declaration('\t\tout() << cppcms::locale::as::domain("%s");' % spec_gettext )
+        output_declaration("\t}")
 
     def use(self,m):
+        global view_name
+        global output_template
         self.class_name=m.group(1)
+        view_name = self.class_name
         self.uses=m.group(2)
         if m.group(4):
             self.extends=m.group(5)
@@ -142,7 +160,7 @@ class view_block:
             namespace=namespace_name
         class_list.append(information())
     def on_end(self):
-        output( "}; // end of class %s" % self.class_name)
+        output_declaration( "}; // end of class %s" % self.class_name)
 
 
 
@@ -177,11 +195,17 @@ class template_block:
         error_exit("Wrong expression %s" % lst)
         
     def use(self,m):
+        global view_name
+        global inline_templates
         self.name=m.group(1)
         params=""
         if m.group(2) and not re.match('^\s*$',m.group(2)):
             params=self.create_parameters(m.group(2))
-        output( "virtual void %s(%s) {" % (self.name,params) )
+        if inline_templates:
+            output_declaration( "virtual void %s(%s) {" % (self.name,params) )
+        else:
+            output_declaration( "virtual void %s(%s);" % (self.name,params) )
+            output_definition( "void %s::%s(%s) {" % (view_name,self.name,params) )
         global stack
         if len(stack)==0 or stack[-1].type!='view':
             error_exit("You must define template inside view block only")
@@ -189,21 +213,27 @@ class template_block:
         global current_template
         current_template=self.name
         global ignore_inline
+        global inline_cpp_to
         ignore_inline=0
+        inline_cpp_to = output_template
 
     def on_end(self):
-        output( "} // end of template %s" % self.name)
+        global output_template
+        output_template( "} // end of template %s" % self.name)
         global ignore_inline
         ignore_inline=1
         global tmpl_seq
         tmpl_seq={}
+        global inline_cpp_to
+        inline_cpp_to = output_declaration
 
         
 
 def inline_content(s):
     global ignore_inline
+    global output_template
     if not ignore_inline:
-        output( 'out()<<"%s";' % to_string(s))
+        output_template( 'out()<<"%s";' % to_string(s))
 
 def warning(x):
     global file_name
@@ -259,19 +289,21 @@ def make_ident(val):
         return "content." + val
 
 def print_using_block_start(class_name,variable_name,content_name):
+    global output_template
     if content_name:
         content=make_ident(content_name)
         guard=True
     else:
         content ='content'
         guard=False
-    output(r'{')
+    output_template(r'{')
     if guard:
-        output(r'  cppcms::base_content::app_guard _g(%s,content);' % content);
-    output(r'  %s %s(out(),%s);' % ( class_name, variable_name, content));
+        output_template(r'  cppcms::base_content::app_guard _g(%s,content);' % content);
+    output_template(r'  %s %s(out(),%s);' % ( class_name, variable_name, content));
     
 def print_using_block_end():
-    output('}')
+    global output_template
+    output_template('}')
 
 class using_block:
     pattern=r'^<%\s*using\s+(?P<class>(?:\w+::)*\w+)(?:\s+with\s+(?P<content>' + variable_match + r'))?\s+as\s+(?P<name>[a-zA-Z_]\w*)\s*%>$' 
@@ -300,6 +332,7 @@ class foreach_block:
     on_first_label=''
     type_name=0
     def use(self,m):
+        global output_template
         self.ident=m.group(1)
         self.seq_name=make_ident(m.group(9))
         self.rowid = m.group(6)
@@ -320,14 +353,15 @@ class foreach_block:
         if self.rowid and (self.rowid in tmpl_seq):
             error_exit("Nested sequences with same rowid name %s" % self.rowid )
         tmpl_seq[self.ident]='';
-        output( "if((%s).%sbegin()!=(%s).%send()) {" % (self.seq_name,self.reverse,self.seq_name,self.reverse) )
+        output_template( "if((%s).%sbegin()!=(%s).%send()) {" % (self.seq_name,self.reverse,self.seq_name,self.reverse) )
         if self.rowid:
             tmpl_seq[self.rowid]='';
-            output("    int %s = %s;" % (self.rowid,self.rowid_begin))
+            output_template("    int %s = %s;" % (self.rowid,self.rowid_begin))
         global stack
         stack.append(self)
 
     def on_end(self):
+        global output_template
         if not self.has_item:
             error_exit("foreach without item")
 
@@ -336,8 +370,9 @@ class foreach_block:
         if self.rowid:
             del tmpl_seq[self.rowid]
 
-        output( "}" )
+        output_template( "}" )
     def prepare_foreach(self):
+        global output_template
         if not self.type_name:
             ptr_type = 'CPPCMS_TYPEOF((%(s)s).%(r)sbegin())'
         else:
@@ -347,13 +382,13 @@ class foreach_block:
             incr = ',++%s' % self.rowid;
         fmt = "for("+ptr_type+" %(i)s_ptr=(%(s)s).%(r)sbegin(),%(i)s_ptr_end=(%(s)s).%(r)send();%(i)s_ptr!=%(i)s_ptr_end;++%(i)s_ptr%(u)s) {";
         fmt = fmt %  { 's' : self.seq_name, 'i' : self.ident , 'r' : self.reverse, 'u' : incr };
-        output(fmt)
+        output_template(fmt)
         if not self.type_name:
-            output( "CPPCMS_TYPEOF(*%s_ptr) &%s=*%s_ptr;" % (self.ident,self.ident,self.ident))
+            output_template( "CPPCMS_TYPEOF(*%s_ptr) &%s=*%s_ptr;" % (self.ident,self.ident,self.ident))
         else:
-            output( "std::iterator_traits< %s >::value_type &%s=*%s_ptr;" % (self.type_name,self.ident,self.ident))
+            output_template( "std::iterator_traits< %s >::value_type &%s=*%s_ptr;" % (self.type_name,self.ident,self.ident))
         if self.has_separator:
-            output( "if(%s_ptr!=(%s).%sbegin()) {" % (self.ident,self.seq_name,self.reverse))
+            output_template( "if(%s_ptr!=(%s).%sbegin()) {" % (self.ident,self.seq_name,self.reverse))
         
         
 
@@ -382,6 +417,7 @@ class item_block:
     type='item'
     def use(self,m):
         global stack
+        global output_template
         if not stack or stack[-1].type!='foreach':
             error_exit("item without foreach")
             return
@@ -389,13 +425,14 @@ class item_block:
         if foreachb.has_item:
             error_exit("Two items for one foreach");
         if foreachb.has_separator:
-            output( "} // end of separator")
+            output_template( "} // end of separator")
         else:
             foreachb.prepare_foreach()
         foreachb.has_item=1
         stack.append(self)
     def on_end(self):
-        output( "} // end of item" )
+        global output_template
+        output_template( "} // end of item" )
 
 class empty_block:
     pattern=r'^<%\s*empty\s*%>'
@@ -404,18 +441,20 @@ class empty_block:
     type='empty'
     def use(self,m):
         global stack
+        global output_template
         if not stack or stack[-1].type!='foreach':
             error_exit("empty without foreach")
             return
         forb=stack.pop()
         if not forb.has_item:
             error_exit("Unexpected empty - item missed?")
-        output( " } else {")
+        output_template( " } else {")
         self.ident=forb.ident
         self.rowid=forb.rowid
         stack.append(self)
     def on_end(self):
-        output( "} // end of empty")
+        global output_template
+        output_template( "} // end of empty")
         global tmpl_seq
         del tmpl_seq[self.ident]
         if self.rowid:
@@ -428,12 +467,14 @@ class else_block:
     basic_name = 'else'
     type='else'
     def on_end(self):
-        output("}")
+        global output_template
+        output_template("}")
     def use(self,m):
+        global output_template
         prev=stack.pop()
         if prev.type!='if' and prev.type!='elif':
             error_exit("elif without if");
-        output( "}else{")
+        output_template( "}else{")
         stack.append(self)
 
 class if_block:
@@ -442,13 +483,16 @@ class if_block:
     basic_name = 'if/elif'
     type='if'
     def prepare(self):
-        output( "if(%s) {" % self.ident)
+        global output_template
+        output_template( "if(%s) {" % self.ident)
 
     def on_end(self):
-        output( "} // endif")
+        global output_template
+        output_template( "} // endif")
 
     def use(self,m):
         global stack
+        global output_template
         self.type=m.group(1)
         if m.group(4):
             if m.group(4)=='rtl':
@@ -470,8 +514,8 @@ class if_block:
                 prev=stack.pop()
                 if prev.type!='if' and prev.type!='elif':
                     error_exit("elif without if");
-                output( "}")
-                output( "else")
+                output_template( "}")
+                output_template( "else")
                 self.prepare()
                 stack.append(self)
             else:
@@ -503,11 +547,15 @@ class error_com:
 
 
 class cpp_include_block:
-    pattern=r'^<%\s*c\+\+\s+(.*)%>$'
-    basic_pattern = 'c\+\+'
+    pattern=r'^<%\s*c\+\+(src)?\s+(.*)%>$'
+    basic_pattern = 'c\+\+(src)?'
     basic_name = 'c++'
     def use(self,m):
-        output( m.group(1));
+        global inline_cpp_to
+        if m.group(1):
+            output_definition(m.group(2));
+        else:
+            inline_cpp_to( m.group(2));
 
 
 class base_show:
@@ -573,26 +621,28 @@ class form_block:
     def format_input(self,command_type,ident):
    
         global html_type_code
+        global output_template
 
         flags = 'cppcms::form_flags::' + html_type_code;
-        output('{ cppcms::form_context _form_context(out(),%s);' % flags)
+        output_template('{ cppcms::form_context _form_context(out(),%s);' % flags)
         render_command = '    (%s).render_input(_form_context);' % ident;
 
         if command_type=='begin':
-            output('    _form_context.widget_part(cppcms::form_context::first_part);')
-            output(render_command)
+            output_template('    _form_context.widget_part(cppcms::form_context::first_part);')
+            output_template(render_command)
         elif command_type=='end':
-            output('    _form_context.widget_part(cppcms::form_context::second_part);')
-            output(render_command)
+            output_template('    _form_context.widget_part(cppcms::form_context::second_part);')
+            output_template(render_command)
         else:
-            output('    _form_context.widget_part(cppcms::form_context::first_part);')
-            output(render_command)
-            output('    out() << (%s).attributes_string();' % ident)
-            output('    _form_context.widget_part(cppcms::form_context::second_part);')
-            output(render_command)
-        output('}')
+            output_template('    _form_context.widget_part(cppcms::form_context::first_part);')
+            output_template(render_command)
+            output_template('    out() << (%s).attributes_string();' % ident)
+            output_template('    _form_context.widget_part(cppcms::form_context::second_part);')
+            output_template(render_command)
+        output_template('}')
     
     def use(self,m):
+        global output_template
 
         ident=make_ident(m.group(2))
         command_type = m.group(1)
@@ -609,7 +659,7 @@ class form_block:
 
         else:
             flags = 'cppcms::form_flags::%s,cppcms::form_flags::%s' % ( html_type_code, m.group(1));
-            output('{ cppcms::form_context _form_context(out(),%s); (%s).render(_form_context); }' % (flags , ident))
+            output_template('{ cppcms::form_context _form_context(out(),%s); (%s).render(_form_context); }' % (flags , ident))
 
     def on_end(self):
         self.format_input(self.command_type,self.ident)
@@ -622,6 +672,7 @@ class render_block:
     basic_pattern = 'render'
     basic_name = 'render'
     def use(self,m):
+        global output_template
         if m.group('content'):
             content = make_ident(m.group('content'))
             guard=True
@@ -651,14 +702,14 @@ class render_block:
             template_name = '"' + namespace_name + '"'
             view_name = first;
        
-        output('{')
+        output_template('{')
 
         if guard:
-            output(r'cppcms::base_content::app_guard _g(%s,content);' % content)
+            output_template(r'cppcms::base_content::app_guard _g(%s,content);' % content)
 
-        output(r'cppcms::views::pool::instance().render(%s,%s,out(),%s);' % (template_name,view_name,content))
+        output_template(r'cppcms::views::pool::instance().render(%s,%s,out(),%s);' % (template_name,view_name,content))
 
-        output('}')
+        output_template('}')
 
 
 class filters_show_block(base_show):
@@ -666,11 +717,12 @@ class filters_show_block(base_show):
     basic_pattern = '=?'
     basic_name = 'Inline Variable'
     def use(self,m):
+        global output_template
         if not m.group(1):
             warning("Variables syntax like <% foo %> is deprecated, use <%= foo %> syntax");
         expr=self.prepare(m.group(2));
         if expr!="":
-            output('out()<<%s;' % expr)
+            output_template('out()<<%s;' % expr)
 
 def make_format_params(s,default_filter = 'escape'):
     pattern=r'^(([^,\("]|'+str_match+'|\(([^"\)]|'+str_match+')*\))+)(,(.*))?$'
@@ -699,26 +751,28 @@ class cache_block:
     basic_name = 'cache'
     type = 'cache'
     def use(self,m):
+        global output_template
         if(m.group('str')):
             self.parameter = m.group('str')
         else:
             self.parameter = make_ident(m.group('var'));
         self.notriggers = m.group('notriggers')
         self.norecording = m.group('norecording')
-        output('{ std::string _cppcms_temp_val;')
-        output('  if(content.app().cache().fetch_frame(%s,_cppcms_temp_val))' % self.parameter);
-        output('      out() << _cppcms_temp_val;');
-        output('  else {')
-        output('    cppcms::copy_filter _cppcms_cache_flt(out());')
+        output_template('{ std::string _cppcms_temp_val;')
+        output_template('  if(content.app().cache().fetch_frame(%s,_cppcms_temp_val))' % self.parameter);
+        output_template('      out() << _cppcms_temp_val;');
+        output_template('  else {')
+        output_template('    cppcms::copy_filter _cppcms_cache_flt(out());')
         if not self.norecording:
-            output('    cppcms::triggers_recorder _cppcms_trig_rec(content.app().cache());')
+            output_template('    cppcms::triggers_recorder _cppcms_trig_rec(content.app().cache());')
         # the code below should be the last one 
         if(m.group('callback')):
-            output('    '+make_ident(m.group('callback')+'()') + ';')
+            output_template('    '+make_ident(m.group('callback')+'()') + ';')
         self.timeout = m.group('time');
         global stack
         stack.append(self)
     def on_end(self):
+        global output_template
         if self.timeout:
             timeout_time = self.timeout
         else:
@@ -731,20 +785,21 @@ class cache_block:
             notriggers='true'
         else:
             notriggers='false'
-        output('    content.app().cache().store_frame(%s,_cppcms_cache_flt.detach(),%s,%s,%s);' \
+        output_template('    content.app().cache().store_frame(%s,_cppcms_cache_flt.detach(),%s,%s,%s);' \
                     % (self.parameter,recorded,timeout_time,notriggers))
-        output('}} // cache')
+        output_template('}} // cache')
 
 class trigger_block:
     pattern=r'^<%\s*trigger\s+((?P<str>'+  str_match +')|(?P<var>'+ variable_match +r'))' + r'\s*%>$'
     basic_pattern = 'trigger'
     basic_name = 'trigger'
     def use(self,m):
+        global output_template
         if(m.group('str')):
             parameter = m.group('str')
         else:
             parameter = make_ident(m.group('var'));
-        output('content.app().cache().add_trigger(%s);' % parameter)
+        output_template('content.app().cache().add_trigger(%s);' % parameter)
 
 
 
@@ -754,6 +809,7 @@ class ngettext_block:
     basic_pattern = 'ngt'
     basic_name = 'ngt'
     def use(self,m):
+        global output_template
         s1=m.group(1)
         s2=m.group(3)
         idt=make_ident(m.group(5))
@@ -761,9 +817,9 @@ class ngettext_block:
         if m.group(11):
             params=make_format_params(m.group(12))
         if not params:
-            output( "out()<<cppcms::locale::translate(%s,%s,%s);" % (s1,s2,idt))
+            output_template( "out()<<cppcms::locale::translate(%s,%s,%s);" % (s1,s2,idt))
         else:
-            output( "out()<<cppcms::locale::format(cppcms::locale::translate(%s,%s,%s)) %% (%s);" % (s1,s2,idt, ') % ('.join(params)))
+            output_template( "out()<<cppcms::locale::format(cppcms::locale::translate(%s,%s,%s)) %% (%s);" % (s1,s2,idt, ') % ('.join(params)))
             
 
 class gettext_block:
@@ -771,34 +827,37 @@ class gettext_block:
     basic_pattern = 'gt'
     basic_name = 'gt'
     def use(self,m):
+        global output_template
         s=m.group(1)
         params=[]
         if m.group(3):
             params=make_format_params(m.group(4))
         if not params:
-            output( "out()<<cppcms::locale::translate(%s);" % s)
+            output_template( "out()<<cppcms::locale::translate(%s);" % s)
         else:
-            output( "out()<<cppcms::locale::format(cppcms::locale::translate(%s)) %% (%s);" % (s , ') % ('.join(params)))
+            output_template( "out()<<cppcms::locale::format(cppcms::locale::translate(%s)) %% (%s);" % (s , ') % ('.join(params)))
 
 class url_block:
     pattern=r'^<%\s*url\s*('+str_match+')\s*(using(.*))?\s*%>$'
     basic_pattern = 'url'
     basic_name = 'url'
     def use(self,m):
+        global output_template
         s=m.group(1)
         params=[]
         if m.group(3):
             params=make_format_params(m.group(4),'urlencode')
         if not params:
-            output( "content.app().mapper().map(out(),%s);" % s)
+            output_template( "content.app().mapper().map(out(),%s);" % s)
         else:
-            output( "content.app().mapper().map(out(),%s, %s);" % (s , ', '.join(params)))
+            output_template( "content.app().mapper().map(out(),%s, %s);" % (s , ', '.join(params)))
 
 class csrf_block:
     pattern=r'^<%\s*csrf(\s+(token|cookie|script))?\s*%>$'
     basic_pattern = 'csrf'
     basic_name = 'csrf'
     def use(self,m):
+        global output_template
         s=m.group(2)
 
         global html_type_code
@@ -809,11 +868,11 @@ class csrf_block:
             suffix =''
 
         if not s:
-            output(r'out() << "<input type=\"hidden\" name=\"_csrf\" value=\"" << content.app().session().get_csrf_token() <<"\" %s>\n";' % suffix)
+            output_template(r'out() << "<input type=\"hidden\" name=\"_csrf\" value=\"" << content.app().session().get_csrf_token() <<"\" %s>\n";' % suffix)
         elif s == 'token':
-            output(r'out() << content.app().session().get_csrf_token();')
+            output_template(r'out() << content.app().session().get_csrf_token();')
         elif s == 'cookie':
-            output(r'out() << content.app().session().get_csrf_token_cookie_name();')
+            output_template(r'out() << content.app().session().get_csrf_token_cookie_name();')
         else: # script
             script="""
             <script type='text/javascript'>
@@ -834,7 +893,7 @@ class csrf_block:
             </script>
             """ % suffix; 
             script = to_string(script).replace('$','"<< content.app().session().get_csrf_token_cookie_name() <<"')
-            output('out() << "' + script +'";')
+            output_template('out() << "' + script +'";')
 
 
 class include_block:
@@ -849,7 +908,8 @@ class include_block:
             + r'\s*%>$'
 
     def print_include(self,call,params):
-        output( "%s(%s);" % (call , ','.join(params)))
+        global output_template
+        output_template( "%s(%s);" % (call , ','.join(params)))
         
     def use(self,m):
         if m.group(3):
@@ -886,11 +946,20 @@ def fetch_content(content):
 
 def help():
     print( "Usage cppcms_tmpl_cc [-o filename.cpp] [-s skin] [-d domain] file1.tmpl ... \n" \
-        "      -o filename.cpp     file name that implements this template\n" \
-        "      -s skin             define skin name\n" \
-        "      -d domain           setup gettext domain for this template\n" \
-        "      -u                  use unsafe static casting instead of dynamic casing for dlls\n" \
-        "      -h/--help           show this help message\n")
+        "      -o/--code filename.cpp        file name that implements this template\n" \
+        "      -s/-n/--skin skin             define skin name\n" \
+        "      -d domain                     setup gettext domain for this template\n" \
+        "      -u/--unsafe-cast              use unsafe static casting instead of dynamic casing for dlls\n" \
+        "      -l/--no-loader                do not generate loader for the views.\n" \
+        "                                    This requires a seperate loader to be implemented in some other cpp.\n" \
+        "      -H/--header filename.hpp      generate header file. \n" \
+        "      -i/--inline-templates value   Whether to inline the template defiitions inside the view declaration.\n" \
+        "                                    value can be one of the following:\n" \
+        "               true                 Inline the template functions inside the view class declaration.\n" \
+        "               false                Place the template function definitions outside the class declaration.\n" \
+        "               default              (Default value is parameter is ommited.) If header file is\n" \
+        "                                    generated, same as false, otherwise same as true.\n" \
+        "      -h/--help                     show this help message\n")
 
 def main():
     global stack
@@ -898,26 +967,47 @@ def main():
     indx=1
     global namespace_name
     global output_file
+    global header_file
     global exit_flag
+    global inline_templates
     unsafe_build = False
+    write_loader = True
     while indx < len(os.sys.argv):
-        if os.sys.argv[indx]=='-s' or os.sys.argv[indx]=='-n':
+        if os.sys.argv[indx]=='-s' or os.sys.argv[indx]=='-n' or os.sys.argv[indx]=='--skin':
             if indx+1>=len(os.sys.argv):
-                sys.stderr.write("-s (-n) should be followed by skin name\n")
+                sys.stderr.write("%s should be followed by skin name\n" % (os.sys.argv[indx]))
                 help()
                 exit_flag=1
                 return
             else:
                 namespace_name=os.sys.argv[indx+1];
                 indx+=1
-        elif os.sys.argv[indx]=='-o':
+        elif os.sys.argv[indx]=='-o' or os.sys.argv[indx]=='--code':
             if indx+1>=len(os.sys.argv):
-                sys.stderr.write("-o should be followed by output file name\n")
+                sys.stderr.write("%s should be followed by output file name\n" % (os.sys.argv[indx]))
                 help()
                 exit_flag=1
                 return
             else:
                 output_file=os.sys.argv[indx+1]
+                indx+=1
+        elif os.sys.argv[indx]=='-H' or os.sys.argv[indx]=='--header':
+            if indx+1>=len(os.sys.argv):
+                sys.stderr.write("%s should be followed by output header file name\n" % (os.sys.argv[indx]))
+                help()
+                exit_flag=1
+                return
+            else:
+                header_file=os.sys.argv[indx+1]
+                indx+=1
+        elif os.sys.argv[indx]=='-i' or os.sys.argv[indx]=='--inline-templates':
+            if indx+1>=len(os.sys.argv):
+                sys.stderr.write("%s should be followed by inline value.\n" % (os.sys.argv[indx]))
+                help()
+                exit_flag=1
+                return
+            else:
+                inline_templates=os.sys.argv[indx+1]
                 indx+=1
         elif os.sys.argv[indx]=='-d':
             if indx+1>=len(os.sys.argv):
@@ -929,8 +1019,10 @@ def main():
                 global spec_gettext
                 spec_gettext=os.sys.argv[indx+1]
                 indx+=1
-        elif os.sys.argv[indx]=='-u':
+        elif os.sys.argv[indx]=='-u' or os.sys.argv[indx]=='--unsafe-cast':
             unsafe_build = True
+        elif os.sys.argv[indx]=='-l' or os.sys.argv[indx]=='--no-loader':
+            write_loader = False
         elif os.sys.argv[indx]=='--help' or os.sys.argv[indx]=='-h':
             help()
             exit_flag=1
@@ -943,12 +1035,28 @@ def main():
         help()
         exit_flag=1
         return
+    if inline_templates == "default":
+        if header_file!='':
+            inline_templates=False
+        else:
+            inline_templates=True
+    elif inline_templates == "true":
+        inline_templates = True
+    else:
+        inline_templates = False
+    global output_template
+    if inline_templates:
+        output_template = output_declaration
+    else:
+        output_template = output_definition
     global output_fd
     if output_file!='':
         output_fd=open(output_file,"w")
     for file in all:
         global file_name
         global line_number
+        global inline_cpp_to
+        inline_cpp_to = output_declaration
         line_number=0
         file_name=file
         f=open(file,'r')
@@ -998,7 +1106,7 @@ def main():
         if stack:
             error_exit("Unexpected end of file %s" % file)
     global class_list
-    if class_list and exit_flag==0:
+    if class_list and exit_flag==0 and write_loader:
         write_class_loader(unsafe_build)
 
 #######################
@@ -1008,6 +1116,7 @@ def main():
 
 html_type_code='as_html'
 output_file=''
+header_file=''
 output_fd=sys.stdout
 namespace_name=''
 file_name=''
@@ -1023,9 +1132,30 @@ current_template=''
 spec_gettext=''
 ignore_inline=1
 
+view_name = ''
+declarations = StringIO.StringIO();
+definitions = StringIO.StringIO();
+inline_cpp_to = output_declaration
+inline_templates = "default"
+output_template = output_definition
+
 ################
 main()
 ################
+
+if header_file!='':
+    header_define = "CPPCMS_GENERATED_HEADER_%s_TMPL_HEADER_INCLUDED" % ( re.sub("[^a-zA-Z0-9]+", "_", header_file ).upper())
+    output_hfd=open(header_file,"w")
+    output_hfd.write("#ifndef %s\n" % ( header_define ))
+    output_hfd.write("#define %s\n\n" % ( header_define ))
+    output_hfd.write(declarations.getvalue());
+    output_hfd.write("#endif // %s\n" % ( header_define ))
+    output_hfd.close()
+    output_fd.write('#include "%s"\n\n' % ( os.path.relpath( header_file, os.path.dirname( output_file ))))
+else:
+    output_fd.write(declarations.getvalue());
+
+output_fd.write(definitions.getvalue());
 
 if output_fd!=sys.stderr:
     output_fd.close()
