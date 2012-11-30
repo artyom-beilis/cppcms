@@ -951,13 +951,14 @@ def help():
         "      -d domain                     setup gettext domain for this template\n" \
         "      -u/--unsafe-cast              use unsafe static casting instead of dynamic casing for dlls\n" \
         "      -l/--no-loader                do not generate loader for the views.\n" \
-        "                                    This requires a seperate loader to be implemented in some other cpp.\n" \
+        "                                    This requires a separate loader to be implemented in some other cpp.\n" \
         "      -H/--header filename.hpp      generate header file. \n" \
-        "      -i/--inline-templates value   Whether to inline the template defiitions inside the view declaration.\n" \
+        "      -I/--include directory        prepend directory to file name include path. \n" \
+        "      -i/--inline-templates value   Whether to inline the template definitions inside the view declaration.\n" \
         "                                    value can be one of the following:\n" \
         "               true                 Inline the template functions inside the view class declaration.\n" \
         "               false                Place the template function definitions outside the class declaration.\n" \
-        "               default              (Default value is parameter is ommited.) If header file is\n" \
+        "               default              (Default value is parameter is omitted.) If header file is\n" \
         "                                    generated, same as false, otherwise same as true.\n" \
         "      -h/--help                     show this help message\n")
 
@@ -969,6 +970,7 @@ def main():
     global output_file
     global header_file
     global exit_flag
+    global include_directory
     global inline_templates
     unsafe_build = False
     write_loader = True
@@ -990,6 +992,17 @@ def main():
                 return
             else:
                 output_file=os.sys.argv[indx+1]
+                indx+=1
+        elif os.sys.argv[indx]=='-I' or os.sys.argv[indx]=='-include':
+            if indx+1>=len(os.sys.argv):
+                sys.stderr.write("%s should be followed by directory name\n" % (os.sys.argv[indx]))
+                help()
+                exit_flag=1
+                return
+            else:
+                include_directory=os.sys.argv[indx+1]
+                if not include_directory.endswith('/') and not include_directory.endswith('\\'):
+                    include_directory=include_directory + '/';
                 indx+=1
         elif os.sys.argv[indx]=='-H' or os.sys.argv[indx]=='--header':
             if indx+1>=len(os.sys.argv):
@@ -1117,6 +1130,7 @@ def main():
 html_type_code='as_html'
 output_file=''
 header_file=''
+include_directory=''
 output_fd=sys.stdout
 namespace_name=''
 file_name=''
@@ -1151,7 +1165,7 @@ if header_file!='':
     output_hfd.write(declarations.getvalue());
     output_hfd.write("#endif // %s\n" % ( header_define ))
     output_hfd.close()
-    output_fd.write('#include "%s"\n\n' % ( os.path.relpath( header_file, os.path.dirname( output_file ))))
+    output_fd.write('#include "%s"\n\n' %  os.path.basename(header_file));
 else:
     output_fd.write(declarations.getvalue());
 
