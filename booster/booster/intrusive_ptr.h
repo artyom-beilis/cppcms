@@ -58,6 +58,13 @@ public:
         if(p_ != 0 && add_ref) intrusive_ptr_add_ref(p_);
     }
 
+    T *release()
+    {
+	    T *r = p_;
+	    p_ = 0;
+	    return r;
+    }
+
     intrusive_ptr(intrusive_ptr const & rhs): p_(rhs.p_)
     {
         if(p_ != 0) intrusive_ptr_add_ref(p_);

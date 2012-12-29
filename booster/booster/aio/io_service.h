@@ -118,6 +118,16 @@ namespace aio {
 		void post(handler const &h);
 
 		///
+		/// Post event completion hander with its status
+		///
+		void post(event_handler const &h,booster::system::error_code const &e);
+		///
+		/// Post event i/o completion hander with its status and i/o size
+		///
+		void post(io_handler const &h,booster::system::error_code const &e,size_t n);
+
+
+		///
 		/// Get the real name of the reactor that io_service uses (calls reactor::name())
 		///
 

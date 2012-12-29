@@ -370,8 +370,7 @@ namespace {
 			count+=n;
 			buf+=n;
 			if(buf.empty() || (e && !basic_io_device::would_block(e))) {
-				io_binder::pointer binder(new io_binder( h, count, e));
-				self->get_io_service().post(binder);
+				self->get_io_service().post(h,e,count);
 			}
 			else {
 				self->on_readable(intrusive_ptr<reader_all>(this));
@@ -429,8 +428,7 @@ namespace {
 			count+=n;
 			buf+=n;
 			if(buf.empty() || (e && !basic_io_device::would_block(e))) {
-				io_binder::pointer binder(new io_binder( h, count, e ));
-				self->get_io_service().post(binder);
+				self->get_io_service().post(h,e,count);
 			}
 			else {
 				self->on_writeable(intrusive_ptr<writer_all>(this));
@@ -482,8 +480,7 @@ void stream_socket::async_write_some(const_buffer const &buffer,io_handler const
 		on_writeable(writer);
 	}
 	else {
-		io_binder::pointer binder(new io_binder( h,n,e ));
-		get_io_service().post(binder);
+		get_io_service().post(h,e,n);
 	}
 	#endif
 }
@@ -503,8 +500,7 @@ void stream_socket::async_read_some(mutable_buffer const &buffer,io_handler cons
 		on_readable(reader);
 	}
 	else {
-		io_binder::pointer binder(new io_binder( h,n,e ));
-		get_io_service().post(binder);
+		get_io_service().post(h,e,n);
 	}
 	#endif
 }
@@ -520,8 +516,7 @@ void stream_socket::async_connect(endpoint const &ep,event_handler const &h)
 		on_writeable(connector);
 	}
 	else {
-		event_binder::pointer binder(new event_binder( h,e ));
-		get_io_service().post(binder);
+		get_io_service().post(h,e);
 	}
 }
 

@@ -64,31 +64,6 @@ namespace socket_details {
 		return res;
 	}
 
-
-	struct io_binder : public callable<void()> {
-		typedef std::auto_ptr<io_binder> pointer;
-		io_handler h;
-		size_t n;
-		system::error_code e;
-		io_binder(io_handler const &ih,size_t in,system::error_code const &ie) : h(ih),n(in),e(ie) {}
-		void operator()()
-		{
-			h(e,n);
-		}
-	};
-
-	struct event_binder : public callable<void()> {
-		event_handler h;
-		system::error_code e;
-		event_binder(event_handler const &ih,system::error_code const &ie) : h(ih),e(ie) {}
-		typedef std::auto_ptr<event_binder> pointer;
-		void operator()()
-		{
-			h(e);
-		}
-	};
-
-
 } // socket_details
 
 using namespace socket_details;

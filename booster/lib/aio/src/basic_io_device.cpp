@@ -209,8 +209,7 @@ bool basic_io_device::dont_block(io_handler const &h)
 	system::error_code e;
 	set_non_blocking(true,e);
 	if(e) {
-		io_binder::pointer b(new io_binder( h, 0, e));
-		get_io_service().post(b);
+		get_io_service().post(h,e,0);
 		return false;
 	}
 	nonblocking_was_set_ = true;
@@ -224,8 +223,7 @@ bool basic_io_device::dont_block(event_handler const &h)
 	system::error_code e;
 	set_non_blocking(true,e);
 	if(e) {
-		event_binder::pointer b(new event_binder( h, e));
-		get_io_service().post(b);
+		get_io_service().post(h,e);
 		return false;
 	}
 	nonblocking_was_set_ = true;

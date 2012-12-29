@@ -54,7 +54,7 @@ namespace booster {
 	template<typename Result,typename ...Params>			
 	class callback<Result(Params...)>				
 	{									
-	public:									
+	public:	
 		///
 		/// Type of result, for use with boost::bind
 		///
@@ -124,6 +124,7 @@ namespace booster {
 										\
 		typedef callable<Result(BOOSTER_TEMPLATE_TYPE_PARAMS)> 		\
 			callable_type;						\
+		typedef intrusive_ptr<callable_type> pointer_type;		\
 										\
 		template<typename R,typename F>					\
 		struct callable_impl : public callable_type {			\
@@ -189,9 +190,11 @@ namespace booster {
 		operator bool() const { return !empty(); }			\
 										\
 		void swap(callback &other) { call_ptr.swap(other.call_ptr); }	\
+		pointer_type const &get_pointer() const { return call_ptr; }	\
+		pointer_type &get_pointer() { return call_ptr; }		\
 										\
 	private:								\
-		intrusive_ptr<callable_type> call_ptr;				\
+		pointer_type call_ptr;						\
 	};									\
 
 	#define BOOSTER_TEMPLATE_PARAMS
