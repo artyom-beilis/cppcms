@@ -28,6 +28,7 @@
 #include <map>
 #include <deque>
 #include <list>
+#include <algorithm>
 
 #include "select_iterrupter.h"
 
@@ -117,70 +118,81 @@ public:
 		booster::intrusive_ptr<booster::refcounted> h;
 		booster::system::error_code e;
 		size_t n;
-		enum { none, op_handler, op_event_handler, op_io_handler } type;
+		void (*type)(completion_handler *self);
+
 		completion_handler() : 
 			n(0),
-			type(none) 
+			type(&completion_handler::op_none) 
 		{
 		}
 		completion_handler(handler const &inh) :
 			h(inh.get_pointer()),
 			n(0),
-			type(op_handler)
+			type(&completion_handler::op_handler)
 		{
 		}
 		completion_handler(handler &inh) :
 			h(inh.get_pointer().release(),false),
 			n(0),
-			type(op_handler)
+			type(&completion_handler::op_handler)
 		{
 		}
 		completion_handler(event_handler const &inh,booster::system::error_code const &ine) : 
 			h(inh.get_pointer()),
 			e(ine),
 			n(0),
-			type(op_event_handler) 
+			type(&completion_handler::op_event_handler) 
 		{
 		}
 		completion_handler(event_handler &inh,booster::system::error_code const &ine) : 
 			h(inh.get_pointer().release(),false),
 			e(ine),
 			n(0),
-			type(op_event_handler) 
+			type(&completion_handler::op_event_handler) 
 		{
 		}
 		completion_handler(io_handler const &inh,booster::system::error_code const &ine,size_t inn) : 
 			h(inh.get_pointer()),
 			e(ine),
 			n(inn),
-			type(op_io_handler) 
+			type(&completion_handler::op_io_handler) 
 		{
 		}
 		completion_handler(io_handler &inh,booster::system::error_code const &ine,size_t inn) : 
 			h(inh.get_pointer().release(),false),
 			e(ine),
 			n(inn),
-			type(op_io_handler) 
+			type(&completion_handler::op_io_handler) 
 		{
 		}
 
 		void operator()() 
 		{
-			booster::refcounted &call = *h;
-			switch(type) {
-			case none: 
-				break;
-			case op_handler:
-				static_cast<handler::callable_type &>(call)();
-				break;
-			case op_event_handler:
-				static_cast<event_handler::callable_type &>(call)(e);
-				break;
-			case op_io_handler:
-				static_cast<io_handler::callable_type &>(call)(e,n);
-				break;
-			}
+			type(this);
 		}
+		static void op_none(completion_handler *)
+		{
+		}
+		static void op_handler(completion_handler *self)
+		{
+			booster::refcounted &call = *self->h;
+			static_cast<handler::callable_type &>(call)();
+		}
+		static void op_event_handler(completion_handler *self)
+		{
+			booster::refcounted &call = *self->h;
+			static_cast<event_handler::callable_type &>(call)(self->e);
+		}
+		static void op_io_handler(completion_handler *self)
+		{
+			booster::refcounted &call = *self->h;
+			static_cast<io_handler::callable_type &>(call)(self->e,self->n);
+		}
+
+
+
+
+
 		void swap(completion_handler &other) {
 			h.swap(other.h);
 			std::swap(e,other.e);
