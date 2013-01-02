@@ -172,7 +172,7 @@ namespace {
 
 void context::async_flush_output(context::handler const &h)
 {
-	if(response().io_mode() != http::response::asynchronous) {
+	if(response().io_mode() != http::response::asynchronous && response().io_mode()!=http::response::asynchronous_raw) {
 		throw cppcms_error("Can't use asynchronouse operations when I/O mode is synchronous");
 	}
 	conn_->async_write_response(
