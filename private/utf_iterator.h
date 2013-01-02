@@ -25,7 +25,12 @@ namespace utf {
 }
 
 namespace utf8 {
-        inline int trail_length(unsigned char c) 
+        inline bool is_trail(char ci)
+        {
+            unsigned char c=ci;
+            return (c & 0xC0)==0x80;
+        }
+	inline int trail_length(unsigned char c) 
         {
             if(c < 128)
                 return 0;
@@ -91,16 +96,22 @@ namespace utf8 {
 				if(p==e)
 					return illegal;
 				tmp = *p++;
+				if (!is_trail(tmp))
+					return illegal;
 				c = (c << 6) | ( tmp & 0x3F);
 			case 2:
 				if(p==e)
 					return illegal;
 				tmp = *p++;
+				if (!is_trail(tmp))
+					return illegal;
 				c = (c << 6) | ( tmp & 0x3F);
 			case 1:
 				if(p==e)
 					return illegal;
 				tmp = *p++;
+				if (!is_trail(tmp))
+					return illegal;
 				c = (c << 6) | ( tmp & 0x3F);
 		}
 
