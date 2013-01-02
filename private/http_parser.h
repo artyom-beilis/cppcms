@@ -71,7 +71,7 @@ public:
 		body_(body),
 		body_ptr_(body_ptr)
 	{
-		header_.reserve(512);
+		header_.reserve(32);
 	}
 	void reset()
 	{

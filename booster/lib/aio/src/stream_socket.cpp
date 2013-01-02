@@ -9,6 +9,10 @@
 #include "socket_details.h"
 #include <booster/aio/socket.h>
 
+#ifndef BOOSTER_WIN32
+#include <sys/ioctl.h>
+#endif
+
 //#define BOOSTER_AIO_FORCE_POLL
 
 
@@ -407,9 +411,9 @@ namespace {
 	struct writer_all : public callable<void(system::error_code const &e)> 
 	{
 		typedef intrusive_ptr<writer_all> pointer;
-		writer_all(stream_socket *s,const_buffer const &b,io_handler const &handler) :
-			buf(b),
-			count(0),
+		writer_all(stream_socket *s,const_buffer const &b,size_t n,io_handler const &handler) :
+			buf(b + n),
+			count(n),
 			self(s),
 			h(handler)
 		{
@@ -533,10 +537,56 @@ void stream_socket::async_write(const_buffer const &buffer,io_handler const &h)
 {
 	if(!dont_block(h))
 		return;
-	writer_all::pointer r(new writer_all(this,buffer,h));
+
+	#ifdef BOOSTER_AIO_FORCE_POLL
+	writer_all::pointer r(new writer_all(this,buffer,0,h));
 	r->run();
+	#else
+	system::error_code e;
+	size_t n = write_some(buffer,e);
+	if((!e && n!=buffer.bytes_count()) || (e && would_block(e))) {
+		writer_all::pointer r(new writer_all(this,buffer,n,h));
+		r->run();
+	}
+	else {
+		get_io_service().post(h,e,n);
+	}
+	#endif
+
+
+
+
 }
 
+size_t stream_socket::bytes_readable(booster::system::error_code &e)
+{
+	#ifdef BOOSTER_WIN32
+	unsigned long size = 0;
+	int r = ::ioctlsocket(native(),FIONREAD,&size);
+	if(r != 0) {
+		e=geterror();
+		return 0;
+	}
+	return size;
+	#else
+	int size = 0;
+	int r = ::ioctl(native(),FIONREAD,&size);
+	if(r < 0) {
+		e=geterror();
+		return 0;
+	}
+	return size;
+	#endif
+}
+
+size_t stream_socket::bytes_readable()
+{
+	booster::system::error_code e;
+	size_t r = bytes_readable(e);
+	if(e)
+		throw booster::system::system_error(e);
+	return r;
+}
 
 void socket_pair(stream_socket &s1,stream_socket &s2,system::error_code &e)
 {

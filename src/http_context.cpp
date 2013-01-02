@@ -57,8 +57,6 @@ context::context(booster::shared_ptr<impl::cgi::connection> conn) :
 	d.reset(new _data(*this));
 	d->response.reset(new http::response(*this));
 	skin(service().views_pool().default_skin());
-	d->cache.reset(new cache_interface(*this));
-	d->session.reset(new session_interface(*this));
 }
 
 std::string context::skin()
@@ -68,6 +66,9 @@ std::string context::skin()
 
 cache_interface &context::cache()
 {
+	if(!d->cache.get()) {
+		d->cache.reset(new cache_interface(*this));
+	}
 	return *d->cache;
 }
 
@@ -177,7 +178,7 @@ void context::async_flush_output(context::handler const &h)
 	conn_->async_write_response(
 		response(),
 		false,
-		boost::bind(wrapper,h,_1));
+		h);
 }
 
 void context::async_complete_response()
@@ -259,6 +260,8 @@ void context::locale(std::string const &name)
 }
 session_interface &context::session()
 {
+	if(!d->session.get())
+		d->session.reset(new session_interface(*this));
 	return *d->session;
 }
 

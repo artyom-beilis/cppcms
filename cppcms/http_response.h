@@ -316,7 +316,9 @@ namespace http {
 		std::pair<char const *,size_t> output();
 
 		void write_http_headers(std::ostream &);
-		std::string get_async_chunk();
+
+		typedef std::pair<booster::shared_ptr<std::vector<char> >,size_t> chunk_type;
+		chunk_type get_async_chunk();
 
 		struct _data;
 		booster::hold_ptr<_data> d;

@@ -15,6 +15,7 @@
 #include <map>
 #include <booster/callback.h>
 #include <booster/system_error.h>
+#include <cppcms/http_context.h>
 
 #include <cppcms/defs.h>
 #include <cppcms/config.h>
@@ -46,7 +47,7 @@ namespace cgi {
 	typedef booster::callback<void(booster::system::error_code const &e)> handler;
 	typedef booster::callback<void(booster::system::error_code const &e,size_t)> io_handler;
 	typedef booster::callback<void()> callback;
-	typedef booster::callback<void(bool)> ehandler;
+	typedef cppcms::http::context::handler ehandler;
 
 	class connection;
 	class acceptor : public booster::noncopyable {
@@ -103,17 +104,20 @@ namespace cgi {
 			}
 			return map_env_;
 		}
-		size_t write(void const *data,size_t n,booster::system::error_code &e);
 		bool is_reuseable();
 	
 		std::string last_error();
 	
-	protected:
 
 		/****************************************************************************/
 
 		// These are abstract member function that should be implemented by
 		// actual protocol like FCGI, SCGI, HTTP or CGI
+	public:
+		virtual void async_write(void const *,size_t,io_handler const &h) = 0;
+		virtual size_t write(void const *,size_t,booster::system::error_code &e) = 0;
+	protected:
+
 
 		virtual void async_read_headers(handler const &h) = 0;
 		virtual bool keep_alive() = 0;
@@ -123,10 +127,8 @@ namespace cgi {
 		virtual void async_read_some(void *,size_t,io_handler const &h) = 0;
 		virtual void on_async_read_complete() {}
 		virtual void async_read_eof(callback const &h) = 0;
-		virtual void async_write_some(void const *,size_t,io_handler const &h) = 0;
 		virtual void async_write_eof(handler const &h) = 0;
 		virtual void write_eof() = 0;
-		virtual size_t write_some(void const *,size_t,booster::system::error_code &e) = 0;
 		virtual booster::aio::io_service &get_io_service() = 0;
 
 		/****************************************************************************/
@@ -138,15 +140,15 @@ namespace cgi {
 
 		booster::shared_ptr<connection> self();
 		void async_read(void *,size_t,io_handler const &h);
-		void async_write(void const *,size_t,io_handler const &h);
 	private:
 
 		struct reader;
-		struct writer;
 		struct cgi_forwarder;
+		struct async_write_binder;
 
 		friend struct reader;
 		friend struct writer;
+		friend struct async_write_binder;
 		friend struct cgi_forwarder;
 
 		void set_error(ehandler const &h,std::string s);
@@ -170,6 +172,8 @@ namespace cgi {
 		std::auto_ptr<multipart_parser> multipart_parser_;
 
 		std::map<std::string,std::string> map_env_;
+
+		booster::intrusive_ptr<async_write_binder> cached_async_write_binder_;
 
 	};
 

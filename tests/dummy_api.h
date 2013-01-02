@@ -34,12 +34,12 @@ public:
 		throw std::runtime_error("dummy_api: unsupported");
 	}
 
-	void async_write_some(void const *,size_t,io_handler const &)
+	void async_write(void const *,size_t,io_handler const &)
 	{
 		throw std::runtime_error("dummy_api: unsupported");
 	}
 	virtual void write_eof(){}
-	virtual size_t write_some(void const *p,size_t s,booster::system::error_code &) 
+	virtual size_t write(void const *p,size_t s,booster::system::error_code &) 
 	{
 		output_->append(reinterpret_cast<char const *>(p),s);
 		return s;

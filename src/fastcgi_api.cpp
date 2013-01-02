@@ -144,40 +144,62 @@ namespace cgi {
 			h(booster::system::error_code(),s);
 		}
 	public:	
-		virtual void async_write_some(void const *p,size_t s,io_handler const &h)
+		virtual void async_write(void const *p,size_t s,io_handler const &h)
 		{
 			booster::system::error_code dummy;
-			do_write_some(p,s,h,true,dummy);
+			do_write(p,s,h,true,dummy);
 		}
 		
-		virtual size_t write_some(void const *buffer,size_t n,booster::system::error_code &e)
+		virtual size_t write(void const *buffer,size_t n,booster::system::error_code &e)
 		{
-			return do_write_some(buffer,n,io_handler(),false,e);
+			return do_write(buffer,n,io_handler(),false,e);
 		}
 		
-		virtual size_t do_write_some(void const *p,size_t s,io_handler const &h,bool async,booster::system::error_code &e)
+		virtual size_t do_write(void const *p,size_t s,io_handler const &h,bool async,booster::system::error_code &e)
 		{
 			if(s==0) {
 				if(async)
-					socket_.get_io_service().post(boost::bind(h,booster::system::error_code(),0));
+					socket_.get_io_service().post(h,booster::system::error_code(),0);
 				return 0;
 			}
-			memset(&header_,0,sizeof(header_));
-			header_.version=fcgi_version_1;
-			header_.type=fcgi_stdout;
-			header_.request_id=request_id_;
-			if(s > 65535) s=65535;
-			header_.content_length =s;
-			header_.padding_length =(8 - (s % 8)) % 8;
-			static char pad[8];
+			io::const_buffer packet;
+			size_t reminder = s;
+			char const *ptr = static_cast<char const *>(p);
+			while(reminder > 0) {
+				static char pad[8];
+				static const size_t max_packet_len = 65535;
+				if(reminder > max_packet_len) {
+					if(s > max_packet_len && reminder == s) {
+						// prepare only once
+						full_header_.version = fcgi_version_1;
+						full_header_.type=fcgi_stdout;
+						full_header_.request_id=request_id_;
+						full_header_.content_length = max_packet_len;
+						full_header_.padding_length = 1;
+						full_header_.to_net();
+					}
+					packet += io::buffer(&full_header_,sizeof(full_header_));
+					packet += io::buffer(ptr,max_packet_len);
+					packet += io::buffer(pad,1);
+					ptr += max_packet_len;
+					reminder -= max_packet_len;
+				}
+				else { 
+					memset(&header_,0,sizeof(header_));
+					header_.version=fcgi_version_1;
+					header_.type=fcgi_stdout;
+					header_.request_id=request_id_;
+					header_.content_length = reminder;
+					header_.padding_length =(8 - (reminder % 8)) % 8;
+					packet += io::buffer(&header_,sizeof(header_));
+					packet += io::buffer(ptr,reminder);
+					packet += io::buffer(pad,header_.padding_length);
+					header_.to_net();
+					ptr += reminder;
+					reminder = 0;
+				}
+			}
 			
-			header_.to_net();
-
-			io::const_buffer packet = 
-					io::buffer(&header_,sizeof(header_))
-					+ io::buffer(p,s)
-					+ io::buffer(pad,header_.padding_length);
-
 			if(async) {
 				socket_.async_write(
 					packet,
@@ -726,6 +748,7 @@ namespace cgi {
 		io::stream_socket socket_;
 
 		fcgi_header header_;
+		fcgi_header full_header_;
 		std::vector<char> body_;
 
 

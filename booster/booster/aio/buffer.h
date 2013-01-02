@@ -85,6 +85,21 @@ namespace booster {
 			{
 				return size_ == 0;
 			}
+			size_t size()
+			{
+				return size_;
+			}
+			size_t bytes_count() const
+			{
+				if(size_ == 0)
+					return 0;
+				if(size_ == 1)
+					return entry_.size;
+				size_t n = 0;
+				for(size_t i=0;i<vec_.size();i++)
+					n+=vec_[i].size;
+				return n;
+			}
 		private:
 			int size_;
 			entry entry_;

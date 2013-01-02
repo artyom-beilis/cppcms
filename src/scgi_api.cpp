@@ -118,14 +118,14 @@ namespace cgi {
 		{
 			socket_.async_read_some(io::buffer(p,s),h);
 		}
-		virtual void async_write_some(void const *p,size_t s,io_handler const &h)
+		virtual void async_write(void const *p,size_t s,io_handler const &h)
 		{
-			socket_.async_write_some(io::buffer(p,s),h);
+			socket_.async_write(io::buffer(p,s),h);
 		}
-		virtual size_t write_some(void const *buffer,size_t n,booster::system::error_code &e)
+		virtual size_t write(void const *buffer,size_t n,booster::system::error_code &e)
 		{
 			booster::system::error_code err;
-			size_t res = socket_.write_some(io::buffer(buffer,n),err);
+			size_t res = socket_.write(io::buffer(buffer,n),err);
 			if(err && io::basic_socket::would_block(err)) {
 				socket_.set_non_blocking(false);
 				return socket_.write_some(io::buffer(buffer,n),e);

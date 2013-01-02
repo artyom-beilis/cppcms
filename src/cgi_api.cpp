@@ -179,7 +179,7 @@ booster::shared_ptr<connection> connection::self()
 }
 
 void connection::async_prepare_request(	http::context *context,
-					booster::callback<void(bool)> const &h)
+					ehandler const &h)
 {
 	async_read_headers(boost::bind(&connection::on_headers_read,self(),_1,context,h));
 }
@@ -198,7 +198,7 @@ void connection::on_headers_read(booster::system::error_code const &e,http::cont
 	if(addr.second != 0 && !addr.first.empty()) {
 		booster::shared_ptr<cgi_forwarder> f(new cgi_forwarder(self(),addr.first,addr.second));
 		f->async_run();
-		h(true);
+		h(http::context::operation_aborted);
 		return;
 	}
 	context->request().prepare();
@@ -220,7 +220,7 @@ void connection::handle_eof(callback const &on_eof)
 void connection::set_error(ehandler const &h,std::string s)
 {
 	error_=s;
-	h(true);
+	h(http::context::operation_aborted);
 }
 
 void connection::handle_http_error(int code,http::context *context,ehandler const &h)
@@ -384,7 +384,7 @@ void connection::on_some_multipart_read(booster::system::error_code const &e,siz
 		}
 		context->request().set_post_data(files);
 		multipart_parser_.reset();
-		h(false);
+		h(http::context::operation_completed);
 		return;
 	}
 	else if (r==multipart_parser::parsing_error) {
@@ -416,7 +416,7 @@ void connection::on_post_data_loaded(booster::system::error_code const &e,http::
 	if(e) { set_error(h,e.message()); return; }
 	context->request().set_post_data(content_);
 	on_async_read_complete();
-	h(false);
+	h(http::context::operation_completed);
 }
 
 bool connection::is_reuseable()
@@ -429,33 +429,69 @@ std::string connection::last_error()
 	return error_;
 }
 
+struct connection::async_write_binder : public booster::callable<void(booster::system::error_code const &,size_t)> {
+	typedef booster::shared_ptr<cppcms::impl::cgi::connection> self_type;
+	self_type self;
+	ehandler h;
+	bool complete_response;
+	booster::shared_ptr<std::vector<char> > block;
+	async_write_binder() :complete_response(false) {}
+	void init(self_type c,bool comp,ehandler const &hnd,booster::shared_ptr<std::vector<char> > const &b) 
+	{
+		self=c;
+		complete_response = comp;
+		h = hnd;
+		block = b;
+	}
+	void reset()
+	{
+		h=ehandler();
+		self.reset();
+		complete_response = false;
+		block.reset();
+	}
+	void operator()(booster::system::error_code const &e,size_t)
+	{
+		self->on_async_write_written(e,complete_response,h);
+		if(!self->cached_async_write_binder_) {
+			self->cached_async_write_binder_ = this;
+			reset();
+		}
+	}
+};
+
+
 void connection::async_write_response(	http::response &response,
 					bool complete_response,
 					ehandler const &h)
 {
-	async_chunk_=response.get_async_chunk();
-	if(!async_chunk_.empty()) {
-		async_write(	async_chunk_.data(),
-				async_chunk_.size(),
-				boost::bind(	&connection::on_async_write_written,
-						self(),
-						_1,
-						complete_response,
-						h));
+	http::response::chunk_type chunk = response.get_async_chunk();
+	if(chunk.second > 0) {
+		booster::intrusive_ptr<async_write_binder> binder;
+		binder.swap(cached_async_write_binder_);
+		if(!binder)
+			binder = new async_write_binder();
+
+		binder->init(self(),complete_response,h,chunk.first);
+		booster::intrusive_ptr<booster::callable<void(booster::system::error_code const &,size_t)> > p(binder.get());
+		async_write(	&(*chunk.first)[0],
+				chunk.second,
+				p);
 		return;
 	}
-	if(complete_response) {
-		on_async_write_written(booster::system::error_code(),complete_response,h);
+	if(!complete_response) {
+		// request to send an empty block
+		service().impl().get_io_service().post(boost::bind(h,http::context::operation_completed));
 		return;
 	}
-	service().impl().get_io_service().post(boost::bind(h,false));
+	on_async_write_written(booster::system::error_code(),true,h); // < h will not be called when complete_response = true
 }
 
 void connection::on_async_write_written(booster::system::error_code const &e,bool complete_response,ehandler const &h)
 {
 	if(e) {	
 		BOOSTER_WARNING("cppcms") << "Writing response failed:" << e.message();
-		service().impl().get_io_service().post(boost::bind(h,true));
+		service().impl().get_io_service().post(boost::bind(h,http::context::operation_aborted));
 		return;
 	}
 	if(complete_response) {
@@ -463,7 +499,7 @@ void connection::on_async_write_written(booster::system::error_code const &e,boo
 		request_in_progress_=false;
 		return;
 	}
-	service().impl().get_io_service().post(boost::bind(h,false));
+	h(http::context::operation_completed);
 }
 void connection::async_complete_response(ehandler const &h)
 {
@@ -479,7 +515,7 @@ void connection::complete_response()
 void connection::on_eof_written(booster::system::error_code const &e,ehandler const &h)
 {
 	if(e) { set_error(h,e.message()); return; }
-	h(false);
+	h(http::context::operation_completed);
 }
 
 
@@ -508,61 +544,12 @@ struct connection::reader {
 			conn->async_read_some(p,s,*this);
 	}
 };
-struct connection::writer {
-	writer(connection *C,io_handler const &H,size_t S,char const *P) : h(H), s(S), p(P),conn(C)
-	{
-		done=0;
-	}
-	io_handler h;
-	size_t s;
-	size_t done;
-	char const *p;
-	connection *conn;
-	void operator() (booster::system::error_code const &e=booster::system::error_code(),size_t wr = 0)
-	{
-		if(e) {
-			h(e,done+wr);
-			return;
-		}
-		s-=wr;
-		p+=wr;
-		done+=wr;
-		if(s==0)
-			h(booster::system::error_code(),done);
-		else
-			conn->async_write_some(p,s,*this);
-	}
-};
 
 void connection::async_read(void *p,size_t s,io_handler const &h)
 {
 	reader r(this,h,s,(char*)p);
 	r();
 }
-
-void connection::async_write(void const *p,size_t s,io_handler const &h)
-{
-	writer w(this,h,s,(char const *)p);
-	w();
-}
-
-size_t connection::write(void const *data,size_t n,booster::system::error_code &e)
-{
-	char const *p=reinterpret_cast<char const *>(data);
-	size_t wr=0;
-	while(n > 0) {
-		size_t d=write_some(p,n,e);
-		if(d == 0)
-			return wr;
-		p+=d;
-		wr+=d;
-		n-=d;
-		if(e)
-			return wr;
-	}
-	return wr;
-}
-
 
 } // cgi
 } // impl

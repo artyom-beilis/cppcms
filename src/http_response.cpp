@@ -63,12 +63,27 @@ namespace details {
 		{
 			out_ = out;
 		}
+		size_t getstr(booster::shared_ptr<std::vector<char> > &buf)
+		{
+			size_t n = buffer_.size() -  (epptr() - pptr());
+			setp(0,0);
+			if(!borrowed_buffer_) {
+				borrowed_buffer_.reset(new std::vector<char>());
+			}
+			borrowed_buffer_->swap(buffer_);
+			buf = borrowed_buffer_;
+			return n;
+		}
 		void getstr(std::string &out)
 		{
-			buffer_.resize(buffer_.size() -  (epptr() - pptr()));
+			size_t n = buffer_.size() -  (epptr() - pptr());
 			setp(0,0);
-			buffer_.swap(out);
-			buffer_.clear();
+			if(n!=0) {
+				out.assign(&buffer_[0],n);
+			}
+			else {
+				out.clear();
+			}
 		}
 		int overflow(int c)
 		{
@@ -81,7 +96,14 @@ namespace details {
 					r=-1;
 			}
 			if(pptr() == 0) {
-				buffer_.resize(1024);
+				if(buffer_.empty()) {
+					if(borrowed_buffer_ && borrowed_buffer_.unique() && borrowed_buffer_->size()!=0) {
+						buffer_.swap(*borrowed_buffer_);
+					}
+					else {
+						buffer_.resize(128);
+					}
+				}
 				setp(&buffer_[0],&buffer_[0]+buffer_.size());
 			}
 			else if(pptr()==epptr()) {
@@ -106,7 +128,8 @@ namespace details {
 			out_ = 0;
 		}
 	private:
-		std::string buffer_;
+		booster::shared_ptr<std::vector<char> > borrowed_buffer_;
+		std::vector<char> buffer_;
 		std::streambuf *out_;
 	};
 
@@ -118,7 +141,7 @@ namespace details {
 		{
 			if(n==0)
 				n=1024;
-			buf_.resize(n);
+			expected_size_ = n;
 		}
 		Self &self()
 		{
@@ -132,6 +155,8 @@ namespace details {
 					r = EOF;
 				}
 			}
+			if(buf_.empty())
+				buf_.resize(expected_size_);
 			char *begin = 	&buf_[0];
 			char *end = 	begin + buf_.size();
 			setp(begin,end);
@@ -144,6 +169,7 @@ namespace details {
 			return overflow(EOF);
 		}
 	private:
+		size_t expected_size_;
 		std::vector<char> buf_;
 	};
 
@@ -523,11 +549,11 @@ std::ostream &response::out()
 	return d->output;
 }
 
-std::string response::get_async_chunk()
+response::chunk_type response::get_async_chunk()
 {
-	std::string result;
-	d->buffered.getstr(result);
-	return result;
+	chunk_type c;
+	c.second = d->buffered.getstr(c.first);
+	return c;
 }
 
 bool response::some_output_was_written()

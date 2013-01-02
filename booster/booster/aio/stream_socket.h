@@ -193,6 +193,16 @@ namespace aio {
 		///
 		void async_write(const_buffer const &buffer,io_handler const &h);
 
+		///
+		/// Return a number of avalible bytes to read, if error occurs returns 0 and e set to the error code
+		///
+		size_t bytes_readable(booster::system::error_code &e);
+
+		///
+		/// Return a number of avalible bytes to read, if error occurs system_error is thrown
+		///
+		size_t bytes_readable();
+
 	private:
 		int readv(mutable_buffer const &b);
 		int writev(const_buffer const &b);
