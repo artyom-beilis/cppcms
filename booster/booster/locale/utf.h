@@ -219,16 +219,22 @@ namespace utf {
                 if(BOOSTER_LOCALE_UNLIKELY(p==e))
                     return incomplete;
                 tmp = *p++;
+                if (!is_trail(tmp))
+                    return illegal;
                 c = (c << 6) | ( tmp & 0x3F);
             case 2:
                 if(BOOSTER_LOCALE_UNLIKELY(p==e))
                     return incomplete;
                 tmp = *p++;
+                if (!is_trail(tmp))
+                    return illegal;
                 c = (c << 6) | ( tmp & 0x3F);
             case 1:
                 if(BOOSTER_LOCALE_UNLIKELY(p==e))
                     return incomplete;
                 tmp = *p++;
+                if (!is_trail(tmp))
+                    return illegal;
                 c = (c << 6) | ( tmp & 0x3F);
             }
 

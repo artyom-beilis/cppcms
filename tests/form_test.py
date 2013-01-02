@@ -127,6 +127,10 @@ test_valid('text5','/text','_1=%d7%a9%d6%b8%d7%9c%d7%95%d7%9d','valid\nשָלו�
 test_valid('text6','/text','_1=%d7%a9%d7%9c','valid\nשל')
 test_valid('text7','/text','_1=%FF%FF','invalid\n\xFF\xFF')
 test_valid('text8','/text','_1=%01%01','invalid\n\x01\x01')
+test_valid('text9.1','/text','_1=xx%DF%7F','invalid\nxx\xDF\x7F')
+test_valid('text9.2','/text','_1=xx%C2%7F','invalid\nxx\xC2\x7F')
+test_valid('text9.3','/text','_1=xx%e0%7F%80','invalid\nxx\xe0\x7F\x80')
+test_valid('text9.4','/text','_1=xx%f0%7F%80%80','invalid\nxx\xf0\x7F\x80\x80')
 
 test_valid('number','/number','_1=','invalid\n')
 test_valid('number1','/number','_1=10','valid\n10')
