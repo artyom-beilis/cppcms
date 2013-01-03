@@ -1,5 +1,5 @@
 Content-Type: text/plain; charset=utf-8
-X-Powered-By: CppCMS/1.0.2
+X-Powered-By: CppCMS/1.0.3
 
 CONTENT_LENGTH:11
 CONTENT_TYPE:application/x-www-form-urlencoded; charset=utf-8
@@ -12,7 +12,7 @@ SCRIPT_NAME:/test
 SERVER_NAME:127.0.0.1
 SERVER_PORT:8080
 SERVER_PROTOCOL:HTTP/1.0
-SERVER_SOFTWARE:CppCMS/1.0.2
+SERVER_SOFTWARE:CppCMS/1.0.3
 
 1=2
 foo=bar
