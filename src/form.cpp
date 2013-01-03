@@ -277,6 +277,7 @@ base_widget::base_widget() :
 	is_valid_(1),
 	is_set_(0),
 	is_disabled_(0),
+	is_readonly_(0),
 	is_generation_done_(0),
 	has_message_(0),
 	has_error_(0),
@@ -406,6 +407,16 @@ bool base_widget::disabled()
 void base_widget::disabled(bool v)
 {
 	is_disabled_=v;
+}
+
+bool base_widget::readonly()
+{
+	return is_readonly_;
+}
+
+void base_widget::readonly(bool v)
+{
+	is_readonly_=v;
 }
 
 std::string base_widget::attributes_string()
@@ -672,6 +683,9 @@ void text::render_attributes(form_context &context)
 	std::pair<int,int> lm=limits();
 	if(lm.second >= 0 && validate_charset()) {
 		output << "maxlength=\"" << cint(lm.second) << "\" ";
+	}
+	if(readonly()) {
+		output << "readonly=\"readonly\" ";
 	}
 }
 

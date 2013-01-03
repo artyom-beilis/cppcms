@@ -533,6 +533,17 @@ namespace cppcms {
 			///
 			void disabled(bool);
 
+
+			///
+			/// Get the HTML \c readonly attribute.
+			///
+			bool readonly();
+
+			///
+			/// Set/Unset the HTML \c readonly attribute.
+			///
+			void readonly(bool);
+
 			///
 			/// Get the general user defined attribute string that can be added to the widget.
 			/// 
@@ -685,11 +696,12 @@ namespace cppcms {
 			uint32_t is_valid_  : 1;
 			uint32_t is_set_ : 1;
 			uint32_t is_disabled_ : 1;
+			uint32_t is_readonly_ : 1;
 			uint32_t is_generation_done_ : 1;
 			uint32_t has_message_ : 1;
 			uint32_t has_error_ : 1;
 			uint32_t has_help_ : 1;
-			uint32_t reserverd_ : 25;
+			uint32_t reserverd_ : 24;
 
 			struct _data;
 			booster::hold_ptr<_data> d;
