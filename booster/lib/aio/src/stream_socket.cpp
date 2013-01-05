@@ -13,6 +13,11 @@
 #include <sys/ioctl.h>
 #endif
 
+#ifdef __sun
+// for FIONREAD
+#include <sys/filio.h>
+#endif
+
 //#define BOOSTER_AIO_FORCE_POLL
 
 
