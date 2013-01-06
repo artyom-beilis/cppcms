@@ -5,7 +5,7 @@ if [ "$1" == "" ] ; then
 	exit 1;
 fi
 
-SVNROOT=https://cppcms.svn.sourceforge.net/svnroot/cppcms/framework
+SVNROOT=https://svn.code.sf.net/p/cppcms/code/framework
 
 svn export $SVNROOT/$1 current-release
 VERSION=`grep CPPCMS_PACKAGE_VERSION current-release/CMakeLists.txt  | sed 's/.*"\(.*\)".*/\1/'`
