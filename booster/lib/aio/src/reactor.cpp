@@ -164,7 +164,7 @@ namespace aio {
 	private:
 		bool check(native_type fd,int &error)
 		{
-			if(fd < 0 || fd >65536) {
+			if(fd < 0) {
 				error=EBADF;
 				return false;
 			}
@@ -181,7 +181,7 @@ namespace aio {
 	protected:
 		bool check(int fd,int &error)
 		{
-			if(fd < 0 || fd >65536) {
+			if(fd < 0) {
 				error=EINVAL;
 				return false;
 			}

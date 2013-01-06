@@ -60,7 +60,7 @@ typedef unique_lock<recursive_mutex> lock_guard;
 
 		bool is_valid(native_type fd)
 		{
-			return 0 <= fd && fd <=65535;
+			return fd >= 0;
 		}
 
 		Cont &operator[](native_type fd)
