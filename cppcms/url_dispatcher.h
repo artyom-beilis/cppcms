@@ -14,6 +14,7 @@
 #include <booster/hold_ptr.h>
 #include <booster/traits/enable_if.h>
 #include <booster/traits/is_base_of.h>
+#include <booster/regex.h>
 #include <cppcms/application.h>
 #include <string>
 #include <list>
@@ -46,11 +47,19 @@ namespace cppcms {
 	public:
 		// Handlers
 		typedef booster::function<void()> handler;
+		typedef booster::function<void(booster::cmatch const &)> rhandler;
 		typedef booster::function<void(std::string)> handler1;
 		typedef booster::function<void(std::string,std::string)> handler2;
 		typedef booster::function<void(std::string,std::string,std::string)> handler3;
 		typedef booster::function<void(std::string,std::string,std::string,std::string)> handler4;
+		typedef booster::function<void(std::string,std::string,std::string,std::string,std::string)> handler5;
+		typedef booster::function<void(std::string,std::string,std::string,std::string,std::string,std::string)> handler6;
 
+		///
+		/// Assign \a handler to pattern \a regex thus if URL that matches
+		/// this pattern requested, \a handler is called with matched results
+		///
+		void assign_generic(std::string const &regex,rhandler handler);
 		///
 		/// Assign \a handler to pattern \a regex thus if URL that matches
 		/// this pattern requested, \a handler is called
@@ -85,6 +94,18 @@ namespace cppcms {
 		/// the string that was matched at position \a exp1, \a exp2, \a exp3 and \a exp4
 		///
 		void assign(std::string const &regex,handler4 handler,int exp1,int exp2,int exp3,int exp4);
+		///
+		/// Assign \a handler to pattern \a regex thus if URL that matches
+		/// this pattern requested, \a handler is called with 1st, 2nd, 3rd, 4th and 5th parameters
+		/// the string that was matched at position \a exp1, \a exp2, \a exp3, \a exp4 and \a exp5
+		///
+		void assign(std::string const &regex,handler5 handler,int exp1,int exp2,int exp3,int exp4,int exp5);
+		///
+		/// Assign \a handler to pattern \a regex thus if URL that matches
+		/// this pattern requested, \a handler is called with 1st, 2nd, 3rd, 4th, 5th and 6th parameters
+		/// the string that was matched at position \a exp1, \a exp2, \a exp3, \a exp4, \a exp 5 and \a exp6
+		///
+		void assign(std::string const &regex,handler6 handler,int exp1,int exp2,int exp3,int exp4,int exp5,int exp6);
 
 		///
 		/// Try to find match between \a url and registered handlers and applications.
@@ -110,6 +131,18 @@ namespace cppcms {
 		void assign(std::string const &regex,void (C::*member)(),C *object)
 		{
 			assign(regex,binder0<C>(member,object));
+		}
+		///
+		/// This template function is a shortcut to assign_generic(regex,rhandler). It allows
+		/// assignment of \a member function of an \a object with signature void handler(booster::cmatch const &)
+		///
+		/// In addition to calling \a member function it calls object->init() before call
+		/// and object->clean() after the call of the C is derived from cppcms::application
+		///
+		template<typename C>
+		void assign_generic(std::string const &regex,void (C::*member)(booster::cmatch const &),C *object)
+		{
+			assign_generic(regex,rbinder<C>(member,object));
 		}
 		///
 		/// This template function is a shortcut to assign(regex,callback,int). It allows
@@ -158,6 +191,30 @@ namespace cppcms {
 		void assign(std::string const &regex,void (C::*member)(std::string,std::string,std::string,std::string),C *object,int e1,int e2,int e3,int e4)
 		{
 			assign(regex,binder4<C>(member,object),e1,e2,e3,e4);
+		}
+		///
+		/// This template function is a shortcut to assign(regex,callback,int,int,int,int,int). It allows
+		/// assignment of \a member function of an \a object with signature void handler(string,string,string,string,string)
+		///
+		/// In addition to calling \a member function it calls object->init() before call
+		/// and object->clean() after the call of the C is derived from cppcms::application
+		///
+		template<typename C>
+		void assign(std::string const &regex,void (C::*member)(std::string,std::string,std::string,std::string,std::string),C *object,int e1,int e2,int e3,int e4,int e5)
+		{
+			assign(regex,binder5<C>(member,object),e1,e2,e3,e4,e5);
+		}
+		///
+		/// This template function is a shortcut to assign(regex,callback,int,int,int,int,int,int). It allows
+		/// assignment of \a member function of an \a object with signature void handler(string,string,string,string,string,string)
+		///
+		/// In addition to calling \a member function it calls object->init() before call
+		/// and object->clean() after the call of the C is derived from cppcms::application
+		///
+		template<typename C>
+		void assign(std::string const &regex,void (C::*member)(std::string,std::string,std::string,std::string,std::string,std::string),C *object,int e1,int e2,int e3,int e4,int e5,int e6)
+		{
+			assign(regex,binder6<C>(member,object),e1,e2,e3,e4,e5,e6);
 		}
 
 		/// 
@@ -216,6 +273,24 @@ namespace cppcms {
 			}
 		};
 		
+		template<typename C>						
+		struct rbinder{
+			typedef void (C::*member_type)(booster::cmatch const &);
+			member_type member;
+			C *object;
+			
+			rbinder(member_type m,C *o) :
+				member(m),
+				object(o)
+			{
+			}
+			void operator()(booster::cmatch const &p1) const
+			{
+				page_guard<C> guard(object);
+				(object->*member)(p1);
+			}
+		};
+
 		template<typename C>						
 		struct binder1{
 			typedef void (C::*member_type)(std::string);
@@ -283,6 +358,42 @@ namespace cppcms {
 			{
 				page_guard<C> guard(object);
 				(object->*member)(p1,p2,p3,p4);
+			}
+		};
+
+		template<typename C>						
+		struct binder5{
+			typedef void (C::*member_type)(std::string,std::string,std::string,std::string,std::string);
+			member_type member;
+			C *object;
+			
+			binder5(member_type m,C *o) :
+				member(m),
+				object(o)
+			{
+			}
+			void operator()(std::string p1,std::string p2,std::string p3,std::string p4,std::string p5) const
+			{
+				page_guard<C> guard(object);
+				(object->*member)(p1,p2,p3,p4,p5);
+			}
+		};
+
+		template<typename C>						
+		struct binder6{
+			typedef void (C::*member_type)(std::string,std::string,std::string,std::string,std::string,std::string);
+			member_type member;
+			C *object;
+			
+			binder6(member_type m,C *o) :
+				member(m),
+				object(o)
+			{
+			}
+			void operator()(std::string p1,std::string p2,std::string p3,std::string p4,std::string p5,std::string p6) const
+			{
+				page_guard<C> guard(object);
+				(object->*member)(p1,p2,p3,p4,p5,p6);
 			}
 		};
 		

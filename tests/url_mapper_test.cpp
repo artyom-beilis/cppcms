@@ -6,6 +6,7 @@
 //
 ///////////////////////////////////////////////////////////////////////////////
 #include <cppcms/url_mapper.h>
+#include <cppcms/url_dispatcher.h>
 #include <cppcms/application.h>
 #include <cppcms/service.h>
 #include <cppcms/json.h>
@@ -19,6 +20,55 @@ std::string value(std::ostringstream &s)
 	std::string res = s.str();
 	s.str("");
 	return res;
+}
+
+class disp : public cppcms::application {
+public:
+	void hg(booster::cmatch const &m)
+	{ v_ = "m:" + std::string(m[0]) +':'+std::string(m[1]); }
+	void h0() { v_ = "-"; }
+	void h1(std::string s1)	
+	{ v_ = ':'+s1; }
+	void h2(std::string s1,std::string s2)
+	{ v_ = ':'+s1+':'+s2; }
+	void h3(std::string s1,std::string s2,std::string s3)
+	{ v_ = ':'+s1+':'+s2+':'+s3; }
+	void h4(std::string s1,std::string s2,std::string s3,std::string s4)
+	{ v_ = ':'+s1+':'+s2+':'+s3+':'+s4; }
+	void h5(std::string s1,std::string s2,std::string s3,std::string s4,std::string s5)
+	{ v_ = ':'+s1+':'+s2+':'+s3+':'+s4+':'+s5; }
+	void h6(std::string s1,std::string s2,std::string s3,std::string s4,std::string s5,std::string s6)
+	{ v_ = ':'+s1+':'+s2+':'+s3+':'+s4+':'+s5+':'+s6; }
+	disp(cppcms::service &s) : cppcms::application(s) 
+	{
+		dispatcher().assign_generic("hg/(.*)",&disp::hg,this);
+		dispatcher().assign("h0",&disp::h0,this);
+		dispatcher().assign("h1/(a(\\d+))",&disp::h1,this,2);
+		dispatcher().assign("h2/(a(\\d+))/(a(\\d+))",&disp::h2,this,2,4);
+		dispatcher().assign("h3/(a(\\d+))/(a(\\d+))/(a(\\d+))",&disp::h3,this,2,4,6);
+		dispatcher().assign("h4/(a(\\d+))/(a(\\d+))/(a(\\d+))/(a(\\d+))",&disp::h4,this,2,4,6,8);
+		dispatcher().assign("h5/(a(\\d+))/(a(\\d+))/(a(\\d+))/(a(\\d+))/(a(\\d+))",&disp::h5,this,2,4,6,8,10);
+		dispatcher().assign("h6/(a(\\d+))/(a(\\d+))/(a(\\d+))/(a(\\d+))/(a(\\d+))/(a(\\d+))",&disp::h6,this,2,4,6,8,10,12);
+	}
+#define TESTD(x,y) do { main(x); TEST(v_==y); } while(0)
+	void test()
+	{
+		TESTD("hg/x","m:hg/x:x");
+		TESTD("h0","-");
+		TESTD("h1/a1",":1");
+		TESTD("h2/a1/a2",":1:2");
+		TESTD("h3/a1/a2/a3",":1:2:3");
+		TESTD("h4/a1/a2/a3/a4",":1:2:3:4");
+		TESTD("h5/a1/a2/a3/a4/a5",":1:2:3:4:5");
+		TESTD("h6/a1/a2/a3/a4/a5/a6",":1:2:3:4:5:6");
+	}
+	std::string v_;
+};
+
+void dispatcher_test(cppcms::service &srv)
+{
+	disp d(srv);
+	d.test();
 }
 
 void basic_test(cppcms::service &srv,bool throws)
@@ -288,6 +338,7 @@ int main()
 {
 	try {
 
+
 		std::cout << "- Basics no throw" << std::endl;
 
 		cppcms::json::value cfg;
@@ -315,6 +366,9 @@ int main()
 		app.test_mapping();
 		std::cout << "- Keyword substitution" << std::endl;
 		app.test_keywords();
+
+		std::cout << "- Dispatcher Test" << std::endl;
+		dispatcher_test(srv);
 
 	}
 	catch(std::exception const &e) {

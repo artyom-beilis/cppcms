@@ -58,13 +58,15 @@ namespace cppcms {
 
 		template<typename H>
 		struct base_handler : public option {
-			base_handler(std::string expr,H handle,int a=0,int b=0,int c=0,int d=0)
+			base_handler(std::string expr,H handle,int a=0,int b=0,int c=0,int d=0,int e=0,int f=0)
 				: option(expr),handle_(handle)
 			{
 				select_[0]=a;
 				select_[1]=b;
 				select_[2]=c;
 				select_[3]=d;
+				select_[4]=e;
+				select_[5]=f;
 			}
 			virtual bool dispatch(std::string url)
 			{
@@ -78,6 +80,11 @@ namespace cppcms {
 			void execute_handler(url_dispatcher::handler const &h)
 			{
 				h();
+			}
+
+			void execute_handler(url_dispatcher::rhandler const &h)
+			{
+				h(match_);
 			}
 
 			void execute_handler(url_dispatcher::handler1 const &h)
@@ -97,16 +104,24 @@ namespace cppcms {
 			{
 				h(match_[select_[0]],match_[select_[1]],match_[select_[2]],match_[select_[3]]);
 			}
+			void execute_handler(url_dispatcher::handler5 const &h)
+			{
+				h(match_[select_[0]],match_[select_[1]],match_[select_[2]],match_[select_[3]],match_[select_[4]]);
+			}
+			void execute_handler(url_dispatcher::handler6 const &h)
+			{
+				h(match_[select_[0]],match_[select_[1]],match_[select_[2]],match_[select_[3]],match_[select_[4]],match_[select_[5]]);
+			}
 
-			int select_[4];
+			int select_[6];
 			H handle_;
 		};
 
 
 		template<typename H>
-		booster::shared_ptr<option> make_handler(std::string expr,H const &handler,int a=0,int b=0,int c=0,int d=0)
+		booster::shared_ptr<option> make_handler(std::string expr,H const &handler,int a=0,int b=0,int c=0,int d=0,int e=0,int f=0)
 		{
-			return booster::shared_ptr<option>(new base_handler<H>(expr,handler,a,b,c,d));
+			return booster::shared_ptr<option>(new base_handler<H>(expr,handler,a,b,c,d,e,f));
 		}
 
 	} // anonynoys
@@ -147,6 +162,10 @@ namespace cppcms {
 	{
 		d->options.push_back(make_handler(expr,h));
 	}
+	void url_dispatcher::assign_generic(std::string const &expr,rhandler h)
+	{
+		d->options.push_back(make_handler(expr,h));
+	}
 
 	void url_dispatcher::assign(std::string const &expr,handler1 h,int p1)
 	{
@@ -166,6 +185,16 @@ namespace cppcms {
 	void url_dispatcher::assign(std::string const &expr,handler4 h,int p1,int p2,int p3,int p4)
 	{
 		d->options.push_back(make_handler(expr,h,p1,p2,p3,p4));
+	}
+
+	void url_dispatcher::assign(std::string const &expr,handler5 h,int p1,int p2,int p3,int p4,int p5)
+	{
+		d->options.push_back(make_handler(expr,h,p1,p2,p3,p4,p5));
+	}
+
+	void url_dispatcher::assign(std::string const &expr,handler6 h,int p1,int p2,int p3,int p4,int p5,int p6)
+	{
+		d->options.push_back(make_handler(expr,h,p1,p2,p3,p4,p5,p6));
 	}
 
 } // namespace cppcms
