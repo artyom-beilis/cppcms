@@ -25,6 +25,9 @@
 
 namespace boost = cppcms_boost;
 
+// for testing only
+//#define CPPCMS_NO_SO_SNDTIMO
+
 #if defined(__sun)  
 #  ifndef CPPCMS_NO_SO_SNDTIMO
 #    define CPPCMS_NO_SO_SNDTIMO
@@ -336,93 +339,55 @@ namespace cgi {
 			return process_output_headers(p,n);
 		}
 		#ifndef CPPCMS_NO_SO_SNDTIMO
-		// using SO_SNDTIMO on almost all platforms
-		size_t write_to_socket(booster::aio::const_buffer const &buf,booster::system::error_code &e)
+		size_t timed_write_some(booster::aio::const_buffer const &buf,booster::system::error_code &e)
 		{
 			set_sync_options(e);
 			if(e) return 0;
-			booster::ptime start = booster::ptime::now();
-			size_t n = socket_.write(buf,e);
-			booster::ptime end = booster::ptime::now();
-			// it may actually return with success but return small
-			// a small buffer
-			if(booster::ptime::to_number(end - start) >= timeout_ - 0.1) {
-				die(); 
-				return n;
-			}
-			if(e  && (io::basic_socket::would_block(e) 
-				#ifdef CPPCMS_WIN32
-				|| e.value() == 10060   // WSAETIMEDOUT - do not want to include windows.h
-				#endif
-				)
-				) { 
-				// handle timeout with SO_SNDTIMEO
-				// that responds with EAGIAN or EWOULDBLOCK
-				die();
-			}
-			return n;
+			return socket_.write_some(buf,e);
 		}
-		#else 
-		// we need to fallback to poll, fortunatelly only on some Unixes like Solaris, so we can use poll(2)
+		#else
+		size_t timed_write_some(booster::aio::const_buffer const &buf,booster::system::error_code &e)
+		{
+			booster::ptime start = booster::ptime::now();
+
+			pollfd pfd=pollfd();
+			pfd.fd = socket_.native();
+			pfd.events = POLLOUT;
+			pfd.revents = 0;
+			int msec = timeout_ * 1000;
+			int r = 0;
+			while((r=poll(&pfd,1,msec))<0 && errno==EINTR) {
+				msec -=  booster::ptime::milliseconds(booster::ptime::now() - start);
+				if(msec <= 0) {
+					r = 0;
+					break;
+				}
+			}
+			if(r < 0) {
+				e=booster::system::error_code(errno,booster::system::system_category);
+				return 0;
+			}
+			if(pfd.revents & POLLOUT)
+				return socket_.write_some(buf,e);
+			e=booster::system::error_code(errc::protocol_violation,cppcms_category);
+			return 0;
+		}
+		#endif
 		size_t write_to_socket(booster::aio::const_buffer const &bufin,booster::system::error_code &e)
 		{
 			booster::aio::const_buffer buf = bufin;
 			size_t total = 0;
 			while(!buf.empty()) {
-				size_t n = socket_.write_some(buf,e);
-				if(!e || !io::basic_socket::would_block(e)) {
-					buf += n
-					total += n;
-					continue;
+				size_t n = timed_write_some(buf,e);
+				total += n;
+				buf += n;
+				if(e) {
+					die();
+					break;
 				}
-				booster::ptime start = booster::ptime::now();
-
-				pollfd pfd=pollfd();
-				pfd.fd = socket_.native();
-				pfd.events = POLLOUT;
-				int msec = timeout_ * 1000;
-				int msec_total = msec;
-				for(;;) {
-					int r = poll(&pfd,1,msec);
-
-					// handle restart after EINTR
-					if(r < 0) {
-						if(errno == EINTR) {
-							int passed = int(booster::ptime::to_number(booster::ptime::now() - start)*1000);
-							msec = msec_total - passed; 
-							if(msec < 0)
-								msec = 0;
-							continue;
-						}
-						e = booster::system::error_code(errno,booster::system::system_category);
-						return total;
-					}
-					else if(r == 0) {
-						// timeout :-(
-						e=booster::system::error_code(errc::protocol_violation,cppcms_category);
-						die();
-						return total;
-					}
-				}
-				// check if we can write
-				if(pfd.revents & POLLOUT) {
-					e = booster::system::error_code();
-					n = socket_.write_some(buf,e);
-					// restart polling if we get would_block again
-					if(n == 0 && io::basic_socket::would_block(e))
-						continue;
-					buf += n;
-					total += n;
-				}
-				else {
-					e=booster::system::error_code(
-						booster::aio::aio_error::select_failed,
-						booster::aio::aio_error_cat);
-					return total;
-				}
-			} // while
+			}
+			return total;
 		}
-		#endif
 		void set_sync_options(booster::system::error_code &e)
 		{
 			if(!sync_option_is_set_) {
