@@ -15,6 +15,7 @@
 #include <cppcms/json.h>
 #include <iostream>
 #include "client.h"
+#include "test.h"
 
 class unit_test : public cppcms::application {
 public:
@@ -34,12 +35,46 @@ public:
 };
 
 
+void basic_test()
+{
+	cppcms::http::cookie c("a","b");
+	{
+		std::ostringstream ss;
+		ss << c;
+		TEST(ss.str()=="Set-Cookie:a=b; Version=1");
+	}
+	{
+		c.max_age(10);
+		std::ostringstream ss;
+		ss << c;
+		TEST(ss.str()=="Set-Cookie:a=b; Max-Age=10; Version=1");
+	}
+	{
+		c.expires(1);
+		std::ostringstream ss;
+		ss << c;
+		TEST(ss.str()=="Set-Cookie:a=b; Max-Age=10; Expires=Thu, 01 Jan 1970 00:00:01 GMT; Version=1");
+	}
+	{
+		std::ostringstream ss;
+		c.browser_age();
+		ss << c;
+		TEST(ss.str()=="Set-Cookie:a=b; Version=1");
+	}
+	{
+		c.expires(1);
+		std::ostringstream ss;
+		ss << c;
+		TEST(ss.str()=="Set-Cookie:a=b; Expires=Thu, 01 Jan 1970 00:00:01 GMT; Version=1");
+	}
+}
 
 
 
 int main(int argc,char **argv)
 {
 	try {
+		basic_test();
 		cppcms::service srv(argc,argv);
 		srv.applications_pool().mount( cppcms::applications_factory<unit_test>());
 		srv.after_fork(submitter(srv));
