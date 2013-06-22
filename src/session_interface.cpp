@@ -394,18 +394,34 @@ void session_interface::set_session_cookie(int64_t age,string const &data,string
 	}
 	std::string const &domain = context_->service().cached_settings().session.cookies.domain;
 	std::string const &path   = context_->service().cached_settings().session.cookies.path;
+	int time_shift = context_->service().cached_settings().session.cookies.time_shift;
+	bool use_age = context_->service().cached_settings().session.cookies.use_age;
+	bool use_exp = context_->service().cached_settings().session.cookies.use_exp;
+
 	bool secure = context_->service().cached_settings().session.cookies.secure;
 
 	http::cookie the_cookie(cookie_name,util::urlencode(data),path,domain);
 
 	if(age < 0) {
-		the_cookie.max_age(0);
+		if(use_age)
+			the_cookie.max_age(0);
+		if(use_exp)
+			the_cookie.expires(1);
 	}
-	else if(age == 0)
+	else if(age == 0) {
 		the_cookie.browser_age();
-	else
-		the_cookie.max_age(age);
+	}
+	else {
+		if(use_age)
+			the_cookie.max_age(age);
+		if(use_exp) {
+			the_cookie.expires(age + time(0) + time_shift);
+		}
+	}
+
+
 	the_cookie.secure(secure);
+
 	context_->response().set_cookie(the_cookie);
 }
 

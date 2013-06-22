@@ -9,6 +9,8 @@
 #define CPPCMS_IMPL_CACHED_SETTINGS
 #include <cppcms/json.h>
 #include <booster/thread.h>
+#include <cppcms/http_cookie.h>
+#include <booster/log.h>
 namespace cppcms {
 namespace impl {
 	struct cached_settings {
@@ -129,6 +131,9 @@ namespace impl {
 				std::string prefix;
 				std::string domain;
 				std::string path;
+				int time_shift;
+				bool use_age;
+				bool use_exp;
 				bool secure;
 			} cookies;
 			cached_session(json::value const &v)
@@ -138,6 +143,25 @@ namespace impl {
 				cookies.prefix = v.get("session.cookies.prefix","cppcms_session");
 				cookies.domain = v.get("session.cookies.domain","");
 				cookies.path = v.get("session.cookies.path","/");
+				cookies.time_shift = v.get("session.cookies.time_shift",0);
+				std::string method = v.get("session.cookies.expiration_method","both");
+
+				if(method == "both") {
+					cookies.use_age = cookies.use_exp = true;
+				}
+				else if (method == "expires") {
+					cookies.use_age = false;
+					cookies.use_exp = true;
+				}
+				else if(method == "max-age") {
+					cookies.use_age = true;
+					cookies.use_exp = false;
+				}
+				else {
+					BOOSTER_WARNING("cppcms") << "Invalid session.cookies.expiration_method "
+					  "should be one of 'max-age', 'expires' or 'both' assuming default 'both'";
+					cookies.use_age = cookies.use_exp = true;
+				}
 				cookies.secure = v.get("session.cookies.secure",false);
 			}
 		} session;
