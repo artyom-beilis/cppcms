@@ -121,7 +121,7 @@ class view_block:
         if self.extends=='' :
             constructor='cppcms::base_view(_s)'
             self.extends='cppcms::base_view'
-            self.top_most = 1
+            self.topmost = 1
         else:
             constructor='%s(_s,_content)' % self.extends;
         output_declaration( "struct %s :public %s" % (self.class_name , self.extends ))
