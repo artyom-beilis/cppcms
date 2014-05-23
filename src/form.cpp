@@ -728,11 +728,11 @@ void textarea::render_input(form_context &context)
 		render_attributes(context);
 
 		if(rows_ >= 0) {
-			output<<boost::format("rows=\"%1%\"",std::locale::classic()) % rows_;
+			output<<boost::format("rows=\"%1%\" ",std::locale::classic()) % rows_;
 		}
 
 		if(cols_ >= 0) {
-			output<<boost::format("cols=\"%1%\"",std::locale::classic()) % cols_;
+			output<<boost::format("cols=\"%1%\" ",std::locale::classic()) % cols_;
 		}
 	}
 	else {
