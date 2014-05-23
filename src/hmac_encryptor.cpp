@@ -56,6 +56,18 @@ std::string hmac_cipher::encrypt(std::string const &plain)
 	return std::string(&data[0],cipher_size);
 }
 
+bool hmac_cipher::equal(void const *a,void const *b,size_t n)
+{
+	char const *left = static_cast<char const *>(a);
+	char const *right = static_cast<char const *>(b);
+	size_t diff = 0;
+	for(size_t i=0;i<n;i++) {
+		if(left[i]!=right[i])
+			diff++;
+	}
+	return diff==0;
+}
+
 bool hmac_cipher::decrypt(std::string const &cipher,std::string &plain)
 {
 	crypto::hmac md(hash_,key_);
@@ -68,7 +80,7 @@ bool hmac_cipher::decrypt(std::string const &cipher,std::string &plain)
 	md.append(cipher.c_str(),message_size);
 	std::vector<char> mac(digest_size,0);
 	md.readout(&mac[0]);
-	bool ok = memcmp(&mac[0],cipher.c_str() + message_size,digest_size) == 0;
+	bool ok = equal(&mac[0],cipher.c_str() + message_size,digest_size);
 	memset(&mac[0],0,digest_size);
 	if(ok) {
 		plain = cipher.substr(0,message_size);
