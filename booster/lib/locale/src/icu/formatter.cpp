@@ -263,7 +263,7 @@ namespace locale {
                         return cache->date_time_format_[1][1];
                     return strftime_to_icu_full(
                         icu::DateFormat::createDateTimeInstance(icu::DateFormat::kFull,icu::DateFormat::kFull,locale),
-                        "YYYY-MM-dd HH:mm:ss"
+                        "yyyy-MM-dd HH:mm:ss"
                     );
                 }
             // not supported by ICU ;(
@@ -272,7 +272,7 @@ namespace locale {
             case 'd': // Day of Month [01,31]
                 return "dd";
             case 'D': // %m/%d/%y
-                return "MM/dd/YY";
+                return "MM/dd/yy";
             case 'e': // Day of Month [1,31]
                 return "d";
             case 'h': // == b
@@ -312,7 +312,7 @@ namespace locale {
                         return cache->date_format_[1];
                     return strftime_to_icu_full(
                         icu::DateFormat::createDateInstance(icu::DateFormat::kMedium,locale),
-                        "YYYY-MM-dd"
+                        "yyyy-MM-dd"
                     );
                 }
             case 'X': // Time
@@ -325,9 +325,9 @@ namespace locale {
                     );
                 }
             case 'y': // Year [00-99]
-                return "YY";
+                return "yy";
             case 'Y': // Year 1998
-                return "YYYY";
+                return "yyyy";
             case 'Z': // timezone
                 return "vvvv";
             case '%': // %

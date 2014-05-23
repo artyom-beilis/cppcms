@@ -451,6 +451,13 @@ void test_format(std::string charset="UTF-8")
     FORMAT("{1,gmt,ftime='%H'''}",a_datetime,"15'");
     FORMAT("{1,gmt,ftime='''%H'}",a_datetime,"'15");
     FORMAT("{1,gmt,ftime='%H o''clock'}",a_datetime,"15 o'clock");
+
+    // Test not a year of the week
+    a_datetime=1388491200; // 2013-12-31 12:00 - check we don't use week of year
+
+    FORMAT("{1,gmt,ftime='%Y'}",a_datetime,"2013");
+    FORMAT("{1,gmt,ftime='%y'}",a_datetime,"13");
+    FORMAT("{1,gmt,ftime='%D'}",a_datetime,"12/31/13");
 }
 
 
