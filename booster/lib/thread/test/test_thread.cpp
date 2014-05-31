@@ -44,6 +44,31 @@ bool tls_ok = true;
 booster::mutex dtor_called_mutex;
 int dtor_called = 0;
 
+struct counted_functor {
+	counted_functor() { add(1); } 
+	counted_functor(counted_functor const &)  { add(1); }
+	counted_functor const &operator=(counted_functor const &) { return *this; }
+	~counted_functor() { add(-1); }
+
+	void operator()() const
+	{
+		booster::ptime::millisleep(200);
+	}
+
+	static void add(int v)
+	{
+		booster::unique_lock<booster::mutex> g(lock);
+		objects+= v;
+	}
+
+	static booster::mutex lock;
+	static int objects;
+
+};
+
+booster::mutex counted_functor::lock;
+int counted_functor::objects;
+
 struct tls_object {
 	int counter;
 	tls_object() : counter(0) {}
@@ -179,6 +204,18 @@ int main()
 			booster::thread t(caller);
 			t.join();
 			TEST(called_);
+		}
+		{
+			std::cout << "Functor destruction" << std::endl;
+			TEST(counted_functor::objects==0);
+			{
+				counted_functor f;
+				booster::thread t(f);
+				TEST(counted_functor::objects>=2);
+				t.join();
+				TEST(counted_functor::objects==1);
+			}
+			TEST(counted_functor::objects==0);
 		}
 		std::cout << "Test recursive mutex" << std::endl;
 		{
