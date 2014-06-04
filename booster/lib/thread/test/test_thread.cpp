@@ -216,6 +216,18 @@ int main()
 				TEST(counted_functor::objects==1);
 			}
 			TEST(counted_functor::objects==0);
+			{
+				{
+                    counted_functor f;
+                    booster::thread t(f);
+                    TEST(counted_functor::objects>=2);
+                    t.detach();
+                }
+				TEST(counted_functor::objects>=1);
+                booster::ptime::millisleep(400);
+                TEST(counted_functor::objects==0);
+			}
+			
 		}
 		std::cout << "Test recursive mutex" << std::endl;
 		{
