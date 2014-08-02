@@ -15,7 +15,7 @@ int main()
 #else
 
 //#define BOOST_LOCALE_ERROR_LIMIT 1000000
-//#define BOOST_LOCALE_ERROR_LIMIT 0
+#define BOOSTER_LOCALE_ERROR_LIMIT 0
 
 #include <booster/locale/boundary.h>
 #include <booster/locale/generator.h>
