@@ -86,7 +86,7 @@ int main(int argc,char **argv)
 			cbc = next;
 		else if(arg=="--hmac-file")
 			hmac_file = next;
-		else if(arg=="--hmac-cbc")
+		else if(arg=="--cbc-file")
 			cbc_file = next;
 		else if(arg=="--output")
 			output = next;
