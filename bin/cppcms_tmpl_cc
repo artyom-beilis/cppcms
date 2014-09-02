@@ -840,7 +840,7 @@ class csrf_block:
 class include_block:
     basic_pattern = 'include'
     basic_name = 'include'
-    pattern=r'^<%\s*include\s+([a-zA_Z]\w*(::\w+)?)\s*\(\s*(.*)\)' \
+    pattern=r'^<%\s*include\s+([a-zA-Z]\w*(::\w+)?)\s*\(\s*(.*)\)' \
             + r'(?:\s+' \
             +   r'(from\s+(?P<from>\w+)' \
             +    '|' \
