@@ -10,6 +10,7 @@
 #include "http_protocol.h"
 #include <stdio.h>
 #include <iterator>
+#include <ostream>
 #include "md5.h"
 #include "tohex.h"
 
