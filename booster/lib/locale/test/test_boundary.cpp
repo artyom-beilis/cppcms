@@ -14,14 +14,14 @@ int main()
 }
 #else
 
-//#define BOOST_LOCALE_ERROR_LIMIT 1000000
-#define BOOSTER_LOCALE_ERROR_LIMIT 0
+#define BOOSTER_LOCALE_ERROR_LIMIT 100000
 
 #include <booster/locale/boundary.h>
 #include <booster/locale/generator.h>
 #include "test_locale.h"
 #include "test_locale_tools.h"
 #include <list>
+#include <unicode/uversion.h>
 
 // Debugging code
 
@@ -394,13 +394,19 @@ void test_boundaries(std::string *all,int *first,int *second,lb::boundary_type t
 void word_boundary()
 {
     booster::locale::generator g;
-    
-    std::string all1[]={"10"," ","Hello"," ","Windows7"," ","平仮名","ひらがな","ヒラガナ",""};
+    //std::string all1[]={"10"," ","Hello"," ","Windows7"," ","平仮名","ひらがな","ヒラガナ",""};
+    //std::string all1[]={"10"," ","Hello"," ","Windows7"," ","平仮名","ひん","アヒル",""};
+    std::string all1[]={"10"," ","Hello"," ","Windows7"," ","平仮名","アヒル",""};
     int        none1[]={ 0,   1,      0,  1,         0,   1,      0,         0,          0};
     int         num1[]={ 1,   0,      0,  0,         1,   0,      0 ,        0 ,         0};
     int        word1[]={ 0,   0,      1,  0,         1,   0,      0 ,        0 ,         0};
+#if U_ICU_VERSION_MAJOR_NUM >= 50
+    int        kana1[]={ 0,   0,      0,  0,         0,   0,      0,         0 ,         0}; 
+    int        ideo1[]={ 0,   0,      0,  0,         0,   0,      1,         1 ,         1}; 
+#else
     int        kana1[]={ 0,   0,      0,  0,         0,   0,      0,         1 ,         1}; 
     int        ideo1[]={ 0,   0,      0,  0,         0,   0,      1,         0 ,         0}; 
+#endif
 
 
     int zero[25]={0};
