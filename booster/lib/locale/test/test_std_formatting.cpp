@@ -60,8 +60,6 @@ void test_by_char(std::locale const &l,std::locale const &lreal)
 {
     typedef std::basic_stringstream<CharType> ss_type;
     typedef std::basic_stringstream<RefCharType> ss_ref_type;
-    typedef std::basic_string<RefCharType> string_type;
-    typedef std::basic_string<RefCharType> string_ref_type;
 
     using namespace booster::locale;
 
