@@ -66,6 +66,40 @@ do{ \
     TESTEQ(ss.str(),to_correct_string<CharType>(expected,loc)); \
 }while(0)
 
+#ifndef _LIBCPP_VERSION
+static bool parsing_fails()
+{
+    return true;
+}
+#else
+static bool parsing_fails()
+{
+    static bool checked=false;
+    static bool fails;
+    if(!checked) {
+        try {
+            std::istringstream ss("x");
+            ss.exceptions(std::ios_base::failbit);
+            int x;
+            ss>>x;
+            fails =false;
+        }
+        catch(std::ios_base::failure const &) {
+            fails=true;
+        }
+        catch(...) {
+            fails=false;
+        }
+        checked=true;
+        if(!fails) {
+            std::cerr << "!!! Warning: libc++ library does not throw an exception on failbit !!!" << std::endl;
+        }
+    }
+    return fails;
+}
+#endif
+
+
 #define TEST_NOPAR(manip,actual,type)                           \
 do{                                                             \
     type v;                                                     \
@@ -78,7 +112,7 @@ do{                                                             \
         ss >> manip >> v ;                                      \
         TEST(ss.fail());                                        \
     }                                                           \
-    {                                                           \
+    if(parsing_fails()){                                        \
         std::basic_istringstream<CharType> ss;                  \
         ss.imbue(loc);                                          \
         ss.str(act);                                            \
