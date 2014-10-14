@@ -90,7 +90,7 @@ namespace cppcms {
 					p.reset(new View(stream,dynamic_cast<Content &>(*c)));
 				}
 				catch(std::bad_cast const &) {
-					throw cppcms_error("cppcms::views::generator: an attempt to use content if invalid type");
+					throw cppcms_error("cppcms::views::generator: an attempt to use content of invalid type");
 				}
 				return p;
 			}
