@@ -49,6 +49,7 @@ namespace impl {
 			pthread_mutex_init(m,0);
 		}
 		else {
+			#ifdef CPPCMS_HAS_THREAD_PSHARED	
 			pthread_mutexattr_t attr;
 			pthread_mutexattr_init(&attr);
 			try {
@@ -64,6 +65,9 @@ namespace impl {
 				pthread_mutexattr_destroy(&attr);
 				throw;
 			}
+			#else
+			throw cppcms_error("Process shared mutex is not supported");
+			#endif
 		}
 	}
 
@@ -78,6 +82,7 @@ namespace impl {
 			pthread_rwlock_init(m,0);
 		}
 		else {
+			#ifdef CPPCMS_HAS_THREAD_PSHARED	
 			pthread_rwlockattr_t attr;
 			pthread_rwlockattr_init(&attr);
 			try {
@@ -93,6 +98,9 @@ namespace impl {
 				pthread_rwlockattr_destroy(&attr);
 				throw;
 			}
+			#else
+			throw cppcms_error("Process shared mutex is not supported");
+			#endif
 		}
 	}
 
@@ -102,7 +110,7 @@ namespace impl {
 	}
 
 
-	
+	#ifdef CPPCMS_HAS_THREAD_PSHARED	
 	inline bool test_pthread_mutex_pshared_impl()
 	{
 		void *memory=mmap_anonymous(sizeof(pthread_mutex_t));
@@ -124,6 +132,13 @@ namespace impl {
 		static bool has = test_pthread_mutex_pshared_impl();
 		return has;
 	}
+	#else
+	inline bool test_pthread_mutex_pshared()
+	{
+		return false;
+	}
+
+	#endif
 
 
 	class mutex : public booster::noncopyable {

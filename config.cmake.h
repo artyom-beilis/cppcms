@@ -109,6 +109,7 @@
 #cmakedefine CPPCMS_NO_PREFOK_CACHE
 #cmakedefine CPPCMS_NO_GZIP
 #cmakedefine CPPCMS_SQLITE_LINK_STATIC
+#cmakedefine CPPCMS_HAS_THREAD_PSHARED
 
 
 #endif
