@@ -12,6 +12,13 @@
 
 namespace booster {
     namespace locale {
+#if defined(__ICONV_F_HIDE_INVALID) && defined(__FreeBSD__)
+        inline size_t call_iconv(iconv_t d,char **in,size_t *insize,char **out,size_t *outsize)
+        {
+            char const **rin = const_cast<char const **>(in);
+            return __iconv(d,rin,insize,out,outsize,__ICONV_F_HIDE_INVALID,0);
+        }
+#else
         extern "C" {
             typedef size_t (*gnu_iconv_ptr_type)(iconv_t d,char const **in,size_t *insize,char **out,size_t *outsize);
             typedef size_t (*posix_iconv_ptr_type)(iconv_t d,char **in,size_t *insize,char **out,size_t *outsize);
@@ -29,6 +36,7 @@ namespace booster {
         {
             return do_iconv( iconv, d, in,insize,out,outsize);
         }
+#endif
 
     } // locale 
 } // boost

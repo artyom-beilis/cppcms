@@ -60,7 +60,11 @@ else()
 endif()
 option(USE_WINDOWS6_API		"Use Windows 6 API (Vista, 7)" OFF)
 
-if("${CMAKE_SYSTEM_NAME}" STREQUAL "Linux" OR APPLE)
+check_function_exists(newlocale BOOSTER_HAS_XLOCALE)
+
+if(	"${CMAKE_SYSTEM_NAME}" STREQUAL "Linux"
+	OR APPLE 
+	OR ("${CMAKE_SYSTEM_NAME}" STREQUAL "FreeBSD" AND BOOSTER_HAS_XLOCALE) )
 	option(DISABLE_POSIX_LOCALE	"Disable POSIX locale backend" OFF)
 else()
 	option(DISABLE_POSIX_LOCALE	"Disable POSIX locale backend" ON)
