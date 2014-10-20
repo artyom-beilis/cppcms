@@ -138,31 +138,42 @@ namespace cppcms {
 						}
 						break;
 					case expecting_separator_boundary:
-						if(*buffer == boundary_[position_])
-							position_++;
-						else if(position_ > 0) {
-							file_->write_data().write(boundary_.c_str(),position_);
-							position_ = 0;
-							if(*buffer == boundary_[0])
-								position_=1;
-							if(!file_->write_data())
-								return no_room_left;
-						}
-						if(position_ == 0) {
-							file_->write_data() << *buffer;
-							if(!file_->write_data())
-								return no_room_left;
-						}
-						else if(position_ == boundary_.size()) {
-							state_ = expecting_one_crlf_or_eof;
-							position_ = 0;
-							file_->data().seekg(0);
-							files_.push_back(file_);
-							file_.reset(new http::file());
-							file_->set_temporary_directory(temp_dir_);
-							if(memory_limit_ != -1) {
-								file_->set_memory_limit(memory_limit_);
-							}
+						{
+							std::streambuf *out=file_->write_data().rdbuf();
+							char const *this_boundary = boundary_.c_str();
+							size_t boundary_size = boundary_.size();
+							while(size > 0) {
+								char c=*buffer;
+								if(c == this_boundary[position_])
+									position_++;
+								else if(position_ > 0) {
+									std::streamsize expected = position_;
+									std::streamsize s=out->sputn(this_boundary,position_);
+									position_ = 0;
+									if(c == boundary_[0])
+										position_=1;
+									if(s!=expected)
+										return no_room_left;
+								}
+								if(position_ == 0) {
+									if(out->sputc(c)==EOF)
+										return no_room_left;
+								}
+								else if(position_ == boundary_size) {
+									state_ = expecting_one_crlf_or_eof;
+									position_ = 0;
+									file_->data().seekg(0);
+									files_.push_back(file_);
+									file_.reset(new http::file());
+									file_->set_temporary_directory(temp_dir_);
+									if(memory_limit_ != -1) {
+										file_->set_memory_limit(memory_limit_);
+									}
+									break;
+								}
+								buffer++;
+								size--;
+							} // end while
 						}
 						break;
 					}
