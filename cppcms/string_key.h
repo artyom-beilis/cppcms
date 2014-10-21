@@ -248,7 +248,7 @@ namespace cppcms {
 		///
 		bool operator!=(string_key const &other) const
 		{
-			return !(*this!=other);
+			return !(*this==other);
 		}
 
 		///

@@ -739,11 +739,11 @@ void textarea::render_input(form_context &context)
 		render_attributes(context);
 
 		if(rows_ >= 0) {
-			output<<"rows=\""<< cint(rows_) << "\"";
+			output<<"rows=\""<< cint(rows_) << "\" ";
 		}
 
 		if(cols_ >= 0) {
-			output<<"cols=\"" <<cint(cols_) << "\"";
+			output<<"cols=\"" <<cint(cols_) << "\" ";
 		}
 	}
 	else {

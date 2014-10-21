@@ -32,6 +32,7 @@ public:
 	
 	virtual std::string encrypt(std::string const &plain);
 	virtual bool decrypt(std::string const &cipher,std::string &plain);
+	static bool equal(void const *a,void const *b,size_t n);
 private:
 	crypto::key key_;
 	std::string hash_;

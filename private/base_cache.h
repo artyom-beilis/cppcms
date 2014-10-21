@@ -14,6 +14,7 @@
 #include <booster/intrusive_ptr.h>
 #include <cppcms/cstdint.h>
 #include <cppcms/base_cache_fwd.h>
+#include <time.h>
 
 namespace cppcms {
 	namespace impl {

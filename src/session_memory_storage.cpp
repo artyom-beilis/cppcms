@@ -6,6 +6,9 @@
 //
 ///////////////////////////////////////////////////////////////////////////////
 #define CPPCMS_SOURCE
+#ifndef CPPCMS_BOOST_NO_0X_HDR_INITIALIZER_LIST
+#define CPPCMS_BOOST_NO_0X_HDR_INITIALIZER_LIST
+#endif
 #include "session_memory_storage.h"
 #include <cppcms/config.h>
 #include "hash_map.h"

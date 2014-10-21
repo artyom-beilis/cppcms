@@ -15,7 +15,7 @@
 #include <sstream>
 #include <cppcms/cppcms_error.h>
 #include "aes_encryptor.h"
-
+#include "hmac_encryptor.h"
 #include <cppcms/base64.h>
 #include <cppcms/crypto.h>
 #include <string.h>
@@ -169,7 +169,7 @@ bool aes_cipher::decrypt(std::string const &cipher,std::string &plain)
 	std::vector<char> verify(digest_size,0);
 	signature.readout(&verify[0]);
 
-	if(memcmp(&verify[0],cipher.c_str() + real_size,digest_size)!=0) {
+	if(!hmac_cipher::equal(&verify[0],cipher.c_str() + real_size,digest_size)) {
 		memset(&verify[0],0,digest_size);
 		return false;
 	}

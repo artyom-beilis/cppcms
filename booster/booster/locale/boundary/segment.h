@@ -27,7 +27,6 @@ namespace boundary {
         int compare_text(LeftIterator l_begin,LeftIterator l_end,RightIterator r_begin,RightIterator r_end)
         {
             typedef LeftIterator left_iterator;
-            typedef RightIterator right_iterator;
             typedef typename std::iterator_traits<left_iterator>::value_type char_type;
             typedef std::char_traits<char_type> traits;
             while(l_begin!=l_end && r_begin!=r_end) {

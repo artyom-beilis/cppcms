@@ -1019,7 +1019,7 @@ namespace json {
 			bool parse_number()
 			{
 				is_ >> real;
-				return is_;
+				return !is_.fail();;
 			}
 			
 		};

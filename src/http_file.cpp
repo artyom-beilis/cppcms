@@ -12,7 +12,6 @@
 #include <booster/nowide/cstdio.h>
 #include <booster/nowide/fstream.h>
 #include <stdlib.h>
-#include <vector>
 
 #include "tohex.h"
 
@@ -77,11 +76,7 @@ std::ostream &file::write_data()
 
 void file::copy_stream(std::istream &in,std::ostream &out)
 {
-	std::vector<char> v(1024,0);
-	while(!in.eof()) {
-		in.read(&v.front(),1024);
-		out.write(&v.front(),in.gcount());
-	}
+	out << in.rdbuf();
 }
 
 void file::save_to(std::string const &filename)

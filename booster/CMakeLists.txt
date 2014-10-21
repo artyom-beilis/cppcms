@@ -61,7 +61,11 @@ else()
 endif()
 option(USE_WINDOWS6_API		"Use Windows 6 API (Vista, 7)" OFF)
 
-if("${CMAKE_SYSTEM_NAME}" STREQUAL "Linux" OR APPLE)
+check_function_exists(newlocale BOOSTER_HAS_XLOCALE)
+
+if(	"${CMAKE_SYSTEM_NAME}" STREQUAL "Linux"
+	OR APPLE 
+	OR ("${CMAKE_SYSTEM_NAME}" STREQUAL "FreeBSD" AND BOOSTER_HAS_XLOCALE) )
 	option(DISABLE_POSIX_LOCALE	"Disable POSIX locale backend" OFF)
 else()
 	option(DISABLE_POSIX_LOCALE	"Disable POSIX locale backend" ON)
@@ -631,7 +635,7 @@ macro(add_booster_param_test MODULE TEST PARAMETER)
 	target_link_libraries(${TEST_NAME} ${BOOSTER_LIB})
 	set_target_properties(${TEST_NAME} PROPERTIES COMPILE_DEFINITIONS "${EXE_COM_DEFS}")
 	add_test(${TEST_NAME} ${TEST_NAME} ${PARAMETER})
-	set_tests_properties(${TEST_NAME} PROPERTIES TIMEOUT 10)
+	set_tests_properties(${TEST_NAME} PROPERTIES TIMEOUT 20)
 endmacro()
 
 macro(add_booster_test MODULE TEST)

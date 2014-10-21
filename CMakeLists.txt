@@ -138,6 +138,10 @@ if(CMAKE_COMPILER_IS_GNUCXX)
 
 elseif(CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
 	set(CXX_FLAGS "-Wall -Wextra")
+	if(CMAKE_SYSTEM_NAME STREQUAL "FreeBSD")
+		set(CMAKE_CXX_LINK_FLAGS "${CMAKE_CXX_LINK_FLAGS} -rdynamic")
+	endif()
+
 elseif(CMAKE_CXX_COMPILER_ID STREQUAL "Intel")
 	set(CXX_FLAGS "-Wall")
 elseif(MSVC)
@@ -288,6 +292,17 @@ endif()
 
 
 check_function_exists(canonicalize_file_name CPPCMS_HAVE_CANONICALIZE_FILE_NAME)
+check_function_exists(pthread_mutexattr_setpshared CPPCMS_HAS_THREAD_PSHARED_LIBC)
+if(NOT CPPCMS_HAS_THREAD_PSHARED_LIBC AND LIB_PTHREAD)
+	check_library_exists(${LIB_PTHREAD} pthread_mutexattr_setpshared "" CPPCMS_HAS_THREAD_PSHARED_PTHREAD)
+endif()
+
+if(CPPCMS_HAS_THREAD_PSHARED_LIBC OR CPPCMS_HAS_THREAD_PSHARED_PTHREAD)
+	set(CPPCMS_HAS_THREAD_PSHARED ON)
+else()
+	set(CPPCMS_HAS_THREAD_PSHARED OFF)
+endif()
+
 
 add_definitions(-DCPPCMS_BOOST_ALL_NO_LIB)
 

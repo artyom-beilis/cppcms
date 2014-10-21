@@ -194,13 +194,15 @@ namespace booster {
 
 	extern "C" void *booster_thread_func(void *p)
 	{
-		// Do not add reference count as it was added upon sucesseful thread creation
-		intrusive_ptr<win_thread_data> d(reinterpret_cast<win_thread_data *>(p),false);
-		try {
-			d->run();
-		}
-		catch(...) {
-		}
+        {
+            // Do not add reference count as it was added upon sucesseful thread creation
+            intrusive_ptr<win_thread_data> d(reinterpret_cast<win_thread_data *>(p),false);
+            try {
+                d->run();
+            }
+            catch(...) {
+            }
+        }
 		_endthreadex(0);
 		
 		return 0;

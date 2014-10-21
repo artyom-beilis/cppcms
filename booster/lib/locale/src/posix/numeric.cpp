@@ -385,7 +385,7 @@ struct basic_numpunct {
     }
     basic_numpunct(locale_t lc) 
     {
-    #ifdef __APPLE__
+    #if defined(__APPLE__) || defined(__FreeBSD__)
         lconv *cv = localeconv_l(lc);
         grouping = cv->grouping;
         thousands_sep = cv->thousands_sep;

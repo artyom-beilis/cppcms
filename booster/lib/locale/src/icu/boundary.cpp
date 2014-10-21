@@ -31,7 +31,11 @@ index_type map_direct(boundary_type t,icu::BreakIterator *it,int reserve)
 {
     index_type indx;
     indx.reserve(reserve);
+#if U_ICU_VERSION_MAJOR_NUM >= 52
+    icu::BreakIterator *rbbi=it;
+#else
     icu::RuleBasedBreakIterator *rbbi=dynamic_cast<icu::RuleBasedBreakIterator *>(it);
+#endif
     
     indx.push_back(break_info());
     it->first();

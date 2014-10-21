@@ -55,6 +55,19 @@ std::string format(json::value const &v)
 int main()
 {
 	try {
+		{
+			cppcms::string_key a("a"),aa("a");
+			cppcms::string_key b("b");
+			TEST(a==aa);
+			TEST(a!=b);
+			TEST(a<b);
+			TEST(a<=b);
+			TEST(a<=a);
+			TEST(b>a);
+			TEST(b>=b);
+			TEST(b>=a);
+		}
+
 		json::value v;
 		json::value const &vc=v;
 		TEST(v.type()==json::is_undefined);

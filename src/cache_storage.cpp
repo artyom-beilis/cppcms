@@ -7,9 +7,21 @@
 ///////////////////////////////////////////////////////////////////////////////
 #define CPPCMS_SOURCE
 #include <cppcms/config.h>
+#include <set>
+
+#ifndef CPPCMS_BOOST_DETAIL_NO_CONTAINER_FWD
+#define CPPCMS_BOOST_DETAIL_NO_CONTAINER_FWD
+#endif
+
+#ifndef CPPCMS_BOOST_NO_0X_HDR_INITIALIZER_LIST
+#define CPPCMS_BOOST_NO_0X_HDR_INITIALIZER_LIST
+#endif
+
+
 #ifndef CPPCMS_NO_CACHE
 #include "cache_storage.h"
 #include <booster/thread.h>
+#include <iostream>
 
 
 
@@ -25,6 +37,7 @@
 #endif
 
 #include <map>
+#include <string>
 #include <list>
 #include <limits>
 #include <memory>

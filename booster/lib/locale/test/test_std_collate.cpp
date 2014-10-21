@@ -74,6 +74,9 @@ void test_char()
 
     std::string name;
 
+    #if defined(_LIBCPP_VERSION) && (defined(__APPLE__) || defined(__FreeBSD__))
+    std::cout << "- Collation is broken on this OS's standard C++ library, skipping" << std::endl;
+    #else
     std::string names[] = { "en_US.UTF-8", "en_US.ISO8859-1" };
     for(unsigned i=0;i<sizeof(names)/sizeof(names[0]);i++) {
         name = get_std_name(names[i]);
@@ -87,6 +90,7 @@ void test_char()
             std::cout << "- " << names[i] << " not supported, skipping" << std::endl;
         }
     }
+    #endif
 }
 
 
