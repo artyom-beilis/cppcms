@@ -68,7 +68,7 @@ session_file_storage::session_file_storage(std::string path,int concurrency_hint
 		file_lock_=true;
 	else
 		file_lock_=false;
-	if(!file_lock_) {
+	if(!file_lock_ && procs_no > 1) {
 		#ifdef MAP_ANONYMOUS
 		int flags = MAP_ANONYMOUS | MAP_SHARED;
 		#else // defined(MAP_ANON)
