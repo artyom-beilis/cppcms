@@ -132,7 +132,8 @@ if(CMAKE_COMPILER_IS_GNUCXX)
 		endif()
 	endif()
 
-	if(CMAKE_SYSTEM_NAME STREQUAL "FreeBSD")
+	if(CMAKE_SYSTEM_NAME STREQUAL "FreeBSD" OR CMAKE_SYSTEM_NAME STREQUAL "NetBSD")
+		message("Addign rdynamic")
 		set(CMAKE_CXX_LINK_FLAGS "${CMAKE_CXX_LINK_FLAGS} -rdynamic")
 	endif()
 

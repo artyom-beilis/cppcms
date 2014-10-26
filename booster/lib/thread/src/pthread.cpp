@@ -152,7 +152,7 @@ namespace booster {
 	void shared_mutex::unique_lock() { pthread_rwlock_wrlock(&d->m); }
 	void shared_mutex::unlock() { pthread_rwlock_unlock(&d->m); }
 
-	#ifndef __APPLE__
+	#if !defined(__APPLE__) && !defined(__NetBSD__)
 	//
 	// This is normal implementation
 	//
@@ -257,7 +257,7 @@ namespace booster {
 		public:
 			pthread_key(void (*d)(void *)) : key(d)
 			{
-				if(pthread_key_create(&key_,booster_pthread_key_destroyer) < 0) {
+				if(pthread_key_create(&key_,booster_pthread_key_destroyer) != 0) {
 					throw system::system_error(errno,system::system_category,
 								   "Failed to create thread specific key");
 				}
