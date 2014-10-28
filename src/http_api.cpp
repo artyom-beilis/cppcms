@@ -346,6 +346,7 @@ namespace cgi {
 			// it may actually return with success but return small
 			// a small buffer
 			if(booster::ptime::to_number(end - start) >= timeout_ - 0.1) {
+				e=booster::system::error_code(errc::protocol_violation,cppcms_category);
 				die(); 
 				return n;
 			}

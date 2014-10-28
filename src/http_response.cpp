@@ -79,6 +79,7 @@ namespace  {
 			if(e) {
 				BOOSTER_WARNING("cppcms") << "Failed to write response:" << e.message();
 				conn_.reset();
+				throw booster::runtime_error(e.message());
 			}
 			return res;
 		}
