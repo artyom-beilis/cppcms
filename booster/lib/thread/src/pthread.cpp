@@ -246,7 +246,7 @@ namespace booster {
 	}
 
 
-#if !defined(__NetBST__) 
+#if !defined(__NetBSD__) 
 	//
 	// Standard implementation pthread_key_t per object
 	//
