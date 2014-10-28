@@ -12,6 +12,8 @@
 #include <errno.h>
 #include <string.h>
 #include <memory>
+#include <vector>
+#include <stack>
 
 #ifdef BOOSTER_POSIX
 #include <unistd.h>
@@ -243,6 +245,11 @@ namespace booster {
 		pthread_cond_wait(&d->c,&(m.mutex()->d->m));
 	}
 
+
+#if !defined(__NetBST__) 
+	//
+	// Standard implementation pthread_key_t per object
+	//
 	namespace details {
 		extern "C" {
 			static void booster_pthread_key_destroyer(void *p)
@@ -284,6 +291,131 @@ namespace booster {
 			return new pthread_key(dtor);
 		}
 	} // details
+#else // workaround
+	//
+	// Workaround of failure to allocate and release keys or if there only few pthread_keys avalible
+	// 
+	// NetBSD
+	//
+	namespace details {
+		typedef std::vector<tls_object *> tls_vector;
+		extern "C" {
+			static void booster_init_mgr_instance();
+			static void booster_detail_keys_deleter(void *ptr)
+			{
+				if(!ptr)
+					return;
+				tls_vector *v=static_cast<tls_vector *>(ptr);
+				if(!v)
+					return;
+				for(size_t i=0;i<v->size();i++)
+					if((*v)[i])
+						delete (*v)[i];
+				delete v;
+			}
+		}
+
+		class keys_manager {
+		public:
+			typedef booster::unique_lock<booster::mutex> guard_type;
+			static keys_manager &instance()
+			{
+				static pthread_once_t once = PTHREAD_ONCE_INIT;
+				pthread_once(&once,booster_init_mgr_instance);
+				return *instance_ptr;
+			}
+			keys_manager() : key_max_(0)
+			{
+				if(pthread_key_create(&key_,booster_detail_keys_deleter)!=0) {
+					throw system::system_error(errno,system::system_category,
+						   "Failed to create thread specific key");
+				}
+			}
+			int allocate_key()
+			{
+				int key;
+				guard_type g(lock_);
+				if(reuse_pool_.empty()) {
+					key = key_max_++;
+				}
+				else {
+					key = reuse_pool_.top();
+					reuse_pool_.pop();
+				}
+				return key;
+			}
+			void release_key(int key)
+			{
+				try {
+					guard_type g(lock_);
+					reuse_pool_.push(key);
+				}
+				catch(...) {}
+			}
+			
+			tls_vector &get_tls_vector()
+			{
+				void *p=pthread_getspecific(key_);
+				if(!p) {
+					tls_vector *v = new tls_vector();
+					pthread_setspecific(key_,v);
+					return *v;
+				}
+				return *static_cast<tls_vector *>(p);
+
+			}
+			static keys_manager *instance_ptr;
+		private:
+			booster::mutex lock_;
+			int key_max_;
+			std::stack<int> reuse_pool_;
+			pthread_key_t key_;
+			
+		};
+
+		keys_manager *keys_manager::instance_ptr;
+
+		extern "C" {
+			static void booster_init_mgr_instance()
+			{
+				static keys_manager mgr;
+				keys_manager::instance_ptr = &mgr;
+			}
+		}
+
+		class unlimited_key : public key {
+		public:
+			unlimited_key(void (*d)(void *)) : key(d)
+			{
+				id_ = keys_manager::instance().allocate_key();
+			}
+			virtual ~unlimited_key()
+			{
+				keys_manager::instance().release_key(id_);
+			}
+			tls_object *get_object()
+			{
+				std::vector<tls_object *> &v=keys_manager::instance().get_tls_vector();
+				if(v.size() < size_t(id_) + 1) {
+					v.resize(id_+1,0);
+				}
+				tls_object *p=v[id_];
+				if(p)
+					return p;
+				tls_object *res = new tls_object(intrusive_ptr<key>(this));
+				v[id_] = res;
+				return res;
+	
+			}
+		private:
+			int id_;
+		};
+		intrusive_ptr<key> make_key(void (*dtor)(void *))
+		{
+			return new unlimited_key(dtor);
+		}
+	} // detail
+#endif 
 
 #ifdef BOOSTER_POSIX
 
