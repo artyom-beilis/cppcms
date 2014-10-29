@@ -343,7 +343,8 @@ check_cxx_source_compiles(
 if(IS_WINDOWS)
 	set(CMAKE_REQUIRED_LIBRARIES ${WS2_32})
 	check_cxx_source_compiles(
-	"#include <winsock2.h>
+	"#include <ws2tcpip.h>
+    #include <winsock2.h>
 	#include <windows.h>
 	int main()
 	{ struct sockaddr_in6 in6; struct in6_addr in6addr; ::inet_pton(AF_INET6,\"::1\",&in6addr); return 0; }"
