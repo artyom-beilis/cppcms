@@ -34,7 +34,9 @@ void make_pair(io::stream_socket &s1,io::stream_socket &s2)
 {
 	io::acceptor a;
 	a.open(io::pf_inet);
+    #ifndef BOOSTER_WIN32
 	a.set_option(io::stream_socket::reuse_address,true);
+    #endif
 	a.bind(io::endpoint("127.0.0.1",0));
 	a.listen(1);
 	s1.open(io::pf_inet);
@@ -295,7 +297,9 @@ void test_async_connect()
 	io::acceptor acc(srv);
 	io::stream_socket s1(srv);
 	acc.open(io::pf_inet);
+    #ifndef BOOSTER_WIN32
 	acc.set_option(io::stream_socket::reuse_address,true);
+    #endif
 	acc.bind(io::endpoint("127.0.0.1",8080));
 	acc.listen(1);
 	acc.async_accept(s1,async_accept_handler);
