@@ -147,11 +147,28 @@ namespace cppcms {
 		/// Get low level central event loop of the CppCMS service that allows you to connect asynchronous application with generic
 		/// asynchronous sockets API or create any asynchronous TCP/IP servers over it.
 		///
-		booster::aio::io_service &get_io_service();
-
+		/// Note: if multiple event loops are used throws cppcms_error. Use get_io_service(id) for new applications, would be deprecated in future releases
 		///
-		/// Post an execution handler \a handler to the event loop queue. This member function is thread safe allowing 
+		booster::aio::io_service &get_io_service();
+		///
+		/// Get I/O service by its numerical id from [0,total_io_services())
+		///
+		/// Note the 0 is accepting I/O service, if more than one event loop is used
+		/// it does only accepting and does not handle incoming traffic
+		///
+		booster::aio::io_service &get_io_service(int id);
+
+		/// Get total I/O services
+		///
+		/// Get total number of the I/O services (event loops) in the system
+		///
+		int total_io_services();
+		///
+		/// Post an execution handler \a handler to main event loop queue.
+		/// This member function is thread safe allowing 
 		/// safe communication between event loop thread (where all asynchronous applications run) and any other threads.
+		///
+		/// Note: in case of multiple event loops, throws, don't use it in new code, would be deprecated in future releases
 		///
 		void post(booster::function<void()> const &handler);
 

@@ -10,6 +10,7 @@
 
 #include <cppcms/json.h>
 #include <cppcms/localization.h>
+#include <cppcms/cppcms_error.h>
 #include <booster/aio/io_service.h>
 #include <booster/aio/stream_socket.h>
 #include <booster/shared_ptr.h>
@@ -33,15 +34,20 @@ namespace impl {
 	public:
 		service();
 		~service();
-		booster::aio::io_service &get_io_service()
+		booster::aio::io_service &get_io_service(int id)
 		{
-			return *io_service_;
+			if(id < 0 || id >= int(io_services_.size()))
+				throw cppcms_error("Invalid io_service id");
+			return *io_services_[id];
 		}
-
+		int total_io_services()
+		{
+			return io_services_.size();
+		}
 
 	private:
 		friend class cppcms::service;
-		std::auto_ptr<booster::aio::io_service> io_service_;
+		std::vector<booster::shared_ptr<booster::aio::io_service> > io_services_;
 
 		std::vector<booster::shared_ptr<cgi::acceptor> > acceptors_;
 		#ifndef CPPCMS_WIN32

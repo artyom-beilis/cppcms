@@ -7,6 +7,7 @@
 	"service" : {
 		//"worker_processes" : 5,
 		"worker_threads" : 5,
+		"event_loops" : 5,
 		//"worker_threads" : 25,
 	//	"api" : "scgi",
 		"api" : "http",

@@ -481,7 +481,7 @@ void connection::async_write_response(	http::response &response,
 	}
 	if(!complete_response) {
 		// request to send an empty block
-		service().impl().get_io_service().post(boost::bind(h,http::context::operation_completed));
+		get_io_service().post(boost::bind(h,http::context::operation_completed));
 		return;
 	}
 	on_async_write_written(booster::system::error_code(),true,h); // < h will not be called when complete_response = true
@@ -491,7 +491,7 @@ void connection::on_async_write_written(booster::system::error_code const &e,boo
 {
 	if(e) {	
 		BOOSTER_WARNING("cppcms") << "Writing response failed:" << e.message();
-		service().impl().get_io_service().post(boost::bind(h,http::context::operation_aborted));
+		get_io_service().post(boost::bind(h,http::context::operation_aborted));
 		return;
 	}
 	if(complete_response) {

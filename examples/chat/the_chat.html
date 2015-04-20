@@ -10,6 +10,7 @@
 <h1>Chat room</h1>
 <script type="text/javascript">
 	var message_count = 0;
+	var error_count = 0;
 	function send_data() {
 		var kw = {
 			url : "/chat/post",
@@ -19,23 +20,21 @@
 		dojo.byId("message").value="";
 		return false;
 	}
-	function read_data() {
-		dojo.xhrGet( {
-			url: "/chat/get/" + message_count,
-			timeout: 10000,
-			handleAs: "text",
-			load: function(response, ioArgs) {
-				dojo.byId("messages").innerHTML = response + '<br/>' + dojo.byId("messages").innerHTML;
-				message_count++;
+	function read_data()
+	{
+		console.log('There');
+		gws = new WebSocket("ws://localhost:8080/chat/get/" + message_count,"chat");
+		gws.onmessage=function(evt) {
+			var response=evt.data;
+			dojo.byId("messages").innerHTML = response + '<br/>' + dojo.byId("messages").innerHTML;
+		}
+		gws.onerror=function(evt) {
+/*			if(error_count < 0) {
+				error_count ++ ;
 				read_data();
-				return response;
-			},
-			error: function(response,ioArgs) {
-				read_data();
-				return response;
-			}
-
-		});
+			}*/
+		}
+		console.log('There2');
 	}
 	dojo.addOnLoad(read_data);
 </script>

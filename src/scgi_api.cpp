@@ -34,8 +34,7 @@ namespace cgi {
 		scgi(cppcms::service &srv) :
 			connection(srv),
 			start_(0),
-			end_(0),
-			socket_(srv.impl().get_io_service())
+			end_(0)
 		{
 		}
 		~scgi()

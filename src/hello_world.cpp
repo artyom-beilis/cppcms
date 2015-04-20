@@ -528,7 +528,7 @@ int main(int argc,char **argv)
 		booster::intrusive_ptr<chat> c=new chat(service);
 		service.applications_pool().mount(c,cppcms::mount_point("/chat"));
 		service.applications_pool().mount(cppcms::applications_factory<hello>(),cppcms::mount_point("/hello"));
-		service.applications_pool().mount(new stock(service),cppcms::mount_point("/stock"));
+		//service.applications_pool().mount(new stock(service),cppcms::mount_point("/stock"));
 		service.run();
 		std::cout<<"Done..."<<std::endl;
 	}

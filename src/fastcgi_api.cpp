@@ -52,8 +52,7 @@ namespace cgi {
 	class fastcgi : public connection {
 	public:
 		fastcgi(cppcms::service &srv) :
-			connection(srv),
-			socket_(srv.impl().get_io_service())
+			connection(srv)
 		{
 			reset_all();
 			int procs=srv.procs_no();

@@ -17,6 +17,12 @@
 #include <booster/noncopyable.h>
 #include <locale>
 
+namespace booster {
+	namespace aio {
+		class io_service;
+	}
+}
+
 namespace cppcms {
 
 	class service;
@@ -49,6 +55,7 @@ namespace cppcms {
 		public:
 			/// \cond INTERNAL
 
+			context(booster::shared_ptr<impl::cgi::connection> conn,int id);
 			context(booster::shared_ptr<impl::cgi::connection> conn);
 			~context();
 			impl::cgi::connection &connection();
@@ -108,7 +115,14 @@ namespace cppcms {
 			/// Get the central service instance
 			///
 			cppcms::service &service();
-
+			///
+			/// Get connected booster::aio::io_service
+			///
+			booster::aio::io_service &get_io_service();
+			///
+			/// Get connected booster::aio::io_service id
+			///
+			int io_service_id();
 			///
 			/// Get current views skin name
 			///

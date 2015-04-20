@@ -65,40 +65,55 @@ namespace cgi {
 	public:
 		typedef booster::shared_ptr<http> http_ptr;
 		typedef booster::weak_ptr<http> weak_http_ptr;
+		typedef std::set<weak_http_ptr> connections_type;
 
-		http_watchdog(booster::aio::io_service &srv) :
-			timer_(srv)
+		struct event_loop_specific_data {
+			connections_type connections;
+			booster::aio::deadline_timer timer;
+		};
+		
+		typedef booster::shared_ptr<event_loop_specific_data> specific_ptr;
+		typedef std::map<booster::aio::io_service *,specific_ptr> watchers_type;
+
+
+		http_watchdog(cppcms::service &srv)
 		{
+			for(int i=0;i<srv.total_io_services();i++) {
+				specific_ptr p(new event_loop_specific_data());
+				booster::aio::io_service *iosrv = &srv.get_io_service(i);
+				p->timer.set_io_service(*iosrv);
+				watchers_[iosrv] = p;
+			}
 		}
 
-		void check(booster::system::error_code const &e=booster::system::error_code());
-
-		void add(weak_http_ptr p)
+		void start()
 		{
-			connections_.insert(p);
+			for(watchers_type::iterator p=watchers_.begin();p!=watchers_.end();++p) {
+				p->first->post(boost::bind(&http_watchdog::check,
+							    shared_from_this(),
+							    p,
+							    booster::system::error_code()));
+			}
 		}
 
-		void remove(weak_http_ptr p)
-		{
-			connections_.erase(p);
-		}
+		void check(watchers_type::iterator p,booster::system::error_code const &e=booster::system::error_code());
+		void add(http_ptr p);
+		void remove(http_ptr p);
 
 	private:
-		typedef std::set<weak_http_ptr> connections_type;
-		connections_type connections_;
-		booster::aio::deadline_timer timer_;
+		std::map<booster::aio::io_service *,booster::shared_ptr<event_loop_specific_data> > watchers_;
 	};
 	
 	class http_creator {
 	public:
 		http_creator() {} // for concept
-		http_creator(booster::aio::io_service &srv,json::value const &settings,std::string const &ip="0.0.0.0",int port = 8080) :
+		http_creator(cppcms::service &srv,json::value const &settings,std::string const &ip="0.0.0.0",int port = 8080) :
 			ip_(ip),port_(port),watchdog_(new http_watchdog(srv))
 		{
 			if(settings.find("http.rewrite").type()==json::is_array) {
 				rewrite_.reset(new url_rewriter(settings.find("http.rewrite").array()));
 			}
-			watchdog_->check();
+			watchdog_->start();
 		}
 		http *operator()(cppcms::service &srv) const;
 	private:
@@ -122,7 +137,6 @@ namespace cgi {
 			) 
 		:
 			connection(srv),
-			socket_(srv.impl().get_io_service()),
 			input_body_ptr_(0),
 			input_parser_(input_body_,input_body_ptr_),
 			output_body_ptr_(0),
@@ -343,7 +357,12 @@ namespace cgi {
 		{
 			set_sync_options(e);
 			if(e) return 0;
-			return socket_.write_some(buf,e);
+			booster::ptime start = booster::ptime::now();
+			size_t r=socket_.write_some(buf,e);
+			booster::ptime end = booster::ptime::now();
+			if(!e && booster::ptime::to_number(end - start) >= timeout_ * 0.99)
+				e=booster::system::error_code(errc::protocol_violation,cppcms_category);
+			return r;
 		}
 		#else
 		size_t timed_write_some(booster::aio::const_buffer const &buf,booster::system::error_code &e)
@@ -675,7 +694,7 @@ namespace cgi {
 		booster::shared_ptr<http_watchdog> watchdog_;
 		booster::shared_ptr<url_rewriter> rewrite_;
 	};
-	void http_watchdog::check(booster::system::error_code const &e)
+	void http_watchdog::check(http_watchdog::watchers_type::iterator it,booster::system::error_code const &e)
 	{
 		if(e)
 			return;
@@ -684,19 +703,19 @@ namespace cgi {
 
 		time_t now = time(0);
 
-		for(connections_type::iterator p=connections_.begin(),e=connections_.end();p!=e;) {
+		for(connections_type::iterator p=it->second->connections.begin(),e=it->second->connections.end();p!=e;) {
 			booster::shared_ptr<http> ptr = p->lock();
 			if(!ptr) {
 				connections_type::iterator tmp = p;
 				++p;
-				connections_.erase(tmp);
+				it->second->connections.erase(tmp);
 			}
 			else {
 				if(ptr->time_to_die() < now) {
 					kill.push_back(ptr);
 					connections_type::iterator tmp = p;
 					++p;
-					connections_.erase(tmp);
+					it->second->connections.erase(tmp);
 				}
 				else {
 					++p;
@@ -708,9 +727,25 @@ namespace cgi {
 			(*p)->async_die();
 		}
 
-		timer_.expires_from_now(booster::ptime(1));
-		timer_.async_wait(boost::bind(&http_watchdog::check,shared_from_this(),_1));
+		it->second->timer.expires_from_now(booster::ptime(1));
+		it->second->timer.async_wait(boost::bind(&http_watchdog::check,shared_from_this(),it,_1));
 	}
+	void http_watchdog::add(http_watchdog::http_ptr p)
+	{
+		watchers_type::iterator wptr = watchers_.find(&p->get_io_service());
+		if(wptr==watchers_.end())
+			return;
+		wptr->second->connections.insert(weak_http_ptr(p));
+	}
+
+	void http_watchdog::remove(http_watchdog::http_ptr p)
+	{
+		watchers_type::iterator wptr = watchers_.find(&p->get_io_service());
+		if(wptr==watchers_.end())
+			return;
+		wptr->second->connections.erase(weak_http_ptr(p));
+	}
+
 
 	http *http_creator::operator()(cppcms::service &srv) const
 	{
@@ -721,7 +756,7 @@ namespace cgi {
 	{
 		typedef socket_acceptor<http,http_creator> acceptor_type;
 		std::auto_ptr<acceptor_type> acc(new acceptor_type(srv,ip,port,backlog));
-		acc->factory(http_creator(srv.get_io_service(),srv.settings(),ip,port));
+		acc->factory(http_creator(srv,srv.settings(),ip,port));
 		std::auto_ptr<acceptor> a(acc);
 		return a;
 	}

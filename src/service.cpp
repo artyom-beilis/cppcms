@@ -224,10 +224,17 @@ void service::setup()
 	impl_->cached_settings_.reset(new impl::cached_settings(settings()));
 	impl::setup_logging(settings());
 	impl_->id_=0;
+	int service_count=settings().get("service.event_loops",1);
+	if(service_count < 0)
+		throw cppcms_error("Invalid service.event_loops value");
+	if(service_count > 1 && procs_no() > 1)
+		throw cppcms_error("Can't use multiple event loops with more than one working process");
 	int reactor=reactor_type(settings().get("service.reactor","default"));
-	impl_->io_service_.reset(new io::io_service(reactor));
-	impl_->sig_.reset(new io::stream_socket(*impl_->io_service_));
-	impl_->breaker_.reset(new io::stream_socket(*impl_->io_service_));
+	impl_->io_services_.resize(service_count);
+	for(int i=0;i<service_count;i++)
+		impl_->io_services_[i].reset(new io::io_service(reactor));
+	impl_->sig_.reset(new io::stream_socket(impl_->get_io_service(0)));
+	impl_->breaker_.reset(new io::stream_socket(impl_->get_io_service(0)));
 
 	int apps=settings().get("service.applications_pool_size",threads_no()*2);
 	impl_->applications_pool_.reset(new cppcms::applications_pool(*this,apps));
@@ -484,9 +491,81 @@ void service::run_acceptor()
 		impl_->acceptors_[i]->async_accept();
 }
 
+int service::total_io_services()
+{
+	return impl_->total_io_services();
+}
+
+booster::aio::io_service &service::get_io_service(int id)
+{
+	return impl_->get_io_service(id);
+}
+
+namespace impl {
+	struct thrower {
+		std::string what;
+		thrower(std::string const &v) : what(v)
+		{
+		}
+		void operator()() const
+		{
+			throw std::runtime_error("Exception in event loop thread:" + what);
+		}
+	};
+
+	struct io_service_runner
+	{
+		io_service_runner(cppcms::service &s,int id) : srv(&s), io_srv(&s.get_io_service(id))
+		{
+		}
+		cppcms::service *srv;
+		booster::aio::io_service *io_srv;
+		void operator()() const
+		{
+			try {
+				io_srv->run();
+			}
+			catch(std::exception const &e) {
+				srv->get_io_service(0).post(thrower(e.what()));
+			}
+			catch(...) {
+				srv->get_io_service(0).post(thrower("Unknown exception"));
+			}
+		}
+	};
+	struct event_loop_collection {
+		event_loop_collection(cppcms::service &srv) : srv_(&srv)
+		{
+		}
+		void start()
+		{
+			for(int i=1;i<srv_->total_io_services();i++) {
+				booster::shared_ptr<booster::thread> t(new booster::thread(io_service_runner(*srv_,i)));
+				threads_.push_back(t);
+			}
+		}
+		~event_loop_collection()
+		{
+			try {
+				for(int i=1;i<srv_->total_io_services();i++) {
+					srv_->get_io_service(i).stop();
+				}
+				for(size_t i=0;i<threads_.size();i++) {
+					threads_[i]->join();
+				}
+			}
+			catch(...) {}
+		}
+		cppcms::service *srv_;
+		std::vector<booster::shared_ptr<booster::thread> > threads_;
+	};
+} // impl
+
 void service::run_event_loop()
 {
-	impl_->get_io_service().run();
+	impl::event_loop_collection coll(*this);
+	coll.start();
+	impl_->get_io_service(0).run();
 }
 
 
@@ -874,7 +953,7 @@ cppcms::impl::service &service::impl()
 
 void service::post(booster::function<void()> const &handler)
 {
-	impl_->get_io_service().post(handler);
+	get_io_service().post(handler);
 }
 
 void service::stop()
@@ -887,7 +966,7 @@ void service::stop()
 	impl_->prefork_acceptor_.reset();
 	#endif
 	thread_pool().stop();
-	impl_->get_io_service().stop();
+	impl_->get_io_service(0).stop();
 }
 
 locale::generator const &service::generator()
@@ -968,7 +1047,9 @@ std::locale service::locale(std::string const &name)
 
 booster::aio::io_service &service::get_io_service()
 {
-	return impl_->get_io_service();
+	if(impl_->total_io_services()==1)
+		return impl_->get_io_service(0);
+	throw cppcms_error("cppcms::service::get_io_service can cppcms::service::post cannot be used in multiple event loop environment");
 }
 
 namespace impl {
@@ -981,7 +1062,7 @@ namespace impl {
 		thread_pool_.reset();
 		sig_.reset();
 		breaker_.reset();
-		io_service_.reset();
+		io_services_.clear();
 		// applications pool should be destroyed after
 		// io_service, because soma apps may try unregister themselfs
 		applications_pool_.reset();

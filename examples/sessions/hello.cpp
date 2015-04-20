@@ -18,38 +18,16 @@ public:
     }
     void main(std::string /* unused */)
     {
-        content::message c;
-        if(request().request_method()=="POST") {
-            c.info.load(context());
-            if(c.info.validate()) {
-                session()["name"]=c.info.name.value();
-                session()["sex"]=c.info.sex.selected_id();
-                session()["state"]=c.info.martial.selected_id();
-                session().set("age",c.info.age.value());
-                c.info.clear();
-            }
+        int n=0;
+        if(session().is_set("n")) {
+            n = session().get<int>("n");
+            n++;
         }
-
-        if(session().is_set("name")) {
-            c.name=session()["name"];
-            if(session()["sex"]=="m") {
-                c.who="Mr";
-            }
-            else {
-                if(session()["state"]=="s") {
-                    c.who="Miss";
-                }
-                else {
-                    c.who="Mrs";
-                }
-            }
-            c.age=session().get<double>("age");
-        }
-        else {
-            c.name="Visitor";
-            c.age=-1;
-        }
-        render("message",c);
+        session().set<int>("n",n);
+        response().set_content_header("text/javascript");
+        response().set_header("P3P","CP=\"Make Interent Explorer Happy and Developers really Sad\"");
+        response().cache_control("max-age=5");
+        response().out() << "document.getElementById('value').innerHTML='<p>" << n << "</p>';" << std::endl;
     }
 };
 

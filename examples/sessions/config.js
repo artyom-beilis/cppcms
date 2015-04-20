@@ -1,10 +1,15 @@
 {
 	"service" : {
 		"api" : "http",
+		"ip" : "0.0.0.0",
 		"port" : 8080
 	},
 	"http" : {
 		"script" : "/hello"
+	},
+	"file_server" : {
+		"enable" : true,
+		"document_root" : "./"
 	},
 	"session" : {
 		"expire" : "renew",

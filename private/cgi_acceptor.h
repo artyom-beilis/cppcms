@@ -41,7 +41,7 @@ namespace impl {
 		public:
 			socket_acceptor(cppcms::service &srv,std::string ip,int port,int backlog) :
 				srv_(srv),
-				acceptor_(srv_.get_io_service()),
+				acceptor_(srv_.get_io_service(0)),
 				stopped_(false),
 				tcp_(true)
 			{
@@ -72,7 +72,8 @@ namespace impl {
 				srv_(srv),
 				acceptor_(srv_.get_io_service()),
 				stopped_(false),
-				tcp_(false)
+				tcp_(false),
+				id_(1)
 			{
 				io::endpoint ep(path);
 				acceptor_.open(io::pf_unix);
@@ -99,6 +100,7 @@ namespace impl {
 				try {
 					api.reset(factory_(srv_));
 					api->socket_.assign(fd);
+					api->socket_.set_io_service(srv_.get_io_service(0));
 					fd=-1;
 				}
 				catch(...) {
@@ -107,7 +109,7 @@ namespace impl {
 				}
 				if(tcp_)
 					api->socket_.set_option(io::basic_socket::tcp_no_delay,true);
-				booster::shared_ptr< ::cppcms::http::context> cnt(new ::cppcms::http::context(api));
+				booster::shared_ptr< ::cppcms::http::context> cnt(new ::cppcms::http::context(api,0));
 				return cnt;
 			}
 			#endif
@@ -132,14 +134,43 @@ namespace impl {
 			}
 
 		private:
+			struct context_runner {
+				booster::shared_ptr< ::cppcms::http::context> ctx;
+				context_runner(booster::shared_ptr< ::cppcms::http::context> c) : ctx(c) {}
+				void operator()() const
+				{
+					ctx->run();
+				}
+			};
+			int next_id()
+			{
+				int r = id_;
+				id_ ++;
+				if(id_ >= srv_.total_io_services())
+					id_ = 1;
+				return r;
+			}
 			void on_accept(booster::system::error_code const &e)
 			{
 				if(!e) {
 					if(tcp_)
 						asio_socket_->set_option(io::basic_socket::tcp_no_delay,true);
-					booster::shared_ptr< ::cppcms::http::context> cnt(new ::cppcms::http::context(api_));
+					booster::aio::io_service *io_srv = 0;
+					int io_service_id = 0;
+					if(srv_.total_io_services() == 1) { 
+						asio_socket_->set_io_service(acceptor_.get_io_service());
+					}
+					else {
+						io_service_id = next_id();
+						io_srv = &srv_.get_io_service(io_service_id);
+						asio_socket_->set_io_service(*io_srv);
+					}
+					booster::shared_ptr< ::cppcms::http::context> cnt(new ::cppcms::http::context(api_,io_service_id));
 					api_.reset();
-					cnt->run();	
+					if(io_srv)
+						io_srv->post(context_runner(cnt));
+					else
+						cnt->run();
 				}
 				async_accept();
 			}
@@ -150,6 +181,7 @@ namespace impl {
 			booster::aio::acceptor acceptor_;
 			bool stopped_;
 			bool tcp_;
+			int id_;
 			Factory factory_;
 		};
 

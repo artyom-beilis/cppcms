@@ -49,7 +49,7 @@ namespace cppcms {
 				connection_(connection),
 				ip_(ip),
 				port_(port),
-				socket_(connection_->service().impl().get_io_service())
+				socket_(connection_->get_io_service())
 			{
 			}
 			void async_send_receive(std::string &data)

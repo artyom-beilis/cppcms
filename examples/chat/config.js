@@ -1,15 +1,15 @@
 {
 	"service" : {
-		"api" : "http",
-		"port" : 8080
+		"api" : "fastcgi",
+		"port" : 8081
 	},
-	"http" : {
-		"script" : "/chat"
-	},
-	"file_server" : {
-		"enable" : true,
-		"document_root" : "."
-	},
+//	"http" : {
+//		"script" : "/chat"
+//	},
+//	"file_server" : {
+//		"enable" : true,
+//		"document_root" : "."
+//	},
 
 }
 
