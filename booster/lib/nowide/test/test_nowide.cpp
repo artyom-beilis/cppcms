@@ -100,6 +100,16 @@ int main()
 				TEST(tmp=="test2");
 				f.close();
 			}
+			{
+				nw::ifstream fi("שלום.txt",nw::fstream::ate | nw::fstream::binary);
+				TEST(fi);
+				TEST(fi.tellg()==std::streampos(5));
+				fi.seekg(-2,std::ios_base::cur);
+				std::string tmp;
+				fi >> tmp;
+				TEST(tmp == "t2");
+				fi.close();
+			}
 			nw::remove("שלום.txt");
 		}
 			

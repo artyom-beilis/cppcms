@@ -124,6 +124,9 @@ namespace nowide {
 		basic_filebuf *open(char const *s,std::ios_base::openmode mode)
 		{
 			reset_device();
+			bool seek_end = mode & std::ios_base::ate;
+			if(seek_end)
+				mode ^= std::ios_base::ate;
 			wchar_t const *smode = get_mode(mode);
 			if(!smode)
 				return 0;
@@ -137,6 +140,12 @@ namespace nowide {
 			FILE *f = _wfopen(name.c_str(),smode);
 			if(!f)
 				return 0;
+			if(seek_end) {
+				if(fseek(f,0,SEEK_END)!=0) {
+					fclose(f);
+					return 0;
+				}
+			}
 			std::auto_ptr<io_device> dev(new details::stdio_iodev(f));
 			device(dev);
 			opened_ = true;
