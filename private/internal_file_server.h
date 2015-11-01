@@ -13,9 +13,11 @@
 namespace cppcms {
 	class service;
 namespace impl {
-	class file_server : public application
+	class CPPCMS_API file_server : public application
 	{
 	public:
+		
+		static void normalize_path(std::string &path);
 		file_server(cppcms::service &srv);
 		~file_server();
 		virtual void main(std::string file_name);
@@ -35,6 +37,7 @@ namespace impl {
 		typedef std::map<std::string,std::string> mime_type;
 		mime_type mime_;
 		bool list_directories_;
+		bool check_symlinks_;
 		std::string index_file_;
 	};
 

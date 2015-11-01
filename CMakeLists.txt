@@ -831,6 +831,12 @@ add_test(file_server_test
 	"-U" "${CNF}"
 	)
 
+add_test(file_server_test_no_links
+	file_server_test "-c" "${CNF}/file_server_test.js" "--file_server-check_symlink=false" 
+	"--test-exec=${PYTHON} ${CNF}/file_server_test.py no_links"
+	"-U" "${CNF}"
+	)
+
 add_test(file_server_with_listing_test
 	file_server_test "-c" "${CNF}/file_server_test.js" 
 	"--file_server-listing=true"

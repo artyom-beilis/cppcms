@@ -48,6 +48,7 @@ file_server::file_server(cppcms::service &srv) : application(srv)
 
 	list_directories_ = settings().get("file_server.listing",false);
 	index_file_ = settings().get("file_server.index","index.html");
+	check_symlinks_ = settings().get("file_server.check_symlink",true);
 
 	std::string mime_file=settings().get("file_server.mime_types","");
 
@@ -253,13 +254,51 @@ bool file_server::is_in_root(std::string const &input_path,std::string const &ro
 	return true;
 }
 
+void file_server::normalize_path(std::string &path)
+{
+#ifdef CPPCMS_WIN32
+	for(size_t i=0;i<path.size();i++)
+		if(path[i]=='\\')
+			path[i]='/';
+#endif
+	if(path.empty() || path[0]!='/')
+		path = "/" + path;
+	
+	std::string::iterator out = path.begin() + 1;
+	std::string::iterator start = path.begin() + 1;
+	while(start < path.end()) {
+		std::string::iterator end = std::find(start,path.end(),'/');
+		if(end==start || (end-start == 1 && *start == '.')) { // case of "//" and "/./"
+			// nothing to do
+		}
+		else if(end-start == 2 && *start == '.' && *(start+1) == '.') {
+			std::string::iterator min_pos = path.begin() + 1;
+			if(out > min_pos)
+				out --;
+			while(out > min_pos) {
+				out --;
+				if(*out == '/')
+					break;
+			}
+		}
+		else {
+			out = std::copy(start,end,out);
+			if(end != path.end())
+				*out++ = '/';
+		}
+		if(end == path.end())
+			break;
+		start = end;
+		++start;
+	}
+	if(*(out-1) == '/' && out > path.begin()+1)
+		out--;
+	path.resize(out - path.begin());
+}
+
 bool file_server::check_in_document_root(std::string normal,std::string &real) 
 {
-	// Use only Unix file names
-	for(size_t i=0;i<normal.size();i++)
-		if(is_directory_separator(normal[i]))
-			normal[i]='/';
-
+	normalize_path(normal);
 	std::string root = document_root_;
 	for(unsigned i=0;i<alias_.size();i++) {
 		std::string const &ref=alias_[i].first;
@@ -276,21 +315,13 @@ bool file_server::check_in_document_root(std::string normal,std::string &real)
 		return false;
 	if(normal[0]!='/')
 		return false;
-	// Prevent the access to any valid file below like
-	// detecting that the files placed in /var/www
-	// by providing a path /../../var/www/known.txt 
-	// whuch would be valid as known is placed in /var/www
-	// but yet we don't want user to detect that files
-	// exist in /var/www
-	for(size_t pos = 1;pos != std::string::npos; pos = normal.find('/',pos)) {
-		std::string sub_path = normal.substr(0,pos);
-		std::string tmp;
-		if(!is_in_root(sub_path,root,tmp))
+	if(check_symlinks_) {
+		if(!is_in_root(normal,root,real))
 			return false;
-		pos++;
 	}
-	if(!is_in_root(normal,root,real))
-		return false;
+	else {
+		real = root + normal;
+	}
 	return true;
 }
 

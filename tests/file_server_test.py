@@ -48,8 +48,11 @@ def test_request(url,status,content='ignore',valid=[],notvalid=[]):
 
 
 do_listing = False 
+check_links = True
 if len(sys.argv) == 2:
-    do_listing = sys.argv[1] == 'listing'
+    do_listing = sys.argv[1] == 'listing' 
+    if sys.argv[1] == 'no_links':
+        check_links = False
 
 
 
@@ -85,10 +88,6 @@ test_request('/alias/',200,'/al/index.html')
 test_request('/alias/test.txt',200,'/al/test.txt')
 test_request('/alias/foo/test.txt',200,'/al/foo/test.txt')
 
-if os.name == 'posix':
-    print "- Testing symlinks"
-    test_request('/no.txt',404)
-    test_request('/yes.txt',200,'/yes')
 
 print "- Testing directory traversal"
 
@@ -102,4 +101,12 @@ test_request('/aliasfile.txt',404)
 test_request('/../alias/never.txt','404')
 test_request('/%2e%2e/never.txt','404')
 test_request('/..%c0%afnever.txt','404')
+
+if os.name == 'posix':
+    print "- Testing symlinks"
+    test_request('/yes.txt',200,'/yes')
+    if check_links:
+        test_request('/no.txt',404)
+    else:
+        test_request('/no.txt',200,'never.txt')
 
