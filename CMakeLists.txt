@@ -825,6 +825,7 @@ add_test(http_timeouts_test_write
 	"--test-write=true"
 	"--test-exec=${PYTHON} ${CNF}/http_timeouts_test.py write")
 
+
 add_test(file_server_test
 	file_server_test "-c" "${CNF}/file_server_test.js" 
 	"--test-exec=${PYTHON} ${CNF}/file_server_test.py"
@@ -839,6 +840,27 @@ add_test(file_server_test_no_links
 
 add_test(file_server_with_listing_test
 	file_server_test "-c" "${CNF}/file_server_test.js" 
+	"--file_server-listing=true"
+	"--test-exec=${PYTHON} ${CNF}/file_server_test.py listing"
+	"-U" "${CNF}"
+	)
+
+
+
+add_test(file_server_test_async
+	file_server_test "-c" "${CNF}/file_server_test.js" "--file_server-async=true"
+	"--test-exec=${PYTHON} ${CNF}/file_server_test.py"
+	"-U" "${CNF}"
+	)
+
+add_test(file_server_test_no_links_async
+	file_server_test "-c" "${CNF}/file_server_test.js" "--file_server-check_symlink=false" "--file_server-async=true" 
+	"--test-exec=${PYTHON} ${CNF}/file_server_test.py no_links"
+	"-U" "${CNF}"
+	)
+
+add_test(file_server_with_listing_test_async
+	file_server_test "-c" "${CNF}/file_server_test.js" "--file_server-async=true" 
 	"--file_server-listing=true"
 	"--test-exec=${PYTHON} ${CNF}/file_server_test.py listing"
 	"-U" "${CNF}"

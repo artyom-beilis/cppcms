@@ -19,6 +19,7 @@
 namespace cppcms {
 class service;
 class applications_pool;
+class application;
 class thread_pool;
 class session_pool;
 
@@ -67,7 +68,7 @@ namespace impl {
 		
 		std::vector<std::string> args_;
 
-
+		booster::intrusive_ptr<cppcms::application> async_file_server_;
 	};
 
 

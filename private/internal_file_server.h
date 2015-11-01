@@ -18,7 +18,7 @@ namespace impl {
 	public:
 		
 		static void normalize_path(std::string &path);
-		file_server(cppcms::service &srv);
+		file_server(cppcms::service &srv,bool async=false);
 		~file_server();
 		virtual void main(std::string file_name);
 
@@ -38,6 +38,7 @@ namespace impl {
 		mime_type mime_;
 		bool list_directories_;
 		bool check_symlinks_;
+		bool async_;
 		std::string index_file_;
 	};
 

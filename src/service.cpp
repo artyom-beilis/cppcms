@@ -26,6 +26,7 @@
 #include <cppcms/service.h>
 #include "service_impl.h"
 #include <cppcms/applications_pool.h>
+#include <cppcms/application.h>
 #include <cppcms/thread_pool.h>
 #include <cppcms/cppcms_error.h>
 #include <cppcms/mount_point.h>
@@ -235,7 +236,13 @@ void service::setup()
 	impl_->cache_pool_.reset(new cppcms::cache_pool(settings()));
 	impl_->session_pool_.reset(new cppcms::session_pool(*this));
 	if(settings().get("file_server.enable",false)) {
-		applications_pool().mount(applications_factory<cppcms::impl::file_server>(),mount_point(""));
+		if(settings().get("file_server.async",false)) {
+			impl_->async_file_server_ = new cppcms::impl::file_server(*this,true);
+			applications_pool().mount(impl_->async_file_server_,mount_point(""));
+		}
+		else {
+			applications_pool().mount(applications_factory<cppcms::impl::file_server>(),mount_point(""));
+		}
 	}
 }
 
@@ -977,6 +984,7 @@ namespace impl {
 	}
 	service::~service()
 	{
+		async_file_server_ = 0;
 		acceptors_.clear();
 		thread_pool_.reset();
 		sig_.reset();

@@ -15,9 +15,11 @@
 
 #include <stdlib.h>
 
+#include <booster/callback.h>
 #include <cppcms/application.h>
 #include <cppcms/service.h>
 #include <cppcms/http_response.h>
+#include <cppcms/http_context.h>
 #include "internal_file_server.h"
 #include <cppcms/cppcms_error.h>
 #include <cppcms/json.h>
@@ -41,7 +43,7 @@
 namespace cppcms {
 namespace impl {
 
-file_server::file_server(cppcms::service &srv) : application(srv)
+file_server::file_server(cppcms::service &srv,bool async) : application(srv), async_(async)
 {
 	if(!canonical(settings().get("file_server.document_root","."),document_root_))
 		throw cppcms_error("Invalid document root");
@@ -406,16 +408,63 @@ void file_server::list_dir(std::string const &url,std::string const &path)
 	out <<"</body>\n";
 }
 
+namespace file_server_detail {
+
+class async_file_handler : public booster::callable<void(cppcms::http::context::completion_type)>
+{
+public:
+	async_file_handler(std::string const &path,booster::shared_ptr<cppcms::http::context> c) : 
+		f(path.c_str(),std::ios_base::binary),
+		ctx(c)
+	{ 
+	}
+	typedef booster::intrusive_ptr<async_file_handler> pointer_type;
+	void go()
+	{
+		if(!f) {
+			ctx->response().set_html_header();
+			ctx->response().make_error_response(404);
+			ctx->async_complete_response();
+		}
+		else {
+			ctx->response();
+			(*this)(cppcms::http::context::operation_completed);
+		}
+		
+	}
+	void operator()(cppcms::http::context::completion_type c)
+	{
+		if(c!=cppcms::http::context::operation_completed) 
+			return;
+		char buf[4096];
+		size_t total = 0;
+		while(!f.eof() && total < 65536) {
+			f.read(buf,sizeof(buf));
+			size_t n = f.gcount();
+			total += n;
+			ctx->response().out().write(buf,n);
+		}
+		if(f.eof())
+			ctx->async_complete_response();
+		else
+			ctx->async_flush_output(pointer_type(this));
+	}
+private:
+	booster::nowide::ifstream f;
+	booster::shared_ptr<cppcms::http::context> ctx;
+};
+
+} // file_server_detail
+
 void file_server::main(std::string file_name)
 {
 	std::string path;
-
 
 	if(!check_in_document_root(file_name,path)) {
 		show404();
 		return;
 	}
-	
+
 	int s=file_mode(path);
 	
 	if((s & S_IFDIR)) {
@@ -467,33 +516,28 @@ void file_server::main(std::string file_name)
 	else
 		response().content_type("application/octet-stream");
 
-	if(!allow_deflate_) {
+	if(!allow_deflate_ && !async_) {
 		response().io_mode(http::response::nogzip);
 	}
 
-	booster::nowide::ifstream file(path.c_str(),std::ios_base::binary);
-	if(!file) {
-		show404();
-		return;
+	if(async_) {
+		file_server_detail::async_file_handler::pointer_type p=new file_server_detail::async_file_handler(path,release_context());
+		p->go();
 	}
-	response().out()<<file.rdbuf(); // write stream to stream
+	else {
+		booster::nowide::ifstream file(path.c_str(),std::ios_base::binary);
+		if(!file) {
+			show404();
+			return;
+		}
+		response().out()<<file.rdbuf(); // write stream to stream
+	}
 }
 
 void file_server::show404()
 {
-	response().status(http::response::not_found);
 	response().set_html_header();
-	response().out() <<
-		"<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.01 Transitional//EN\"\n"
-		"	\"http://www.w3.org/TR/html4/loose.dtd\">\n"
-		"<html>\n"
-		"  <head>\n"
-		"    <title>404 Not Found</title>\n"
-		"  </head>\n"
-		"  <body>\n"
-		"    <h1>404 Not Found</h1>\n"
-		"  </body>\n"
-		"</html>\n"<<std::flush;
+	response().make_error_response(404);
 }
 
 
