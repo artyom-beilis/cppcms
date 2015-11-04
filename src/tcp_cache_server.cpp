@@ -352,7 +352,9 @@ public:
 			services_[i] = io[i].get();
 		io::endpoint ep(ip,port);
 		acceptor_.open(ep.family());
+        #ifndef CPPCMS_WIN32
 		acceptor_.set_option(io::basic_socket::reuse_address,true);
+        #endif
 		acceptor_.bind(ep);
 		acceptor_.listen(10);
 		start_accept();

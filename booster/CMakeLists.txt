@@ -11,7 +11,6 @@ project(booster)
 include(CheckFunctionExists)
 include(CheckCXXSourceCompiles)
 include(CheckLibraryExists)
-include(CPack)
 enable_testing()
 #
 # Most important includes
@@ -63,9 +62,21 @@ option(USE_WINDOWS6_API		"Use Windows 6 API (Vista, 7)" OFF)
 
 check_function_exists(newlocale BOOSTER_HAS_XLOCALE)
 
-if(	"${CMAKE_SYSTEM_NAME}" STREQUAL "Linux"
-	OR APPLE 
-	OR ("${CMAKE_SYSTEM_NAME}" STREQUAL "FreeBSD" AND BOOSTER_HAS_XLOCALE) )
+
+if("${CMAKE_SYSTEM_NAME}" STREQUAL "Linux")
+	set(ENABLE_POSIX_LOCALE ON)
+elseif(APPLE)
+	set(ENABLE_POSIX_LOCALE ON)
+elseif("${CMAKE_SYSTEM_NAME}" STREQUAL "FreeBSD")
+	if(BOOSTER_HAS_XLOCALE)
+		set(ENABLE_POSIX_LOCALE ON)
+	endif()
+else()
+	set(ENABLE_POSIX_LOCALE OFF)
+endif()
+
+
+if(ENABLE_POSIX_LOCALE)
 	option(DISABLE_POSIX_LOCALE	"Disable POSIX locale backend" OFF)
 else()
 	option(DISABLE_POSIX_LOCALE	"Disable POSIX locale backend" ON)
@@ -360,7 +371,8 @@ check_cxx_source_compiles(
 if(IS_WINDOWS)
 	set(CMAKE_REQUIRED_LIBRARIES ${WS2_32})
 	check_cxx_source_compiles(
-	"#include <winsock2.h>
+	"#include <ws2tcpip.h>
+    #include <winsock2.h>
 	#include <windows.h>
 	int main()
 	{ struct sockaddr_in6 in6; struct in6_addr in6addr; ::inet_pton(AF_INET6,\"::1\",&in6addr); return 0; }"

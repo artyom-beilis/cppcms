@@ -30,7 +30,9 @@ int main()
 		ep=io::endpoint("127.0.0.1",8080);	
 		io::acceptor a;
 		a.open(io::pf_inet);
+        #ifndef BOOSTER_WIN32
 		a.set_option(io::basic_socket::reuse_address,true);
+        #endif
 		a.bind(ep);
 		a.listen(1);
 

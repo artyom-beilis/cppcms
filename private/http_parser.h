@@ -11,6 +11,10 @@
 #include <vector>
 #include <string>
 
+#ifdef getc
+#undef getc
+#endif
+
 namespace cppcms {
 namespace http {
 namespace impl {

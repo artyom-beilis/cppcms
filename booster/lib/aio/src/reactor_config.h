@@ -20,7 +20,7 @@
 #  define AIO_HAVE_POLL
 #  define AIO_HAVE_POSIX_SELECT
 
-#elif defined(__FreeBSD__)
+#elif defined(__FreeBSD__) || defined(__NetBSD__)
 
 #  define AIO_HAVE_KQUEUE
 #  define AIO_HAVE_POLL

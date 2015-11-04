@@ -13,6 +13,7 @@
 			"prefix" : "sc",
 			"domain" : "foo.bar",
 			"path" : "/foo",
+			"expiration_method" : "max-age"
 		},
 		"client" : {
 			"hmac" : "sha1",

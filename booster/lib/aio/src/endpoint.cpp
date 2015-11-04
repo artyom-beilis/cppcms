@@ -13,6 +13,9 @@
 #include <sys/un.h>
 #include <netinet/in.h>
 #else
+#ifndef BOOSTER_AIO_NO_PF_INET6
+#include <ws2tcpip.h>
+#endif
 #include <winsock2.h>
 #include <windows.h>
 #include <sstream>
@@ -186,7 +189,13 @@ std::string endpoint::ip() const
 	case pf_inet6:
 		{
 			char buf[INET6_ADDRSTRLEN+1] = {0};
+            #ifndef BOOSTER_WIN32
 			char const *res = ::inet_ntop(AF_INET6,&d->sa.in6.sin6_addr,buf,sizeof(buf));
+            #else
+            struct in6_addr addr = d->sa.in6.sin6_addr; 
+            // under windows it isn't const function
+            char const *res = ::inet_ntop(AF_INET6,&addr,buf,sizeof(buf));
+            #endif
 			if(res)
 				return std::string(res);
 			throw_invalid();

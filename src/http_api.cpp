@@ -343,7 +343,27 @@ namespace cgi {
 		{
 			set_sync_options(e);
 			if(e) return 0;
-			return socket_.write_some(buf,e);
+			booster::ptime start = booster::ptime::now();
+			size_t n = socket_.write_some(buf,e);
+			booster::ptime end = booster::ptime::now();
+			// it may actually return with success but return small
+			// a small buffer
+			if(booster::ptime::to_number(end - start) >= timeout_ - 0.1) {
+				e=booster::system::error_code(errc::protocol_violation,cppcms_category);
+				die(); 
+				return n;
+			}
+			if(e  && (io::basic_socket::would_block(e) 
+				#ifdef CPPCMS_WIN32
+				|| e.value() == 10060   // WSAETIMEDOUT - do not want to include windows.h
+				#endif
+				)
+				) { 
+				// handle timeout with SO_SNDTIMEO
+				// that responds with EAGIAN or EWOULDBLOCK
+				die();
+			}
+			return n;
 		}
 		#else
 		size_t timed_write_some(booster::aio::const_buffer const &buf,booster::system::error_code &e)
