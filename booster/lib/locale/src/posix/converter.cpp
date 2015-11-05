@@ -7,6 +7,9 @@
 //
 #define BOOSTER_SOURCE
 
+#if defined(__FreeBSD__)
+#include <xlocale.h>
+#endif
 #include <locale>
 #include <booster/backtrace.h>
 #include <booster/locale/generator.h>
