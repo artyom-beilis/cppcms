@@ -44,19 +44,28 @@ void test_set(cppcms::session_interface &interface,std::string const &values)
 
 class adapter : public cppcms::session_interface_cookie_adapter {
 public:
+	adapter(cppcms::http::context &c) 
+	{
+		cookie_name = c.session().session_cookie_name();
+		value = c.request().get("sid");
+	}
 	
 	void set_cookie(cppcms::http::cookie const &updated_cookie)
 	{
-		if(updated_cookie.name() == ctx_->session().session_cookie_name()) {
-			ctx_->response().out() << updated_cookie.value();
+		if(updated_cookie.name() == cookie_name) {
+			if((updated_cookie.max_age_defined() && updated_cookie.max_age() == 0)
+			   || (updated_cookie.expires_defined() && updated_cookie.expires() + 1 < time(0)))
+				value.clear();
+			else
+				value = updated_cookie.value();
 		}
 	}
 	std::string get_session_cookie(std::string const &/*name*/)
 	{
-		return ctx_->request().get("sid");
+		return value;
 	}
-private:
-	cppcms::http::context *ctx_;
+	std::string value;
+	std::string cookie_name;
 };
 
 class unit_test : public cppcms::application {
@@ -166,6 +175,19 @@ public:
 				std::cerr << "Failed " << e.what() << std::endl;
 				response().out() << "not ok";
 			}
+		}
+		else if(u=="/alt") {
+			adapter a(context());
+			session().set_cookie_adapter_and_reload(a);
+			bool is_set=session().is_set("x");
+			std::string val;
+			if(is_set)
+				val=session().get("x");
+			if(request().get("x")!="")
+				session().set("x",request().get("x"));
+			response().out() << "is_set_x="<<is_set << '\n'
+					 << "x='" << val << "'\n";
+			response().out() << "sid=" << a.value;
 		}
 	}
 };

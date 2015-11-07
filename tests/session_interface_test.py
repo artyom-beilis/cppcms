@@ -175,6 +175,34 @@ def size_tests(x):
     session.transmit("/small")
     test(session.state['sc'].value[0]=='C')
 
+def alt_tests(x):
+    print "------------------- Alternative Storage --------------------"
+    session=Session();
+    r=parse_info(session.transmit("/alt?x=a"));
+    test(not ('sc' in session.state))
+    test(r["is_set_x"]=='0')
+    test(r['x']=="''")
+    test('sid' in r)
+    sid = r['sid']
+    r=parse_info(session.transmit("/alt?sid=" + sid));
+    test(not ('sc' in session.state))
+    test(r["is_set_x"]=='1')
+    test(r["x"]=="'a'");
+    test('sid' in r)
+    sid = r['sid']
+    r=parse_info(session.transmit("/alt?x=2&sid=" + sid));
+    test(not ('sc' in session.state))
+    test(r["is_set_x"]=='1')
+    test(r["x"]=="'a'");
+    test('sid' in r)
+    sid = r['sid']
+    r=parse_info(session.transmit("/alt?sid=" + sid));
+    test(not ('sc' in session.state))
+    test(r["is_set_x"]=='1')
+    test(r["x"]=="'2'");
+    test('sid' in r)
+
+
 method = sys.argv[2]
 
 
@@ -182,12 +210,14 @@ if sys.argv[1] == 'server':
     general_tests(method)
     reset_session(method)
     no_replay(method)
+    alt_tests(method)
 elif sys.argv[1] == 'client':
     general_tests(method)
+    alt_tests(method)
 elif sys.argv[1] == 'both':
     general_tests(method)
     size_tests(method)
     force_server(method)
-
+    alt_tests(method)
 
 
