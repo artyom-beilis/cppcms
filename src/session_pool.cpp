@@ -39,11 +39,14 @@ namespace boost = cppcms_boost;
 #include <booster/callback.h>
 #include <booster/posix_time.h>
 
+#include "cached_settings.h"
 
 namespace cppcms {
 struct session_pool::_data 
 {
 	booster::shared_object module;
+	cppcms::json::value settings;
+	booster::hold_ptr<impl::cached_settings> cached_settings;
 };
 
 using namespace cppcms::sessions;
@@ -149,17 +152,18 @@ private:
 
 void session_pool::init()
 {
-	service &srv=*service_;
+	cppcms::json::value const &settings = (service_ ? service_->settings() : d->settings);
+
 	if(backend_.get())
 		return;
 
-	std::string location=srv.settings().get("session.location","none");
+	std::string location=settings.get("session.location","none");
 
 	if((location == "client" || location=="both") && !encryptor_.get()) {
 		using namespace cppcms::sessions::impl;
-		std::string enc=srv.settings().get("session.client.encryptor","");
-		std::string mac=srv.settings().get("session.client.hmac","");
-		std::string cbc=srv.settings().get("session.client.cbc","");
+		std::string enc=settings.get("session.client.encryptor","");
+		std::string mac=settings.get("session.client.hmac","");
+		std::string cbc=settings.get("session.client.cbc","");
 		
 		if(enc.empty() &&  mac.empty() && cbc.empty()) {
 			throw cppcms_error("Using clinet session storage without encryption method");
@@ -175,10 +179,10 @@ void session_pool::init()
 		if(!enc.empty()) {
 			crypto::key k;
 
-			std::string key_file = srv.settings().get("session.client.key_file","");
+			std::string key_file = settings.get("session.client.key_file","");
 
 			if(key_file.empty())
-				k=crypto::key(srv.settings().get<std::string>("session.client.key"));
+				k=crypto::key(settings.get<std::string>("session.client.key"));
 			else
 				k.read_from_file(key_file);
 
@@ -197,9 +201,9 @@ void session_pool::init()
 		}
 		else {
 			crypto::key hmac_key;
-			std::string hmac_key_file = srv.settings().get("session.client.hmac_key_file","");
+			std::string hmac_key_file = settings.get("session.client.hmac_key_file","");
 			if(hmac_key_file.empty())
-				hmac_key = crypto::key(srv.settings().get<std::string>("session.client.hmac_key"));
+				hmac_key = crypto::key(settings.get<std::string>("session.client.hmac_key"));
 			else
 				hmac_key.read_from_file(hmac_key_file);
 
@@ -208,10 +212,10 @@ void session_pool::init()
 			}
 			else {
 				crypto::key cbc_key;
-				std::string cbc_key_file = srv.settings().get("session.client.cbc_key_file","");
+				std::string cbc_key_file = settings.get("session.client.cbc_key_file","");
 
 				if(cbc_key_file.empty())
-					cbc_key = crypto::key(srv.settings().get<std::string>("session.client.cbc_key"));
+					cbc_key = crypto::key(settings.get<std::string>("session.client.cbc_key"));
 				else
 					cbc_key.read_from_file(cbc_key_file);
 
@@ -222,29 +226,41 @@ void session_pool::init()
 		encryptor(factory);
 	}
 	if((location == "server" || location == "both") && !storage_.get()) {
-		std::string stor=srv.settings().get<std::string>("session.server.storage");
+		std::string stor=settings.get<std::string>("session.server.storage");
 		std::auto_ptr<sessions::session_storage_factory> factory;
 		if(stor == "files") {
-			std::string dir = srv.settings().get("session.server.dir","");
+			std::string dir = settings.get("session.server.dir","");
 			#ifdef CPPCMS_WIN_NATIVE
 			factory.reset(new session_file_storage_factory(dir));
 			#else
-			bool sharing = srv.settings().get("session.server.shared",true);
-			int threads = srv.threads_no();
-			int procs = srv.procs_no();
-			if(procs == 0) procs=1;
-			factory.reset(new session_file_storage_factory(dir,threads*procs,procs,sharing));
+			if(!service_) {
+				if(!settings.get("session.server.shared",true)) {
+					throw cppcms_error("When using external session management with file storage "
+								"session.server.shared must be true");
+				}
+				factory.reset(new session_file_storage_factory(dir,booster::thread::hardware_concurrency()+1,2,true));
+			}
+			else {
+				bool sharing = settings.get("session.server.shared",true);
+				int threads = service_->threads_no();
+				int procs = service_->procs_no();
+				if(procs == 0) procs=1;
+				factory.reset(new session_file_storage_factory(dir,threads*procs,procs,sharing));
+			}
 			#endif
 		}
 		else if(stor == "memory") {
-			if(srv.procs_no() > 1)
+			if(!service_) {
+				throw cppcms_error("Can't use memory storage for external session management");
+			}
+			if(service_->procs_no() > 1)
 				throw cppcms_error("Can't use memory storage with more then 1 worker process");
 			factory.reset(new session_memory_storage_factory());
 		}
 		else if(stor == "external") {
-			std::string so = srv.settings().get<std::string>("session.server.shared_object","");
-			std::string module = srv.settings().get<std::string>("session.server.module","");
-			std::string entry_point = srv.settings().get<std::string>("session.server.entry_point","sessions_generator");
+			std::string so = settings.get<std::string>("session.server.shared_object","");
+			std::string module = settings.get<std::string>("session.server.module","");
+			std::string entry_point = settings.get<std::string>("session.server.entry_point","sessions_generator");
 			if(so.empty() && module.empty())
 				throw cppcms_error(	"sessions_pool: session.storage=external "
 							"and neither session.server.shared_object "
@@ -262,14 +278,14 @@ void session_pool::init()
 			}
 			cppcms_session_storage_generator_type f=0;
 			d->module.symbol(f,entry_point);
-			factory.reset(f(srv.settings().find("session.server.settings")));
+			factory.reset(f(settings.find("session.server.settings")));
 		}
 #ifndef CPPCMS_NO_TCP_CACHE
 		else if(stor == "network") {
 			typedef std::vector<std::string> ips_type;
 			typedef std::vector<int> ports_type;
-			ips_type ips = srv.settings().get<ips_type>("session.server.ips");
-			ports_type ports = srv.settings().get<ports_type>("session.server.ports");
+			ips_type ips = settings.get<ips_type>("session.server.ips");
+			ports_type ports = settings.get<ports_type>("session.server.ports");
 			if(ips.size() != ports.size())
 				throw cppcms_error(	"sessions_pool: session.server.ips and "
 							"session.server.ports are not of the same size");
@@ -292,7 +308,7 @@ void session_pool::init()
 		backend(f);
 	}
 	else if(location == "both") {
-		unsigned limit=srv.settings().get("session.client_size_limit",2048);
+		unsigned limit=settings.get("session.client_size_limit",2048);
 		std::auto_ptr<session_api_factory> f(new dual_factory(limit,this));
 		backend(f);
 	}
@@ -301,7 +317,8 @@ void session_pool::init()
 	else 
 		throw cppcms_error("Unknown location");
 
-	service_->after_fork(boost::bind(&session_pool::after_fork,this));
+	if(service_)
+		service_->after_fork(boost::bind(&session_pool::after_fork,this));
 }
 
 session_pool::session_pool(service &srv) :
@@ -310,6 +327,13 @@ session_pool::session_pool(service &srv) :
 {
 }
 
+session_pool::session_pool(cppcms::json::value const &v) :
+	d(new _data()),
+	service_(0)
+{
+	d->settings = v;
+	d->cached_settings.reset(new cppcms::impl::cached_settings(v));
+}
 void session_pool::after_fork()
 {
 	if(backend_.get() && backend_->requires_gc()) {
@@ -346,6 +370,11 @@ void session_pool::encryptor(std::auto_ptr<sessions::encryptor_factory> e)
 void session_pool::storage(std::auto_ptr<sessions::session_storage_factory> s)
 {
 	storage_=s;
+}
+
+cppcms::impl::cached_settings const &session_pool::cached_settings()
+{
+	return service_? service_->cached_settings() : *d->cached_settings;
 }
 
 } /// cppcms

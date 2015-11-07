@@ -127,6 +127,7 @@ namespace impl {
 		struct cached_session {
 			int timeout;
 			std::string expire;
+			bool disable_automatic_load;
 			struct cached_cookies {
 				std::string prefix;
 				std::string domain;
@@ -140,6 +141,7 @@ namespace impl {
 			{
 				timeout = v.get("session.timeout",24*3600);
 				expire = v.get("session.expire","browser");
+				disable_automatic_load = v.get("session.disable_automatic_load",false);
 				cookies.prefix = v.get("session.cookies.prefix","cppcms_session");
 				cookies.domain = v.get("session.cookies.domain","");
 				cookies.path = v.get("session.cookies.path","/");

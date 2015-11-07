@@ -17,11 +17,14 @@
 
 namespace cppcms {
 	class service;
-
+	namespace impl {
+		struct cached_settings;
+	}
 	namespace sessions {
 		class encryptor_factory;
 		class session_storage_factory;
-	};
+	}
+	namespace json { class value; }
 
 	///
 	/// \brief This class provides an access to session management backends an allow customization.
@@ -31,14 +34,31 @@ namespace cppcms {
 	///	
 	class CPPCMS_API session_pool: public booster::noncopyable {
 	public:
-		/// \cond INTERNAL
+		///
+		/// Constructor that is used together with CppCMS service
+		///
 		session_pool(service &srv);
+		///
+		/// Constructor that is used to create independent pool to access the session storage by external tools
+		///
+		session_pool(json::value const &v);
+
+		///
+		/// Destructor
+		///
 		~session_pool();
 
+		///
+		/// Initialize the pool - must be called before get() can be used
+		///
+		/// Note: it allows to install custom session_api, encryptor or storage functionality
+		/// 
 		void init();
 
+		///
+		/// Get an actual object that is used to store/retreive session data
+		///
 		booster::shared_ptr<session_api> get();
-		/// \endcond
 
 		///
 		/// Assign your own implementation of session_api passing pointer to session_api_factory.
@@ -56,6 +76,8 @@ namespace cppcms {
 		void storage(std::auto_ptr<sessions::session_storage_factory> s);
 	private:
 
+		impl::cached_settings const &cached_settings();
+
 		void after_fork();
 		
 		struct cookies_factory;
@@ -72,6 +94,7 @@ namespace cppcms {
 		friend struct cookies_factory;
 		friend struct dual_factory;
 		friend struct sid_factory;
+		friend class session_interface;
 		friend class gc_job;
 
 		booster::hold_ptr<_data> d;

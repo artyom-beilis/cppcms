@@ -28,11 +28,13 @@
 #include <sstream>
 #include "string.h"
 
-using namespace std;
-
 namespace cppcms {
 
-	struct session_interface::_data {};
+	struct session_interface::_data {
+		session_pool *pool;
+		session_interface_cookie_adapter *adapter;
+		_data() : pool(0), adapter(0) {}
+	};
 
 	struct session_interface::entry {
 		std::string value;
@@ -50,18 +52,12 @@ namespace cppcms {
 		}
 	};
 
-session_interface::session_interface(http::context &context) :
-	context_(&context),
-	loaded_(0),
-	reset_(0),
-	csrf_checked_(0),
-	csrf_do_validation_(0),
-	csrf_validation_(0)
+void session_interface::init()
 {
-	csrf_validation_ = context.service().cached_settings().security.csrf.enable;
-	csrf_do_validation_ = context.service().cached_settings().security.csrf.automatic;
-	timeout_val_def_=context.service().cached_settings().session.timeout;
-	string s_how=context.service().cached_settings().session.expire;
+	csrf_validation_ = cached_settings().security.csrf.enable;
+	csrf_do_validation_ = cached_settings().security.csrf.automatic;
+	timeout_val_def_=cached_settings().session.timeout;
+	std::string s_how=cached_settings().session.expire;
 	if(s_how=="fixed") {
 		how_def_=fixed;
 	}
@@ -74,7 +70,33 @@ session_interface::session_interface(http::context &context) :
 	else {
 		throw cppcms_error("Unsupported `session.expire' type `"+s_how+"'");
 	}
+}
 
+session_interface::session_interface(session_pool &pool,session_interface_cookie_adapter &adapter) :
+	context_(0),
+	loaded_(0),
+	reset_(0),
+	csrf_checked_(0),
+	csrf_do_validation_(0),
+	csrf_validation_(0),
+	d(new session_interface::_data())
+{
+	d->pool = &pool;
+	d->adapter = &adapter;
+	init();
+	storage_=d->pool->get();
+}
+
+session_interface::session_interface(http::context &context) :
+	context_(&context),
+	loaded_(0),
+	reset_(0),
+	csrf_checked_(0),
+	csrf_do_validation_(0),
+	csrf_validation_(0),
+	d(new session_interface::_data())
+{
+	init();
 	storage_=context_->service().session_pool().get();
 }
 
@@ -95,6 +117,8 @@ bool session_interface::validate_csrf_token(std::string const &token)
 
 void session_interface::validate_request_origin()
 {
+	if(!context_)
+		throw cppcms_error("request origin validation isn't possible without http::context");
 	if(csrf_checked_)
 		return;
 	csrf_checked_ = 1;
@@ -136,7 +160,7 @@ bool session_interface::load()
 	data_copy_.clear();
 	timeout_val_=timeout_val_def_;
 	how_=how_def_;
-	string ar;
+	std::string ar;
 	saved_=0;
 	on_server_=0;
 	if(!storage_->load(*this,ar,timeout_in_)) {
@@ -151,6 +175,12 @@ bool session_interface::load()
 	if(is_set("_s"))
 		on_server_=get<int>("_s");
 	return true;
+}
+bool session_interface::set_cookie_adapter_and_reload(session_interface_cookie_adapter &adapter)
+{
+	d->adapter = &adapter;
+	loaded_ = 0;
+	return load();
 }
 
 int session_interface::cookie_age()
@@ -219,9 +249,9 @@ void session_interface::load_data(data_type &data,std::string const &s)
 		packed p(begin,end);
 		begin +=sizeof(p);
 		if(end - begin >= int(p.key_size + p.data_size)) {
-			string key(begin,begin+p.key_size);
+			std::string key(begin,begin+p.key_size);
 			begin+=p.key_size;
-			string val(begin,begin+p.data_size);
+			std::string val(begin,begin+p.data_size);
 			begin+=p.data_size;
 			entry &ent=data[key];
 			ent.exposed = p.exposed;
@@ -281,10 +311,10 @@ void session_interface::save()
 	}
 
 
-	if(new_session_ && context_->service().cached_settings().security.csrf.enable)
+	if(new_session_ && cached_settings().security.csrf.enable)
 	{
 		set("_csrf",generate_csrf_token());
-		if(context_->service().cached_settings().security.csrf.exposed)
+		if(cached_settings().security.csrf.exposed)
 			expose("_csrf");
 	}
 
@@ -305,7 +335,7 @@ void session_interface::save()
 		force_update=true;
 	}
 
-	string ar;
+	std::string ar;
 	save_data(data_,ar);
 	
 	temp_cookie_.clear();
@@ -323,19 +353,19 @@ void session_interface::check()
 		throw cppcms_error("Session storage backend is not loaded\n");
 }
 
-string &session_interface::operator[](string const &key)
+std::string &session_interface::operator[](std::string const &key)
 {
 	check();
 	return data_[key].value;
 }
 
-void session_interface::erase(string const &key)
+void session_interface::erase(std::string const &key)
 {
 	check();
 	data_.erase(key);
 }
 
-bool session_interface::is_set(string const &key)
+bool session_interface::is_set(std::string const &key)
 {
 	check();
 	return data_.find(key)!=data_.end();
@@ -345,6 +375,18 @@ void session_interface::clear()
 {
 	check();
 	data_.clear();
+}
+
+std::set<std::string> session_interface::key_set()
+{
+	check();
+	std::set<std::string> r;
+	for(data_type::const_iterator p=data_.begin();p!=data_.end();++p) {
+		if(p->first.c_str()[0]=='_')
+			continue;
+		r.insert(p->first);
+	}
+	return r;
 }
 
 std::string session_interface::get(std::string const &key,std::string const &def)
@@ -383,22 +425,22 @@ bool session_interface::is_blocking()
 	return storage_ && storage_->is_blocking();
 }
 
-void session_interface::set_session_cookie(int64_t age,string const &data,string const &key)
+void session_interface::set_session_cookie(int64_t age,std::string const &data,std::string const &key)
 {
 	if(data.empty())
 		age=-1;
-	std::string cookie_name=context_->service().cached_settings().session.cookies.prefix;
+	std::string cookie_name=cached_settings().session.cookies.prefix;
 	if(!key.empty()) {
 		cookie_name+="_";
 		cookie_name+=key;
 	}
-	std::string const &domain = context_->service().cached_settings().session.cookies.domain;
-	std::string const &path   = context_->service().cached_settings().session.cookies.path;
-	int time_shift = context_->service().cached_settings().session.cookies.time_shift;
-	bool use_age = context_->service().cached_settings().session.cookies.use_age;
-	bool use_exp = context_->service().cached_settings().session.cookies.use_exp;
+	std::string const &domain = cached_settings().session.cookies.domain;
+	std::string const &path   = cached_settings().session.cookies.path;
+	int time_shift = cached_settings().session.cookies.time_shift;
+	bool use_age = cached_settings().session.cookies.use_age;
+	bool use_exp = cached_settings().session.cookies.use_exp;
 
-	bool secure = context_->service().cached_settings().session.cookies.secure;
+	bool secure = cached_settings().session.cookies.secure;
 
 	http::cookie the_cookie(cookie_name,util::urlencode(data),path,domain);
 
@@ -421,25 +463,38 @@ void session_interface::set_session_cookie(int64_t age,string const &data,string
 
 
 	the_cookie.secure(secure);
-
-	context_->response().set_cookie(the_cookie);
+	
+	if(d->adapter)
+		d->adapter->set_cookie(the_cookie);
+	else
+		context_->response().set_cookie(the_cookie);
 }
 
-void session_interface::set_session_cookie(string const &data)
+void session_interface::set_session_cookie(std::string const &data)
 {
 	check();
 	temp_cookie_=data;
 }
 
-string session_interface::get_session_cookie()
+std::string session_interface::session_cookie_name()
+{
+	return cached_settings().session.cookies.prefix;
+}
+
+std::string session_interface::get_session_cookie()
 {
 	check();
-	string name=context_->service().cached_settings().session.cookies.prefix;
-	http::request::cookies_type const &cookies = context_->request().cookies();
-	http::request::cookies_type::const_iterator p=cookies.find(name);
-	if(p==cookies.end())
-		return "";
-	return p->second.value();
+	std::string const &name=cached_settings().session.cookies.prefix;
+	if(d->adapter) {
+		return d->adapter->get_session_cookie(name);
+	}
+	else {
+		http::request::cookies_type const &cookies = context_->request().cookies();
+		http::request::cookies_type::const_iterator p=cookies.find(name);
+		if(p==cookies.end())
+			return std::string();
+		return p->second.value();
+	}
 }
 	
 bool session_interface::is_exposed(std::string const &key)
@@ -450,12 +505,12 @@ bool session_interface::is_exposed(std::string const &key)
 	return false;
 }
 
-void session_interface::expose(string const &key,bool exp)
+void session_interface::expose(std::string const &key,bool exp)
 {
 	data_[key].exposed=exp;
 }
 
-void session_interface::hide(string const &key)
+void session_interface::hide(std::string const &key)
 {
 	check();
 	expose(key,false);
@@ -525,7 +580,19 @@ std::string session_interface::get_csrf_token()
 
 std::string session_interface::get_csrf_token_cookie_name()
 {
-	return context_->service().cached_settings().session.cookies.prefix + "__csrf"; // one for suffix and one for _csrf
+	return cached_settings().session.cookies.prefix + "__csrf"; // one for suffix and one for _csrf
+}
+
+impl::cached_settings const &session_interface::cached_settings()
+{
+	if(context_)
+		return context_->service().cached_settings();
+	else
+		return d->pool->cached_settings();
+}
+
+session_interface_cookie_adapter::~session_interface_cookie_adapter()
+{
 }
 
 

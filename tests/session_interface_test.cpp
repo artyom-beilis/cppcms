@@ -11,6 +11,7 @@
 #include <cppcms/http_request.h>
 #include <cppcms/http_response.h>
 #include <cppcms/http_context.h>
+#include <cppcms/http_cookie.h>
 #include <cppcms/session_interface.h>
 #include <cppcms/serialization.h>
 #include <cppcms/json.h>
@@ -25,6 +26,37 @@ struct mydata : public cppcms::serializable {
 	{
 		a & x & y;
 	}
+};
+
+void test_set(cppcms::session_interface &interface,std::string const &values)
+{
+	std::set<std::string> keys = interface.key_set();
+	std::string res;
+	for(std::set<std::string>::const_iterator p=keys.begin();p!=keys.end();++p) {
+		if(res.empty())
+			res = *p;
+		else
+			res += "|" + *p;
+	}
+	if(res!=values)
+		throw std::runtime_error("Key set is invalid:(" + res +")!=(" + values +")");
+}
+
+class adapter : public cppcms::session_interface_cookie_adapter {
+public:
+	
+	void set_cookie(cppcms::http::cookie const &updated_cookie)
+	{
+		if(updated_cookie.name() == ctx_->session().session_cookie_name()) {
+			ctx_->response().out() << updated_cookie.value();
+		}
+	}
+	std::string get_session_cookie(std::string const &/*name*/)
+	{
+		return ctx_->request().get("sid");
+	}
+private:
+	cppcms::http::context *ctx_;
 };
 
 class unit_test : public cppcms::application {
@@ -104,7 +136,9 @@ public:
 		else if(u=="/api") {
 			try {
 				// Fix Me Later
+				test_set(session(),"");
 				session().set("x","10");
+				test_set(session(),"x");
 				TEST(session().get<std::string>("x")=="10");
 				TEST(session().get<int>("x")==10);
 				TEST(session().get<double>("x")==10.0);
@@ -112,6 +146,7 @@ public:
 				TEST(session().get("x","default")=="10");
 				TEST(session()["x"]=="10");
 				TEST(session()["z"]=="");
+				test_set(session(),"x|z");
 				session()["z"]="test";
 				TEST(session()["z"]=="test");
 
@@ -120,6 +155,7 @@ public:
 				a.y=20;
 				session().store_data("tmp",a);
 				session().fetch_data("tmp",b);
+				test_set(session(),"tmp|x|z");
 				TEST(b.x==10);
 				TEST(b.y==20);
 

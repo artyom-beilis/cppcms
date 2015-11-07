@@ -127,7 +127,7 @@ void context::complete_response()
 void context::dispatch(booster::intrusive_ptr<application> app,std::string url,bool syncronous)
 {
 	try {
-		if(syncronous)
+		if(syncronous && !app->context().service().cached_settings().session.disable_automatic_load)
 			app->context().session().load();
 		app->main(url);
 	}

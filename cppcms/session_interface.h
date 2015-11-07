@@ -17,18 +17,24 @@
 #include <cppcms/serialization_classes.h>
 #include <string>
 #include <map>
+#include <set>
 #include <memory>
 #include <sstream>
 #include <typeinfo>
 
 namespace cppcms {
+namespace impl {
+	struct cached_settings;
+}
 namespace http {
 	class context;
 	class request;
 	class response;
+	class cookie;
 }
 
 class session_api;
+class session_pool;
 
 ///
 /// \brief This exception is thrown when CSRF attempt is suspected:
@@ -40,6 +46,34 @@ public:
 		cppcms_error("Cross site request forgery detected")
 	{
 	}
+};
+
+
+///
+/// API to handle session cookies.
+///
+/// This API allows two things:
+///
+/// (a) Integration with 3rd part web technologies to access CppCMS session, i.e. using CppCMS session
+///     from PHP or Java Servlets
+///
+/// (b) An API that allows to translate cookies session tracking system to a different 
+///     method when cookies do not suite the design - for example for internal RPC 
+///     systems, etc. Note incorrect use of non-cookies medium may expose you
+///     to security issues 
+///
+class CPPCMS_API session_interface_cookie_adapter : public booster::noncopyable {
+public:
+	virtual ~session_interface_cookie_adapter();
+	///
+	/// Set a new cookie value
+	///
+	virtual void set_cookie(http::cookie const &updated_cookie) = 0;
+	///
+	/// Get value of the cookie, it is guaranteed that \a name is 
+	/// what session_interface::session_cookie_name() returns
+	/// 
+	virtual std::string get_session_cookie(std::string const &name) = 0;
 };
 
 ///
@@ -69,11 +103,22 @@ public:
 class CPPCMS_API session_interface : private booster::noncopyable {
 public:
 
-	/// \cond INTERNAL
+	///
+	/// Create cppcms::service independent session interface to be used
+	/// for implementing interoperability with non-cppcms based web platforms
+	///
+	session_interface(session_pool &pool,session_interface_cookie_adapter &adapter);
+	
+	///
+	/// Creates session interface for the context - never should be used by users
+	/// directly
+	///
 	session_interface(http::context &);
-	~session_interface();
-	/// \endcond
 
+	///
+	/// destructor...
+	///
+	~session_interface();
 	///
 	/// Check if a \a key is set (assigned some value to it) in the session 
 	///
@@ -268,6 +313,14 @@ public:
 	bool load();
 
 	///
+	/// Set alternative cookies interface and load session data, returns same value as load, note
+	/// if any data was loaded from cookies it would be discarded
+	///
+	/// It can be used for use of an alternative session state medium
+	///
+	bool set_cookie_adapter_and_reload(session_interface_cookie_adapter &adapter);
+	
+	///
 	/// Save the session data, generally should not be called as it is saved automatically. However when
 	/// writing asynchronous application and using custom slow storage devices like SQL it may be useful to control
 	/// when and how save() is called.
@@ -335,11 +388,22 @@ public:
 	///
 	std::string get_csrf_token_cookie_name();
 
+	///
+	/// Get the session cookie name
+	///
+	std::string session_cookie_name();
+
+	///
+	/// Retrun a set of keys that are defined for a current session;
+	///
+	std::set<std::string> key_set();
 private:
 	friend class http::response;
 	friend class http::request;
 
+	void init();
 
+	impl::cached_settings const &cached_settings();
 
 	struct entry;
 
