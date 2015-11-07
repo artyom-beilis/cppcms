@@ -83,9 +83,28 @@ public:
 	///
 	void expires(time_t when);
 	///
+	/// Returns expires timestamp for the cookie, if not set returns 0
+	///
+	time_t expires() const;
+
+	/// 
+	/// returns true if expires(time_t when) was called and expiration was set,
+	/// if browser_age() is called it is reset to false
+	///
+	bool expires_defined() const;
+	///
 	/// Set max cookie's age
 	///
-	void max_age(unsigned a);
+	void max_age(unsigned age);
+	///
+	/// Get max cookie's age, returns 0 if not set
+	///
+	unsigned max_age() const;
+	/// 
+	/// returns true if max(unsigned age) was called and max_age was set,
+	/// if browser_age() is called it is reset to false
+	///
+	bool max_age_defined() const;
 	///
 	/// Set age according to browser's session (i.e. no Max-Age)
 	///

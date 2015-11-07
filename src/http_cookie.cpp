@@ -41,11 +41,35 @@ void cookie::expires(time_t when)
 	has_expiration_=1;
 	d->expires = when;
 }
+
+time_t cookie::expires() const
+{
+	if(has_expiration_)
+		return d->expires;
+	return 0;
+}
+bool cookie::expires_defined() const
+{
+	return has_expiration_ == 1;
+}
+
+
 void cookie::max_age(unsigned age)
 { 
 	has_age_=1;
 	max_age_=age;
 }
+bool cookie::max_age_defined() const
+{
+	return has_age_ == 1;
+}
+unsigned cookie::max_age() const
+{
+	if(has_age_)
+		return max_age_;
+	return 0;
+}
+
 void cookie::browser_age()
 {
 	has_age_=0;
