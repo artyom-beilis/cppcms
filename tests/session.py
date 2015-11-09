@@ -4,66 +4,55 @@
 
 from ctypes import *
 import sys
+import types
 
 capi=cdll.LoadLibrary(sys.argv[1]);
-capi.cppcms_capi_session_pool_new.restype=c_void_p
 
-capi.cppcms_capi_session_pool_delete.argtypes = [ c_void_p ]
 
-capi.cppcms_capi_session_pool_strerror.restype =c_char_p
-capi.cppcms_capi_session_pool_strerror.argtypes = [ c_void_p ]
-
-capi.cppcms_capi_session_pool_init.restype=c_int
-capi.cppcms_capi_session_pool_init.argtype= [ c_void_p ,c_char_p ]
-
-capi.cppcms_capi_session_new.restype = c_void_p
-capi.cppcms_capi_session_delete.argtypes = [ c_void_p ]
-capi.cppcms_capi_session_init.argtypes = [ c_void_p,c_void_p ]
-capi.cppcms_capi_session_strerror.restype =c_char_p
-capi.cppcms_capi_session_strerror.argtypes = [ c_void_p ]
-capi.cppcms_capi_session_get_session_cookie_name.restype = c_char_p
-capi.cppcms_capi_session_get_session_cookie_name.argtypes = [ c_void_p ]
-
+class MManip:
+    def __init__(self,c,cname):
+        self.Class = c;
+        self.cname = cname;
+    def add_method(self,name,result,params,check_error=True):
+        real_method = getattr(capi,self.cname + "_" + name);
+        real_method.restype = result
+        real_method.argstypes = params
+        if name == 'new':
+            def wrap(self):
+                self.d=real_method()
+            setattr(self.Class,name,classmethod(wrap))
+        else:
+            def wrap(self,*args):
+                r=real_method(self.d,*args)
+                if check_error:
+                    if(self.got_error()):
+                        raise RuntimeError(self.strerror())
+                return r
+            setattr(self.Class,name,classmethod(wrap))
 
 class SessionPool:
-    def __init__(self,path) :
-        self.d = capi.cppcms_capi_session_pool_new();
-        if capi.cppcms_capi_session_pool_init(self.d,path) != 0:
-            err = capi.cppcms_capi_session_pool_strerror(self.d);
-            capi.cppcms_capi_session_pool_delete(self.d);
-            self.d=None
-            raise RuntimeError(err)
+    def __init__(self):
+        self.new()
     def __del__(self):
-        capi.cppcms_capi_session_pool_delete(self.d)
+        self.delete()
+    @staticmethod
+    def setup():
+        m=MManip(SessionPool,"cppcms_capi_session_pool")
+        m.add_method('new',c_void_p,[],False)
+        m.add_method('delete',None,[c_void_p],False)
+        m.add_method('strerror',c_char_p,[c_void_p],False)
+        m.add_method('got_error',c_int,[c_void_p],False)
+        m.add_method('clear_error',None,[c_void_p],False)
+        m.add_method('init',c_int,[c_char_p])
+        m.add_method('init_from_json',c_int,[c_char_p])
 
-class SessionInterface:
-    def __init__(self,pool):
-        self.d = capi.cppcms_capi_session_new()
-        if capi.cppcms_capi_session_init(self.d,pool.d)!=0:
-            err = capi.cppcms_capi_session_strerror(self.d)
-            capi.cppcms_capi_session_delete(self.d)
-            self.d=None
-            raise RuntimeError(err)
-    def get_session_cookie_name(self):
-        return capi.cppcms_capi_session_get_session_cookie_name(self.d)
-    def set(self,key,value):
-        capi.cppcms_capi_session_set(self.d,key,value)
-    def get(self,key):
-        return capi.cppcms_capi_session_get(self.d,key)
-    def load(self,cookie):
-        capi.cppcms_capi_session_load(self.d,cookie)
-    def save(self):
-        capi.cppcms_capi_session_save(self.d)
-    def __del__(self):
-        capi.cppcms_capi_session_delete(self.d)
+SessionPool.setup()
+
 
 def x():
-    pass
-    #p=SessionPool(sys.argv[2])
+    p=SessionPool()
+    p.init(sys.argv[2])
+
 x()
-print "A"
-capi = None
-sys.exit(0)
-print "B"
 
 
