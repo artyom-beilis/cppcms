@@ -18,8 +18,12 @@
 #include <booster/hold_ptr.h>
 #include <booster/nowide/fstream.h>
 #include <stdio.h>
+#include <typeinfo>
+
+
 
 namespace {
+
 	template<typename C>
 	void handle(C *ptr)
 	{
@@ -98,11 +102,12 @@ struct cppcms_capi_session {
 	std::string returned_value;
 
 	struct cookie_adapter : public cppcms::session_interface_cookie_adapter {
-		std::list<cppcms::http::cookie> cookies;
-		std::list<cppcms::http::cookie>::const_iterator cookies_ptr;
+		std::map<std::string,cppcms::http::cookie> cookies;
+		std::map<std::string,cppcms::http::cookie>::const_iterator cookies_ptr;
+
 		std::string value;
 		virtual void set_cookie(cppcms::http::cookie const &updated_cookie) {
-			cookies.push_back(updated_cookie);
+			cookies[updated_cookie.name()]=updated_cookie;
 		}
 		virtual std::string get_session_cookie(std::string const &) {
 			return value;
@@ -487,7 +492,8 @@ cppcms_capi_cookie *cppcms_capi_session_cookie_first(cppcms_capi_session *sessio
 		session->adapter.cookies_ptr=session->adapter.cookies.begin();
 		if(session->adapter.cookies_ptr == session->adapter.cookies.end())
 			return 0;
-		cppcms_capi_cookie *r=new cppcms_capi_cookie(*session->adapter.cookies_ptr++);
+		cppcms_capi_cookie *r=new cppcms_capi_cookie(session->adapter.cookies_ptr->second);
+		++session->adapter.cookies_ptr;
 		return r;
 	}
 	CATCH(session,0,0);
@@ -499,13 +505,14 @@ cppcms_capi_cookie *cppcms_capi_session_cookie_next(cppcms_capi_session *session
 		session->check_saved();
 		if(session->adapter.cookies_ptr == session->adapter.cookies.end())
 			return 0;
-		cppcms_capi_cookie *r=new cppcms_capi_cookie(*session->adapter.cookies_ptr++);
+		cppcms_capi_cookie *r=new cppcms_capi_cookie(session->adapter.cookies_ptr->second);
+		++session->adapter.cookies_ptr;
 		return r;
 	}
 	CATCH(session,0,0);
 }
 
-void cppcms_capi_cookie_delete(cppcms_capi_cookie *cookie) { delete cookie; }
+void cppcms_capi_cookie_delete(cppcms_capi_cookie *cookie) { if(cookie) delete cookie; }
 
 char const *cppcms_capi_cookie_header(cppcms_capi_cookie const *cookie) { return cookie->header.c_str(); }
 char const *cppcms_capi_cookie_header_content(cppcms_capi_cookie const *cookie) { return cookie->header_content.c_str(); }
@@ -521,6 +528,6 @@ unsigned cppcms_capi_cookie_max_age(cppcms_capi_cookie const *cookie) { return c
 int cppcms_capi_cookie_expires_defined(cppcms_capi_cookie const *cookie) { return cookie->has_expires; }
 long long cppcms_capi_cookie_expires(cppcms_capi_cookie const *cookie) { return cookie->expires; }
 
-int cppcms_capi_cookie_expires_is_secure(cppcms_capi_cookie const *cookie) { return cookie->secure; }
+int cppcms_capi_cookie_is_secure(cppcms_capi_cookie const *cookie) { return cookie->secure; }
 
 } // extern "C"

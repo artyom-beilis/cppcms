@@ -77,7 +77,6 @@ CPPCMS_API int cppcms_capi_session_save(cppcms_capi_session *session);
 
 CPPCMS_API cppcms_capi_cookie *cppcms_capi_session_cookie_first(cppcms_capi_session *session);
 CPPCMS_API cppcms_capi_cookie *cppcms_capi_session_cookie_next(cppcms_capi_session *session);
-CPPCMS_API cppcms_capi_cookie *cppcms_capi_session_cookie_next(cppcms_capi_session *session);
 
 CPPCMS_API void cppcms_capi_cookie_delete(cppcms_capi_cookie *cookie);
 
@@ -95,7 +94,7 @@ CPPCMS_API unsigned cppcms_capi_cookie_max_age(cppcms_capi_cookie const *cookie)
 CPPCMS_API int cppcms_capi_cookie_expires_defined(cppcms_capi_cookie const *cookie);
 CPPCMS_API long long cppcms_capi_cookie_expires(cppcms_capi_cookie const *cookie);
 
-CPPCMS_API int cppcms_capi_cookie_expires_is_secure(cppcms_capi_cookie const *cookie);
+CPPCMS_API int cppcms_capi_cookie_is_secure(cppcms_capi_cookie const *cookie);
 
 
 #ifdef __cplusplus
