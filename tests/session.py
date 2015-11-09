@@ -24,19 +24,16 @@ class MManip:
             def wrap(self):
                 self.d=real_method()
                 #print 'Calling %s.%s() -> %s' % (cname,name,self.d)
-            setattr(self.Class,mname,classmethod(wrap))
+            setattr(self.Class,mname,wrap)
         else:
             def wrap(self,*args):
                 r=real_method(self.d,*args)
+                #print 'Calling %s->%s.%s(%s) -> %s' % (self.d,cname,name,list(args),r)
                 if check_error:
                     if(self.got_error()):
                         raise RuntimeError(self.strerror())
-                if name == 'delete':
-                    self.d = None
-                #print 'Called %s->%s.%s(%s) -> %s' % (self.d,cname,name,list(args),r)
-
                 return r
-            setattr(self.Class,mname,classmethod(wrap))
+            setattr(self.Class,mname,wrap)
 
 class SessionPool:
     def __init__(self):
@@ -58,12 +55,15 @@ SessionPool.setup()
 
 class Cookie:
     def __init__(self,ptr):
-        self.init(ptr)
+        self.d=ptr
     def __del__(self):
         self.impl_delete()
-        pass
     def __str__(self):
-        return self.header()
+        r=self.header()
+        if r:
+            return r
+        else:
+            return "deleted cookie"
     @staticmethod
     def setup():
         m=MManip(Cookie,"cppcms_capi_cookie")
@@ -79,9 +79,6 @@ class Cookie:
         m.add_method('expires',c_longlong,[c_void_p],False)
         m.add_method('expires_defined',c_int,[c_void_p],False)
         m.add_method('is_secure',c_int,[c_void_p],False)
-        def init(self,d):
-            self.d = d
-        setattr(Cookie,'init',classmethod(init))
 
 Cookie.setup()
 
