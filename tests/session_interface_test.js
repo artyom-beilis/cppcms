@@ -9,7 +9,6 @@
 	"session" : {
 		"timeout" : 5, 
 		"client_size_limit" : 256,
-		"location" : "client",
 		"cookies" : {
 			"prefix" : "sc",
 			"domain" : "foo.bar",
