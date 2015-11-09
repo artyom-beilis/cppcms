@@ -700,6 +700,9 @@ foreach(TEST ${ALL_TESTS})
 	target_link_libraries(${TEST} ${CPPCMS_LIB})
 endforeach()
 
+add_executable(external_session_test tests/external_session_test.c)
+target_link_libraries(external_session_test ${CPPCMS_LIB})
+set(ALL_TESTS ${ALL_TESTS} external_session_test)
 
 #####################################
 # End of tests
@@ -918,6 +921,7 @@ if(NOT IS_WINDOWS)
 endif()
 
 
+add_test(external_session_test external_session_test "${CNF}/external_session_test.js")
 foreach(LOC client server both)
 	foreach(EXP renew browser fixed)
 		add_test(session_interface_test_${LOC}_${EXP}
