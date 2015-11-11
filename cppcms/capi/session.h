@@ -17,15 +17,24 @@ extern "C" {
 #define CPPCMS_CAPI_SESSION_RENEW	1
 #define CPPCMS_CAPI_SESSION_BROWSER	2
 
+#define CPPCMS_CAPI_ERROR_OK		0
+#define CPPCMS_CAPI_ERROR_GENERAL	1
+#define CPPCMS_CAPI_ERROR_RUNTIME	2
+#define CPPCMS_CAPI_ERROR_INVALID_ARGUMENT	4
+#define CPPCMS_CAPI_ERROR_LOGIC		5
+#define CPPCMS_CAPI_ERROR_ALLOC		6
+
+typedef void *cppcms_capi_object;
 typedef struct cppcms_capi_session_pool cppcms_capi_session_pool;
 typedef struct cppcms_capi_session cppcms_capi_session;
 typedef struct cppcms_capi_cookie cppcms_capi_cookie;
 
+CPPCMS_API int cppcms_capi_error(cppcms_capi_object obj);
+CPPCMS_API char const *cppcms_capi_error_message(cppcms_capi_object obj);
+CPPCMS_API char const *cppcms_capi_error_clear(cppcms_capi_object obj);
+
 CPPCMS_API cppcms_capi_session_pool *cppcms_capi_session_pool_new();
 CPPCMS_API void cppcms_capi_session_pool_delete(cppcms_capi_session_pool *pool);
-CPPCMS_API char const *cppcms_capi_session_pool_strerror(cppcms_capi_session_pool *pool);
-CPPCMS_API int cppcms_capi_session_pool_got_error(cppcms_capi_session_pool *pool);
-CPPCMS_API void cppcms_capi_session_pool_clear_error(cppcms_capi_session_pool *pool);
 
 CPPCMS_API int cppcms_capi_session_pool_init(cppcms_capi_session_pool *pool,char const *config_file);
 CPPCMS_API int cppcms_capi_session_pool_init_from_json(cppcms_capi_session_pool *pool,char const *json);
@@ -33,9 +42,6 @@ CPPCMS_API int cppcms_capi_session_pool_init_from_json(cppcms_capi_session_pool 
 
 CPPCMS_API cppcms_capi_session *cppcms_capi_session_new();
 CPPCMS_API void cppcms_capi_session_delete(cppcms_capi_session *session);
-CPPCMS_API char const *cppcms_capi_session_strerror(cppcms_capi_session *session);
-CPPCMS_API int cppcms_capi_session_got_error(cppcms_capi_session *pool);
-CPPCMS_API void cppcms_capi_session_clear_error(cppcms_capi_session *pool);
 
 
 CPPCMS_API int cppcms_capi_session_init(cppcms_capi_session *session,cppcms_capi_session_pool *pool);
@@ -54,9 +60,16 @@ CPPCMS_API char const *cppcms_capi_session_get_next_key(cppcms_capi_session *ses
 CPPCMS_API char const *cppcms_capi_session_get_csrf_token(cppcms_capi_session *session);
 
 
-CPPCMS_API int cppcms_capi_session_set(cppcms_capi_session *session,char const *key,char const *value,int value_len);
+CPPCMS_API int cppcms_capi_session_set(cppcms_capi_session *session,char const *key,char const *value);
 CPPCMS_API char const *cppcms_capi_session_get(cppcms_capi_session *session,char const *key);
-CPPCMS_API int cppcms_capi_session_get_len(cppcms_capi_session *session,char const *key);
+
+CPPCMS_API int cppcms_capi_session_set_binary_as_hex(cppcms_capi_session *session,char const *key,char const *value);
+CPPCMS_API char const *cppcms_capi_session_get_binary_as_hex(cppcms_capi_session *session,char const *key);
+
+CPPCMS_API int cppcms_capi_session_set_binary(cppcms_capi_session *session,char const *key,void const *value,int length);
+CPPCMS_API int cppcms_capi_session_get_binary(cppcms_capi_session *session,char const *key,void *buf,int buffer_size);
+CPPCMS_API int cppcms_capi_session_get_binary_len(cppcms_capi_session *session,char const *key);
+
 
 CPPCMS_API int cppcms_capi_session_reset_session(cppcms_capi_session *session);
 

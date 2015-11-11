@@ -4,7 +4,7 @@
 #include <string.h>
 
 #define TEST(x) do { if(!(x)) { printf("Error %s in %d\n",#x,__LINE__); exit(1); }} while(0)
-#define CHECK(p) do{ if(cppcms_capi_##p##_got_error(p)!=0) { printf("Failed %s in %d\n",cppcms_capi_##p##_strerror(p),__LINE__); exit(1); }} while(0)
+#define CHECK(p) do{ if(cppcms_capi_error(p)!=0) { printf("Failed %s in %d\n",cppcms_capi_error_message(p),__LINE__); exit(1); }} while(0)
 
 int main(int argc,char **argv)
 {
@@ -13,6 +13,11 @@ int main(int argc,char **argv)
 	cppcms_capi_session *session = 0;
 	char *state=strdup("");
 	int n=0;
+
+	if(argc!=2) {
+		fprintf(stderr,"usage external_session_test config.js\n");
+		return 1;
+	}
 
 	printf("Create session\n");
 	session_pool=cppcms_capi_session_pool_new();
@@ -27,8 +32,8 @@ int main(int argc,char **argv)
 
 	cppcms_capi_session_load(session,state);
 	CHECK(session);
-	cppcms_capi_session_set(session,"x","test",-1);
-	cppcms_capi_session_set(session,"yyy","111",-1);
+	cppcms_capi_session_set(session,"x","test");
+	cppcms_capi_session_set(session,"yyy","111");
 	cppcms_capi_session_set_exposed(session,"x",1);
 	printf("Check keys first time\n");
 	TEST(strcmp(cppcms_capi_session_get_first_key(session),"x")==0);
@@ -77,7 +82,8 @@ int main(int argc,char **argv)
 	TEST(cppcms_capi_session_is_set(session,"zz")==0);
 	TEST(strcmp(cppcms_capi_session_get(session,"x"),"test")==0);
 	TEST(strcmp(cppcms_capi_session_get(session,"yyy"),"111")==0);
-	TEST(cppcms_capi_session_set(session,"yyy","\0\0\0\1",4)==0);
+	TEST(cppcms_capi_session_set_binary(session,"yyy","\0\xFA\0\1",4)==0);
+	TEST(strcmp(cppcms_capi_session_get_binary_as_hex(session,"yyy"),"00fa0001")==0);
 
 
 	cppcms_capi_session_set_exposed(session,"x",0);
@@ -117,8 +123,14 @@ int main(int argc,char **argv)
 	TEST(cppcms_capi_session_is_set(session,"yyy"));
 	TEST(cppcms_capi_session_is_set(session,"zz")==0);
 	TEST(strcmp(cppcms_capi_session_get(session,"x"),"test")==0);
-	TEST(memcmp(cppcms_capi_session_get(session,"yyy"),"\0\0\0\1",4)==0);
-	TEST(cppcms_capi_session_get_len(session,"yyy")==4);
+	TEST(memcmp(cppcms_capi_session_get(session,"yyy"),"\0\xfa\0\1",4)==0);
+	char buf[5]={1,2,3,4,5};
+	TEST(cppcms_capi_session_get_binary_len(session,"yyy")==4);
+	TEST(cppcms_capi_session_get_binary(session,"yyy",buf,sizeof(buf))==4);
+	TEST(memcmp(buf,"\0\xFA\0\1\5",5)==0);
+	TEST(cppcms_capi_session_set_binary_as_hex(session,"yyy","DEADbeef")==0);
+	TEST(cppcms_capi_session_get_binary(session,"yyy",buf,4)==4);
+	TEST(memcmp(buf,"\xde\xad\xbe\xef\5",5)==0);
 
 
 	cppcms_capi_session_clear(session);
@@ -139,6 +151,16 @@ int main(int argc,char **argv)
 	}
 	TEST(n==1);
 	
+	TEST(cppcms_capi_session_get(session,NULL)==0);
+	TEST(cppcms_capi_error(session)==CPPCMS_CAPI_ERROR_INVALID_ARGUMENT);
+	TEST(strstr(cppcms_capi_error_message(session),"null")!=0);
+	TEST(strstr(cppcms_capi_error_clear(session),"null")!=0);
+	TEST(strcmp(cppcms_capi_error_message(session),"ok")==0);
+	TEST(cppcms_capi_error(session)==CPPCMS_CAPI_ERROR_OK);
+	TEST(cppcms_capi_session_save(session)==-1);
+	TEST(cppcms_capi_error(session)==CPPCMS_CAPI_ERROR_LOGIC);
+
+
 	cppcms_capi_session_delete(session);
 	printf("New state=[%s]\n",state);
 

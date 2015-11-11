@@ -112,6 +112,7 @@ if(CMAKE_COMPILER_IS_GNUCXX)
 		GCC_IS_GCC4)
 
 	set(CXX_FLAGS "-Wall -Wextra")
+	set(C_FLAGS "-Wall -Wextra")
 
 	if(CMAKE_SYSTEM_NAME STREQUAL "SunOS")
 		set(CXX_FLAGS "${CXX_FLAGS} -pthreads")
@@ -145,8 +146,10 @@ elseif(CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
 
 elseif(CMAKE_CXX_COMPILER_ID STREQUAL "Intel")
 	set(CXX_FLAGS "-Wall")
+	set(C_FLAGS "-Wall")
 elseif(MSVC)
 	set(CXX_FLAGS "/EHsc /W3")
+	set(C_FLAGS "/W3")
 elseif(CMAKE_CXX_COMPILER_ID STREQUAL "SunPro")
 	#
 	# We use STL port under Sun Studio, standard library is broken
@@ -160,6 +163,7 @@ elseif(CMAKE_CXX_COMPILER_ID STREQUAL "SunPro")
 endif()
 
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${CXX_FLAGS}")
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${C_FLAGS}")
 
 #############################################################################
 #

@@ -20,82 +20,56 @@
 #include <stdio.h>
 #include <typeinfo>
 
-
-
-namespace {
-
-	template<typename C>
-	void handle(C *ptr)
-	{
-		if(!ptr)
-			return;
-		try {
-			try {
-				throw;
-			}
-			catch(std::exception const &e) {
-				ptr->strerror = e.what();
-				ptr->error=true;
-			}
-			catch(...) {
-				ptr->strerror = "Unknown exception";
-				ptr->error=true;
-			}
-
-		}
-		catch(...) { ptr->error = true; } 
-	}
-	void check_str(char const *str) 
-	{
-		if(!str)
-			throw std::runtime_error("String is null");
-	}
-} // namespace
-
-
 extern "C" {
+
+struct cppcms_capi_exception {
+	int code;
+	char const *msg;
+	std::string s_msg;
+	char c_msg[64];
+	cppcms_capi_exception() : code(0), msg("ok")
+	{
+		memset(c_msg,0,sizeof(c_msg));
+	}
+};
+
 
 
 struct cppcms_capi_session_pool {
-	cppcms_capi_session_pool() : error(false) {}
-	std::string strerror;
-	bool error;
+	cppcms_capi_exception e;
 	booster::hold_ptr<cppcms::session_pool> p;
+
 };
 
-#define TRY try
-#define CATCH(x,ok,error) catch(...) { handle(x); return error; } return ok
-
 struct cppcms_capi_session {
+	cppcms_capi_exception e;
 	
 	void check() { 
 		if(!p.get())
-			throw std::runtime_error("Session is not initialized");
+			throw std::logic_error("Session is not initialized");
 	}
 	void check_loaded()
 	{
 		check();
 		if(!loaded)
-			throw std::runtime_error("Session is not loaded");
+			throw std::logic_error("Session is not loaded");
 	}
 	void check_loaded_unsaved()
 	{
 		check();
 		if(!loaded)
-			throw std::runtime_error("Session is not loaded");
+			throw std::logic_error("Session is not loaded");
 		if(saved)
-			throw std::runtime_error("Session is already saved - no changes allowed");
+			throw std::logic_error("Session is already saved - no changes allowed");
 	}
 	void check_saved()
 	{
 		if(!saved)
-			throw std::runtime_error("Session is not saved");
+			throw std::logic_error("Session is not saved");
 	}
 	bool loaded;
 	bool saved;
 
-	std::string strerror;
-	bool error;
 	booster::hold_ptr<cppcms::session_interface> p;
 	std::set<std::string> key_set;
 	std::set<std::string>::const_iterator key_set_ptr;
@@ -115,7 +89,7 @@ struct cppcms_capi_session {
 	} adapter;
 
 
-	cppcms_capi_session() : error(false) {
+	cppcms_capi_session() {
 		key_set_ptr = key_set.begin();
 		loaded = false;
 		saved = false;
@@ -123,6 +97,7 @@ struct cppcms_capi_session {
 };
 
 struct cppcms_capi_cookie {
+	cppcms_capi_exception e;
 	std::string name;
 	std::string value;
 	std::string path;
@@ -156,6 +131,121 @@ struct cppcms_capi_cookie {
 };
 
 
+
+
+
+} // extern C
+
+
+namespace {
+
+	void seterror(cppcms_capi_exception &c,int code,std::exception const &e) 
+	{
+		if(c.code)
+			return;
+		c.code = code;
+		try {
+			c.s_msg = e.what();
+			c.msg = c.s_msg.c_str();
+		}
+		catch(...) {
+			strncpy(c.c_msg,e.what(),sizeof(c.c_msg)-1);
+			c.msg = c.c_msg;
+		}
+	}
+	void seterror(cppcms_capi_exception &c,int code,char const *msg) 
+	{
+		if(c.code)
+			return;
+		c.code = code;
+		c.msg=msg;
+	}
+
+	template<typename C>
+	void handle(C *ptr)
+	{
+		if(!ptr)
+			return;
+		try {
+			try {
+				throw;
+			}
+			catch(std::runtime_error const &e) {
+				seterror(ptr->e,CPPCMS_CAPI_ERROR_RUNTIME,e);
+			}
+			catch(std::invalid_argument const &e) {
+				seterror(ptr->e,CPPCMS_CAPI_ERROR_INVALID_ARGUMENT,e);
+			}
+			catch(std::logic_error const &e) {
+				seterror(ptr->e,CPPCMS_CAPI_ERROR_LOGIC,e);
+			}
+			catch(std::bad_alloc const &e) {
+				seterror(ptr->e,CPPCMS_CAPI_ERROR_ALLOC,"memory allocation error");
+			}
+			catch(std::exception const &e) {
+				seterror(ptr->e,CPPCMS_CAPI_ERROR_GENERAL,e);
+			}
+			catch(...) {
+				seterror(ptr->e,CPPCMS_CAPI_ERROR_GENERAL,"unknown error");
+			}
+
+		}
+		catch(...) { 
+			seterror(ptr->e,CPPCMS_CAPI_ERROR_GENERAL,"unknown error");
+		} 
+	}
+	void check_str(char const *str) 
+	{
+		if(!str)
+			throw std::invalid_argument("String is null");
+	}
+	unsigned char hex_to_digit(char c) 
+	{
+		if('0' <= c && c<='9')
+			return c - '0';
+		if('a' <= c && c<= 'f')
+			return c - 'a' + 10;
+		if('A' <= c && c<= 'F')
+			return c - 'A' + 10;
+		throw std::invalid_argument("Non hexadecimal digit detected");
+	}
+} // namespace
+
+
+extern "C" {
+
+#define TRY try
+#define CATCH(x,ok,error) catch(...) { handle(x); return error; } return ok
+
+int cppcms_capi_error(cppcms_capi_object obj)
+{
+	if(!obj)
+		return 0;
+	cppcms_capi_exception *e=static_cast<cppcms_capi_exception *>(obj);
+	return e->code;
+}
+char const *cppcms_capi_error_message(cppcms_capi_object obj)
+{
+	if(!obj)
+		return "ok";
+	cppcms_capi_exception *e=static_cast<cppcms_capi_exception *>(obj);
+	if(e->code == 0)
+		return "ok";
+	else
+		return e->msg;
+}
+char const *cppcms_capi_error_clear(cppcms_capi_object obj)
+{
+	char const *r=cppcms_capi_error_message(obj);
+	if(obj) {
+		static_cast<cppcms_capi_exception *>(obj)->code = 0;
+	}
+	return r;
+}
+
+
+
+
 cppcms_capi_session_pool *cppcms_capi_session_pool_new()
 {
 	try {
@@ -167,22 +257,6 @@ void cppcms_capi_session_pool_delete(cppcms_capi_session_pool *pool)
 	if(pool)
 		delete pool;
 }
-char const *cppcms_capi_session_pool_strerror(cppcms_capi_session_pool *pool)
-{
-	return pool->strerror.c_str();
-}
-
-int cppcms_capi_session_pool_got_error(cppcms_capi_session_pool *pool)
-{
-	return pool->error;
-}
-void cppcms_capi_session_pool_clear_error(cppcms_capi_session_pool *pool)
-{
-	pool->error = false;
-	pool->strerror = "";
-}
-
-
 
 
 int cppcms_capi_session_pool_init(cppcms_capi_session_pool *pool,char const *config_file)
@@ -237,27 +311,16 @@ void cppcms_capi_session_delete(cppcms_capi_session *session)
 {
 	if(session) delete session;
 }
-char const *cppcms_capi_session_strerror(cppcms_capi_session *session)
-{
-	return session->strerror.c_str();
-}
-
-int cppcms_capi_session_got_error(cppcms_capi_session *s)
-{
-	return s->error;
-}
-void cppcms_capi_session_clear_error(cppcms_capi_session *s)
-{
-	s->error = false;
-	s->strerror = "";
-}
-
 
 int cppcms_capi_session_init(cppcms_capi_session *session,cppcms_capi_session_pool *pool)
 {
 	TRY {
+		if(!session)
+			return -1;
+		if(!pool)
+			throw std::logic_error("pool is NULL");
 		if(!pool->p.get()) {
-			throw std::runtime_error("Session pool is not initialized");
+			throw std::logic_error("Session pool is not initialized");
 		}
 		session->p.reset(new cppcms::session_interface(*pool->p,session->adapter));
 	}
@@ -267,6 +330,8 @@ int cppcms_capi_session_init(cppcms_capi_session *session,cppcms_capi_session_po
 int cppcms_capi_session_clear(cppcms_capi_session *session)
 {
 	TRY {
+		if(!session)
+			return -1;
 		session->check_loaded_unsaved();
 		session->p->clear();
 	}CATCH(session,0,-1);
@@ -275,6 +340,9 @@ int cppcms_capi_session_clear(cppcms_capi_session *session)
 int cppcms_capi_session_is_set(cppcms_capi_session *session,char const *key)
 {
 	TRY {
+		if(!session)
+			return -1;
+		check_str(key);
 		session->check_loaded();
 		return session->p->is_set(key);
 	}CATCH(session,0,-1);
@@ -282,6 +350,9 @@ int cppcms_capi_session_is_set(cppcms_capi_session *session,char const *key)
 int cppcms_capi_session_erase(cppcms_capi_session *session,char const *key)
 {
 	TRY {
+		if(!session)
+			return -1;
+		check_str(key);
 		session->check_loaded_unsaved();
 		session->p->erase(key);
 	}CATCH(session,0,-1);
@@ -289,6 +360,9 @@ int cppcms_capi_session_erase(cppcms_capi_session *session,char const *key)
 int cppcms_capi_session_get_exposed(cppcms_capi_session *session,char const *key)
 {
 	TRY {
+		if(!session)
+			return -1;
+		check_str(key);
 		session->check_loaded();
 		return session->p->is_exposed(key);
 	}CATCH(session,0,-1);
@@ -296,6 +370,9 @@ int cppcms_capi_session_get_exposed(cppcms_capi_session *session,char const *key
 int cppcms_capi_session_set_exposed(cppcms_capi_session *session,char const *key,int is_exposed)
 {
 	TRY {
+		if(!session)
+			return -1;
+		check_str(key);
 		session->check_loaded_unsaved();
 		session->p->expose(key,is_exposed);
 	}CATCH(session,0,-1);
@@ -304,6 +381,8 @@ int cppcms_capi_session_set_exposed(cppcms_capi_session *session,char const *key
 char const *cppcms_capi_session_get_first_key(cppcms_capi_session *session)
 {
 	TRY {
+		if(!session)
+			return 0;
 		session->check_loaded();
 		session->key_set = session->p->key_set();
 		session->key_set_ptr = session->key_set.begin();
@@ -317,6 +396,8 @@ char const *cppcms_capi_session_get_first_key(cppcms_capi_session *session)
 char const *cppcms_capi_session_get_next_key(cppcms_capi_session *session)
 {
 	TRY {
+		if(!session)
+			return 0;
 		session->check_loaded();
 		if(session->key_set_ptr != session->key_set.end()) {
 			char const *r=session->key_set_ptr->c_str();
@@ -330,6 +411,8 @@ char const *cppcms_capi_session_get_next_key(cppcms_capi_session *session)
 char const *cppcms_capi_session_get_csrf_token(cppcms_capi_session *session)
 {
 	TRY {
+		if(!session)
+			return 0;
 		session->check_loaded();
 		session->returned_value = session->p->get_csrf_token();
 		return session->returned_value.c_str();
@@ -339,22 +422,24 @@ char const *cppcms_capi_session_get_csrf_token(cppcms_capi_session *session)
 }
 
 
-int cppcms_capi_session_set(cppcms_capi_session *session,char const *key,char const *value,int value_len)
+int cppcms_capi_session_set(cppcms_capi_session *session,char const *key,char const *value)
 {
 	TRY {
+		if(!session)
+			return -1;
+		check_str(key);
+		check_str(value);
 		session->check_loaded_unsaved();
-		std::string v;
-		if(value_len  == -1)
-			v=value;
-		else
-			v.assign(value,size_t(value_len));
-		session->p->set(key,v);
+		(*(session->p))[key]=value;
 	}CATCH(session,0,-1);
 }
 
 char const *cppcms_capi_session_get(cppcms_capi_session *session,char const *key)
 {
 	TRY {
+		if(!session)
+			return 0;
+		check_str(key);
 		session->check_loaded();
 		if(!session->p->is_set(key))
 			return 0;
@@ -363,20 +448,114 @@ char const *cppcms_capi_session_get(cppcms_capi_session *session,char const *key
 	}CATCH(session,0,0);
 
 }
-int cppcms_capi_session_get_len(cppcms_capi_session *session,char const *key)
+
+int cppcms_capi_session_get_binary_len(cppcms_capi_session *session,char const *key)
 {
 	TRY {
+		if(!session)
+			return -1;
+		check_str(key);
 		session->check_loaded();
 		if(!session->p->is_set(key))
 			return 0;
-		return session->p->get(key).size();
+		return (*(session->p))[key].size();
+	}CATCH(session,0,-1);
+}
+
+int cppcms_capi_session_set_binary(cppcms_capi_session *session,char const *key,void const *value,int length)
+{
+	TRY {
+		if(!session)
+			return -1;
+		check_str(key);
+		if(!value)
+			throw std::invalid_argument("value is null");
+		if(length < 0)
+			throw std::invalid_argument("length is negative");
+		session->check_loaded_unsaved();
+		(*(session->p))[key].assign(static_cast<char const *>(value),size_t(length));
+	}CATCH(session,0,-1);
+}
+int cppcms_capi_session_get_binary(cppcms_capi_session *session,char const *key,void *buf,int buffer_size)
+{
+
+	TRY {
+		if(!session)
+			return -1;
+		check_str(key);
+		if(buffer_size < 0)
+			throw std::invalid_argument("buffer size is negative");
+		if(!buf)
+			throw std::invalid_argument("buffer is null");
+		session->check_loaded();
+		if(!session->p->is_set(key))
+			return 0;
+		std::string &value = (*(session->p))[key];
+		int copy_size = value.size();
+		if(copy_size > buffer_size)
+			throw std::invalid_argument("Output buffer is too small");
+		memcpy(buf,value.c_str(),copy_size);
+		return copy_size;
 	}CATCH(session,0,-1);
 
 }
 
+
+int cppcms_capi_session_set_binary_as_hex(cppcms_capi_session *session,char const *key,char const *value)
+{
+	TRY {
+		if(!session)
+			return -1;
+		check_str(key);
+		check_str(value);
+		int len = strlen(value);
+		if(len % 2 != 0)
+			throw std::invalid_argument("value lengths is odd");
+		std::string tmp;
+		tmp.reserve(len / 2);
+		for(int i=0;i<len;i+=2) {
+			unsigned char h=hex_to_digit(value[i]);
+			unsigned char l=hex_to_digit(value[i+1]);
+			unsigned char b = h * 16u  + l;
+			tmp+=char(b);
+		}
+		
+		session->check_loaded_unsaved();
+		(*(session->p))[key].swap(tmp);
+
+	}CATCH(session,0,-1);
+}
+char const *cppcms_capi_session_get_binary_as_hex(cppcms_capi_session *session,char const *key)
+{
+	TRY {
+		if(!session)
+			return 0;
+		check_str(key);
+		session->check_loaded();
+
+		if(!session->p->is_set(key))
+			return 0;
+		std::string const &value = (*(session->p))[key];
+		std::string tmp;
+		int len = value.size();
+		tmp.reserve(len*2);
+		for(int i=0;i<len;i++) {
+			static char const *digits="0123456789abcdef";
+			unsigned char c=value[i];
+			tmp+=digits[(c >> 4u & 0xFu)];
+			tmp+=digits[(c & 0xFu)];
+		}
+		session->returned_value.swap(tmp);
+		return session->returned_value.c_str();
+	}CATCH(session,0,0);
+}
+
+
 int cppcms_capi_session_reset_session(cppcms_capi_session *session)
 {
 	TRY {
+		if(!session)
+			return -1;
 		session->check_loaded_unsaved();
 		session->p->reset_session();
 	}
@@ -386,6 +565,8 @@ int cppcms_capi_session_reset_session(cppcms_capi_session *session)
 int cppcms_capi_session_set_default_age(cppcms_capi_session *session)
 {
 	TRY {
+		if(!session)
+			return -1;
 		session->check_loaded_unsaved();
 		session->p->default_age();
 	}
@@ -394,6 +575,8 @@ int cppcms_capi_session_set_default_age(cppcms_capi_session *session)
 int cppcms_capi_session_set_age(cppcms_capi_session *session,int t)
 {
 	TRY {
+		if(!session)
+			return -1;
 		session->check_loaded_unsaved();
 		session->p->age(t);
 	}
@@ -402,6 +585,8 @@ int cppcms_capi_session_set_age(cppcms_capi_session *session,int t)
 int cppcms_capi_session_get_age(cppcms_capi_session *session)
 {
 	TRY {
+		if(!session)
+			return -1;
 		session->check_loaded();
 		return session->p->age();
 	}
@@ -411,6 +596,8 @@ int cppcms_capi_session_get_age(cppcms_capi_session *session)
 int cppcms_capi_session_set_default_expiration(cppcms_capi_session *session)
 {
 	TRY {
+		if(!session)
+			return -1;
 		session->check_loaded_unsaved();
 		session->p->default_expiration();
 	}
@@ -420,6 +607,8 @@ int cppcms_capi_session_set_default_expiration(cppcms_capi_session *session)
 int cppcms_capi_session_set_expiration(cppcms_capi_session *session,int t)
 {
 	TRY {
+		if(!session)
+			return -1;
 		session->check_loaded_unsaved();
 		session->p->expiration(t);
 	}
@@ -428,6 +617,8 @@ int cppcms_capi_session_set_expiration(cppcms_capi_session *session,int t)
 int cppcms_capi_session_get_expiration(cppcms_capi_session *session)
 {
 	TRY {
+		if(!session)
+			return -1;
 		session->check_loaded();
 		return session->p->expiration();
 	}
@@ -437,6 +628,8 @@ int cppcms_capi_session_get_expiration(cppcms_capi_session *session)
 int cppcms_capi_session_set_on_server(cppcms_capi_session *session,int is_on_server)
 {
 	TRY {
+		if(!session)
+			return -1;
 		session->check_loaded_unsaved();
 		session->p->on_server(is_on_server);
 	}
@@ -445,6 +638,8 @@ int cppcms_capi_session_set_on_server(cppcms_capi_session *session,int is_on_ser
 int cppcms_capi_session_get_on_server(cppcms_capi_session *session)
 {
 	TRY {
+		if(!session)
+			return -1;
 		session->check_loaded();
 		return session->p->on_server();
 	}
@@ -454,6 +649,8 @@ int cppcms_capi_session_get_on_server(cppcms_capi_session *session)
 char const *cppcms_capi_session_get_session_cookie_name(cppcms_capi_session *session)
 {
 	TRY {
+		if(!session)
+			return 0;
 		session->check();
 		session->returned_value = session->p->session_cookie_name();
 		return session->returned_value.c_str();
@@ -463,9 +660,12 @@ char const *cppcms_capi_session_get_session_cookie_name(cppcms_capi_session *ses
 int cppcms_capi_session_load(cppcms_capi_session *session,char const *session_cookie_value)
 {
 	TRY {
+		if(!session)
+			return -1;
+		check_str(session_cookie_value);
 		session->check();
 		if(session->loaded) {
-			throw std::runtime_error("Session is already loaded");
+			throw std::logic_error("Session is already loaded");
 		}
 		session->adapter.value = session_cookie_value;
 		session->p->load();
@@ -477,6 +677,8 @@ int cppcms_capi_session_load(cppcms_capi_session *session,char const *session_co
 int cppcms_capi_session_save(cppcms_capi_session *session)
 {
 	TRY {
+		if(!session)
+			return -1;
 		session->check_loaded_unsaved();
 		session->p->save();
 		session->saved = true;
@@ -488,6 +690,8 @@ int cppcms_capi_session_save(cppcms_capi_session *session)
 cppcms_capi_cookie *cppcms_capi_session_cookie_first(cppcms_capi_session *session)
 {
 	TRY {
+		if(!session)
+			return 0;
 		session->check_saved();
 		session->adapter.cookies_ptr=session->adapter.cookies.begin();
 		if(session->adapter.cookies_ptr == session->adapter.cookies.end())
@@ -502,6 +706,8 @@ cppcms_capi_cookie *cppcms_capi_session_cookie_first(cppcms_capi_session *sessio
 cppcms_capi_cookie *cppcms_capi_session_cookie_next(cppcms_capi_session *session)
 {
 	TRY {
+		if(!session)
+			return 0;
 		session->check_saved();
 		if(session->adapter.cookies_ptr == session->adapter.cookies.end())
 			return 0;
@@ -514,20 +720,20 @@ cppcms_capi_cookie *cppcms_capi_session_cookie_next(cppcms_capi_session *session
 
 void cppcms_capi_cookie_delete(cppcms_capi_cookie *cookie) { if(cookie) delete cookie; }
 
-char const *cppcms_capi_cookie_header(cppcms_capi_cookie const *cookie) { return cookie->header.c_str(); }
-char const *cppcms_capi_cookie_header_content(cppcms_capi_cookie const *cookie) { return cookie->header_content.c_str(); }
+char const *cppcms_capi_cookie_header(cppcms_capi_cookie const *cookie) { return cookie ? cookie->header.c_str() : 0; }
+char const *cppcms_capi_cookie_header_content(cppcms_capi_cookie const *cookie) { return cookie ? cookie->header_content.c_str() : 0; }
 
-char const *cppcms_capi_cookie_name(cppcms_capi_cookie const *cookie) { return cookie->name.c_str(); }
-char const *cppcms_capi_cookie_value(cppcms_capi_cookie const *cookie) { return cookie->value.c_str(); }
-char const *cppcms_capi_cookie_path(cppcms_capi_cookie const *cookie) { return cookie->path.c_str(); }
-char const *cppcms_capi_cookie_domain(cppcms_capi_cookie const *cookie) { return cookie->domain.c_str(); }
+char const *cppcms_capi_cookie_name(cppcms_capi_cookie const *cookie) { return cookie ? cookie->name.c_str(): 0 ; }
+char const *cppcms_capi_cookie_value(cppcms_capi_cookie const *cookie) { return cookie ? cookie->value.c_str(): 0; }
+char const *cppcms_capi_cookie_path(cppcms_capi_cookie const *cookie) { return cookie ? cookie->path.c_str(): 0; }
+char const *cppcms_capi_cookie_domain(cppcms_capi_cookie const *cookie) { return cookie ? cookie->domain.c_str() : 0; }
 
-int cppcms_capi_cookie_max_age_defined(cppcms_capi_cookie const *cookie) { return cookie->has_max_age; }
-unsigned cppcms_capi_cookie_max_age(cppcms_capi_cookie const *cookie) { return cookie->max_age; }
+int cppcms_capi_cookie_max_age_defined(cppcms_capi_cookie const *cookie) { return cookie ? cookie->has_max_age : -1; }
+unsigned cppcms_capi_cookie_max_age(cppcms_capi_cookie const *cookie) { return cookie ? cookie->max_age: 0; }
 
-int cppcms_capi_cookie_expires_defined(cppcms_capi_cookie const *cookie) { return cookie->has_expires; }
-long long cppcms_capi_cookie_expires(cppcms_capi_cookie const *cookie) { return cookie->expires; }
+int cppcms_capi_cookie_expires_defined(cppcms_capi_cookie const *cookie) { return cookie ? cookie->has_expires: -1; }
+long long cppcms_capi_cookie_expires(cppcms_capi_cookie const *cookie) { return cookie ? cookie->expires: -1; }
 
-int cppcms_capi_cookie_is_secure(cppcms_capi_cookie const *cookie) { return cookie->secure; }
+int cppcms_capi_cookie_is_secure(cppcms_capi_cookie const *cookie) { return cookie ? cookie->secure: -1; }
 
 } // extern "C"
