@@ -5,25 +5,24 @@
 from ctypes import *
 import sys
 import types
+import threading
 from datetime import datetime
 
 class Loader:
     """The native cppcms library access API"""
+    lock = threading.Lock()
     capi = None
+    SESSION_FIXED=0
+    SESSION_RENEW=1
+    SESSION_BROWSER=2
+    ERROR_OK=0
+    ERROR_GENERAL=1
+    ERROR_RUNTIME=2
+    ERROR_INVALID_ARGUMENT=4
+    ERROR_LOGIC=5
+    ERROR_ALLOC=6
     @classmethod
-    def load(cls,path):
-        """Initialize API by loading libcppcms from the given path"""
-        cls.capi = cdll.LoadLibrary(path);
-        # Start there
-        cls.SESSION_FIXED=0
-        cls.SESSION_RENEW=1
-        cls.SESSION_BROWSER=2
-        cls.ERROR_OK=0
-        cls.ERROR_GENERAL=1
-        cls.ERROR_RUNTIME=2
-        cls.ERROR_INVALID_ARGUMENT=4
-        cls.ERROR_LOGIC=5
-        cls.ERROR_ALLOC=6
+    def configAPI(cls):
         cls.capi.cppcms_capi_error.restype=c_int
         cls.capi.cppcms_capi_error.argtypes=[ c_void_p ]
         cls.capi.cppcms_capi_error_message.restype=c_char_p
@@ -126,6 +125,37 @@ class Loader:
         cls.capi.cppcms_capi_cookie_expires.argtypes=[ c_void_p ]
         cls.capi.cppcms_capi_cookie_is_secure.restype=c_int
         cls.capi.cppcms_capi_cookie_is_secure.argtypes=[ c_void_p ]
+    
+    @classmethod
+    def load_from(cls,lst):
+        for name in lst:
+            try:
+                cls.capi=cdll.LoadLibrary(name)
+            except:
+                cls.capi=None
+            if cls.capi != None:
+                return
+        raise RuntimeError('Failed to load any of ' + ', '.join(lst))
+    @classmethod
+    def load(cls,path=None):
+        """Initialize API by loading libcppcms from the given path"""
+        with cls.lock:
+            if cls.capi!=None:
+                return
+            if path==None:
+                import platform
+                system = platform.system().lower()
+                if system=='windows':
+                    cls.load_from(['cppcms.dll','libcppcms.dll','cppcms-1.dll','libcppcms-1.dll'])
+                elif system=='macosx' or system=='darwin':
+                    cls.load_from(['libcppcms.dylib','libcppcms.1.dylib'])
+                elif system.find('cygwin')!=-1 :
+                    cls.load_from(['cygcppcms.dll','cygcppcms-1.dll'])
+                else:
+                    cls.load_from(['libcppcms.so','libcppcms.so.1'])
+            else:
+                cls.capi = cdll.LoadLibrary(path);
+            cls.configAPI()
 
 class SessionBase:
     def check(self):
@@ -142,6 +172,7 @@ class SessionBase:
 class SessionPool(SessionBase):
     """Pool that handles all session - should be single instance per application """
     def __init__(self,config_file=None,json_text=None):
+        Loader.load()
         """Initialize the pool from either CppCMS configuration file or directly from JSON text"""
         if config_file == None and json_text == None:
             raise ValueError('either config_file or json_text should be provided')
@@ -368,10 +399,14 @@ class Session(SessionBase):
         return self.is_set(k)
 
 
-def __private_test():
-    import binascii
+def __private_test(config):
+    def to_hex(a):
+        s=''
+        for p in a:
+            s=s+('\\x%02x' % int(p))
+        return s
     state=''
-    p=SessionPool(sys.argv[2])
+    p=SessionPool(config)
     s=p.session()
     s.load(state)
     s['x']='111'
@@ -394,11 +429,11 @@ def __private_test():
     s=Session(p)
     s.load(state)
     tmp=s.get_binary('z')
-    print('Binary expected \\x01\\x00\\xFF\\x7F=' + binascii.hexlify(tmp))
+    print('Binary expected \\x01\\x00\\xFF\\x7F=' + to_hex(tmp))
     s.set_exposed('x',0)
     s.save()
-    print("Use operator:[] ",s['x'])
-    print("Is in ",('x' in s))
+    print("Use operator:[] " + s['x'])
+    print("Is in " + str('x' in s))
     for c in s.cookies():
         print (c)
         print (c.value())
@@ -417,9 +452,13 @@ def __private_test():
             state = c.value()
 
 if __name__ == "__main__":
-    if len(sys.argv) != 3:
-        sys.stderr.write("Usage /path/to/libcppcms.so/dll config.j\n")
+    if len(sys.argv) != 2 and len(sys.argv) != 3:
+        sys.stderr.write("Usage [ /path/to/libcppcms.so/dll ] config.js\n")
         sys.exit(1)
-    Loader.load(sys.argv[1])
-    __private_test()
+    if len(sys.argv) == 3:
+        Loader.load(sys.argv[1])
+        __private_test(sys.argv[2])
+    else:
+        __private_test(sys.argv[1])
+
 
