@@ -9,10 +9,7 @@ public class Sample extends HttpServlet {
 	public void init() throws ServletException 
 	{
 		ServletContext context = getServletContext();
-		String libPath = context.getRealPath("/WEB-INF/lib/libcppcms.so");
 		String configPath = context.getRealPath("/WEB-INF/cppcms-config.js");
-		
-		API.init(libPath);
 		pool = SessionPool.openFromConfig(configPath);
 	}
 

@@ -70,27 +70,69 @@ public class API {
 
 	protected static JnaAPI api;
 
-	public static void init(String path)
+	private static void loadLibrary(String path)
 	{
 		api = (JnaAPI)Native.loadLibrary(path,JnaAPI.class);	
 	}
-	public static void init()
+	public static synchronized void init(String path)
 	{
-		init("libcppcms.so");
+		if(api == null) {
+			loadLibrary(path);
+		}
+	}
+	public static synchronized void init()
+	{
+		if(api != null)
+			return;
+
+		String names[]=null;
+		String os=System.getProperty("os.name").toLowerCase();
+		if(os.indexOf("win")!=-1)
+			names = new String[] { "cppcms.dll", "libcppcms.dll", "cppcms-1.dll", "libcppcms-1.dll" };
+		else if(os.indexOf("mac")!=-1)
+			names=new String[] { "libcppcms.dylib", "libcppcms.1.dylib" };
+		else 
+			names=new String[] { "libcppcms.so", "libcppcms.so.1" };
+		for(int i=0;i<names.length;i++) {
+			try {
+				loadLibrary(names[i]);
+			}
+			catch(Exception e) {}
+			catch(Error e){}
+		}
+		if(api==null) {
+			StringBuilder sb = new StringBuilder();
+			sb.append("Failed to load any of the following:");
+			for(int i=0;i<names.length;i++) {
+				sb.append(" ");
+				sb.append(names[i]);
+			}
+			throw new RuntimeException(sb.toString()); 
+		}
 	}
 
 	public static void main(String[] args) 
 	{
-		if(args.length != 2) {
-			System.out.println("usage /path/to/libcppcms.so /path/to/config.js");
+		String path=null;
+		String conf=null;
+		if(args.length == 2) {
+			path = args[0];
+			conf = args[1];
+		}
+		else if(args.length == 1) {
+			conf = args[0];
+		} 
+		else {
+			System.out.println("usage [/path/to/libcppcms.so] /path/to/config.js");
 			return;
 		}
 		SessionPool p = null;
 		Session s = null;
 		try {
 			String state="";
-			init(args[0]);
-			p = SessionPool.openFromConfig(args[1]);
+			if(path!=null)
+				init(path);
+			p = SessionPool.openFromConfig(conf);
 			s = p.getSession();
 			s.load(state);
 			s.set("x","1");

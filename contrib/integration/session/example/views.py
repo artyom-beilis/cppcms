@@ -1,12 +1,6 @@
 from django.http import HttpResponse
 from django.conf import settings
 import cppcms
-
-#
-# Load the module containing the API
-#
-cppcms.Loader.load('libcppcms.so')
-
 #
 # Create the session pool - note it is thread safe and should be one per projects
 # Provide a path to configuration file

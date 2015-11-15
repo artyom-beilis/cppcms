@@ -7,8 +7,7 @@ public class SessionPool extends SessionBase {
 
 	 private SessionPool()
 	 {
-		if(API.api == null)
-			throw new NullPointerException("API.init() wasn't called - API wasn't loaded prior to use of SessionPool");
+		API.init();
 		d=API.api.cppcms_capi_session_pool_new();
 	 }
 	 public static SessionPool openFromConfig(String file) 
