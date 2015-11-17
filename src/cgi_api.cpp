@@ -121,11 +121,15 @@ namespace cppcms { namespace impl { namespace cgi {
 		void on_response_read(booster::system::error_code const &e,size_t len)
 		{
 			if(e) {
-				conn_->async_write_eof(boost::bind(&cgi_forwarder::cleanup,shared_from_this()));
+				conn_->async_write(booster::aio::const_buffer(),
+							boost::bind(&cgi_forwarder::cleanup,shared_from_this()),
+							true);
 				return;
 			}
 			else {
-				conn_->async_write(&response_.front(),len,boost::bind(&cgi_forwarder::on_response_written,shared_from_this(),_1,_2));
+				conn_->async_write(booster::aio::buffer(&response_.front(),len),
+						   boost::bind(&cgi_forwarder::on_response_written,shared_from_this(),_1,_2),
+						   false);
 			}
 		}
 		void on_response_written(booster::system::error_code const &e,size_t /*len*/)
@@ -259,14 +263,15 @@ void connection::handle_http_error(int code,http::context *context,ehandler cons
 	async_chunk_ += "</h1>\r\n"
 		"</body>\r\n"
 		"</html>\r\n";
-	async_write(async_chunk_.c_str(),async_chunk_.size(),
+	async_write(booster::aio::buffer(async_chunk_),
 		boost::bind(
 			&connection::handle_http_error_eof,
 			self(),
 			_1,
 			_2,
 			code,
-			h));
+			h),
+			true);
 }
 
 void connection::handle_http_error_eof(
@@ -279,17 +284,11 @@ void connection::handle_http_error_eof(
 		set_error(h,e.message());
 		return;
 	}
-	async_write_eof(boost::bind(&connection::handle_http_error_done,self(),_1,code,h));
-}
-
-void connection::handle_http_error_done(booster::system::error_code const &e,int code,ehandler const &h)
-{
-	if(e) {
-		set_error(h,e.message());
-		return;
-	}
+	do_eof();
 	set_error(h,http::response::status_to_string(code));
 }
+
+
 
 void connection::load_content(booster::system::error_code const &e,http::context *context,ehandler const &h)
 {
@@ -452,7 +451,10 @@ struct connection::async_write_binder : public booster::callable<void(booster::s
 	}
 	void operator()(booster::system::error_code const &e,size_t)
 	{
-		self->on_async_write_written(e,complete_response,h);
+		if(complete_response) {
+			self->do_eof();
+		}
+		h(e ? cppcms::http::context::operation_aborted : cppcms::http::context::operation_completed );
 		if(!self->cached_async_write_binder_) {
 			self->cached_async_write_binder_ = this;
 			reset();
@@ -474,49 +476,13 @@ void connection::async_write_response(	http::response &response,
 
 		binder->init(self(),complete_response,h,chunk.first);
 		booster::intrusive_ptr<booster::callable<void(booster::system::error_code const &,size_t)> > p(binder.get());
-		async_write(	&(*chunk.first)[0],
-				chunk.second,
-				p);
+		async_write(	booster::aio::buffer(&(*chunk.first)[0],chunk.second),p,complete_response);
 		return;
 	}
-	if(!complete_response) {
-		// request to send an empty block
-		service().impl().get_io_service().post(boost::bind(h,http::context::operation_completed));
-		return;
-	}
-	on_async_write_written(booster::system::error_code(),true,h); // < h will not be called when complete_response = true
+	// request to send an empty block
+	get_io_service().post(boost::bind(h,http::context::operation_completed));
 }
 
-void connection::on_async_write_written(booster::system::error_code const &e,bool complete_response,ehandler const &h)
-{
-	if(e) {	
-		BOOSTER_WARNING("cppcms") << "Writing response failed:" << e.message();
-		service().impl().get_io_service().post(boost::bind(h,http::context::operation_aborted));
-		return;
-	}
-	if(complete_response) {
-		async_write_eof(boost::bind(&connection::on_eof_written,self(),_1,h));
-		request_in_progress_=false;
-		return;
-	}
-	h(http::context::operation_completed);
-}
-void connection::async_complete_response(ehandler const &h)
-{
-	async_write_eof(boost::bind(&connection::on_eof_written,self(),_1,h));
-	request_in_progress_=false;
-}
-
-void connection::complete_response()
-{
-	write_eof();
-}
-
-void connection::on_eof_written(booster::system::error_code const &e,ehandler const &h)
-{
-	if(e) { set_error(h,e.message()); return; }
-	h(http::context::operation_completed);
-}
 
 
 struct connection::reader {

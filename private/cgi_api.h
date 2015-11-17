@@ -11,6 +11,7 @@
 #include <booster/noncopyable.h>
 #include <booster/shared_ptr.h>
 #include <booster/enable_shared_from_this.h>
+#include <booster/aio/buffer.h>
 #include <vector>
 #include <map>
 #include <booster/callback.h>
@@ -76,10 +77,6 @@ namespace cgi {
 		void async_write_response(	http::response &response,
 						bool complete_response,
 						ehandler const &on_response_written);
-
-		void async_complete_response(	ehandler const &on_response_complete);
-
-		void complete_response();
 		
 		void aync_wait_for_close_by_peer(callback const &on_eof);
 
@@ -114,8 +111,10 @@ namespace cgi {
 		// These are abstract member function that should be implemented by
 		// actual protocol like FCGI, SCGI, HTTP or CGI
 	public:
-		virtual void async_write(void const *,size_t,io_handler const &h) = 0;
-		virtual size_t write(void const *,size_t,booster::system::error_code &e) = 0;
+		virtual void async_write(booster::aio::const_buffer const &buf,io_handler const &h,bool eof) = 0;
+		virtual size_t write(booster::aio::const_buffer const &buf,booster::system::error_code &e,bool eof) = 0;
+		virtual void do_eof() = 0;
+		virtual booster::aio::const_buffer format_output(booster::aio::const_buffer const &in,bool completed,booster::system::error_code &e) = 0;
 	protected:
 
 
@@ -127,8 +126,6 @@ namespace cgi {
 		virtual void async_read_some(void *,size_t,io_handler const &h) = 0;
 		virtual void on_async_read_complete() {}
 		virtual void async_read_eof(callback const &h) = 0;
-		virtual void async_write_eof(handler const &h) = 0;
-		virtual void write_eof() = 0;
 		virtual booster::aio::io_service &get_io_service() = 0;
 
 		/****************************************************************************/
@@ -156,12 +153,9 @@ namespace cgi {
 		void load_content(booster::system::error_code const &e,http::context *,ehandler const &h);
 		void on_post_data_loaded(booster::system::error_code const &e,http::context *,ehandler const &h);
 		void on_some_multipart_read(booster::system::error_code const &e,size_t n,http::context *,ehandler const &h);
-		void on_async_write_written(booster::system::error_code const &e,bool complete_response,ehandler const &h);
-		void on_eof_written(booster::system::error_code const &e,ehandler const &h);
 		void handle_eof(callback const &on_eof);
 		void handle_http_error(int code,http::context *context,ehandler const &h);
 		void handle_http_error_eof(booster::system::error_code const &e,size_t n,int code,ehandler const &h); 
-		void handle_http_error_done(booster::system::error_code const &e,int code,ehandler const &h);
 
 		std::vector<char> content_;
 		cppcms::service *service_;

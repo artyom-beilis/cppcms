@@ -113,22 +113,26 @@ namespace cgi {
 
 			h(booster::system::error_code());
 		}
+		virtual booster::aio::const_buffer format_output(booster::aio::const_buffer const &in,bool /*comleted*/,booster::system::error_code &/*e*/) 
+		{
+			return in;
+		}
 
 		virtual void async_read_some(void *p,size_t s,io_handler const &h)
 		{
 			socket_.async_read_some(io::buffer(p,s),h);
 		}
-		virtual void async_write(void const *p,size_t s,io_handler const &h)
+		virtual void async_write(booster::aio::const_buffer const &in,io_handler const &h,bool /*eof*/)
 		{
-			socket_.async_write(io::buffer(p,s),h);
+			socket_.async_write(in,h);
 		}
-		virtual size_t write(void const *buffer,size_t n,booster::system::error_code &e)
+		virtual size_t write(booster::aio::const_buffer const &in,booster::system::error_code &e,bool /*eof*/)
 		{
 			booster::system::error_code err;
-			size_t res = socket_.write(io::buffer(buffer,n),err);
+			size_t res = socket_.write(in,err);
 			if(err && io::basic_socket::would_block(err)) {
 				socket_.set_non_blocking(false);
-				return socket_.write_some(io::buffer(buffer,n),e);
+				return socket_.write_some(in,e);
 			}
 			else if(err) {
 				e=err;
@@ -146,17 +150,11 @@ namespace cgi {
 			return false;
 		}
 
-		virtual void write_eof()
+		virtual void do_eof()
 		{
 			booster::system::error_code e;
 			socket_.shutdown(io::stream_socket::shut_wr,e);
 			socket_.close(e);
-		}
-		virtual void async_write_eof(handler const &h)
-		{
-			booster::system::error_code e;
-			socket_.shutdown(io::stream_socket::shut_wr,e);
-			socket_.get_io_service().post(boost::bind(h,booster::system::error_code()));
 		}
 
 		virtual void async_read_eof(callback const &h)

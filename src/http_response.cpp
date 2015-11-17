@@ -218,6 +218,7 @@ namespace details {
 		{
 			if(!opened_)
 				return;
+			pubsync();
 			if(out_) {
 				z_stream_.avail_in = 0;
 				z_stream_.next_in = 0;
@@ -282,35 +283,51 @@ namespace details {
 
 	class output_device : public basic_obuf<output_device> {
 		booster::weak_ptr<impl::cgi::connection> conn_;
+		bool final_;
+		bool eof_send_;
 	public:
 		output_device(impl::cgi::connection *conn,size_t n) : 
 			basic_obuf<output_device>(n),
-			conn_(conn->shared_from_this())
+			conn_(conn->shared_from_this()),
+			final_(false),
+			eof_send_(false)
 		{
 		}
 		void close()
 		{
+			final_=true;
 			pubsync();
+			if(!eof_send_) {
+				do_write(booster::aio::const_buffer());
+			}
 		}
-		int write(char const *data,int n)
+		int do_write(booster::aio::const_buffer const &in)
 		{
-			if(n==0)
+			bool set_eof = final_ && !eof_send_;
+			if(in.empty() && !set_eof)
 				return 0;
+
 			booster::shared_ptr<impl::cgi::connection> c = conn_.lock();
 			if(!c)
 				return -1;
 			
 			booster::system::error_code e;
 
-			int res = c->write(data,n,e);
+			int res = c->write(in,e,set_eof);
 			if(e) {
 				BOOSTER_WARNING("cppcms") << "Failed to write response:" << e.message();
 				conn_.reset();
 				return -1;
 			}
-			if(res!=n)
+			if(res!=int(in.bytes_count()))
 				return -1;
+			if(set_eof)
+				eof_send_ = true;
 			return 0;
+		}
+		int write(char const *data,int n)
+		{
+			return do_write(booster::aio::buffer(data,n));
 		}
 	};
 }
@@ -405,12 +422,16 @@ void response::set_header(std::string const &name,std::string const &value)
 void response::finalize()
 {
 	if(!finalized_) {
-		out()<<std::flush;
+		out();
 #ifndef CPPCMS_NO_GZIP
 		d->zbuf.close();
 #endif
 		d->cached.close();
-		d->output_buf.close();
+
+		if(io_mode_ == asynchronous || io_mode_ == asynchronous_raw) 
+			d->buffered.close();
+		else
+			d->output_buf.close();
 		finalized_=1;
 	}
 }

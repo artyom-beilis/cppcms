@@ -116,7 +116,6 @@ void context::on_request_ready(bool error)
 void context::complete_response()
 {
 	response().finalize();
-	conn_->complete_response();
 	if(conn_->is_reuseable()) {
 		booster::shared_ptr<context> cont(new context(conn_));
 		service().post(boost::bind(&context::run,cont));
@@ -191,7 +190,7 @@ void context::async_complete_response()
 			boost::bind(&context::try_restart,self(),_1));
 		return;
 	}
-	conn_->async_complete_response(boost::bind(&context::try_restart,self(),_1));
+	complete_response();
 }
 
 void context::try_restart(bool e)

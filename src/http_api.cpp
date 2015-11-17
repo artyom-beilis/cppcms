@@ -310,33 +310,32 @@ namespace cgi {
 			}
 			socket_.async_read_some(io::buffer(p,s),h);
 		}
-		virtual void async_write_eof(handler const &h)
-		{
-			remove_from_watchdog();
-			booster::system::error_code e;
-			socket_.shutdown(io::stream_socket::shut_wr,e);
-			socket_.get_io_service().post(h,booster::system::error_code());
-		}
-		virtual void write_eof()
+		virtual void do_eof()
 		{
 			booster::system::error_code e;
 			socket_.shutdown(io::stream_socket::shut_wr,e);
 			socket_.close(e);
 		}
-		virtual void async_write(void const *p,size_t s,io_handler const &h)
+		virtual void async_write(booster::aio::const_buffer const &in,io_handler const &h,bool eof)
 		{
 			update_time();
 			watchdog_->add(self());
-			if(headers_done_)
-				socket_.async_write(io::buffer(p,s),h);
-			else
-				process_output_headers(p,s,h);
+			booster::system::error_code e;
+			booster::aio::const_buffer packet = format_output(in,eof,e);
+			if(e) {
+				socket_.get_io_service().post(h,e,0);
+				return;
+			}
+			socket_.async_write(packet,h);
 		}
-		virtual size_t write(void const *p,size_t n,booster::system::error_code &e)
+		virtual size_t write(booster::aio::const_buffer const &in,booster::system::error_code &e,bool eof)
 		{
-			if(headers_done_) 
-				return write_to_socket(io::buffer(p,n),e);	
-			return process_output_headers(p,n);
+
+			booster::aio::const_buffer packet = format_output(in,eof,e);
+			if(e) return 0;
+			write_to_socket(packet,e);	
+			if(e) return 0;
+			return in.bytes_count();
 		}
 		#ifndef CPPCMS_NO_SO_SNDTIMO
 		size_t timed_write_some(booster::aio::const_buffer const &buf,booster::system::error_code &e)
@@ -443,9 +442,43 @@ namespace cgi {
 			socket_.async_read_some(io::buffer(&a,1),boost::bind(h));
 		}
 
-	private:
-		size_t process_output_headers(void const *p,size_t s,io_handler const &h=io_handler())
+		virtual booster::aio::const_buffer format_output(booster::aio::const_buffer const &in,bool /*completed*/,booster::system::error_code &e)
 		{
+			if(headers_done_)
+				return in;
+			booster::aio::const_buffer packet;
+			std::pair<booster::aio::const_buffer::entry const *,size_t> tmp = in.get();
+			booster::aio::const_buffer::entry const *entry = tmp.first;
+			size_t parts = tmp.second;
+			while(parts > 0)  {
+				bool r =process_output_headers(entry->ptr,entry->size,e);
+				parts--;
+				entry++;
+				if(r) {
+					if(!e)
+						headers_done_ = true;
+					break;
+				}
+			}
+			if(e)
+				return packet;
+			packet+= booster::aio::buffer(response_line_);
+			packet+= booster::aio::buffer(output_body_);
+			while(parts > 0) {
+				packet+= booster::aio::buffer(entry->ptr,entry->size);
+				parts --;
+				entry++;
+			}
+			return packet;
+		}
+		
+
+	private:
+		bool process_output_headers(void const *p,size_t s,booster::system::error_code &e)
+		{
+			static char const *addon = 
+				"Server: CppCMS-Embedded/" CPPCMS_PACKAGE_VERSION "\r\n"
+				"Connection: close\r\n";
 			char const *ptr=static_cast<char const *>(p);
 			output_body_.insert(output_body_.end(),ptr,ptr+s);
 
@@ -454,67 +487,35 @@ namespace cgi {
 			for(;;) {
 				switch(output_parser_.step()) {
 				case parser::more_data:
-					if(h)
-						h(booster::system::error_code(),s);
-					return s;
+					return false;
 				case parser::got_header:
 					{
 						char const *name="";
 						char const *value="";
 						if(!parse_single_header(output_parser_.header_,name,value))  {
-							h(booster::system::error_code(errc::protocol_violation,cppcms_category),s);
-							return s;
+							e=booster::system::error_code(errc::protocol_violation,cppcms_category);
+							return true;
 						}
 						if(strcmp(name,"STATUS")==0) {
 							response_line_ = "HTTP/1.0 ";
 							response_line_ +=value;
 							response_line_ +="\r\n";
-							return write_response(h,s);
+							response_line_.append(addon);
+							return true;
 						}
 					}
 					break;
 				case parser::end_of_headers:
 					response_line_ = "HTTP/1.0 200 Ok\r\n";
+					response_line_.append(addon);
+					return true;
 
-					return write_response(h,s);
 				case parser::error_observerd:
-					h(booster::system::error_code(errc::protocol_violation,cppcms_category),0);
-					return 0;
+					e=booster::system::error_code(errc::protocol_violation,cppcms_category);
+					return true;
 				}
 			}
 	
-		}
-		size_t write_response(io_handler const &h,size_t s)
-		{
-			char const *addon = 
-				"Server: CppCMS-Embedded/" CPPCMS_PACKAGE_VERSION "\r\n"
-				"Connection: close\r\n";
-
-			response_line_.append(addon);
-
-			booster::aio::const_buffer packet = 
-				io::buffer(response_line_) 
-				+ io::buffer(output_body_);
-#ifdef DEBUG_HTTP_PARSER
-			std::cerr<<"["<<response_line_<<std::string(output_body_.begin(),output_body_.end())
-				<<"]"<<std::endl;
-#endif
-			headers_done_=true;
-			if(!h) {
-				booster::system::error_code e;
-				write_to_socket(packet,e);
-				if(e) return 0;
-				return s;
-			}
-
-			socket_.async_write(packet,boost::bind(&http::do_write,self(),_1,h,s));
-			return s;
-		}
-
-		void do_write(booster::system::error_code const &e,io_handler const &h,size_t s)
-		{
-			if(e) { h(e,0); return; }
-			h(booster::system::error_code(),s);
 		}
 
 		void process_request(handler const &h)

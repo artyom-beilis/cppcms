@@ -143,64 +143,102 @@ namespace cgi {
 			}
 			h(booster::system::error_code(),s);
 		}
-	public:	
-		virtual void async_write(void const *p,size_t s,io_handler const &h)
+	public:
+		static void print(booster::aio::const_buffer const &in,bool eof)
 		{
-			booster::system::error_code dummy;
-			do_write(p,s,h,true,dummy);
-		}
-		
-		virtual size_t write(void const *buffer,size_t n,booster::system::error_code &e)
-		{
-			return do_write(buffer,n,io_handler(),false,e);
-		}
-		
-		virtual size_t do_write(void const *p,size_t s,io_handler const &h,bool async,booster::system::error_code &e)
-		{
-			if(s==0) {
-				if(async)
-					socket_.get_io_service().post(h,booster::system::error_code(),0);
-				return 0;
+			std::pair<booster::aio::const_buffer::entry const *,size_t> r = in.get();
+			for(size_t i=0;i<r.second;i++) {
+				std::cout.write(r.first[i].ptr,r.first[i].size);
 			}
-			io::const_buffer packet;
-			size_t reminder = s;
-			char const *ptr = static_cast<char const *>(p);
+			std::cout << (eof ? "EOF" : "---")<< std::endl;
+		}
+		virtual void async_write(booster::aio::const_buffer const &in,io_handler const &h,bool eof)
+		{
+			print(in,eof);
+			booster::system::error_code dummy;
+			do_write(in,h,true,dummy,eof);
+		}
+		
+		virtual size_t write(booster::aio::const_buffer const &in,booster::system::error_code &e,bool eof)
+		{
+			print(in,eof);
+			return do_write(in,io_handler(),false,e,eof);
+		}
+
+		virtual booster::aio::const_buffer format_output(booster::aio::const_buffer const &in,bool completed,booster::system::error_code &)
+		{
+			booster::aio::const_buffer packet;
+			booster::aio::const_buffer::entry const *chunks = in.get().first;
+			size_t reminder = in.bytes_count();
+			size_t in_size = reminder;
+			size_t chunk_consumed = 0;
 			while(reminder > 0) {
-				static char pad[8];
+				static const char pad[8]={0,0,0,0,0,0,0,0};
 				static const size_t max_packet_len = 65535;
+				size_t chunk = 0;
+				int pad_len = 0;
 				if(reminder > max_packet_len) {
-					if(s > max_packet_len && reminder == s) {
+					chunk = max_packet_len;
+					if(in_size > max_packet_len && reminder == in_size) {
 						// prepare only once
 						full_header_.version = fcgi_version_1;
 						full_header_.type=fcgi_stdout;
 						full_header_.request_id=request_id_;
 						full_header_.content_length = max_packet_len;
-						full_header_.padding_length = 1;
+						full_header_.padding_length = pad_len = 1;
 						full_header_.to_net();
 					}
 					packet += io::buffer(&full_header_,sizeof(full_header_));
-					packet += io::buffer(ptr,max_packet_len);
-					packet += io::buffer(pad,1);
-					ptr += max_packet_len;
-					reminder -= max_packet_len;
 				}
-				else { 
+				else {
+					chunk = reminder;
 					memset(&header_,0,sizeof(header_));
 					header_.version=fcgi_version_1;
 					header_.type=fcgi_stdout;
 					header_.request_id=request_id_;
 					header_.content_length = reminder;
-					header_.padding_length =(8 - (reminder % 8)) % 8;
-					packet += io::buffer(&header_,sizeof(header_));
-					packet += io::buffer(ptr,reminder);
-					packet += io::buffer(pad,header_.padding_length);
+					header_.padding_length =pad_len = (8 - (reminder % 8)) % 8;
 					header_.to_net();
-					ptr += reminder;
-					reminder = 0;
+
+					packet += io::buffer(&header_,sizeof(header_));
 				}
+
+				reminder -= chunk;
+				while(chunk > 0) {
+					size_t next_size = chunks->size - chunk_consumed;
+					if(next_size > chunk)
+						next_size = chunk;
+
+					packet += io::buffer(chunks->ptr + chunk_consumed, next_size);
+					chunk_consumed += next_size;
+					chunk -= next_size;
+					if(chunk_consumed == chunks->size) {
+						chunks++;
+						chunk_consumed = 0;
+					}
+				}
+
+				packet += io::buffer(pad,pad_len);
 			}
+			if(completed) {
+				prepare_eof();
+				packet += io::buffer(&eof_,sizeof(eof_));
+			}
+			return packet;
+		}
+		virtual size_t do_write(booster::aio::const_buffer const &in,io_handler const &h,bool async,booster::system::error_code &e,bool eof)
+		{
+			size_t s = in.bytes_count();
+			io::const_buffer packet = format_output(in,eof,e);
+
+			if(e)
+				return 0;
 			
 			if(async) {
+				if(packet.empty()) {
+					socket_.get_io_service().post(h,booster::system::error_code(),0);
+					return 0;
+				}
 				socket_.async_write(
 					packet,
 					boost::bind(	h,
@@ -209,6 +247,8 @@ namespace cgi {
 				return s;
 			}
 			else {
+				if(packet.empty())
+					return 0;
 				booster::system::error_code err;
 				size_t res = socket_.write(packet,err);
 				if(err && io::basic_socket::would_block(err)) {
@@ -251,36 +291,8 @@ namespace cgi {
 			eof_.headers_[1].to_net();
 			eof_.record_.to_net();
 		}
-		virtual void write_eof()
+		virtual void do_eof()
 		{
-			prepare_eof();	
-			booster::system::error_code e;
-			socket_.write(io::buffer(&eof_,sizeof(eof_)),e);
-		}
-		
-		virtual void async_write_eof(handler const &h)
-		{
-			prepare_eof();	
-			socket_.cancel();
-			socket_.async_write(
-				io::buffer(&eof_,sizeof(eof_)),
-				boost::bind(	&fastcgi::on_written_eof,
-						self(),
-						_1,
-						h));
-		}
-
-		virtual void on_written_eof(booster::system::error_code const &e,handler const &h)
-		{
-			if(e) { h(e); return; }
-
-			// Stop reading from socket
-			if(!keep_alive_) {
-				booster::system::error_code err;
-				socket_.shutdown(io::stream_socket::shut_rdwr,err);
-			}
-
-			h(booster::system::error_code());
 		}
 
 		// This is not really correct because server may try

@@ -24,6 +24,10 @@ public:
 			env_.add(pool_.add(p->first),pool_.add(p->second));
 	}
 
+	booster::aio::const_buffer format_output(booster::aio::const_buffer const &in,bool,booster::system::error_code &)
+	{
+		return in;
+	}
 	void async_read_headers(handler const &) 
 	{
 		throw std::runtime_error("dummy_api: unsupported");
@@ -34,15 +38,17 @@ public:
 		throw std::runtime_error("dummy_api: unsupported");
 	}
 
-	void async_write(void const *,size_t,io_handler const &)
+	void async_write(booster::aio::const_buffer const &,io_handler const &,bool)
 	{
 		throw std::runtime_error("dummy_api: unsupported");
 	}
-	virtual void write_eof(){}
-	virtual size_t write(void const *p,size_t s,booster::system::error_code &) 
+	virtual void do_eof(){}
+	virtual size_t write(booster::aio::const_buffer const &in,booster::system::error_code &,bool ) 
 	{
-		output_->append(reinterpret_cast<char const *>(p),s);
-		return s;
+		std::pair<booster::aio::const_buffer::entry const *,size_t> all=in.get();
+		for(size_t i=0;i<all.second;i++) 
+			output_->append(reinterpret_cast<char const *>(all.first[i].ptr),all.first[i].size);
+		return in.bytes_count();
 	}
 	virtual booster::aio::io_service &get_io_service() 
 	{
@@ -54,10 +60,6 @@ public:
 	}
 	void close(){}
 	virtual void async_read_some(void *,size_t,io_handler const &) 
-	{
-		throw std::runtime_error("dummy_api: unsupported");
-	}
-	virtual void async_write_eof(handler const &)
 	{
 		throw std::runtime_error("dummy_api: unsupported");
 	}
