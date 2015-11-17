@@ -28,6 +28,7 @@
 #include <streambuf>
 #include <iterator>
 #include <map>
+#include <list>
 #include <stdio.h>
 
 #ifndef CPPCMS_NO_GZIP
@@ -318,7 +319,7 @@ struct response::_data {
 	typedef bool (*compare_type)(std::string const &left,std::string const &right);
 	typedef std::map<std::string,std::string,compare_type> headers_type;
 	headers_type headers;
-	std::vector<cookie> cookies;
+	std::list<std::string> added_headers;
 
 	details::copy_buf buffered;
 	details::copy_buf cached;
@@ -388,7 +389,9 @@ void response::set_redirect_header(std::string const &loc,int s)
 }
 void response::set_cookie(cookie const &cookie)
 {
-	d->cookies.push_back(cookie);
+	std::ostringstream ss;
+	ss << cookie;
+	d->added_headers.push_back(ss.str());
 }
 
 void response::set_header(std::string const &name,std::string const &value)
@@ -480,13 +483,23 @@ void response::write_http_headers(std::ostream &out)
 			continue;
 		out<<h->first<<": "<<h->second<<"\r\n";
 	}
-	
-	for(unsigned i=0;i<d->cookies.size();i++) {
-		out<<d->cookies[i]<<"\r\n";
+
+	for(std::list<std::string>::const_iterator p=d->added_headers.begin();p!=d->added_headers.end();++p) {
+		out << *p << "\r\n";
 	}
 
 	out<<"\r\n";
 	out<<std::flush;
+}
+void response::add_header(std::string const &name,std::string const &value)
+{
+	std::string h;
+	h.reserve(name.size() + value.size() + 3);
+	h+=name;
+	h+=": ";
+	h+=value;
+	d->added_headers.push_back(std::string());
+	d->added_headers.back().swap(h);
 }
 
 

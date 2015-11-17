@@ -226,6 +226,12 @@ namespace http {
 		void erase_header(std::string const &h);
 
 		///
+		/// add header - independently of set_header/get_header/erase_header - allows
+		/// to specify multiple headers of same type like Set-Cookie or WWW-Authenticate 
+		///
+		void add_header(std::string const &name,std::string const &value);
+
+		///
 		/// This function set HTTP Content-Type header, but unlike contet_type function it also adds
 		/// current locale charset encoding (unless localization.disable_charset_in_content_type set to true in configuration)
 		///
