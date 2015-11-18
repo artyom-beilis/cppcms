@@ -38,17 +38,18 @@ public:
 		throw std::runtime_error("dummy_api: unsupported");
 	}
 
-	void async_write(booster::aio::const_buffer const &,io_handler const &,bool)
-	{
-		throw std::runtime_error("dummy_api: unsupported");
-	}
 	virtual void do_eof(){}
-	virtual size_t write(booster::aio::const_buffer const &in,booster::system::error_code &,bool ) 
+	virtual void on_some_output_written() {}
+	virtual bool write(booster::aio::const_buffer const &in,bool,booster::system::error_code &) 
 	{
 		std::pair<booster::aio::const_buffer::entry const *,size_t> all=in.get();
 		for(size_t i=0;i<all.second;i++) 
 			output_->append(reinterpret_cast<char const *>(all.first[i].ptr),all.first[i].size);
 		return in.bytes_count();
+	}
+	virtual booster::aio::stream_socket &socket()
+	{
+		throw std::runtime_error("dummy_api: unsupported");
 	}
 	virtual booster::aio::io_service &get_io_service() 
 	{

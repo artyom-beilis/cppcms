@@ -122,25 +122,6 @@ namespace cgi {
 		{
 			socket_.async_read_some(io::buffer(p,s),h);
 		}
-		virtual void async_write(booster::aio::const_buffer const &in,io_handler const &h,bool /*eof*/)
-		{
-			socket_.async_write(in,h);
-		}
-		virtual size_t write(booster::aio::const_buffer const &in,booster::system::error_code &e,bool /*eof*/)
-		{
-			booster::system::error_code err;
-			size_t res = socket_.write(in,err);
-			if(err && io::basic_socket::would_block(err)) {
-				socket_.set_non_blocking(false);
-				return socket_.write_some(in,e);
-			}
-			else if(err) {
-				e=err;
-				return res;
-			}
-			else 
-				return res;
-		}
 		virtual booster::aio::io_service &get_io_service()
 		{
 			return socket_.get_io_service();
@@ -163,6 +144,8 @@ namespace cgi {
 			socket_.async_read_some(io::buffer(&a,1),boost::bind(h));
 		}
 
+		virtual void on_some_output_written() {} 
+		virtual booster::aio::stream_socket &socket() { return socket_; }
 	private:
 		size_t start_,end_,sep_;
 		booster::shared_ptr<scgi> self()

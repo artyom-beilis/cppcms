@@ -121,18 +121,14 @@ namespace cppcms { namespace impl { namespace cgi {
 		void on_response_read(booster::system::error_code const &e,size_t len)
 		{
 			if(e) {
-				conn_->async_write(booster::aio::const_buffer(),
-							boost::bind(&cgi_forwarder::cleanup,shared_from_this()),
-							true);
+				conn_->async_write(booster::aio::const_buffer(),true,boost::bind(&cgi_forwarder::cleanup,shared_from_this()));
 				return;
 			}
 			else {
-				conn_->async_write(booster::aio::buffer(&response_.front(),len),
-						   boost::bind(&cgi_forwarder::on_response_written,shared_from_this(),_1,_2),
-						   false);
+				conn_->async_write(booster::aio::buffer(&response_.front(),len),false,boost::bind(&cgi_forwarder::on_response_written,shared_from_this(),_1));
 			}
 		}
-		void on_response_written(booster::system::error_code const &e,size_t /*len*/)
+		void on_response_written(booster::system::error_code const &e)
 		{
 			if(e) { cleanup(); return; }
 			scgi_.async_read_some(booster::aio::buffer(response_),
@@ -263,20 +259,17 @@ void connection::handle_http_error(int code,http::context *context,ehandler cons
 	async_chunk_ += "</h1>\r\n"
 		"</body>\r\n"
 		"</html>\r\n";
-	async_write(booster::aio::buffer(async_chunk_),
+	async_write(booster::aio::buffer(async_chunk_),true,
 		boost::bind(
 			&connection::handle_http_error_eof,
 			self(),
 			_1,
-			_2,
 			code,
-			h),
-			true);
+			h));
 }
 
 void connection::handle_http_error_eof(
 	booster::system::error_code const &e,
-	size_t /*n*/,
 	int code,
 	ehandler const &h)
 {
@@ -428,59 +421,180 @@ std::string connection::last_error()
 	return error_;
 }
 
-struct connection::async_write_binder : public booster::callable<void(booster::system::error_code const &,size_t)> {
-	typedef booster::shared_ptr<cppcms::impl::cgi::connection> self_type;
-	self_type self;
+struct connection::async_write_binder : public booster::callable<void(booster::system::error_code const &)> {
+	typedef booster::shared_ptr<cppcms::impl::cgi::connection> conn_type;
+	
+	conn_type conn;
 	ehandler h;
 	bool complete_response;
-	booster::shared_ptr<std::vector<char> > block;
-	async_write_binder() :complete_response(false) {}
-	void init(self_type c,bool comp,ehandler const &hnd,booster::shared_ptr<std::vector<char> > const &b) 
-	{
-		self=c;
-		complete_response = comp;
-		h = hnd;
-		block = b;
-	}
+
 	void reset()
 	{
 		h=ehandler();
-		self.reset();
+		conn.reset();
 		complete_response = false;
-		block.reset();
 	}
-	void operator()(booster::system::error_code const &e,size_t)
+	void operator()(booster::system::error_code const &e)
 	{
 		if(complete_response) {
-			self->do_eof();
+			conn->do_eof();
 		}
 		h(e ? cppcms::http::context::operation_aborted : cppcms::http::context::operation_completed );
-		if(!self->cached_async_write_binder_) {
-			self->cached_async_write_binder_ = this;
+		if(!conn->cached_async_write_binder_) {
+			conn->cached_async_write_binder_ = this;
 			reset();
 		}
 	}
 };
 
+booster::intrusive_ptr<connection::async_write_binder> connection::get_write_binder(ehandler const &h,bool complete_response)
+{
+	booster::intrusive_ptr<connection::async_write_binder> tmp;
+	if(cached_async_write_binder_) {
+		tmp.swap(cached_async_write_binder_);
+	}
+	if(!tmp) {
+		tmp = new connection::async_write_binder();
+	}
+	tmp->conn = self();
+	tmp->h = h;
+	tmp->complete_response = complete_response;
+	return tmp;
+}
 
 void connection::async_write_response(	http::response &response,
 					bool complete_response,
 					ehandler const &h)
 {
+	booster::intrusive_ptr<async_write_binder> tmp = get_write_binder(h,complete_response);
+	booster::system::error_code e;
 	http::response::chunk_type chunk = response.get_async_chunk();
-	if(chunk.second > 0) {
-		booster::intrusive_ptr<async_write_binder> binder;
-		binder.swap(cached_async_write_binder_);
-		if(!binder)
-			binder = new async_write_binder();
-
-		binder->init(self(),complete_response,h,chunk.first);
-		booster::intrusive_ptr<booster::callable<void(booster::system::error_code const &,size_t)> > p(binder.get());
-		async_write(	booster::aio::buffer(&(*chunk.first)[0],chunk.second),p,complete_response);
+	if(chunk.second > 0 || complete_response || has_pending()) {
+		booster::aio::const_buffer out;
+		if(chunk.second > 0)
+			out = booster::aio::buffer(&chunk.first->front(),chunk.second);
+		if(nonblocking_write(out,complete_response,e) || e) {
+			get_io_service().post(tmp,e);
+			return;
+		}
+		async_write(booster::aio::const_buffer(),false,tmp);
 		return;
 	}
 	// request to send an empty block
-	get_io_service().post(boost::bind(h,http::context::operation_completed));
+	get_io_service().post(tmp,e);
+}
+
+bool connection::has_pending()
+{
+	return !pending_output_.empty();
+}
+
+void connection::append_pending(booster::aio::const_buffer const &new_data)
+{
+	size_t pos = pending_output_.size();
+	pending_output_.resize(pending_output_.size() + new_data.bytes_count());
+	std::pair<booster::aio::const_buffer::entry const *,size_t> packets = new_data.get();
+	for(size_t i=0;i<packets.second;i++) {
+		memcpy(&pending_output_[pos],packets.first[i].ptr,packets.first[i].size);
+		pos += packets.first[i].size;
+	}
+}
+
+bool connection::write(booster::aio::const_buffer const &buf,bool eof,booster::system::error_code &e)
+{
+	booster::aio::const_buffer new_data = format_output(buf,eof,e);
+	if(e) return  false;
+	booster::aio::const_buffer output = pending_output_.empty() ? new_data : (booster::aio::buffer(pending_output_) + new_data);
+	socket().set_non_blocking_if_needed(false,e);
+	if(e) return false;
+
+	bool r=write_to_socket(output,e);
+	pending_output_.clear();
+	return r;
+}
+
+bool connection::write_to_socket(booster::aio::const_buffer const &in,booster::system::error_code &e)
+{
+	return socket().write(in,e) == in.bytes_count();
+}
+
+bool connection::nonblocking_write(booster::aio::const_buffer const &buf,bool eof,booster::system::error_code &e)
+{
+	booster::aio::const_buffer new_data = format_output(buf,eof,e);
+	if(e) return  false;
+	booster::aio::const_buffer output = pending_output_.empty() ? new_data : (booster::aio::buffer(pending_output_) + new_data);
+	
+	socket().set_non_blocking_if_needed(true,e);
+	if(e) return false;
+
+	size_t n = socket().write_some(output,e);
+	if(n == output.bytes_count()) {
+		pending_output_.clear();
+		return true;
+	}
+	if(n == 0) {
+		append_pending(new_data);
+	}
+	else {
+		std::vector<char> tmp;
+		pending_output_.swap(tmp); 
+		// after swapping output still points to a valid buffer
+		append_pending(output + n);
+	}
+	if(e && socket().would_block(e)) {
+		e=booster::system::error_code();
+		return false;
+	}
+	return false;
+}
+
+struct connection::async_write_handler : public booster::callable<void(booster::system::error_code const &e)>
+{
+	typedef booster::shared_ptr<cppcms::impl::cgi::connection> conn_type;
+	typedef booster::intrusive_ptr< booster::callable<void(booster::system::error_code const &)> > self_type;
+	std::vector<char> data;
+	booster::aio::const_buffer output;
+	handler h;
+	conn_type conn;
+
+	async_write_handler(conn_type const &c,std::vector<char> &d,handler const &hin) :
+		h(hin),
+		conn(c)
+	{
+		data.swap(d);
+		output = booster::aio::buffer(data);
+	}
+
+	virtual void operator()(booster::system::error_code const &ein)
+	{
+		if(ein) { h(ein); return; }
+		booster::system::error_code e;
+		conn->socket().set_non_blocking_if_needed(true,e);
+		size_t n = conn->socket().write_some(output,e);
+		if(n!=0)
+			conn->on_some_output_written();
+		output += n;
+		if(output.empty()) {
+			h(e);
+			return;
+		}
+		if(e && booster::aio::basic_io_device::would_block(e)) {
+			conn->socket().on_writeable(self_type(this));
+		}
+		h(e);
+	}
+};
+
+void connection::async_write(booster::aio::const_buffer const &buf,bool eof,handler const &h)
+{
+	booster::system::error_code e;
+	if(nonblocking_write(buf,eof,e) || e) {
+		if(!e) on_some_output_written();
+		get_io_service().post(h,e);
+		return;
+	}
+	async_write_handler::self_type p(new async_write_handler(self(),pending_output_,h));
+	socket().on_writeable(p);
 }
 
 

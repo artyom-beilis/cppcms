@@ -144,26 +144,6 @@ namespace cgi {
 			h(booster::system::error_code(),s);
 		}
 	public:
-		static void print(booster::aio::const_buffer const &in,bool eof)
-		{
-			std::pair<booster::aio::const_buffer::entry const *,size_t> r = in.get();
-			for(size_t i=0;i<r.second;i++) {
-				std::cout.write(r.first[i].ptr,r.first[i].size);
-			}
-			std::cout << (eof ? "EOF" : "---")<< std::endl;
-		}
-		virtual void async_write(booster::aio::const_buffer const &in,io_handler const &h,bool eof)
-		{
-			print(in,eof);
-			booster::system::error_code dummy;
-			do_write(in,h,true,dummy,eof);
-		}
-		
-		virtual size_t write(booster::aio::const_buffer const &in,booster::system::error_code &e,bool eof)
-		{
-			print(in,eof);
-			return do_write(in,io_handler(),false,e,eof);
-		}
 
 		virtual booster::aio::const_buffer format_output(booster::aio::const_buffer const &in,bool completed,booster::system::error_code &)
 		{
@@ -226,45 +206,8 @@ namespace cgi {
 			}
 			return packet;
 		}
-		virtual size_t do_write(booster::aio::const_buffer const &in,io_handler const &h,bool async,booster::system::error_code &e,bool eof)
-		{
-			size_t s = in.bytes_count();
-			io::const_buffer packet = format_output(in,eof,e);
-
-			if(e)
-				return 0;
-			
-			if(async) {
-				if(packet.empty()) {
-					socket_.get_io_service().post(h,booster::system::error_code(),0);
-					return 0;
-				}
-				socket_.async_write(
-					packet,
-					boost::bind(	h,
-							_1,
-							s));
-				return s;
-			}
-			else {
-				if(packet.empty())
-					return 0;
-				booster::system::error_code err;
-				size_t res = socket_.write(packet,err);
-				if(err && io::basic_socket::would_block(err)) {
-					socket_.set_non_blocking(false);
-					packet+=res;
-					socket_.write(packet,e);
-					return s;
-				}
-				else if(err) {
-					e=err;
-					return 0;
-				}
-				else
-					return s;
-			}
-		}
+		virtual void on_some_output_written() {} 
+		virtual booster::aio::stream_socket &socket() { return socket_; }
 		virtual booster::aio::io_service &get_io_service()
 		{
 			return socket_.get_io_service();

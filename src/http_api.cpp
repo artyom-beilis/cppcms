@@ -316,27 +316,6 @@ namespace cgi {
 			socket_.shutdown(io::stream_socket::shut_wr,e);
 			socket_.close(e);
 		}
-		virtual void async_write(booster::aio::const_buffer const &in,io_handler const &h,bool eof)
-		{
-			update_time();
-			watchdog_->add(self());
-			booster::system::error_code e;
-			booster::aio::const_buffer packet = format_output(in,eof,e);
-			if(e) {
-				socket_.get_io_service().post(h,e,0);
-				return;
-			}
-			socket_.async_write(packet,h);
-		}
-		virtual size_t write(booster::aio::const_buffer const &in,booster::system::error_code &e,bool eof)
-		{
-
-			booster::aio::const_buffer packet = format_output(in,eof,e);
-			if(e) return 0;
-			write_to_socket(packet,e);	
-			if(e) return 0;
-			return in.bytes_count();
-		}
 		#ifndef CPPCMS_NO_SO_SNDTIMO
 		size_t timed_write_some(booster::aio::const_buffer const &buf,booster::system::error_code &e)
 		{
@@ -392,7 +371,7 @@ namespace cgi {
 			return 0;
 		}
 		#endif
-		size_t write_to_socket(booster::aio::const_buffer const &bufin,booster::system::error_code &e)
+		bool write_to_socket(booster::aio::const_buffer const &bufin,booster::system::error_code &e)
 		{
 			booster::aio::const_buffer buf = bufin;
 			size_t total = 0;
@@ -405,12 +384,12 @@ namespace cgi {
 					break;
 				}
 			}
-			return total;
+			return total == bufin.bytes_count();
 		}
 		void set_sync_options(booster::system::error_code &e)
 		{
 			if(!sync_option_is_set_) {
-				socket_.set_non_blocking(false,e);
+				socket_.set_non_blocking_if_needed(false,e);
 				if(e)
 					return;
 				cppcms::impl::set_send_timeout(socket_,timeout_,e);
@@ -442,8 +421,15 @@ namespace cgi {
 			socket_.async_read_some(io::buffer(&a,1),boost::bind(h));
 		}
 
+		void on_some_output_written()
+		{
+			update_time();
+		}
+		virtual booster::aio::stream_socket &socket() { return socket_; }
 		virtual booster::aio::const_buffer format_output(booster::aio::const_buffer const &in,bool /*completed*/,booster::system::error_code &e)
 		{
+			update_time();
+			add_to_watchdog();
 			if(headers_done_)
 				return in;
 			booster::aio::const_buffer packet;

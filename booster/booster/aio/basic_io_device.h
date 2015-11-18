@@ -133,6 +133,20 @@ namespace aio {
 		/// If a error occurs it is assigned to \a e.
 		///	
 		void set_non_blocking(bool nonblocking,system::error_code &e);
+		///
+		/// Set the object to blocking or non-blocking mode. It checks if set_non_blocking() was
+		/// called before and does nothing if previous call matches the request
+		///
+		/// Throws system::system_error if error occurs.
+		///	
+		void set_non_blocking_if_needed(bool nonblocking);
+		///
+		/// Set the object to blocking or non-blocking mode. It checks if set_non_blocking() was
+		/// called before and does nothing if previous call matches the request
+		///
+		/// If a error occurs it is assigned to \a e.
+		///	
+		void set_non_blocking_if_needed(bool nonblocking,system::error_code &e);
 
 		///
 		/// Check if a error code \a e reports that the non-blocking operation would block

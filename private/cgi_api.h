@@ -111,11 +111,19 @@ namespace cgi {
 		// These are abstract member function that should be implemented by
 		// actual protocol like FCGI, SCGI, HTTP or CGI
 	public:
-		virtual void async_write(booster::aio::const_buffer const &buf,io_handler const &h,bool eof) = 0;
-		virtual size_t write(booster::aio::const_buffer const &buf,booster::system::error_code &e,bool eof) = 0;
+		bool has_pending();
+		virtual bool nonblocking_write(booster::aio::const_buffer const &buf,bool eof,booster::system::error_code &e);
+		virtual void async_write(booster::aio::const_buffer const &buf,bool eof,handler const &h);
+		virtual bool write(booster::aio::const_buffer const &buf,bool eof,booster::system::error_code &e);
+
+		virtual void on_some_output_written() = 0;
 		virtual void do_eof() = 0;
 		virtual booster::aio::const_buffer format_output(booster::aio::const_buffer const &in,bool completed,booster::system::error_code &e) = 0;
+		virtual bool write_to_socket(booster::aio::const_buffer const &in,booster::system::error_code &e);
 	protected:
+		void append_pending(booster::aio::const_buffer const &new_data);
+
+		virtual booster::aio::stream_socket &socket() = 0;
 
 
 		virtual void async_read_headers(handler const &h) = 0;
@@ -134,6 +142,7 @@ namespace cgi {
 		
 		string_pool pool_;
 		string_map env_;
+		std::vector<char> pending_output_;
 
 		booster::shared_ptr<connection> self();
 		void async_read(void *,size_t,io_handler const &h);
@@ -142,10 +151,12 @@ namespace cgi {
 		struct reader;
 		struct cgi_forwarder;
 		struct async_write_binder;
+		struct async_write_handler;
 
 		friend struct reader;
 		friend struct writer;
 		friend struct async_write_binder;
+		friend struct async_write_handler;
 		friend struct cgi_forwarder;
 
 		void set_error(ehandler const &h,std::string s);
@@ -155,7 +166,8 @@ namespace cgi {
 		void on_some_multipart_read(booster::system::error_code const &e,size_t n,http::context *,ehandler const &h);
 		void handle_eof(callback const &on_eof);
 		void handle_http_error(int code,http::context *context,ehandler const &h);
-		void handle_http_error_eof(booster::system::error_code const &e,size_t n,int code,ehandler const &h); 
+		void handle_http_error_eof(booster::system::error_code const &e,int code,ehandler const &h); 
+		booster::intrusive_ptr<connection::async_write_binder> get_write_binder(ehandler const &h,bool complete_response);
 
 		std::vector<char> content_;
 		cppcms::service *service_;

@@ -54,7 +54,13 @@ namespace details {
 		return ss.str();
 	}
 
-	class copy_buf : public std::streambuf {
+	class closeable {
+	public:
+		virtual void close() = 0;
+		virtual ~closeable() {}
+	};
+
+	class copy_buf : public std::streambuf, public closeable  {
 	public:
 		copy_buf(std::streambuf *output = 0) :
 			out_(output)
@@ -176,7 +182,7 @@ namespace details {
 
 
 #ifndef CPPCMS_NO_GZIP
-	class gzip_buf : public basic_obuf<gzip_buf> {
+	class gzip_buf : public basic_obuf<gzip_buf>, public closeable {
 	public:
 		gzip_buf(size_t n = 0) :
 			basic_obuf<gzip_buf>(n),
@@ -281,7 +287,7 @@ namespace details {
 
 #endif
 
-	class output_device : public basic_obuf<output_device> {
+	class output_device : public basic_obuf<output_device>, public closeable {
 		booster::weak_ptr<impl::cgi::connection> conn_;
 		bool final_;
 		bool eof_send_;
@@ -313,13 +319,13 @@ namespace details {
 			
 			booster::system::error_code e;
 
-			int res = c->write(in,e,set_eof);
+			bool res = c->write(in,set_eof,e);
 			if(e) {
 				BOOSTER_WARNING("cppcms") << "Failed to write response:" << e.message();
 				conn_.reset();
 				return -1;
 			}
-			if(res!=int(in.bytes_count()))
+			if(!res)
 				return -1;
 			if(set_eof)
 				eof_send_ = true;
@@ -337,6 +343,7 @@ struct response::_data {
 	typedef std::map<std::string,std::string,compare_type> headers_type;
 	headers_type headers;
 	std::list<std::string> added_headers;
+	std::list<details::closeable *> buffers;
 
 	details::copy_buf buffered;
 	details::copy_buf cached;
@@ -423,15 +430,8 @@ void response::finalize()
 {
 	if(!finalized_) {
 		out();
-#ifndef CPPCMS_NO_GZIP
-		d->zbuf.close();
-#endif
-		d->cached.close();
-
-		if(io_mode_ == asynchronous || io_mode_ == asynchronous_raw) 
-			d->buffered.close();
-		else
-			d->output_buf.close();
+		for(std::list<details::closeable *>::iterator p=d->buffers.begin();p!=d->buffers.end();++p)
+			(*p)->close();
 		finalized_=1;
 	}
 }
@@ -546,10 +546,14 @@ std::ostream &response::out()
 	if(finalized_)
 		throw cppcms_error("Request for output stream for finalized request is illegal");
 	
-	if(io_mode_ == asynchronous || io_mode_ == asynchronous_raw) 
+	if(io_mode_ == asynchronous || io_mode_ == asynchronous_raw)  {
 		d->output.rdbuf(&d->buffered);
-	else 
+		d->buffers.push_front(&d->buffered);
+	}
+	else { 
 		d->output.rdbuf(&d->output_buf);
+		d->buffers.push_front(&d->output_buf);
+	}
 	
 	ostream_requested_=1;
 	
@@ -568,6 +572,7 @@ std::ostream &response::out()
 	if(copy_to_cache_) {
 		d->cached.open(d->output.rdbuf());
 		d->output.rdbuf(&d->cached);
+		d->buffers.push_front(&d->cached);
 	}
 	
 	#ifndef CPPCMS_NO_GZIP
@@ -576,6 +581,7 @@ std::ostream &response::out()
 		int buffer=context_.service().cached_settings().gzip.buffer;
 		d->zbuf.open(d->output.rdbuf(),level,buffer);
 		d->output.rdbuf(&d->zbuf);
+		d->buffers.push_front(&d->zbuf);
 	}
 	#endif
 	

@@ -164,6 +164,20 @@ void basic_io_device::set_non_blocking(bool nonblocking,system::error_code &e)
 	nonblocking_was_set_=nonblocking;
 }
 
+void basic_io_device::set_non_blocking_if_needed(bool nonblocking)
+{
+	if(nonblocking_was_set_ == nonblocking)
+		return;
+	set_non_blocking(nonblocking);
+}
+
+void basic_io_device::set_non_blocking_if_needed(bool nonblocking,booster::system::error_code &e)
+{
+	if(nonblocking_was_set_ == nonblocking)
+		return;
+	set_non_blocking(nonblocking,e);
+}
+
 void basic_io_device::set_non_blocking(bool nonblocking)
 {
 	system::error_code e;
