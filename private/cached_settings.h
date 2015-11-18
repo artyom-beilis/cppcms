@@ -55,6 +55,7 @@ namespace impl {
 			std::string ip;
 			int port;
 			int output_buffer_size;
+			int async_output_buffer_size;
 			bool disable_xpowered_by;
 			bool generate_http_headers;
 			int worker_threads;
@@ -64,6 +65,7 @@ namespace impl {
 				ip = v.get("service.ip","127.0.0.1");
 				port = v.get("service.port",8080);
 				output_buffer_size = v.get("service.output_buffer_size",16384);
+				async_output_buffer_size = v.get("service.async_output_buffer_size",1024);
 				disable_xpowered_by = v.get("service.disable_xpowered_by",false);
 				unsigned cpus = booster::thread::hardware_concurrency();
 				if(cpus == 0)

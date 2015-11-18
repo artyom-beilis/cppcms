@@ -137,6 +137,7 @@ namespace cppcms { namespace impl { namespace cgi {
 
 		void cleanup()
 		{
+			conn_->do_eof();
 			booster::system::error_code e;
 			scgi_.shutdown(booster::aio::stream_socket::shut_rdwr,e);
 			scgi_.close(e);
@@ -468,20 +469,11 @@ void connection::async_write_response(	http::response &response,
 {
 	booster::intrusive_ptr<async_write_binder> tmp = get_write_binder(h,complete_response);
 	booster::system::error_code e;
-	http::response::chunk_type chunk = response.get_async_chunk();
-	if(chunk.second > 0 || complete_response || has_pending()) {
-		booster::aio::const_buffer out;
-		if(chunk.second > 0)
-			out = booster::aio::buffer(&chunk.first->front(),chunk.second);
-		if(nonblocking_write(out,complete_response,e) || e) {
-			get_io_service().post(tmp,e);
-			return;
-		}
-		async_write(booster::aio::const_buffer(),false,tmp);
+	if(response.flush_async_chunk(e)!=0 || !has_pending()) {
+		get_io_service().post(tmp,e);
 		return;
 	}
-	// request to send an empty block
-	get_io_service().post(tmp,e);
+	async_write(booster::aio::const_buffer(),false,tmp);
 }
 
 bool connection::has_pending()

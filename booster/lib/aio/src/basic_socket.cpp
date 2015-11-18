@@ -88,10 +88,11 @@ endpoint basic_socket::remote_endpoint(system::error_code &e)
 	std::vector<char> endpoint_raw_(1000,0);
 	sockaddr *sa = reinterpret_cast<sockaddr *>(&endpoint_raw_.front());
 	socklen_t len = endpoint_raw_.size();
-	if(::getpeername(native(),sa,&len) < 0)
-		e=geterror();
 	endpoint ep;
-	ep.raw(sa,len);
+	if(::getpeername(native(),sa,&len) < 0) 
+		e=geterror();
+	else
+		ep.raw(sa,len);
 	return ep;
 }
 

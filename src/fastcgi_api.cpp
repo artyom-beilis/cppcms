@@ -17,6 +17,7 @@
 #include <string.h>
 #include <algorithm>
 #include <iostream>
+#include <stdio.h>
 #include <cppcms/config.h>
 
 #include <booster/aio/buffer.h>
@@ -49,11 +50,13 @@ namespace cgi {
 
 
 	template<typename API,typename Factory> class socket_acceptor;
+
 	class fastcgi : public connection {
 	public:
 		fastcgi(cppcms::service &srv) :
 			connection(srv),
-			socket_(srv.impl().get_io_service())
+			socket_(srv.impl().get_io_service()),
+			eof_callback_(false)
 		{
 			reset_all();
 			int procs=srv.procs_no();
@@ -149,6 +152,21 @@ namespace cgi {
 		{
 			booster::aio::const_buffer packet;
 			booster::aio::const_buffer::entry const *chunks = in.get().first;
+#ifdef DEBUG_FASTCGI
+			{
+				size_t n=in.get().second;
+				printf("Format output of %d:\n",int(in.bytes_count()));
+				for(size_t i=0;i<n;i++) {
+					printf("[%.*s]",int(chunks[i].size),chunks[i].ptr);
+				}
+				if(completed) {
+					printf("\nEOF\n");
+				}
+				else {
+					printf("\n---\n");
+				}
+			}
+#endif
 			size_t reminder = in.bytes_count();
 			size_t in_size = reminder;
 			size_t chunk_consumed = 0;
@@ -236,12 +254,16 @@ namespace cgi {
 		}
 		virtual void do_eof()
 		{
+			if(eof_callback_)
+				socket_.cancel();
+			eof_callback_ = false;
 		}
 
 		// This is not really correct because server may try
 		// to multiplex or ask control... But meanwhile it is good enough
 		virtual void async_read_eof(callback const &h)
 		{
+			eof_callback_ = true;
 			static char a;
 			async_read_from_socket(&a,1,boost::bind(h));
 		}
@@ -721,6 +743,7 @@ namespace cgi {
 
 		std::vector<char> cache_;
 		size_t cache_start_,cache_end_;
+		bool eof_callback_;
 
 		void reset_all()
 		{

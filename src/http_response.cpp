@@ -54,13 +54,14 @@ namespace details {
 		return ss.str();
 	}
 
-	class closeable {
+	class closeable : public std::streambuf {
 	public:
 		virtual void close() = 0;
 		virtual ~closeable() {}
 	};
 
-	class copy_buf : public std::streambuf, public closeable  {
+
+	class copy_buf : public closeable  {
 	public:
 		copy_buf(std::streambuf *output = 0) :
 			out_(output)
@@ -127,11 +128,15 @@ namespace details {
 		}
 		int sync()
 		{
-			return overflow(EOF);
+			if(overflow(EOF) < 0)
+				return -1;
+			if(out_) 
+				return out_->pubsync();
+			return 0;
 		}
 		void close()
 		{
-			pubsync();
+			overflow(EOF);
 			out_ = 0;
 		}
 	private:
@@ -142,7 +147,7 @@ namespace details {
 
 
 	template<typename Self>
-	class basic_obuf : public std::streambuf {
+	class basic_obuf : public closeable {
 	public:
 		basic_obuf(size_t n = 0)
 		{
@@ -182,7 +187,7 @@ namespace details {
 
 
 #ifndef CPPCMS_NO_GZIP
-	class gzip_buf : public basic_obuf<gzip_buf>, public closeable {
+	class gzip_buf : public basic_obuf<gzip_buf> {
 	public:
 		gzip_buf(size_t n = 0) :
 			basic_obuf<gzip_buf>(n),
@@ -286,56 +291,224 @@ namespace details {
 	};
 
 #endif
-
-	class output_device : public basic_obuf<output_device>, public closeable {
-		booster::weak_ptr<impl::cgi::connection> conn_;
-		bool final_;
-		bool eof_send_;
+	class basic_device : public closeable {
 	public:
-		output_device(impl::cgi::connection *conn,size_t n) : 
-			basic_obuf<output_device>(n),
-			conn_(conn->shared_from_this()),
+		basic_device() : 
 			final_(false),
-			eof_send_(false)
+			eof_send_(false),
+			buffer_size_(0)
 		{
 		}
-		void close()
+		void open(booster::weak_ptr<impl::cgi::connection> c,size_t n)
 		{
-			final_=true;
-			pubsync();
-			if(!eof_send_) {
-				do_write(booster::aio::const_buffer());
-			}
+			buffer_size_ = n;
+			do_setp();
+			conn_ = c;
 		}
-		int do_write(booster::aio::const_buffer const &in)
-		{
-			bool set_eof = final_ && !eof_send_;
-			if(in.empty() && !set_eof)
-				return 0;
 
+		virtual bool do_write(impl::cgi::connection &c,booster::aio::const_buffer const &out,bool eof,booster::system::error_code &e) = 0;
+
+		int write(booster::aio::const_buffer const &out)
+		{
+			booster::system::error_code e;
+			return write(out,e);
+		}
+		int write(booster::aio::const_buffer const &out,booster::system::error_code &e)
+		{
+			if(out.empty())
+				return 0;
 			booster::shared_ptr<impl::cgi::connection> c = conn_.lock();
 			if(!c)
 				return -1;
-			
-			booster::system::error_code e;
-
-			bool res = c->write(in,set_eof,e);
+			bool send_eof = final_ && !eof_send_;
+			eof_send_ = send_eof;
+			if(do_write(*c,out,send_eof,e)) {
+				return 0;
+			}
 			if(e) {
 				BOOSTER_WARNING("cppcms") << "Failed to write response:" << e.message();
-				conn_.reset();
 				return -1;
+
 			}
-			if(!res)
-				return -1;
-			if(set_eof)
-				eof_send_ = true;
 			return 0;
 		}
-		int write(char const *data,int n)
+		virtual int sync()
 		{
-			return do_write(booster::aio::buffer(data,n));
+			return overflow(EOF);
+		}
+		virtual int overflow(int c)
+		{
+			char c_tmp=c;
+			booster::aio::const_buffer out=booster::aio::buffer(pbase(),pptr()-pbase());
+			if(c!=EOF)
+				out += booster::aio::buffer(&c_tmp,1);
+			booster::system::error_code e;
+			if(write(out)!=0)
+				return -1;
+			do_setp();
+			return 0;
+		}
+		virtual std::streamsize xsputn(const char* s, std::streamsize n)
+		{
+			if((epptr() - pptr()) >= n) {
+				memcpy(pptr(),s,n);
+				pbump(n);
+				return n;
+			}
+			else {
+				booster::aio::const_buffer out=booster::aio::buffer(pbase(),pptr()-pbase());
+				out+=booster::aio::buffer(s,n);
+				if(write(out)!=0)
+					return -1;
+				do_setp();
+				return n;
+			}
+		}
+
+		void do_setp()
+		{
+			output_.resize(buffer_size_);
+			if(buffer_size_ == 0)
+				setp(0,0);
+			else
+				setp(&output_[0],&output_[buffer_size_-1]+1);
+		}
+		int flush(booster::system::error_code &e)
+		{
+			int r = write(booster::aio::buffer(pbase(),pptr()-pbase()),e);
+			setp(pbase(),epptr());
+			return r;
+		}
+		virtual std::streambuf *setbuf(char const *,std::streamsize size)
+		{
+			buffer_size_ = size;
+			std::streamsize content_size = pptr() - pbase();
+			if(content_size > size) {
+				booster::system::error_code e;
+				if(flush(e)!=0)
+					return 0;
+				content_size = 0;
+			}
+			do_setp();
+			pbump(content_size);
+			return this;
+		}
+		void close()
+		{
+			if(eof_send_)
+				return;
+			final_=true;
+			booster::system::error_code e;
+			flush(e);
+		}
+	protected:
+		booster::weak_ptr<impl::cgi::connection> conn_;
+		bool final_;
+		bool eof_send_;
+		size_t buffer_size_;
+		std::vector<char> output_;
+	};
+
+	class async_io_buf : public basic_device {
+	public:
+		async_io_buf() : full_buffering_(true)
+		{
+		}
+
+		int full_buffering(bool buffering)
+		{
+			if(full_buffering_ == buffering)
+				return 0;
+			full_buffering_ = buffering;
+			if(full_buffering_ == false) {
+				if(pubsetbuf(0,buffer_size_)==0) {
+					return -1;
+				}
+			}
+			return 0;
+		}
+		std::streambuf *setbuf(char *s,std::streamsize size)
+		{
+			if(full_buffering_) {
+				buffer_size_ = size;
+				std::streamsize content_size = pptr() - pbase();
+				if(size_t(size) > output_.size())
+					output_.resize(size);
+				do_setp();
+				pbump(content_size);
+				return this;
+			}
+			return basic_device::setbuf(s,size);
+		}
+		size_t next_size(size_t in)
+		{
+			if(in == 0)
+				return 64;
+			return in * 2;
+			
+		}
+		virtual int overflow(int c)
+		{
+			if(full_buffering_) {
+				if(pptr() ==  epptr()) {
+					size_t current_size = pptr() - pbase();
+					output_.resize(next_size(output_.size()));
+					setp(&output_[0],&output_[output_.size()-1]+1);
+					pbump(current_size);
+				}
+				if(c!=EOF) {
+					*pptr() = c;
+					pbump(1);
+				}
+				return 0;
+			}
+			else {
+				return basic_device::overflow(c);
+			}
+		}
+		virtual std::streamsize xsputn(const char* s, std::streamsize n)
+		{
+			if(full_buffering_) {
+				std::streamsize reminder = epptr() - pptr();
+				if(reminder < n) {
+					size_t current_size = pptr()-pbase();
+					size_t minimal_size = current_size + n;
+					size_t resize_size = next_size(output_.size());
+					while(resize_size < minimal_size)
+						resize_size *= 2;
+					output_.resize(resize_size);
+					setp(&output_[0],&output_[0]+resize_size);
+					pbump(current_size);
+				}
+				memcpy(pptr(),s,n);
+				pbump(n);
+				return n;
+			}
+			else {
+				return basic_device::xsputn(s,n);
+			}
+		}
+		virtual bool do_write(impl::cgi::connection &c,booster::aio::const_buffer const &out,bool eof,booster::system::error_code &e) 
+		{
+			c.nonblocking_write(out,eof,e);
+			if(e)
+				return false;
+			return true;
+		}
+	private:
+		bool full_buffering_;
+	};
+
+
+	class output_device : public basic_device {
+	public:
+		virtual bool do_write(impl::cgi::connection &c,booster::aio::const_buffer const &out,bool eof,booster::system::error_code &e) 
+		{
+			return c.write(out,eof,e);
 		}
 	};
+
+
 }
 
 struct response::_data {
@@ -345,18 +518,19 @@ struct response::_data {
 	std::list<std::string> added_headers;
 	std::list<details::closeable *> buffers;
 
-	details::copy_buf buffered;
+	details::async_io_buf buffered;
 	details::copy_buf cached;
 	#ifndef CPPCMS_NO_GZIP
 	details::gzip_buf zbuf;
 	#endif
 	details::output_device output_buf;
 	std::ostream output;
+	booster::weak_ptr<impl::cgi::connection> conn;
 
-	_data(impl::cgi::connection *conn) : 
+	_data(impl::cgi::connection *c) : 
 		headers(details::string_i_comp),
-		output_buf(conn,conn->service().cached_settings().service.output_buffer_size),
-		output(0)
+		output(0),
+		conn(c->shared_from_this())
 	{
 	}
 };
@@ -538,6 +712,12 @@ std::string response::copied_data()
 	return tmp;
 }
 
+int response::flush_async_chunk(booster::system::error_code &e)
+{
+	return d->buffered.flush(e);
+}
+
+
 std::ostream &response::out()
 {
 	if(ostream_requested_)
@@ -547,10 +727,12 @@ std::ostream &response::out()
 		throw cppcms_error("Request for output stream for finalized request is illegal");
 	
 	if(io_mode_ == asynchronous || io_mode_ == asynchronous_raw)  {
+		d->buffered.open(d->conn,context_.service().cached_settings().service.async_output_buffer_size);
 		d->output.rdbuf(&d->buffered);
 		d->buffers.push_front(&d->buffered);
 	}
 	else { 
+		d->output_buf.open(d->conn,context_.service().cached_settings().service.output_buffer_size);
 		d->output.rdbuf(&d->output_buf);
 		d->buffers.push_front(&d->output_buf);
 	}
@@ -587,13 +769,6 @@ std::ostream &response::out()
 	
 	d->output.imbue(context_.locale());
 	return d->output;
-}
-
-response::chunk_type response::get_async_chunk()
-{
-	chunk_type c;
-	c.second = d->buffered.getstr(c.first);
-	return c;
 }
 
 bool response::some_output_was_written()

@@ -137,7 +137,8 @@ namespace cgi {
 			sync_option_is_set_(false),
 			in_watchdog_(false),
 			watchdog_(wd),
-			rewrite_(rw)
+			rewrite_(rw),
+			eof_callback_(false)
 		{
 
 			env_.add("SERVER_SOFTWARE",CPPCMS_PACKAGE_NAME "/" CPPCMS_PACKAGE_VERSION);
@@ -168,8 +169,7 @@ namespace cgi {
 			char const *uri = request_uri_;
 			if(!uri || *uri==0)
 				uri = "unknown";
-			booster::system::error_code e;
-			BOOSTER_INFO("cppcms_http") << "Timeout on connection for URI: " << uri << " from " << socket_.remote_endpoint(e).ip();
+			BOOSTER_INFO("cppcms_http") << "Timeout on connection for URI: " << uri << " from " << cgetenv("REMOTE_ADDR");
 		}
 
 		void die()
@@ -312,6 +312,9 @@ namespace cgi {
 		}
 		virtual void do_eof()
 		{
+			if(eof_callback_)
+				socket_.cancel();
+			eof_callback_ = false;
 			booster::system::error_code e;
 			socket_.shutdown(io::stream_socket::shut_wr,e);
 			socket_.close(e);
@@ -681,6 +684,7 @@ namespace cgi {
 
 		booster::shared_ptr<http_watchdog> watchdog_;
 		booster::shared_ptr<url_rewriter> rewrite_;
+		bool eof_callback_;
 	};
 	void http_watchdog::check(booster::system::error_code const &e)
 	{

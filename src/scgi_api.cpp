@@ -13,6 +13,7 @@
 #include "cppcms_error_category.h"
 #include <iostream>
 #include <stdlib.h>
+#include <stdio.h>
 #include <cppcms/config.h>
 #ifdef CPPCMS_USE_EXTERNAL_BOOST
 #   include <boost/bind.hpp>
@@ -35,7 +36,8 @@ namespace cgi {
 			connection(srv),
 			start_(0),
 			end_(0),
-			socket_(srv.impl().get_io_service())
+			socket_(srv.impl().get_io_service()),
+			eof_callback_(false)
 		{
 		}
 		~scgi()
@@ -133,6 +135,9 @@ namespace cgi {
 
 		virtual void do_eof()
 		{
+			if(eof_callback_)
+				socket_.cancel();
+			eof_callback_ = false;
 			booster::system::error_code e;
 			socket_.shutdown(io::stream_socket::shut_wr,e);
 			socket_.close(e);
@@ -140,6 +145,7 @@ namespace cgi {
 
 		virtual void async_read_eof(callback const &h)
 		{
+			eof_callback_ = true;
 			static char a;
 			socket_.async_read_some(io::buffer(&a,1),boost::bind(h));
 		}
@@ -155,6 +161,7 @@ namespace cgi {
 		friend class socket_acceptor<scgi>;
 		io::stream_socket socket_;
 		std::vector<char> buffer_;
+		bool eof_callback_;
 	};
 
 	

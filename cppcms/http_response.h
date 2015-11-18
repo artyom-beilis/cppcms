@@ -16,6 +16,11 @@
 #include <iostream>
 #include <cppcms/cstdint.h>
 
+namespace booster{ 
+	namespace system {
+		class error_code;
+	}
+}
 namespace cppcms {
 class cache_interface;
 namespace impl { namespace cgi { class connection;  }}
@@ -323,8 +328,7 @@ namespace http {
 
 		void write_http_headers(std::ostream &);
 
-		typedef std::pair<booster::shared_ptr<std::vector<char> >,size_t> chunk_type;
-		chunk_type get_async_chunk();
+		int flush_async_chunk(booster::system::error_code &e);
 
 		struct _data;
 		booster::hold_ptr<_data> d;
