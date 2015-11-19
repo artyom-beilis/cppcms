@@ -56,16 +56,6 @@ namespace details {
 
 	class extended_streambuf : public std::streambuf {
 	public:
-		virtual std::pair<char *,char *> write_range() 
-		{
-			return std::pair<char *,char *>(pptr(),epptr());
-		}
-		virtual int consume_range(int n) {
-			pbump(n);
-			if(pptr()==epptr())
-				return overflow(EOF);
-			return 0;
-		}
 		virtual void close() = 0;
 		virtual ~extended_streambuf() {}
 	};
@@ -202,85 +192,41 @@ namespace details {
 
 
 #ifndef CPPCMS_NO_GZIP
-	class gzip_buf : public basic_obuf<gzip_buf> {
+	class gzip_buf : public extended_streambuf {
 	public:
-		gzip_buf(size_t n = 0) :
-			basic_obuf<gzip_buf>(n),
+		gzip_buf() :
 			opened_(false),
 			z_stream_(z_stream()),
-			out_(0),
-			level_(-1),
-			buffer_(4096)
+			out_(0)
 		{
 		}
-		/*
-		int do_write(char const *p,int n,bool flush)
+		int overflow(int c)
 		{
-			if(!out_ || !opened_) {
-				return 0;
-			}
-
-			if(n==0) {
-				return 0;
-			}
-
-			z_stream_.avail_in = n;
-			z_stream_.next_in = (Bytef*)(p);
-
-			do {
-				z_stream_.avail_out = chunk_.size();
-				z_stream_.next_out = (Bytef*)(&chunk_[0]);
-
-				deflate(&z_stream_,(flush ? Z_SYNC_FLUSH : Z_NO_FLUSH));
-				int have = chunk_.size() - z_stream_.avail_out;
-				if(out_->sputn(&chunk_[0],have)!=have) {
-					close();
+			if(pbase()==epptr())
+				return -1;
+			int have = pptr() - pbase();
+			if(have > 0) {
+				if(do_write(pbase(),have,Z_NO_FLUSH) < 0)
 					return -1;
-				}
-			} while(z_stream_.avail_out == 0);
-
+				pbump(-have);
+			}
+			if(c!=EOF) {
+				sputc(c);
+			}
 			return 0;
 		}
-		int write(char const *p,int n)
+		int sync()
 		{
-			return do_write(p,n,false);
+			int have = pptr() - pbase();
+			if(do_write(pbase(),have,Z_SYNC_FLUSH) < 0)
+				return -1;
+			pbump(-have);
+			return 0;
 		}
-		int flush()
-		{
-			return do_write("",0,true);
-		}
-		void close()
-		{
-			if(!opened_)
-				return;
-			pubsync();
-			if(out_) {
-				z_stream_.avail_in = 0;
-				z_stream_.next_in = 0;
-				do {
-					z_stream_.avail_out = chunk_.size();
-					z_stream_.next_out = (Bytef*)(&chunk_[0]);
-					deflate(&z_stream_,Z_FINISH);
-					int have = chunk_.size() - z_stream_.avail_out;
-					if(out_->sputn(&chunk_[0],have)!=have) {
-						break;
-					}
-				} while(z_stream_.avail_out == 0);
-				out_->pubsync();
-			}
-
-			deflateEnd(&z_stream_);
-			opened_ = false;
-			z_stream_ = z_stream();
-			chunk_.clear();
-			out_ = 0;
-
-		}
-		*/
 		int do_write(char const *p,int n,int flush_flag)
 		{
 			if(!out_ || !opened_) {
-				return 0;
+				return -1;
 			}
 
 			if(n==0 && flush_flag==Z_NO_FLUSH) {
@@ -291,62 +237,41 @@ namespace details {
 			z_stream_.next_in = (Bytef*)(p);
 
 			do {
-				std::pair<char *,char *> range = out_->write_range();
-				int have_space = (range.second - range.first);
-				if(have_space > 0) {
-					z_stream_.avail_out = have_space;
-					z_stream_.next_out = (Bytef*)(range.first);
-					deflate(&z_stream_,flush_flag);
-					int have = have_space - z_stream_.avail_out;
-					if(out_->consume_range(have)!=0) {
-						out_ = 0;
-						return -1;
-					}
-				}
-				else {
-					chunk_.resize(1024);
-					z_stream_.avail_out = chunk_.size();
-					z_stream_.next_out = (Bytef*)(&chunk_[0]);
-					deflate(&z_stream_,flush_flag);
-					int have = chunk_.size() - z_stream_.avail_out;
-					if(out_->sputn(&chunk_[0],have)!=have) {
-						out_ = 0;
-						return -1;
-					}
+				z_stream_.avail_out = buffer_;
+				z_stream_.next_out = (Bytef*)(&chunk_[0]);
+				deflate(&z_stream_,flush_flag);
+				int have = chunk_.size() - z_stream_.avail_out;
+				if(out_->sputn(&chunk_[0],have)!=have) {
+					out_ = 0;
+					return -1;
 				}
 			} while(z_stream_.avail_out == 0);
 
+			if(flush_flag == Z_SYNC_FLUSH && out_ && out_->pubsync() < 0) {
+				out_ = 0;
+				return -1;
+			}
+
 			return 0;
-		}
-		int write(char const *p,int n)
-		{
-			return do_write(p,n,Z_NO_FLUSH);
-		}
-		int flush()
-		{
-			return do_write("",0,Z_SYNC_FLUSH);
 		}
 		void close()
 		{
 			if(!opened_)
 				return;
-			pubsync();
-
-			if(out_) 
-				do_write(0,0,Z_FINISH);
-			if(out_)
-				out_->pubsync();
-
+			do_write(pbase(),pptr()-pbase(),Z_FINISH);
 			deflateEnd(&z_stream_);
 			opened_ = false;
 			z_stream_ = z_stream();
 			chunk_.clear();
+			in_chunk_.clear();
 			out_ = 0;
 
 		}
 		void open(extended_streambuf *out,int level,int buffer_size)
 		{
 			level_ = level;
+			if(buffer_size < 256)
+				buffer_size = 256;
 			buffer_ = buffer_size;
 			out_ = out;
 			if(deflateInit2(&z_stream_,
@@ -363,6 +288,9 @@ namespace details {
 				}
 				throw booster::runtime_error(error);
 			}
+			in_chunk_.resize(buffer_);
+			chunk_.resize(buffer_);
+			setp(&in_chunk_[0],&in_chunk_[0]+buffer_);
 			opened_ = true;
 		}
 		~gzip_buf()
@@ -373,6 +301,7 @@ namespace details {
 	private:
 		bool opened_;
 		std::vector<char> chunk_;
+		std::vector<char> in_chunk_;
 		z_stream z_stream_;
 		extended_streambuf *out_;
 		int level_;

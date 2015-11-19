@@ -45,10 +45,12 @@ public:
 	virtual bool write(booster::aio::const_buffer const &in,bool eof,booster::system::error_code &) 
 	{
 		std::pair<booster::aio::const_buffer::entry const *,size_t> all=in.get();
-		for(size_t i=0;i<all.second;i++)  {
+		if(all.second!=0) {
 			if(mark_chunks_)
 				output_->append("[");
-			output_->append(reinterpret_cast<char const *>(all.first[i].ptr),all.first[i].size);
+			for(size_t i=0;i<all.second;i++)  {
+				output_->append(reinterpret_cast<char const *>(all.first[i].ptr),all.first[i].size);
+			}
 			if(mark_chunks_)
 				output_->append("]");
 		}

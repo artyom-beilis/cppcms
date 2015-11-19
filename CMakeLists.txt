@@ -708,6 +708,9 @@ endforeach()
 add_executable(external_session_test tests/external_session_test.c)
 target_link_libraries(external_session_test ${CPPCMS_LIB})
 set(ALL_TESTS ${ALL_TESTS} external_session_test)
+if(NOT DISABLE_GZIP)
+	target_link_libraries(response_test ${ZLIB})
+endif()
 
 #####################################
 # End of tests
@@ -768,6 +771,7 @@ set(CNF "${CMAKE_CURRENT_SOURCE_DIR}/tests")
 
 add_test(base64_test base64_test)
 add_test(todec_test todec_test)
+add_test(response_test response_test)
 add_test(encryptor_test encryptor_test "${CNF}")
 add_test(storage_test storage_test)
 add_test(json_test json_test)

@@ -5,14 +5,23 @@
 //  See accompanying file COPYING.TXT file for licensing details.
 //
 ///////////////////////////////////////////////////////////////////////////////
-#include "tc_test_content.h"
+
 #include <cppcms/service.h>
 #include <cppcms/http_response.h>
 #include <cppcms/json.h>
 #include <cppcms/cache_interface.h>
 #include <cppcms/url_mapper.h>
+#include <cppcms/config.h>
+#include <cppcms/view.h>
+#include <string>
+#include <vector>
+#include <iomanip>
 #include "dummy_api.h"
 #include "test.h"
+
+#ifndef CPPCMS_NO_GZIP
+#include <zlib.h>
+#endif
 
 #include <iomanip>
 #include <sstream>
@@ -67,7 +76,7 @@ public:
 		env["SCRIPT_NAME"]="/foo";
 		env["PATH_INFO"]="/bar";
 		env["REQUEST_METHOD"]="GET";
-		env["HTTP_ACCEPT_ENCODING"]=="gzip";
+		env["HTTP_ACCEPT_ENCODING"]="gzip";
 		booster::shared_ptr<dummy_api> api(new dummy_api(srv_,env,output_,mark_chunks,mark_eof));
 		booster::shared_ptr<cppcms::http::context> cnt(new cppcms::http::context(api));
 		assign_context(cnt);
@@ -106,8 +115,17 @@ public:
 		TEQ(str(),"");
 		response().out() << std::flush;
 		TEQ(str(),"[124]");
-		response().out() << "xxx";
+		response().out() << '0';
 		TEQ(str(),"");
+		response().out() << '1';
+		TEQ(str(),"");
+		response().out() << '2';
+		TEQ(str(),"");
+		response().out() << '3';
+		TEQ(str(),"");
+		response().out() << '4';
+		TEQ(str(),"[01234]");
+		response().out() << "xxx";
 		response().setbuf(0);
 		TEQ(str(),"[xxx]");
 		if(async) {
@@ -130,6 +148,99 @@ public:
 		response().finalize();
 		TEQ(str(),"[EOF]");
 	}
+#ifndef CPPCMS_NO_GZIP
+	z_stream zs;
+	bool zs_done;
+	std::string total;
+	std::string totalz;
+
+	void zsinit()
+	{
+		memset(&zs,0,sizeof(zs));
+		inflateInit2(&zs,15+16);
+		zs_done = false;
+		total.clear();
+		totalz.clear();
+	}
+	void zsdone()
+	{
+		TEST(zs_done == true);
+		inflateEnd(&zs);
+	}
+	std::string zstr()
+	{
+		std::vector<char> out(4096);
+		std::string s = str();
+		totalz += s;
+		/*for(size_t i=0;i<totalz.size();i++) {
+			std::cout << std::setw(2) <<std::hex<< unsigned((unsigned char)totalz[i]);
+		}
+		std::cout << "->[" << total <<"]" << std::endl;
+		*/
+		if(zs_done) {
+			TEST(s.empty());
+			return std::string();
+		}
+		if(s.empty()) {
+			return std::string();
+		}
+		zs.avail_in = s.size();
+		zs.next_in = (Bytef*)s.c_str();
+		zs.avail_out = out.size();
+		zs.next_out = (Bytef*)&out[0];
+		int r = inflate(&zs,0);
+		TEST(r==0 || r==Z_STREAM_END);
+		std::string output;
+		output.assign(&out[0],out.size() - zs.avail_out);
+		if(r == Z_STREAM_END)
+			zs_done = true;
+		total += output;
+		return output;
+
+	}
+	void test_gzipped(bool cached)
+	{
+		std::cout << "- Test gzip setbuf/flush " << (cached ? "cached" : "non cached")<< std::endl;
+		set_context(false,false);
+		if(cached) {
+			cache().fetch_page("none");
+		}
+		response().out();
+		std::string temp = str();
+		TEST(temp.find("\r\n\r\n")==temp.size()-4);
+		zsinit();
+		response().out() << "message";
+		TEQ(zstr(),"");
+		response().out() << std::flush;
+		TEQ(zstr(),"message");
+		response().setbuf(0);
+		response().out() << "ABCD" << std::flush;
+		TEQ(zstr(),"ABCD");
+		response().setbuf(2);
+		response().out() << "XYZ" << std::flush;
+		TEQ(zstr(),"XYZ");
+		response().setbuf(1024);
+		response().out() << "11111111111111111111111111111111111" << std::flush;
+		TEQ(zstr(),"11111111111111111111111111111111111");
+		response().out() << "x";
+		response().finalize();
+		TEQ(zstr(),"x");
+		zsdone();
+		std::string ztmp = totalz;
+		std::string tmp = total;
+		zsinit();
+		output_ = ztmp;
+		TEST(tmp == zstr());
+		zsdone();
+		if(cached) {
+			cache().store_page("p");
+			std::string ztmp2;
+			TEST(cache().fetch_frame("_Z:p",ztmp2,true));
+			TEST(ztmp2 == ztmp);
+			cache().rise("p");
+		}
+	}
+#endif
 
 private:
 	std::string output_;
@@ -148,6 +259,10 @@ int main()
 
 		app.test_buffer_size(false);
 		app.test_buffer_size(true);
+#ifndef CPPCMS_NO_GZIP
+		app.test_gzipped(false);
+		app.test_gzipped(true);
+#endif
 
 	}
 	catch(std::exception const &e)
