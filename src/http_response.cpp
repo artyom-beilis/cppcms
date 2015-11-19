@@ -54,14 +54,24 @@ namespace details {
 		return ss.str();
 	}
 
-	class closeable : public std::streambuf {
+	class extended_streambuf : public std::streambuf {
 	public:
+		virtual std::pair<char *,char *> write_range() 
+		{
+			return std::pair<char *,char *>(pptr(),epptr());
+		}
+		virtual int consume_range(int n) {
+			pbump(n);
+			if(pptr()==epptr())
+				return overflow(EOF);
+			return 0;
+		}
 		virtual void close() = 0;
-		virtual ~closeable() {}
+		virtual ~extended_streambuf() {}
 	};
 
 
-	class copy_buf : public closeable  {
+	class copy_buf : public extended_streambuf  {
 	public:
 		copy_buf(std::streambuf *output = 0) :
 			out_(output)
@@ -147,7 +157,7 @@ namespace details {
 
 
 	template<typename Self>
-	class basic_obuf : public closeable {
+	class basic_obuf : public extended_streambuf {
 	public:
 		basic_obuf(size_t n = 0)
 		{
@@ -178,7 +188,12 @@ namespace details {
 		}
 		int sync()
 		{
-			return overflow(EOF);
+			if(overflow(EOF) != 0)
+				return -1;
+			if(self().flush() != 0)
+				return -1;
+			return 0;
+
 		}
 	private:
 		size_t expected_size_;
@@ -198,7 +213,8 @@ namespace details {
 			buffer_(4096)
 		{
 		}
-		int write(char const *p,int n)
+		/*
+		int do_write(char const *p,int n,bool flush)
 		{
 			if(!out_ || !opened_) {
 				return 0;
@@ -215,7 +231,7 @@ namespace details {
 				z_stream_.avail_out = chunk_.size();
 				z_stream_.next_out = (Bytef*)(&chunk_[0]);
 
-				deflate(&z_stream_,Z_NO_FLUSH);
+				deflate(&z_stream_,(flush ? Z_SYNC_FLUSH : Z_NO_FLUSH));
 				int have = chunk_.size() - z_stream_.avail_out;
 				if(out_->sputn(&chunk_[0],have)!=have) {
 					close();
@@ -224,6 +240,14 @@ namespace details {
 			} while(z_stream_.avail_out == 0);
 
 			return 0;
+		}
+		int write(char const *p,int n)
+		{
+			return do_write(p,n,false);
+		}
+		int flush()
+		{
+			return do_write("",0,true);
 		}
 		void close()
 		{
@@ -252,11 +276,77 @@ namespace details {
 			out_ = 0;
 
 		}
-		void open(std::streambuf *out,int level = -1,int buffer_size=-1)
+		*/
+		int do_write(char const *p,int n,int flush_flag)
+		{
+			if(!out_ || !opened_) {
+				return 0;
+			}
+
+			if(n==0 && flush_flag==Z_NO_FLUSH) {
+				return 0;
+			}
+
+			z_stream_.avail_in = n;
+			z_stream_.next_in = (Bytef*)(p);
+
+			do {
+				std::pair<char *,char *> range = out_->write_range();
+				int have_space = (range.second - range.first);
+				if(have_space > 0) {
+					z_stream_.avail_out = have_space;
+					z_stream_.next_out = (Bytef*)(range.first);
+					deflate(&z_stream_,flush_flag);
+					int have = have_space - z_stream_.avail_out;
+					if(out_->consume_range(have)!=0) {
+						out_ = 0;
+						return -1;
+					}
+				}
+				else {
+					chunk_.resize(1024);
+					z_stream_.avail_out = chunk_.size();
+					z_stream_.next_out = (Bytef*)(&chunk_[0]);
+					deflate(&z_stream_,flush_flag);
+					int have = chunk_.size() - z_stream_.avail_out;
+					if(out_->sputn(&chunk_[0],have)!=have) {
+						out_ = 0;
+						return -1;
+					}
+				}
+			} while(z_stream_.avail_out == 0);
+
+			return 0;
+		}
+		int write(char const *p,int n)
+		{
+			return do_write(p,n,Z_NO_FLUSH);
+		}
+		int flush()
+		{
+			return do_write("",0,Z_SYNC_FLUSH);
+		}
+		void close()
+		{
+			if(!opened_)
+				return;
+			pubsync();
+
+			if(out_) 
+				do_write(0,0,Z_FINISH);
+			if(out_)
+				out_->pubsync();
+
+			deflateEnd(&z_stream_);
+			opened_ = false;
+			z_stream_ = z_stream();
+			chunk_.clear();
+			out_ = 0;
+
+		}
+		void open(extended_streambuf *out,int level,int buffer_size)
 		{
 			level_ = level;
-			if(buffer_size == -1)
-				buffer_size = 4096;
 			buffer_ = buffer_size;
 			out_ = out;
 			if(deflateInit2(&z_stream_,
@@ -274,7 +364,6 @@ namespace details {
 				throw booster::runtime_error(error);
 			}
 			opened_ = true;
-			chunk_.resize(buffer_,0);
 		}
 		~gzip_buf()
 		{
@@ -285,13 +374,13 @@ namespace details {
 		bool opened_;
 		std::vector<char> chunk_;
 		z_stream z_stream_;
-		std::streambuf *out_;
+		extended_streambuf *out_;
 		int level_;
 		size_t buffer_;
 	};
 
 #endif
-	class basic_device : public closeable {
+	class basic_device : public extended_streambuf {
 	public:
 		basic_device() : 
 			final_(false),
@@ -313,9 +402,10 @@ namespace details {
 			booster::system::error_code e;
 			return write(out,e);
 		}
+		
 		int write(booster::aio::const_buffer const &out,booster::system::error_code &e)
 		{
-			if(out.empty())
+			if(out.empty()) 
 				return 0;
 			booster::shared_ptr<impl::cgi::connection> c = conn_.lock();
 			if(!c)
@@ -353,7 +443,6 @@ namespace details {
 			if((epptr() - pptr()) >= n) {
 				memcpy(pptr(),s,n);
 				pbump(n);
-				return n;
 			}
 			else {
 				booster::aio::const_buffer out=booster::aio::buffer(pbase(),pptr()-pbase());
@@ -361,8 +450,8 @@ namespace details {
 				if(write(out)!=0)
 					return -1;
 				do_setp();
-				return n;
 			}
+			return n;
 		}
 
 		void do_setp()
@@ -379,7 +468,7 @@ namespace details {
 			setp(pbase(),epptr());
 			return r;
 		}
-		virtual std::streambuf *setbuf(char const *,std::streamsize size)
+		virtual std::streambuf *setbuf(char *,std::streamsize size)
 		{
 			buffer_size_ = size;
 			std::streamsize content_size = pptr() - pbase();
@@ -426,6 +515,10 @@ namespace details {
 				}
 			}
 			return 0;
+		}
+		bool full_buffering()
+		{
+			return full_buffering_;
 		}
 		std::streambuf *setbuf(char *s,std::streamsize size)
 		{
@@ -516,7 +609,7 @@ struct response::_data {
 	typedef std::map<std::string,std::string,compare_type> headers_type;
 	headers_type headers;
 	std::list<std::string> added_headers;
-	std::list<details::closeable *> buffers;
+	std::list<details::extended_streambuf *> buffers;
 
 	details::async_io_buf buffered;
 	details::copy_buf cached;
@@ -526,11 +619,16 @@ struct response::_data {
 	details::output_device output_buf;
 	std::ostream output;
 	booster::weak_ptr<impl::cgi::connection> conn;
+	int required_buffer_size;
+	bool full_buffering;
 
 	_data(impl::cgi::connection *c) : 
 		headers(details::string_i_comp),
 		output(0),
-		conn(c->shared_from_this())
+		conn(c->shared_from_this()),
+		required_buffer_size(-1),
+		full_buffering(true)
+
 	{
 	}
 };
@@ -604,11 +702,45 @@ void response::finalize()
 {
 	if(!finalized_) {
 		out();
-		for(std::list<details::closeable *>::iterator p=d->buffers.begin();p!=d->buffers.end();++p)
+		for(std::list<details::extended_streambuf *>::iterator p=d->buffers.begin();p!=d->buffers.end();++p)
 			(*p)->close();
 		finalized_=1;
 	}
 }
+
+void response::setbuf(int buffer_size)
+{
+	if(buffer_size < 0)
+		buffer_size = -1;
+	d->required_buffer_size = buffer_size;
+
+	if(ostream_requested_) {
+		if(buffer_size < 0) {
+			if(io_mode_ == asynchronous || io_mode_ == asynchronous_raw)  
+				buffer_size = context_.service().cached_settings().service.async_output_buffer_size;
+			else
+				buffer_size = context_.service().cached_settings().service.output_buffer_size;
+		}
+		d->buffers.back()->pubsetbuf(0,buffer_size);
+	}
+}
+
+void response::full_asynchronous_buffering(bool enable)
+{
+	d->buffered.full_buffering(enable);
+}
+bool response::full_asynchronous_buffering()
+{
+	return d->buffered.full_buffering();
+}
+bool response::pending_blocked_output()
+{
+	booster::shared_ptr<impl::cgi::connection> conn = d->conn.lock();
+	if(!conn)
+		return false;
+	return conn->has_pending();
+}
+
 
 std::string response::get_header(std::string const &name)
 {
@@ -727,12 +859,18 @@ std::ostream &response::out()
 		throw cppcms_error("Request for output stream for finalized request is illegal");
 	
 	if(io_mode_ == asynchronous || io_mode_ == asynchronous_raw)  {
-		d->buffered.open(d->conn,context_.service().cached_settings().service.async_output_buffer_size);
+		size_t bsize = context_.service().cached_settings().service.async_output_buffer_size;
+		if(d->required_buffer_size != -1)
+			bsize = d->required_buffer_size;
+		d->buffered.open(d->conn,bsize);
 		d->output.rdbuf(&d->buffered);
 		d->buffers.push_front(&d->buffered);
 	}
 	else { 
-		d->output_buf.open(d->conn,context_.service().cached_settings().service.output_buffer_size);
+		size_t bsize = context_.service().cached_settings().service.output_buffer_size;
+		if(d->required_buffer_size != -1)
+			bsize = d->required_buffer_size;
+		d->output_buf.open(d->conn,bsize);
 		d->output.rdbuf(&d->output_buf);
 		d->buffers.push_front(&d->output_buf);
 	}
@@ -761,7 +899,7 @@ std::ostream &response::out()
 	if(gzip) {
 		int level=context_.service().cached_settings().gzip.level;
 		int buffer=context_.service().cached_settings().gzip.buffer;
-		d->zbuf.open(d->output.rdbuf(),level,buffer);
+		d->zbuf.open(d->buffers.front(),level,buffer);
 		d->output.rdbuf(&d->zbuf);
 		d->buffers.push_front(&d->zbuf);
 	}

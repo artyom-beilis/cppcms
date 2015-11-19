@@ -678,6 +678,7 @@ set(ALL_TESTS
 	mount_point_test
 	todec_test
 	hash_map_test
+	response_test
 	)
 
 if(NOT DISABLE_PREFORK_CACHE AND NOT IS_WINDOWS)

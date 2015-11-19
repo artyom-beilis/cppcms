@@ -23,6 +23,7 @@ public:
 	{
 		dispatcher().assign("/ca",&unit_test::compressed_a,this);
 		dispatcher().assign("/cb",&unit_test::compressed_b,this);
+		dispatcher().assign("/cbig",&unit_test::compressed_big,this);
 		dispatcher().assign("/bin",&unit_test::binary,this);
 		dispatcher().assign("/not",&unit_test::not_compressed,this);
 	}
@@ -34,6 +35,16 @@ public:
 	{
 		response().set_plain_text_header();
 		response().out()<< "test b";
+	}
+	void compressed_big()
+	{
+		response().set_plain_text_header();
+		int total = 100000;
+		for(int i=0;i<total;i++) {
+			response().out() << i << "\n";
+			if(i==total / 2)
+				response().out() << std::flush;
+		}
 	}
 	void binary()
 	{

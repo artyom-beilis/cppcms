@@ -23,7 +23,12 @@ def decompress(content):
     zstream = gzip.GzipFile(mode='r', fileobj=virt)
     result = zstream.read()
     return result
-    
+
+def big():
+    slist=[]
+    for x in xrange(0,100000):
+        slist.append(str(x)+'\n')
+    return ''.join(slist)
 
 
 def test_valid(url,accepts,compressed,expected):
@@ -39,8 +44,13 @@ def test_valid(url,accepts,compressed,expected):
 
 test_valid('/ca',True,True,'test a')
 test_valid('/ca',False,False,'test a')
+
 test_valid('/cb',True,True,'test b')
 test_valid('/cb',False,False,'test b')
+bg=big()
+test_valid('/cbig',True,True,bg)
+test_valid('/cbig',False,False,bg)
+
 test_valid('/bin',True,False,'binary')
 test_valid('/bin',False,False,'binary')
 test_valid('/not',True,False,'not compressed')

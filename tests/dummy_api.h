@@ -16,9 +16,11 @@ using cppcms::impl::cgi::callback;
 
 class dummy_api  : public cppcms::impl::cgi::connection {
 public:
-	dummy_api(cppcms::service &srv,std::map<std::string,std::string> env,std::string &output) :
+	dummy_api(cppcms::service &srv,std::map<std::string,std::string> env,std::string &output,bool mark_chunks=false,bool write_eof=false) :
 		cppcms::impl::cgi::connection(srv),
-		output_(&output)
+		output_(&output),
+		write_eof_(write_eof),
+		mark_chunks_(mark_chunks)
 	{
 		for(std::map<std::string,std::string>::iterator p=env.begin();p!=env.end();++p)
 			env_.add(pool_.add(p->first),pool_.add(p->second));
@@ -40,12 +42,23 @@ public:
 
 	virtual void do_eof(){}
 	virtual void on_some_output_written() {}
-	virtual bool write(booster::aio::const_buffer const &in,bool,booster::system::error_code &) 
+	virtual bool write(booster::aio::const_buffer const &in,bool eof,booster::system::error_code &) 
 	{
 		std::pair<booster::aio::const_buffer::entry const *,size_t> all=in.get();
-		for(size_t i=0;i<all.second;i++) 
+		for(size_t i=0;i<all.second;i++)  {
+			if(mark_chunks_)
+				output_->append("[");
 			output_->append(reinterpret_cast<char const *>(all.first[i].ptr),all.first[i].size);
-		return in.bytes_count();
+			if(mark_chunks_)
+				output_->append("]");
+		}
+		if(eof && write_eof_)
+			output_->append("[EOF]");
+		return true;
+	}
+	virtual bool nonblocking_write(booster::aio::const_buffer const &in,bool eof,booster::system::error_code &e)
+	{
+		return write(in,eof,e);
 	}
 	virtual booster::aio::stream_socket &socket()
 	{
@@ -66,6 +79,8 @@ public:
 	}
 private:
 	std::string *output_;
+	bool write_eof_;
+	bool mark_chunks_;
 
 };
 

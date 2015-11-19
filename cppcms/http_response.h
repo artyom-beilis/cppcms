@@ -312,6 +312,47 @@ namespace http {
 		///
 		void finalize();
 
+		///
+		/// Defines the size of the output buffer for the output data.
+		/// 
+		/// Setting the to 0 makes the output non-buffered and prevents unnecessary copy of large objects in memory
+		///
+		/// The default is defined in configuration by service.output_buffer_size and service.async_output_buffer_size for synchronous and asynchronous 
+		/// applications accordingly, can be called before and after out() was called
+		///
+		/// Calling with negative value would reset it to the default
+		///
+		/// Note: when gzip compression active, buffering is still present at intermediate levels
+		///
+		void setbuf(int buffer_size);
+		///
+		/// Sets full buffering mode for asynchronous applications
+		///
+		/// When set to true the output data is transferred only when async_flush_output or async_complete_response are called this
+		/// is the default behavior.
+		///
+		/// When set to false, the data is sent upon flushing of the std::ostream provided by out(). If I/O operation blocks,
+		/// the actual output is buffered, it is possible to test if blocking occurred by calling pending_blocked_output()
+		///
+		/// When the full buffering is disable, if an error occurs, the out() is set to fail state.
+		///
+		void full_asynchronous_buffering(bool enable);
+
+		/// 
+		/// Get current state of asynchronous buffering
+		///
+		bool full_asynchronous_buffering();
+
+		///
+		/// Returns true of some of the output wasn't sent due to blocking upon flushing of std::stream &out() which is used together with full_asynchronous_buffering(false) mode.
+		///
+		/// Note: it does not look on to internal buffers thus it is user's responsibility to call
+		///
+		/// Once the condition occurs you can flush the output asynchronously using async_complete_response or async_flush_output
+		///
+		bool pending_blocked_output();
+
+
 		/// \cond INTERNAL 
 		response(context &);
 		~response();
