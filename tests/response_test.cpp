@@ -81,24 +81,19 @@ public:
 		return result;
 	}
 
-	void test_buffer_size(bool cache_it,bool async,bool zipit)
+	void test_buffer_size(bool async)
 	{
-		std::cout << "- Test setbuf/flush " << std::endl;
-		std::cout << "-- " << (cache_it ? "with": "without") << " cache, " << (zipit ? "with" : "without") << " gzip"  << " mode " << (async ? "async" : "sync")<< std::endl;
+		std::cout << "- Test setbuf/flush " << (async ? "async" : "sync")<< std::endl;
 		set_context(true,true);
-		response().setbuf(0);
-		if(cache_it) {
-			cache().fetch_page("none");
-		}
 		if(async) {
-			zipit = false;
 			response().io_mode(cppcms::http::response::asynchronous);
 		}
 		else {
-			if(!zipit)
-				 response().io_mode(cppcms::http::response::nogzip);
+			response().io_mode(cppcms::http::response::nogzip);
 		}
+		response().full_asynchronous_buffering(false);
 		response().out();
+		response().setbuf(0);
 		str();
 		response().out() << "x";
 		TEQ(str(),"[x]");
@@ -115,7 +110,24 @@ public:
 		TEQ(str(),"");
 		response().setbuf(0);
 		TEQ(str(),"[xxx]");
-		cache().store_page("something else");
+		if(async) {
+			response().setbuf(4);
+			std::cout<< "-- fully/partially buffered mode" << std::endl;
+			response().full_asynchronous_buffering(true);
+			response().out() << "12345678";
+			TEQ(str(),"");
+			response().out() << std::flush;
+			TEQ(str(),"");
+			response().full_asynchronous_buffering(false);
+			TEQ(str(),"[12345678]");
+			response().full_asynchronous_buffering(true);
+			response().out() << "123";
+			TEQ(str(),"");
+			response().full_asynchronous_buffering(false);
+			response().out() << std::flush;
+			TEQ(str(),"[123]");
+		}
+		response().finalize();
 		TEQ(str(),"[EOF]");
 	}
 
@@ -125,7 +137,7 @@ private:
 };
 
 
-int main(int argc,char **argv)
+int main()
 {
 	try {
 		cppcms::json::value cfg;
@@ -134,8 +146,8 @@ int main(int argc,char **argv)
 		cppcms::service srv(cfg);
 		test_app app(srv);
 
-		app.test_buffer_size(false,false,false);
-		app.test_buffer_size(true,false,false);
+		app.test_buffer_size(false);
+		app.test_buffer_size(true);
 
 	}
 	catch(std::exception const &e)

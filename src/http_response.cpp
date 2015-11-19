@@ -405,12 +405,12 @@ namespace details {
 		
 		int write(booster::aio::const_buffer const &out,booster::system::error_code &e)
 		{
-			if(out.empty()) 
+			bool send_eof = final_ && !eof_send_;
+			if(out.empty() && !send_eof) 
 				return 0;
 			booster::shared_ptr<impl::cgi::connection> c = conn_.lock();
 			if(!c)
 				return -1;
-			bool send_eof = final_ && !eof_send_;
 			eof_send_ = send_eof;
 			if(do_write(*c,out,send_eof,e)) {
 				return 0;
