@@ -11,6 +11,7 @@ int main(int argc,char **argv)
 	cppcms_capi_cookie *cookie=0;
 	cppcms_capi_session_pool *session_pool=0;
 	cppcms_capi_session *session = 0;
+	char buf[5]={1,2,3,4,5};
 	char *state=strdup("");
 	int n=0;
 
@@ -124,7 +125,6 @@ int main(int argc,char **argv)
 	TEST(cppcms_capi_session_is_set(session,"zz")==0);
 	TEST(strcmp(cppcms_capi_session_get(session,"x"),"test")==0);
 	TEST(memcmp(cppcms_capi_session_get(session,"yyy"),"\0\xfa\0\1",4)==0);
-	char buf[5]={1,2,3,4,5};
 	TEST(cppcms_capi_session_get_binary_len(session,"yyy")==4);
 	TEST(cppcms_capi_session_get_binary(session,"yyy",buf,sizeof(buf))==4);
 	TEST(memcmp(buf,"\0\xFA\0\1\5",5)==0);
