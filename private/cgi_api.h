@@ -116,7 +116,8 @@ namespace cgi {
 		virtual void async_write(booster::aio::const_buffer const &buf,bool eof,handler const &h);
 		virtual bool write(booster::aio::const_buffer const &buf,bool eof,booster::system::error_code &e);
 
-		virtual void on_some_output_written() = 0;
+		virtual void on_async_write_start() = 0;
+		virtual void on_async_write_progress(bool completed) = 0;
 		virtual void do_eof() = 0;
 		virtual booster::aio::const_buffer format_output(booster::aio::const_buffer const &in,bool completed,booster::system::error_code &e) = 0;
 		virtual bool write_to_socket(booster::aio::const_buffer const &in,booster::system::error_code &e);

@@ -115,6 +115,8 @@ namespace cgi {
 
 			h(booster::system::error_code());
 		}
+		virtual void on_async_write_start() {}
+		virtual void on_async_write_progress(bool) {}
 		virtual booster::aio::const_buffer format_output(booster::aio::const_buffer const &in,bool /*comleted*/,booster::system::error_code &/*e*/) 
 		{
 			return in;
@@ -150,7 +152,6 @@ namespace cgi {
 			socket_.async_read_some(io::buffer(&a,1),boost::bind(h));
 		}
 
-		virtual void on_some_output_written() {} 
 		virtual booster::aio::stream_socket &socket() { return socket_; }
 	private:
 		size_t start_,end_,sep_;

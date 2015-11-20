@@ -563,17 +563,18 @@ struct connection::async_write_handler : public booster::callable<void(booster::
 		booster::system::error_code e;
 		conn->socket().set_non_blocking_if_needed(true,e);
 		size_t n = conn->socket().write_some(output,e);
-		if(n!=0)
-			conn->on_some_output_written();
 		output += n;
+		if(n!=0) {
+			conn->on_async_write_progress(output.empty());
+		}
 		if(output.empty()) {
 			h(e);
 			return;
 		}
 		if(e && booster::aio::basic_io_device::would_block(e)) {
 			conn->socket().on_writeable(self_type(this));
+			return;
 		}
-		h(e);
 	}
 };
 
@@ -581,10 +582,10 @@ void connection::async_write(booster::aio::const_buffer const &buf,bool eof,hand
 {
 	booster::system::error_code e;
 	if(nonblocking_write(buf,eof,e) || e) {
-		if(!e) on_some_output_written();
 		get_io_service().post(h,e);
 		return;
 	}
+	on_async_write_start();
 	async_write_handler::self_type p(new async_write_handler(self(),pending_output_,h));
 	socket().on_writeable(p);
 }

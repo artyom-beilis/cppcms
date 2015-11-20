@@ -22,6 +22,7 @@
 #include <sstream>
 #include <algorithm>
 #include <cppcms_boost/bind.hpp>
+#include <stdio.h>
 
 namespace boost = cppcms_boost;
 
@@ -383,7 +384,7 @@ namespace cgi {
 				total += n;
 				buf += n;
 				if(e) {
-					die();
+					close();
 					break;
 				}
 			}
@@ -424,9 +425,16 @@ namespace cgi {
 			socket_.async_read_some(io::buffer(&a,1),boost::bind(h));
 		}
 
-		void on_some_output_written()
+		void on_async_write_start()
 		{
 			update_time();
+			watchdog_->add(self());
+		}
+		void on_async_write_progress(bool completed)
+		{
+			update_time();
+			if(completed)
+				watchdog_->remove(self());
 		}
 		virtual booster::aio::stream_socket &socket() { return socket_; }
 		virtual booster::aio::const_buffer format_output(booster::aio::const_buffer const &in,bool /*completed*/,booster::system::error_code &e)

@@ -121,6 +121,8 @@ namespace cgi {
 				return;
 			}
 		}
+		virtual void on_async_write_start(){}
+		virtual void on_async_write_progress(bool){}
 	private:
 		void on_some_input_recieved(booster::system::error_code const &e,io_handler const &h,void *p,size_t s)
 		{
@@ -224,7 +226,6 @@ namespace cgi {
 			}
 			return packet;
 		}
-		virtual void on_some_output_written() {} 
 		virtual booster::aio::stream_socket &socket() { return socket_; }
 		virtual booster::aio::io_service &get_io_service()
 		{

@@ -42,7 +42,9 @@ public:
 	}
 
 	virtual void do_eof(){}
-	virtual void on_some_output_written() {}
+	virtual void on_async_write_start(){}
+	virtual void on_async_write_progress(bool){}
+
 	virtual bool write(booster::aio::const_buffer const &in,bool eof,booster::system::error_code &e) 
 	{
 		if(*output_ == "$$$ERROR$$$") {

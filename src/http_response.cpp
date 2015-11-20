@@ -146,49 +146,6 @@ namespace details {
 	};
 
 
-	template<typename Self>
-	class basic_obuf : public extended_streambuf {
-	public:
-		basic_obuf(size_t n = 0)
-		{
-			if(n==0)
-				n=1024;
-			expected_size_ = n;
-		}
-		Self &self()
-		{
-			return static_cast<Self &>(*this);
-		}
-		int overflow(int c)
-		{
-			int r=0;
-			if(pptr()!=0 && pptr() > pbase()) {
-				if(self().write(pbase(),pptr()-pbase()) < 0) {
-					r = EOF;
-				}
-			}
-			if(buf_.empty())
-				buf_.resize(expected_size_);
-			char *begin = 	&buf_[0];
-			char *end = 	begin + buf_.size();
-			setp(begin,end);
-			if(c!=EOF && r!=EOF)
-				sputc(c);
-			return r;
-		}
-		int sync()
-		{
-			if(overflow(EOF) != 0)
-				return -1;
-			if(self().flush() != 0)
-				return -1;
-			return 0;
-
-		}
-	private:
-		size_t expected_size_;
-		std::vector<char> buf_;
-	};
 
 
 #ifndef CPPCMS_NO_GZIP
@@ -346,8 +303,8 @@ namespace details {
 			}
 			if(e) {
 				BOOSTER_WARNING("cppcms") << "Failed to write response:" << e.message();
+				conn_.reset();
 				return -1;
-
 			}
 			return 0;
 		}
