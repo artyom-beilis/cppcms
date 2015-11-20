@@ -8,7 +8,8 @@
 #ifndef CPPCMS_IMPL_DUMMY_API_H
 #define CPPCMS_IMPL_DUMMY_API_H
 #include "cgi_api.h"
-
+#include <booster/system_error.h>
+#include <booster/aio/aio_category.h>
 using cppcms::impl::cgi::io_handler;
 using cppcms::impl::cgi::handler;
 using cppcms::impl::cgi::callback;
@@ -42,8 +43,18 @@ public:
 
 	virtual void do_eof(){}
 	virtual void on_some_output_written() {}
-	virtual bool write(booster::aio::const_buffer const &in,bool eof,booster::system::error_code &) 
+	virtual bool write(booster::aio::const_buffer const &in,bool eof,booster::system::error_code &e) 
 	{
+		if(*output_ == "$$$ERROR$$$") {
+			e=booster::system::error_code(booster::aio::aio_error::eof,booster::aio::aio_error_cat);
+			return false;
+		}
+		bool block = false;
+		if(output_->substr(0,3+5+3) == "$$$BLOCK$$$") {
+			if(pending_output_.empty())
+				pending_output_.push_back('x');
+			block = true;
+		}
 		std::pair<booster::aio::const_buffer::entry const *,size_t> all=in.get();
 		if(all.second!=0) {
 			if(mark_chunks_)
@@ -56,7 +67,7 @@ public:
 		}
 		if(eof && write_eof_)
 			output_->append("[EOF]");
-		return true;
+		return !block;
 	}
 	virtual bool nonblocking_write(booster::aio::const_buffer const &in,bool eof,booster::system::error_code &e)
 	{

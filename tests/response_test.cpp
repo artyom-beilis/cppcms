@@ -148,6 +148,81 @@ public:
 		response().finalize();
 		TEQ(str(),"[EOF]");
 	}
+	void reset_context(bool async,bool gzip,bool set_cache)
+	{
+		set_context(false,false);
+		if(async) {
+			response().io_mode(cppcms::http::response::asynchronous);
+			response().full_asynchronous_buffering(false);
+		}
+		else {
+			if(!gzip)
+				response().io_mode(cppcms::http::response::nogzip);
+		}
+		if(set_cache)
+			cache().fetch_page("none");
+		response().out();
+		str();
+	}
+	void test_io_error(bool async,bool gzip,bool cached)
+	{
+		std::cout << "- Test I/O errors " << (async ? "async" : "sync")
+		          << (gzip ? " gzip" : "") << (cached ? " cached" : "") << std::endl;
+		reset_context(async,gzip,cached);
+		response().setbuf(0);
+		response().out() << "XXXXXXXXXXXXXXXX";
+		TEST(response().out());
+		response().out() << std::flush;
+		TEST(response().out());
+		#ifndef CPPCMS_NO_GZIP
+		if(gzip) {
+			zsinit();
+			TEST(zstr() == "XXXXXXXXXXXXXXXX");
+			zs_done = true;
+			zsdone();
+		}
+		#endif
+		output_="$$$ERROR$$$";
+		if(gzip || cached) {
+			response().out() << "x" << std::flush;
+		}
+		else {
+			response().out() << "x";
+		}
+		TEST(!response().out());
+		reset_context(async,gzip,cached);
+		response().setbuf(1024);
+		response().out() << "XXXXXXXXXXXXXXXX";
+		TEST(response().out());
+		response().out() << std::flush;
+		TEST(response().out());
+		output_="$$$ERROR$$$";
+		int i;
+		std::cout << "--- error on stream... " << std::flush;
+		for(i=0;i<=100000;i++) {
+			response().out() << std::setw(9) << i << '\n';
+			if(!response().out())
+				break;
+		}
+		TEST(i<100000);
+		std::cout << "Detected after " << (i*10) << " bytes " << std::endl;
+		if(async) {
+			reset_context(async,gzip,cached);
+			response().setbuf(1024);
+			response().out() << "xx" << std::flush;
+			std::cout << "--- block on stream... " << std::flush;
+			output_="$$$BLOCK$$$";
+			int i;
+			for(i=0;i<=100000;i++) {
+				response().out() << std::setw(9) << i << '\n';
+				TEST(response().out());
+				if(response().pending_blocked_output())
+					break;
+			}
+			TEST(i<100000);
+			std::cout << "Detected after " << (i*10) << " bytes " << std::endl;
+		}
+	}
 #ifndef CPPCMS_NO_GZIP
 	z_stream zs;
 	bool zs_done;
@@ -259,6 +334,15 @@ int main()
 
 		app.test_buffer_size(false);
 		app.test_buffer_size(true);
+		//void test_io_error(bool async,bool gzip,bool cached)
+		app.test_io_error(false,false,false);
+		app.test_io_error(false,true,false);
+		app.test_io_error(false,false,true);
+		app.test_io_error(false,true,true);
+
+		app.test_io_error(true,false,false);
+		app.test_io_error(true,false,true);
+
 #ifndef CPPCMS_NO_GZIP
 		app.test_gzipped(false);
 		app.test_gzipped(true);
