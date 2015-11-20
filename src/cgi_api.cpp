@@ -448,8 +448,11 @@ struct connection::async_write_binder : public booster::callable<void(booster::s
 	}
 };
 
-booster::intrusive_ptr<connection::async_write_binder> connection::get_write_binder(ehandler const &h,bool complete_response)
+void connection::async_write_response(	http::response &response,
+					bool complete_response,
+					ehandler const &h)
 {
+	//  prepare cached binder
 	booster::intrusive_ptr<connection::async_write_binder> tmp;
 	if(cached_async_write_binder_) {
 		tmp.swap(cached_async_write_binder_);
@@ -460,14 +463,8 @@ booster::intrusive_ptr<connection::async_write_binder> connection::get_write_bin
 	tmp->conn = self();
 	tmp->h = h;
 	tmp->complete_response = complete_response;
-	return tmp;
-}
+	// ready
 
-void connection::async_write_response(	http::response &response,
-					bool complete_response,
-					ehandler const &h)
-{
-	booster::intrusive_ptr<async_write_binder> tmp = get_write_binder(h,complete_response);
 	booster::system::error_code e;
 	if(response.flush_async_chunk(e)!=0 || !has_pending()) {
 		get_io_service().post(tmp,e);

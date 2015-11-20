@@ -168,7 +168,6 @@ namespace cgi {
 		void handle_eof(callback const &on_eof);
 		void handle_http_error(int code,http::context *context,ehandler const &h);
 		void handle_http_error_eof(booster::system::error_code const &e,int code,ehandler const &h); 
-		booster::intrusive_ptr<connection::async_write_binder> get_write_binder(ehandler const &h,bool complete_response);
 
 		std::vector<char> content_;
 		cppcms::service *service_;
