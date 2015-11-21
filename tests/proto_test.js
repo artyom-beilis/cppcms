@@ -4,7 +4,7 @@
 		"worker_threads" : 5
 	},
 	"http" : {
-		"script_names" : [ "/test" , "/async" , "/sync" ]
+		"script_names" : [ "/test" , "/async" , "/sync", "/nonblocking" ]
 	},
 	"localization" : {
 		"messages" : {

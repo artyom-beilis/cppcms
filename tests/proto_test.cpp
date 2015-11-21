@@ -17,6 +17,7 @@
 #include "test.h"
 
 bool is_async;
+bool is_nonblocking;
 
 class unit_test : public cppcms::application {
 public:
@@ -26,6 +27,7 @@ public:
 	virtual void main(std::string /*unused*/)
 	{
 		response().set_plain_text_header();
+		response().setbuf(64);
 		TEST(is_async == is_asynchronous());
 		if(!is_asynchronous()) {
 			TEST(response().io_mode() == cppcms::http::response::normal);
@@ -33,6 +35,9 @@ public:
 		}
 		else {
 			TEST(response().io_mode() == cppcms::http::response::asynchronous);
+		}
+		if(is_nonblocking) {
+			response().full_asynchronous_buffering(false);
 		}
 		std::map<std::string,std::string> env=request().getenv();
 		std::ostream &out = response().out();
@@ -62,8 +67,19 @@ int main(int argc,char **argv)
 			srv.applications_pool().mount( cppcms::applications_factory<unit_test>());
 		}
 		else {
-			is_async = true;
-			std::cout << "Asynchronous testing" << std::endl;
+			if(srv.settings().get<std::string>("test.async")=="async") {
+				is_async = true;
+				std::cout << "Asynchronous testing" << std::endl;
+			}
+			else if(srv.settings().get<std::string>("test.async")=="nonblocking") {
+				is_async = true;
+				is_nonblocking = true;
+				std::cout << "Non blocking testing" << std::endl;
+			}
+			else {
+				std::cerr << "Invalid configuration value of test.async" << std::endl;
+				return 1;
+			}
 			app=new unit_test(srv);
 			srv.applications_pool().mount(app);
 		}

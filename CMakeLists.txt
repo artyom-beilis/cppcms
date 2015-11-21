@@ -940,7 +940,7 @@ foreach(LOC client server both)
 	endforeach()
 endforeach()
 
-foreach(TYPE async sync)
+foreach(TYPE async sync nonblocking)
 	add_test(proto_test_${TYPE}_http 
 		proto_test "-c" "${CNF}/proto_test.js" 
 		"--test-async=${TYPE}" "--service-api=http" "--service-port=8080" "--service-ip=127.0.0.1"

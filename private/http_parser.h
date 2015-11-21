@@ -10,6 +10,7 @@
 #include "http_protocol.h"
 #include <vector>
 #include <string>
+#include <stack>
 
 #ifdef getc
 #undef getc
@@ -35,8 +36,10 @@ class parser {
 	
 	unsigned bracket_counter_;
 
-	std::vector<char> &body_;
-	unsigned &body_ptr_;
+	std::vector<char> *body_;
+	unsigned *body_ptr_;
+	char const **pbase_,**pptr_,**epptr_;
+	std::stack<char> ungot_;
 
 
 	// Non copyable
@@ -46,23 +49,45 @@ class parser {
 protected:
 	inline int getc()
 	{
-		if(body_ptr_ < body_.size()) {
-			return (unsigned char)body_[body_ptr_++];
+		if(!ungot_.empty()) {
+			unsigned char r=ungot_.top();
+			ungot_.pop();
+			return r;
+		}
+		if(body_) {
+			if(*body_ptr_ < body_->size()) {
+				return (unsigned char)(*body_)[(*body_ptr_)++];
+			}
+			else {
+				body_->clear();
+				*body_ptr_=0;
+				return -1;
+			}
 		}
 		else {
-			body_.clear();
-			body_ptr_=0;
-			return -1;
+			if(*pptr_ != *epptr_) {
+				unsigned char c = *(*pptr_)++;
+				return c;
+			}
+			else {
+				return -1;
+			}
 		}
 	}
 	inline void ungetc(int c)
 	{
-		if(body_ptr_ > 0) {
-			body_ptr_--;
-			body_[body_ptr_]=c;
+		if(body_) {
+			if(*body_ptr_ > 0)
+				(*body_ptr_)--;
+			else
+				ungot_.push(c);
 		}
 		else {
-			body_.insert(body_.begin(),c);
+			if(*pbase_!=*pptr_)
+				(*pptr_)--;
+			else
+				ungot_.push(c);
+
 		}
 	}
 
@@ -72,8 +97,23 @@ public:
 	parser(std::vector<char> &body,unsigned &body_ptr) :
 		state_(idle),
 		bracket_counter_(0),
-		body_(body),
-		body_ptr_(body_ptr)
+		body_(&body),
+		body_ptr_(&body_ptr),
+		pbase_(0),
+		pptr_(0),
+		epptr_(0)
+	{
+		header_.reserve(32);
+	}
+	parser(char const *&pbase,char const *&pptr,char const *&epptr) :
+		state_(idle),
+		bracket_counter_(0),
+		body_(0),
+		body_ptr_(0),
+		pbase_(&pbase),
+		pptr_(&pptr),
+		epptr_(&epptr)
+
 	{
 		header_.reserve(32);
 	}

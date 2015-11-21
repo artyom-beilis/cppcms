@@ -494,6 +494,8 @@ bool connection::write(booster::aio::const_buffer const &buf,bool eof,booster::s
 	booster::aio::const_buffer new_data = format_output(buf,eof,e);
 	if(e) return  false;
 	booster::aio::const_buffer output = pending_output_.empty() ? new_data : (booster::aio::buffer(pending_output_) + new_data);
+	if(output.empty())
+		return true;
 	socket().set_non_blocking_if_needed(false,e);
 	if(e) return false;
 
@@ -512,6 +514,8 @@ bool connection::nonblocking_write(booster::aio::const_buffer const &buf,bool eo
 	booster::aio::const_buffer new_data = format_output(buf,eof,e);
 	if(e) return  false;
 	booster::aio::const_buffer output = pending_output_.empty() ? new_data : (booster::aio::buffer(pending_output_) + new_data);
+	if(output.empty())
+		return true;
 	
 	socket().set_non_blocking_if_needed(true,e);
 	if(e) return false;

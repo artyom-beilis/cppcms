@@ -126,8 +126,10 @@ namespace cgi {
 			socket_(srv.impl().get_io_service()),
 			input_body_ptr_(0),
 			input_parser_(input_body_,input_body_ptr_),
-			output_body_ptr_(0),
-			output_parser_(output_body_,output_body_ptr_),
+			output_pbase_(0),
+			output_pptr_(0),
+			output_epptr_(0),
+			output_parser_(output_pbase_,output_pptr_,output_epptr_),
 			request_method_(non_const_empty_string),
 			request_uri_(non_const_empty_string),
 			headers_done_(false),
@@ -447,8 +449,13 @@ namespace cgi {
 			std::pair<booster::aio::const_buffer::entry const *,size_t> tmp = in.get();
 			booster::aio::const_buffer::entry const *entry = tmp.first;
 			size_t parts = tmp.second;
+			output_pbase_=output_pptr_=output_epptr_=0;
+			bool r=false;
 			while(parts > 0)  {
-				bool r =process_output_headers(entry->ptr,entry->size,e);
+				output_pbase_=static_cast<char const *>(entry->ptr);
+				output_pptr_ = output_pbase_;
+				output_epptr_ = output_pbase_ + entry->size;
+				r =process_output_headers(e);
 				parts--;
 				entry++;
 				if(r) {
@@ -459,28 +466,34 @@ namespace cgi {
 			}
 			if(e)
 				return packet;
-			packet+= booster::aio::buffer(response_line_);
-			packet+= booster::aio::buffer(output_body_);
-			while(parts > 0) {
-				packet+= booster::aio::buffer(entry->ptr,entry->size);
-				parts --;
-				entry++;
+			if(!r) {
+				tmp = in.get();
+				entry = tmp.first;
+				parts = tmp.second;
+				output_body_.reserve(output_body_.size() + in.bytes_count());
+				while(parts > 0) {
+					output_body_.insert(output_body_.end(),entry->ptr,entry->ptr+entry->size);
+					parts--;
+					entry++;
+				}
+				return packet;
 			}
+			packet+= booster::aio::buffer(response_line_);
+			if(!output_body_.empty())
+				packet+= booster::aio::buffer(output_body_);
+			packet+= in;
 			return packet;
 		}
 		
 
 	private:
-		bool process_output_headers(void const *p,size_t s,booster::system::error_code &e)
+		bool process_output_headers(booster::system::error_code &e)
 		{
 			static char const *addon = 
 				"Server: CppCMS-Embedded/" CPPCMS_PACKAGE_VERSION "\r\n"
 				"Connection: close\r\n";
-			char const *ptr=static_cast<char const *>(p);
-			output_body_.insert(output_body_.end(),ptr,ptr+s);
 
 			using cppcms::http::impl::parser;
-
 			for(;;) {
 				switch(output_parser_.step()) {
 				case parser::more_data:
@@ -660,7 +673,9 @@ namespace cgi {
 		unsigned input_body_ptr_;
 		::cppcms::http::impl::parser input_parser_;
 		std::vector<char> output_body_;
-		unsigned output_body_ptr_;
+		char const *output_pbase_;
+		char const *output_pptr_;
+		char const *output_epptr_;
 		::cppcms::http::impl::parser output_parser_;
 
 

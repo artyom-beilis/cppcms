@@ -56,6 +56,8 @@ if test=='http':
     test_io(input,socket_type,target);
     input = load_file('disco_test_async_single.in');
     test_io(input,socket_type,target);
+    input = load_file('disco_test_async_nonblocking.in');
+    test_io(input,socket_type,target);
 elif test=='fastcgi_tcp' or test=='fastcgi_unix':
     input = tofcgi.to_fcgi_request(load_file('disco_test_norm_cgi.in'));
     test_io(input,socket_type,target);
@@ -65,6 +67,8 @@ elif test=='fastcgi_tcp' or test=='fastcgi_unix':
     test_io(input,socket_type,target);
     input = tofcgi.to_fcgi_request(load_file('disco_test_async_cgi_single.in'));
     test_io(input,socket_type,target);
+    input = tofcgi.to_fcgi_request(load_file('disco_test_async_cgi_nonblocking.in'));
+    test_io(input,socket_type,target);
 elif test=='scgi_tcp' or test=='scgi_unix':
     input = toscgi.toscgi(load_file('disco_test_norm_cgi.in'));
     test_io(input,socket_type,target);
@@ -73,6 +77,8 @@ elif test=='scgi_tcp' or test=='scgi_unix':
     input = toscgi.toscgi(load_file('disco_test_async_cgi_multiple.in'));
     test_io(input,socket_type,target);
     input = toscgi.toscgi(load_file('disco_test_async_cgi_single.in'));
+    test_io(input,socket_type,target);
+    input = toscgi.toscgi(load_file('disco_test_async_cgi_nonblocking.in'));
     test_io(input,socket_type,target);
 else:
     usege()
