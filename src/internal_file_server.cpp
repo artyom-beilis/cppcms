@@ -323,6 +323,11 @@ bool file_server::check_in_document_root(std::string normal,std::string &real)
 	}
 	else {
 		real = root + normal;
+        // remove trailing '/' from file name
+        size_t real_size = real.size();
+        if(real_size > 0 && is_directory_separator(real[real_size-1])) {
+            real.resize(real_size-1);
+        }
 	}
 	return true;
 }
@@ -333,8 +338,14 @@ namespace {
 typedef struct _stat port_stat;
 int get_stat(char const *name,port_stat *st)
 {
-	std::wstring wname = booster::locale::conv::utf_to_utf<wchar_t>(name,booster::locale::conv::stop);
-	return ::_wstat(wname.c_str(),st);
+    try {
+        std::wstring wname = booster::locale::conv::utf_to_utf<wchar_t>(name,booster::locale::conv::stop);
+        return ::_wstat(wname.c_str(),st);
+    }
+    catch(booster::locale::conv::conversion_error const &)
+    {
+        return -1;
+    }
 }
 #else
 typedef struct stat port_stat;
