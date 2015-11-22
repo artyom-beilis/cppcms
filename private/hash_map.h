@@ -203,7 +203,7 @@ public:
 
 	std::pair<iterator,bool> insert(value_type const &entry)
 	{
-		std::pair<iterator,bool> r(0,false);
+		std::pair<iterator,bool> r(iterator(),false);
 		rehash_if_needed();
 		range_type &range=get(entry.first);
 		iterator p = find_in_range(range,entry.first);
@@ -307,7 +307,7 @@ public:
 	void rehash(size_t new_size)
 	{
 		basic_map tmp;
-		tmp.hash_.resize(new_size,range_type(0,0));
+		tmp.hash_.resize(new_size,range_type(iterator(),iterator()));
 		while(list_.begin) {
 			iterator p=list_.begin;
 			list_.erase(p);
