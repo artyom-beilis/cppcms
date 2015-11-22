@@ -52,7 +52,17 @@ void compare_strings(std::string const &l,std::string const &r,int file_line)
 
 }
 
+std::string remove_brakets(std::string const &in)
+{
+    std::string r;
+    for(size_t i=0;i<in.size();i++)
+        if(in[i]!='[' && in[i]!=']')
+            r+= in[i];
+    return r;
+}
+
 #define TEQ(l,r) compare_strings(l,r,__LINE__)
+#define TEQC(l,r) compare_strings(remove_brakets(l),remove_brakets(r),__LINE__)
 
 class test_app : public cppcms::application {
 public:
@@ -107,7 +117,7 @@ public:
 		response().out() << "x";
 		TEQ(str(),"[x]");
 		response().out() << 123;
-		TEQ(str(),"[123]");
+		TEQC(str(),"[123]");
 		response().setbuf(4);
 		response().out() << "abcdefg";
 		TEQ(str(),"[abcdefg]");
