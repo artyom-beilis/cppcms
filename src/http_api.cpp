@@ -325,11 +325,20 @@ namespace cgi {
 		#ifndef CPPCMS_NO_SO_SNDTIMO
 		size_t timed_write_some(booster::aio::const_buffer const &buf,booster::system::error_code &e)
 		{
-			set_sync_options(e);
+			socket_.set_non_blocking_if_needed(false,e);
 			if(e) return 0;
+
+			if(!sync_option_is_set_) {
+				cppcms::impl::set_send_timeout(socket_,timeout_,e);
+				if(e)
+					return 0;
+				sync_option_is_set_ = true;
+			}
+
 			booster::ptime start = booster::ptime::now();
 			size_t n = socket_.write_some(buf,e);
 			booster::ptime end = booster::ptime::now();
+
 			// it may actually return with success but return small
 			// a small buffer
 			if(booster::ptime::to_number(end - start) >= timeout_ - 0.1) {
@@ -391,19 +400,6 @@ namespace cgi {
 				}
 			}
 			return total == bufin.bytes_count();
-		}
-		void set_sync_options(booster::system::error_code &e)
-		{
-			if(!sync_option_is_set_) {
-				socket_.set_non_blocking_if_needed(false,e);
-				if(e)
-					return;
-				cppcms::impl::set_send_timeout(socket_,timeout_,e);
-				if(e)
-					return;
-				sync_option_is_set_ = true;
-			}
-
 		}
 		virtual booster::aio::io_service &get_io_service()
 		{

@@ -182,6 +182,13 @@ booster::shared_ptr<connection> connection::self()
 void connection::async_prepare_request(	http::context *context,
 					ehandler const &h)
 {
+	booster::system::error_code e;
+	socket().set_non_blocking(true,e);
+	if(e) {
+		BOOSTER_WARNING("cppcms") << "Failed to set nonblocking mode in socket " << e.message();
+		get_io_service().post(boost::bind(h,http::context::operation_aborted));
+		return;
+	}
 	async_read_headers(boost::bind(&connection::on_headers_read,self(),_1,context,h));
 }
 
