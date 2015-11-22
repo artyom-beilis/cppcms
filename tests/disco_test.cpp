@@ -28,6 +28,7 @@ public:
 	}
 	virtual void main(std::string /*unused*/)
 	{
+		std::cout << "Running sync test\n" << std::endl;
 		calls ++;
 		bool bad_found = false;
 		std::ostream &out = response().out();
@@ -38,11 +39,11 @@ public:
 			}
 		}
 		if(bad_found) {
-			std::cout << "Disconned as expected" << std::endl;
+			std::cout << "Sync Disconned as expected" << std::endl;
 			bad_count++;
 		}
 		else {
-			std::cout << "Not disconnected!" << std::endl;
+			std::cout << "Sync Not disconnected!" << std::endl;
 		}
 	}
 };
@@ -59,7 +60,9 @@ public:
 		int counter;
 		void operator()(cppcms::http::context::completion_type ct)
 		{
+			std::cout << "Async IO Completed " << std::endl;
 			if(ct == cppcms::http::context::operation_aborted) {
+				std::cout << "Async Disconned as expected" << std::endl;
 				bad_count++;
 				return;
 			}
@@ -72,6 +75,7 @@ public:
 				context->async_flush_output(*this);
 			}
 			else {
+				std::cout << "Async Not disconnected!" << std::endl;
 				context->async_complete_response();
 			}
 		}
@@ -79,6 +83,7 @@ public:
 
 	void multiple()
 	{
+		std::cout << "Running async test\n" << std::endl;
 		calls ++;
 		binder call;
 		call.context = release_context();
@@ -88,6 +93,7 @@ public:
 	}
 	void single()
 	{
+		std::cout << "Running async test without error reporting\n" << std::endl;
 		calls ++;
 		std::ostream &out = response().out();
 		for(unsigned i=0;i<100000;i++) {
@@ -119,7 +125,7 @@ public:
 		void operator()(cppcms::http::context::completion_type ct)
 		{
 			if(ct == cppcms::http::context::operation_aborted) {
-				std::cout << "Error on completion detected" << std::endl;
+				std::cout << "Nonblocking Error on completion detected" << std::endl;
 				bad_count++;
 				return;
 			}
@@ -127,23 +133,24 @@ public:
 			for(;counter < 100000;counter++) {
 				out << counter << '\n';
 				if(!out) {
-					std::cout << "Error on stream detected" << std::endl;
+					std::cout << "Nonblocking Error on stream detected" << std::endl;
 					bad_count++;
 					return;
 				}
 				if(context->response().pending_blocked_output()) {
-					std::cout << "Got blocking status at" << counter << std::endl;
+					std::cout << "Nonblocking Got blocking status at" << counter << std::endl;
 					context->async_flush_output(self_ptr(this));
 					return;
 				}
 			}
-			std::cout << "No error detected" << std::endl;
+			std::cout << "Nonblocking No error detected" << std::endl;
 			context->async_complete_response();
 		}
 	};
 
 	void main(std::string)
 	{
+		std::cout << "Running non-blocking test" << std::endl;
 		response().setbuf(0);
 		response().full_asynchronous_buffering(false);
 		calls ++;

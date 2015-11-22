@@ -576,6 +576,7 @@ struct connection::async_write_handler : public booster::callable<void(booster::
 			conn->socket().on_writeable(self_type(this));
 			return;
 		}
+		h(e);
 	}
 };
 
