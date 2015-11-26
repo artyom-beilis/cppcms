@@ -26,12 +26,6 @@
 #include <booster/locale/message.h>
 
 #include <cppcms/config.h>
-#ifdef CPPCMS_USE_EXTERNAL_BOOST
-#   include <boost/bind.hpp>
-#else // Internal Boost
-#   include <cppcms_boost/bind.hpp>
-    namespace boost = cppcms_boost;
-#endif
 
 namespace cppcms {
 

@@ -31,6 +31,7 @@
 #include <cppcms/cppcms_error.h>
 #include <cppcms/mount_point.h>
 #include <cppcms/forwarder.h>
+#include <cppcms/mem_bind.h>
 #include "cgi_acceptor.h"
 #ifndef CPPCMS_WIN32
 #include "prefork_acceptor.h"
@@ -73,12 +74,6 @@
 #include <booster/nowide/fstream.h>
 #include <booster/thread.h>
 #include <cppcms/config.h>
-#ifdef CPPCMS_USE_EXTERNAL_BOOST
-#   include <boost/bind.hpp>
-#else // Internal Boost
-#   include <cppcms_boost/bind.hpp>
-    namespace boost = cppcms_boost;
-#endif
 
 #ifndef CPPCMS_WIN32
 #include "daemonize.h"
@@ -380,14 +375,25 @@ namespace {
 } // anon
 
 
+namespace {
+	struct stop_binder {
+		stop_binder(void (cppcms::service::*member)(),cppcms::service *s) : m(member),srv(s) {}
+		void (cppcms::service::*m)();
+		cppcms::service *srv;
+		void operator()(booster::system::error_code const &,size_t) 
+		{
+			(srv->*m)();
+		}
+	};
+}
+
 void service::setup_exit_handling()
 {
 	io::socket_pair(*impl_->sig_,*impl_->breaker_);
 
 	static char c;
 
-	impl_->breaker_->async_read_some(io::buffer(&c,1),
-					boost::bind(&service::stop,this));
+	impl_->breaker_->async_read_some(io::buffer(&c,1),stop_binder(&service::stop,this));
 
 	impl_->notification_socket_=impl_->sig_->native();
 
@@ -532,9 +538,10 @@ void service::win_service_exec()
 
 void service::run_win_service()
 {
-	impl::winservice::instance().prepare(boost::bind(&service::win_service_prepare,this));
-	impl::winservice::instance().exec(boost::bind(&service::win_service_exec,this));
-	impl::winservice::instance().stop(boost::bind(&service::shutdown,this));
+	using cppcms::util::mem_bind;
+	impl::winservice::instance().prepare(mem_bind(&service::win_service_prepare,this));
+	impl::winservice::instance().exec(mem_bind(&service::win_service_exec,this));
+	impl::winservice::instance().stop(mem_bind(&service::shutdown,this));
 	
  	int argc=impl_->args_.size();
 	std::vector<char*> argv(argc+1,static_cast<char*>(0));

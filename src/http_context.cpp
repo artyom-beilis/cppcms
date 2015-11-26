@@ -24,14 +24,7 @@
 #include "cached_settings.h"
 
 #include <cppcms/config.h>
-#ifdef CPPCMS_USE_EXTERNAL_BOOST
-#   include <boost/bind.hpp>
-#else // Internal Boost
-#   include <cppcms_boost/bind.hpp>
-    namespace boost = cppcms_boost;
-#endif
-
-
+#include "binder.h"
 
 
 namespace cppcms {
@@ -78,9 +71,30 @@ void context::skin(std::string const &skin)
 }
 
 
+namespace {
+	struct ct_to_bool {
+		void (context::*member)(bool r);
+		booster::shared_ptr<context> ctx;
+		void operator()(context::completion_type c)
+		{
+			((*ctx).*member)(c!=context::operation_completed);
+		}
+	};
+}
+
 void context::run()
 {
-	conn_->async_prepare_request(this,boost::bind(&context::on_request_ready,self(),_1));
+	ct_to_bool cb = { &context::on_request_ready, self() };
+	conn_->async_prepare_request(this,cb);
+}
+
+namespace {
+	struct dispatcher {
+		void (*func)(booster::intrusive_ptr<application>,std::string,bool);
+		booster::intrusive_ptr<application> app;
+		std::string url;
+		void operator()() { func(app,url,true); }
+	};
 }
 
 void context::on_request_ready(bool error)
@@ -109,8 +123,21 @@ void context::on_request_ready(bool error)
 		dispatch(app,matched,false);
 	}
 	else {
-		app->service().thread_pool().post(boost::bind(&context::dispatch,app,matched,true));
+		dispatcher dt;
+		dt.func = &context::dispatch;
+		dt.app = app;
+		dt.url.swap(matched);
+		app->service().thread_pool().post(dt);
 	}
+}
+
+namespace {
+	struct run_ctx {  
+		booster::shared_ptr<context> ctx;
+		void operator()() {
+			ctx->run();
+		}
+	};
 }
 
 void context::complete_response()
@@ -118,7 +145,8 @@ void context::complete_response()
 	response().finalize();
 	if(conn_->is_reuseable()) {
 		booster::shared_ptr<context> cont(new context(conn_));
-		service().post(boost::bind(&context::run,cont));
+		run_ctx rn = { cont };
+		service().post(rn);
 	}
 	conn_.reset();
 }
@@ -180,14 +208,16 @@ void context::async_flush_output(context::handler const &h)
 		h);
 }
 
+
 void context::async_complete_response()
 {
 	response().finalize();
 	if(response().io_mode() == http::response::asynchronous || response().io_mode() == http::response::asynchronous_raw) {
+		ct_to_bool cb = { &context::try_restart, self() };
 		conn_->async_write_response(
 			response(),
 			true,
-			boost::bind(&context::try_restart,self(),_1));
+			cb);
 		return;
 	}
 	complete_response();

@@ -25,19 +25,7 @@
 #include <scgi_header.h>
 
 #include "todec.h"
-
-#ifdef CPPCMS_USE_EXTERNAL_BOOST
-#   include <boost/bind.hpp>
-#   if defined(CPPCMS_WIN32) && _WIN32_WINNT <= 0x0501 && !defined(BOOST_ASIO_DISABLE_IOCP)
-#   define NO_CANCELIO
-#   endif
-#else // Internal Boost
-#   include <cppcms_boost/bind.hpp>
-    namespace boost = cppcms_boost;
-#   if defined(CPPCMS_WIN32) && _WIN32_WINNT <= 0x0501 && !defined(CPPCMS_BOOST_ASIO_DISABLE_IOCP)
-#   define NO_CANCELIO
-#   endif
-#endif
+#include "binder.h"
 
 namespace io = booster::aio;
 
@@ -58,13 +46,11 @@ namespace cppcms {
 				io::endpoint ep(ip_,port_);
 				socket_.open(ep.family());
 				socket_.async_connect(ep,
-					boost::bind(
-						&tcp_pipe::on_connected,
-						shared_from_this(),_1));
+					mfunc_to_event_handler(&tcp_pipe::on_connected,shared_from_this()));
 			}
 		private:
 
-			void on_connected(booster::system::error_code e) 
+			void on_connected(booster::system::error_code const &e) 
 			{
 				if(e) {
 					connection_->response().make_error_response(500);
@@ -73,10 +59,10 @@ namespace cppcms {
 				}
 				socket_.async_write(
 					io::buffer(data_),
-					boost::bind(&tcp_pipe::on_written,shared_from_this(),_1));
+					mfunc_to_io_handler(&tcp_pipe::on_written,shared_from_this()));
 			}
 
-			void on_written(booster::system::error_code const &e)
+			void on_written(booster::system::error_code const &e,size_t )
 			{
 				if(e) {
 					connection_->response().make_error_response(500);
@@ -85,13 +71,11 @@ namespace cppcms {
 				}
 
 				
-				connection_->async_on_peer_reset(boost::bind(&tcp_pipe::on_peer_close,shared_from_this()));
+				connection_->async_on_peer_reset(mfunc_to_handler(&tcp_pipe::on_peer_close,shared_from_this()));
 				connection_->response().io_mode(http::response::asynchronous_raw);
 				input_.resize(4096);
 				socket_.async_read_some(io::buffer(input_),
-					boost::bind(&tcp_pipe::on_read,shared_from_this(),
-						_1,
-						_2));
+					mfunc_to_io_handler(&tcp_pipe::on_read,shared_from_this()));
 
 			}
 
@@ -114,9 +98,7 @@ namespace cppcms {
 				}
 				else {
 					socket_.async_read_some(io::buffer(input_),
-						boost::bind(&tcp_pipe::on_read,shared_from_this(),
-							_1,
-							_2));
+						mfunc_to_io_handler(&tcp_pipe::on_read,shared_from_this()));
 				}
 			}
 

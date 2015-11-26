@@ -25,9 +25,7 @@
 
 #include "cgi_api.h"
 
-#include <cppcms_boost/bind.hpp>
-
-namespace boost = cppcms_boost;
+#include <cppcms/mem_bind.hpp>
 
 namespace cppcms {
 namespace impl {
@@ -70,7 +68,7 @@ public:
 		}
 		read_interrupter_=fds[0];
 		write_interrupter_=fds[1];
-		thread_.reset(new booster::thread(boost::bind(&prefork_acceptor::run,this)));
+		thread_.reset(new booster::thread(cppcms::util::mem_bind(&prefork_acceptor::run,this)));
 	}
 private:
 	void stop()
@@ -185,7 +183,7 @@ private:
 			}
 
 			for(unsigned i=0;i<connections_.size();i++) {
-				service_->post(boost::bind(&cppcms::http::context::run,connections_[i]));
+				service_->post(cppcms::util::mem_bind(&cppcms::http::context::run,connections_[i]));
 			}
 			connections_.clear();
 		} // while loop

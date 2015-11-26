@@ -22,12 +22,7 @@
 #include <scgi_header.h>
 #include <stdlib.h>
 #include <cppcms/config.h>
-#ifdef CPPCMS_USE_EXTERNAL_BOOST
-#   include <boost/bind.hpp>
-#else // Internal Boost
-#   include <cppcms_boost/bind.hpp>
-    namespace boost = cppcms_boost;
-#endif
+#include "binder.h"
 
 #include <booster/log.h>
 #include <booster/aio/endpoint.h>
@@ -55,7 +50,7 @@ namespace cppcms { namespace impl { namespace cgi {
 		}
 		void async_run()
 		{
-			scgi_.async_connect(ep_,boost::bind(&cgi_forwarder::on_connected,shared_from_this(),_1));
+			scgi_.async_connect(ep_,mfunc_to_event_handler(&cgi_forwarder::on_connected,shared_from_this()));
 		}
 	private:
 		void on_connected(booster::system::error_code const &e)
@@ -64,7 +59,7 @@ namespace cppcms { namespace impl { namespace cgi {
 			header_ = make_scgi_header(conn_->getenv(),0);
 			scgi_.async_write(
 				booster::aio::buffer(header_),
-				boost::bind(&cgi_forwarder::on_header_sent,shared_from_this(),_1,_2));
+				mfunc_to_io_handler(&cgi_forwarder::on_header_sent,shared_from_this()));
 		}
 		void on_header_sent(booster::system::error_code const &e,size_t n)
 		{
@@ -89,7 +84,7 @@ namespace cppcms { namespace impl { namespace cgi {
 					post_.resize(content_length_);
 				}
 				conn_->async_read_some(&post_.front(),post_.size(),
-					boost::bind(&cgi_forwarder::on_post_data_read,shared_from_this(),_1,_2));
+					mfunc_to_io_handler(&cgi_forwarder::on_post_data_read,shared_from_this()));
 			}
 			else {
 				response_.swap(post_);
@@ -103,7 +98,7 @@ namespace cppcms { namespace impl { namespace cgi {
 			conn_->on_async_read_complete();
 			scgi_.async_write(
 				booster::aio::buffer(&post_.front(),len),
-				boost::bind(&cgi_forwarder::on_post_data_written,shared_from_this(),_1,_2));
+				mfunc_to_io_handler(&cgi_forwarder::on_post_data_written,shared_from_this()));
 		}
 		void on_post_data_written(booster::system::error_code const &e,size_t len)
 		{
@@ -114,25 +109,25 @@ namespace cppcms { namespace impl { namespace cgi {
 		
 		void read_response() 
 		{
-			conn_->async_read_eof(boost::bind(&cgi_forwarder::cleanup,shared_from_this()));
+			conn_->async_read_eof(mfunc_to_handler(&cgi_forwarder::cleanup,shared_from_this()));
 			scgi_.async_read_some(booster::aio::buffer(response_),
-						boost::bind(&cgi_forwarder::on_response_read,shared_from_this(),_1,_2));
+						mfunc_to_io_handler(&cgi_forwarder::on_response_read,shared_from_this()));
 		}
 		void on_response_read(booster::system::error_code const &e,size_t len)
 		{
 			if(e) {
-				conn_->async_write(booster::aio::const_buffer(),true,boost::bind(&cgi_forwarder::cleanup,shared_from_this()));
+				conn_->async_write(booster::aio::const_buffer(),true,mfunc_to_event_handler(&cgi_forwarder::cleanup,shared_from_this()));
 				return;
 			}
 			else {
-				conn_->async_write(booster::aio::buffer(&response_.front(),len),false,boost::bind(&cgi_forwarder::on_response_written,shared_from_this(),_1));
+				conn_->async_write(booster::aio::buffer(&response_.front(),len),false,mfunc_to_event_handler(&cgi_forwarder::on_response_written,shared_from_this()));
 			}
 		}
 		void on_response_written(booster::system::error_code const &e)
 		{
 			if(e) { cleanup(); return; }
 			scgi_.async_read_some(booster::aio::buffer(response_),
-				boost::bind(&cgi_forwarder::on_response_read,shared_from_this(),_1,_2));
+				mfunc_to_io_handler(&cgi_forwarder::on_response_read,shared_from_this()));
 		}
 
 		void cleanup()
@@ -141,6 +136,10 @@ namespace cppcms { namespace impl { namespace cgi {
 			booster::system::error_code e;
 			scgi_.shutdown(booster::aio::stream_socket::shut_rdwr,e);
 			scgi_.close(e);
+		}
+		void cleanup(booster::system::error_code const &)
+		{
+			cleanup();
 		}
 
 		booster::shared_ptr<connection> conn_;
@@ -186,10 +185,10 @@ void connection::async_prepare_request(	http::context *context,
 	socket().set_non_blocking(true,e);
 	if(e) {
 		BOOSTER_WARNING("cppcms") << "Failed to set nonblocking mode in socket " << e.message();
-		get_io_service().post(boost::bind(h,http::context::operation_aborted));
+		get_io_service().post(func_to_handler(h,http::context::operation_aborted));
 		return;
 	}
-	async_read_headers(boost::bind(&connection::on_headers_read,self(),_1,context,h));
+	async_read_headers(mfunc_to_event_handler(&connection::on_headers_read,self(),context,h));
 }
 
 void connection::on_headers_read(booster::system::error_code const &e,http::context *context,ehandler const &h)
@@ -215,7 +214,7 @@ void connection::on_headers_read(booster::system::error_code const &e,http::cont
 
 void connection::aync_wait_for_close_by_peer(booster::callback<void()> const &on_eof)
 {
-	async_read_eof(boost::bind(&connection::handle_eof,self(),on_eof));
+	async_read_eof(mfunc_to_handler(&connection::handle_eof,self(),on_eof));
 }
 
 void connection::handle_eof(callback const &on_eof)
@@ -268,10 +267,9 @@ void connection::handle_http_error(int code,http::context *context,ehandler cons
 		"</body>\r\n"
 		"</html>\r\n";
 	async_write(booster::aio::buffer(async_chunk_),true,
-		boost::bind(
+		mfunc_to_event_handler(
 			&connection::handle_http_error_eof,
 			self(),
-			_1,
 			code,
 			h));
 }
@@ -331,10 +329,8 @@ void connection::load_content(booster::system::error_code const &e,http::context
 			content_.clear();
 			content_.resize(8192);
 			async_read_some(&content_.front(),content_.size(),
-				boost::bind(&connection::on_some_multipart_read,
+				mfunc_to_io_handler(&connection::on_some_multipart_read,
 					self(),
-					_1,
-					_2,
 					context,
 					h));
 		}
@@ -350,11 +346,11 @@ void connection::load_content(booster::system::error_code const &e,http::context
 			content_.resize(content_length,0);
 			async_read(	&content_.front(),
 					content_.size(),
-					boost::bind(&connection::on_post_data_loaded,self(),_1,context,h));
+					mfunc_to_io_handler(&connection::on_post_data_loaded,self(),context,h));
 		}
 	}
 	else  {
-		on_post_data_loaded(booster::system::error_code(),context,h);
+		on_post_data_loaded(booster::system::error_code(),0,context,h);
 	}
 }
 
@@ -401,17 +397,15 @@ void connection::on_some_multipart_read(booster::system::error_code const &e,siz
 	}
 	else {
 		async_read_some(&content_.front(),content_.size(),
-			boost::bind(&connection::on_some_multipart_read,
+			mfunc_to_io_handler(&connection::on_some_multipart_read,
 				self(),
-				_1,
-				_2,
 				context,
 				h));
 	}
 }
 
 
-void connection::on_post_data_loaded(booster::system::error_code const &e,http::context *context,ehandler const &h)
+void connection::on_post_data_loaded(booster::system::error_code const &e,size_t /*unused*/,http::context *context,ehandler const &h)
 {
 	if(e) { set_error(h,e.message()); return; }
 	context->request().set_post_data(content_);

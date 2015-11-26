@@ -15,14 +15,10 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <cppcms/config.h>
-#ifdef CPPCMS_USE_EXTERNAL_BOOST
-#   include <boost/bind.hpp>
-#else // Internal Boost
-#   include <cppcms_boost/bind.hpp>
-    namespace boost = cppcms_boost;
-#endif
 #include <booster/aio/buffer.h>
 #include <string.h>
+
+#include "binder.h"
 
 namespace io = booster::aio;
 
@@ -52,10 +48,9 @@ namespace cgi {
 			buffer_.resize(16);
 			socket_.async_read(
 				io::buffer(buffer_),
-				boost::bind(
+				mfunc_to_io_handler(
 					&scgi::on_first_read,
 					self(),
-					_1,_2,
 					h));
 
 		}
@@ -86,12 +81,12 @@ namespace cgi {
 			}
 			socket_.async_read(
 				io::buffer(&buffer_[size],buffer_.size() - size),
-				boost::bind(	&scgi::on_headers_chunk_read,
+					mfunc_to_io_handler(
+						&scgi::on_headers_chunk_read,
 						self(),
-						_1,
 						h));
 		}
-		void on_headers_chunk_read(booster::system::error_code const &e,handler const &h)
+		void on_headers_chunk_read(booster::system::error_code const &e,size_t ,handler const &h)
 		{
 			if(e) { h(e); return; }
 			if(buffer_.back()!=',') {
@@ -145,11 +140,17 @@ namespace cgi {
 			socket_.close(e);
 		}
 
+		struct ignore_io {
+			callback h;
+			void operator()(booster::system::error_code const &,size_t) { h(); }
+		};
+
 		virtual void async_read_eof(callback const &h)
 		{
 			eof_callback_ = true;
 			static char a;
-			socket_.async_read_some(io::buffer(&a,1),boost::bind(h));
+			ignore_io cb = { h };
+			socket_.async_read_some(io::buffer(&a,1),cb);
 		}
 
 		virtual booster::aio::stream_socket &socket() { return socket_; }

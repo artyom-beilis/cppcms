@@ -13,13 +13,7 @@
 #include <list>
 #include <vector>
 #include <cppcms/config.h>
-#ifdef CPPCMS_USE_EXTERNAL_BOOST
-#   include <boost/bind.hpp>
-#else // Internal Boost
-#   include <cppcms_boost/bind.hpp>
-    namespace boost = cppcms_boost;
-#endif
-
+#include <cppcms/mem_bind.h>
 #include <booster/shared_ptr.h>
 #include <booster/thread.h>
 
@@ -62,7 +56,7 @@ namespace impl {
 			pthread_sigmask(SIG_BLOCK,&set,&old);
 			#endif
 			for(int i=0;i<threads;i++) {
-				workers_[i].reset(new booster::thread(boost::bind(&thread_pool::worker,this)));
+				workers_[i].reset(new booster::thread(cppcms::util::mem_bind(&thread_pool::worker,this)));
 			}
 	
 			#if defined(CPPCMS_POSIX)

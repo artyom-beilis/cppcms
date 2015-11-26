@@ -26,12 +26,6 @@
 #include <set>
 #include <cppcms/config.h>
 #include <cppcms/mem_bind.h>
-#ifdef CPPCMS_USE_EXTERNAL_BOOST
-#   include <boost/bind.hpp>
-#else // Internal Boost
-#   include <cppcms_boost/bind.hpp>
-    namespace boost = cppcms_boost;
-#endif
 #include <fstream>
 
 #include "hello_world_view.h"
@@ -61,6 +55,14 @@ public:
 		response().finalize();
 		release_context()->async_complete_response();
 	}
+	struct binder {
+		chat *self;
+		booster::shared_ptr<cppcms::http::context> context;
+		void operator()() {
+			self->remove_context(context);
+		}
+
+	};
 	void get(std::string no)
 	{
 		std::cerr<<"Get:"<<waiters_.size()<<std::endl;
@@ -73,11 +75,8 @@ public:
 		else if(pos == messages_.size()) {
 			booster::shared_ptr<cppcms::http::context> context=release_context();
 			waiters_.insert(context);
-			context->async_on_peer_reset(
-				boost::bind(
-					&chat::remove_context,
-					booster::intrusive_ptr<chat>(this),
-					context));
+			binder bd = { this, context };
+			context->async_on_peer_reset(bd);
 		}
 		else {
 			response().status(404);

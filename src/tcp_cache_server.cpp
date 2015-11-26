@@ -20,7 +20,6 @@
 #include <cppcms/cppcms_error.h>
 #include <cppcms/config.h>
 #include <cppcms/session_storage.h>
-#include <cppcms_boost/bind.hpp>
 #include <booster/shared_ptr.h>
 #include <booster/enable_shared_from_this.h>
 #include <booster/thread.h>
@@ -29,6 +28,8 @@
 #include <booster/aio/endpoint.h>
 #include <booster/aio/buffer.h>
 #include <booster/aio/deadline_timer.h>
+#include <cppcms/mem_bind.h>
+#include "binder.h"
 #include <booster/log.h>
 #include <time.h>
 #include <stdlib.h>
@@ -38,12 +39,11 @@
 
 #include "tcp_cache_server.h"
 
-namespace boost = cppcms_boost;
 
 
 namespace cppcms {
 namespace impl {
-
+using cppcms::util::mem_bind;
 namespace io = booster::aio;
 
 class tcp_cache_service::session : public booster::enable_shared_from_this<tcp_cache_service::session> {
@@ -72,21 +72,19 @@ public:
 	void run()
 	{
 		socket_.async_read(io::buffer(&hin_,sizeof(hin_)),
-				boost::bind(&session::on_header_in,shared_from_this(),
-						_1));
+				mfunc_to_io_handler(&session::on_header_in,shared_from_this()));
 	}
-	void on_header_in(booster::system::error_code const &e)
+	void on_header_in(booster::system::error_code const &e,size_t)
 	{
 		if(e) { handle_error(e); return; }
 		data_in_.clear();
 		data_in_.resize(hin_.size);
 		if(hin_.size > 0) {
 			socket_.async_read(io::buffer(data_in_),
-				boost::bind(&session::on_data_in,shared_from_this(),
-						_1));
+				mfunc_to_io_handler(&session::on_data_in,shared_from_this()));
 		}
 		else {
-			on_data_in(e);
+			on_data_in(e,0);
 		}
 	}
 	
@@ -241,7 +239,7 @@ public:
 		BOOSTER_WARNING("cppcms_scale") << "Error on connection, fd=" << socket_.native() 
 				<<"; " << e.message();
 	}
-	void on_data_in(booster::system::error_code const &e)
+	void on_data_in(booster::system::error_code const &e,size_t )
 	{
 		if(e) {
 			handle_error(e);
@@ -289,10 +287,9 @@ public:
 			packet += io::buffer(data_out_.c_str(),hout_.size);
 		}
 		socket_.async_write(packet,
-			boost::bind(&session::on_data_out,shared_from_this(),
-				_1));
+			mfunc_to_io_handler(&session::on_data_out,shared_from_this()));
 	}
-	void on_data_out(booster::system::error_code const &e)
+	void on_data_out(booster::system::error_code const &e,size_t)
 	{
 		if(e) { handle_error(e); return; }
 		run();
@@ -315,7 +312,7 @@ class tcp_cache_service::server  {
 				s->run();
 			}
 			else {
-				s->socket_.get_io_service().post(boost::bind(&session::run,s));
+				s->socket_.get_io_service().post(mem_bind(&session::run,s));
 			}
 			start_accept();
 		}
@@ -333,7 +330,7 @@ class tcp_cache_service::server  {
 	void start_accept()
 	{
 		booster::shared_ptr<session> s(new session(get_next_io_service(),cache_,sessions_));
-		acceptor_.async_accept(s->socket_,boost::bind(&server::on_accept,this,_1,s));
+		acceptor_.async_accept(s->socket_,mfunc_to_event_handler(&server::on_accept,this,s));
 	}
 public:
 	server(		std::vector<booster::shared_ptr<io::io_service> > &io,
@@ -377,7 +374,7 @@ public:
 		if(e) return;
 		
 		timer_.expires_from_now(booster::ptime::seconds(seconds_));
-		timer_.async_wait(boost::bind(&garbage_collector::async_run,this,_1));
+		timer_.async_wait(mfunc_to_event_handler(&garbage_collector::async_run,this));
 		
 		io_->gc_job();
 	}
@@ -405,31 +402,35 @@ private:
 };
 
 
-static void thread_function(io::io_service *io)
-{
-	bool stop=false;
-	try{
-		while(!stop) {
-			try {
-				io->run();
-				stop=true;
-			}
-			catch(cppcms::cppcms_error const &e) {
-				// Not much to do...
-				// Object will be destroyed automatically 
-				// Because it does not resubmit itself
-				BOOSTER_ERROR("cppcms_scale") << "Error:" << e.what() << booster::trace(e);
+struct thread_functional {
+	thread_functional(io::io_service *in) : io(in) {}
+	io::io_service *io;
+	void operator()()
+	{
+		bool stop=false;
+		try{
+			while(!stop) {
+				try {
+					io->run();
+					stop=true;
+				}
+				catch(cppcms::cppcms_error const &e) {
+					// Not much to do...
+					// Object will be destroyed automatically 
+					// Because it does not resubmit itself
+					BOOSTER_ERROR("cppcms_scale") << "Error:" << e.what() << booster::trace(e);
+				}
 			}
 		}
+		catch(std::exception const &e)
+		{
+			BOOSTER_ERROR("cppcms_scale") << "Fatal:" << e.what() << booster::trace(e);
+		}
+		catch(...){
+			BOOSTER_ERROR("cppcms_scale") << "Unknown exception" << std::endl;
+		}
 	}
-	catch(std::exception const &e)
-	{
-		BOOSTER_ERROR("cppcms_scale") << "Fatal:" << e.what() << booster::trace(e);
-	}
-	catch(...){
-		BOOSTER_ERROR("cppcms_scale") << "Unknown exception" << std::endl;
-	}
-}
+};
 
 struct tcp_cache_service::_data {
 	std::vector<booster::shared_ptr<io::io_service> > io;
@@ -462,12 +463,12 @@ tcp_cache_service::tcp_cache_service(	booster::intrusive_ptr<base_cache> cache,
 #endif
 	if(factory && factory->requires_gc()) {
 		d->gc_runner.reset(new garbage_collector(factory,gc_timeout));
-		d->gc_thread.reset(new booster::thread(boost::bind(&garbage_collector::run,d->gc_runner)));
+		d->gc_thread.reset(new booster::thread(mem_bind(&garbage_collector::run,d->gc_runner)));
 	}
 
 	for(int i=0;i<threads;i++){
 		booster::shared_ptr<booster::thread> thread;
-		thread.reset(new booster::thread(boost::bind(thread_function,d->io[i].get())));
+		thread.reset(new booster::thread(thread_functional(d->io[i].get())));
 		d->threads.push_back(thread);
 	}
 #ifndef CPPCMS_WIN32

@@ -21,10 +21,9 @@
 #include <list>
 #include <sstream>
 #include <algorithm>
-#include <cppcms_boost/bind.hpp>
 #include <stdio.h>
 
-namespace boost = cppcms_boost;
+#include "binder.h"
 
 // for testing only
 //#define CPPCMS_NO_SO_SNDTIMO
@@ -193,7 +192,7 @@ namespace cgi {
 
 		void async_read_some_headers(handler const &h)
 		{
-			socket_.on_readable(boost::bind(&http::some_headers_data_read,self(),_1,h));
+			socket_.on_readable(mfunc_to_event_handler(&http::some_headers_data_read,self(),h));
 			update_time();
 		}
 		virtual void async_read_headers(handler const &h)
@@ -222,17 +221,16 @@ namespace cgi {
 			n = socket_.read_some(booster::aio::buffer(input_body_),e);
 
 			total_read_+=n;
-			if(total_read_ > 16384) {
-				h(booster::system::error_code(errc::protocol_violation,cppcms_category));
-				return;
-			}
-
 			input_body_.resize(n);
 
 			for(;;) {
 				using ::cppcms::http::impl::parser;
 				switch(input_parser_.step()) {
 				case parser::more_data:
+					if(total_read_ > 16384) {
+						h(booster::system::error_code(errc::protocol_violation,cppcms_category));
+						return;
+					}
 					// Assuming body_ptr == body.size()
 					async_read_some_headers(h);
 					return;
@@ -304,7 +302,7 @@ namespace cgi {
 					input_body_.clear();
 					input_body_ptr_=0;
 				}
-				socket_.get_io_service().post(boost::bind(h,booster::system::error_code(),s));
+				socket_.get_io_service().post(h,booster::system::error_code(),s);
 				return;
 			}
 			if(input_body_.capacity()!=0) {
@@ -416,11 +414,16 @@ namespace cgi {
 			socket_.shutdown(io::stream_socket::shut_rdwr,e);
 			socket_.close(e);
 		}
+		struct ignore_binder {
+			callback h;
+			void operator()(booster::system::error_code const &,size_t) { h(); }
+		};
 		virtual void async_read_eof(callback const &h)
 		{
 			watchdog_->add(self());
 			static char a;
-			socket_.async_read_some(io::buffer(&a,1),boost::bind(h));
+			ignore_binder cb = { h };
+			socket_.async_read_some(io::buffer(&a,1),cb);
 		}
 
 		void on_async_write_start()
@@ -611,9 +614,9 @@ namespace cgi {
 		void error_response(char const *message,handler const &h)
 		{
 			socket_.async_write(io::buffer(message,strlen(message)),
-					boost::bind(&http::on_error_response_written,self(),_1,h));
+					mfunc_to_io_handler(&http::on_error_response_written,self(),h));
 		}
-		void on_error_response_written(booster::system::error_code const &e,handler const &h)
+		void on_error_response_written(booster::system::error_code const &e,size_t,handler const &h)
 		{
 			if(e) {
 				h(e);
@@ -739,7 +742,7 @@ namespace cgi {
 		}
 
 		timer_.expires_from_now(booster::ptime(1));
-		timer_.async_wait(boost::bind(&http_watchdog::check,shared_from_this(),_1));
+		timer_.async_wait(mfunc_to_event_handler(&http_watchdog::check,shared_from_this()));
 	}
 
 	http *http_creator::operator()(cppcms::service &srv) const

@@ -19,8 +19,7 @@
 #include <booster/shared_object.h>
 #include <booster/enable_shared_from_this.h>
 #include <cppcms/config.h>
-#include <cppcms_boost/bind.hpp>
-namespace boost = cppcms_boost;
+#include <cppcms/mem_bind.h>
 
 #include "aes_encryptor.h"
 
@@ -38,6 +37,7 @@ namespace boost = cppcms_boost;
 #include <booster/aio/deadline_timer.h>
 #include <booster/callback.h>
 #include <booster/posix_time.h>
+#include <booster/system_error.h>
 
 #include "cached_settings.h"
 
@@ -130,18 +130,20 @@ public:
 		pool_(pool)
 	{
 	}
-	void async_run() const
+	void async_run(booster::system::error_code const &e) 
 	{
-		service_->thread_pool().post(boost::bind(&gc_job::gc,shared_from_this()));
+		if(e)
+			return;
+		service_->thread_pool().post(cppcms::util::mem_bind(&gc_job::gc,shared_from_this()));
 	}
 private:
-	void gc() const 
+	void gc() 
 	{
 		booster::ptime start = booster::ptime::now();
 		booster::ptime restart = start + booster::ptime::from_number(freq_);
 		pool_->backend_->gc();
 		timer_->expires_at(restart);
-		timer_->async_wait(boost::bind(&gc_job::async_run,shared_from_this()));
+		timer_->async_wait(cppcms::util::mem_bind(&gc_job::async_run,shared_from_this()));
 	}
 	booster::shared_ptr<booster::aio::deadline_timer> timer_;
 	service *service_;
@@ -318,7 +320,7 @@ void session_pool::init()
 		throw cppcms_error("Unknown location");
 
 	if(service_)
-		service_->after_fork(boost::bind(&session_pool::after_fork,this));
+		service_->after_fork(cppcms::util::mem_bind(&session_pool::after_fork,this));
 }
 
 session_pool::session_pool(service &srv) :
@@ -342,7 +344,7 @@ void session_pool::after_fork()
 		double frequency = service_->settings().get("session.gc",0.0);
 		if(frequency > 0) {
 			booster::shared_ptr<gc_job> job(new gc_job(service_,frequency,this));
-			job->async_run();
+			job->async_run(booster::system::error_code());
 		}
 	}
 }
