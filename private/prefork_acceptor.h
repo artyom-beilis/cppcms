@@ -25,7 +25,7 @@
 
 #include "cgi_api.h"
 
-#include <cppcms/mem_bind.hpp>
+#include <cppcms/mem_bind.h>
 
 namespace cppcms {
 namespace impl {
