@@ -15,12 +15,7 @@
 #include <booster/nowide/cstdio.h>
 
 
-#ifdef CPPCMS_USE_EXTERNAL_BOOST
-#   include <boost/crc.hpp>
-#else // Internal Boost
-#   include <cppcms_boost/crc.hpp>
-    namespace boost = cppcms_boost;
-#endif
+#include "crc32.h"
 
 #include <memory>
 #include <time.h>
@@ -168,7 +163,7 @@ bool session_file_storage::read_from_file(HANDLE h,time_t &timeout,std::string &
 	if(!read_all(h,&crc,sizeof(crc)) || !read_all(h,&size,sizeof(size)))
 		return false;
 	std::vector<char> buffer(size,0);
-	boost::crc_32_type crc_calc;
+	impl::crc32_calc crc_calc;
 	if(size > 0) {
 		if(!read_all(h,&buffer.front(),size))
 			return false;
@@ -192,7 +187,7 @@ void session_file_storage::save_to_file(HANDLE h,time_t timeout,std::string cons
 		uint32_t crc;
 		uint32_t size;
 	} tmp = { timeout, 0, in.size() };
-	boost::crc_32_type crc_calc;
+	impl::crc32_calc crc_calc;
 	crc_calc.process_bytes(in.data(),in.size());
 	tmp.crc=crc_calc.checksum();
 	if(!write_all(h,&tmp,sizeof(tmp)) || !write_all(h,in.data(),in.size()))

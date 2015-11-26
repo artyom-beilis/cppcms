@@ -437,10 +437,14 @@ endif()
 	
 
 if(WINDOWS_NATIVE)
-	set(CPPCMS_SOURCES ${CPPCMS_SOURCES} src/session_win32_file_storage.cpp)
+	if(NOT DISABLE_GZIP)
+		set(CPPCMS_SOURCES ${CPPCMS_SOURCES} src/session_win32_file_storage.cpp)
+	endif()
 	set(CPPCMS_SOURCES ${CPPCMS_SOURCES} src/winservice.cpp)
 else()
-	set(CPPCMS_SOURCES ${CPPCMS_SOURCES} src/session_posix_file_storage.cpp)
+	if(NOT DISABLE_GZIP)
+		set(CPPCMS_SOURCES ${CPPCMS_SOURCES} src/session_posix_file_storage.cpp)
+	endif()
 	set(CPPCMS_SOURCES ${CPPCMS_SOURCES} src/daemonize.cpp)
 endif()
 

@@ -13,12 +13,7 @@
 #include <cppcms/cppcms_error.h>
 #include <cppcms/config.h>
 
-#ifdef CPPCMS_USE_EXTERNAL_BOOST
-#   include <boost/crc.hpp>
-#else // Internal Boost
-#   include <cppcms_boost/crc.hpp>
-    namespace boost = cppcms_boost;
-#endif
+#include "crc32.h"
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -258,7 +253,7 @@ bool session_file_storage::read_from_file(int fd,time_t &timeout,std::string &da
 	if(!read_all(fd,&crc,sizeof(crc)) || !read_all(fd,&size,sizeof(size)))
 		return false;
 	std::vector<char> buffer(size,0);
-	boost::crc_32_type crc_calc;
+	impl::crc32_calc crc_calc;
 	if(size > 0) {
 		if(!read_all(fd,&buffer.front(),size))
 			return false;
@@ -282,7 +277,7 @@ void session_file_storage::save_to_file(int fd,time_t timeout,std::string const 
 		uint32_t crc;
 		uint32_t size;
 	} tmp = { timeout, 0, static_cast<uint32_t>(in.size()) };
-	boost::crc_32_type crc_calc;
+	impl::crc32_calc crc_calc;
 	crc_calc.process_bytes(in.data(),in.size());
 	tmp.crc=crc_calc.checksum();
 	if(!write_all(fd,&tmp,sizeof(tmp)) || !write_all(fd,in.data(),in.size()))
