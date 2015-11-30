@@ -66,12 +66,18 @@ namespace aio {
 		/// Bind the opended socket the \ref endpoint \a ep
 		///
 		/// Throws system::system_error if error occurs.
+		///
+		/// Note: calls basic_socket::bind(ep) - exists there just
+		/// for backward compatibility
 		///	
 		void bind(endpoint const &ep);
 		///
 		/// Bind the opended socket the \ref endpoint \a ep
 		///
 		/// If a error occurs it is assigned to \a e.
+		///	
+		/// Note: calls basic_socket::bind(ep,e) - exists there just
+		/// for backward compatibility
 		///	
 		void bind(endpoint const &ep,system::error_code &e);
 		///

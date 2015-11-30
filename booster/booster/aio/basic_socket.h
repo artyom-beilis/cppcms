@@ -106,6 +106,23 @@ namespace aio {
 		/// Throws system::system_error if error occurs.
 		///	
 		void set_option(boolean_option_type opt,bool v);
+		///
+		/// Bind the opended socket the \ref endpoint \a ep
+		///
+		/// Throws system::system_error if error occurs.
+		///	
+		void bind(endpoint const &ep);
+		///
+		/// Bind the opended socket the \ref endpoint \a ep
+		///
+		/// If a error occurs it is assigned to \a e.
+		///	
+		void bind(endpoint const &ep,system::error_code &e);
+		///
+		/// Starts listening on the socket with backlog parameter \a backlog
+		///
+		/// Throws system::system_error if error occurs.
+		///	
 		
 	private:
 		struct data;

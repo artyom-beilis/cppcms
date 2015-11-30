@@ -86,17 +86,12 @@ void acceptor::listen(int backlog)
 
 void acceptor::bind(endpoint const &ep,system::error_code &e)
 {
-	endpoint::native_address_type address = ep.raw();
-	if(::bind(native(),address.first,address.second) < 0)
-		e=geterror();
+	basic_socket::bind(ep,e);
 }
 
 void acceptor::bind(endpoint const &ep)
 {
-	system::error_code e;
-	bind(ep,e);
-	if(e)
-		throw system::system_error(e);
+	basic_socket::bind(ep);
 }
 
 namespace {

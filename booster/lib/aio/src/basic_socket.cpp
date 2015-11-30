@@ -172,6 +172,20 @@ bool basic_socket::get_option(boolean_option_type opt)
 	return res;
 }
 
+void basic_socket::bind(endpoint const &ep,system::error_code &e)
+{
+	endpoint::native_address_type address = ep.raw();
+	if(::bind(native(),address.first,address.second) < 0)
+		e=geterror();
+}
+
+void basic_socket::bind(endpoint const &ep)
+{
+	system::error_code e;
+	bind(ep,e);
+	if(e)
+		throw system::system_error(e);
+}
 
 } // aio
 } // booster
