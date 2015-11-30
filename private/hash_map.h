@@ -11,6 +11,7 @@
 #include <new>
 #include <functional>
 #include <vector>
+#include <utility>
 #include <assert.h>
 
 #include <cppcms/cstdint.h>
