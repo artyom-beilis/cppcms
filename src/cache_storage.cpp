@@ -9,15 +9,6 @@
 #include <cppcms/config.h>
 #include <set>
 
-#ifndef CPPCMS_BOOST_DETAIL_NO_CONTAINER_FWD
-#define CPPCMS_BOOST_DETAIL_NO_CONTAINER_FWD
-#endif
-
-#ifndef CPPCMS_BOOST_NO_0X_HDR_INITIALIZER_LIST
-#define CPPCMS_BOOST_NO_0X_HDR_INITIALIZER_LIST
-#endif
-
-
 #ifndef CPPCMS_NO_CACHE
 #include "cache_storage.h"
 #include <booster/thread.h>
@@ -92,13 +83,7 @@ struct process_settings {
 	
 	static bool not_enough_memory()
 	{
-		size_t mem_size = process_memory->size() / 10;
-		void *p=process_memory->malloc(mem_size);
-		if(!p)  { 
-			return true;
-		}
-		process_memory->free(p);
-		return false;
+		return process_memory->max_available()  < process_memory->size() / 10;
 	}
 	
 	static size_t size_limit()
