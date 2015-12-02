@@ -141,9 +141,10 @@ int main(int argc,char **argv)
 	try {
 		cppcms::service srv(argc,argv);
 		write_tests = srv.settings().get("test.write",false);
-		booster::intrusive_ptr<cppcms::application> async = new async_test(srv);
-		srv.applications_pool().mount( async, cppcms::mount_point("/async") );
-		srv.applications_pool().mount( cppcms::applications_factory<sync_test>(), cppcms::mount_point("/sync"));
+		srv.applications_pool().mount( 	cppcms::create_pool<async_test>(),
+						cppcms::mount_point("/async"),
+						cppcms::app::asynchronous);
+		srv.applications_pool().mount( cppcms::create_pool<sync_test>(), cppcms::mount_point("/sync"));
 		srv.after_fork(submitter(srv));
 		cppcms::copy_filter flt(std::cerr); // record the log
 		srv.run();

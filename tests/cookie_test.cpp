@@ -76,7 +76,7 @@ int main(int argc,char **argv)
 	try {
 		basic_test();
 		cppcms::service srv(argc,argv);
-		srv.applications_pool().mount( cppcms::applications_factory<unit_test>());
+		srv.applications_pool().mount( cppcms::create_pool<unit_test>());
 		srv.after_fork(submitter(srv));
 		srv.run();
 	}

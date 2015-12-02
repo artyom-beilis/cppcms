@@ -12,16 +12,89 @@
 #include <booster/noncopyable.h>
 #include <booster/hold_ptr.h>
 #include <booster/intrusive_ptr.h>
+#include <booster/shared_ptr.h>
+#include <booster/weak_ptr.h>
+#include <booster/enable_shared_from_this.h>
 
 #include <memory>
 #include <string>
 
 namespace cppcms {
-
 	class application;
+}
+
+namespace booster {
+	void CPPCMS_API intrusive_ptr_add_ref(cppcms::application *p);
+	void CPPCMS_API intrusive_ptr_release(cppcms::application *p);
+}
+
+namespace cppcms {
+
 	class service;
 	class mount_point;
-	
+	class application_specific_pool;
+	class applications_pool;
+	namespace http {
+		class context;
+	}
+
+	///
+	/// Flags for application pool management
+	///	
+	namespace app {
+		static const int synchronous 	= 0x0000; ///< Synchronous application 
+		static const int asynchronous	= 0x0001; ///< Asynchronous application that operates in asynchronous mode
+		// TBD
+		//static const int content_filter = 0x0002; ///< Asynchronous application that validates incoming content during upload
+
+		static const int op_mode_mask	= 0x000F; /// mask to select sync vs async flags
+
+		static const int thread_specific= 0x0010; ///< Make synchronous application thread specific
+		/// \cond INTERNAL
+		static const int legacy		= 0x8000; ///< Use legacy handling of application life time when the application is created in the event loop and than dispatched as a job to a thread pool
+		/// \endcond
+	}
+
+	///
+	/// \brief an interface for creating user applications
+	///
+	class CPPCMS_API application_specific_pool : 
+		public booster::noncopyable,
+		public booster::enable_shared_from_this<application_specific_pool>
+	{
+	public:
+		application_specific_pool();
+		virtual ~application_specific_pool();
+
+		int flags();
+		void flags(int f);
+
+	protected:
+		///
+		/// Returns newly created instance of an application, its ownership
+		/// is transferred
+		///
+		virtual application *new_application(service &srv) = 0;
+	private:
+		friend class applications_pool;
+		friend class http::context;
+		friend void booster::intrusive_ptr_release(cppcms::application *app);
+
+		application *get_new(service &srv);
+
+		void size(size_t n);
+		booster::intrusive_ptr<application> get(service &);
+		void put(application *app);
+
+		struct _data;
+		class _policy;
+		class _tls_policy;
+		class _pool_policy;
+		class _async_policy;
+		class _async_legacy_policy;
+		booster::hold_ptr<_data> d;
+	};
+
 	///
 	/// \brief Application pool is the central class that holds user created applications
 	///
@@ -42,7 +115,10 @@ namespace cppcms {
 	public:
 
 		///
-		/// \brief a base class for user application factories
+		/// \brief a base class for user application factories - to be deprecated, use
+		/// application_specific_pool instead
+		/// 
+		/// \deprecated Use application_specific_pool
 		///
 		struct factory : public booster::noncopyable {
 			///
@@ -58,6 +134,8 @@ namespace cppcms {
 		///
 		/// This member function is thread safe.
 		///
+		/// \deprecated Use mount(booster::shared_ptr<application_specific_pool> gen,int application_options) instead
+		///
 		void mount(std::auto_ptr<factory> aps);
 		
 		///
@@ -66,7 +144,8 @@ namespace cppcms {
 		///
 		/// This member function is thread safe.
 		///
-
+		/// \deprecated Use mount(booster::shared_ptr<application_specific_pool> gen,mount_point const &point,int application_options) instead
+		///
 		void mount(std::auto_ptr<factory> aps,mount_point const &point);
 
 		///
@@ -75,6 +154,8 @@ namespace cppcms {
 		///
 		/// This member function is thread safe.
 		///
+		/// \deprecated Use mount(booster::shared_ptr<application_specific_pool> gen,int application_options) with application_options=app::asynchronous instead
+		///
 		void mount(booster::intrusive_ptr<application> app);
 		///
 		/// Mount an asynchronous application \a app  by mount_point \a point application matching and
@@ -82,14 +163,45 @@ namespace cppcms {
 		///
 		/// This member function is thread safe.
 		///
+		/// \deprecated Use mount(booster::shared_ptr<application_specific_pool> gen,mount_point const &point,int application_options) with application_options=app::asynchronous instead
+		///
 		void mount(booster::intrusive_ptr<application> app,mount_point const &point);
+
+		///
+		/// Mount a application_specific_pool for an application that processes all requests, path provided to application's main is PATH_INFO
+		///
+		/// \a application_options allow to specify mode of operation - synchronous, asynchronous, see namespace
+		/// cppcms::app
+		///
+		/// Note: applications_pool owns gen now and is responsible for destroying it
+		///
+		/// This member function is thread safe.
+		///
+		void mount(booster::shared_ptr<application_specific_pool> gen,int application_options = 0);
+
+		///
+		/// Mount a application_specific_pool to a specific mount point
+		///
+		/// \a application_options allow to specify mode of operation - synchronous, asynchronous, see namespace
+		/// cppcms::app
+		///
+		/// Note: applications_pool owns gen now and is responsible for destroying it
+		///
+		/// This member function is thread safe.
+		///
+		void mount(booster::shared_ptr<application_specific_pool> gen,mount_point const &point,int application_options = 0);
 
 
 		/// \cond INTERNAL
 
+		/// get is not in use any more
 		booster::intrusive_ptr<application> 
 		get(char const *h,char const *s,char const *path_info,std::string &match);
 
+		booster::shared_ptr<application_specific_pool> 
+		get_application_specific_pool(char const *h,char const *s,char const *path_info,std::string &match);
+
+		// put is not in use any more
 		void put(application *app);
 		applications_pool(service &srv,int pool_size_limit);
 		~applications_pool();
@@ -97,9 +209,6 @@ namespace cppcms {
 		/// \endcond
 
 	private:
-		struct basic_app_data;
-		struct app_data;
-		struct long_running_app_data;
 		struct _data;
 		service *srv_;
 		booster::hold_ptr<_data> d;
@@ -147,6 +256,8 @@ namespace cppcms {
 	/// Create application factory for application of type T, such as T has a constructor
 	/// T::T(cppcms::service &s);
 	///
+	/// \deprecated Use applications_genrator
+	///
 	template<typename T>
 	std::auto_ptr<applications_pool::factory> applications_factory()
 	{
@@ -157,6 +268,8 @@ namespace cppcms {
 	///
 	/// Create application factory for application of type T, such as T has a constructor
 	/// T::T(cppcms::service &s,P1);
+	///
+	/// \deprecated Use applications_genrator
 	///
 	template<typename T,typename P1>
 	std::auto_ptr<applications_pool::factory> applications_factory(P1 p1)
@@ -169,6 +282,8 @@ namespace cppcms {
 	/// Create application factory for application of type T, such as T has a constructor
 	/// T::T(cppcms::service &s,P1,P2);
 	///
+	/// \deprecated Use applications_genrator
+	///
 	template<typename T,typename P1,typename P2>
 	std::auto_ptr<applications_pool::factory> applications_factory(P1 p1,P2 p2)
 	{
@@ -176,6 +291,79 @@ namespace cppcms {
 		return f;
 	}
 
+	/// \cond INTERNAL 
+	namespace details {
+		template<typename T>
+		struct simple_application_specific_pool0 : public application_specific_pool
+		{
+			T *new_application(service &s) 
+			{
+				return new T(s);
+			}
+		};
+		template<typename T,typename P1>
+		struct simple_application_specific_pool1 : public application_specific_pool
+		{
+			simple_application_specific_pool1(P1 p1) : p1_(p1) {}
+			P1 p1_;
+			T *new_application(service &s)
+			{
+				return new T(s,p1_);
+			}
+		};
+		template<typename T,typename P1,typename P2>
+		struct simple_application_specific_pool2 : public application_specific_pool 
+		{
+			simple_application_specific_pool2(P1 p1,P2 p2) : p1_(p1),p2_(p2) {}
+			P1 p1_;
+			P2 p2_;
+			T *new_application(service &s)
+			{
+				return new T(s,p1_,p2_);
+			}
+		};
+	} // details
+
+	/// \endcond
+
+	///
+	/// Create application application_specific_pool for application of type T, such as T has a constructor
+	/// T::T(cppcms::service &s);
+	///
+	/// \deprecated Use applications_genrator
+	///
+	template<typename T>
+	booster::shared_ptr<application_specific_pool> create_pool()
+	{
+		booster::shared_ptr<application_specific_pool> f(new details::simple_application_specific_pool0<T>);
+		return f;
+	}
+	
+	///
+	/// Create application application_specific_pool for application of type T, such as T has a constructor
+	/// T::T(cppcms::service &s,P1);
+	///
+	/// \deprecated Use applications_genrator
+	///
+	template<typename T,typename P1>
+	booster::shared_ptr<application_specific_pool> create_pool(P1 p1)
+	{
+		booster::shared_ptr<application_specific_pool> f(new details::simple_application_specific_pool1<T,P1>(p1));
+		return f;
+	}
+	
+	///
+	/// Create application application_specific_pool for application of type T, such as T has a constructor
+	/// T::T(cppcms::service &s,P1,P2);
+	///
+	/// \deprecated Use applications_genrator
+	///
+	template<typename T,typename P1,typename P2>
+	booster::shared_ptr<application_specific_pool> create_pool(P1 p1,P2 p2)
+	{
+		booster::shared_ptr<application_specific_pool> f(new details::simple_application_specific_pool2<T,P1,P2>(p1,p2));
+		return f;
+	}
 
 } // cppcms
 

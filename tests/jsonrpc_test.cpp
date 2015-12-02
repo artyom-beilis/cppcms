@@ -107,7 +107,7 @@ int main(int argc,char **argv)
 {
 	try {
 		cppcms::service srv(argc,argv);
-		srv.applications_pool().mount( cppcms::applications_factory<json_service>());
+		srv.applications_pool().mount( cppcms::create_pool<json_service>());
 		if(srv.settings().type("test.exec")!=cppcms::json::is_undefined)
 			srv.after_fork(submitter(srv));
 		srv.run();

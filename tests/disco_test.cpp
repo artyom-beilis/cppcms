@@ -165,13 +165,17 @@ int main(int argc,char **argv)
 {
 	try {
 		cppcms::service srv(argc,argv);
-		booster::intrusive_ptr<cppcms::application> async = new async_unit_test(srv);
-		booster::intrusive_ptr<cppcms::application> nb = new nonblocking_unit_test(srv);
+		srv.applications_pool().mount( 
+			cppcms::create_pool<async_unit_test>(),
+			cppcms::mount_point("/async"),
+			cppcms::app::asynchronous);
 
-		srv.applications_pool().mount( async, cppcms::mount_point("/async") );
-		srv.applications_pool().mount( nb, cppcms::mount_point("/nonblocking") );
+		srv.applications_pool().mount(
+			cppcms::create_pool<nonblocking_unit_test>(),
+			cppcms::mount_point("/nonblocking"),
+			cppcms::app::asynchronous);
 
-		srv.applications_pool().mount( cppcms::applications_factory<unit_test>(), cppcms::mount_point("/sync"));
+		srv.applications_pool().mount( cppcms::create_pool<unit_test>(), cppcms::mount_point("/sync"));
 		srv.after_fork(submitter(srv));
 		srv.run();
 	}

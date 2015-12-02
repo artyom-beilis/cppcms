@@ -32,6 +32,7 @@ namespace cppcms {
 	class url_dispatcher;
 	class url_mapper;
 	class applications_pool;
+	class application_specific_pool;
 	class application;
 	class base_content;
 	class cache_interface;
@@ -391,8 +392,8 @@ namespace cppcms {
 		void recycle();
 		void parent(application *parent);
 
-		void pool_id(int id);
-		int pool_id();
+		booster::weak_ptr<application_specific_pool> get_pool();
+		void set_pool(booster::weak_ptr<application_specific_pool> pool);
 
 
 		struct _data; // future use
@@ -403,6 +404,7 @@ namespace cppcms {
 
 		booster::atomic_counter refs_;
 		friend class applications_pool;
+		friend class application_specific_pool;
 		friend void booster::intrusive_ptr_add_ref(application *p);
 		friend void booster::intrusive_ptr_release(application *p);
 	};

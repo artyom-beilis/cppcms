@@ -61,10 +61,9 @@ int main(int argc,char **argv)
 {
 	try {
 		cppcms::service srv(argc,argv);
-		booster::intrusive_ptr<cppcms::application> app;
 		if(srv.settings().get("test.async","sync")=="sync") {
 			std::cout << "Synchronous testing" << std::endl;
-			srv.applications_pool().mount( cppcms::applications_factory<unit_test>());
+			srv.applications_pool().mount( cppcms::create_pool<unit_test>());
 		}
 		else {
 			if(srv.settings().get<std::string>("test.async")=="async") {
@@ -80,8 +79,7 @@ int main(int argc,char **argv)
 				std::cerr << "Invalid configuration value of test.async" << std::endl;
 				return 1;
 			}
-			app=new unit_test(srv);
-			srv.applications_pool().mount(app);
+			srv.applications_pool().mount( cppcms::create_pool<unit_test>(),cppcms::app::asynchronous);
 		}
 		srv.after_fork(submitter(srv));
 		srv.run();

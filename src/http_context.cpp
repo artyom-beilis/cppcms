@@ -89,11 +89,20 @@ void context::run()
 }
 
 namespace {
-	struct dispatcher {
-		void (*func)(booster::intrusive_ptr<application>,std::string,bool);
+	struct dispatcher_legacy {
+		void (*func)(booster::intrusive_ptr<application> const &,std::string const &,bool);
 		booster::intrusive_ptr<application> app;
 		std::string url;
 		void operator()() { func(app,url,true); }
+	};
+	struct dispatcher {
+		void (*func)(booster::shared_ptr<application_specific_pool> const &,booster::shared_ptr<context> const &,std::string const &);
+		booster::shared_ptr<application_specific_pool> pool;
+		booster::shared_ptr<context> ctx;
+		std::string url;
+		void operator()() {
+			func(pool,ctx,url); 
+		}
 	};
 }
 
@@ -106,28 +115,56 @@ void context::on_request_ready(bool error)
 	char const *script_name = conn_->cgetenv("SCRIPT_NAME");
 	std::string matched;
 
-	booster::intrusive_ptr<application> app = service().applications_pool().get(host,script_name,path_info,matched);
+	booster::shared_ptr<application_specific_pool> pool = 
+		service().applications_pool().get_application_specific_pool(
+			host,
+			script_name,
+			path_info,
+			matched
+			);
 
-	if(!app) {
+	if(!pool) {
 		response().io_mode(http::response::asynchronous);
 		response().make_error_response(http::response::not_found);
 		async_complete_response();
 		return;
 	}
 
-	app->assign_context(self());
-	
-	if(app->is_asynchronous()) {
-		response().io_mode(http::response::asynchronous);
+	if(pool->flags() == (app::legacy | app::synchronous) || (pool->flags() & app::op_mode_mask)!=app::synchronous) {
+		// synchronous legacy
+		booster::intrusive_ptr<application> app = pool->get(service());
+
+		if(!app) {
+			response().io_mode(http::response::asynchronous);
+			response().make_error_response(http::response::internal_server_error);
+			async_complete_response();
+			return;
+		}
+
+		app->assign_context(self());
+
+		if(pool->flags() == app::legacy) {
+			dispatcher_legacy dt;
+			dt.func = &context::dispatch;
+			dt.app = app;
+			dt.url.swap(matched);
+			app->service().thread_pool().post(dt);
+			return;
+		}
+		
 		// Don't post, as context may be reassigned 
+		response().io_mode(http::response::asynchronous);
 		dispatch(app,matched,false);
+		return;
 	}
 	else {
 		dispatcher dt;
 		dt.func = &context::dispatch;
-		dt.app = app;
+		dt.pool = pool;
+		dt.ctx = self();
 		dt.url.swap(matched);
-		app->service().thread_pool().post(dt);
+		service().thread_pool().post(dt);
+		return;
 	}
 }
 
@@ -151,7 +188,19 @@ void context::complete_response()
 	conn_.reset();
 }
 // static 
-void context::dispatch(booster::intrusive_ptr<application> app,std::string url,bool syncronous)
+void context::dispatch(booster::shared_ptr<application_specific_pool> const &pool,booster::shared_ptr<context> const &self,std::string const &url)
+{
+	booster::intrusive_ptr<application> app = pool->get(self->service());
+	if(!app) {
+		self->response().make_error_response(http::response::internal_server_error);
+		self->complete_response();
+		return;
+	}
+	app->assign_context(self);
+	dispatch(app,url,true);
+}
+// static 
+void context::dispatch(booster::intrusive_ptr<application> const &app,std::string const &url,bool syncronous)
 {
 	try {
 		if(syncronous && !app->context().service().cached_settings().session.disable_automatic_load)
@@ -188,14 +237,6 @@ void context::dispatch(booster::intrusive_ptr<application> app,std::string url,b
 		}
 	}
 }
-
-namespace {
-	void wrapper(context::handler const &h,bool r)
-	{
-		h(r ? context::operation_aborted : context::operation_completed);
-	}
-}
-
 
 void context::async_flush_output(context::handler const &h)
 {

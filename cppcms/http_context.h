@@ -21,6 +21,7 @@ namespace cppcms {
 
 	class service;
 	class application;
+	class application_specific_pool;
 	class cache_interface;
 	class session_interface;
 	namespace json { class value; }
@@ -165,7 +166,8 @@ namespace cppcms {
 			void async_on_peer_reset(booster::callback<void()> const &h);
 		private:
 			void on_request_ready(bool error);
-			static void dispatch(booster::intrusive_ptr<application> app,std::string url,bool syncronous);
+			static void dispatch(booster::shared_ptr<application_specific_pool> const &pool,booster::shared_ptr<context> const &self,std::string const &url);
+			static void dispatch(booster::intrusive_ptr<application> const &app,std::string const &url,bool syncronous);
 			void try_restart(bool e);
 			booster::shared_ptr<context> self();
 

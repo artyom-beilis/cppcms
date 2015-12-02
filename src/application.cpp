@@ -31,16 +31,15 @@ namespace cppcms {
 
 struct application::_data {
 	_data(cppcms::service *s):
-		service(s),
-		pool_id(-1)
+		service(s)
 	{
 	}
 	cppcms::service *service;
 	booster::shared_ptr<http::context> conn;
-	int pool_id;
 	url_dispatcher url;
 	booster::hold_ptr<url_mapper> url_map;
 	std::vector<application *> managed_children;
+	booster::weak_ptr<application_specific_pool> my_pool;
 };
 
 application::application(cppcms::service &srv) :
@@ -110,7 +109,10 @@ booster::shared_ptr<http::context> application::release_context()
 
 bool application::is_asynchronous()
 {
-	return pool_id() < 0;
+	booster::shared_ptr<application_specific_pool> p=d->my_pool.lock();
+	if(p && (p->flags() & app::op_mode_mask) != 0)
+		return true;
+	return false; 
 }
 
 void application::assign_context(booster::shared_ptr<http::context> conn)
@@ -118,14 +120,14 @@ void application::assign_context(booster::shared_ptr<http::context> conn)
 	root()->d->conn=conn;
 }
 
-void application::pool_id(int id)
+void application::set_pool(booster::weak_ptr<application_specific_pool> p)
 {
-	d->pool_id=id;
+	d->my_pool = p;
 }
 
-int application::pool_id()
+booster::weak_ptr<application_specific_pool> application::get_pool()
 {
-	return d->pool_id;
+	return d->my_pool;
 }
 
 application *application::parent()
@@ -362,33 +364,27 @@ namespace booster {
 	// REMEMBER THIS IS CALLED FROM DESTRUCTOR!!!
 	void intrusive_ptr_release(cppcms::application *app)
 	{
-		// it is called in destructors... So be very careful
+		if(!app)
+			return;
 		try {
 			app = app->root();
 			long refs=--(app->refs_);
 			if(refs > 0)
 				return;
-			
-			cppcms::service &service=app->service();
-
-			try {
-				app->recycle();
+			app->recycle();
+			booster::shared_ptr<cppcms::application_specific_pool> p = app->get_pool().lock();
+			if(p) {
+				cppcms::application *tmp = app;
+				app = 0;
+				p->put(tmp);
 			}
-			catch(...) {
-				if(app->pool_id() < 0) {
-					service.applications_pool().put(app);
-				}
-				else
-					delete app;
-				throw;
-			}
-
-			service.applications_pool().put(app);
-			// return the application to pool... or delete it if "pooled"
+			else
+				delete app;
 		}
 		catch(...) 
 		{
-			// FIXME LOG IT?
+			if(app)
+				delete app;
 		}
 	}
 } // booster

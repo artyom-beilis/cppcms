@@ -116,7 +116,7 @@ int main(int argc,char **argv)
 {
 	try {
 		cppcms::service srv(argc,argv);
-		srv.applications_pool().mount( cppcms::applications_factory<unit_test>());
+		srv.applications_pool().mount( cppcms::create_pool<unit_test>());
 		if(srv.settings().find("test.exec").type()==cppcms::json::is_string)
 			srv.after_fork(submitter(srv));
 	
