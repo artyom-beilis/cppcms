@@ -50,6 +50,7 @@ namespace cppcms {
 		static const int op_mode_mask	= 0x000F; /// mask to select sync vs async flags
 
 		static const int thread_specific= 0x0010; ///< Make synchronous application thread specific
+		static const int prepopulated	= 0x0020; ///< Make sure all applications are created from the beginning (ignored in thread_specific is set)
 		/// \cond INTERNAL
 		static const int legacy		= 0x8000; ///< Use legacy handling of application life time when the application is created in the event loop and than dispatched as a job to a thread pool
 		/// \endcond
@@ -76,6 +77,7 @@ namespace cppcms {
 		///
 		virtual application *new_application(service &srv) = 0;
 	private:
+		void prepopulate(cppcms::service &srv);
 		friend class applications_pool;
 		friend class http::context;
 		friend void booster::intrusive_ptr_release(cppcms::application *app);
@@ -256,7 +258,7 @@ namespace cppcms {
 	/// Create application factory for application of type T, such as T has a constructor
 	/// T::T(cppcms::service &s);
 	///
-	/// \deprecated Use applications_genrator
+	/// \deprecated Use create_pool
 	///
 	template<typename T>
 	std::auto_ptr<applications_pool::factory> applications_factory()
@@ -269,7 +271,7 @@ namespace cppcms {
 	/// Create application factory for application of type T, such as T has a constructor
 	/// T::T(cppcms::service &s,P1);
 	///
-	/// \deprecated Use applications_genrator
+	/// \deprecated Use create_pool
 	///
 	template<typename T,typename P1>
 	std::auto_ptr<applications_pool::factory> applications_factory(P1 p1)
@@ -282,7 +284,7 @@ namespace cppcms {
 	/// Create application factory for application of type T, such as T has a constructor
 	/// T::T(cppcms::service &s,P1,P2);
 	///
-	/// \deprecated Use applications_genrator
+	/// \deprecated Use create_pool
 	///
 	template<typename T,typename P1,typename P2>
 	std::auto_ptr<applications_pool::factory> applications_factory(P1 p1,P2 p2)
@@ -330,8 +332,6 @@ namespace cppcms {
 	/// Create application application_specific_pool for application of type T, such as T has a constructor
 	/// T::T(cppcms::service &s);
 	///
-	/// \deprecated Use applications_genrator
-	///
 	template<typename T>
 	booster::shared_ptr<application_specific_pool> create_pool()
 	{
@@ -343,8 +343,6 @@ namespace cppcms {
 	/// Create application application_specific_pool for application of type T, such as T has a constructor
 	/// T::T(cppcms::service &s,P1);
 	///
-	/// \deprecated Use applications_genrator
-	///
 	template<typename T,typename P1>
 	booster::shared_ptr<application_specific_pool> create_pool(P1 p1)
 	{
@@ -355,8 +353,6 @@ namespace cppcms {
 	///
 	/// Create application application_specific_pool for application of type T, such as T has a constructor
 	/// T::T(cppcms::service &s,P1,P2);
-	///
-	/// \deprecated Use applications_genrator
 	///
 	template<typename T,typename P1,typename P2>
 	booster::shared_ptr<application_specific_pool> create_pool(P1 p1,P2 p2)

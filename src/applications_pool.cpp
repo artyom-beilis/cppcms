@@ -26,6 +26,7 @@ namespace cppcms {
 class application_specific_pool::_policy {
 public:
 	_policy(application_specific_pool *self) : self_(self) {}
+	virtual void prepopulate(cppcms::service &srv) = 0;
 	virtual ~_policy() {}
 	virtual booster::intrusive_ptr<application> get(cppcms::service &srv) = 0;
 	virtual void put(application *app) = 0;
@@ -51,6 +52,7 @@ public:
 			return;
 		tss_.reset(app);
 	}
+	virtual void prepopulate(cppcms::service &){}
 private:
 	booster::thread_specific_ptr<application> tss_;
 };
@@ -67,6 +69,15 @@ public:
 	{
 		for(size_t i=0;i<size_;i++)
 			delete apps_[i];
+	}
+	virtual void prepopulate(cppcms::service &srv)
+	{
+		if((self_->flags() & app::prepopulated) && !(self_->flags() & app::legacy)) {
+			while(size_ < apps_.size()) {
+				size_++;
+				apps_[size_-1]= get_new(srv);
+			}
+		}
 	}
 	virtual booster::intrusive_ptr<application> get(cppcms::service &srv)
 	{
@@ -92,7 +103,17 @@ private:
 
 class application_specific_pool::_async_policy : public application_specific_pool::_policy{
 public:
-	_async_policy(application_specific_pool *self) : _policy(self) {}
+	_async_policy(application_specific_pool *self) : 
+		_policy(self) 
+	{
+	}
+	virtual void prepopulate(cppcms::service &srv)
+	{
+		if((self_->flags() & app::prepopulated) && !(self_->flags() & app::legacy)) {
+			if(!app_)
+				app_ = get_new(srv);
+		}
+	}
 	virtual booster::intrusive_ptr<application> get(cppcms::service &srv)
 	{
 		if(!app_)
@@ -114,6 +135,7 @@ public:
 		app_(0)
 	{
 	}
+	virtual void prepopulate(cppcms::service &) {}
 	virtual booster::intrusive_ptr<application> get(cppcms::service &srv)
 	{
 		if(self_->flags()==-1)
@@ -224,6 +246,11 @@ booster::intrusive_ptr<application> application_specific_pool::get(cppcms::servi
 	return app;
 }
 
+void application_specific_pool::prepopulate(cppcms::service &srv)
+{
+	d->policy->prepopulate(srv);
+}
+
 namespace impl {
 	class legacy_sync_pool : public application_specific_pool {
 	public:
@@ -294,6 +321,7 @@ void applications_pool::mount(std::auto_ptr<factory> aps,mount_point const &mp)
 	booster::unique_lock<booster::recursive_mutex> lock(d->lock);
 	d->apps.push_back(_data::attachment(p,mp));
 }
+
 void applications_pool::mount(std::auto_ptr<factory> aps)
 {
 	mount(aps,mount_point());
@@ -318,6 +346,8 @@ void applications_pool::mount(booster::shared_ptr<application_specific_pool> gen
 	}
 	gen->size(d->thread_count);
 	gen->flags(flags);
+	if(flags & app::prepopulated)
+		gen->prepopulate(*srv_);
 	booster::unique_lock<booster::recursive_mutex> lock(d->lock);
 	d->apps.push_back(_data::attachment(gen,point));
 }
