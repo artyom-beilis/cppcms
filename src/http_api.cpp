@@ -22,7 +22,6 @@
 #include <sstream>
 #include <algorithm>
 #include <stdio.h>
-
 #include "binder.h"
 
 // for testing only
@@ -52,8 +51,6 @@
 #include "rewrite.h"
 
 namespace io = booster::aio;
-
-
 
 namespace cppcms {
 namespace impl {
@@ -440,8 +437,6 @@ namespace cgi {
 		virtual booster::aio::stream_socket &socket() { return socket_; }
 		virtual booster::aio::const_buffer format_output(booster::aio::const_buffer const &in,bool /*completed*/,booster::system::error_code &e)
 		{
-			update_time();
-			add_to_watchdog();
 			if(headers_done_)
 				return in;
 			booster::aio::const_buffer packet;
@@ -716,7 +711,7 @@ namespace cgi {
 		std::list<http_ptr> kill;
 
 		time_t now = time(0);
-
+		
 		for(connections_type::iterator p=connections_.begin(),e=connections_.end();p!=e;) {
 			booster::shared_ptr<http> ptr = p->lock();
 			if(!ptr) {
