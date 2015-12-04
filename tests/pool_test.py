@@ -14,7 +14,7 @@ def test(x):
     if not x:
         raise RuntimeError("Failed")
 def now():
-    return datetime.datetime.now().strftime("%H:%M:%S.%f")
+    return "    " + datetime.datetime.now().strftime("%H:%M:%S.%f")
 
 class Conn():
     num=re.compile('^[0-9]+$')
@@ -35,8 +35,6 @@ class Conn():
             response = response + tmp
         body = response.split('\r\n\r\n')[1]
 
-        #r=self.h.getresponse()
-        #body = r.read()
         r={}
         for s in body.split('\n'):
             if s=='':
@@ -60,6 +58,7 @@ def pool_many(url,cb=None):
         a[i]=None
 
 def test_sync():
+    print '/sync'
     st=Conn('/test/stats?id=/sync').get()
     test(st["total"]==0)
 
@@ -85,10 +84,10 @@ def test_sync():
     test(st["current"]==2)
 
 
-test_sync()
 
 def test_sync_prep():
     n='/sync/prepopulated'
+    print n
     st=Conn('/test/stats?id=' + n).get()
     test(st["total"]==2)
 
@@ -108,10 +107,10 @@ def test_sync_prep():
     test(st["total"]==2)
     test(st["current"]==2)
 
-test_sync_prep()
 
 
 def test_sync_ts():
+    print '/sync/tss'
     st=Conn('/test/stats?id=/sync/tss').get()
     test(st["total"]==0)
 
@@ -139,4 +138,32 @@ def test_sync_ts():
     test(st["total"]==2)
     test(st["current"]==2)
 
+
+
+def test_sync_legacy():
+    n='/sync/legacy'
+    print n
+    st=Conn('/test/stats?id=' + n).get()
+    test(st["total"]==0)
+
+    c1 = Conn(n+'?sleep=0.2') 
+    c2 = Conn(n+'?sleep=0.2') 
+    r1=c1.get()
+    r2=c2.get()
+    test(r1["app_id"]!=r2["app_id"])
+    test(r1["original_thread_id"]==1)
+    test(r2["original_thread_id"]==1)
+    test(r1["thread_id"]!=r2["thread_id"])
+    test(r1["thread_id"] >= 1000)
+    test(r2["thread_id"] >= 1000)
+
+    pool_many(n+'?sleep=0.2')
+    st=Conn('/test/stats?id=' + n).get()
+    test(st["total"]==2)
+    test(st["current"]==2)
+
+test_sync()
+test_sync_prep()
 test_sync_ts()
+test_sync_legacy()
+print "OK"

@@ -67,9 +67,6 @@ namespace cppcms {
 		application_specific_pool();
 		virtual ~application_specific_pool();
 
-		int flags();
-		void flags(int f);
-
 	protected:
 		///
 		/// Returns newly created instance of an application, its ownership
@@ -77,8 +74,13 @@ namespace cppcms {
 		///
 		virtual application *new_application(service &srv) = 0;
 	private:
+		int flags();
+		void flags(int f);
+
 		void prepopulate(cppcms::service &srv);
+		void application_requested(cppcms::service &srv);
 		friend class applications_pool;
+		friend class application;
 		friend class http::context;
 		friend void booster::intrusive_ptr_release(cppcms::application *app);
 
@@ -94,6 +96,7 @@ namespace cppcms {
 		class _pool_policy;
 		class _async_policy;
 		class _async_legacy_policy;
+		class _legacy_pool_policy;
 		booster::hold_ptr<_data> d;
 	};
 
@@ -205,7 +208,7 @@ namespace cppcms {
 
 		// put is not in use any more
 		void put(application *app);
-		applications_pool(service &srv,int pool_size_limit);
+		applications_pool(service &srv,int unused);
 		~applications_pool();
 
 		/// \endcond

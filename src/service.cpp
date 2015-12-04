@@ -225,8 +225,7 @@ void service::setup()
 	impl_->sig_.reset(new io::stream_socket(*impl_->io_service_));
 	impl_->breaker_.reset(new io::stream_socket(*impl_->io_service_));
 
-	int apps=settings().get("service.applications_pool_size",threads_no()*2);
-	impl_->applications_pool_.reset(new cppcms::applications_pool(*this,apps));
+	impl_->applications_pool_.reset(new cppcms::applications_pool(*this,0));
 	impl_->views_pool_.reset(new cppcms::views::manager(settings()));
 	impl_->cache_pool_.reset(new cppcms::cache_pool(settings()));
 	impl_->session_pool_.reset(new cppcms::session_pool(*this));

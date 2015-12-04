@@ -805,9 +805,9 @@ add_test(status_test
 	status_test "-c" "${CNF}/status_test.js" 
 	"--test-exec=${PYTHON} ${CNF}/status_test.py")
 
-#add_test(pool_test
-#	pool_test "-c" "${CNF}/pool_test.js" 
-#	"--test-exec=${PYTHON} ${CNF}/pool_test.py")
+add_test(pool_test
+	pool_test "-c" "${CNF}/pool_test.js" 
+	"--test-exec=${PYTHON} ${CNF}/pool_test.py")
 
 add_test(async_status_test
 	status_test "-c" "${CNF}/status_test.js" "--test-async=async"

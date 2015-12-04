@@ -89,12 +89,6 @@ void context::run()
 }
 
 namespace {
-	struct dispatcher_legacy {
-		void (*func)(booster::intrusive_ptr<application> const &,std::string const &,bool);
-		booster::intrusive_ptr<application> app;
-		std::string url;
-		void operator()() { func(app,url,true); }
-	};
 	struct dispatcher {
 		void (*func)(booster::shared_ptr<application_specific_pool> const &,booster::shared_ptr<context> const &,std::string const &);
 		booster::shared_ptr<application_specific_pool> pool;
@@ -130,11 +124,12 @@ void context::on_request_ready(bool error)
 		return;
 	}
 
-	if(pool->flags() == (app::legacy | app::synchronous) || (pool->flags() & app::op_mode_mask)!=app::synchronous) {
-		// synchronous legacy
+	if((pool->flags() & app::op_mode_mask)!=app::synchronous) {
+		// asynchronous 
 		booster::intrusive_ptr<application> app = pool->get(service());
 
 		if(!app) {
+			BOOSTER_ERROR("cppcms") << "Cound fetch asynchronous application from pool";
 			response().io_mode(http::response::asynchronous);
 			response().make_error_response(http::response::internal_server_error);
 			async_complete_response();
@@ -142,17 +137,6 @@ void context::on_request_ready(bool error)
 		}
 
 		app->assign_context(self());
-
-		if(pool->flags() == app::legacy) {
-			dispatcher_legacy dt;
-			dt.func = &context::dispatch;
-			dt.app = app;
-			dt.url.swap(matched);
-			app->service().thread_pool().post(dt);
-			return;
-		}
-		
-		// Don't post, as context may be reassigned 
 		response().io_mode(http::response::asynchronous);
 		dispatch(app,matched,false);
 		return;
@@ -192,6 +176,7 @@ void context::dispatch(booster::shared_ptr<application_specific_pool> const &poo
 {
 	booster::intrusive_ptr<application> app = pool->get(self->service());
 	if(!app) {
+		BOOSTER_ERROR("cppcms") << "Cound fetch synchronous application from a pool";
 		self->response().make_error_response(http::response::internal_server_error);
 		self->complete_response();
 		return;

@@ -27,6 +27,7 @@ class application_specific_pool::_policy {
 public:
 	_policy(application_specific_pool *self) : self_(self) {}
 	virtual void prepopulate(cppcms::service &srv) = 0;
+	virtual void application_requested(cppcms::service &) {}
 	virtual ~_policy() {}
 	virtual booster::intrusive_ptr<application> get(cppcms::service &srv) = 0;
 	virtual void put(application *app) = 0;
@@ -70,6 +71,7 @@ public:
 		for(size_t i=0;i<size_;i++)
 			delete apps_[i];
 	}
+	virtual void application_requested(cppcms::service &) {}
 	virtual void prepopulate(cppcms::service &srv)
 	{
 		if((self_->flags() & app::prepopulated) && !(self_->flags() & app::legacy)) {
@@ -100,6 +102,70 @@ private:
 	std::vector<application *> apps_;
 	size_t size_;
 };
+
+class application_specific_pool::_legacy_pool_policy : public application_specific_pool::_policy {
+public:
+	_legacy_pool_policy(application_specific_pool *self,size_t n) : 
+		_policy(self),
+		total_(0),
+		pending_(0),
+		size_(0),
+		limit_(n)
+	{
+		apps_.resize(limit_,0);
+	}
+	~_legacy_pool_policy()
+	{
+		for(size_t i=0;i<size_;i++) {
+			delete apps_[i];
+			apps_[i]=0;
+		}
+	}
+	virtual void application_requested(cppcms::service &srv) 
+	{
+		if(total_ >= limit_)
+			return;
+		pending_++;
+		if(pending_ > size_) {
+			apps_[size_] = get_new(srv);
+			size_++;
+			total_++;
+		}
+	}
+	virtual void prepopulate(cppcms::service &) {}
+	virtual booster::intrusive_ptr<application> get(cppcms::service &)
+	{
+		booster::intrusive_ptr<application> app;
+		// must never happen start
+		if(size_ == 0)
+			return app;
+		// must never happen end
+		size_--;
+		pending_--;
+		app = apps_[size_];
+		apps_[size_] = 0;
+		return app;
+	}
+	virtual void put(application *app)
+	{
+		if(!app)
+			return;
+		// must never heppen start
+		if(size_ >= limit_)
+			delete app;
+		// must never happend end
+		apps_[size_++] = app;
+	}
+private:
+	std::vector<application *> apps_;
+	size_t total_;
+	size_t pending_;
+	size_t size_;
+	size_t limit_;
+};
+
+
+
 
 class application_specific_pool::_async_policy : public application_specific_pool::_policy{
 public:
@@ -164,6 +230,16 @@ struct application_specific_pool::_data {
 	booster::recursive_mutex lock;
 };
 
+void application_specific_pool::size(size_t s)
+{
+	d->size = s;
+}
+
+void application_specific_pool::application_requested(cppcms::service &srv)
+{
+	d->policy->application_requested(srv);
+}
+
 application_specific_pool::~application_specific_pool()
 {
 }
@@ -171,7 +247,6 @@ application_specific_pool::~application_specific_pool()
 application_specific_pool::application_specific_pool() : d(new application_specific_pool::_data()) 
 {
 	d->flags = 0;
-	d->size = 0;
 }
 
 int application_specific_pool::flags()
@@ -193,7 +268,7 @@ void application_specific_pool::flags(int flags)
 	}
 
 	if(flags == app::legacy) {
-		d->policy.reset(new _pool_policy(this,d->size));
+		d->policy.reset(new _legacy_pool_policy(this,d->size));
 		return;
 	}
 
@@ -207,11 +282,6 @@ void application_specific_pool::flags(int flags)
 	else {
 		d->policy.reset(new _pool_policy(this,d->size));
 	}
-}
-
-void application_specific_pool::size(size_t n)
-{
-	d->size = n;
 }
 
 application *application_specific_pool::get_new(service &srv)
@@ -294,17 +364,15 @@ struct applications_pool::_data {
 	};
 	std::list<attachment> apps;
 	std::list<attachment> legacy_async_apps;
-	int legacy_limit;
 	int thread_count;
 	booster::recursive_mutex lock;
 };
 
 
-applications_pool::applications_pool(service &srv,int pool_size_limit) :
+applications_pool::applications_pool(service &srv,int /*unused*/) :
 	srv_(&srv),
 	d(new applications_pool::_data())
 {
-	d->legacy_limit=pool_size_limit;
 	d->thread_count = srv_->threads_no();
 }
 applications_pool::~applications_pool()
@@ -315,7 +383,7 @@ applications_pool::~applications_pool()
 void applications_pool::mount(std::auto_ptr<factory> aps,mount_point const &mp)
 {
 	booster::shared_ptr<application_specific_pool> p(new impl::legacy_sync_pool(aps));
-	p->size(d->legacy_limit);
+	p->size(d->thread_count);
 	p->flags(app::legacy);
 
 	booster::unique_lock<booster::recursive_mutex> lock(d->lock);
@@ -333,6 +401,7 @@ void applications_pool::mount(booster::intrusive_ptr<application> app)
 void applications_pool::mount(booster::intrusive_ptr<application> app,mount_point const &mp)
 {
 	booster::shared_ptr<application_specific_pool> p(new impl::legacy_async_pool(app));
+	p->size(d->thread_count);
 	p->flags(app::legacy | app::asynchronous);
 
 	booster::unique_lock<booster::recursive_mutex> lock(d->lock);
@@ -367,6 +436,7 @@ applications_pool::get_application_specific_pool(char const *host,char const *sc
 		if(!m.first)
 			continue;
 		match = m.second;
+		it->pool->application_requested(*srv_);
 		return it->pool;
 	}
 	booster::shared_ptr<application_specific_pool> result;
@@ -381,6 +451,7 @@ applications_pool::get_application_specific_pool(char const *host,char const *sc
 			if(!m.first)
 				continue;
 			match = m.second;
+			app_it->pool->application_requested(*srv_);
 			result = app_it->pool;
 		}
 	}

@@ -21,11 +21,22 @@
 #include "client.h"
 #include <sstream>
 #include <booster/log.h>
-
+#include "test.h"
 
 booster::thread_specific_ptr<int> g_thread_id;
 booster::mutex g_id_lock;
 int g_thread_id_counter=1000;
+
+struct thread_submitter {
+	thread_submitter(cppcms::service &srv) : srv_(&srv) {}
+	void operator()() const
+	{
+		runner r(*srv_);
+		booster::thread t(r);
+		t.detach();
+	}
+	cppcms::service *srv_;
+};
 
 void set_thread_id(int v)
 {
@@ -164,60 +175,76 @@ private:
 int main(int argc,char **argv)
 {
 	try {
-		using cppcms::mount_point;
-		cppcms::service srv(argc,argv);
+		{
+			using cppcms::mount_point;
+			cppcms::service srv(argc,argv);
 
-		set_thread_id(1);
-		
-		srv.applications_pool().mount(
-			cppcms::create_pool<unit_test>(counter::instance("/sync")),
-			mount_point("/sync","",0),
-			cppcms::app::synchronous);
-		
-		srv.applications_pool().mount(
-			cppcms::create_pool<unit_test>(counter::instance("/sync/work")),
-			mount_point("/sync","/work",0),
-			cppcms::app::synchronous);
+			set_thread_id(1);
+			
+			srv.applications_pool().mount(
+				cppcms::create_pool<unit_test>(counter::instance("/sync")),
+				mount_point("/sync","",0),
+				cppcms::app::synchronous);
+			
+			srv.applications_pool().mount(
+				cppcms::create_pool<unit_test>(counter::instance("/sync/work")),
+				mount_point("/sync","/work",0),
+				cppcms::app::synchronous);
 
-		srv.applications_pool().mount(
-			cppcms::create_pool<unit_test>(counter::instance("/sync/prepopulated")),
-			mount_point("/sync","/prepopulated",0),
-			cppcms::app::synchronous | cppcms::app::prepopulated);
-		
-		srv.applications_pool().mount(
-			cppcms::create_pool<unit_test>(counter::instance("/sync/tss")),
-			mount_point("/sync","/tss",0),
-			cppcms::app::synchronous | cppcms::app::thread_specific);
+			srv.applications_pool().mount(
+				cppcms::create_pool<unit_test>(counter::instance("/sync/prepopulated")),
+				mount_point("/sync","/prepopulated",0),
+				cppcms::app::synchronous | cppcms::app::prepopulated);
+			
+			srv.applications_pool().mount(
+				cppcms::create_pool<unit_test>(counter::instance("/sync/tss")),
+				mount_point("/sync","/tss",0),
+				cppcms::app::synchronous | cppcms::app::thread_specific);
 
-		srv.applications_pool().mount(
-			cppcms::applications_factory<unit_test>(counter::instance("/sync/legacy")),
-			 mount_point("/sync","/legacy",0));
-		
-		srv.applications_pool().mount(
-			cppcms::create_pool<unit_test>(counter::instance("/async")),
-			mount_point("/async","",0),
-			cppcms::app::asynchronous);
+			srv.applications_pool().mount(
+				cppcms::applications_factory<unit_test>(counter::instance("/sync/legacy")),
+				 mount_point("/sync","/legacy",0));
+			
+			srv.applications_pool().mount(
+				cppcms::create_pool<unit_test>(counter::instance("/async")),
+				mount_point("/async","",0),
+				cppcms::app::asynchronous);
 
-		srv.applications_pool().mount(
-			cppcms::create_pool<unit_test>(counter::instance("/async/prepopulated")),
-			mount_point("/async","/prepopulated",0),
-			cppcms::app::asynchronous);
+			srv.applications_pool().mount(
+				cppcms::create_pool<unit_test>(counter::instance("/async/prepopulated")),
+				mount_point("/async","/prepopulated",0),
+				cppcms::app::asynchronous);
 
-		booster::intrusive_ptr<cppcms::application> app = new unit_test(srv,counter::instance("/async/legacy"));
-		srv.applications_pool().mount(
-			app,
-			mount_point("/async","/legacy",0));
+			booster::intrusive_ptr<cppcms::application> app = new unit_test(srv,counter::instance("/async/legacy"));
+			srv.applications_pool().mount(
+				app,
+				mount_point("/async","/legacy",0));
 
-		counter::instance("/async/temporary");
+			counter::instance("/async/temporary");
 
-		srv.applications_pool().mount(cppcms::create_pool<tester>(),mount_point("/test"),cppcms::app::asynchronous);
+			srv.applications_pool().mount(cppcms::create_pool<tester>(),mount_point("/test"),cppcms::app::asynchronous);
 
-		srv.after_fork(submitter(srv));
-		srv.run();
+			srv.after_fork(thread_submitter(srv));
+			srv.run();
+		}
+
+		std::cout << "Test all deleted" << std::endl;
+		TEST(counter::instance("/sync")->current == 0);
+		TEST(counter::instance("/sync/prepopulated")->current == 0);
+		TEST(counter::instance("/sync/tss")->current == 0);
+		TEST(counter::instance("/sync/legacy")->current == 0);
+		TEST(counter::instance("/async")->current == 0);
+		TEST(counter::instance("/async/prepopulated")->current == 0);
+		TEST(counter::instance("/async/legacy")->current == 0);
+		std::cout << "Done" << std::endl;
 	}
 	catch(std::exception const &e) {
 		std::cerr << e.what() << std::endl;
 		return EXIT_FAILURE;
 	}
+	if(run_ok)
+		std::cout << "Ok" << std::endl;
+	else
+		std::cout << "FAILED" << std::endl;
 	return run_ok ? EXIT_SUCCESS : EXIT_FAILURE;
 }
