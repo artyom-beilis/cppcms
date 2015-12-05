@@ -24,7 +24,7 @@ class Conn():
         self.s=socket.socket(socket.AF_INET, socket.SOCK_STREAM);
         self.s.connect(('127.0.0.1',8080))
         self.s.send('GET ' + path + ' HTTP/1.0\r\n\r\n')
-    def get(self):
+    def get(self,exp404=False):
         print now(),'READ ',self.path
         response = ''
         while True:
@@ -33,7 +33,12 @@ class Conn():
                 self.s.close()
                 break
             response = response + tmp
-        body = response.split('\r\n\r\n')[1]
+        r2 = response.split('\r\n\r\n')
+        headers=r2[0]
+        body = r2[1]
+        if exp404:
+            test(headers.find('HTTP/1.0 404')==0)
+            return {'status' : 404 }
 
         r={}
         for s in body.split('\n'):
@@ -162,8 +167,100 @@ def test_sync_legacy():
     test(st["total"]==2)
     test(st["current"]==2)
 
+def test_async():
+    n='/async'
+    print n
+    st=Conn('/test/stats?id=' + n).get()
+    test(st["total"]==0)
+
+    c1 = Conn(n+'?sleep=0.2') 
+    c2 = Conn(n+'?sleep=0.2') 
+    r1=c1.get()
+    r2=c2.get()
+    test(r1["app_id"]==r2["app_id"])
+    test(r1["original_thread_id"]==1)
+    test(r1["thread_id"] == 1)
+    test(r2["original_thread_id"]==1)
+    test(r2["thread_id"] == 1)
+
+    pool_many(n+'?sleep=0.0')
+    st=Conn('/test/stats?id=' + n).get()
+    test(st["total"]==1)
+    test(st["current"]==1)
+
+def test_async_prep():
+    n='/async/prepopulated'
+    print n
+    st=Conn('/test/stats?id=' + n).get()
+    test(st["total"]==1)
+
+    c1 = Conn(n+'?sleep=0.2') 
+    r1=c1.get()
+    test(r1["app_id"]==1)
+    test(r1["original_thread_id"]==1)
+    test(r1["thread_id"] == 1)
+
+    pool_many(n+'?sleep=0.1')
+    st=Conn('/test/stats?id=' + n).get()
+    test(st["total"]==1)
+    test(st["current"]==1)
+
+def test_async_legacy():
+    n='/async/legacy'
+    print n
+    st=Conn('/test/stats?id=' + n).get()
+    test(st["total"]==1)
+
+    c1 = Conn(n+'?sleep=0.2') 
+    r1=c1.get()
+    test(r1["app_id"]==1)
+    test(r1["original_thread_id"]==1)
+    test(r1["thread_id"] == 1)
+
+    pool_many(n+'?sleep=0.1')
+    st=Conn('/test/stats?id=' + n).get()
+    test(st["total"]==1)
+    test(st["current"]==1)
+
+def test_async_temporary():
+    n='/async/temporary'
+    print n
+    st=Conn('/test/stats?id=' + n).get()
+    test(st["total"]==0)
+    
+    Conn(n).get(exp404 = True)
+    st=Conn('/test/install').get()
+    test(st["install"]==1)
+
+    st=Conn('/test/stats?id=' + n).get()
+    test(st["total"]==1)
+    test(st["current"]==1)
+    c1 = Conn(n) 
+    r1=c1.get()
+    test(r1["app_id"]==1)
+    test(r1["original_thread_id"]==1)
+    test(r1["thread_id"] == 1)
+    
+    st=Conn('/test/stats?id=' + n).get()
+    test(st["total"]==1)
+    test(st["current"]==1)
+    
+    st=Conn('/test/uninstall').get()
+    test(st["install"]==0)
+    
+    st=Conn('/test/stats?id=' + n).get()
+    test(st["total"]==1)
+    test(st["current"]==0)
+
+    Conn(n).get(exp404 = True)
+    
+
 test_sync()
 test_sync_prep()
 test_sync_ts()
 test_sync_legacy()
+test_async()
+test_async_prep()
+test_async_legacy()
+test_async_temporary()
 print "OK"

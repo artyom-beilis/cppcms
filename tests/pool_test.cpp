@@ -161,8 +161,10 @@ public:
 		else if(name=="/install") {
 			app_ = new unit_test(service(),counter::instance("/async/temporary"));
 			service().applications_pool().mount(app_,cppcms::mount_point("/async","/temporary",0));
+			response().out()<<"install=1";
 		}
 		else if(name=="/uninstall") {
+			response().out()<<"install=0";
 			app_ = 0;
 		}
 
@@ -213,7 +215,7 @@ int main(int argc,char **argv)
 			srv.applications_pool().mount(
 				cppcms::create_pool<unit_test>(counter::instance("/async/prepopulated")),
 				mount_point("/async","/prepopulated",0),
-				cppcms::app::asynchronous);
+				cppcms::app::asynchronous | cppcms::app::prepopulated);
 
 			booster::intrusive_ptr<cppcms::application> app = new unit_test(srv,counter::instance("/async/legacy"));
 			srv.applications_pool().mount(

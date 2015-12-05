@@ -256,7 +256,9 @@ int application_specific_pool::flags()
 
 void application_specific_pool::flags(int flags)
 {
-	if(d->flags == -1 || d->policy.get())
+	if(d->flags == -1)
+		return;
+	if(flags != -1 && d->policy.get())
 		return;
 	d->flags = flags;
 	if(flags == -1) 
