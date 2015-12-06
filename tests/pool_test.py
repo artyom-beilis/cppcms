@@ -36,6 +36,7 @@ class Conn():
         r2 = response.split('\r\n\r\n')
         headers=r2[0]
         body = r2[1]
+        first_header = headers.split('\r\n')[0]
         if exp404:
             test(headers.find('HTTP/1.0 404')==0)
             return {'status' : 404 }
@@ -49,7 +50,7 @@ class Conn():
                 r[ss[0]]=int(ss[1])
             else:
                 r[ss[0]]=ss[1]
-        print now(), "Got",r
+        print now(), "Got",first_header,r
         return r
 
 def pool_many(url,cb=None):
@@ -63,7 +64,8 @@ def pool_many(url,cb=None):
         a[i]=None
 
 def test_sync():
-    print '/sync'
+    n='/sync'
+    print n
     st=Conn('/test/stats?id=/sync').get()
     test(st["total"]==0)
 
@@ -88,6 +90,9 @@ def test_sync():
     test(st["total"]==2)
     test(st["current"]==2)
 
+    st=Conn('/test/unmount?id='+n).get()
+    Conn(n).get(exp404 = True)
+    test(Conn('/test/stats?id='+n).get()["current"]==0)
 
 
 def test_sync_prep():
@@ -112,9 +117,13 @@ def test_sync_prep():
     test(st["total"]==2)
     test(st["current"]==2)
 
+    Conn('/test/unmount?id='+n).get()
+    Conn(n).get(exp404 = True)
+    test(Conn('/test/stats?id='+n).get()["current"]==0)
 
 
 def test_sync_ts():
+    n='/sync/tss'
     print '/sync/tss'
     st=Conn('/test/stats?id=/sync/tss').get()
     test(st["total"]==0)
@@ -143,6 +152,9 @@ def test_sync_ts():
     test(st["total"]==2)
     test(st["current"]==2)
 
+    st=Conn('/test/unmount?id='+n).get()
+    Conn(n).get(exp404 = True)
+    test(Conn('/test/stats?id='+n).get()["current"]==2)
 
 
 def test_sync_legacy():
@@ -187,6 +199,10 @@ def test_async():
     st=Conn('/test/stats?id=' + n).get()
     test(st["total"]==1)
     test(st["current"]==1)
+    
+    st=Conn('/test/unmount?id='+n).get()
+    Conn(n).get(exp404 = True)
+    test(Conn('/test/stats?id='+n).get()["current"]==0)
 
 def test_async_prep():
     n='/async/prepopulated'
@@ -204,6 +220,10 @@ def test_async_prep():
     st=Conn('/test/stats?id=' + n).get()
     test(st["total"]==1)
     test(st["current"]==1)
+
+    st=Conn('/test/unmount?id='+n).get()
+    Conn(n).get(exp404 = True)
+    test(Conn('/test/stats?id='+n).get()["current"]==0)
 
 def test_async_legacy():
     n='/async/legacy'

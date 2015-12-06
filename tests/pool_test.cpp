@@ -151,6 +151,8 @@ private:
 	int original_thread_id_;
 };
 
+std::map<std::string,booster::weak_ptr<cppcms::application_specific_pool> > weak_pools;
+
 class tester : public cppcms::application {
 public:
 	tester(cppcms::service &srv) : cppcms::application(srv) {}
@@ -158,6 +160,15 @@ public:
 	{
 		if(name=="/stats")
 			counter::instance(request().get("id"))->print(response().out());
+		else if(name=="/unmount") {
+			std::string id = request().get("id");
+			bool exists_before = weak_pools[id].lock();
+			service().applications_pool().unmount(weak_pools[id]);
+			bool exists_after = weak_pools[id].lock();
+			response().out()<<"unmount=" << id << "\n"
+				"before="<<exists_before <<"\n"
+				"after="<<exists_after;
+		}
 		else if(name=="/install") {
 			app_ = new unit_test(service(),counter::instance("/async/temporary"));
 			service().applications_pool().mount(app_,cppcms::mount_point("/async","/temporary",0));
@@ -174,6 +185,16 @@ private:
 };
 
 
+struct marker {
+	marker(std::string const &name) : name_(name) {}
+	booster::shared_ptr<cppcms::application_specific_pool> const &operator | (booster::shared_ptr<cppcms::application_specific_pool> const &in)
+	{
+		weak_pools[name_] = in;
+		return in;
+	}
+	std::string name_;
+};
+
 int main(int argc,char **argv)
 {
 	try {
@@ -184,7 +205,7 @@ int main(int argc,char **argv)
 			set_thread_id(1);
 			
 			srv.applications_pool().mount(
-				cppcms::create_pool<unit_test>(counter::instance("/sync")),
+				marker("/sync") | cppcms::create_pool<unit_test>(counter::instance("/sync")),
 				mount_point("/sync","",0),
 				cppcms::app::synchronous);
 			
@@ -194,26 +215,26 @@ int main(int argc,char **argv)
 				cppcms::app::synchronous);
 
 			srv.applications_pool().mount(
-				cppcms::create_pool<unit_test>(counter::instance("/sync/prepopulated")),
+				marker("/sync/prepopulated") | cppcms::create_pool<unit_test>(counter::instance("/sync/prepopulated")),
 				mount_point("/sync","/prepopulated",0),
 				cppcms::app::synchronous | cppcms::app::prepopulated);
 			
 			srv.applications_pool().mount(
-				cppcms::create_pool<unit_test>(counter::instance("/sync/tss")),
+				marker("/sync/tss") | cppcms::create_pool<unit_test>(counter::instance("/sync/tss")),
 				mount_point("/sync","/tss",0),
 				cppcms::app::synchronous | cppcms::app::thread_specific);
 
 			srv.applications_pool().mount(
 				cppcms::applications_factory<unit_test>(counter::instance("/sync/legacy")),
-				 mount_point("/sync","/legacy",0));
+				mount_point("/sync","/legacy",0));
 			
 			srv.applications_pool().mount(
-				cppcms::create_pool<unit_test>(counter::instance("/async")),
+				marker("/async") | cppcms::create_pool<unit_test>(counter::instance("/async")),
 				mount_point("/async","",0),
 				cppcms::app::asynchronous);
 
 			srv.applications_pool().mount(
-				cppcms::create_pool<unit_test>(counter::instance("/async/prepopulated")),
+				marker("/async/prepopulated") | cppcms::create_pool<unit_test>(counter::instance("/async/prepopulated")),
 				mount_point("/async","/prepopulated",0),
 				cppcms::app::asynchronous | cppcms::app::prepopulated);
 
@@ -228,6 +249,8 @@ int main(int argc,char **argv)
 
 			srv.after_fork(thread_submitter(srv));
 			srv.run();
+
+			weak_pools.clear();
 		}
 
 		std::cout << "Test all deleted" << std::endl;

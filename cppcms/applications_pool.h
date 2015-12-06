@@ -197,6 +197,20 @@ namespace cppcms {
 		void mount(booster::shared_ptr<application_specific_pool> gen,mount_point const &point,int application_options = 0);
 
 
+		///
+		/// Unmount an application_specific_pool from the general pool.
+		///
+		/// Notes:
+		///
+		/// - Exiting request would continue to be executed
+		/// - There is no guarantee when and in which thread application objects would be destroyed upon use of unmount
+		/// - applications in the pool using thread_specific policy would be destroyed only on thread exit (i.e. when threads of thread pool are destroyed)
+		///
+		/// This member function is thread safe.
+		///
+		void unmount(booster::weak_ptr<application_specific_pool> gen);
+
+
 		/// \cond INTERNAL
 
 		/// get is not in use any more

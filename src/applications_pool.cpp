@@ -420,6 +420,10 @@ void applications_pool::mount(booster::shared_ptr<application_specific_pool> gen
 	if(flags & app::prepopulated)
 		gen->prepopulate(*srv_);
 	booster::unique_lock<booster::recursive_mutex> lock(d->lock);
+	for(std::list<_data::attachment>::iterator it = d->apps.begin();it!=d->apps.end();++it) {
+		if(it->pool == gen)
+			throw cppcms_error("Attempt to mount application_specific_pool twice");
+	}
 	d->apps.push_back(_data::attachment(gen,point));
 }
 
@@ -458,6 +462,21 @@ applications_pool::get_application_specific_pool(char const *host,char const *sc
 		}
 	}
 	return result;
+}
+
+void applications_pool::unmount(booster::weak_ptr<application_specific_pool> wgen)
+{
+	booster::shared_ptr<application_specific_pool> gen = wgen.lock();
+	if(!gen) return;
+	
+	booster::unique_lock<booster::recursive_mutex> lock(d->lock);
+
+	for(std::list<_data::attachment>::iterator it = d->apps.begin();it!=d->apps.end();++it) {
+		if(it->pool == gen) {
+			d->apps.erase(it);
+			return;
+		}
+	}
 }
 
 booster::intrusive_ptr<application> applications_pool::get(	char const *,
