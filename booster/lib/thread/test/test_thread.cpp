@@ -84,7 +84,7 @@ struct tls_functor2 {
 	void operator()() const
 	{
 		ptr->reset(new tls_object());
-		booster::ptime::millisleep(200);
+		booster::ptime::millisleep(600);
 	}
 };
 
