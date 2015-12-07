@@ -369,7 +369,7 @@ void connection::on_some_multipart_read(booster::system::error_code const &e,siz
 		multipart_parser::files_type files = multipart_parser_->get_files();
 		long long allowed=service().cached_settings().security.content_length_limit*1024;
 		for(unsigned i=0;i<files.size();i++) {
-			if(files[i]->mime().empty() && files[i]->size() > allowed) {
+			if(!files[i]->has_mime() && files[i]->size() > allowed) {
 				BOOSTER_NOTICE("cppcms") << "multipart/form-data non-file entry size too big " << 
 						files[i]->size() 
 						<< " REMOTE_ADDR = `" << getenv("REMOTE_ADDR") 

@@ -140,7 +140,6 @@ namespace cppcms {
 						break;
 					case expecting_separator_boundary:
 						{
-							content_in_ = true;
 							std::streambuf *out=file_->write_data().rdbuf();
 							char const *this_boundary = boundary_.c_str();
 							size_t boundary_size = boundary_.size();
@@ -172,7 +171,6 @@ namespace cppcms {
 									file_->data().seekg(0);
 									files_.push_back(file_);
 									file_.reset(new http::file());
-									content_in_ = false;
 									file_->set_temporary_directory(temp_dir_);
 									if(memory_limit_ != -1) {
 										file_->set_memory_limit(memory_limit_);

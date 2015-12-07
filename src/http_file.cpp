@@ -32,6 +32,12 @@ std::string file::mime() const
 	return mime_;
 }
 
+bool file::has_mime() const
+{
+	return !mime_.empty();
+}
+
+
 std::string file::filename() const
 {
 	return filename_;
@@ -158,7 +164,6 @@ void file::move_to_file()
 	file_data_.str("");
 	saved_in_file_ = 1;
 }
-
 
 void file::add_bytes_to_size(size_t n)
 {

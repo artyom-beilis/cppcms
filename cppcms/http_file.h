@@ -46,6 +46,10 @@ namespace http {
 		///
 		std::string mime() const;
 		///
+		/// Returns true if content type defined
+		///
+		bool has_mime() const;
+		///
 		/// Get the filename as it was sent by the browser.
 		///
 		std::string filename() const;
