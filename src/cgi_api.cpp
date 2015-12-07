@@ -362,9 +362,25 @@ void connection::on_some_multipart_read(booster::system::error_code const &e,siz
 	char const *begin = &content_.front();
 	char const *end = begin + n;
 	multipart_parser::parsing_result_type r = multipart_parser::continue_input;
+	long long allowed=service().cached_settings().security.content_length_limit*1024;
 	while(begin!=end) {
 		r = multipart_parser_->consume(begin,end);
-		if(r==multipart_parser::meta_ready || r == multipart_parser::content_ready || r==multipart_parser::content_partial)
+		if(r==multipart_parser::content_ready || r==multipart_parser::content_partial) {
+			http::file &f= 	(r == multipart_parser::content_ready)
+					?	multipart_parser_->last_file() 
+					:	multipart_parser_->get_file();
+
+			if(!f.has_mime() && f.size() > allowed) {
+				BOOSTER_NOTICE("cppcms") << "multipart/form-data non-file entry size too big " << 
+						f.size() 
+						<< " REMOTE_ADDR = `" << getenv("REMOTE_ADDR") 
+						<< "' REMOTE_HOST=`" << getenv("REMOTE_HOST") << "'";
+				handle_http_error(413,context,h);
+				return;
+			}
+			continue;
+		}
+		else if(r==multipart_parser::meta_ready)
 			continue;
 		break;
 	}
@@ -376,17 +392,6 @@ void connection::on_some_multipart_read(booster::system::error_code const &e,siz
 		}
 		content_.clear();
 		multipart_parser::files_type files = multipart_parser_->get_files();
-		long long allowed=service().cached_settings().security.content_length_limit*1024;
-		for(unsigned i=0;i<files.size();i++) {
-			if(!files[i]->has_mime() && files[i]->size() > allowed) {
-				BOOSTER_NOTICE("cppcms") << "multipart/form-data non-file entry size too big " << 
-						files[i]->size() 
-						<< " REMOTE_ADDR = `" << getenv("REMOTE_ADDR") 
-						<< "' REMOTE_HOST=`" << getenv("REMOTE_HOST") << "'";
-				handle_http_error(413,context,h);
-				return;
-			}
-		}
 		context->request().set_post_data(files);
 		multipart_parser_.reset();
 		h(http::context::operation_completed);
