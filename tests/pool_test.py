@@ -16,7 +16,7 @@ def test(x):
 def now():
     return "    " + datetime.datetime.now().strftime("%H:%M:%S.%f")
 
-class Conn():
+class Conn:
     num=re.compile('^[0-9]+$')
     def __init__(self,path):
         self.path = path
@@ -38,6 +38,7 @@ class Conn():
         body = r2[1]
         first_header = headers.split('\r\n')[0]
         if exp404:
+            print now(), "Got",first_header
             test(headers.find('HTTP/1.0 404')==0)
             return {'status' : 404 }
 
