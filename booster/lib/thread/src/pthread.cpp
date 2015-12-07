@@ -246,7 +246,7 @@ namespace booster {
 	}
 
 
-#if !defined(__NetBSD__) 
+#if !defined(__NetBSD__) && !defined(__CYGWIN__)
 	//
 	// Standard implementation pthread_key_t per object
 	//
@@ -293,9 +293,11 @@ namespace booster {
 	} // details
 #else // workaround
 	//
-	// Workaround of failure to allocate and release keys or if there only few pthread_keys avalible
+	// There is a workaround for two major cases:
+	//	
+	// NetBSD: Workaround of failure to allocate and release keys or if there only few pthread_keys avalible, under NetBSD keys are not being released for some reason
 	// 
-	// NetBSD
+	// Cygwin: deadlock in destructor - call of pthread_key_delete from the destructor given in pthread key itself
 	//
 	namespace details {
 		typedef std::vector<tls_object *> tls_vector;
