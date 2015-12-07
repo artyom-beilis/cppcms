@@ -359,7 +359,16 @@ void connection::on_some_multipart_read(booster::system::error_code const &e,siz
 	if(e) { set_error(h,e.message()); return; }
 	read_size_-=n;
 	if(read_size_ < 0) { handle_http_error(400,context,h); return ;}
-	multipart_parser::parsing_result_type r = multipart_parser_->consume(&content_.front(),n);
+	char const *begin = &content_.front();
+	char const *end = begin + n;
+	multipart_parser::parsing_result_type r = multipart_parser::continue_input;
+	while(begin!=end) {
+		r = multipart_parser_->consume(begin,end);
+		if(r==multipart_parser::meta_ready || r == multipart_parser::content_ready || r==multipart_parser::content_partial)
+			continue;
+		break;
+	}
+
 	if(r == multipart_parser::eof) {
 		if(read_size_ != 0)  {
 			handle_http_error(400,context,h);

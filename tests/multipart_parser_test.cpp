@@ -66,6 +66,8 @@ std::string getcontent(std::istream &in)
 		if(in.gcount() == 1)
 			res+=c;
 	}
+	in.clear();
+	in.seekg(0);
 	return res;
 }
 
@@ -82,15 +84,17 @@ std::string getcontent(booster::shared_ptr<cppcms::http::file> const &p)
 }
 
 struct random_consumer {
-	random_consumer(int bs,cppcms::impl::multipart_parser &p,cppcms::impl::multipart_parser::files_type &f) :
+	random_consumer(int bs,cppcms::impl::multipart_parser &p,cppcms::impl::multipart_parser::files_type &f,std::vector<std::string> *cont = 0) :
 		block_size(bs),
 		parser(&p),
-		files(&f)
+		files(&f),
+		strings(cont)
 	{
 	}
 	int block_size;
 	cppcms::impl::multipart_parser *parser;
 	cppcms::impl::multipart_parser::files_type *files;
+	std::vector<std::string> *strings;
 	cppcms::impl::multipart_parser::parsing_result_type operator()(char const *buffer,int size)
 	{
 		while(size > 0) {
@@ -103,28 +107,48 @@ struct random_consumer {
 			if(block > size)
 				block=size;
 				
-			cppcms::impl::multipart_parser::parsing_result_type res = parser->consume(buffer,block);
-#ifdef DEBUG_MULTIPART_PARSER
-			std::cerr << "Got " << int(res) << " Consumed " << block << std::endl;
-#endif			
+			cppcms::impl::multipart_parser::parsing_result_type res = cppcms::impl::multipart_parser::continue_input;
+		
+			char const *start = buffer;
+			char const *end = start + block;
+			while(start != end) {
+				res = parser->consume(start,end);
+				TEST(start<=end);
+				if(res == cppcms::impl::multipart_parser::meta_ready) {
+					TEST(parser->has_file());
+					TEST(!parser->get_file().name().empty());
+					TEST(parser->get_file().size()==0);
+					continue;
+				}
+				else if(res == cppcms::impl::multipart_parser::content_partial) {
+					TEST(parser->has_file());
+					TEST(!parser->get_file().name().empty());
+					continue;
+				}
+				else if(res ==  cppcms::impl::multipart_parser::content_ready) {
+					TEST(!parser->has_file());
+					if(strings)
+						strings->push_back(getcontent(parser->last_file()));
+					continue;
+				}
+				else
+					break;
+			}
+			
 			buffer+=block;
 			size-=block;
 			if(res==cppcms::impl::multipart_parser::eof) {
-				cppcms::impl::multipart_parser::files_type fblock = parser->get_files();
-				for(unsigned i=0;i<fblock.size();i++) {
-					files->push_back(fblock[i]);
-				}
+				*files = parser->get_files();
 				return res;
 			}
-			if(res==cppcms::impl::multipart_parser::parsing_error)
+			if(res==cppcms::impl::multipart_parser::parsing_error) {
 				return res;
-			if(res==cppcms::impl::multipart_parser::got_something) {
-				cppcms::impl::multipart_parser::files_type fblock = parser->get_files();
-				TEST(!fblock.empty());
-				for(unsigned i=0;i<fblock.size();i++) {
-					files->push_back(fblock[i]);
-				}
 			}
+			TEST(	res==cppcms::impl::multipart_parser::continue_input 
+				|| res==cppcms::impl::multipart_parser::meta_ready
+				|| res==cppcms::impl::multipart_parser::content_partial
+				|| res==cppcms::impl::multipart_parser::content_ready
+				);
 		}
 		TEST(!"Never get there");
 		return cppcms::impl::multipart_parser::eof;
@@ -139,7 +163,7 @@ int main(int argc,char **argv)
 		return 1;
 	}
 	try {
-		int block_size[]={ 1, -1, 5, 3, 10 };
+		int block_size[]={ 1, -1, 5, 3, 10, 1000 };
 		int max_mem_size[] = { 0, 3, 10000 };
 		for(unsigned i=0;i<sizeof(block_size)/sizeof(block_size[0]);i++) {
 			for(unsigned j=0;j<sizeof(max_mem_size)/sizeof(max_mem_size[0]);j++) {
@@ -148,7 +172,8 @@ int main(int argc,char **argv)
 					cppcms::impl::multipart_parser parser("",max_mem_size[j]);
 					TEST(parser.set_content_type(std::string(test_1_content)));
 					cppcms::impl::multipart_parser::files_type files;
-					random_consumer c(block_size[i],parser,files);
+					std::vector<std::string> cts;
+					random_consumer c(block_size[i],parser,files,&cts);
 					TEST(c(test_1_file,strlen(test_1_file))==cppcms::impl::multipart_parser::eof);
 					TEST(files.size()==7);
 					TEST(files[0]->name()=="test1");
@@ -156,15 +181,18 @@ int main(int argc,char **argv)
 					TEST(files[0]->mime()=="text/plain");
 					std::string content = getcontent(files[0]);
 					TEST(content=="hello\r\n");
+					TEST(cts.at(0) == content);
 					TEST(files[1]->name()=="test2");
 					TEST(files[1]->filename()=="");
 					TEST(files[1]->mime()=="");
 					TEST(getcontent(files[1])=="שלום");
+					TEST(cts.at(1)=="שלום");
 					TEST(getcontent(files[2])=="x\r");
 					TEST(getcontent(files[3])=="x\r\n-");
 					TEST(getcontent(files[4])=="x\r\n--");
 					TEST(getcontent(files[5])=="x\r\n--x");
 					TEST(getcontent(files[6])=="x\r\n--x-");
+					TEST(cts.at(6)=="x\r\n--x-");
 				}
 				{
 					cppcms::impl::multipart_parser parser("",max_mem_size[j]);

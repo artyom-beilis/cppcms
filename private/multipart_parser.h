@@ -58,7 +58,8 @@ namespace cppcms {
 				state_ ( expecting_first_boundary ),
 				position_(0),
 				temp_dir_(temp_dir),
-				memory_limit_(memory_limit)
+				memory_limit_(memory_limit),
+				file_is_ready_(false)
 			{
 			}
 			~multipart_parser()
@@ -67,15 +68,31 @@ namespace cppcms {
 			
 			typedef enum {
 				parsing_error,
+				meta_ready,
+				content_partial,
+				content_ready,
 				continue_input,
-				got_something,
 				eof,
 				no_room_left
 			} parsing_result_type;
 
-			parsing_result_type consume(char const *buffer,int size)
+			bool has_file() { return file_is_ready_; }
+			http::file &get_file()
 			{
-				for(;size > 0;buffer++,size--) {
+				if(!file_is_ready_)
+					throw booster::logic_error("Invalid state for get_file");
+				return *file_;
+			}
+			http::file &last_file()
+			{
+				if(files_.empty())
+					throw booster::logic_error("No file was uploaded");
+				return *files_.back();
+			}
+
+			parsing_result_type consume(char const *&buffer,char const *buffer_end)
+			{
+				for(;buffer!=buffer_end;buffer++) {
 					#ifdef DEBUG_MULTIPART_PARSER
 					std::cerr << "[";
 					if(*buffer < 32) 
@@ -115,7 +132,7 @@ namespace cppcms {
 					case expecting_eof_lf:
 						if(*buffer!='\n')
 							return parsing_error;
-						if(size == 1)
+						if(buffer + 1 == buffer_end)
 							return eof;
 						else
 							return parsing_error;
@@ -136,6 +153,9 @@ namespace cppcms {
 							header_.clear();
 							position_ = 0;
 							state_ = expecting_separator_boundary;
+							buffer++;
+							file_is_ready_=true;
+							return meta_ready;
 						}
 						break;
 					case expecting_separator_boundary:
@@ -144,7 +164,7 @@ namespace cppcms {
 							char const *this_boundary = boundary_.c_str();
 							size_t boundary_size = boundary_.size();
 							size_t added = 0;
-							while(size > 0) {
+							while(buffer != buffer_end) {
 								char c=*buffer;
 								if(c == this_boundary[position_])
 									position_++;
@@ -175,19 +195,21 @@ namespace cppcms {
 									if(memory_limit_ != -1) {
 										file_->set_memory_limit(memory_limit_);
 									}
-									break;
+									buffer++;
+									file_is_ready_=false;
+									return content_ready;
 								}
 								buffer++;
-								size--;
 							} // end while
 							file_->add_bytes_to_size(added);
 							added = 0;
+							return content_partial;
 						}
 						break;
 					}
 				}
-				if(!files_.empty())
-					return got_something;
+				if(file_is_ready_)
+					return content_partial;
 				else
 					return continue_input;
 			}
@@ -317,6 +339,7 @@ namespace cppcms {
 
 			std::string temp_dir_;
 			int memory_limit_;
+			bool file_is_ready_;
 		};
 
 			#ifdef DEBUG_MULTIPART_PARSER
