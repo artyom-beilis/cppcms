@@ -16,7 +16,13 @@
 #include <sstream>
 #include <fstream>
 
-namespace cppcms { namespace http {
+namespace cppcms {
+
+/// \cond INTERNAL
+namespace impl { class multipart_parser; }
+/// \endcond
+
+namespace http {
 
 	class request;
 
@@ -82,6 +88,10 @@ namespace cppcms { namespace http {
 		/// \endcond
 
 	private:
+
+		void add_bytes_to_size(size_t n);
+
+		friend class impl::multipart_parser;
 		std::string name_;
 		std::string mime_;
 		std::string filename_;

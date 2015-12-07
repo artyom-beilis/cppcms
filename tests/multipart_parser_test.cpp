@@ -6,6 +6,7 @@
 //
 ///////////////////////////////////////////////////////////////////////////////
 //#define DEBUG_MULTIPART_PARSER
+#include <iostream>
 #include "multipart_parser.h"
 #include <iostream>
 #include "test.h"
@@ -63,9 +64,21 @@ std::string getcontent(std::istream &in)
 		char c;
 		in.get(c);
 		if(in.gcount() == 1)
-		res+=c;
+			res+=c;
 	}
 	return res;
+}
+
+std::string getcontent(cppcms::http::file &file)
+{
+	long long len = file.size();
+	std::string res = getcontent(file.data());
+	TEST(int(res.size()) == len);
+	return res;
+}
+std::string getcontent(booster::shared_ptr<cppcms::http::file> const &p)
+{
+	return getcontent(*p);
 }
 
 struct random_consumer {
@@ -89,7 +102,11 @@ struct random_consumer {
 
 			if(block > size)
 				block=size;
+				
 			cppcms::impl::multipart_parser::parsing_result_type res = parser->consume(buffer,block);
+#ifdef DEBUG_MULTIPART_PARSER
+			std::cerr << "Got " << int(res) << " Consumed " << block << std::endl;
+#endif			
 			buffer+=block;
 			size-=block;
 			if(res==cppcms::impl::multipart_parser::eof) {
@@ -137,17 +154,17 @@ int main(int argc,char **argv)
 					TEST(files[0]->name()=="test1");
 					TEST(files[0]->filename()=="foo.txt");
 					TEST(files[0]->mime()=="text/plain");
-					std::string content = getcontent(files[0]->data());
+					std::string content = getcontent(files[0]);
 					TEST(content=="hello\r\n");
 					TEST(files[1]->name()=="test2");
 					TEST(files[1]->filename()=="");
 					TEST(files[1]->mime()=="");
-					TEST(getcontent(files[1]->data())=="שלום");
-					TEST(getcontent(files[2]->data())=="x\r");
-					TEST(getcontent(files[3]->data())=="x\r\n-");
-					TEST(getcontent(files[4]->data())=="x\r\n--");
-					TEST(getcontent(files[5]->data())=="x\r\n--x");
-					TEST(getcontent(files[6]->data())=="x\r\n--x-");
+					TEST(getcontent(files[1])=="שלום");
+					TEST(getcontent(files[2])=="x\r");
+					TEST(getcontent(files[3])=="x\r\n-");
+					TEST(getcontent(files[4])=="x\r\n--");
+					TEST(getcontent(files[5])=="x\r\n--x");
+					TEST(getcontent(files[6])=="x\r\n--x-");
 				}
 				{
 					cppcms::impl::multipart_parser parser("",max_mem_size[j]);
@@ -159,7 +176,7 @@ int main(int argc,char **argv)
 					TEST(files[0]->name()=="test1");
 					TEST(files[0]->filename()=="");
 					TEST(files[0]->mime()=="");
-					std::string content = getcontent(files[0]->data());
+					std::string content = getcontent(files[0]);
 					TEST(content=="hello");
 				}
 				std::string boundaries[4]= { 
@@ -197,7 +214,7 @@ int main(int argc,char **argv)
 						TEST(files.size()==3);
 						TEST(files[0]->name()=="submit-name");
 						TEST(files[0]->mime()=="" && files[0]->filename().empty());
-						TEST(getcontent(files[0]->data())=="שלום");
+						TEST(getcontent(files[0])=="שלום");
 						TEST(files[1]->name()=="file");
 						TEST(files[1]->mime()=="text/plain");
 						if(i==3) // IE
@@ -205,7 +222,7 @@ int main(int argc,char **argv)
 						else
 							TEST(files[1]->filename()=="שלום.txt");
 						
-						TEST(getcontent(files[1]->data())=="שלום עולם!\n");
+						TEST(getcontent(files[1])=="שלום עולם!\n");
 						files[1]->save_to("test.txt");
 						{
 							std::ifstream tmp("test.txt");
@@ -218,7 +235,7 @@ int main(int argc,char **argv)
 						TEST(files[2]->name()=="submit");
 						TEST(files[2]->mime().empty());
 						TEST(files[2]->filename().empty());
-						TEST(getcontent(files[2]->data())=="Send");
+						TEST(getcontent(files[2])=="Send");
 					}
 				}
 			}

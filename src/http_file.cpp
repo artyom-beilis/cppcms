@@ -13,13 +13,14 @@
 #include <booster/nowide/fstream.h>
 #include <stdlib.h>
 
+#include <iostream>
 #include "tohex.h"
 
 namespace cppcms {
 namespace http {
 
 
-struct file::impl_data {};
+struct file::impl_data { long long size; };
 
 std::string file::name() const
 {
@@ -37,16 +38,7 @@ std::string file::filename() const
 }
 long long file::size() 
 {
-	if(saved_in_file_) {
-		std::streampos now=file_.tellp();
-		file_.seekp(0,std::ios_base::end);
-		long long size = file_.tellp();
-		file_.seekp(now);
-		return size;
-	}
-	else {
-		return file_data_.tellp();
-	}
+	return d->size;
 }
 
 std::istream &file::data()
@@ -168,13 +160,18 @@ void file::move_to_file()
 }
 
 
-
+void file::add_bytes_to_size(size_t n)
+{
+	d->size += n;
+}
 
 file::file() :
 	size_limit_(1024*128),
 	saved_in_file_(0),
-	removed_(0)
+	removed_(0),
+	d(new impl_data())
 {
+	d->size = 0;
 }
 
 file::~file()

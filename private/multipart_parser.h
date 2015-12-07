@@ -31,6 +31,7 @@ namespace cppcms {
 				result.swap(files_);
 				return result;
 			}
+
 			bool set_content_type(std::string const &ct)
 			{
 				http::content_type t(ct);
@@ -139,9 +140,11 @@ namespace cppcms {
 						break;
 					case expecting_separator_boundary:
 						{
+							content_in_ = true;
 							std::streambuf *out=file_->write_data().rdbuf();
 							char const *this_boundary = boundary_.c_str();
 							size_t boundary_size = boundary_.size();
+							size_t added = 0;
 							while(size > 0) {
 								char c=*buffer;
 								if(c == this_boundary[position_])
@@ -149,6 +152,7 @@ namespace cppcms {
 								else if(position_ > 0) {
 									std::streamsize expected = position_;
 									std::streamsize s=out->sputn(this_boundary,position_);
+									added += position_;
 									position_ = 0;
 									if(c == boundary_[0])
 										position_=1;
@@ -156,15 +160,19 @@ namespace cppcms {
 										return no_room_left;
 								}
 								if(position_ == 0) {
+									added++;
 									if(out->sputc(c)==EOF)
 										return no_room_left;
 								}
 								else if(position_ == boundary_size) {
 									state_ = expecting_one_crlf_or_eof;
 									position_ = 0;
+									file_->add_bytes_to_size(added);
+									added = 0;
 									file_->data().seekg(0);
 									files_.push_back(file_);
 									file_.reset(new http::file());
+									content_in_ = false;
 									file_->set_temporary_directory(temp_dir_);
 									if(memory_limit_ != -1) {
 										file_->set_memory_limit(memory_limit_);
@@ -174,6 +182,8 @@ namespace cppcms {
 								buffer++;
 								size--;
 							} // end while
+							file_->add_bytes_to_size(added);
+							added = 0;
 						}
 						break;
 					}
