@@ -380,7 +380,9 @@ set(CPPCMS_SOURCES
 	src/xss.cpp
 	src/copy_filter.cpp
 	src/send_timeout.cpp
+	src/http_content_filter.cpp
 	src/capi/session.cpp
+
 )
 
 if(NOT DISABLE_TCPCACHE)

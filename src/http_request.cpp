@@ -10,8 +10,11 @@
 #include <cppcms/http_request.h>
 #include <cppcms/http_cookie.h>
 #include <cppcms/http_file.h>
+#include <cppcms/http_content_filter.h>
 #include "http_protocol.h"
 #include <cppcms/util.h>
+#include "cached_settings.h"
+#include <cppcms/service.h>
 
 #include <stdio.h>
 #include <string.h>
@@ -125,6 +128,8 @@ bool request::parse_cookies()
 
 struct request::_data {
 	std::vector<char> post_data;
+	content_limits limits;
+	_data(cppcms::service &srv) : limits(srv.cached_settings()) {}
 };
 
 void request::set_post_data(std::vector<char> &post_data)
@@ -132,7 +137,7 @@ void request::set_post_data(std::vector<char> &post_data)
 	d->post_data.clear();
 	d->post_data.swap(post_data);
 
-	if(content_type_.media_type() == "application/x-www-form-urlencoded") {
+	if(content_type_.is_form_urlencoded()) {
 		if(!d->post_data.empty()) {
 			char const *pdata=&d->post_data.front();
 			parse_form_urlencoded(pdata,pdata+d->post_data.size(),post_);
@@ -209,9 +214,14 @@ std::pair<void *,size_t> request::raw_post_data()
 }
 
 request::request(impl::cgi::connection &conn) :
-	d(new _data),
+	d(new _data(conn.service())),
 	conn_(&conn)
 {
+}
+
+content_limits &request::limits()
+{
+	return d->limits;
 }
 
 request::~request()

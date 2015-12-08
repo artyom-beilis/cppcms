@@ -52,6 +52,16 @@ public:
 	///
 	bool parameter_is_set(std::string const &key) const;
 
+
+	///
+	/// Check if media type application/x-www-form-urlencoded content_type
+	///
+	bool is_form_urlencoded() const;
+	///
+	/// Check if media type is multipart/form-data content_type
+	///
+	bool is_multipart_form_data() const;
+
 	///
 	/// Parse content type \a ct and create the class
 	///

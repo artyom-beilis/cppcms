@@ -51,6 +51,18 @@ namespace cppcms { namespace http {
 			return d->media_type;
 		return std::string();
 	}
+	bool content_type::is_form_urlencoded() const
+	{
+		if(d)
+			return d->media_type == "application/x-www-form-urlencoded";
+		return false;
+	}
+	bool content_type::is_multipart_form_data() const
+	{
+		if(d)
+			return d->media_type == "multipart/form-data";
+		return false;
+	}
 	std::string content_type::charset() const
 	{
 		return parameter_by_key("charset");

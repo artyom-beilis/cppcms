@@ -25,6 +25,7 @@ namespace http {
 
 	class cookie;
 	class file;
+	class content_limits;
 
 	///
 	/// \brief This class represents all information related to the HTTP/CGI request.
@@ -290,6 +291,10 @@ namespace http {
 		///
 		std::pair<void *,size_t> raw_post_data();
 
+		///
+		///  Get content limits for incoming data processing
+		///
+		content_limits &limits();
 	public:
 		/// \cond INTERNAL
 		request(impl::cgi::connection &);

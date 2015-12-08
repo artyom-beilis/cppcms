@@ -121,6 +121,7 @@ namespace cgi {
 		virtual void do_eof() = 0;
 		virtual booster::aio::const_buffer format_output(booster::aio::const_buffer const &in,bool completed,booster::system::error_code &e) = 0;
 		virtual bool write_to_socket(booster::aio::const_buffer const &in,booster::system::error_code &e);
+		virtual booster::aio::io_service &get_io_service() = 0;
 	protected:
 		void append_pending(booster::aio::const_buffer const &new_data);
 
@@ -135,7 +136,6 @@ namespace cgi {
 		virtual void async_read_some(void *,size_t,io_handler const &h) = 0;
 		virtual void on_async_read_complete() {}
 		virtual void async_read_eof(callback const &h) = 0;
-		virtual booster::aio::io_service &get_io_service() = 0;
 
 		/****************************************************************************/
 

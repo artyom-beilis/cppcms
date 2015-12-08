@@ -11,6 +11,7 @@
 #include <cppcms/http_request.h>
 #include <cppcms/http_response.h>
 #include <cppcms/forwarder.h>
+#include <cppcms/http_content_filter.h>
 #include "http_protocol.h"
 #include <cppcms/service.h>
 #include "service_impl.h"
@@ -307,9 +308,9 @@ void connection::load_content(booster::system::error_code const &e,http::context
 	}
 	
 	if(content_length > 0) {
-		if(content_type.media_type()=="multipart/form-data") {
+		if(content_type.is_multipart_form_data()) {
 			// 64 MB
-			long long allowed=service().cached_settings().security.multipart_form_data_limit*1024;
+			long long allowed=context->request().limits().multipart_form_data_limit();
 			if(content_length > allowed) { 
 				BOOSTER_NOTICE("cppcms") << "multipart/form-data size too big " << content_length << 
 					" REMOTE_ADDR = `" << getenv("REMOTE_ADDR") << "' REMOTE_HOST=`" << getenv("REMOTE_HOST") << "'";
@@ -317,8 +318,8 @@ void connection::load_content(booster::system::error_code const &e,http::context
 				return;
 			}
 			multipart_parser_.reset(new multipart_parser(
-				service().cached_settings().security.uploads_path,
-				service().cached_settings().security.file_in_memory_limit));
+				context->request().limits().uploads_path(),
+				context->request().limits().file_in_memory_limit()));
 			read_size_ = content_length;
 			if(!multipart_parser_->set_content_type(content_type)) {
 				BOOSTER_NOTICE("cppcms") << "Invalid multipart/form-data request" << content_length << 
@@ -335,7 +336,7 @@ void connection::load_content(booster::system::error_code const &e,http::context
 					h));
 		}
 		else {
-			long long allowed=service().cached_settings().security.content_length_limit*1024;
+			long long allowed=context->request().limits().content_length_limit();
 			if(content_length > allowed) {
 				BOOSTER_NOTICE("cppcms") << "POST data size too big " << content_length << 
 					" REMOTE_ADDR = `" << getenv("REMOTE_ADDR") << "' REMOTE_HOST=`" << getenv("REMOTE_HOST") << "'";
@@ -362,7 +363,7 @@ void connection::on_some_multipart_read(booster::system::error_code const &e,siz
 	char const *begin = &content_.front();
 	char const *end = begin + n;
 	multipart_parser::parsing_result_type r = multipart_parser::continue_input;
-	long long allowed=service().cached_settings().security.content_length_limit*1024;
+	long long allowed=context->request().limits().content_length_limit();
 	while(begin!=end) {
 		r = multipart_parser_->consume(begin,end);
 		if(r==multipart_parser::content_ready || r==multipart_parser::content_partial) {

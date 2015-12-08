@@ -164,8 +164,34 @@ namespace cppcms {
 			///    this handler would be called as well, so you need to check both
 			///
 			void async_on_peer_reset(booster::callback<void()> const &h);
+			///
+			/// Submit the context to alternative pool - allows to transfer context from application to application, \a matched_url 
+			/// would be given to application::main for processing
+			///
+			/// Note: 
+			///
+			/// - no output should be itransfered on this context
+			/// - the context MUST be detached for existing application
+			///
+			/// This function can be called from any thread 
+			///
+			void submit_to_pool(booster::shared_ptr<application_specific_pool> pool,std::string const &matched_url); 
+			///
+			/// Submit the context to alternative application - allows to transfer context from application to application, \a matched_url 
+			/// would be given to application::main for processing
+			///
+			/// Note: 
+			///
+			/// - the app should be asynchronous
+			/// - no output should be itransfered on this context
+			/// - the context MUST be detached for existing application
+			///
+			/// This function can be called from any thread 
+			///
+			void submit_to_asynchronous_application(booster::intrusive_ptr<application> app,std::string const &matched_url);
 		private:
 			void on_request_ready(bool error);
+			void submit_to_pool_internal(booster::shared_ptr<application_specific_pool> pool,std::string const &matched,bool now);
 			static void dispatch(booster::shared_ptr<application_specific_pool> const &pool,booster::shared_ptr<context> const &self,std::string const &url);
 			static void dispatch(booster::intrusive_ptr<application> const &app,std::string const &url,bool syncronous);
 			void try_restart(bool e);

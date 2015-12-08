@@ -20,6 +20,7 @@
 #include <cppcms/cppcms_error.h>
 #include <booster/log.h>
 #include <booster/backtrace.h>
+#include <booster/aio/io_service.h>
 
 #include "cached_settings.h"
 
@@ -43,7 +44,6 @@ namespace http {
 		{
 		}
 	};
-
 context::context(booster::shared_ptr<impl::cgi::connection> conn) :
 	conn_(conn)
 {
@@ -100,6 +100,73 @@ namespace {
 	};
 }
 
+
+void context::submit_to_pool(booster::shared_ptr<application_specific_pool> pool,std::string const &matched)
+{
+	submit_to_pool_internal(pool,matched,false);
+}
+
+
+namespace {
+	struct dispatch_binder {
+		void (*dispatch)(booster::intrusive_ptr<application> const &,std::string const &,bool);
+		booster::intrusive_ptr<application> app;
+		std::string matched;
+		bool flag;
+
+		void operator()()
+		{
+			dispatch(app,matched,flag);
+		}
+
+	};
+}
+
+
+void context::submit_to_asynchronous_application(booster::intrusive_ptr<application> app,std::string const &matched)
+{
+	app->assign_context(self());
+	response().io_mode(http::response::asynchronous);
+	dispatch_binder bd = { &context::dispatch, app,matched,false };
+	conn_->get_io_service().post(bd);
+}
+
+
+void context::submit_to_pool_internal(booster::shared_ptr<application_specific_pool> pool,std::string const &matched,bool now)
+{
+	if((pool->flags() & app::op_mode_mask)!=app::synchronous) {
+		// asynchronous 
+		booster::intrusive_ptr<application> app = pool->get(service());
+
+		if(!app) {
+			BOOSTER_ERROR("cppcms") << "Cound fetch asynchronous application from pool";
+			response().io_mode(http::response::asynchronous);
+			response().make_error_response(http::response::internal_server_error);
+			async_complete_response();
+			return;
+		}
+		if(now) {
+			app->assign_context(self());
+			response().io_mode(http::response::asynchronous);
+			dispatch(app,matched,false);
+		}
+		else {
+			submit_to_asynchronous_application(app,matched);
+		}
+
+		return;
+	}
+	else {
+		dispatcher dt;
+		dt.func = &context::dispatch;
+		dt.pool = pool;
+		dt.ctx = self();
+		dt.url=matched;
+		service().thread_pool().post(dt);
+		return;
+	}
+}
+
 void context::on_request_ready(bool error)
 {
 	if(error) return;
@@ -124,32 +191,7 @@ void context::on_request_ready(bool error)
 		return;
 	}
 
-	if((pool->flags() & app::op_mode_mask)!=app::synchronous) {
-		// asynchronous 
-		booster::intrusive_ptr<application> app = pool->get(service());
-
-		if(!app) {
-			BOOSTER_ERROR("cppcms") << "Cound fetch asynchronous application from pool";
-			response().io_mode(http::response::asynchronous);
-			response().make_error_response(http::response::internal_server_error);
-			async_complete_response();
-			return;
-		}
-
-		app->assign_context(self());
-		response().io_mode(http::response::asynchronous);
-		dispatch(app,matched,false);
-		return;
-	}
-	else {
-		dispatcher dt;
-		dt.func = &context::dispatch;
-		dt.pool = pool;
-		dt.ctx = self();
-		dt.url.swap(matched);
-		service().thread_pool().post(dt);
-		return;
-	}
+	submit_to_pool_internal(pool,matched,true);
 }
 
 namespace {
@@ -188,6 +230,15 @@ void context::dispatch(booster::shared_ptr<application_specific_pool> const &poo
 void context::dispatch(booster::intrusive_ptr<application> const &app,std::string const &url,bool syncronous)
 {
 	try {
+		if(syncronous) {
+			app->response().io_mode(http::response::normal);
+			if(!app->context().service().cached_settings().session.disable_automatic_load)
+				app->context().session().load();
+		}
+		else {
+			app->response().io_mode(http::response::asynchronous);
+		}
+
 		if(syncronous && !app->context().service().cached_settings().session.disable_automatic_load)
 			app->context().session().load();
 		app->main(url);
