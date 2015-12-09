@@ -31,11 +31,13 @@ namespace cppcms {
 
 struct application::_data {
 	_data(cppcms::service *s):
-		service(s)
+		service(s),
+		temp_conn(0)
 	{
 	}
 	cppcms::service *service;
 	booster::shared_ptr<http::context> conn;
+	http::context *temp_conn;
 	url_dispatcher url;
 	booster::hold_ptr<url_mapper> url_map;
 	std::vector<application *> managed_children;
@@ -92,10 +94,25 @@ booster::shared_ptr<http::context> application::get_context()
 	return root()->d->conn;
 }
 
+void application::add_context(http::context &conn)
+{
+	if(root()->d->conn)
+		throw cppcms_error("Context already assigned");
+	root()->d->temp_conn = &conn;
+}
+
+void application::remove_context()
+{
+	root()->d->temp_conn = 0;
+}
+
 http::context &application::context()
 {
-	if(!root()->d->conn)
+	if(!root()->d->conn) {
+		if(root()->d->temp_conn)
+			return *root()->d->temp_conn;
 		throw cppcms_error("Access to unassigned context");
+	}
 	return *root()->d->conn;
 }
 
@@ -118,6 +135,7 @@ bool application::is_asynchronous()
 void application::assign_context(booster::shared_ptr<http::context> conn)
 {
 	root()->d->conn=conn;
+	root()->d->temp_conn = 0;
 }
 
 void application::set_pool(booster::weak_ptr<application_specific_pool> p)

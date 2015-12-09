@@ -54,6 +54,7 @@ public:
 		booster::shared_ptr<dummy_api> api(new dummy_api(srv_,env,output_));
 		booster::shared_ptr<cppcms::http::context> cnt(new cppcms::http::context(api));
 		assign_context(cnt);
+		response().io_mode(cppcms::http::response::normal);
 		output_.clear();
 	}
 

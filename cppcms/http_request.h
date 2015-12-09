@@ -26,6 +26,8 @@ namespace http {
 	class cookie;
 	class file;
 	class content_limits;
+	class content_filter;
+	class basic_content_filter;
 
 	///
 	/// \brief This class represents all information related to the HTTP/CGI request.
@@ -295,13 +297,29 @@ namespace http {
 		///  Get content limits for incoming data processing
 		///
 		content_limits &limits();
+
+		///
+		/// Get installed content filter
+		///
+		basic_content_filter *content_filter();
+		
+		///
+		/// Install content filter, setting it to 0 would remove the filter
+		///
+		void content_filter(basic_content_filter *flt);
+
+		///
+		/// Returns true when full request content is ready
+		///
+		bool is_ready();
 	public:
 		/// \cond INTERNAL
 		request(impl::cgi::connection &);
 		~request();
 		/// \endcond
 	private:
-
+		void set_ready();
+		friend class context;
 		friend class impl::cgi::connection;
 
 		void set_post_data(std::vector<char> &post_data);

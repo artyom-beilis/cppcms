@@ -274,6 +274,17 @@ namespace cppcms {
 		void assign_context(booster::shared_ptr<http::context> conn);
 
 		///
+		/// Add context to applications such that context ownership isn't transferred
+		/// to the application
+		///
+		void add_context(http::context &conn);
+
+		///
+		/// Remove context added with add_context
+		///
+		void remove_context();
+
+		///
 		/// Returns true if current application was created as asynchronous application.
 		///
 		bool is_asynchronous();

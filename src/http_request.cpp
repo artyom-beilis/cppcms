@@ -129,8 +129,29 @@ bool request::parse_cookies()
 struct request::_data {
 	std::vector<char> post_data;
 	content_limits limits;
-	_data(cppcms::service &srv) : limits(srv.cached_settings()) {}
+	basic_content_filter *filter;
+	bool ready;
+	_data(cppcms::service &srv) : limits(srv.cached_settings()),filter(0),ready(false) {}
 };
+
+basic_content_filter *request::content_filter()
+{
+	return d->filter;
+}
+
+void request::content_filter(basic_content_filter *filter)
+{
+	d->filter = filter;
+}
+
+bool request::is_ready()
+{
+	return d->ready;
+}
+void request::set_ready()
+{
+	d->ready = true;
+}
 
 void request::set_post_data(std::vector<char> &post_data)
 {

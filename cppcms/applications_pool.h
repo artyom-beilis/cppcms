@@ -51,6 +51,7 @@ namespace cppcms {
 
 		static const int thread_specific= 0x0010; ///< Make synchronous application thread specific
 		static const int prepopulated	= 0x0020; ///< Make sure all applications are created from the beginning (ignored in thread_specific is set)
+		static const int content_filter = 0x0040; ///< Make this asynchronous application to handle content
 		/// \cond INTERNAL
 		static const int legacy		= 0x8000; ///< Use legacy handling of application life time when the application is created in the event loop and than dispatched as a job to a thread pool
 		/// \endcond

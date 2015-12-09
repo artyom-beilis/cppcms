@@ -526,7 +526,7 @@ response::response(context &context) :
 	d(new _data(&context.connection())),
 	context_(context),
 	stream_(0),
-	io_mode_(normal),
+	io_mode_(asynchronous),
 	disable_compression_(0),
 	ostream_requested_(0),
 	copy_to_cache_(0),

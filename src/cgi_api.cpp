@@ -307,6 +307,12 @@ void connection::load_content(booster::system::error_code const &e,http::context
 		return;
 	}
 	
+	int status = context->on_headers_ready(content_length > 0);
+	if(status != 0) {
+		handle_http_error(status,context,h);
+		return;
+	}
+
 	if(content_length > 0) {
 		if(content_type.is_multipart_form_data()) {
 			// 64 MB
@@ -364,8 +370,30 @@ void connection::on_some_multipart_read(booster::system::error_code const &e,siz
 	char const *end = begin + n;
 	multipart_parser::parsing_result_type r = multipart_parser::continue_input;
 	long long allowed=context->request().limits().content_length_limit();
+	bool has_filter = context->has_file_filter();
 	while(begin!=end) {
 		r = multipart_parser_->consume(begin,end);
+		if(has_filter) {
+			int status;
+			switch(r) { 
+			case multipart_parser::meta_ready:
+				status = context->send_to_file_filter(multipart_parser_->get_file(),0);
+				break;
+			case multipart_parser::content_partial:
+				status = context->send_to_file_filter(multipart_parser_->get_file(),1);
+				break;
+			case multipart_parser::content_ready:
+				status = context->send_to_file_filter(multipart_parser_->last_file(),2);
+				break;
+			default:
+				status = 0;
+			}
+			if(status != 0) {
+				handle_http_error(status,context,h);
+				return;
+			}
+		}
+
 		if(r==multipart_parser::content_ready || r==multipart_parser::content_partial) {
 			http::file &f= 	(r == multipart_parser::content_ready)
 					?	multipart_parser_->last_file() 

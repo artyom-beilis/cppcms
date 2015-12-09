@@ -76,9 +76,9 @@ if write:
 else:
     print 'Read from client timeouts'
     test_unfinished_out('')
-    test_unfinished_out('GET /')
-    test_unfinished_out('POST / HTTP/1.0\r\nContent-Length:10000\r\n\r\nbla bla')
-    test_unfinished_out('POST / HTTP/1.0\r\nContent-Length:10000\r\n\r\n', ['ss','ss','ss','ss'])
+    test_unfinished_out('GET /sync/long')
+    test_unfinished_out('POST /sync/long HTTP/1.0\r\nContent-Length:10000\r\n\r\nbla bla')
+    test_unfinished_out('POST /sync/long HTTP/1.0\r\nContent-Length:10000\r\n\r\n', ['ss','ss','ss','ss'])
 
     print 'Disconnect the client timeout'
 

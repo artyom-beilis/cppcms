@@ -21,6 +21,7 @@
 #include <booster/log.h>
 #include <booster/backtrace.h>
 #include <booster/aio/io_service.h>
+#include <cppcms/http_content_filter.h>
 
 #include "cached_settings.h"
 
@@ -38,6 +39,9 @@ namespace http {
 		std::auto_ptr<http::response> response;
 		std::auto_ptr<cache_interface> cache;
 		std::auto_ptr<session_interface> session;
+		booster::shared_ptr<application_specific_pool> pool;
+		booster::intrusive_ptr<application> app;
+		std::string matched;
 		_data(context &cntx) :
 			locale(cntx.connection().service().locale()),
 			request(cntx.connection())
@@ -120,6 +124,20 @@ namespace {
 		}
 
 	};
+
+	class context_guard {
+	public:
+		context_guard(cppcms::application &app,cppcms::http::context &ctx) : app_(&app)
+		{
+			app_->add_context(ctx);
+		}
+		~context_guard() 
+		{
+			app_->remove_context();
+		}
+	private:	
+		cppcms::application *app_;
+	};
 }
 
 
@@ -167,10 +185,27 @@ void context::submit_to_pool_internal(booster::shared_ptr<application_specific_p
 	}
 }
 
-void context::on_request_ready(bool error)
+int context::translate_exception()
 {
-	if(error) return;
+	try {
+		throw;
+	}
+	catch(abort_upload const &e) {
+		return e.code();
+	}
+	catch(std::exception const &e) {
+		make_error_message(e);
+		return 500;
+	}
+	catch(...) {
+		BOOSTER_ERROR("cppcms") << "Unknown exception";
+		return 500;
+	}
+	return 0;
+}
 
+int context::on_headers_ready(bool has_content)
+{
 	char const *host = conn_->cgetenv("HTTP_HOST");
 	char const *path_info = conn_->cgetenv("PATH_INFO");
 	char const *script_name = conn_->cgetenv("SCRIPT_NAME");
@@ -183,15 +218,94 @@ void context::on_request_ready(bool error)
 			path_info,
 			matched
 			);
+	if(!pool)
+		return 404;
 
-	if(!pool) {
-		response().io_mode(http::response::asynchronous);
-		response().make_error_response(http::response::not_found);
-		async_complete_response();
+	int flags;
+	if(!has_content || ((flags=pool->flags()) & app::op_mode_mask) == app::synchronous || (flags & app::content_filter)==0) {
+		d->pool.swap(pool);
+		d->matched.swap(matched);
+		return 0;
+	}
+
+	booster::intrusive_ptr<application> app = d->pool->get(service());
+	if(!app)
+		return 500;
+
+	try {
+		context_guard g(*app,*this);
+		app->main(matched);
+	}
+	catch(...) {
+		return translate_exception();
+	}
+	d->pool.swap(pool);
+	d->app.swap(app);
+	d->matched.swap(matched);
+	return 0;
+}
+
+bool context::has_file_filter()
+{
+	return dynamic_cast<multipart_filter *>(request().content_filter())!=0;
+}
+int context::send_to_file_filter(file &f,int stage)
+{
+	try {
+		context_guard g(*d->app,*this);
+		multipart_filter *filter=static_cast<multipart_filter *>(request().content_filter());
+		switch(stage) {
+		case 0: filter->on_new_file(f); break;
+		case 1: filter->on_upload_progress(f); break;
+		case 2: filter->on_data_ready(f); break;
+		}
+	}
+	catch(...) {
+		return translate_exception();
+	}
+	return 0;
+}
+
+void context::on_request_ready(bool error)
+{
+	booster::shared_ptr<application_specific_pool> pool;
+	booster::intrusive_ptr<application> app;
+	pool.swap(d->pool);
+	app.swap(d->app);
+	basic_content_filter *filter = 0;
+
+	if(error && app && (filter=request().content_filter())!=0) {
+		context_guard g(*app,*this);
+		try {
+			filter->on_error();
+		}
+		catch(...) {}
 		return;
 	}
 
-	submit_to_pool_internal(pool,matched,true);
+	if(error)
+		return;
+
+	request().set_ready();
+
+	if(app && filter) {
+		context_guard g(*app,*this);
+		try {
+			filter->on_end_of_content();
+		}
+		catch(...) {
+			translate_exception();
+			return;
+		}
+	}
+
+	if(app) {
+		app->assign_context(self());
+		dispatch(app,d->matched,false);
+		return;
+	}
+
+	submit_to_pool_internal(pool,d->matched,true);
 }
 
 namespace {
@@ -226,6 +340,21 @@ void context::dispatch(booster::shared_ptr<application_specific_pool> const &poo
 	app->assign_context(self);
 	dispatch(app,url,true);
 }
+
+void context::make_error_message(std::exception const &e)
+{
+	BOOSTER_ERROR("cppcms") << "Caught exception ["<<e.what()<<"]\n" << booster::trace(e)  ;
+	if(!response().some_output_was_written()) {
+		if(service().cached_settings().security.display_error_message) {
+			std::ostringstream ss;
+			ss << e.what() << '\n';
+			ss << booster::trace(e);
+			response().make_error_response(http::response::internal_server_error,ss.str());
+		}
+		else
+			response().make_error_response(http::response::internal_server_error);
+	}
+}
 // static 
 void context::dispatch(booster::intrusive_ptr<application> const &app,std::string const &url,bool syncronous)
 {
@@ -248,20 +377,9 @@ void context::dispatch(booster::intrusive_ptr<application> const &app,std::strin
 			app->response().make_error_response(http::response::forbidden);
 		}
 	}
-	catch(std::exception const &e){
-		BOOSTER_ERROR("cppcms") << "Caught exception ["<<e.what()<<"]\n" << booster::trace(e)  ;
-		if(app->get_context()) {
-			if(!app->response().some_output_was_written()) {
-				if(app->service().cached_settings().security.display_error_message) {
-					std::ostringstream ss;
-					ss << e.what() << '\n';
-					ss << booster::trace(e);
-					app->response().make_error_response(http::response::internal_server_error,ss.str());
-				}
-				else
-					app->response().make_error_response(http::response::internal_server_error);
-			}
-		}
+	catch(...){
+		if(app->get_context())
+			app->context().translate_exception();
 	}
 	
 	if(app->get_context()) {

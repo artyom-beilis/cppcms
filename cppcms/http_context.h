@@ -33,6 +33,7 @@ namespace cppcms {
 	namespace http {
 		class request;
 		class response;
+		class file;
 
 		///
 		/// \brief context is a central class that holds all specific connection related information.
@@ -190,6 +191,12 @@ namespace cppcms {
 			///
 			void submit_to_asynchronous_application(booster::intrusive_ptr<application> app,std::string const &matched_url);
 		private:
+			friend class impl::cgi::connection;
+			bool has_file_filter();
+			int send_to_file_filter(file &f,int stage);
+			int on_headers_ready(bool has_content);
+			int translate_exception();
+			void make_error_message(std::exception const &e);
 			void on_request_ready(bool error);
 			void submit_to_pool_internal(booster::shared_ptr<application_specific_pool> pool,std::string const &matched,bool now);
 			static void dispatch(booster::shared_ptr<application_specific_pool> const &pool,booster::shared_ptr<context> const &self,std::string const &url);
