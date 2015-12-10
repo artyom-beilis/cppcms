@@ -686,6 +686,7 @@ set(ALL_TESTS
 	todec_test
 	hash_map_test
 	response_test
+	file_buffer_test
 	)
 
 if(NOT DISABLE_PREFORK_CACHE AND NOT IS_WINDOWS)
@@ -798,6 +799,7 @@ add_test(rewrite_test rewrite_test)
 add_test(url_mapper_test url_mapper_test)
 add_test(copy_filter_test copy_filter_test)
 add_test(mount_point_test mount_point_test)
+add_test(file_buffer_test file_buffer_test)
 if(NOT DISABLE_SHARED)
 	add_test(tc_test_shared tc_test "--shared")
 	add_test(tc_test_separate tc_test "--separate")
