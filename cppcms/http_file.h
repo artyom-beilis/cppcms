@@ -64,6 +64,18 @@ namespace http {
 		/// Get the size of the file.
 		///
 		long long size();
+
+		///
+		/// Specify the path to the output file, note if is_temporary is true
+		/// than the file would be deleted on cppcms::http::file destruction,
+		/// unless save_to is called, otherwise it would remain persistent
+		///
+		void output_file(std::string const &name,bool is_temporary = false);
+
+		///
+		/// Make sure that file created by output_file member function is not removed in destructor
+		///
+		void make_permanent();
 		
 		///
 		/// Save file to file named \a filename. Throws cppcms_error in case of failure.
@@ -85,35 +97,39 @@ namespace http {
 
 		file();
 		~file();
+		
+		/// \endcond
 
+		///
+		/// Set the maximal size of file that would be stored in memory instead of file system
+		/// 
 		void set_memory_limit(size_t size);
+		///
+		/// Set the temporary directory where uploaded files are created
+		///
 		void set_temporary_directory(std::string const &dir);
 
-		/// \endcond
 
 	private:
 
-		void add_bytes_to_size(size_t n);
-
-		friend class impl::multipart_parser;
 		std::string name_;
 		std::string mime_;
 		std::string filename_;
 		size_t size_limit_;
 
-		booster::nowide::fstream file_;
-		std::stringstream file_data_;
-		std::string tmp_file_name_;
-		std::string temporary_dir_;
+		booster::nowide::fstream res1_;
+		std::stringstream res2_;
+		std::string res3_;
+		std::string res4_;
 
-		void move_to_file();
 		void save_by_copy(std::string const &file_name,std::istream &in);
 		void copy_stream(std::istream &in,std::ostream &out);
 
 		
-		uint32_t saved_in_file_ : 1;
 		uint32_t removed_ : 1 ;
-		uint32_t reserverd_ : 30;
+		uint32_t file_specified_ : 1;
+		uint32_t file_temporary_: 1;
+		uint32_t reserverd_ : 29;
 
 		struct impl_data; // for future use
 		booster::hold_ptr<impl_data> d;

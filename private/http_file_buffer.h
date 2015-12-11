@@ -116,6 +116,21 @@ public:
 	{
 		return file_size_ + (pptr() - pbase());
 	}
+	int to_file()
+	{
+		if(!in_memory_)
+			return 0;
+		size_t read_offset =gptr() - eback();
+		if(write_buffer() != 0)
+			return -1;
+		clear(data_);
+		output_.resize(buffer_size);
+		setp(&output_[0],&output_[0]+buffer_size);
+		setg(0,0,0);
+		read_offset_ = read_offset;
+		in_memory_=false;
+		return 0;
+	}
 
 private:
 	void get_name()
@@ -237,18 +252,12 @@ protected:
 	{
 		size_t size = pptr() - pbase();
 		if(in_memory_) {
-			size_t read_offset =gptr() - eback();
 			if(size >= limit_) {
-				if(write_buffer() != 0)
+				if(to_file() < 0)
 					return -1;
-				clear(data_);
-				output_.resize(buffer_size);
-				setp(&output_[0],&output_[0]+buffer_size);
-				setg(0,0,0);
-				read_offset_ = read_offset;
-				in_memory_=false;
 			}
 			else {
+				size_t read_offset =gptr() - eback();
 				size_t new_size = data_.size() * 2;
 				if(new_size == 0)
 					new_size = 64;

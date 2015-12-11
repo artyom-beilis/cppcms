@@ -67,6 +67,24 @@ std::ostream &file::write_data()
 	return d->out;
 }
 
+void file::make_permanent()
+{
+	file_temporary_ = 0;
+}
+
+void file::output_file(std::string const &name,bool is_temporary)
+{
+	d->fb.name(name);
+	if(!is_temporary) {
+		if(d->fb.to_file()!=0) {
+			throw cppcms_error("Failed to write to file " + name);
+		}
+	}
+	file_specified_ = 1;
+	file_temporary_ = is_temporary ? 1:0;
+
+}
+
 void file::copy_stream(std::istream &in,std::ostream &out)
 {
 	out << in.rdbuf();
@@ -77,7 +95,7 @@ void file::save_to(std::string const &filename)
 	d->in.clear(); 
 	d->in.seekg(0);
 	d->fb.pubsync();
-	
+
 	if(d->fb.in_memory()) {
 		save_by_copy(filename,d->in);
 		return;
@@ -128,6 +146,8 @@ void file::set_temporary_directory(std::string const &dir)
 
 file::file() :
 	removed_(0),
+	file_specified_(0),
+	file_temporary_(1),
 	d(new impl_data())
 {
 }
@@ -136,7 +156,7 @@ file::~file()
 {
 	if(!d->fb.in_memory() && !removed_) {
 		d->fb.close();
-		if(!d->fb.name().empty()) {
+		if(file_temporary_ && !d->fb.name().empty()) {
 			booster::nowide::remove(d->fb.name().c_str());
 		}
 	}
