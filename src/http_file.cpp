@@ -14,13 +14,22 @@
 #include <stdlib.h>
 
 #include <iostream>
-#include "tohex.h"
+#include "http_file_buffer.h"
 
 namespace cppcms {
 namespace http {
 
 
-struct file::impl_data { long long size; };
+struct file::impl_data { 
+	impl::file_buffer fb;
+	std::istream in;
+	std::ostream out;
+	impl_data() :
+		in(&fb),
+		out(&fb)
+	{
+	}
+};
 
 std::string file::name() const
 {
@@ -44,32 +53,18 @@ std::string file::filename() const
 }
 long long file::size() 
 {
-	return d->size;
+	return d->fb.size();
 }
 
 std::istream &file::data()
 {
-	if(saved_in_file_)
-		return file_;
-	else
-		return file_data_;
+	return d->in;
 }
 
 
 std::ostream &file::write_data()
 {
-	if(saved_in_file_) {
-		return file_;
-	}
-	else {
-		if(size() > static_cast<long long>(size_limit_)) {
-			move_to_file();
-			return file_;
-		}
-		else {
-			return file_data_;
-		}
-	}
+	return d->out;
 }
 
 void file::copy_stream(std::istream &in,std::ostream &out)
@@ -79,33 +74,32 @@ void file::copy_stream(std::istream &in,std::ostream &out)
 
 void file::save_to(std::string const &filename)
 {
-	if(!saved_in_file_) {
-		file_data_.clear();
-		file_data_.seekg(0);
-		save_by_copy(filename,file_data_);
+	d->in.clear(); 
+	d->in.seekg(0);
+	d->fb.pubsync();
+	
+	if(d->fb.in_memory()) {
+		save_by_copy(filename,d->in);
 		return;
 	}
-	file_.clear();
-	file_.seekg(0);
-	file_.sync();
 	#ifdef CPPCMS_WIN32
-		file_.close();
+		d->fb.close();
 		/// we can't move opened file on windows as it would be locked 
-		if(booster::nowide::rename(tmp_file_name_.c_str(),filename.c_str())!=0) {
-			file_.open(tmp_file_name_.c_str(),std::ios_base::binary | std::ios_base::in | std::ios_base::out);
-			if(!file_) {
+		if(booster::nowide::rename(d->fb.name().c_str(),filename.c_str())!=0) {
+			booster::nowide::ifstream tmp(d->fb.name().c_str(),std::ios_base::binary | std::ios_base::in);
+			if(!tmp) {
 				throw cppcms_error("Failed to reopen file");
 			}
-			save_by_copy(filename,file_);
-			file_.close();
-			booster::nowide::remove(tmp_file_name_.c_str());
+			save_by_copy(filename,tmp);
+			tmp.close();
+			booster::nowide::remove(d->fb.name().c_str());
 		}
 	#else
-		if(booster::nowide::rename(tmp_file_name_.c_str(),filename.c_str())!=0) {
-			save_by_copy(filename,file_);
-			booster::nowide::remove(tmp_file_name_.c_str());
+		if(booster::nowide::rename(d->fb.name().c_str(),filename.c_str())!=0) {
+			save_by_copy(filename,d->in);
+			booster::nowide::remove(d->fb.name().c_str());
 		}
-		file_.close();
+		d->fb.close();
 	#endif
 	removed_ = 1;
 }
@@ -124,67 +118,26 @@ void file::save_by_copy(std::string const &file_name,std::istream &in)
 
 void file::set_memory_limit(size_t size)
 {
-	size_limit_ = size;
+	d->fb.set_limit(size);
 }
 
-void file::set_temporary_directory(std::string const &d)
+void file::set_temporary_directory(std::string const &dir)
 {
-	temporary_dir_ = d;
-}
-
-void file::move_to_file()
-{
-	std::string tmp_dir;
-	if(temporary_dir_.empty()) {
-		char const *tmp=getenv("TEMP");
-		if(!tmp)
-			tmp=getenv("TMP");
-		if(!tmp)
-			tmp="/tmp";
-		tmp_dir=tmp;
-	}
-	else {
-		tmp_dir = temporary_dir_;
-	}
-
-	tmp_file_name_ = tmp_dir + "/cppcms_uploads_";
-	urandom_device rnd;
-	char buf[16];
-	char rand[33]={0};
-	rnd.generate(buf,16);
-	impl::tohex(buf,sizeof(buf),rand);
-	tmp_file_name_.append(rand);
-	tmp_file_name_+=".tmp";
-	file_.open(tmp_file_name_.c_str(),
-		std::ios_base::binary | std::ios_base::in | std::ios_base::out | std::ios_base::trunc);
-	if(!file_)
-		throw cppcms_error("Failed to create temporary file");
-	file_data_.seekg(0);
-	copy_stream(file_data_,file_);
-	file_data_.str("");
-	saved_in_file_ = 1;
-}
-
-void file::add_bytes_to_size(size_t n)
-{
-	d->size += n;
+	d->fb.temp_dir(dir);
 }
 
 file::file() :
-	size_limit_(1024*128),
-	saved_in_file_(0),
 	removed_(0),
 	d(new impl_data())
 {
-	d->size = 0;
 }
 
 file::~file()
 {
-	if(saved_in_file_ && !removed_) {
-		file_.close();
-		if(!tmp_file_name_.empty()) {
-			booster::nowide::remove(tmp_file_name_.c_str());
+	if(!d->fb.in_memory() && !removed_) {
+		d->fb.close();
+		if(!d->fb.name().empty()) {
+			booster::nowide::remove(d->fb.name().c_str());
 		}
 	}
 }
