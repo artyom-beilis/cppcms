@@ -47,8 +47,10 @@ namespace http {
 
 	class CPPCMS_API content_limits : public booster::noncopyable {
 		friend class request;
-		content_limits(impl::cached_settings const &);
 	public:
+		/// \cond INTERNAL
+		content_limits(impl::cached_settings const &);
+		/// \endcond 
 
 		content_limits();
 		~content_limits();
