@@ -534,7 +534,10 @@ response::response(context &context) :
 {
 	set_content_header("text/html");
 	if(context_.service().cached_settings().service.disable_xpowered_by==false) {
-		set_header("X-Powered-By", CPPCMS_PACKAGE_NAME "/" CPPCMS_PACKAGE_VERSION);
+		if(context_.service().cached_settings().service.disable_xpowered_by_version)
+			set_header("X-Powered-By", CPPCMS_PACKAGE_NAME);
+		else
+			set_header("X-Powered-By", CPPCMS_PACKAGE_NAME "/" CPPCMS_PACKAGE_VERSION);
 	}
 }
 

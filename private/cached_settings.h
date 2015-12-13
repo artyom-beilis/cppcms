@@ -57,6 +57,7 @@ namespace impl {
 			int output_buffer_size;
 			int async_output_buffer_size;
 			bool disable_xpowered_by;
+			bool disable_xpowered_by_version;
 			bool generate_http_headers;
 			int worker_threads;
 			int worker_processes;
@@ -67,6 +68,7 @@ namespace impl {
 				output_buffer_size = v.get("service.output_buffer_size",16384);
 				async_output_buffer_size = v.get("service.async_output_buffer_size",1024);
 				disable_xpowered_by = v.get("service.disable_xpowered_by",false);
+				disable_xpowered_by_version = v.get("service.disable_xpowered_by_version",false);
 				unsigned cpus = booster::thread::hardware_concurrency();
 				if(cpus == 0)
 					cpus = 1;
