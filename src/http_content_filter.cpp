@@ -90,6 +90,9 @@ void multipart_filter::on_new_file(http::file &) {}
 void multipart_filter::on_upload_progress(http::file &) {}
 void multipart_filter::on_data_ready(http::file &) {}
 
+struct raw_content_filter::_raw_data {};
+void raw_content_filter::on_data_chunk(void const *,size_t) {}
+raw_content_filter::~raw_content_filter() {}
 
 } // http
 }// cppcms
