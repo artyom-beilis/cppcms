@@ -159,16 +159,6 @@ namespace cppcms { namespace impl { namespace cgi {
 
 
 
-connection::connection(cppcms::service &srv) :
-	service_(&srv),
-	request_in_progress_(true)
-{
-}
-
-connection::~connection()
-{
-}
-
 
 cppcms::service &connection::service()
 {
@@ -669,6 +659,17 @@ void connection::async_read(void *p,size_t s,io_handler const &h)
 	reader r(this,h,s,(char*)p);
 	r();
 }
+
+connection::connection(cppcms::service &srv) :
+	service_(&srv),
+	request_in_progress_(true)
+{
+}
+
+connection::~connection()
+{
+}
+
 
 } // cgi
 } // impl
