@@ -110,6 +110,8 @@
 #cmakedefine CPPCMS_NO_GZIP
 #cmakedefine CPPCMS_SQLITE_LINK_STATIC
 #cmakedefine CPPCMS_HAS_THREAD_PSHARED
+#cmakedefine CPPCMS_HAVE_FSEEKI64
+#cmakedefine CPPCMS_HAVE_FSEEKO
 
 
 #endif

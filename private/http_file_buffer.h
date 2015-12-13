@@ -10,10 +10,14 @@
 #ifndef _FILE_OFFSET_BITS
 #define _FILE_OFFSET_BITS 64
 #endif
-
-#ifdef CPPCMS_WIN_NATIVE
+#include <cppcms/config.h>
+#include <stdlib.h>
+#ifdef CPPCMS_HAVE_FSEEKO
+// nothing
+#elif defined(CPPCMS_HAVE_FSEEKI64)
 #define fseeko(f,o,w) _fseeki64(f,o,w)
-#define ftello(f) _ftelli64(f)
+#else
+#define fseek(f,o,w) fseek(f,o,w)
 #endif
 
 #include <booster/nowide/cstdio.h>

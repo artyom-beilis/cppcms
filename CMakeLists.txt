@@ -246,7 +246,25 @@ check_cxx_source_compiles(
 	"#include <list> 
 	int main(){std::list<int> l; __typeof__(l.begin()) p=l.begin();}"
 	CPPCMS_HAVE_UNDERSCORE_TYPEOF)
+check_cxx_source_compiles(
+       "#ifndef _FILE_OFFSET_BITS
+	#define _FILE_OFFSET_BITS 64
+	#endif
+	#include <stdio.h>
+	int main()
+	{
+		char is_big[sizeof(off_t) >= 8 ? 1 : -1];
+		fseeko(0,0,0);
+	}"
+	CPPCMS_HAVE_FSEEKO
+)
 
+check_cxx_source_compiles(
+	"#include <stdio.h>
+	int main()
+	{ _fseeki64(0,0,0); }"
+	CPPCMS_HAVE_FSEEKI64
+)
 if(NOT DISABLE_GZIP)
 	find_library(ZLIB NAMES z zdll zlib${ZLIB_SUFFIX} zlib)
 	find_path(ZLIB_INCLUDE_DIR zlib.h)

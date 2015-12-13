@@ -131,8 +131,6 @@ int main()
 				test(size,inmem[m]);
 			}
 		}
-		FILE *f=0;
-		TEST(sizeof( ftello(f) ) > 4);
 	}
 	catch(std::exception const &e) {
 		std::cerr << "FAIL: " << e.what() << std::endl;
