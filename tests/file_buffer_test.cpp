@@ -45,16 +45,16 @@ void test_read(std::istream &is,int &oldpos,int size)
 		case 2: is.seekg(pos - size,std::ios_base::end); break;
 		case 3: is.seekg(pos - oldpos,std::ios_base::cur); break;
 		}
-		TEST(is.tellg() == pos);
+		TEST(int(is.tellg()) == pos);
 		for(int j=0;j<chunk;j++) {
 			TEST(is.get() == cfpos(pos + j));
 		}
 		oldpos = pos + chunk;
-		TEST(is.tellg() == oldpos);
+		TEST(int(is.tellg()) == oldpos);
 		if(oldpos == size) {
 			TEST(is.get()==-1);
 			is.clear();
-			TEST(is.tellg() == oldpos);
+			TEST(int(is.tellg()) == oldpos);
 		}
 
 		if(rand() % 5==0 && oldpos > 0) {
@@ -64,7 +64,7 @@ void test_read(std::istream &is,int &oldpos,int size)
 			}
 			oldpos -= back;
 		}
-		TEST(is.tellg() == oldpos);
+		TEST(int(is.tellg()) == oldpos);
 	}
 }
 
@@ -97,7 +97,7 @@ void test(int const size,int msize)
 			if(fb.size() != size)
 				printf("%d %d\n",int(fb.size()),size);
 			TEST(fb.size() == size);
-			TEST(out.tellp()==size);
+			TEST(int(out.tellp())==size);
 			TEST(fb.in_memory() == (size <= msize));
 		}
 		catch(...) {
