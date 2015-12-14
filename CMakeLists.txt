@@ -251,6 +251,7 @@ check_cxx_source_compiles(
 	#define _FILE_OFFSET_BITS 64
 	#endif
 	#include <stdio.h>
+	#include <stdlib.h>
 	int main()
 	{
 		char is_big[sizeof(off_t) >= 8 ? 1 : -1];

@@ -12,6 +12,7 @@
 #endif
 #include <cppcms/config.h>
 #include <stdio.h>
+#include <stdlib.h>
 #ifdef CPPCMS_HAVE_FSEEKO
 // nothing
 #elif defined(CPPCMS_HAVE_FSEEKI64)
