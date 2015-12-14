@@ -109,7 +109,7 @@ public:
 	nonblocking_unit_test(cppcms::service &s) : cppcms::application(s)
 	{
 	}
-	struct binder : public booster::callable<void(cppcms::http::context::completion_type ct)> {
+	struct binder : public booster::callable<void(cppcms::http::context::completion_type)> {
 		typedef booster::intrusive_ptr<binder> self_ptr;
 		booster::shared_ptr<cppcms::http::context> context;
 		int counter;
