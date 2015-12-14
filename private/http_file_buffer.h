@@ -11,13 +11,13 @@
 #define _FILE_OFFSET_BITS 64
 #endif
 #include <cppcms/config.h>
-#include <stdlib.h>
+#include <stdio.h>
 #ifdef CPPCMS_HAVE_FSEEKO
 // nothing
 #elif defined(CPPCMS_HAVE_FSEEKI64)
 #define fseeko(f,o,w) _fseeki64(f,o,w)
 #else
-#define fseek(f,o,w) fseek(f,o,w)
+#define fseeko(f,o,w) fseek(f,o,w)
 #endif
 
 #include <booster/nowide/cstdio.h>
