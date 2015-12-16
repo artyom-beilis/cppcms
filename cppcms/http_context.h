@@ -192,9 +192,8 @@ namespace cppcms {
 			void submit_to_asynchronous_application(booster::intrusive_ptr<application> app,std::string const &matched_url);
 		private:
 			friend class impl::cgi::connection;
-			bool has_file_filter();
-			int send_to_file_filter(file &f,int stage);
-			int on_headers_ready(bool has_content);
+			int on_content_progress(size_t n);
+			int on_headers_ready();
 			int translate_exception();
 			void make_error_message(std::exception const &e);
 			void on_request_ready(bool error);

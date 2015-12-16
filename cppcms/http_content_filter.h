@@ -55,8 +55,8 @@ namespace http {
 		content_limits();
 		~content_limits();
 
-		size_t content_length_limit() const;
-		void content_length_limit(size_t size);
+		long long content_length_limit() const;
+		void content_length_limit(long long size);
 
 		long long multipart_form_data_limit() const;
 		void multipart_form_data_limit(long long size);
@@ -69,7 +69,7 @@ namespace http {
 
 	private:
 		
-		size_t content_length_limit_;
+		long long content_length_limit_;
 		size_t file_in_memory_limit_;
 		long long multipart_form_data_limit_;
 		std::string uploads_path_;
@@ -92,7 +92,7 @@ namespace http {
 		booster::hold_ptr<_data> d;
 	};
 
-	class CPPCMS_API raw_content_filter : basic_content_filter {
+	class CPPCMS_API raw_content_filter : public basic_content_filter {
 	public:
 		virtual void on_data_chunk(void const *data,size_t data_size) = 0;
 		virtual ~raw_content_filter();

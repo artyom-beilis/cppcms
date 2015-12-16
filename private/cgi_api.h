@@ -162,20 +162,16 @@ namespace cgi {
 
 		void set_error(ehandler const &h,std::string s);
 		void on_headers_read(booster::system::error_code const &e,http::context *,ehandler const &h);
-		void load_content(booster::system::error_code const &e,http::context *,ehandler const &h);
-		void on_post_data_loaded(booster::system::error_code const &e,size_t ,http::context *,ehandler const &h);
-		void on_some_multipart_read(booster::system::error_code const &e,size_t n,http::context *,ehandler const &h);
+		void load_content(http::context *,ehandler const &h);
+		void on_some_content_read(booster::system::error_code const &e,size_t n,http::context *,ehandler const &h);
 		void handle_eof(callback const &on_eof);
 		void handle_http_error(int code,http::context *context,ehandler const &h);
 		void handle_http_error_eof(booster::system::error_code const &e,int code,ehandler const &h); 
 
-		std::vector<char> content_;
 		cppcms::service *service_;
 		std::string async_chunk_;
 		std::string error_;
 		bool request_in_progress_;
-		long long read_size_;
-		std::auto_ptr<multipart_parser> multipart_parser_;
 
 		std::map<std::string,std::string> map_env_;
 

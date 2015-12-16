@@ -318,14 +318,18 @@ namespace http {
 		~request();
 		/// \endcond
 	private:
-		void set_ready();
 		friend class context;
 		friend class impl::cgi::connection;
 
-		void set_post_data(std::vector<char> &post_data);
-		void set_post_data(std::vector<booster::shared_ptr<file> > const &multipart);
-		bool prepare();
+		int on_content_start();
+		void on_error();
+		int on_content_progress(size_t n);
+		std::pair<char *,size_t > get_buffer();
+	
+		bool size_ok(file &f,long long size);
 
+		std::pair<char *,size_t> get_content_buffer();
+		bool prepare();
 		bool parse_cookies();
 		std::string urlencoded_decode(char const *,char const *);
 		bool parse_form_urlencoded(char const *begin,char const *end,form_type &out);

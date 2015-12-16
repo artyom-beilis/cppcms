@@ -45,7 +45,7 @@ std::string abort_upload::message() const
 struct content_limits::_data {};
 
 content_limits::content_limits(impl::cached_settings const &s)  :
-	content_length_limit_(s.security.content_length_limit * 1024),
+	content_length_limit_(s.security.content_length_limit * 1024LL),
 	file_in_memory_limit_(s.security.file_in_memory_limit),
 	multipart_form_data_limit_(s.security.multipart_form_data_limit * 1024LL),
 	uploads_path_(s.security.uploads_path)
@@ -63,8 +63,8 @@ content_limits::content_limits() :
 {
 }
 
-size_t content_limits::content_length_limit() const { return content_length_limit_; }
-void content_limits::content_length_limit(size_t size) { content_length_limit_=size; }
+long long content_limits::content_length_limit() const { return content_length_limit_; }
+void content_limits::content_length_limit(long long size) { content_length_limit_=size; }
 
 long long content_limits::multipart_form_data_limit() const { return multipart_form_data_limit_; }
 void content_limits::multipart_form_data_limit(long long size) { multipart_form_data_limit_=size; }

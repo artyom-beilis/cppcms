@@ -65,7 +65,7 @@ namespace cppcms {
 			~multipart_parser()
 			{
 			}
-			
+		
 			typedef enum {
 				parsing_error,
 				meta_ready,
@@ -75,6 +75,17 @@ namespace cppcms {
 				eof,
 				no_room_left
 			} parsing_result_type;
+			static bool is_ok(parsing_result_type r) {
+				switch(r) {
+				case meta_ready:
+				case content_partial:
+				case content_ready:
+				case continue_input:
+					return true;
+				default:
+					return false;
+				}
+			}
 
 			bool has_file() { return file_is_ready_; }
 			http::file &get_file()
@@ -132,8 +143,10 @@ namespace cppcms {
 					case expecting_eof_lf:
 						if(*buffer!='\n')
 							return parsing_error;
-						if(buffer + 1 == buffer_end)
+						if(buffer + 1 == buffer_end) {
+							buffer++;
 							return eof;
+						}
 						else
 							return parsing_error;
 					case expecting_lf:

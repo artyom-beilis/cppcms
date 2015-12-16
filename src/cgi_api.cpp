@@ -18,7 +18,6 @@
 #include "cached_settings.h"
 #include <cppcms/json.h>
 #include "cgi_api.h"
-#include "multipart_parser.h"
 #include <cppcms/util.h>
 #include <scgi_header.h>
 #include <stdlib.h>
@@ -199,8 +198,7 @@ void connection::on_headers_read(booster::system::error_code const &e,http::cont
 		h(http::context::operation_aborted);
 		return;
 	}
-	context->request().prepare();
-	load_content(e,context,h);
+	load_content(context,h);
 }
 
 void connection::aync_wait_for_close_by_peer(booster::callback<void()> const &on_eof)
@@ -224,39 +222,41 @@ void connection::set_error(ehandler const &h,std::string s)
 void connection::handle_http_error(int code,http::context *context,ehandler const &h)
 {
 	async_chunk_.clear();
-	async_chunk_.reserve(256);
-	std::string status;
-	status.reserve(128);
-	status += char('0' +  code/100);
-	status += char('0' +  code/10 % 10);
-	status += char('0' +  code % 10);
-	status += ' ';
-	status += http::response::status_to_string(code);
-	if(context->service().cached_settings().service.generate_http_headers) {
-		async_chunk_ += "HTTP/1.0 ";
-		async_chunk_ += status;
-		async_chunk_ += "\r\n"
-				"Connection: close\r\n"
-				"Content-Type: text/html\r\n"
-				"\r\n";
-	}
-	else {
-		async_chunk_ += "Content-Type: text/html\r\n"
-				"Status: ";
-		async_chunk_ += status;
-		async_chunk_ += "\r\n"
-				"\r\n";
-	}
+	if(!context->response().some_output_was_written()) {
+		async_chunk_.reserve(256);
+		std::string status;
+		status.reserve(128);
+		status += char('0' +  code/100);
+		status += char('0' +  code/10 % 10);
+		status += char('0' +  code % 10);
+		status += ' ';
+		status += http::response::status_to_string(code);
+		if(context->service().cached_settings().service.generate_http_headers) {
+			async_chunk_ += "HTTP/1.0 ";
+			async_chunk_ += status;
+			async_chunk_ += "\r\n"
+					"Connection: close\r\n"
+					"Content-Type: text/html\r\n"
+					"\r\n";
+		}
+		else {
+			async_chunk_ += "Content-Type: text/html\r\n"
+					"Status: ";
+			async_chunk_ += status;
+			async_chunk_ += "\r\n"
+					"\r\n";
+		}
 
 
-	async_chunk_ += 	
-		"<html>\r\n"
-		"<body>\r\n"
-		"<h1>";
-	async_chunk_ += status;
-	async_chunk_ += "</h1>\r\n"
-		"</body>\r\n"
-		"</html>\r\n";
+		async_chunk_ += 	
+			"<html>\r\n"
+			"<body>\r\n"
+			"<h1>";
+		async_chunk_ += status;
+		async_chunk_ += "</h1>\r\n"
+			"</body>\r\n"
+			"</html>\r\n";
+	}
 	async_write(booster::aio::buffer(async_chunk_),true,
 		mfunc_to_event_handler(
 			&connection::handle_http_error_eof,
@@ -280,170 +280,54 @@ void connection::handle_http_error_eof(
 
 
 
-void connection::load_content(booster::system::error_code const &e,http::context *context,ehandler const &h)
+void connection::load_content(http::context *context,ehandler const &h)
 {
-	if(e)  {
-		set_error(h,e.message());
-		return;
-	}
-
-	http::content_type content_type = context->request().content_type_parsed();
-	char const *s_content_length=cgetenv("CONTENT_LENGTH");
-
-	long long content_length = *s_content_length == 0 ? 0 : atoll(s_content_length);
-
-	if(content_length < 0)  {
-		handle_http_error(400,context,h);
-		return;
-	}
-	
-	int status = context->on_headers_ready(content_length > 0);
-	if(status != 0) {
+	int status=0;
+	if((status = context->on_headers_ready())!=0) {
 		handle_http_error(status,context,h);
 		return;
 	}
 
-	if(content_length > 0) {
-		if(content_type.is_multipart_form_data()) {
-			// 64 MB
-			long long allowed=context->request().limits().multipart_form_data_limit();
-			if(content_length > allowed) { 
-				BOOSTER_NOTICE("cppcms") << "multipart/form-data size too big " << content_length << 
-					" REMOTE_ADDR = `" << getenv("REMOTE_ADDR") << "' REMOTE_HOST=`" << getenv("REMOTE_HOST") << "'";
-				handle_http_error(413,context,h);
-				return;
-			}
-			multipart_parser_.reset(new multipart_parser(
-				context->request().limits().uploads_path(),
-				context->request().limits().file_in_memory_limit()));
-			read_size_ = content_length;
-			if(!multipart_parser_->set_content_type(content_type)) {
-				BOOSTER_NOTICE("cppcms") << "Invalid multipart/form-data request" << content_length << 
-					" REMOTE_ADDR = `" << getenv("REMOTE_ADDR") << "' REMOTE_HOST=`" << getenv("REMOTE_HOST") << "'";
-				handle_http_error(400,context,h);
-				return;
-			}
-			content_.clear();
-			content_.resize(8192);
-			async_read_some(&content_.front(),content_.size(),
-				mfunc_to_io_handler(&connection::on_some_multipart_read,
-					self(),
-					context,
-					h));
-		}
-		else {
-			long long allowed=context->request().limits().content_length_limit();
-			if(content_length > allowed) {
-				BOOSTER_NOTICE("cppcms") << "POST data size too big " << content_length << 
-					" REMOTE_ADDR = `" << getenv("REMOTE_ADDR") << "' REMOTE_HOST=`" << getenv("REMOTE_HOST") << "'";
-				handle_http_error(413,context,h);
-				return;
-			}
-			content_.clear();
-			content_.resize(content_length,0);
-			async_read(	&content_.front(),
-					content_.size(),
-					mfunc_to_io_handler(&connection::on_post_data_loaded,self(),context,h));
-		}
-	}
-	else  {
-		on_post_data_loaded(booster::system::error_code(),0,context,h);
-	}
-}
-
-void connection::on_some_multipart_read(booster::system::error_code const &e,size_t n,http::context *context,ehandler const &h)
-{
-	if(e) { set_error(h,e.message()); return; }
-	read_size_-=n;
-	if(read_size_ < 0) { handle_http_error(400,context,h); return ;}
-	char const *begin = &content_.front();
-	char const *end = begin + n;
-	multipart_parser::parsing_result_type r = multipart_parser::continue_input;
-	long long allowed=context->request().limits().content_length_limit();
-	bool has_filter = context->has_file_filter();
-	while(begin!=end) {
-		r = multipart_parser_->consume(begin,end);
-		if(has_filter) {
-			int status;
-			switch(r) { 
-			case multipart_parser::meta_ready:
-				status = context->send_to_file_filter(multipart_parser_->get_file(),0);
-				break;
-			case multipart_parser::content_partial:
-				status = context->send_to_file_filter(multipart_parser_->get_file(),1);
-				break;
-			case multipart_parser::content_ready:
-				status = context->send_to_file_filter(multipart_parser_->last_file(),2);
-				break;
-			default:
-				status = 0;
-			}
-			if(status != 0) {
-				handle_http_error(status,context,h);
-				return;
-			}
-		}
-
-		if(r==multipart_parser::content_ready || r==multipart_parser::content_partial) {
-			http::file &f= 	(r == multipart_parser::content_ready)
-					?	multipart_parser_->last_file() 
-					:	multipart_parser_->get_file();
-
-			if(!f.has_mime() && f.size() > allowed) {
-				BOOSTER_NOTICE("cppcms") << "multipart/form-data non-file entry size too big " << 
-						f.size() 
-						<< " REMOTE_ADDR = `" << getenv("REMOTE_ADDR") 
-						<< "' REMOTE_HOST=`" << getenv("REMOTE_HOST") << "'";
-				handle_http_error(413,context,h);
-				return;
-			}
-			continue;
-		}
-		else if(r==multipart_parser::meta_ready)
-			continue;
-		break;
-	}
-
-	if(r == multipart_parser::eof) {
-		if(read_size_ != 0)  {
-			handle_http_error(400,context,h);
-			return;
-		}
-		content_.clear();
-		multipart_parser::files_type files = multipart_parser_->get_files();
-		context->request().set_post_data(files);
-		multipart_parser_.reset();
-		h(http::context::operation_completed);
-		return;
-	}
-	else if (r==multipart_parser::parsing_error) {
-		handle_http_error(400,context,h);
-		return;
-	}
-	else if(r==multipart_parser::no_room_left) {
-		handle_http_error(413,context,h);
-		return;
-	}
-	else if(read_size_ == 0) {
-		handle_http_error(400,context,h);
-		return;
-	}
-	else {
-		async_read_some(&content_.front(),content_.size(),
-			mfunc_to_io_handler(&connection::on_some_multipart_read,
+	if(context->request().content_length() > 0) {
+		std::pair<char *,size_t> buffer = context->request().get_buffer();
+		async_read_some(buffer.first,buffer.second,
+			mfunc_to_io_handler(&connection::on_some_content_read,
 				self(),
 				context,
 				h));
 	}
+	else  {
+		on_async_read_complete();
+		h(http::context::operation_completed);
+	}
 }
 
 
-void connection::on_post_data_loaded(booster::system::error_code const &e,size_t /*unused*/,http::context *context,ehandler const &h)
+void connection::on_some_content_read(booster::system::error_code const &e,size_t n,http::context *context,ehandler const &h)
 {
 	if(e) { set_error(h,e.message()); return; }
-	context->request().set_post_data(content_);
-	on_async_read_complete();
-	h(http::context::operation_completed);
+
+
+	int status = context->on_content_progress(n);
+	if(status !=0) {
+		 handle_http_error(status,context,h);
+		 return;
+	}
+
+	std::pair<char *,size_t> buffer = context->request().get_buffer();
+
+	if(buffer.second==0) {
+		on_async_read_complete();
+		h(http::context::operation_completed);
+		return;
+	}
+	else {
+		async_read_some(buffer.first,buffer.second,
+			mfunc_to_io_handler(&connection::on_some_content_read,
+				self(),
+				context,
+				h));
+	}
 }
 
 bool connection::is_reuseable()

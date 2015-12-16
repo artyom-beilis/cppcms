@@ -129,11 +129,13 @@ namespace {
 	public:
 		context_guard(cppcms::application &app,cppcms::http::context &ctx) : app_(&app)
 		{
-			app_->add_context(ctx);
+			if(app_)
+				app_->add_context(ctx);
 		}
 		~context_guard() 
 		{
-			app_->remove_context();
+			if(app_)
+				app_->remove_context();
 		}
 	private:	
 		cppcms::application *app_;
@@ -204,13 +206,14 @@ int context::translate_exception()
 	return 0;
 }
 
-int context::on_headers_ready(bool has_content)
+int context::on_headers_ready()
 {
 	char const *host = conn_->cgetenv("HTTP_HOST");
 	char const *path_info = conn_->cgetenv("PATH_INFO");
 	char const *script_name = conn_->cgetenv("SCRIPT_NAME");
 	std::string matched;
 
+	booster::intrusive_ptr<application> app;
 	booster::shared_ptr<application_specific_pool> pool = 
 		service().applications_pool().get_application_specific_pool(
 			host,
@@ -220,50 +223,37 @@ int context::on_headers_ready(bool has_content)
 			);
 	if(!pool)
 		return 404;
+	
+	request().prepare();
 
 	int flags;
-	if(!has_content || ((flags=pool->flags()) & app::op_mode_mask) == app::synchronous || (flags & app::content_filter)==0) {
-		d->pool.swap(pool);
-		d->matched.swap(matched);
-		return 0;
-	}
-
-	booster::intrusive_ptr<application> app = d->pool->get(service());
-	if(!app)
-		return 500;
-
-	try {
-		context_guard g(*app,*this);
-		app->main(matched);
-	}
-	catch(...) {
-		return translate_exception();
-	}
-	d->pool.swap(pool);
-	d->app.swap(app);
-	d->matched.swap(matched);
-	return 0;
-}
-
-bool context::has_file_filter()
-{
-	return dynamic_cast<multipart_filter *>(request().content_filter())!=0;
-}
-int context::send_to_file_filter(file &f,int stage)
-{
-	try {
-		context_guard g(*d->app,*this);
-		multipart_filter *filter=static_cast<multipart_filter *>(request().content_filter());
-		switch(stage) {
-		case 0: filter->on_new_file(f); break;
-		case 1: filter->on_upload_progress(f); break;
-		case 2: filter->on_data_ready(f); break;
+	
+	if(request().content_length() != 0 && ((flags=pool->flags()) & app::op_mode_mask) != app::synchronous && (flags & app::content_filter)!=0) {
+		app = pool->get(service());
+		if(!app)
+			return 500;
+		try {
+			context_guard g(*app,*this);
+			app->main(matched);
+		}
+		catch(...) {
+			return translate_exception();
 		}
 	}
-	catch(...) {
-		return translate_exception();
-	}
+
+	int status = request().on_content_start();
+	if(status!=0)
+		return status;
+	d->pool.swap(pool);
+	d->matched.swap(matched);
+	d->app.swap(app);
 	return 0;
+}
+
+int context::on_content_progress(size_t n)
+{
+	context_guard g(*d->app,*this);
+	return request().on_content_progress(n);
 }
 
 void context::on_request_ready(bool error)
@@ -272,31 +262,10 @@ void context::on_request_ready(bool error)
 	booster::intrusive_ptr<application> app;
 	pool.swap(d->pool);
 	app.swap(d->app);
-	basic_content_filter *filter = 0;
 
-	if(error && app && (filter=request().content_filter())!=0) {
-		context_guard g(*app,*this);
-		try {
-			filter->on_error();
-		}
-		catch(...) {}
+	if(error) {
+		request().on_error();
 		return;
-	}
-
-	if(error)
-		return;
-
-	request().set_ready();
-
-	if(app && filter) {
-		context_guard g(*app,*this);
-		try {
-			filter->on_end_of_content();
-		}
-		catch(...) {
-			translate_exception();
-			return;
-		}
 	}
 
 	if(app) {

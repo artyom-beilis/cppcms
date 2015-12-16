@@ -138,6 +138,7 @@ struct random_consumer {
 			buffer+=block;
 			size-=block;
 			if(res==cppcms::impl::multipart_parser::eof) {
+				TEST(start == end);
 				*files = parser->get_files();
 				return res;
 			}
