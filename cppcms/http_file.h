@@ -76,6 +76,13 @@ namespace http {
 		/// Make sure that file created by output_file member function is not removed in destructor
 		///
 		void make_permanent();
+		///
+		/// Close the file if it is still open, if the file temporary it is deleted, the the
+		/// file in memory its content is removed, data() would return non-usable stream
+		///
+		/// Returns 0 in case of sucess and -1 in case of failure
+		///
+		int close();
 		
 		///
 		/// Save file to file named \a filename. Throws cppcms_error in case of failure.

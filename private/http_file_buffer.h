@@ -102,6 +102,11 @@ public:
 			}
 			f_ = 0;
 		}
+		setp(0,0);
+		setg(0,0,0);
+		clear(input_);
+		clear(output_);
+		clear(data_);
 		return 0;
 	}
 #ifdef DEBUG_FILE_BUFFER

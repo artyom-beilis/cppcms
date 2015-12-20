@@ -833,6 +833,10 @@ add_test(pool_test
 	pool_test "-c" "${CNF}/pool_test.js" 
 	"--test-exec=${PYTHON} ${CNF}/pool_test.py")
 
+add_test(filter_test
+	filter_test "-c" "${CNF}/filter_test.js" 
+	"--test-exec=${PYTHON} ${CNF}/filter_test.py")
+
 add_test(async_status_test
 	status_test "-c" "${CNF}/status_test.js" "--test-async=async"
 	"--test-exec=${PYTHON} ${CNF}/status_test.py async")

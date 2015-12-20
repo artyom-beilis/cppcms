@@ -152,14 +152,23 @@ file::file() :
 {
 }
 
-file::~file()
+
+int file::close()
 {
 	if(!d->fb.in_memory() && !removed_) {
-		d->fb.close();
+		int r = d->fb.close();
 		if(file_temporary_ && !d->fb.name().empty()) {
 			booster::nowide::remove(d->fb.name().c_str());
 		}
+		return r;
 	}
+	else 
+		return d->fb.close();
+}
+
+file::~file()
+{
+	close();
 }
 
 void file::filename(std::string const &v)

@@ -31,9 +31,12 @@ def make_multipart_form_data(qs):
     r=[]
     fc={}
     ln={}
+    post={}
     for item in qs:
         key=item.split('=')[0]
         value = item.split('=')[1]
+        if key=='formdata':
+            post[value]=True
         pr=key[0:2]
         if pr == 'f_' or pr == 'l_':
             name = key[2:]
@@ -46,7 +49,8 @@ def make_multipart_form_data(qs):
             l=ln[name]
             c=fc[name]
             r.append('--123456\r\n')
-            r.append('Content-Type: text/plain\r\n')
+            if not name in post:
+                r.append('Content-Type: text/plain\r\n')
             r.append('Content-Disposition: form-data; name="' + name +'"\r\n\r\n')
             r.append(make_content(c,l))
             r.append('\r\n')
@@ -186,14 +190,22 @@ def test_upload():
     test(r['status']==400)
     test_on_error_called()
     
-    r=transfer('/upload',['l_1=100','f_1=a','save_to_1=test.txt'])
-    test(r['status']==200)
     try:
         os.remove('test.txt')
     except:
         pass
+    r=transfer('/upload',['l_1=100','f_1=a','save_to_1=test.txt'])
+    test(r['status']==200)
+    time.sleep(0.2);
     test(open('test.txt','rb').read() == make_content('a',100))
     os.remove('test.txt')
+
+    test(transfer('/upload',['l_1=100','f_1=a','cl_limit=5'])['status']==200)
+    test(transfer('/upload',['fail=1','cl_limit=5'],{'content':'{"x":1000}','content_type':'application/json'})['status']==413)
+    test(transfer('/upload',['fail=1','l_1=100','f_1=a','mp_limit=50'])['status']==413)
+    test(transfer('/upload',['l_1=100','f_1=a','mp_limit=200'])['status']==200)
+    test(transfer('/upload',['formdata=1','l_1=100','f_1=a','l_2=200','f_2=b','mp_limit=500','cl_limit=100'])['status']==200)
+    test(transfer('/upload',['fail=1','formdata=1','l_1=100','f_1=a','l_2=200','f_2=b','mp_limit=500','cl_limit=99'])['status']==413)
 
 test_upload()
 print "OK"

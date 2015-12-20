@@ -200,6 +200,10 @@ namespace cppcms {
 				booster::hold_ptr<T> p;
 			};
 		public:
+			///
+			/// Get context specific value of type T binded to context. If none is stored or
+			/// type mismatched NULL is returned
+			///
 			template<typename T>
 			T *get_specific()
 			{
@@ -208,6 +212,9 @@ namespace cppcms {
 					return 0;
 				return sh->p.get();
 			}
+			///
+			/// Reset context specific value of type T binded to context. Old value is deleted
+			///
 			template<typename T>
 			void reset_specific(T *ptr = 0)
 			{
@@ -224,6 +231,9 @@ namespace cppcms {
 					set_holder(sh);
 				}
 			}
+			///
+			/// Release context specific value binded to context.
+			///
 			template<typename T>
 			T *release_specific()
 			{

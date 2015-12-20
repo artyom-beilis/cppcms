@@ -168,6 +168,11 @@ public:
 			if(request().get("abort")=="on_headers_ready")
 				do_abort(501);
 			request().set_content_filter(*this);
+			std::string cl_limit,mp_limit;
+			if((cl_limit=request().get("cl_limit"))!="") 
+				request().limits().content_length_limit(atoi(cl_limit.c_str()));
+			if((mp_limit=request().get("mp_limit"))!="") 
+				request().limits().multipart_form_data_limit(atoi(mp_limit.c_str()));
 		}
 		else {
 			test_data *td = context().get_specific<test_data>();
@@ -192,6 +197,7 @@ public:
 				
 	}
 };
+
 
 int main(int argc,char **argv)
 {
