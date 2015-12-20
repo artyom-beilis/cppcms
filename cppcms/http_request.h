@@ -299,19 +299,33 @@ namespace http {
 		content_limits &limits();
 
 		///
-		/// Get installed content filter
+		/// Get installed content filter, returns 0 if it is not installed, no ownership is transfered
 		///
 		basic_content_filter *content_filter();
 		
 		///
-		/// Install content filter, setting it to 0 would remove the filter
+		/// Installs content filter. If another filter installed it is removed
 		///
-		void content_filter(basic_content_filter *flt);
+		void set_content_filter(basic_content_filter &flt);
 
+		///
+		/// Installs new content filter (or removes existing), the ownership of new filter is transfered to the request object
+		///
+		void reset_content_filter(basic_content_filter *flt = 0);
+		///
+		/// Release existing content filter owned by request
+		///
+		basic_content_filter *release_content_filter();
 		///
 		/// Returns true when full request content is ready
 		///
 		bool is_ready();
+		///
+		/// Set the size of the buffer for content that isn't loaded to memory directly,
+		/// like for example multipart/form-data, default is defined in configuration as
+		/// service.input_buffer_size and defaults to 65536
+		///
+		void setbuf(int size);
 	public:
 		/// \cond INTERNAL
 		request(impl::cgi::connection &);
@@ -320,6 +334,8 @@ namespace http {
 	private:
 		friend class context;
 		friend class impl::cgi::connection;
+
+		void set_filter(basic_content_filter *ptr,bool owns);
 
 		int on_content_start();
 		void on_error();

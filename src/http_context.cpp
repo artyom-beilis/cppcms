@@ -42,6 +42,7 @@ namespace http {
 		booster::shared_ptr<application_specific_pool> pool;
 		booster::intrusive_ptr<application> app;
 		std::string matched;
+		booster::hold_ptr<context::holder> specific;
 		_data(context &cntx) :
 			locale(cntx.connection().service().locale()),
 			request(cntx.connection())
@@ -54,6 +55,15 @@ context::context(booster::shared_ptr<impl::cgi::connection> conn) :
 	d.reset(new _data(*this));
 	d->response.reset(new http::response(*this));
 	skin(service().views_pool().default_skin());
+}
+
+void context::set_holder(holder *p)
+{
+	d->specific.reset(p);
+}
+context::holder *context::get_holder()
+{
+	return d->specific.get();
 }
 
 std::string context::skin()
@@ -264,7 +274,18 @@ void context::on_request_ready(bool error)
 	app.swap(d->app);
 
 	if(error) {
-		request().on_error();
+		if(app) {
+			try {
+				context_guard g(*app,*this);
+				request().on_error();
+			}
+			catch(std::exception const &e) {
+				BOOSTER_ERROR("cppcms") << "exception at request::on_error" << e.what() << booster::trace(e);
+			}
+			catch(...) {
+				BOOSTER_ERROR("cppcms") << "Unknown exception at request::on_error";
+			}
+		}
 		return;
 	}
 
@@ -352,12 +373,19 @@ void context::dispatch(booster::intrusive_ptr<application> const &app,std::strin
 	}
 	
 	if(app->get_context()) {
-		if(syncronous) {
-			app->context().complete_response();
+		try {
+			if(syncronous) {
+				app->context().complete_response();
+			}
+			else  {
+				app->context().async_complete_response();
+			}
 		}
-		else  {
-			app->context().async_complete_response();
+		catch(...) {
+			app->release_context();
+			throw;
 		}
+		app->release_context();
 	}
 }
 

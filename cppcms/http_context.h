@@ -190,7 +190,56 @@ namespace cppcms {
 			/// This function can be called from any thread 
 			///
 			void submit_to_asynchronous_application(booster::intrusive_ptr<application> app,std::string const &matched_url);
+
 		private:
+			struct holder { virtual ~holder() {} };
+			template<typename T>
+			struct specific_holder : public holder {
+				specific_holder(T *ptr) : p(ptr) {}
+				virtual ~specific_holder() {}
+				booster::hold_ptr<T> p;
+			};
+		public:
+			template<typename T>
+			T *get_specific()
+			{
+				specific_holder<T> *sh=dynamic_cast<specific_holder<T> *>(get_holder());
+				if(!sh)
+					return 0;
+				return sh->p.get();
+			}
+			template<typename T>
+			void reset_specific(T *ptr = 0)
+			{
+				if(ptr == 0) {
+					set_holder(0);
+					return;
+				}
+				specific_holder<T> *sh=dynamic_cast<specific_holder<T> *>(get_holder());
+				if(sh) {
+					sh->p.reset(ptr);
+				}
+				else {
+					specific_holder<T> *sh = new specific_holder<T>(ptr);
+					set_holder(sh);
+				}
+			}
+			template<typename T>
+			T *release_specific()
+			{
+				T *r = 0;
+				specific_holder<T> *sh=dynamic_cast<specific_holder<T> *>(get_holder());
+				if(sh) {
+					r = sh->p.release();
+				}
+				set_holder(0);
+				return r;
+			}
+		private:
+
+			void set_holder(holder *p);
+			holder *get_holder();
+			
 			friend class impl::cgi::connection;
 			int on_content_progress(size_t n);
 			int on_headers_ready();

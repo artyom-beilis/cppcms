@@ -706,6 +706,7 @@ set(ALL_TESTS
 	hash_map_test
 	response_test
 	file_buffer_test
+	filter_test
 	)
 
 if(NOT DISABLE_PREFORK_CACHE AND NOT IS_WINDOWS)

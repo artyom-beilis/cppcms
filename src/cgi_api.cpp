@@ -257,6 +257,10 @@ void connection::handle_http_error(int code,http::context *context,ehandler cons
 			"</body>\r\n"
 			"</html>\r\n";
 	}
+	else {
+		booster::system::error_code e;
+		context->response().flush_async_chunk(e);
+	}
 	async_write(booster::aio::buffer(async_chunk_),true,
 		mfunc_to_event_handler(
 			&connection::handle_http_error_eof,

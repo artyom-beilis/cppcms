@@ -33,15 +33,11 @@ namespace http {
 		/// Abort 
 		///
 		abort_upload(int status_code);
-		abort_upload(int status_code,std::string const &message);
 		virtual ~abort_upload() throw();
 
 		int code() const;
-		std::string message() const;
-
 	private:
 		int code_;
-		std::string message_;
 	};
 
 

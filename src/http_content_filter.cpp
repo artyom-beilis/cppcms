@@ -16,15 +16,7 @@ namespace http {
 
 abort_upload::abort_upload(int status_code) :
 	cppcms_error(http::response::status_to_string(status_code)),	
-	code_(status_code), 
-	message_(http::response::status_to_string(status_code))
-{
-}
-
-abort_upload::abort_upload(int status_code,std::string const &message):
-	cppcms_error(message),
-	code_(status_code),
-	message_(message)
+	code_(status_code)
 {
 }
 
@@ -35,11 +27,6 @@ int abort_upload::code() const
 
 abort_upload::~abort_upload() throw()
 {
-}
-
-std::string abort_upload::message() const
-{
-	return message_;
 }
 
 struct content_limits::_data {};

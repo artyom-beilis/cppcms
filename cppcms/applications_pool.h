@@ -44,8 +44,6 @@ namespace cppcms {
 	namespace app {
 		static const int synchronous 	= 0x0000; ///< Synchronous application 
 		static const int asynchronous	= 0x0001; ///< Asynchronous application that operates in asynchronous mode
-		// TBD
-		//static const int content_filter = 0x0002; ///< Asynchronous application that validates incoming content during upload
 
 		static const int op_mode_mask	= 0x000F; /// mask to select sync vs async flags
 

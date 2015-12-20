@@ -131,6 +131,7 @@ struct request::_data {
 	std::vector<char> post_data;
 	content_limits limits;
 	basic_content_filter *filter;
+	bool filter_owned;
 	bool filter_is_raw_content_filter;
 	bool filter_is_multipart_filter;
 	bool ready;
@@ -138,31 +139,71 @@ struct request::_data {
 	long long read_size;
 	bool read_full;
 	bool no_on_error;
+	int buffer_size;
 	booster::hold_ptr<cppcms::impl::multipart_parser> multipart_parser;	
 	_data(cppcms::service &srv) : 
 		limits(srv.cached_settings()),
 		filter(0),
+		filter_owned(false),
 		filter_is_raw_content_filter(false), 
 		filter_is_multipart_filter(false),
 		ready(false),
 		content_length(0),
 		read_size(0),
 		read_full(false),
-		no_on_error(false)
+		no_on_error(false),
+		buffer_size(srv.cached_settings().service.input_buffer_size)
 	{
 	}
+	~_data()
+	{
+		if(filter_owned)
+			delete filter;
+	}
 };
+
+void request::setbuf(int size)
+{
+	if(size < 1)
+		size = 1;
+	d->buffer_size = size;
+}
 
 basic_content_filter *request::content_filter()
 {
 	return d->filter;
 }
 
-void request::content_filter(basic_content_filter *filter)
+void request::set_content_filter(basic_content_filter &flt)
 {
+	set_filter(&flt,false);
+}
+void request::reset_content_filter(basic_content_filter *flt)
+{
+	set_filter(flt,true);
+}
+basic_content_filter *request::release_content_filter()
+{
+	if(d->filter_owned) {
+		basic_content_filter *flt = d->filter;
+		d->filter = 0;
+		d->filter_owned = false;
+		return flt;
+	}
+	d->filter = 0;
+	return 0;
+}
+
+void request::set_filter(basic_content_filter *filter,bool owned)
+{
+	if(d->filter && d->filter != filter && d->filter_owned) {
+		delete d->filter;
+		d->filter = 0;
+	}
 	d->filter = filter;
-	d->filter_is_multipart_filter   = dynamic_cast<multipart_filter   *>(filter) != 0;
-	d->filter_is_raw_content_filter = dynamic_cast<raw_content_filter *>(filter) != 0;
+	d->filter_owned = filter ? owned : false;
+	d->filter_is_multipart_filter   = dynamic_cast<multipart_filter   *>(d->filter) != 0;
+	d->filter_is_raw_content_filter = dynamic_cast<raw_content_filter *>(d->filter) != 0;
 }
 
 bool request::is_ready()
@@ -180,9 +221,10 @@ std::pair<char *,size_t > request::get_buffer()
 	}
 	else {
 		long long reminder = d->content_length - d->read_size;
-		if(static_cast<long long>(d->post_data.size()) < reminder) {
-			d->post_data.resize(d->content_length);
-		}
+		if(reminder < d->buffer_size)
+			d->post_data.resize(reminder);
+		else
+			d->post_data.resize(d->buffer_size);
 		if(d->post_data.size() == 0) {
 			std::vector<char> tmp;
 			tmp.swap(d->post_data);
@@ -339,6 +381,8 @@ int request::on_content_progress(size_t n)
 
 void request::on_error()
 {
+	if(d->no_on_error)
+		return;
 	if(d->filter) {
 		d->filter->on_error();
 	}
@@ -361,10 +405,6 @@ int request::on_content_start()
 		d->read_full = true;
 	}
 	else {
-		if(d->content_length < 65535)
-			d->post_data.resize(d->content_length);
-		else
-			d->post_data.resize(65536);
 		if(content_type_.is_multipart_form_data() && !d->filter_is_raw_content_filter) {
 			d->multipart_parser.reset(new multipart_parser(
 				d->limits.uploads_path(),
@@ -406,6 +446,8 @@ bool request::prepare()
 	else
 		d->content_length = atoll(s);
 	content_type_ = cppcms::http::content_type(conn_->cgetenv("CONTENT_TYPE"));
+	if(d->content_length == 0)
+		d->ready = true;
 	return true;
 }
 
