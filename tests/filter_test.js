@@ -9,6 +9,6 @@
 	},
 	"http" : {
 		"timeout" : 3,
-		"script_names" : [ "/upload" ]
+		"script_names" : [ "/upload", "/raw" ]
 	}
 }

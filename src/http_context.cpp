@@ -22,6 +22,7 @@
 #include <booster/backtrace.h>
 #include <booster/aio/io_service.h>
 #include <cppcms/http_content_filter.h>
+#include <stdio.h>
 
 #include "cached_settings.h"
 
@@ -251,13 +252,11 @@ int context::on_headers_ready()
 		}
 	}
 
-	int status = request().on_content_start();
-	if(status!=0)
-		return status;
 	d->pool.swap(pool);
 	d->matched.swap(matched);
 	d->app.swap(app);
-	return 0;
+	
+	return request().on_content_start();
 }
 
 int context::on_content_progress(size_t n)

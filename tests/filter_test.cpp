@@ -30,12 +30,9 @@ int total_on_error;
 #define TESTNT(x) do { if(x) break;  std::cerr << "FAIL: " #x " in line: " << __LINE__ << std::endl; g_fail = 1; return; } while(0)
 
 
-class file_test : public cppcms::application, public cppcms::http::multipart_filter {
+class basic_test :  public cppcms::application {
 public:
-	file_test(cppcms::service &s) : cppcms::application(s)
-	{
-	}
-
+	basic_test(cppcms::service &srv) : cppcms::application(srv) {}
 	std::string get_ref(std::string const &name)
 	{
 		int len = atoi(request().get("l_" + name).c_str());
@@ -49,6 +46,31 @@ public:
 				c='a';
 		}
 		return r;
+	}
+	
+	void do_abort(int code)
+	{
+		int how=atoi(request().get("how").c_str());
+		switch(how){
+		case 3:
+			response().setbuf(0);
+		case 2:
+			response().full_asynchronous_buffering(false);
+		case 1:
+			response().status(code);
+			response().set_plain_text_header();
+			response().out() << "at="<<request().get("abort");
+		case 0:
+			throw cppcms::http::abort_upload(code);
+		}
+	}
+
+};
+
+class file_test : public basic_test, public cppcms::http::multipart_filter {
+public:
+	file_test(cppcms::service &s) : basic_test(s)
+	{
 	}
 
 	struct test_data {
@@ -128,22 +150,6 @@ public:
 		total_on_error++;
 	}
 	
-	void do_abort(int code)
-	{
-		int how=atoi(request().get("how").c_str());
-		switch(how){
-		case 3:
-			response().setbuf(0);
-		case 2:
-			response().full_asynchronous_buffering(false);
-		case 1:
-			response().status(code);
-			response().set_plain_text_header();
-			response().out() << "at="<<request().get("abort");
-		case 0:
-			throw cppcms::http::abort_upload(code);
-		}
-	}
 	void main(std::string path)
 	{
 		if(path=="/total_on_error") {
@@ -199,6 +205,106 @@ public:
 };
 
 
+class raw_test : public basic_test, public cppcms::http::raw_content_filter {
+public:
+	raw_test(cppcms::service &s) : basic_test(s)
+	{
+	}
+
+	struct test_data {
+		int on_data_chunk;
+		int on_end_of_content;
+		int on_error;
+		std::string content;
+		test_data() : on_data_chunk(0), on_end_of_content(0), on_error(0) {}
+		void write(std::ostream &out)
+		{
+			out <<
+			"on_data_chunk="<<on_data_chunk<<"\n"
+			"on_end_of_content="<<on_end_of_content<<"\n"
+			;
+		}
+	};
+
+	test_data *data()
+	{
+		return context().get_specific<test_data>();
+	}
+
+	void on_data_chunk(void const *ptr,size_t data_size)
+	{
+		if(request().get("abort")=="on_data_chunk" && atoi(request().get("at").c_str()) >= int(data()->content.size()))
+			do_abort(502);
+		data()->on_data_chunk++;
+		data()->content.append(static_cast<char const *>(ptr),data_size);
+	}
+
+	void on_end_of_content(){
+		data()->on_end_of_content++;
+		TESTNT(request().get("fail")=="");
+		if(request().get("abort")=="on_end_of_content")
+			do_abort(503);
+
+	}
+	void on_error() {
+		data()->on_error++;
+		TESTNT(request().get("fail")=="1");
+		total_on_error++;
+	}
+	
+	void main(std::string path)
+	{
+		if(path=="/total_on_error") {
+			response().out() << "total_on_error=" << total_on_error;
+			total_on_error = 0;
+			return;
+		}
+		if(path=="/no_content") {
+			TESTNT(request().is_ready());
+			response().out() << "no_content=1";
+			return;
+		}
+		if(request().get("setbuf")!="") {
+			request().setbuf(atoi(request().get("setbuf").c_str()));
+		}
+
+		TESTNT(request().is_ready() || context().get_specific<test_data>()==0);
+
+		if(!request().is_ready()) {
+			test_data *td = new test_data();
+			context().reset_specific<test_data>(td);
+			if(request().get("abort")=="on_headers_ready")
+				do_abort(501);
+			request().set_content_filter(*this);
+			std::string cl_limit,mp_limit;
+			if((cl_limit=request().get("cl_limit"))!="") 
+				request().limits().content_length_limit(atoi(cl_limit.c_str()));
+			if((mp_limit=request().get("mp_limit"))!="") 
+				request().limits().multipart_form_data_limit(atoi(mp_limit.c_str()));
+		}
+		else {
+			test_data *td = context().get_specific<test_data>();
+			TESTNT(td);
+			if(request().get("abort")=="") {
+				TESTNT(td->on_error == 0);
+				TESTNT(td->on_data_chunk >= 1);
+				TESTNT(td->on_end_of_content == 1);
+				if(request().get("chunks")!="")
+					TESTNT(td->on_data_chunk > 1);
+				if(request().get("l_1")!="")
+					TESTNT(td->content == get_ref("1"));
+			}
+			TESTNT(request().content_length() > 0);
+			TESTNT(request().raw_post_data().second == 0);
+			td->write(response().out());
+
+		}
+				
+	}
+};
+
+
+
 int main(int argc,char **argv)
 {
 	try {
@@ -207,6 +313,10 @@ int main(int argc,char **argv)
 
 		srv.applications_pool().mount(	cppcms::create_pool<file_test>(),
 						mount_point("/upload"),
+						cppcms::app::asynchronous | cppcms::app::content_filter);
+		
+		srv.applications_pool().mount(	cppcms::create_pool<raw_test>(),
+						mount_point("/raw"),
 						cppcms::app::asynchronous | cppcms::app::content_filter);
 
 		

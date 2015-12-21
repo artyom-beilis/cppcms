@@ -70,12 +70,17 @@ class Conn:
         else:
             self.path = path + '?' + '&'.join(q)
         if custom_content:
-            post=custom_content['content']
-            if 'content_length' in custom_content:
-                content_length=custom_content['content_length']
-            else:
+            if type(custom_content) is str:
+                post=custom_content;
                 content_length=len(post)
-            content_type=custom_content['content_type']
+                content_type='text/plain'
+            else:
+                post=custom_content['content']
+                if 'content_length' in custom_content:
+                    content_length=custom_content['content_length']
+                else:
+                    content_length=len(post)
+                content_type=custom_content['content_type']
         else:
             post = make_multipart_form_data(q)
             content_length = len(post)
@@ -143,8 +148,8 @@ def transfer(path,q=[],custom_content=None):
     c=Conn(path,q,custom_content)
     return c.get()
     
-def test_on_error_called():
-    test(transfer('/upload/total_on_error',[])['total_on_error']==1)
+def test_on_error_called(expected=1):
+    test(transfer('/upload/total_on_error',[])['total_on_error']==expected)
 
 def test_upload():
     r=transfer('/upload/no_content',[])
@@ -202,10 +207,58 @@ def test_upload():
 
     test(transfer('/upload',['l_1=100','f_1=a','cl_limit=5'])['status']==200)
     test(transfer('/upload',['fail=1','cl_limit=5'],{'content':'{"x":1000}','content_type':'application/json'})['status']==413)
+    test_on_error_called()
     test(transfer('/upload',['fail=1','l_1=100','f_1=a','mp_limit=50'])['status']==413)
+    test_on_error_called()
     test(transfer('/upload',['l_1=100','f_1=a','mp_limit=200'])['status']==200)
     test(transfer('/upload',['formdata=1','l_1=100','f_1=a','l_2=200','f_2=b','mp_limit=500','cl_limit=100'])['status']==200)
     test(transfer('/upload',['fail=1','formdata=1','l_1=100','f_1=a','l_2=200','f_2=b','mp_limit=500','cl_limit=99'])['status']==413)
+    test_on_error_called()
+
+def test_raw():
+    r=transfer('/raw/no_content',[])
+    test(r['no_content']==1)
+    test(r['status']==200)
+    r=transfer('/raw',['l_1=10','f_1=a'],make_content('a',10))
+    test(r['status']==200)
+    r=transfer('/raw',['l_1=10','f_1=a','chunks=5'],make_content('a',10))
+    test(r['status']==200)
+    test(r['on_data_chunk']==2)
+    r=transfer('/raw',['l_1=10000','f_1=a'],make_content('a',10000))
+    test(r['status']==200)
+    test(r['on_data_chunk']>=2)
+    r=transfer('/raw',['l_1=10000','f_1=a','setbuf=10'],make_content('a',10000))
+    test(r['status']==200)
+    test(r['on_data_chunk']>=100)
+
+    code=500
+    for loc in ['on_headers_ready','on_data_chunk','on_end_of_content']:
+        code=code+1
+        for how in [0,1,2,3]:
+            for at in [0,20]:
+                r=transfer('/raw',['l_1=50','f_1=a','abort=%s' % loc,'how=%d' % how,'setbuf=10','at=%d' % at],make_content('a',50))
+                test(r['status']==code)
+                if how == 0:
+                    test(r['is_html'])
+                else:
+                    test(r['at']==loc)
+        
+    r=transfer('/raw',['fail=1'],{'content' : 'a=b','content_length':4,'content_type':'application/x-www-form-urlencoded'})
+    test_on_error_called()
+    r=transfer('/raw',[],{'content' : 'abcdefghig','content_type':'multipart/form-data; boundary=123456'})
+    test(r['status']==200)
+    
+    test(transfer('/raw',['l_2=100','f_2=a','cl_limit=5'])['status']==200)
+    test(transfer('/raw',['fail=1','cl_limit=5'],{'content':'{"x":1000}','content_type':'application/json'})['status']==413)
+    test_on_error_called()
+    test(transfer('/raw',['fail=1','l_2=100','f_2=a','mp_limit=50'])['status']==413)
+    test_on_error_called()
+    test(transfer('/raw',['l_2=100','f_2=a','mp_limit=200'])['status']==200)
+    test(transfer('/raw',['formdata=1','l_3=100','f_3=a','l_2=200','f_2=b','mp_limit=500','cl_limit=100'])['status']==200)
+    test(transfer('/raw',['formdata=1','l_3=100','f_3=a','l_2=200','f_2=b','mp_limit=500','cl_limit=99'])['status']==200)
+
 
 test_upload()
+test_raw()
+test_on_error_called(0)
 print "OK"

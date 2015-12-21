@@ -93,6 +93,7 @@ def test_sync():
 
     st=Conn('/test/unmount?id='+n).get()
     Conn(n).get(exp404 = True)
+    time.sleep(0.1)
     test(Conn('/test/stats?id='+n).get()["current"]==0)
 
 
@@ -120,6 +121,7 @@ def test_sync_prep():
 
     Conn('/test/unmount?id='+n).get()
     Conn(n).get(exp404 = True)
+    time.sleep(0.1)
     test(Conn('/test/stats?id='+n).get()["current"]==0)
 
 
@@ -155,6 +157,7 @@ def test_sync_ts():
 
     st=Conn('/test/unmount?id='+n).get()
     Conn(n).get(exp404 = True)
+    time.sleep(0.1)
     test(Conn('/test/stats?id='+n).get()["current"]==2)
 
 
@@ -203,6 +206,7 @@ def test_async():
     
     st=Conn('/test/unmount?id='+n).get()
     Conn(n).get(exp404 = True)
+    time.sleep(0.1)
     test(Conn('/test/stats?id='+n).get()["current"]==0)
 
 def test_async_prep():
@@ -224,6 +228,7 @@ def test_async_prep():
 
     st=Conn('/test/unmount?id='+n).get()
     Conn(n).get(exp404 = True)
+    time.sleep(0.1)
     test(Conn('/test/stats?id='+n).get()["current"]==0)
 
 def test_async_legacy():
@@ -269,6 +274,7 @@ def test_async_temporary():
     st=Conn('/test/uninstall').get()
     test(st["install"]==0)
     
+    time.sleep(0.1)
     st=Conn('/test/stats?id=' + n).get()
     test(st["total"]==1)
     test(st["current"]==0)

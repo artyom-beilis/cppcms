@@ -115,6 +115,12 @@ namespace http {
 		booster::hold_ptr<_data> d;
 	};
 
+	///
+	/// Basic content filter that can be installed to request, all filters should be derived from this base class
+	///
+	/// Note that when `on_*` member functions of the basic_content_filter are called the original application that runs the filtering
+	/// has temporary installed context that can be accessed from it.
+	///
 	class CPPCMS_API basic_content_filter {
 		basic_content_filter(basic_content_filter const &);
 		void operator=(basic_content_filter const &);
@@ -122,28 +128,85 @@ namespace http {
 		basic_content_filter();
 		virtual ~basic_content_filter();
 
+		///
+		/// Member function that is called when entire content is read. By default does nothing.
+		///
+		/// The request can be aborted by throwing abort_upload
+		///
 		virtual void on_end_of_content();
+		///
+		/// Member function that is called in case of a error occuring during upload progress, user should not throw exception from this function but rather
+		/// perform cleanup procedures if needed
+		///
 		virtual void on_error();
 	private:
 		struct _data;
 		booster::hold_ptr<_data> d;
 	};
 
+	///
+	/// Process of any kind of generic content data.
+	///
+	/// Note: when raw_content_filter is used no content data is actually saved to request, for example request().raw_post_data() would return
+	/// an empty content, so it is your responsibility to store/parse whatever content you use
+	///
 	class CPPCMS_API raw_content_filter : public basic_content_filter {
 	public:
+		///
+		/// You must implement this member function to handle the data
+		///
+		/// A chunk of incoming data is avalible refered by data of size data_size
+		///
+		/// The request can be aborted by throwing abort_upload
+		///
 		virtual void on_data_chunk(void const *data,size_t data_size) = 0;
+
+		raw_content_filter();
 		virtual ~raw_content_filter();
 	private:
 		struct _raw_data;
 		booster::hold_ptr<_raw_data> d;
 	};
 
+	///
+	/// Filter for multipart/form-data - file upload
+	///
+	/// It allows to process/validate incomping data on the fly and make sure that for example the user is actually authorized to upload
+	/// such a files
+	///
 	class CPPCMS_API multipart_filter : public basic_content_filter {
 	public:
 		multipart_filter();
 		virtual ~multipart_filter();
+		///
+		/// New file meta-data of a form field or file is ready: the mime-type, form name and file name if provided are known, the content wasn't processed yet
+		///
+		/// Notes:
+		///
+		/// - This is the point when you can change various file properties, like location of the temporary file or specifiy output file name and more
+		/// - The request can be aborted by throwing abort_upload
+		/// - By default does nothing
+		///
 		virtual void on_new_file(http::file &input_file);
+		///
+		/// Some of the file data is available, you can access it and run some validation during upload progress.
+		///
+		/// Notes:
+		///
+		/// - This is the point when you can perform some file content validation
+		/// - The request can be aborted by throwing abort_upload
+		/// - By default does nothing
+		///
 		virtual void on_upload_progress(http::file &input_file);
+		///
+		/// The entire file data was transfered, its size wouldn't change
+		///
+		/// Notes:
+		///
+		/// - This is the point when you can save file if needed or perform final validation
+		/// - The request can be aborted by throwing abort_upload
+		/// - By default does nothing
+		///
 		virtual void on_data_ready(http::file &input_file);
 	
 	private:

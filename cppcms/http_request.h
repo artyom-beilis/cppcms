@@ -283,10 +283,10 @@ namespace http {
 		files_type files();
 		
 		///
-		/// Access to raw bits of POST data. If the POST request is empty or the request_type in not POST
-		/// {NULL,0} will be returned.
+		/// Access to raw bits of POST (content) data. If the content is empty if raw_content_filter is installed
+		/// or multipart/form-data is handled the read_post_data().second will be 0;
 		///
-		/// Note: when processing multipart/form-data POST request this function will always return {NULL,0} as
+		/// Note: when processing multipart/form-data returns chunk of zero size as
 		/// such requests maybe huge (file uploads of multiple hundreds of MB or even GB) that are would be stored in
 		/// temporary files instead of memory. In order to get access to POST data you'll have to use post(), get(), or files()
 		/// member functions.
