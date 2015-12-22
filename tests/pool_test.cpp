@@ -23,6 +23,9 @@
 #include <booster/log.h>
 #include "test.h"
 
+int g_fail;
+#define TESTNT(x) do { if(x) break;  std::cerr << "FAIL: " #x " in line: " << __LINE__ << std::endl; g_fail = 1; return; } while(0)
+
 booster::thread_specific_ptr<int> g_thread_id;
 booster::mutex g_id_lock;
 int g_thread_id_counter=1000;
@@ -195,6 +198,76 @@ struct marker {
 	std::string name_;
 };
 
+struct pools {
+	booster::weak_ptr<cppcms::application_specific_pool> sync,async;
+	bool async_requested;
+	pools() : async_requested(false) {}
+};
+
+class sender : public cppcms::application  {
+public:
+
+	struct src_prop {
+		bool src_async;
+		bool src_created;
+		bool src_to_app;
+	};
+	sender(cppcms::service &srv,pools *p) :
+		cppcms::application(srv),
+		pools_(p),
+		first_time_(true)
+	{
+	}
+
+	void main(std::string url)
+	{
+		if(url!="/sender") {
+			src_prop *p = context().get_specific<src_prop>();
+			TESTNT(p);
+			response().out() << "async=" << is_asynchronous() << "\n"
+			"src_async="  << p->src_async   <<"\n"
+			"src_created="<< p->src_created <<"\n"
+			"src_to_app=" << p->src_to_app  <<"\n"
+			"path="       << url<<"\n"
+			;
+			return;
+		}
+
+		src_prop *p=new src_prop();
+		context().reset_specific<src_prop>(p);
+		
+		bool to_app = request().get("to_app")=="1";
+		p->src_to_app = to_app;
+		p->src_async = is_asynchronous();
+		p->src_created = false;
+		booster::shared_ptr<cppcms::application_specific_pool> tgt;
+		if(request().get("to")=="sync") 
+			tgt = pools_->sync.lock();
+		else 
+			tgt = pools_->async.lock();
+
+		booster::shared_ptr<cppcms::http::context> ctx = release_context();
+		TESTNT(tgt);
+		
+		if(!to_app) {
+			ctx->submit_to_pool(tgt,"/pool");
+			return; 
+		}
+		
+		booster::intrusive_ptr<cppcms::application> app;
+		app =tgt->asynchronous_application_by_io_service(service().get_io_service());
+		if(!app) {
+			app = tgt->asynchronous_application_by_io_service(service().get_io_service(),service());
+			p->src_created=true;
+		}
+		TESTNT(app);
+		ctx->submit_to_asynchronous_application(app,"/app");
+	}
+private:
+	pools *pools_;
+	bool first_time_;
+};
+
 int main(int argc,char **argv)
 {
 	try {
@@ -247,6 +320,25 @@ int main(int argc,char **argv)
 
 			srv.applications_pool().mount(cppcms::create_pool<tester>(),mount_point("/test"),cppcms::app::asynchronous);
 
+			pools p;
+			{
+				booster::shared_ptr<cppcms::application_specific_pool> tmp;
+				srv.applications_pool().mount(
+					(tmp=cppcms::create_pool<sender>(&p)),
+					mount_point("/async","/sender",0),
+					cppcms::app::asynchronous);
+				p.async = tmp;
+			}
+			
+			{
+				booster::shared_ptr<cppcms::application_specific_pool> tmp;
+				srv.applications_pool().mount(
+					(tmp=cppcms::create_pool<sender>(&p)),
+					mount_point("/sync","/sender",0),
+					cppcms::app::synchronous);
+				p.sync = tmp;
+			}
+
 			srv.after_fork(thread_submitter(srv));
 			srv.run();
 
@@ -267,9 +359,12 @@ int main(int argc,char **argv)
 		std::cerr << e.what() << std::endl;
 		return EXIT_FAILURE;
 	}
-	if(run_ok)
-		std::cout << "Ok" << std::endl;
-	else
+	if(run_ok && !g_fail) {
+		std::cout << "Full Test: Ok" << std::endl;
+		return EXIT_SUCCESS;
+	}
+	else {
 		std::cout << "FAILED" << std::endl;
-	return run_ok ? EXIT_SUCCESS : EXIT_FAILURE;
+		return EXIT_FAILURE;
+	}
 }

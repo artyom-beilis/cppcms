@@ -29,12 +29,17 @@ public:
 	virtual void prepopulate(cppcms::service &srv) = 0;
 	virtual void application_requested(cppcms::service &) {}
 	virtual ~_policy() {}
+	virtual booster::intrusive_ptr<application> get_async(booster::aio::io_service &,cppcms::service *srv=0);
 	virtual booster::intrusive_ptr<application> get(cppcms::service &srv) = 0;
 	virtual void put(application *app) = 0;
 	application *get_new(cppcms::service &srv) { return self_->get_new(srv); }
 protected:
 	application_specific_pool *self_;
 };
+booster::intrusive_ptr<application> application_specific_pool::_policy::get_async(booster::aio::io_service &,cppcms::service *) 
+{
+	throw cppcms_error("Is not implemented for synchronous application");
+}
 
 class application_specific_pool::_tls_policy : public application_specific_pool::_policy {
 public:
@@ -170,28 +175,49 @@ private:
 class application_specific_pool::_async_policy : public application_specific_pool::_policy{
 public:
 	_async_policy(application_specific_pool *self) : 
-		_policy(self) 
+		_policy(self),
+		io_srv_(0)
 	{
 	}
 	virtual void prepopulate(cppcms::service &srv)
 	{
 		if((self_->flags() & app::prepopulated) && !(self_->flags() & app::legacy)) {
-			if(!app_)
+			if(!app_) {
 				app_ = get_new(srv);
+				io_srv_ = &srv.get_io_service();
+			}
 		}
 	}
 	virtual booster::intrusive_ptr<application> get(cppcms::service &srv)
 	{
-		if(!app_)
+		if(!app_) {
 			app_ = get_new(srv);
+			if(app_) {
+				io_srv_ = &srv.get_io_service();
+			}
+		}
 		return app_;
 	}
 	virtual void put(application *)
 	{
 		// SHOULD NEVER BE CALLED as when pool is destroyed and app_ is destroyed weak_ptr would be invalid
 	}
+	virtual booster::intrusive_ptr<application> get_async(booster::aio::io_service &io_srv,cppcms::service *srv = 0) 
+	{
+
+		if(app_) {
+			if(&io_srv == io_srv_)
+				return app_;
+			else
+				throw cppcms_error("given booster::aio::io_service isn't main event loop io_service");
+		}
+		if(!srv)
+			return 0;
+		return get(*srv);
+	}
 private:
 	booster::intrusive_ptr<application> app_;
+	booster::aio::io_service *io_srv_;
 };
 
 class application_specific_pool::_async_legacy_policy : public application_specific_pool::_policy{
@@ -284,6 +310,16 @@ void application_specific_pool::flags(int flags)
 	else {
 		d->policy.reset(new _pool_policy(this,d->size));
 	}
+}
+
+booster::intrusive_ptr<application> application_specific_pool::asynchronous_application_by_io_service(booster::aio::io_service &ios,cppcms::service &srv)
+{
+	return d->policy->get_async(ios,&srv);
+}
+
+booster::intrusive_ptr<application> application_specific_pool::asynchronous_application_by_io_service(booster::aio::io_service &ios)
+{
+	return d->policy->get_async(ios);
 }
 
 application *application_specific_pool::get_new(service &srv)

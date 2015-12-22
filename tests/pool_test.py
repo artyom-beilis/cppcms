@@ -281,6 +281,54 @@ def test_async_temporary():
 
     Conn(n).get(exp404 = True)
     
+def test_send():
+
+    print "/sync/sender"
+
+    r=Conn('/sync/sender?to=async&to_app=1').get()
+    test(r["path"]=="/app")
+    test(r["async"]==1)
+    test(r["src_async"]==0)
+    test(r["src_created"]==1)
+    test(r["src_to_app"]==1)
+    
+    r=Conn('/sync/sender?to=async&to_app=1').get()
+    test(r["path"]=="/app")
+    test(r["async"]==1)
+    test(r["src_async"]==0)
+    test(r["src_created"]==0)
+    test(r["src_to_app"]==1)
+
+    r=Conn('/sync/sender?to=async').get()
+    test(r["path"]=="/pool")
+    test(r["async"]==1)
+    test(r["src_async"]==0)
+    test(r["src_created"]==0)
+    test(r["src_to_app"]==0)
+    
+    r=Conn('/sync/sender?to=sync').get()
+    test(r["path"]=="/pool")
+    test(r["async"]==0)
+    test(r["src_async"]==0)
+
+    print "/async/sender"
+    
+    r=Conn('/async/sender?to=async&to_app=1').get()
+    test(r["path"]=="/app")
+    test(r["async"]==1)
+    test(r["src_async"]==1)
+    test(r["src_to_app"]==1)
+    
+    r=Conn('/async/sender?to=async').get()
+    test(r["path"]=="/pool")
+    test(r["async"]==1)
+    test(r["src_async"]==1)
+    
+    r=Conn('/async/sender?to=sync').get()
+    test(r["path"]=="/pool")
+    test(r["async"]==0)
+    test(r["src_async"]==1)
+    
 
 test_sync()
 test_sync_prep()
@@ -290,4 +338,5 @@ test_async()
 test_async_prep()
 test_async_legacy()
 test_async_temporary()
+test_send()
 print "OK"

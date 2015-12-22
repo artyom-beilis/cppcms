@@ -26,6 +26,9 @@ namespace cppcms {
 namespace booster {
 	void CPPCMS_API intrusive_ptr_add_ref(cppcms::application *p);
 	void CPPCMS_API intrusive_ptr_release(cppcms::application *p);
+	namespace aio {
+		class io_service;
+	}
 }
 
 namespace cppcms {
@@ -65,6 +68,28 @@ namespace cppcms {
 	public:
 		application_specific_pool();
 		virtual ~application_specific_pool();
+
+		///
+		/// Returns asynchronous application that runs at given booster::aio::io_service constext, it the application
+		/// does not exist yet, it is created
+		///
+		/// Notes:
+		///
+		/// - if the application is created upon function call it would be created in the calling thread regardless if it is event loop thread or not
+		/// - If the pool isn't mounted as asynchronous pool then cppcms_error is thrown
+		/// - if the io_srv isn't main cppcms io_service cppcms_error is thrown
+		///
+		booster::intrusive_ptr<application> asynchronous_application_by_io_service(booster::aio::io_service &io_srv,cppcms::service &srv);
+		///
+		/// Returns asynchronous application that runs at given booster::aio::io_service constext, it the application
+		/// does not exist yet NULL pointer is returned
+		///	
+		/// Notes:
+		///
+		/// - If the pool isn't mounted as asynchronous pool then cppcms_error is thrown
+		/// - if the io_srv isn't main cppcms io_service cppcms_error is thrown
+		///
+		booster::intrusive_ptr<application> asynchronous_application_by_io_service(booster::aio::io_service &io_srv);
 
 	protected:
 		///

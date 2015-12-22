@@ -125,12 +125,14 @@ void context::submit_to_pool(booster::shared_ptr<application_specific_pool> pool
 namespace {
 	struct dispatch_binder {
 		void (*dispatch)(booster::intrusive_ptr<application> const &,std::string const &,bool);
+		booster::shared_ptr<context> ctx;
 		booster::intrusive_ptr<application> app;
 		std::string matched;
 		bool flag;
 
 		void operator()()
 		{
+			app->assign_context(ctx);
 			dispatch(app,matched,flag);
 		}
 
@@ -154,11 +156,10 @@ namespace {
 }
 
 
+
 void context::submit_to_asynchronous_application(booster::intrusive_ptr<application> app,std::string const &matched)
 {
-	app->assign_context(self());
-	response().io_mode(http::response::asynchronous);
-	dispatch_binder bd = { &context::dispatch, app,matched,false };
+	dispatch_binder bd = { &context::dispatch, self(), app,matched,false };
 	conn_->get_io_service().post(bd);
 }
 
