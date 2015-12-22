@@ -486,6 +486,19 @@ namespace json {
 		bool load(std::istream &in,bool full,int *line_number=0);
 
 		///
+		/// Read a value from character range
+		///
+		/// Note: only JSON object and JSON array are considered valid values
+		///
+		/// \param begin - begin of the text range, at the end points to the end of parsed range
+		/// \param end - end of the text range
+		/// \param full  require EOF once the object is read, otherwise consider it as syntax error
+		/// \param line_number  return a number of the line where syntax error occurred
+		/// \result returns true if the value was read successfully, otherwise returns false to indicate a syntax error.
+		///
+		bool load(char const *&begin,char const *end,bool full,int *line_number=0);
+
+		///
 		/// Compare two values objects, return true if they are same
 		///
 		bool operator==(value const &other) const;

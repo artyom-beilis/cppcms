@@ -34,12 +34,21 @@ public:
 json::value Parse(std::string s,int line)
 {
 	std::istringstream ss(s);
+	json::value v2;
+	char const *begin,*end;
+	begin = s.c_str();
+	end = begin + s.size();
+	bool r=v2.load(begin,end,true);
 	json::value v;
 	if(!v.load(ss,true)) {
+		TEST(!r);
 		std::ostringstream tmp;
 		tmp << "Parsing error of " << s << " in line " << line;
 		throw parsing_error(tmp.str());
 	}
+	TEST(ss.get()==-1);
+	TEST(begin == end);
+	TEST(v==v2);
 	return v;
 }
 
@@ -212,6 +221,11 @@ int main()
 			long double val = std::numeric_limits<long double>::max() / 100;
 			THROWS(v["x"]=val);
 		}
+		char const *part="{}[]";
+		TEST(v.load(part,part+4,false));
+		TEST(*part=='[');
+		TEST(v.type() == cppcms::json::is_object);
+		TEST(!v.load(part,part+4,true));
 
 	}
 	catch(std::exception const &e)

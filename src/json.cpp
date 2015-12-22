@@ -840,11 +840,11 @@ namespace json {
 
 			int next()
 			{
+				std::streambuf *buf = is_.rdbuf();
 				for(;;) {
-					char c;
-					if(!is_.get(c))
+					int c;
+					if((c=buf->sbumpc())==-1)
 						return tock_eof;
-					
 					switch(c) {
 					case '[':
 					case '{':
@@ -861,7 +861,7 @@ namespace json {
 						line++;
 						break;
 					case '"':
-						is_.unget();
+						buf->sungetc();
 						if(parse_string())
 							return tock_str;
 						return tock_err;
@@ -888,13 +888,13 @@ namespace json {
 					case '7':
 					case '8':
 					case '9':
-						is_.unget();
+						buf->sungetc();
 						if(parse_number())
 							return tock_number;
 						return tock_err;
 					case '/':
 						if(check("/")) {
-							while(is_.get(c) && c!='\n')
+							while((c=buf->sbumpc())!=-1 && c!='\n')
 								;
 							if(c=='\n')
 								break;
@@ -912,21 +912,22 @@ namespace json {
 
 			bool check(char const *s)
 			{
-				char c;
-				while(*s && is_.get(c) && c==*s)
+				std::streambuf *buf = is_.rdbuf();
+				while(*s && buf->sbumpc()==std::char_traits<char>::to_int_type(*s))
 					s++;
 				return *s==0;
 			}
 			bool parse_string()
 			{
-				char c;
+				int c;
+				std::streambuf *buf=is_.rdbuf();
 				str.clear();
-				if(!is_.get(c) || c!='"')
+				if((c=buf->sbumpc())==-1 || c!='"')
 					return false;
 				bool second_surragate_expected=false;
 				uint16_t first_surragate = 0;
 				for(;;) {
-					if(!is_.get(c))
+					if((c=buf->sbumpc())==-1)
 						return false;
 					if(second_surragate_expected && c!='\\')
 						return false;
@@ -935,7 +936,7 @@ namespace json {
 					if(c=='"')
 						break;
 					if(c=='\\') {
-						if(!is_.get(c))
+						if((c=buf->sbumpc())==-1)
 							return false;
 						if(second_surragate_expected && c!='u')
 							return false;
@@ -1055,6 +1056,28 @@ namespace json {
 			return out;
 		}
 #endif
+
+		class charbuf : public std::streambuf {
+		public:
+			charbuf(char const *begin,char const *end)
+			{
+				setg(const_cast<char *>(begin),const_cast<char *>(begin),const_cast<char *>(end));
+			}
+			char const *position()
+			{
+				return gptr();
+			}
+		};
+		
+		bool parse_stream(std::istream &in,value &out,bool force_eof,int &error_at_line);
+		bool parse_stream(char const *&begin,char const *end,value &out,bool force_eof,int &error_at_line)
+		{
+			charbuf b(begin,end);
+			std::istream is(&b);
+			bool r=parse_stream(is,out,force_eof,error_at_line);
+			begin = b.position();
+			return r;
+		}
 
 		bool parse_stream(std::istream &in,value &out,bool force_eof,int &error_at_line)
 		{
@@ -1270,8 +1293,18 @@ namespace json {
 	bool value::load(std::istream &in,bool full,int *line_number)
 	{
 		int err_line;
-		value v;
 		if(!parse_stream(in,*this,full,err_line)) {
+			if(line_number)
+				*line_number=err_line;
+			return false;
+		}
+		return true;
+
+	}
+	bool value::load(char const *&begin,char const *end,bool full,int *line_number)
+	{
+		int err_line;
+		if(!parse_stream(begin,end,*this,full,err_line)) {
 			if(line_number)
 				*line_number=err_line;
 			return false;
