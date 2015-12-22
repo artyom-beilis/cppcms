@@ -49,7 +49,8 @@ public:
 		f_(0),
 		limit_(mlimit),
 		file_size_(0),
-		read_offset_(0)
+		read_offset_(0),
+		closed_(false)
 	{
 		setp(0,0);
 		setg(0,0,0);
@@ -93,6 +94,8 @@ public:
 
 	int close()
 	{
+		if(closed_)
+			return 0;
 		if(sync() < 0)
 			return -1;
 		if(f_) {
@@ -107,6 +110,7 @@ public:
 		clear(input_);
 		clear(output_);
 		clear(data_);
+		closed_ = true;
 		return 0;
 	}
 #ifdef DEBUG_FILE_BUFFER
@@ -304,6 +308,8 @@ protected:
 	}
 	int write_buffer()
 	{
+		if(closed_)
+			return -1;
 		if(!f_) {
 			get_name();
 			f_ = booster::nowide::fopen(name_.c_str(),"w+b");
@@ -335,6 +341,7 @@ private:
 	std::vector<char> data_;
 	std::string temp_dir_;
 	std::string name_;
+	bool closed_;
 };
 
 } // impl
