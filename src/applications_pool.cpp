@@ -25,7 +25,14 @@ namespace cppcms {
 
 class application_specific_pool::_policy {
 public:
-	_policy(application_specific_pool *self) : self_(self) {}
+	bool lock_on_get_put;
+	bool lock_on_request;
+	_policy(application_specific_pool *self) : 
+		lock_on_get_put(true),
+		lock_on_request(false),
+		self_(self)
+	{
+	}
 	virtual void prepopulate(cppcms::service &srv) = 0;
 	virtual void application_requested(cppcms::service &) {}
 	virtual ~_policy() {}
@@ -43,7 +50,11 @@ booster::intrusive_ptr<application> application_specific_pool::_policy::get_asyn
 
 class application_specific_pool::_tls_policy : public application_specific_pool::_policy {
 public:
-	_tls_policy(application_specific_pool *self) : application_specific_pool::_policy(self) {}
+	_tls_policy(application_specific_pool *self) : 
+		application_specific_pool::_policy(self) 
+	{
+		lock_on_get_put=false;
+	}
 
 	virtual booster::intrusive_ptr<application> get(cppcms::service &srv)
 	{
@@ -118,6 +129,7 @@ public:
 		limit_(n)
 	{
 		apps_.resize(limit_,0);
+		lock_on_request=true;
 	}
 	~_legacy_pool_policy()
 	{
@@ -263,7 +275,13 @@ void application_specific_pool::size(size_t s)
 
 void application_specific_pool::application_requested(cppcms::service &srv)
 {
-	d->policy->application_requested(srv);
+	if(d->policy->lock_on_request) {
+		booster::unique_lock<booster::recursive_mutex> g(d->lock);
+		d->policy->application_requested(srv);
+	}
+	else { 
+		d->policy->application_requested(srv);
+	}
 }
 
 application_specific_pool::~application_specific_pool()
@@ -314,11 +332,19 @@ void application_specific_pool::flags(int flags)
 
 booster::intrusive_ptr<application> application_specific_pool::asynchronous_application_by_io_service(booster::aio::io_service &ios,cppcms::service &srv)
 {
+	booster::unique_lock<booster::recursive_mutex> g(d->lock);
+	if(d->flags == -1)
+		return 0;
+	assert(d->policy.get());
 	return d->policy->get_async(ios,&srv);
 }
 
 booster::intrusive_ptr<application> application_specific_pool::asynchronous_application_by_io_service(booster::aio::io_service &ios)
 {
+	booster::unique_lock<booster::recursive_mutex> g(d->lock);
+	if(d->flags == -1)
+		return 0;
+	assert(d->policy.get());
 	return d->policy->get_async(ios);
 }
 
@@ -333,24 +359,34 @@ application *application_specific_pool::get_new(service &srv)
 
 void application_specific_pool::put(application *a)
 {
-	booster::unique_lock<booster::recursive_mutex> g(d->lock);
-
 	if(d->flags == -1) {
 		delete a;
 		return;
 	}
 	assert(d->policy.get());
-	d->policy->put(a);
+	if(d->policy->lock_on_get_put) {
+		booster::unique_lock<booster::recursive_mutex> g(d->lock);
+		d->policy->put(a);
+	}
+	else {
+		d->policy->put(a);
+	}
 }
 
 booster::intrusive_ptr<application> application_specific_pool::get(cppcms::service &srv)
 {
-	booster::unique_lock<booster::recursive_mutex> g(d->lock);
 
 	if(d->flags == -1)
 		return 0;
 	assert(d->policy.get());
-	booster::intrusive_ptr<application> app = d->policy->get(srv);
+	booster::intrusive_ptr<application> app;
+
+	if(d->policy->lock_on_get_put) {
+		booster::unique_lock<booster::recursive_mutex> g(d->lock);
+		app = d->policy->get(srv);
+	}
+	else
+		app = d->policy->get(srv);
 	return app;
 }
 
