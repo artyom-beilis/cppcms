@@ -48,6 +48,7 @@ namespace http {
 		///
 		/// Returns true if content type defined
 		///
+		/// \ver{v1_2}
 		bool has_mime() const;
 		///
 		/// Get the filename as it was sent by the browser.
@@ -70,11 +71,13 @@ namespace http {
 		/// than the file would be deleted on cppcms::http::file destruction,
 		/// unless save_to is called, otherwise it would remain persistent
 		///
+		/// \ver{v1_2}
 		void output_file(std::string const &name,bool is_temporary = false);
 
 		///
 		/// Make sure that file created by output_file member function is not removed in destructor
 		///
+		/// \ver{v1_2}
 		void make_permanent();
 		///
 		/// Close the file if it is still open, if the file temporary it is deleted, the the
@@ -82,6 +85,7 @@ namespace http {
 		///
 		/// Returns 0 in case of sucess and -1 in case of failure
 		///
+		/// \ver{v1_2}
 		int close();
 		
 		///
@@ -110,10 +114,12 @@ namespace http {
 		///
 		/// Set the maximal size of file that would be stored in memory instead of file system
 		/// 
+		/// \ver{v1_2}
 		void set_memory_limit(size_t size);
 		///
 		/// Set the temporary directory where uploaded files are created
 		///
+		/// \ver{v1_2}
 		void set_temporary_directory(std::string const &dir);
 
 

@@ -234,6 +234,7 @@ namespace http {
 		/// add header - independently of set_header/get_header/erase_header - allows
 		/// to specify multiple headers of same type like Set-Cookie or WWW-Authenticate 
 		///
+		/// \ver{v1_2}
 		void add_header(std::string const &name,std::string const &value);
 
 		///
@@ -324,6 +325,7 @@ namespace http {
 		///
 		/// Note: when gzip compression active, buffering is still present at intermediate levels
 		///
+		/// \ver{v1_2}
 		void setbuf(int buffer_size);
 		///
 		/// Sets full buffering mode for asynchronous applications
@@ -336,11 +338,13 @@ namespace http {
 		///
 		/// When the full buffering is disable, if an error occurs, the out() is set to fail state.
 		///
+		/// \ver{v1_2}
 		void full_asynchronous_buffering(bool enable);
 
 		/// 
 		/// Get current state of asynchronous buffering
 		///
+		/// \ver{v1_2}
 		bool full_asynchronous_buffering();
 
 		///
@@ -350,6 +354,7 @@ namespace http {
 		///
 		/// Once the condition occurs you can flush the output asynchronously using async_complete_response or async_flush_output
 		///
+		/// \ver{v1_2}
 		bool pending_blocked_output();
 
 

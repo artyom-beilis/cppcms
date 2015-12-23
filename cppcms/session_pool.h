@@ -41,6 +41,7 @@ namespace cppcms {
 		///
 		/// Constructor that is used to create independent pool to access the session storage by external tools
 		///
+		/// \ver{v1_2}
 		session_pool(json::value const &v);
 
 		///
@@ -53,11 +54,13 @@ namespace cppcms {
 		///
 		/// Note: it allows to install custom session_api, encryptor or storage functionality
 		/// 
+		/// \ver{v1_2}
 		void init();
 
 		///
 		/// Get an actual object that is used to store/retreive session data
 		///
+		/// \ver{v1_2}
 		booster::shared_ptr<session_api> get();
 
 		///

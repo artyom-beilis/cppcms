@@ -120,10 +120,12 @@ namespace aio {
 		///
 		/// Post event completion hander with its status
 		///
+		/// \ver{v1_2}
 		void post(event_handler const &h,booster::system::error_code const &e);
 		///
 		/// Post event i/o completion hander with its status and i/o size
 		///
+		/// \ver{v1_2}
 		void post(io_handler const &h,booster::system::error_code const &e,size_t n);
 
 

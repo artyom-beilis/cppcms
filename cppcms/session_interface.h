@@ -62,6 +62,7 @@ public:
 ///     systems, etc. Note incorrect use of non-cookies medium may expose you
 ///     to security issues 
 ///
+/// \ver{v1_2}
 class CPPCMS_API session_interface_cookie_adapter : public booster::noncopyable {
 public:
 	virtual ~session_interface_cookie_adapter();
@@ -107,6 +108,7 @@ public:
 	/// Create cppcms::service independent session interface to be used
 	/// for implementing interoperability with non-cppcms based web platforms
 	///
+	/// \ver{v1_2}
 	session_interface(session_pool &pool,session_interface_cookie_adapter &adapter);
 	
 	///
@@ -318,6 +320,7 @@ public:
 	///
 	/// It can be used for use of an alternative session state medium
 	///
+	/// \ver{v1_2}
 	bool set_cookie_adapter_and_reload(session_interface_cookie_adapter &adapter);
 	
 	///
@@ -391,11 +394,13 @@ public:
 	///
 	/// Get the session cookie name
 	///
+	/// \ver{v1_2}
 	std::string session_cookie_name();
 
 	///
 	/// Retrun a set of keys that are defined for a current session;
 	///
+	/// \ver{v1_2}
 	std::set<std::string> key_set();
 private:
 	friend class http::response;

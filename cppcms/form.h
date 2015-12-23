@@ -537,11 +537,13 @@ namespace cppcms {
 			///
 			/// Get the HTML \c readonly attribute.
 			///
+			/// \ver{v1_2}
 			bool readonly();
 
 			///
 			/// Set/Unset the HTML \c readonly attribute.
 			///
+			/// \ver{v1_2}
 			void readonly(bool);
 
 			///

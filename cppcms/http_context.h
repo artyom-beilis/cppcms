@@ -176,6 +176,7 @@ namespace cppcms {
 			///
 			/// This function can be called from any thread 
 			///
+			/// \ver{v1_2}
 			void submit_to_pool(booster::shared_ptr<application_specific_pool> pool,std::string const &matched_url); 
 			///
 			/// Submit the context to alternative application - allows to transfer context from application to application, \a matched_url 
@@ -189,6 +190,7 @@ namespace cppcms {
 			///
 			/// This function can be called from any thread 
 			///
+			/// \ver{v1_2}
 			void submit_to_asynchronous_application(booster::intrusive_ptr<application> app,std::string const &matched_url);
 
 		private:
@@ -204,6 +206,7 @@ namespace cppcms {
 			/// Get context specific value of type T binded to context. If none is stored or
 			/// type mismatched NULL is returned
 			///
+			/// \ver{v1_2}
 			template<typename T>
 			T *get_specific()
 			{
@@ -215,6 +218,7 @@ namespace cppcms {
 			///
 			/// Reset context specific value of type T binded to context. Old value is deleted
 			///
+			/// \ver{v1_2}
 			template<typename T>
 			void reset_specific(T *ptr = 0)
 			{
@@ -234,6 +238,7 @@ namespace cppcms {
 			///
 			/// Release context specific value binded to context.
 			///
+			/// \ver{v1_2}
 			template<typename T>
 			T *release_specific()
 			{

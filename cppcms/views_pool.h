@@ -155,6 +155,7 @@ namespace cppcms {
 			///
 			/// This function is thread safe
 			///
+			/// \ver{v1_2}
 			std::vector<std::string> enumerate();
 			
 			///

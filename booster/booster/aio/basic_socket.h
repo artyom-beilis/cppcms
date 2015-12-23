@@ -111,12 +111,14 @@ namespace aio {
 		///
 		/// Throws system::system_error if error occurs.
 		///	
+		/// \ver{v1_2}
 		void bind(endpoint const &ep);
 		///
 		/// Bind the opended socket the \ref endpoint \a ep
 		///
 		/// If a error occurs it is assigned to \a e.
 		///	
+		/// \ver{v1_2}
 		void bind(endpoint const &ep,system::error_code &e);
 		///
 		/// Starts listening on the socket with backlog parameter \a backlog

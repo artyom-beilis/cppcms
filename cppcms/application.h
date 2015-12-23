@@ -277,11 +277,13 @@ namespace cppcms {
 		/// Add context to applications such that context ownership isn't transferred
 		/// to the application
 		///
+		/// \ver{v1_2}
 		void add_context(http::context &conn);
 
 		///
 		/// Remove context added with add_context
 		///
+		/// \ver{v1_2}
 		void remove_context();
 
 		///

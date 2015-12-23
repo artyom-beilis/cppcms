@@ -200,6 +200,7 @@ namespace booster {
 		///
 		/// Add two POSIX time ranges (as numbers)
 		///
+		/// \ver{v1_2}
 		ptime& operator+=(ptime const &other)
 		{
 			*this = ptime(sec+other.sec,nsec+other.nsec);
@@ -217,6 +218,7 @@ namespace booster {
 		///
 		/// Subtract one time from other (as number)
 		///
+		/// \ver{v1_2}
 		ptime& operator-=(ptime const &other)
 		{
 			*this = ptime(sec-other.sec,nsec-other.nsec);

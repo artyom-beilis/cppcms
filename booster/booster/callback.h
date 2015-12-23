@@ -56,6 +56,11 @@ namespace booster {
 	{									
 	public:	
 		///
+		/// Pointer to callable object
+		///
+		/// \ver{v1_2}
+		typedef intrusive_ptr<callable_type> pointer_type;		
+		///
 		/// Type of result, for use with boost::bind
 		///
 		typedef Result result_type;		
@@ -104,6 +109,16 @@ namespace booster {
 		/// Swaps two callbackal object. Does not throw.
 		///
 		void swap(callback &other);
+		///
+		/// Get underlying pointer to callable_type
+		///
+		/// \ver{v1_2}
+		pointer_type const &get_pointer() const;
+		///
+		/// Get underlying pointer to callable_type
+		///
+		/// \ver{v1_2}
+		pointer_type &get_pointer();
 	};			
 
 	#else

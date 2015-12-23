@@ -85,12 +85,14 @@ public:
 	///
 	/// Returns expires timestamp for the cookie, if not set returns 0
 	///
+	/// \ver{v1_2}
 	time_t expires() const;
 
 	/// 
 	/// returns true if expires(time_t when) was called and expiration was set,
 	/// if browser_age() is called it is reset to false
 	///
+	/// \ver{v1_2}
 	bool expires_defined() const;
 	///
 	/// Set max cookie's age
@@ -99,11 +101,13 @@ public:
 	///
 	/// Get max cookie's age, returns 0 if not set
 	///
+	/// \ver{v1_2}
 	unsigned max_age() const;
 	/// 
 	/// returns true if max(unsigned age) was called and max_age was set,
 	/// if browser_age() is called it is reset to false
 	///
+	/// \ver{v1_2}
 	bool max_age_defined() const;
 	///
 	/// Set age according to browser's session (i.e. no Max-Age)

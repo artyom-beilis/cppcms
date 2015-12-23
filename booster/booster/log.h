@@ -258,6 +258,7 @@ namespace log {
 		///
 		/// \note \a s should be valid as long as the object exists
 		///	
+		/// \ver{v1_2}
 		class BOOSTER_API stream : public sink {
 		public:
 			///
@@ -285,6 +286,7 @@ namespace log {
 			/// Flag that can be passed to constructor that specifies that
 			/// the log should be appended to the existing file
 			///
+			/// \ver{v1_2}
 			static const int app = -1;
 
 			///
@@ -297,6 +299,7 @@ namespace log {
 			/// then no new files created but rather the log is appended to the
 			/// existing file
 			///
+			/// \ver{v1_2}
 			file(std::string const &file_name,int max_files = 0);
 			
 			virtual ~file();

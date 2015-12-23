@@ -296,35 +296,42 @@ namespace http {
 		///
 		///  Get content limits for incoming data processing
 		///
+		/// \ver{v1_2}
 		content_limits &limits();
 
 		///
 		/// Get installed content filter, returns 0 if it is not installed, no ownership is transfered
 		///
+		/// \ver{v1_2}
 		basic_content_filter *content_filter();
 		
 		///
 		/// Installs content filter. If another filter installed it is removed
 		///
+		/// \ver{v1_2}
 		void set_content_filter(basic_content_filter &flt);
 
 		///
 		/// Installs new content filter (or removes existing), the ownership of new filter is transfered to the request object
 		///
+		/// \ver{v1_2}
 		void reset_content_filter(basic_content_filter *flt = 0);
 		///
 		/// Release existing content filter owned by request
 		///
+		/// \ver{v1_2}
 		basic_content_filter *release_content_filter();
 		///
 		/// Returns true when full request content is ready
 		///
+		/// \ver{v1_2}
 		bool is_ready();
 		///
 		/// Set the size of the buffer for content that isn't loaded to memory directly,
 		/// like for example multipart/form-data, default is defined in configuration as
 		/// service.input_buffer_size and defaults to 65536
 		///
+		/// \ver{v1_2}
 		void setbuf(int size);
 	public:
 		/// \cond INTERNAL

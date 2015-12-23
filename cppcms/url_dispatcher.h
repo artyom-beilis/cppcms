@@ -99,12 +99,14 @@ namespace cppcms {
 		/// this pattern requested, \a handler is called with 1st, 2nd, 3rd, 4th and 5th parameters
 		/// the string that was matched at position \a exp1, \a exp2, \a exp3, \a exp4 and \a exp5
 		///
+		/// \ver{v1_2}
 		void assign(std::string const &regex,handler5 handler,int exp1,int exp2,int exp3,int exp4,int exp5);
 		///
 		/// Assign \a handler to pattern \a regex thus if URL that matches
 		/// this pattern requested, \a handler is called with 1st, 2nd, 3rd, 4th, 5th and 6th parameters
 		/// the string that was matched at position \a exp1, \a exp2, \a exp3, \a exp4, \a exp 5 and \a exp6
 		///
+		/// \ver{v1_2}
 		void assign(std::string const &regex,handler6 handler,int exp1,int exp2,int exp3,int exp4,int exp5,int exp6);
 
 		///
@@ -139,6 +141,7 @@ namespace cppcms {
 		/// In addition to calling \a member function it calls object->init() before call
 		/// and object->clean() after the call of the C is derived from cppcms::application
 		///
+		/// \ver{v1_2}
 		template<typename C>
 		void assign_generic(std::string const &regex,void (C::*member)(booster::cmatch const &),C *object)
 		{
@@ -199,6 +202,7 @@ namespace cppcms {
 		/// In addition to calling \a member function it calls object->init() before call
 		/// and object->clean() after the call of the C is derived from cppcms::application
 		///
+		/// \ver{v1_2}
 		template<typename C>
 		void assign(std::string const &regex,void (C::*member)(std::string,std::string,std::string,std::string,std::string),C *object,int e1,int e2,int e3,int e4,int e5)
 		{
@@ -211,6 +215,7 @@ namespace cppcms {
 		/// In addition to calling \a member function it calls object->init() before call
 		/// and object->clean() after the call of the C is derived from cppcms::application
 		///
+		/// \ver{v1_2}
 		template<typename C>
 		void assign(std::string const &regex,void (C::*member)(std::string,std::string,std::string,std::string,std::string,std::string),C *object,int e1,int e2,int e3,int e4,int e5,int e6)
 		{

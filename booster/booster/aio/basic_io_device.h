@@ -139,6 +139,7 @@ namespace aio {
 		///
 		/// Throws system::system_error if error occurs.
 		///	
+		/// \ver{v1_2}
 		void set_non_blocking_if_needed(bool nonblocking);
 		///
 		/// Set the object to blocking or non-blocking mode. It checks if set_non_blocking() was
@@ -146,6 +147,7 @@ namespace aio {
 		///
 		/// If a error occurs it is assigned to \a e.
 		///	
+		/// \ver{v1_2}
 		void set_non_blocking_if_needed(bool nonblocking,system::error_code &e);
 
 		///

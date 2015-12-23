@@ -144,6 +144,7 @@ namespace cppcms {
 		/// fetch_page and store_page would work, it is not possible to
 		/// handle pages without full i/o context
 		/// 
+		/// \ver{v1_2}
 		cache_interface(cppcms::service &srv);
 		///
 		/// \cond INTERNAL

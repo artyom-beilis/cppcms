@@ -56,10 +56,12 @@ public:
 	///
 	/// Check if media type application/x-www-form-urlencoded content_type
 	///
+	/// \ver{v1_2}
 	bool is_form_urlencoded() const;
 	///
 	/// Check if media type is multipart/form-data content_type
 	///
+	/// \ver{v1_2}
 	bool is_multipart_form_data() const;
 
 	///

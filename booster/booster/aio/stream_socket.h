@@ -196,11 +196,13 @@ namespace aio {
 		///
 		/// Return a number of avalible bytes to read, if error occurs returns 0 and e set to the error code
 		///
+		/// \ver{v1_2}
 		size_t bytes_readable(booster::system::error_code &e);
 
 		///
 		/// Return a number of avalible bytes to read, if error occurs system_error is thrown
 		///
+		/// \ver{v1_2}
 		size_t bytes_readable();
 
 	private:

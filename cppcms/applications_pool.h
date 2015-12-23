@@ -42,13 +42,14 @@ namespace cppcms {
 	}
 
 	///
-	/// Flags for application pool management
+	/// \brief Flags for application pool management
 	///	
+	/// \ver{v1_2}
 	namespace app {
 		static const int synchronous 	= 0x0000; ///< Synchronous application 
 		static const int asynchronous	= 0x0001; ///< Asynchronous application that operates in asynchronous mode
 
-		static const int op_mode_mask	= 0x000F; /// mask to select sync vs async flags
+		static const int op_mode_mask	= 0x000F; ///< mask to select sync vs async flags
 
 		static const int thread_specific= 0x0010; ///< Make synchronous application thread specific
 		static const int prepopulated	= 0x0020; ///< Make sure all applications are created from the beginning (ignored in thread_specific is set)
@@ -61,6 +62,7 @@ namespace cppcms {
 	///
 	/// \brief an interface for creating user applications
 	///
+	/// \ver{v1_2}
 	class CPPCMS_API application_specific_pool : 
 		public booster::noncopyable,
 		public booster::enable_shared_from_this<application_specific_pool>
@@ -206,6 +208,7 @@ namespace cppcms {
 		///
 		/// This member function is thread safe.
 		///
+		/// \ver{v1_2}
 		void mount(booster::shared_ptr<application_specific_pool> gen,int application_options = 0);
 
 		///
@@ -218,6 +221,7 @@ namespace cppcms {
 		///
 		/// This member function is thread safe.
 		///
+		/// \ver{v1_2}
 		void mount(booster::shared_ptr<application_specific_pool> gen,mount_point const &point,int application_options = 0);
 
 
@@ -232,6 +236,7 @@ namespace cppcms {
 		///
 		/// This member function is thread safe.
 		///
+		/// \ver{v1_2}
 		void unmount(booster::weak_ptr<application_specific_pool> gen);
 
 

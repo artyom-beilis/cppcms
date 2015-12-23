@@ -27,6 +27,7 @@ namespace http {
 	///
 	/// Exceptions that is thrown to abort content upload progress indicating an error
 	///
+	/// \ver{v1_2}
 	class CPPCMS_API abort_upload : public cppcms_error {
 	public:
 		///
@@ -47,6 +48,7 @@ namespace http {
 	///
 	/// Class that represent the limits on the input content sizes
 	///
+	/// \ver{v1_2}
 	class CPPCMS_API content_limits : public booster::noncopyable {
 		friend class request;
 	public:
@@ -121,6 +123,7 @@ namespace http {
 	/// Note that when `on_*` member functions of the basic_content_filter are called the original application that runs the filtering
 	/// has temporary installed context that can be accessed from it.
 	///
+	/// \ver{v1_2}
 	class CPPCMS_API basic_content_filter {
 		basic_content_filter(basic_content_filter const &);
 		void operator=(basic_content_filter const &);
@@ -150,6 +153,7 @@ namespace http {
 	/// Note: when raw_content_filter is used no content data is actually saved to request, for example request().raw_post_data() would return
 	/// an empty content, so it is your responsibility to store/parse whatever content you use
 	///
+	/// \ver{v1_2}
 	class CPPCMS_API raw_content_filter : public basic_content_filter {
 	public:
 		///
@@ -174,6 +178,7 @@ namespace http {
 	/// It allows to process/validate incomping data on the fly and make sure that for example the user is actually authorized to upload
 	/// such a files
 	///
+	/// \ver{v1_2}
 	class CPPCMS_API multipart_filter : public basic_content_filter {
 	public:
 		multipart_filter();
