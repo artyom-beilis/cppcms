@@ -85,10 +85,16 @@ namespace booster {
 			{
 				return size_ == 0;
 			}
-			size_t size()
+			///
+			/// Get size of buffer in number of chunks,i.e.
+			///
+			size_t size() const
 			{
 				return size_;
 			}
+			///
+			/// Get total amount of bytes in the buffer
+			///
 			size_t bytes_count() const
 			{
 				if(size_ == 0)
