@@ -230,13 +230,11 @@ void service::setup()
 	impl_->cache_pool_.reset(new cppcms::cache_pool(settings()));
 	impl_->session_pool_.reset(new cppcms::session_pool(*this));
 	if(settings().get("file_server.enable",false)) {
+		int flags = app::synchronous;
 		if(settings().get("file_server.async",false)) {
-			impl_->async_file_server_ = new cppcms::impl::file_server(*this,true);
-			applications_pool().mount(impl_->async_file_server_,mount_point(""));
+			flags = app::asynchronous;
 		}
-		else {
-			applications_pool().mount(applications_factory<cppcms::impl::file_server>(),mount_point(""));
-		}
+		applications_pool().mount(create_pool<cppcms::impl::file_server>(),mount_point(""),flags);
 	}
 }
 
@@ -990,7 +988,6 @@ namespace impl {
 	}
 	service::~service()
 	{
-		async_file_server_ = 0;
 		acceptors_.clear();
 		thread_pool_.reset();
 		sig_.reset();

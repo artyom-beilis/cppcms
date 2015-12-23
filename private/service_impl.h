@@ -67,8 +67,6 @@ namespace impl {
 		std::auto_ptr<booster::aio::stream_socket> sig_,breaker_;
 		
 		std::vector<std::string> args_;
-
-		booster::intrusive_ptr<cppcms::application> async_file_server_;
 	};
 
 
