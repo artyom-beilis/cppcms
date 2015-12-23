@@ -438,7 +438,9 @@ public:
 			ctx->async_complete_response();
 		}
 		else {
-			ctx->response();
+			ctx->response().full_asynchronous_buffering(false);
+			ctx->response().out();
+			ctx->response().setbuf(0);
 			(*this)(cppcms::http::context::operation_completed);
 		}
 		
@@ -447,9 +449,9 @@ public:
 	{
 		if(c!=cppcms::http::context::operation_completed) 
 			return;
-		char buf[4096];
+		char buf[8192];
 		size_t total = 0;
-		while(!f.eof() && total < 65536) {
+		while(!f.eof() && !ctx->response().pending_blocked_output()) {
 			f.read(buf,sizeof(buf));
 			size_t n = f.gcount();
 			total += n;
