@@ -37,6 +37,7 @@ class parser {
 
 	std::vector<char> &body_;
 	unsigned &body_ptr_;
+	bool clear_body_;
 
 
 	// Non copyable
@@ -50,8 +51,10 @@ protected:
 			return (unsigned char)body_[body_ptr_++];
 		}
 		else {
-			body_.clear();
-			body_ptr_=0;
+			if(clear_body_) {
+				body_.clear();
+				body_ptr_=0;
+			}
 			return -1;
 		}
 	}
@@ -69,11 +72,12 @@ protected:
 public:
 	std::string header_;
 
-	parser(std::vector<char> &body,unsigned &body_ptr) :
+	parser(std::vector<char> &body,unsigned &body_ptr,bool clear_body=false) :
 		state_(idle),
 		bracket_counter_(0),
 		body_(body),
-		body_ptr_(body_ptr)
+		body_ptr_(body_ptr),
+		clear_body_(clear_body)
 	{
 		header_.reserve(512);
 	}

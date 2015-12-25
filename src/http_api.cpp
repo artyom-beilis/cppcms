@@ -123,7 +123,7 @@ namespace cgi {
 			input_body_ptr_(0),
 			input_parser_(input_body_,input_body_ptr_),
 			output_body_ptr_(0),
-			output_parser_(output_body_,output_body_ptr_),
+			output_parser_(output_body_,output_body_ptr_,false),
 			request_method_(non_const_empty_string),
 			request_uri_(non_const_empty_string),
 			headers_done_(false),
