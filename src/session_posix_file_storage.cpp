@@ -150,7 +150,7 @@ public:
 			lock.l_type=F_WRLCK;
 			lock.l_whence=SEEK_SET;
 			int res;
-			while((res=fcntl(fd_,F_SETLKW,&lock)!=0) && errno==EINTR)
+			while((res=fcntl(fd_,F_SETLKW,&lock))!=0 && errno==EINTR)
 				;
 			if(res < 0) {
 				::close(fd_);
@@ -186,7 +186,7 @@ public:
 				lock.l_type=F_UNLCK;
 				lock.l_whence=SEEK_SET;
 				int res;
-				while((res=fcntl(fd_,F_SETLKW,&lock)!=0) && errno==EINTR)
+				while((res=fcntl(fd_,F_SETLKW,&lock))!=0 && errno==EINTR)
 					;
 			}
 			::close(fd_);
