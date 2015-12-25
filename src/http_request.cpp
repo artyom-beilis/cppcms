@@ -156,7 +156,7 @@ namespace {
 void request::set_post_data(std::vector<booster::shared_ptr<file> > const &multipart)
 {
 	for(unsigned i=0;i<multipart.size();i++) {
-		if(multipart[i]->mime().empty() || multipart[i]->filename().empty()) {
+		if(multipart[i]->mime().empty()) {
 			post_.insert(std::make_pair(multipart[i]->name(),read_file(multipart[i]->data())));
 		}
 		else {
