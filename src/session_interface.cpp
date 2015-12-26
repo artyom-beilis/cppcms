@@ -24,7 +24,7 @@
 #include <iostream>
 
 #include "cached_settings.h"
-
+#include <set>
 #include <sstream>
 #include "string.h"
 
@@ -239,20 +239,42 @@ void session_interface::load_data(data_type &data,std::string const &s)
 
 void session_interface::update_exposed(bool force)
 {
+	
+	std::set<std::string> removed;
 	for(data_type::iterator p=data_.begin();p!=data_.end();++p) {
 		data_type::iterator p2=data_copy_.find(p->first);
 		if(p->second.exposed && (force || p2==data_copy_.end() || !p2->second.exposed || p->second.value!=p2->second.value)){
 			set_session_cookie(cookie_age(),p->second.value,p->first);
 		}
 		else if(!p->second.exposed && ((p2!=data_copy_.end() && p2->second.exposed) || force)) {
-			set_session_cookie(-1,"",p->first);
+			removed.insert(p->first);
 		}
 	}
 	for(data_type::iterator p=data_copy_.begin();p!=data_copy_.end();++p) {
 		if(p->second.exposed && data_.find(p->first)==data_.end()) {
-			set_session_cookie(-1,"",p->first);
+			removed.insert(p->first);
 		}
 	}
+
+	typedef http::request::cookies_type cookies_type;
+	cookies_type const &input_cookies = context_->request().cookies();
+
+	std::string prefix = context_->service().cached_settings().session.cookies.prefix + "_";
+	for(cookies_type::const_iterator cp=input_cookies.begin();cp!=input_cookies.end();++cp) {
+		if(cp->first.compare(0,prefix.size(),prefix)!=0)	
+			continue;
+		std::string key = cp->first.substr(prefix.size());
+		if(removed.find(key)!=removed.end())
+			continue;
+		data_type::iterator ptr;
+		if((ptr = data_.find(key))==data_.end() || !ptr->second.exposed) {
+			removed.insert(key);
+		}
+	}
+
+	for(std::set<std::string>::const_iterator p=removed.begin();p!=removed.end();++p)
+		set_session_cookie(-1,"",*p);
+
 }
 
 
