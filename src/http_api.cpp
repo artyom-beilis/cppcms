@@ -532,15 +532,10 @@ namespace cgi {
 
 		void process_request(handler const &h)
 		{
-			if(	strcmp(request_method_,"GET")!=0 
-				&& strcmp(request_method_,"POST")!=0
-				&& strcmp(request_method_,"HEAD")!=0
-				&& strcmp(request_method_,"PUT")!=0
-				&& strcmp(request_method_,"DELETE")!=0
-				&& strcmp(request_method_,"OPTIONS")!=0
-			  ) 
-			{
-				error_response("HTTP/1.0 501 Not Implemented\r\n\r\n",h);
+			char const *rm = request_method_;
+			char const *rm_end = request_method_ + strlen(request_method_);
+			if(rm==rm_end || cppcms::http::protocol::tocken(rm,rm_end)!=rm_end) {
+				error_response("HTTP/1.0 400 Bad Request\r\n\r\n",h);
 				return;
 			}
 
