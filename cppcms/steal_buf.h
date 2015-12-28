@@ -19,6 +19,99 @@ namespace cppcms {
 namespace util {
 
 	///
+	/// Simple std::streambuf to create input from [char const *,char const *) range
+	///
+	/// \ver{v1_2}
+
+	class const_char_buf : public std::streambuf {
+	public:
+		///
+		/// Create Empty buffer
+		///
+		const_char_buf()
+		{
+			range(0,0);
+		}
+		///
+		/// Create a buffer from a range
+		///
+		const_char_buf(char const *begin,char const *end)
+		{
+			range(begin,end);
+		}
+		///
+		/// Define the range for existing buffer, pointer is reset to begin
+		///
+		void range(char const *cbegin,char const *cend)
+		{
+			char *begin = const_cast<char*>(cbegin);
+			char *end   = const_cast<char*>(cend);
+			setg(begin,begin,end);
+		}
+		///
+		/// Begin of range
+		///
+		char const *begin() const
+		{
+			return eback();
+		}
+		///
+		/// End of range
+		///
+		char const *end() const
+		{
+			return egptr();
+		}
+	};
+
+	///
+	/// Simple std::istream implementation for range of [char const *,char const *)
+	///
+	/// \ver{v1_2}
+	class const_char_istream : public std::istream {
+	public:
+		///
+		/// Create new empty stream
+		///
+		const_char_istream() : std::istream(0) 
+		{
+			init(&buf_);
+		}
+		///
+		/// Create stream initialized with range [begin,end)
+		///
+		const_char_istream(char const *begin,char const *end) : std::istream(0) 
+		{
+			buf_.range(begin,end);
+			init(&buf_);
+		}
+		///
+		/// Get begin of the range
+		///
+		char const *begin() const
+		{
+			return buf_.begin();
+		}
+		///
+		/// Get end of the range
+		///
+		char const *end() const
+		{
+			return buf_.end();
+		}
+		///
+		/// Set range, resets pointer to start and clears flags
+		///
+		void range(char const *begin,char const *end)
+		{
+			buf_.range(begin,end);
+			clear();
+		}
+	private:
+		const_char_buf buf_;
+	};
+
+	///
 	/// \brief Very simple output stream buffer that uses stack for small chunks of 
 	/// text and then allocates memory of the default buffer is too small.
 	///

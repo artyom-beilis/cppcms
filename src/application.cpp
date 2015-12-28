@@ -38,7 +38,7 @@ struct application::_data {
 	cppcms::service *service;
 	booster::shared_ptr<http::context> conn;
 	http::context *temp_conn;
-	url_dispatcher url;
+	booster::hold_ptr<url_dispatcher> url_disp;
 	booster::hold_ptr<url_mapper> url_map;
 	std::vector<application *> managed_children;
 	booster::weak_ptr<application_specific_pool> my_pool;
@@ -49,6 +49,7 @@ application::application(cppcms::service &srv) :
 	refs_(0)
 {
 	parent_=root_=this;
+	d->url_disp.reset(new url_dispatcher(this));
 	d->url_map.reset(new url_mapper(this));
 }
 
@@ -81,7 +82,7 @@ http::response &application::response()
 
 url_dispatcher &application::dispatcher()
 {
-	return d->url;
+	return *d->url_disp;
 }
 
 url_mapper &application::mapper()
@@ -114,6 +115,16 @@ http::context &application::context()
 		throw cppcms_error("Access to unassigned context");
 	}
 	return *root()->d->conn;
+}
+
+bool application::has_context()
+{
+	return root()->d->conn || root()->d->temp_conn;
+}
+
+bool application::owns_context()
+{
+	return root()->d->conn;
 }
 
 booster::shared_ptr<http::context> application::release_context()

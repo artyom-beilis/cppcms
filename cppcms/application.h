@@ -291,6 +291,18 @@ namespace cppcms {
 		///
 		bool is_asynchronous();
 
+		///
+		/// Returns true if there is a context added or assigned to application
+		///
+		/// \ver{v1_2}
+		bool has_context();
+		
+		///
+		/// Returns true if the application owns a context (that can be released for example)
+		///
+		/// \ver{v1_2}
+		bool owns_context();
+
 
 		///
 		/// This is main function of the application that is called when it is matched

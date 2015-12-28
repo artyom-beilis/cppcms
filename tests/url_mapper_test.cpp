@@ -7,14 +7,42 @@
 ///////////////////////////////////////////////////////////////////////////////
 #include <cppcms/url_mapper.h>
 #include <cppcms/url_dispatcher.h>
+#include <cppcms/http_response.h>
 #include <cppcms/application.h>
 #include <cppcms/service.h>
 #include <cppcms/json.h>
 #include <cppcms/cppcms_error.h>
+#include <booster/locale/info.h>
 #include <sstream>
 #include "test.h"
+#include "dummy_api.h"
 
 
+struct point {
+	int x,y;
+};
+
+std::istream &operator>>(std::istream &in,point &d)
+{
+	char c;
+	in >> d.x >> c >> d.y;
+	if(c!=',')
+		in.setstate(std::ios::failbit);
+	return in;
+}
+
+namespace stuff {
+struct foo { 
+	int l;
+};
+
+bool parse_url_parameter(cppcms::util::const_char_istream &parameter,foo &f)
+{
+	f.l = parameter.end() - parameter.begin();
+	return true;
+}
+
+} // stuff
 std::string value(std::ostringstream &s)
 {
 	std::string res = s.str();
@@ -39,6 +67,54 @@ public:
 	{ v_ = ':'+s1+':'+s2+':'+s3+':'+s4+':'+s5; }
 	void h6(std::string s1,std::string s2,std::string s3,std::string s4,std::string s5,std::string s6)
 	{ v_ = ':'+s1+':'+s2+':'+s3+':'+s4+':'+s5+':'+s6; }
+
+
+	template<typename T>
+	static std::string to_string(T v)
+	{
+		std::ostringstream ss;
+		ss<<v;
+		return "to_str(" + ss.str() + ")";
+	}
+
+	void h1_i(int param)
+	{
+		v_= "h1_i:"+to_string(param);
+	}
+	void h1_d(double param)
+	{
+		v_= "h1_d:"+to_string(param);
+	}
+	void h1_s(std::string param)
+	{
+		v_= "h1_s:"+param;
+	}
+	void h1_s_cr(std::string const &param)
+	{
+		v_= "h1_s_cr:"+param;
+	}
+	void h1_s_r(std::string &param)
+	{
+		v_= "h1_s_r:"+param;
+	}
+	void h1_s_c(std::string const param)
+	{
+		v_= "h1_s_c:"+param;
+	}
+
+	void get_0() { v_="get_0"; }
+	void get_1(int x) { v_="get_1:" + to_string(x); }
+	void get_2(int x,int y) { v_="get_2:" + to_string(x) + ":" + to_string(y); }
+	
+	void p_0() { v_="p_0"; }
+	void p_1(int x) { v_="p_1:" + to_string(x); }
+	void p_2(int x,int y) { v_="p_2:" + to_string(x) + ":" + to_string(y); }
+
+	void point_m(point const &p) { v_="point:" + to_string(p.x) + "X" + to_string(p.y); }
+	void foo_m(stuff::foo const &p) { v_="foo:" + to_string(p.l); }
+
+
+
 	disp(cppcms::service &s) : cppcms::application(s) 
 	{
 		dispatcher().assign_generic("hg/(.*)",&disp::hg,this);
@@ -49,8 +125,35 @@ public:
 		dispatcher().assign("h4/(a(\\d+))/(a(\\d+))/(a(\\d+))/(a(\\d+))",&disp::h4,this,2,4,6,8);
 		dispatcher().assign("h5/(a(\\d+))/(a(\\d+))/(a(\\d+))/(a(\\d+))/(a(\\d+))",&disp::h5,this,2,4,6,8,10);
 		dispatcher().assign("h6/(a(\\d+))/(a(\\d+))/(a(\\d+))/(a(\\d+))/(a(\\d+))/(a(\\d+))",&disp::h6,this,2,4,6,8,10,12);
+		
+		dispatcher().map("/h0",&disp::h0,this);
+		dispatcher().map("/h1_num/(.*)",&disp::h1_i,this,1);
+		dispatcher().map("/h1_num/(.*)",&disp::h1_d,this,1);
+
+		dispatcher().map("/h1_s/(\\d+)",&disp::h1_s,this,1);
+		dispatcher().map("/h1_s_cr/((\\d+))",&disp::h1_s_cr,this,2);
+		dispatcher().map("/h1_s_r/(\\d+)",&disp::h1_s_r,this,1);
+		dispatcher().map("/h1_s_c/(\\d+)",&disp::h1_s_c,this,1);
+
+		dispatcher().map("/name/(.*)",&disp::h1_s,this,1);
+
+		dispatcher().map("GET","/res",&disp::get_0,this);
+		dispatcher().map("GET","/res/(a(\\d+))",&disp::get_1,this,2);
+		//dispatcher().map("GET","/res/(a(\\d+))/(a(\\d+))",&disp::get_2,this,1,2);
+
+		dispatcher().map("(PUT|POST)","/res",&disp::p_0,this);
+		dispatcher().map("(PUT|POST)","/res/(a(\\d+))",&disp::p_1,this,2);
+		//dispatcher().map("(PUT|POST)","/res/(a(\\d+)/(a(\\d+))",&disp::p_2,this,2,4);
+
+		dispatcher().map("/point/(.*)",&disp::point_m,this,1);
+		dispatcher().map("/foo/(.*)",&disp::foo_m,this,1);
+
+
 	}
 #define TESTD(x,y) do { main(x); TEST(v_==y); } while(0)
+
+#define TESTM(m,x,y) do { v_="none"; set_context((m)); main((x)); release_context() ; if(v_!=(y))  std::cerr << "v=" <<v_ << " exp="<< (y) <<std::endl; TEST(v_==(y)); } while(0)
+
 	void test()
 	{
 		TESTD("hg/x","m:hg/x:x");
@@ -61,8 +164,67 @@ public:
 		TESTD("h4/a1/a2/a3/a4",":1:2:3:4");
 		TESTD("h5/a1/a2/a3/a4/a5",":1:2:3:4:5");
 		TESTD("h6/a1/a2/a3/a4/a5/a6",":1:2:3:4:5:6");
+
+
+		set_context("GET");
+		std::cout << std::use_facet<booster::locale::info>(context().locale()).encoding() << std::endl;
+		release_context();
+
+		TESTM("GET","/h0","-");
+		TESTM("GET","/h1_num/123.3","h1_d:to_str(123.3)");
+		TESTM("GET","/h1_num/123","h1_i:to_str(123)");
+		TESTM("GET","/h1_num/123 23","none");
+		TESTM("GET","/h1_s/1111","h1_s:1111");
+		TESTM("GET","/h1_s_c/1111","h1_s_c:1111");
+		TESTM("GET","/h1_s_r/1111","h1_s_r:1111");
+		TESTM("GET","/h1_s_cr/1111","h1_s_cr:1111");
+		TESTM("GET","/h1_s_cr/1111\xFF","none");
+		TESTM("GET","/h1_s_cr/1111\xFF","none");
+		
+		TESTM("GET","/name/\\xD7\\xA9\\xD7\\x9C\\xD7\\x95\\xD7\\x9D\\x20\\xE6\\x97\\xA5\\xE6\\x9C\\xAC\\xE8\\xAA\\x9E",
+			   "h1_s:\\xD7\\xA9\\xD7\\x9C\\xD7\\x95\\xD7\\x9D\\x20\\xE6\\x97\\xA5\\xE6\\x9C\\xAC\\xE8\\xAA\\x9E");
+		TESTM("GET","/name/\xFF","none");
+
+		TESTM("GET","/res","get_0");
+		TESTM("GET","/res/a1","get_1:to_str(1)");
+		//TESTM("GET","/res/a1/a2","get_2:to_str(1):to_str(2)");
+		
+		TESTM("POST","/res","p_0");
+		TESTM("POST","/res/a1","p_1:to_str(1)");
+		//TESTM("POST","/res/a1/a2","p_2:to_str(1):to_str(2)");
+
+		TESTM("PUT","/res","p_0");
+		TESTM("PUT","/res/a1","p_1:to_str(1)");
+		//TESTM("PUT","/res/a1/a2","p_2:to_str(1):to_str(2)");
+
+		TESTM("DELETE","/res","none");
+		TESTM("DELETE","/res/a1","none");
+		//TESTM("DELETE","/res/a1/a2","none");
+
+		TESTM("GET","/point/123,23","point:to_str(123)Xto_str(23)");
+		TESTM("GET","/point/123","none");
+		TESTM("GET","/point/123,23.2","none");
+
+		TESTM("GET","/foo/abcd","foo:to_str(4)");
+		TESTM("GET","/foo/abcdefg","foo:to_str(7)");
 	}
+	void set_context(std::string const &method="GET")
+	{
+		std::map<std::string,std::string> env;
+		env["HTTP_HOST"]="www.example.com";
+		env["SCRIPT_NAME"]="/foo";
+		env["PATH_INFO"]="/bar";
+		env["REQUEST_METHOD"]=method;
+		env["HTTP_ACCEPT_ENCODING"]="gzip";
+		booster::shared_ptr<dummy_api> api(new dummy_api(service(),env,output_));
+		booster::shared_ptr<cppcms::http::context> cnt(new cppcms::http::context(api));
+		assign_context(cnt);
+		response().io_mode(cppcms::http::response::normal);
+		output_.clear();
+	}
+
 	std::string v_;
+	std::string output_;
 };
 
 void dispatcher_test(cppcms::service &srv)
@@ -342,6 +504,7 @@ int main()
 		std::cout << "- Basics no throw" << std::endl;
 
 		cppcms::json::value cfg;
+		cfg["localization"]["locales"][0]="en_US.UTF-8";
 		{
 			cppcms::service srv(cfg);
 			basic_test(srv,false);

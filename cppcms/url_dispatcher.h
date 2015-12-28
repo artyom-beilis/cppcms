@@ -14,14 +14,37 @@
 #include <booster/hold_ptr.h>
 #include <booster/traits/enable_if.h>
 #include <booster/traits/is_base_of.h>
+#include <booster/traits/type_traits.h>
 #include <booster/regex.h>
 #include <cppcms/application.h>
+#include <cppcms/steal_buf.h>
 #include <string>
 #include <list>
 
 namespace cppcms {
 
-	class application;
+	///
+	/// Sets the content of parameter to output
+	///
+	/// \ver{v1_2}
+	inline bool parse_url_parameter(util::const_char_istream &parameter,std::string &output)
+	{
+		output.assign(parameter.begin(),parameter.end());
+		return true;
+	}
+	///
+	/// Parses general value
+	///
+	/// \ver{v1_2}
+	template<typename ParamType>
+	bool parse_url_parameter(util::const_char_istream &parameter,ParamType &value)
+	{
+		parameter >> value;
+		if(!parameter || !parameter.eof())
+			return false;
+		return true;
+	}
+
 
 	///
 	/// \brief This class is used to glue between member function of application class and urls
@@ -29,22 +52,61 @@ namespace cppcms {
 	/// This class is used in context of \a cppcms::application  with its \a url member function.
 	/// It uses regular expression to bind between url and callbacks that actually process the
 	/// request. It also allows mount sub-applications to the root of
-	/// the primary application. For example:
+	/// the primary application.
+	///
+	/// There are two families of functions, assign and map.
+	
+	/// Older `assign` interface allows matching only URL against regular expression.
+	/// and passes std::string as parameter. All the validation must be
+	/// performed by regular expression or the code that was called.
+	///
+	/// Newer `map` interface allows both matching an URL and an HTTP request method.
+	/// Parameters are parsed using `bool parse_url_parameter(util::const_char_istream &parameter,Type &param)`
+	/// that by default uses std::istream to perform casting.
+	///
+	/// Additionally every matched parameter is checked to contain valid text encoding
+	///
+	/// Newer API uses map member functions family that was introduced in CppCMS 1.1.
+	///
+	/// For example:
 	///
 	/// \code
 	/// class my_web_project : public cppcms::application {
 	///	users_app users_;
+	///     /* Older Handlers */
 	///	void display_page(std::string)
 	///      ...
+	///     /* Newer CppCMS 1.1 handlers */
+	///     void get_resource(int id);
+	///     void update_resource(int id);
+	///     void new_resource();
+	///     void id_by_name(std::string const &name); /* name checked for valid encoding */
+	///	void display_page_by_id(int id)
 	/// public:
 	///    my_web_project() {
-	///	url().assign("^/page/(\\d+)/?$",bind1st(mem_fun(&my_web_project::display_page),this),1);
+	///	/* Older API */
+	///	dispatcher().assign("/page/(\\d+)/?",&my_web_project::display_page,this,1);
+	///
+	///     /* New API - CppCMS 1.1 and above */
+	///
+	///     dispatcher().map("GET","/resource/(\\d+)",&my_web_project::get_resource,this,1);
+	///     dispatcher().map("PUT","/resource/(\\d+)",&my_web_project::update_resource,this,1);
+	///     dispatcher().map("POST","/resources",&my_web_project::new_resource,this);
+	///     dispatcher().map("GET"."/id_by_name/(.*)",&my_web_project::id_by_name,this,1);
+	///     dispatcher().map("/page/(\\d+)",&my_web_project::display_page_by_id,this,1); /* any method */
 	///	...
 	/// \endcode
 	///
-
+	///
 	class CPPCMS_API url_dispatcher : public booster::noncopyable {
 	public:
+		///
+		/// \brief RESTful API Handler that validates parameters and executes a method.
+		///
+		/// If validation fails it should return false and thus the matching would continue to next handler
+		///
+		/// \ver{v1_2}
+		typedef booster::function<bool(cppcms::application &,booster::cmatch const &)> generic_handler;
 		// Handlers
 		typedef booster::function<void()> handler;
 		typedef booster::function<void(booster::cmatch const &)> rhandler;
@@ -54,6 +116,100 @@ namespace cppcms {
 		typedef booster::function<void(std::string,std::string,std::string,std::string)> handler4;
 		typedef booster::function<void(std::string,std::string,std::string,std::string,std::string)> handler5;
 		typedef booster::function<void(std::string,std::string,std::string,std::string,std::string,std::string)> handler6;
+
+		
+		///
+		/// Map a callback \a h to a URL matching regular expression \a re and an HTTP \a method 
+		///
+		/// \param method - HTTP method to match like GET, POST, note regular expression can be used as well, for example "(POST|PUT)"
+		/// \param re - matched URL
+		/// \param h - handler to execute
+		///
+		/// \ver{v1_2}
+		void map_generic(std::string const &method,std::string const &re,generic_handler const &h);
+		///
+		/// Map a callback \a h to a URL matching regular expression \a re
+		///
+		/// \param re - matched URL
+		/// \param h - handler to execute
+		///
+		/// \ver{v1_2}
+		void map_generic(std::string const &re,generic_handler const &h);
+
+
+		///
+		/// \brief Map \a member of \a app as a URL handler that matches regualr expression \a re and HTTP method \a method
+		///
+		/// \param method - HTTP method to match like GET, POST, note regular expression can be used as well, for example "(POST|PUT)"
+		/// \param re - matched URL
+		/// \param member - member function of application \a app
+		/// \param app - application that its \a member is called
+		///
+		/// In addition to calling \a member function it calls app->init() before call
+		/// and app->clean() after the call of the C is derived from cppcms::application
+		///
+		/// \ver{v1_2}
+		template<typename C>
+		void map(std::string const &method,std::string const &re,void (C::*member)(),C *app)
+		{
+			map_generic(method,re,url_binder0<C>(member,app));
+		}
+		///
+		/// \brief Map \a member of \a app as a URL handler that matches regualr expression \a re
+		///
+		/// \param re - matched URL
+		/// \param member - member function of application \a app
+		/// \param app - application that its \a member is called
+		///
+		/// In addition to calling \a member function it calls app->init() before call
+		/// and app->clean() after the call of the C is derived from cppcms::application
+		///
+		/// \ver{v1_2}
+		template<typename C>
+		void map(std::string const &re,void (C::*member)(),C *app)
+		{
+			map_generic(re,url_binder0<C>(member,app));
+		}
+		///
+		/// \brief Map \a member of \a app as a URL handler that matches regualr expression \a re and HTTP method \a method
+		///
+		/// \param method - HTTP method to match like GET, POST, note regular expression can be used as well, for example "(POST|PUT)"
+		/// \param re - matched URL
+		/// \param member - member function of application \a app
+		/// \param app - application that its \a member is called
+		/// \param g1 - a matched group passed as first parameter of \a member after validation and conversion using parse_url_parameter function
+		///
+		/// In addition to calling \a member function it calls app->init() before call
+		/// and app->clean() after the call of the C is derived from cppcms::application
+		///
+		///		
+		/// \ver{v1_2}
+		template<typename C,typename P1>
+		void map(std::string const &method,std::string const &re,void (C::*member)(P1),C *app,int g1)
+		{
+			map_generic(method,re,url_binder1<C,P1>(member,app,g1));
+		}
+		///
+		/// \brief Map \a member of \a app as a URL handler that matches regualr expression \a re and HTTP method \a method
+		///
+		/// \param re - matched URL
+		/// \param member - member function of application \a app
+		/// \param app - application that its \a member is called
+		/// \param g1 - a matched group passed as first parameter of \a member after validation and conversion using parse_url_parameter function
+		///
+		/// In addition to calling \a member function it calls app->init() before call
+		/// and app->clean() after the call of the C is derived from cppcms::application
+		///
+		///		
+		/// \ver{v1_2}
+		template<typename C,typename P1>
+		void map(std::string const &re,void (C::*member)(P1),C *app,int g1)
+		{
+			map_generic(re,url_binder1<C,P1>(member,app,g1));
+		}
+
+		
+
 
 		///
 		/// Assign \a handler to pattern \a regex thus if URL that matches
@@ -118,8 +274,11 @@ namespace cppcms {
 
 		bool dispatch(std::string url);
 
+		/// \cond INTERNAL
+		url_dispatcher(application *app);
 		url_dispatcher();
 		~url_dispatcher();
+		/// \endcond
 
 		///
 		/// This template function is a shortcut to assign(regex,callback). It allows
@@ -242,6 +401,8 @@ namespace cppcms {
 		class page_guard {
 		public:
 			page_guard(C * /*o*/) {}
+			page_guard(C * /*o*/,std::istream &) {}
+			application *app() { return 0; }
 		};
 
 		template<typename C>
@@ -252,6 +413,7 @@ namespace cppcms {
 			{
 				object_->init();
 			}
+			application *app() { return object_; }
 			~page_guard()
 			{
 				object_->clear();
@@ -384,6 +546,9 @@ namespace cppcms {
 			}
 		};
 
+		static bool validate_encoding(application &app,char const *begin,char const *end);
+		static void setup_stream(application &app,std::istream &s);
+
 		template<typename C>						
 		struct binder6{
 			typedef void (C::*member_type)(std::string,std::string,std::string,std::string,std::string,std::string);
@@ -401,7 +566,78 @@ namespace cppcms {
 				(object->*member)(p1,p2,p3,p4,p5,p6);
 			}
 		};
+
+
+
+		template<typename T>
+		static bool parse(application &app,util::const_char_istream &p,booster::cmatch const &m,int group,T &v)
+		{
+			if(!validate_encoding(app,m[group].first,m[group].second))
+				return false;
+			p.range(m[group].first,m[group].second);
+			return parse_url_parameter(p,v);
+		}
+
+
+		template<typename C>
+		struct url_binder0  {
+			typedef void (C::*member_type)();
+			member_type member;
+			C *self;
+			url_binder0(member_type m,C *s) : member(m),self(s) {}
+			bool operator()(application &,booster::cmatch const  &) 
+			{
+				page_guard<C> guard(self);
+				(self->*member)();
+				return true;
+			}
+		};
 		
+		template<typename C,typename P1>
+		struct url_binder1  {
+			typedef void (C::*member_type)(P1);
+			member_type member;
+			C *self;
+			int g1;
+			url_binder1(member_type m,C *s,int p1) : member(m),self(s),g1(p1) {}
+			bool operator()(application &app,booster::cmatch const  &m) 
+			{
+				util::const_char_istream s;
+				setup_stream(app,s);
+
+				typename booster::remove_const_reference<P1>::type p1;
+				bool res = parse(app,s,m,g1,p1);
+
+				if(!res) return false;
+				page_guard<C> guard(self);
+				(self->*member)(p1);
+				return true;
+			}
+		};
+		
+		template<typename C,typename P1,typename P2>
+		struct url_binder2  {
+			typedef void (C::*member_type)(P1,P2);
+			member_type member;
+			C *self;
+			int g1,g2;
+			url_binder2(member_type m,C *s,int p1,int p2) : member(m),self(s),g1(p1),g2(p2) {}
+			bool operator()(application &app,booster::cmatch const  &m) 
+			{
+				util::const_char_istream s;
+				setup_stream(app,s);
+
+				typename booster::remove_const_reference<P1>::type p1;
+				typename booster::remove_const_reference<P2>::type p2;
+				bool res = parse(app,s,m,g1,p1) && parse(app,s,m,g2,p2);
+				
+				if(!res) return false;
+				page_guard<C> guard(self);
+				(self->*member)(p1,p2);
+				return true;
+			}
+		};
+
 
 		struct _data;
 		booster::hold_ptr<_data> d;
