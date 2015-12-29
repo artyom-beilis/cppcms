@@ -129,7 +129,9 @@ CPPCMS_API int cppcms_capi_session_set_on_server(cppcms_capi_session *session,in
 CPPCMS_API int cppcms_capi_session_get_on_server(cppcms_capi_session *session);
 
 CPPCMS_API char const *cppcms_capi_session_get_session_cookie_name(cppcms_capi_session *session);
-CPPCMS_API int cppcms_capi_session_load(cppcms_capi_session *session,char const *session_cookie_value);
+CPPCMS_API int cppcms_capi_session_set_session_cookie(cppcms_capi_session *session,char const *session_cookie_value);
+CPPCMS_API int cppcms_capi_session_add_cookie_name(cppcms_capi_session *session,char const *name);
+CPPCMS_API int cppcms_capi_session_load(cppcms_capi_session *session);
 CPPCMS_API int cppcms_capi_session_save(cppcms_capi_session *session);
 
 CPPCMS_API cppcms_capi_cookie *cppcms_capi_session_cookie_first(cppcms_capi_session *session);

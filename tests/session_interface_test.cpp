@@ -64,6 +64,7 @@ public:
 	{
 		return value;
 	}
+	std::set<std::string> get_cookie_names() { return std::set<std::string>(); }
 	std::string value;
 	std::string cookie_name;
 };

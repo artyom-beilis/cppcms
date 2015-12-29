@@ -31,7 +31,8 @@ int main(int argc,char **argv)
 	cppcms_capi_session_init(session,session_pool);
 	CHECK(session);
 
-	cppcms_capi_session_load(session,state);
+	cppcms_capi_session_set_session_cookie(session,state);
+	cppcms_capi_session_load(session);
 	CHECK(session);
 	cppcms_capi_session_set(session,"x","test");
 	cppcms_capi_session_set(session,"yyy","111");
@@ -68,7 +69,9 @@ int main(int argc,char **argv)
 	cppcms_capi_session_init(session,session_pool);
 	CHECK(session);
 
-	cppcms_capi_session_load(session,state);
+	cppcms_capi_session_set_session_cookie(session,state);
+	cppcms_capi_session_add_cookie_name(session,"sc_tt");
+	cppcms_capi_session_load(session);
 	CHECK(session);
 	
 	printf("Check keys second time\n");
@@ -93,19 +96,29 @@ int main(int argc,char **argv)
 	n=0;
 	for(cookie=cppcms_capi_session_cookie_first(session);cookie;cookie=cppcms_capi_session_cookie_next(session)) {
 		printf("   %s\n",cppcms_capi_cookie_header(cookie));
-		n++;
 		if(strcmp(cppcms_capi_cookie_name(cookie),cppcms_capi_session_get_session_cookie_name(session))==0) {
 			free(state);
 			state = strdup(cppcms_capi_cookie_value(cookie));
+			n += 1;
 		}
 		else if(strcmp(cppcms_capi_cookie_name(cookie),"sc_x")==0) {
 			TEST(strcmp(cppcms_capi_cookie_value(cookie),"")==0);
 			TEST(cppcms_capi_cookie_max_age_defined(cookie)==1);
 			TEST(cppcms_capi_cookie_max_age(cookie)==0);
+			n += 10;
+		}
+		else if(strcmp(cppcms_capi_cookie_name(cookie),"sc_tt")==0) {
+			TEST(strcmp(cppcms_capi_cookie_value(cookie),"")==0);
+			TEST(cppcms_capi_cookie_max_age_defined(cookie)==1);
+			TEST(cppcms_capi_cookie_max_age(cookie)==0);
+			n += 100;
+		}
+		else {
+			n+=1000;
 		}
 		cppcms_capi_cookie_delete(cookie);
 	}
-	TEST(n==2);
+	TEST(n==111);
 	
 	cppcms_capi_session_delete(session);
 	printf("New state=[%s]\n",state);
@@ -115,7 +128,8 @@ int main(int argc,char **argv)
 	cppcms_capi_session_init(session,session_pool);
 	CHECK(session);
 
-	cppcms_capi_session_load(session,state);
+	cppcms_capi_session_set_session_cookie(session,state);
+	cppcms_capi_session_load(session);
 	CHECK(session);
 
 	TEST(cppcms_capi_session_get_exposed(session,"x")==0);

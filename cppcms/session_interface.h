@@ -71,10 +71,13 @@ public:
 	///
 	virtual void set_cookie(http::cookie const &updated_cookie) = 0;
 	///
-	/// Get value of the cookie, it is guaranteed that \a name is 
-	/// what session_interface::session_cookie_name() returns
+	/// Get value of a cookie, it is guaranted that name is what session_interface::session_cookie_name() returns
 	/// 
 	virtual std::string get_session_cookie(std::string const &name) = 0;
+	///
+	/// Get all cookie keys
+	///
+	virtual std::set<std::string> get_cookie_names() = 0;
 };
 
 ///

@@ -286,20 +286,36 @@ void session_interface::update_exposed(bool force)
 		}
 	}
 
-	if(cached_settings().session.cookies.remove_unknown_cookies && context_) {
-		typedef http::request::cookies_type cookies_type;
-		cookies_type const &input_cookies = context_->request().cookies();
-
+	if(cached_settings().session.cookies.remove_unknown_cookies) {
 		std::string prefix = cached_settings().session.cookies.prefix + "_";
-		for(cookies_type::const_iterator cp=input_cookies.begin();cp!=input_cookies.end();++cp) {
-			if(cp->first.compare(0,prefix.size(),prefix)!=0)	
-				continue;
-			std::string key = cp->first.substr(prefix.size());
-			if(removed.find(key)!=removed.end())
-				continue;
-			data_type::iterator ptr;
-			if((ptr = data_.find(key))==data_.end() || !ptr->second.exposed) {
-				removed.insert(key);
+		if(!d->adapter) {
+			typedef http::request::cookies_type cookies_type;
+			cookies_type const &input_cookies = context_->request().cookies();
+
+			for(cookies_type::const_iterator cp=input_cookies.begin();cp!=input_cookies.end();++cp) {
+				if(cp->first.compare(0,prefix.size(),prefix)!=0)	
+					continue;
+				std::string key = cp->first.substr(prefix.size());
+				if(removed.find(key)!=removed.end())
+					continue;
+				data_type::iterator ptr;
+				if((ptr = data_.find(key))==data_.end() || !ptr->second.exposed) {
+					removed.insert(key);
+				}
+			}
+		}
+		else {
+			std::set<std::string> cookies = d->adapter->get_cookie_names();
+			for(std::set<std::string>::const_iterator cp=cookies.begin();cp!=cookies.end();++cp) {
+				if(cp->compare(0,prefix.size(),prefix)!=0)	
+					continue;
+				std::string key = cp->substr(prefix.size());
+				if(removed.find(key)!=removed.end())
+					continue;
+				data_type::iterator ptr;
+				if((ptr = data_.find(key))==data_.end() || !ptr->second.exposed) {
+					removed.insert(key);
+				}
 			}
 		}
 	}

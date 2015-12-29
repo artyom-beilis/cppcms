@@ -80,11 +80,16 @@ struct cppcms_capi_session {
 		std::map<std::string,cppcms::http::cookie>::const_iterator cookies_ptr;
 
 		std::string value;
+		std::set<std::string> keys;
 		virtual void set_cookie(cppcms::http::cookie const &updated_cookie) {
 			cookies[updated_cookie.name()]=updated_cookie;
 		}
 		virtual std::string get_session_cookie(std::string const &) {
 			return value;
+		}
+		virtual std::set<std::string> get_cookie_names()
+		{
+			return keys;
 		}
 	} adapter;
 
@@ -657,17 +662,40 @@ char const *cppcms_capi_session_get_session_cookie_name(cppcms_capi_session *ses
 	}
 	CATCH(session,0,0);
 }
-int cppcms_capi_session_load(cppcms_capi_session *session,char const *session_cookie_value)
+
+int cppcms_capi_session_set_session_cookie(cppcms_capi_session *session,char const *session_cookie_value)
 {
 	TRY {
 		if(!session)
 			return -1;
 		check_str(session_cookie_value);
 		session->check();
+		session->adapter.value = session_cookie_value;
+	}
+	CATCH(session,0,-1);
+}
+
+int cppcms_capi_session_add_cookie_name(cppcms_capi_session *session,char const *name)
+{
+	TRY {
+		if(!session)
+			return -1;
+		check_str(name);
+		session->check();
+		session->adapter.keys.insert(name);
+	}
+	CATCH(session,0,-1);
+}
+
+int cppcms_capi_session_load(cppcms_capi_session *session)
+{
+	TRY {
+		if(!session)
+			return -1;
+		session->check();
 		if(session->loaded) {
 			throw std::logic_error("Session is already loaded");
 		}
-		session->adapter.value = session_cookie_value;
 		session->p->load();
 		session->loaded = true;
 	}
