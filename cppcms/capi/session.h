@@ -12,33 +12,75 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
+///
+/// \defgroup capi_session CppCMS C Session API 
+/// @{
+/// \ver{v1_2}
+///
 
-#define CPPCMS_CAPI_SESSION_FIXED	0
-#define CPPCMS_CAPI_SESSION_RENEW	1
-#define CPPCMS_CAPI_SESSION_BROWSER	2
+/// \defgroup capi_session_expiration Expiration Codes
+/// @{
+#define CPPCMS_CAPI_SESSION_FIXED	0 ///< Fixed session expiration 
+#define CPPCMS_CAPI_SESSION_RENEW	1 ///< Session expiration automatically renewed on access 
+#define CPPCMS_CAPI_SESSION_BROWSER	2 ///< Session is tied to browser session
+/// @}
 
-#define CPPCMS_CAPI_ERROR_OK		0
-#define CPPCMS_CAPI_ERROR_GENERAL	1
-#define CPPCMS_CAPI_ERROR_RUNTIME	2
-#define CPPCMS_CAPI_ERROR_INVALID_ARGUMENT	4
-#define CPPCMS_CAPI_ERROR_LOGIC		5
-#define CPPCMS_CAPI_ERROR_ALLOC		6
+///
+/// \defgroup capi_session_error_handling Error Handling
+/// @{
+#define CPPCMS_CAPI_ERROR_OK		0 ///< Success 
+#define CPPCMS_CAPI_ERROR_GENERAL	1 ///< Uncategorized error
+#define CPPCMS_CAPI_ERROR_RUNTIME	2 ///< Runtime Error occured
+#define CPPCMS_CAPI_ERROR_INVALID_ARGUMENT	4 ///< Invalid Argument Provided
+#define CPPCMS_CAPI_ERROR_LOGIC		5 ///< Invalid API Use
+#define CPPCMS_CAPI_ERROR_ALLOC		6 ///< Allocation Failed
 
-typedef void *cppcms_capi_object;
+///
+/// "Base class" for cppcms_capi_session, cppcms_capi_session_pool, and cppcms_capi_cookie
+///
+/// Is used to get error status of the object
+///
+typedef void *cppcms_capi_object; 
+
+/// @}
+
+/// Class that represents cppcms::session_pool in C
+///
+/// \defgroup cppcms_capi_session_pool Session Pool
 typedef struct cppcms_capi_session_pool cppcms_capi_session_pool;
+/// Class that represents cppcms::session_interface in C
+///
+/// \defgroup cppcms_capi_session_pool_init_from_json Session Interface
 typedef struct cppcms_capi_session cppcms_capi_session;
+/// Class that represents cppcms::http::cookie in C
+///
+/// \defgroup cppcms_capi_session_cookie Cookie
 typedef struct cppcms_capi_cookie cppcms_capi_cookie;
 
-CPPCMS_API int cppcms_capi_error(cppcms_capi_object obj);
-CPPCMS_API char const *cppcms_capi_error_message(cppcms_capi_object obj);
-CPPCMS_API char const *cppcms_capi_error_clear(cppcms_capi_object obj);
+///
+/// \addtogroup capi_session_error_handling 
+/// @{
 
+CPPCMS_API int cppcms_capi_error(cppcms_capi_object obj); ///< Get error code for the object
+CPPCMS_API char const *cppcms_capi_error_message(cppcms_capi_object obj); ///< Get error message for the object
+CPPCMS_API char const *cppcms_capi_error_clear(cppcms_capi_object obj); ///< Clear error and get last message
+
+/// @}
+
+/// \addtogroup cppcms_capi_session_pool
+/// @{
+
+/// Create new empty pool object, returns NULL in case of fatal error
 CPPCMS_API cppcms_capi_session_pool *cppcms_capi_session_pool_new();
+/// Destroys pool object
 CPPCMS_API void cppcms_capi_session_pool_delete(cppcms_capi_session_pool *pool);
 
+/// Initialize the pool from CppCMS configuration file,\a config_file
 CPPCMS_API int cppcms_capi_session_pool_init(cppcms_capi_session_pool *pool,char const *config_file);
+/// Initialize the pool from CppCMS configuration in json fromat \a json
 CPPCMS_API int cppcms_capi_session_pool_init_from_json(cppcms_capi_session_pool *pool,char const *json);
 
+/// @}
 
 CPPCMS_API cppcms_capi_session *cppcms_capi_session_new();
 CPPCMS_API void cppcms_capi_session_delete(cppcms_capi_session *session);
@@ -78,7 +120,9 @@ CPPCMS_API int cppcms_capi_session_set_age(cppcms_capi_session *session,int t);
 CPPCMS_API int cppcms_capi_session_get_age(cppcms_capi_session *session);
 
 CPPCMS_API int cppcms_capi_session_set_default_expiration(cppcms_capi_session *session);
+/// Define expiration method
 CPPCMS_API int cppcms_capi_session_set_expiration(cppcms_capi_session *session,int t);
+/// Get current expiration method
 CPPCMS_API int cppcms_capi_session_get_expiration(cppcms_capi_session *session);
 
 CPPCMS_API int cppcms_capi_session_set_on_server(cppcms_capi_session *session,int is_on_server);
@@ -109,7 +153,9 @@ CPPCMS_API long long cppcms_capi_cookie_expires(cppcms_capi_cookie const *cookie
 
 CPPCMS_API int cppcms_capi_cookie_is_secure(cppcms_capi_cookie const *cookie);
 
-
+///
+/// @}
+///
 #ifdef __cplusplus
 } // extern "C"
 #endif
