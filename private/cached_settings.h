@@ -142,6 +142,7 @@ namespace impl {
 				bool use_age;
 				bool use_exp;
 				bool secure;
+				bool remove_unknown_cookies;
 			} cookies;
 			cached_session(json::value const &v)
 			{
@@ -153,6 +154,7 @@ namespace impl {
 				cookies.path = v.get("session.cookies.path","/");
 				cookies.time_shift = v.get("session.cookies.time_shift",0);
 				std::string method = v.get("session.cookies.expiration_method","both");
+				cookies.remove_unknown_cookies = v.get("session.cookies.remove_unknown_cookies",true);
 
 				if(method == "both") {
 					cookies.use_age = cookies.use_exp = true;

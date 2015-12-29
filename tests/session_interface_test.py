@@ -62,8 +62,12 @@ def general_tests(method):
     session.transmit('/new_short')
     if method!='browser':
         test(session.received['sc'].max_age == '1')
+    session.transmit('/expose')
+    test(session.received['sc_x'].value=='1')
     time.sleep(2)
     test(session.transmit('/is_expired') == 'expired')
+    test(session.received['sc_x'].max_age=='0')
+    test(session.received['sc'].max_age=='0')
 
     print "new"
     session.transmit('/new')
