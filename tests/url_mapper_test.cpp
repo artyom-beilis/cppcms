@@ -76,6 +76,13 @@ public:
 		ss<<v;
 		return "to_str(" + ss.str() + ")";
 	}
+	template<typename T>
+	static std::string ts(T v)
+	{
+		std::ostringstream ss;
+		ss<<':'<<v;
+		return ss.str();
+	}
 
 	void h1_i(int param)
 	{
@@ -105,6 +112,12 @@ public:
 	void get_0() { v_="get_0"; }
 	void get_1(int x) { v_="get_1:" + to_string(x); }
 	void get_2(int x,int y) { v_="get_2:" + to_string(x) + ":" + to_string(y); }
+	void get_3(int x,int y,int z) { v_="get_3" + ts(x)+ts(y)+ts(z); }
+	void get_4(int x,int y,int z,int t) { v_="get_4" + ts(x)+ts(y)+ts(z)+ts(t); }
+	void get_5(int a,int b,int c,int d,int e) { v_="get_5" + ts(a)+ts(b)+ts(c)+ts(d)+ts(e); }
+	void get_6(int a,int b,int c,int d,int e,int f) { v_="get_6" + ts(a)+ts(b)+ts(c)+ts(d)+ts(e)+ts(f); }
+	void get_7(int a,int b,int c,int d,int e,int f,int g) { v_="get_7" + ts(a)+ts(b)+ts(c)+ts(d)+ts(e)+ts(f)+ts(g); }
+	void get_8(int a,int b,int c,int d,int e,int f,int g,int h) { v_="get_8" + ts(a)+ts(b)+ts(c)+ts(d)+ts(e)+ts(f)+ts(g)+ts(h); }
 	
 	void p_0() { v_="p_0"; }
 	void p_1(int x) { v_="p_1:" + to_string(x); }
@@ -127,10 +140,12 @@ public:
 		dispatcher().assign("h6/(a(\\d+))/(a(\\d+))/(a(\\d+))/(a(\\d+))/(a(\\d+))/(a(\\d+))",&disp::h6,this,2,4,6,8,10,12);
 		
 		dispatcher().map("/h0",&disp::h0,this);
+		dispatcher().map(booster::regex("/rh0",booster::regex::icase),&disp::h0,this);
 		dispatcher().map("/h1_num/(.*)",&disp::h1_i,this,1);
 		dispatcher().map("/h1_num/(.*)",&disp::h1_d,this,1);
 
 		dispatcher().map("/h1_s/(\\d+)",&disp::h1_s,this,1);
+		dispatcher().map(booster::regex("/rh1_s/(\\d+)",booster::regex::icase),&disp::h1_s,this,1);
 		dispatcher().map("/h1_s_cr/((\\d+))",&disp::h1_s_cr,this,2);
 		dispatcher().map("/h1_s_r/(\\d+)",&disp::h1_s_r,this,1);
 		dispatcher().map("/h1_s_c/(\\d+)",&disp::h1_s_c,this,1);
@@ -139,16 +154,68 @@ public:
 
 		dispatcher().map("GET","/res",&disp::get_0,this);
 		dispatcher().map("GET","/res/(a(\\d+))",&disp::get_1,this,2);
-		//dispatcher().map("GET","/res/(a(\\d+))/(a(\\d+))",&disp::get_2,this,1,2);
+		dispatcher().map("GET","/res/(a(\\d+))/(a(\\d+))",&disp::get_2,this,2,4);
+
+
 
 		dispatcher().map("(PUT|POST)","/res",&disp::p_0,this);
 		dispatcher().map("(PUT|POST)","/res/(a(\\d+))",&disp::p_1,this,2);
-		//dispatcher().map("(PUT|POST)","/res/(a(\\d+)/(a(\\d+))",&disp::p_2,this,2,4);
+		dispatcher().map("(PUT|POST)","/res/(a(\\d+))/(a(\\d+))",&disp::p_2,this,2,4);
 
 		dispatcher().map("/point/(.*)",&disp::point_m,this,1);
 		dispatcher().map("/foo/(.*)",&disp::foo_m,this,1);
 
 
+		dispatcher().map("GET" ,		"/res_1/(a(\\d+))/(a(\\d+))/(a(\\d+))",				&disp::get_3,this,2,4,6);
+		dispatcher().map(			"/res_2/(a(\\d+))/(a(\\d+))/(a(\\d+))",				&disp::get_3,this,2,4,6);
+		dispatcher().map("GET" ,booster::regex(	"/RES_3/(a(\\d+))/(a(\\d+))/(a(\\d+))",booster::regex::icase),	&disp::get_3,this,2,4,6);
+		dispatcher().map(	booster::regex(	"/RES_4/(a(\\d+))/(a(\\d+))/(a(\\d+))",booster::regex::icase),	&disp::get_3,this,2,4,6);
+
+
+		dispatcher().map("GET" ,		"/res_1/(a(\\d+))/(a(\\d+))/(a(\\d+))/(a(\\d+))",				&disp::get_4,this,2,4,6,8);
+		dispatcher().map(			"/res_2/(a(\\d+))/(a(\\d+))/(a(\\d+))/(a(\\d+))",				&disp::get_4,this,2,4,6,8);
+		dispatcher().map("GET" ,booster::regex(	"/RES_3/(a(\\d+))/(a(\\d+))/(a(\\d+))/(a(\\d+))",booster::regex::icase),	&disp::get_4,this,2,4,6,8);
+		dispatcher().map(	booster::regex(	"/RES_4/(a(\\d+))/(a(\\d+))/(a(\\d+))/(a(\\d+))",booster::regex::icase),	&disp::get_4,this,2,4,6,8);
+
+		dispatcher().map("GET" ,		"/res_1/(a(\\d+))/(a(\\d+))/(a(\\d+))/(a(\\d+))/(a(\\d+))",				&disp::get_5,this,2,4,6,8,10);
+		dispatcher().map(			"/res_2/(a(\\d+))/(a(\\d+))/(a(\\d+))/(a(\\d+))/(a(\\d+))",				&disp::get_5,this,2,4,6,8,10);
+		dispatcher().map("GET" ,booster::regex(	"/RES_3/(a(\\d+))/(a(\\d+))/(a(\\d+))/(a(\\d+))/(a(\\d+))",booster::regex::icase),	&disp::get_5,this,2,4,6,8,10);
+		dispatcher().map(	booster::regex(	"/RES_4/(a(\\d+))/(a(\\d+))/(a(\\d+))/(a(\\d+))/(a(\\d+))",booster::regex::icase),	&disp::get_5,this,2,4,6,8,10);
+
+		dispatcher().map("GET" ,		"/res_1/(a(\\d+))/(a(\\d+))/(a(\\d+))/(a(\\d+))/(a(\\d+))/(a(\\d+))",				&disp::get_6,this,2,4,6,8,10,12);
+		dispatcher().map(			"/res_2/(a(\\d+))/(a(\\d+))/(a(\\d+))/(a(\\d+))/(a(\\d+))/(a(\\d+))",				&disp::get_6,this,2,4,6,8,10,12);
+		dispatcher().map("GET" ,booster::regex(	"/RES_3/(a(\\d+))/(a(\\d+))/(a(\\d+))/(a(\\d+))/(a(\\d+))/(a(\\d+))",booster::regex::icase),	&disp::get_6,this,2,4,6,8,10,12);
+		dispatcher().map(	booster::regex(	"/RES_4/(a(\\d+))/(a(\\d+))/(a(\\d+))/(a(\\d+))/(a(\\d+))/(a(\\d+))",booster::regex::icase),	&disp::get_6,this,2,4,6,8,10,12);
+		
+		dispatcher().map("GET" ,		
+				 "/res_1/(a(\\d+))/(a(\\d+))/(a(\\d+))/(a(\\d+))/(a(\\d+))/(a(\\d+))/(a(\\d+))",
+				&disp::get_7,this,2,4,6,8,10,12,14);
+
+		dispatcher().map("/res_2/(a(\\d+))/(a(\\d+))/(a(\\d+))/(a(\\d+))/(a(\\d+))/(a(\\d+))/(a(\\d+))",				
+				&disp::get_7,this,2,4,6,8,10,12,14);
+
+		dispatcher().map("GET" ,
+		  booster::regex("/RES_3/(a(\\d+))/(a(\\d+))/(a(\\d+))/(a(\\d+))/(a(\\d+))/(a(\\d+))/(a(\\d+))",booster::regex::icase),	
+		  		&disp::get_7,this,2,4,6,8,10,12,14);
+
+		dispatcher().map(
+		  booster::regex("/RES_4/(a(\\d+))/(a(\\d+))/(a(\\d+))/(a(\\d+))/(a(\\d+))/(a(\\d+))/(a(\\d+))",booster::regex::icase),	
+		  		&disp::get_7,this,2,4,6,8,10,12,14);
+
+		dispatcher().map("GET" ,		
+				 "/res_1/(a(\\d+))/(a(\\d+))/(a(\\d+))/(a(\\d+))/(a(\\d+))/(a(\\d+))/(a(\\d+))/(a(\\d+))",
+				&disp::get_8,this,2,4,6,8,10,12,14,16);
+
+		dispatcher().map("/res_2/(a(\\d+))/(a(\\d+))/(a(\\d+))/(a(\\d+))/(a(\\d+))/(a(\\d+))/(a(\\d+))/(a(\\d+))",				
+				&disp::get_8,this,2,4,6,8,10,12,14,16);
+
+		dispatcher().map("GET" ,
+		  booster::regex("/RES_3/(a(\\d+))/(a(\\d+))/(a(\\d+))/(a(\\d+))/(a(\\d+))/(a(\\d+))/(a(\\d+))/(a(\\d+))",booster::regex::icase),	
+		  		&disp::get_8,this,2,4,6,8,10,12,14,16);
+
+		dispatcher().map(
+		  booster::regex("/RES_4/(a(\\d+))/(a(\\d+))/(a(\\d+))/(a(\\d+))/(a(\\d+))/(a(\\d+))/(a(\\d+))/(a(\\d+))",booster::regex::icase),	
+		  		&disp::get_8,this,2,4,6,8,10,12,14,16);
 	}
 #define TESTD(x,y) do { main(x); TEST(v_==y); } while(0)
 
@@ -166,40 +233,39 @@ public:
 		TESTD("h6/a1/a2/a3/a4/a5/a6",":1:2:3:4:5:6");
 
 
-		set_context("GET");
-		std::cout << std::use_facet<booster::locale::info>(context().locale()).encoding() << std::endl;
-		release_context();
-
 		TESTM("GET","/h0","-");
+		TESTM("GET","/rh0","-");
+		TESTM("GET","/RH0","-");
 		TESTM("GET","/h1_num/123.3","h1_d:to_str(123.3)");
 		TESTM("GET","/h1_num/123","h1_i:to_str(123)");
 		TESTM("GET","/h1_num/123 23","none");
 		TESTM("GET","/h1_s/1111","h1_s:1111");
+		TESTM("GET","/RH1_S/1111","h1_s:1111");
 		TESTM("GET","/h1_s_c/1111","h1_s_c:1111");
 		TESTM("GET","/h1_s_r/1111","h1_s_r:1111");
 		TESTM("GET","/h1_s_cr/1111","h1_s_cr:1111");
 		TESTM("GET","/h1_s_cr/1111\xFF","none");
 		TESTM("GET","/h1_s_cr/1111\xFF","none");
 		
-		TESTM("GET","/name/\\xD7\\xA9\\xD7\\x9C\\xD7\\x95\\xD7\\x9D\\x20\\xE6\\x97\\xA5\\xE6\\x9C\\xAC\\xE8\\xAA\\x9E",
-			   "h1_s:\\xD7\\xA9\\xD7\\x9C\\xD7\\x95\\xD7\\x9D\\x20\\xE6\\x97\\xA5\\xE6\\x9C\\xAC\\xE8\\xAA\\x9E");
+		TESTM("GET","/name/\xD7\xA9\xD7\x9C\xD7\x95\xD7\x9D\x20\xE6\x97\xA5\xE6\x9C\xAC\xE8\xAA\x9E",
+			   "h1_s:\xD7\xA9\xD7\x9C\xD7\x95\xD7\x9D\x20\xE6\x97\xA5\xE6\x9C\xAC\xE8\xAA\x9E");
 		TESTM("GET","/name/\xFF","none");
 
 		TESTM("GET","/res","get_0");
 		TESTM("GET","/res/a1","get_1:to_str(1)");
-		//TESTM("GET","/res/a1/a2","get_2:to_str(1):to_str(2)");
+		TESTM("GET","/res/a1/a2","get_2:to_str(1):to_str(2)");
 		
 		TESTM("POST","/res","p_0");
 		TESTM("POST","/res/a1","p_1:to_str(1)");
-		//TESTM("POST","/res/a1/a2","p_2:to_str(1):to_str(2)");
+		TESTM("POST","/res/a1/a2","p_2:to_str(1):to_str(2)");
 
 		TESTM("PUT","/res","p_0");
 		TESTM("PUT","/res/a1","p_1:to_str(1)");
-		//TESTM("PUT","/res/a1/a2","p_2:to_str(1):to_str(2)");
+		TESTM("PUT","/res/a1/a2","p_2:to_str(1):to_str(2)");
 
 		TESTM("DELETE","/res","none");
 		TESTM("DELETE","/res/a1","none");
-		//TESTM("DELETE","/res/a1/a2","none");
+		TESTM("DELETE","/res/a1/a2","none");
 
 		TESTM("GET","/point/123,23","point:to_str(123)Xto_str(23)");
 		TESTM("GET","/point/123","none");
@@ -207,6 +273,36 @@ public:
 
 		TESTM("GET","/foo/abcd","foo:to_str(4)");
 		TESTM("GET","/foo/abcdefg","foo:to_str(7)");
+		
+		TESTM("GET","/res_1/a1/a2/a3","get_3:1:2:3");
+		TESTM("GET","/res_2/a1/a2/a3","get_3:1:2:3");
+		TESTM("GET","/res_3/a1/a2/a3","get_3:1:2:3");
+		TESTM("GET","/res_4/a1/a2/a3","get_3:1:2:3");
+		
+		TESTM("GET","/res_1/a1/a2/a3/a4","get_4:1:2:3:4");
+		TESTM("GET","/res_2/a1/a2/a3/a4","get_4:1:2:3:4");
+		TESTM("GET","/res_3/a1/a2/a3/a4","get_4:1:2:3:4");
+		TESTM("GET","/res_4/a1/a2/a3/a4","get_4:1:2:3:4");
+		
+		TESTM("GET","/res_1/a1/a2/a3/a4/a5","get_5:1:2:3:4:5");
+		TESTM("GET","/res_2/a1/a2/a3/a4/a5","get_5:1:2:3:4:5");
+		TESTM("GET","/res_3/a1/a2/a3/a4/a5","get_5:1:2:3:4:5");
+		TESTM("GET","/res_4/a1/a2/a3/a4/a5","get_5:1:2:3:4:5");
+
+		TESTM("GET","/res_1/a1/a2/a3/a4/a5/a6","get_6:1:2:3:4:5:6");
+		TESTM("GET","/res_2/a1/a2/a3/a4/a5/a6","get_6:1:2:3:4:5:6");
+		TESTM("GET","/res_3/a1/a2/a3/a4/a5/a6","get_6:1:2:3:4:5:6");
+		TESTM("GET","/res_4/a1/a2/a3/a4/a5/a6","get_6:1:2:3:4:5:6");
+		
+		TESTM("GET","/res_1/a1/a2/a3/a4/a5/a6/a7","get_7:1:2:3:4:5:6:7");
+		TESTM("GET","/res_2/a1/a2/a3/a4/a5/a6/a7","get_7:1:2:3:4:5:6:7");
+		TESTM("GET","/res_3/a1/a2/a3/a4/a5/a6/a7","get_7:1:2:3:4:5:6:7");
+		TESTM("GET","/res_4/a1/a2/a3/a4/a5/a6/a7","get_7:1:2:3:4:5:6:7");
+
+		TESTM("GET","/res_1/a1/a2/a3/a4/a5/a6/a7/a8","get_8:1:2:3:4:5:6:7:8");
+		TESTM("GET","/res_2/a1/a2/a3/a4/a5/a6/a7/a8","get_8:1:2:3:4:5:6:7:8");
+		TESTM("GET","/res_3/a1/a2/a3/a4/a5/a6/a7/a8","get_8:1:2:3:4:5:6:7:8");
+		TESTM("GET","/res_4/a1/a2/a3/a4/a5/a6/a7/a8","get_8:1:2:3:4:5:6:7:8");
 	}
 	void set_context(std::string const &method="GET")
 	{

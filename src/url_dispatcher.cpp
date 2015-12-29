@@ -235,12 +235,12 @@ namespace cppcms {
 		d->options.push_back(make_handler(expr,h));
 	}
 	
-	void url_dispatcher::map_generic(std::string const &method,std::string const &re,generic_handler const &h)
+	void url_dispatcher::map_generic(std::string const &method,booster::regex const &re,generic_handler const &h)
 	{
 		booster::shared_ptr<option> opt(new generic_option(method,re,h));
 		d->options.push_back(opt);
 	}
-	void url_dispatcher::map_generic(std::string const &re,generic_handler const &h)
+	void url_dispatcher::map_generic(booster::regex const &re,generic_handler const &h)
 	{
 		booster::shared_ptr<option> opt(new generic_option(re,h));
 		d->options.push_back(opt);

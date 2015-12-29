@@ -122,94 +122,187 @@ namespace cppcms {
 		/// Map a callback \a h to a URL matching regular expression \a re and an HTTP \a method 
 		///
 		/// \param method - HTTP method to match like GET, POST, note regular expression can be used as well, for example "(POST|PUT)"
-		/// \param re - matched URL
+		/// \param re - regular expression to match the URL
 		/// \param h - handler to execute
 		///
 		/// \ver{v1_2}
-		void map_generic(std::string const &method,std::string const &re,generic_handler const &h);
+		void map_generic(std::string const &method,booster::regex const &re,generic_handler const &h);
 		///
 		/// Map a callback \a h to a URL matching regular expression \a re
 		///
-		/// \param re - matched URL
+		/// \param re - regular expression to match the URL
 		/// \param h - handler to execute
 		///
 		/// \ver{v1_2}
-		void map_generic(std::string const &re,generic_handler const &h);
+		void map_generic(booster::regex const &re,generic_handler const &h);
 
+
+		#ifdef CPPCMS_DOXYGEN_DOCS
 
 		///
 		/// \brief Map \a member of \a app as a URL handler that matches regualr expression \a re and HTTP method \a method
 		///
 		/// \param method - HTTP method to match like GET, POST, note regular expression can be used as well, for example "(POST|PUT)"
-		/// \param re - matched URL
+		/// \param re - regular expression to match the URL
 		/// \param member - member function of application \a app
 		/// \param app - application that its \a member is called
+		/// \param groups - matched groups converted to ApplicationMemberArgs
+		///
+		/// Note: 
+		///
+		///  - number of integers in \a groups should match the number of arguments of \a member
+		///  - \a member can have up to 8 arguments MemberArgs and the function should receive same number of integer parameters representing matched groups
+		///
+		/// For exaample
+		/// \code
+		///    class foo : public cppcms::application {
+		///        ...
+		///       void page(int x,std::string const &name);
+		///       void update(int x);
+		///       foo(...) 
+		///       {
+		///          dispatcher().map("GET","/page/(\\d+)(/(.*))?",&foo::page,this,1,3);
+		///          dispatcher().map("POST","/update/(\\d+)",&foo::update,this,1);
+		///       }
+		/// \endcode
+		///
+		/// When the reuqest matches the \a method and regualr expression \a re, \a member of \a app is called, For case of `page` that has two
+		/// parameters the first matched group is converted to integer and passed to as first parameter and 3rd group is passed as string to 2nd parameter
+		///
+		/// In case of `update` - that has only 1 parameter, a single integer should be passed
 		///
 		/// In addition to calling \a member function it calls app->init() before call
-		/// and app->clean() after the call of the C is derived from cppcms::application
+		/// and app->clean() after the call if Application is derived from cppcms::application
 		///
+		///		
 		/// \ver{v1_2}
-		template<typename C>
-		void map(std::string const &method,std::string const &re,void (C::*member)(),C *app)
-		{
-			map_generic(method,re,url_binder0<C>(member,app));
-		}
+		template<typename Application,typename... ApplicationMemberArgs>
+		void map(std::string const &method,std::string const &re,void (Application::*member)(ApplicationMemberArgs...),Application *app, int ... groups );
+
 		///
 		/// \brief Map \a member of \a app as a URL handler that matches regualr expression \a re
 		///
-		/// \param re - matched URL
+		/// \param re - regular expression to match the URL
 		/// \param member - member function of application \a app
 		/// \param app - application that its \a member is called
+		/// \param groups - matched groups converted to ApplicationMemberArgs
+		///
+		/// Note: 
+		///
+		///  - number of integers in \a groups should match the number of arguments of \a member
+		///  - \a member can have up to 8 arguments MemberArgs and the function should receive same number of integer parameters representing matched groups
+		///
+		/// For exaample
+		/// \code
+		///    class foo : public cppcms::application {
+		///        ...
+		///       void page(int x,std::string const &name);
+		///       void update(int x);
+		///       foo(...) 
+		///       {
+		///          dispatcher().map("/page/(\\d+)(/(.*))?",&foo::page,this,1,3);
+		///          dispatcher().map("/update/(\\d+)",&foo::update,this,1);
+		///       }
+		/// \endcode
+		///
+		/// When the reuqest URL the regualr expression \a re, \a member of \a app is called, For case of `page` that has two
+		/// parameters the first matched group is converted to integer and passed to as first parameter and 3rd group is passed as string to 2nd parameter
+		///
+		/// In case of `update` - that has only 1 parameter, a single integer should be passed
 		///
 		/// In addition to calling \a member function it calls app->init() before call
-		/// and app->clean() after the call of the C is derived from cppcms::application
+		/// and app->clean() after the call if Application is derived from cppcms::application
 		///
+		///		
 		/// \ver{v1_2}
-		template<typename C>
-		void map(std::string const &re,void (C::*member)(),C *app)
-		{
-			map_generic(re,url_binder0<C>(member,app));
-		}
+		template<typename Application,typename... ApplicationMemberArgs>
+		void map(std::string const &re,void (Application::*member)(ApplicationMemberArgs...),Application *app, int ... groups );
+
+
 		///
 		/// \brief Map \a member of \a app as a URL handler that matches regualr expression \a re and HTTP method \a method
 		///
 		/// \param method - HTTP method to match like GET, POST, note regular expression can be used as well, for example "(POST|PUT)"
-		/// \param re - matched URL
+		/// \param re - regular expression to match the URL
 		/// \param member - member function of application \a app
 		/// \param app - application that its \a member is called
-		/// \param g1 - a matched group passed as first parameter of \a member after validation and conversion using parse_url_parameter function
+		/// \param groups - matched groups converted to ApplicationMemberArgs
+		///
+		/// Note: 
+		///
+		///  - number of integers in \a groups should match the number of arguments of \a member
+		///  - \a member can have up to 8 arguments MemberArgs and the function should receive same number of integer parameters representing matched groups
+		///
+		/// For exaample
+		/// \code
+		///    class foo : public cppcms::application {
+		///        ...
+		///       void page(int x,std::string const &name);
+		///       void update(int x);
+		///       foo(...) 
+		///       {
+		///          using booster::regex;
+		///          dispatcher().map(regex("/page/(\\d+)(/(.*))?",regex::icase),&foo::page,this,1,3);
+		///          dispatcher().map("POST","/update/(\\d+)",&foo::update,this,1);
+		///       }
+		/// \endcode
+		///
+		/// When the reuqest matches the \a method and regualr expression \a re, \a member of \a app is called, For case of `page` that has two
+		/// parameters the first matched group is converted to integer and passed to as first parameter and 3rd group is passed as string to 2nd parameter
+		///
+		/// In case of `update` - that has only 1 parameter, a single integer should be passed
 		///
 		/// In addition to calling \a member function it calls app->init() before call
-		/// and app->clean() after the call of the C is derived from cppcms::application
+		/// and app->clean() after the call if Application is derived from cppcms::application
 		///
 		///		
 		/// \ver{v1_2}
-		template<typename C,typename P1>
-		void map(std::string const &method,std::string const &re,void (C::*member)(P1),C *app,int g1)
-		{
-			map_generic(method,re,url_binder1<C,P1>(member,app,g1));
-		}
+		template<typename Application,typename... ApplicationMemberArgs>
+		void map(std::string const &method,booster::regex const &re,void (Application::*member)(ApplicationMemberArgs...),Application *app, int ... groups );
+
 		///
-		/// \brief Map \a member of \a app as a URL handler that matches regualr expression \a re and HTTP method \a method
+		/// \brief Map \a member of \a app as a URL handler that matches regualr expression \a re
 		///
-		/// \param re - matched URL
+		/// \param re - regular expression to match the URL
 		/// \param member - member function of application \a app
 		/// \param app - application that its \a member is called
-		/// \param g1 - a matched group passed as first parameter of \a member after validation and conversion using parse_url_parameter function
+		/// \param groups - matched groups converted to ApplicationMemberArgs
+		///
+		/// Note: 
+		///
+		///  - number of integers in \a groups should match the number of arguments of \a member
+		///  - \a member can have up to 8 arguments MemberArgs and the function should receive same number of integer parameters representing matched groups
+		///
+		/// For exaample
+		/// \code
+		///    class foo : public cppcms::application {
+		///        ...
+		///       void page(int x,std::string const &name);
+		///       void update(int x);
+		///       foo(...) 
+		///       {
+		///          using booster::regex;
+		///          dispatcher().map(regex("/page/(\\d+)(/(.*))?",regex::icase),&foo::page,this,1,3);
+		///          dispatcher().map("/update/(\\d+)",&foo::update,this,1);
+		///       }
+		/// \endcode
+		///
+		/// When the reuqest URL the regualr expression \a re, \a member of \a app is called, For case of `page` that has two
+		/// parameters the first matched group is converted to integer and passed to as first parameter and 3rd group is passed as string to 2nd parameter
+		///
+		/// In case of `update` - that has only 1 parameter, a single integer should be passed
 		///
 		/// In addition to calling \a member function it calls app->init() before call
-		/// and app->clean() after the call of the C is derived from cppcms::application
+		/// and app->clean() after the call if Application is derived from cppcms::application
 		///
 		///		
 		/// \ver{v1_2}
-		template<typename C,typename P1>
-		void map(std::string const &re,void (C::*member)(P1),C *app,int g1)
-		{
-			map_generic(re,url_binder1<C,P1>(member,app,g1));
-		}
+		template<typename Application,typename... ApplicationMemberArgs>
+		void map(booster::regex const &re,void (Application::*member)(ApplicationMemberArgs...),Application *app, int ... groups );
 
-		
 
+
+		#endif
 
 		///
 		/// Assign \a handler to pattern \a regex thus if URL that matches
@@ -579,65 +672,264 @@ namespace cppcms {
 		}
 
 
-		template<typename C>
-		struct url_binder0  {
-			typedef void (C::*member_type)();
-			member_type member;
-			C *self;
-			url_binder0(member_type m,C *s) : member(m),self(s) {}
-			bool operator()(application &,booster::cmatch const  &) 
-			{
-				page_guard<C> guard(self);
-				(self->*member)();
-				return true;
-			}
-		};
+		template<typename F>
+		struct url_binder;
+
+
+		#define CPPCMS_DEFANDPARSE(N) 	typename booster::remove_const_reference<P##N>::type p##N; \
+						if(!parse(app,s,m,g##N,p##N)) return false;
+
+		#define CPPCMS_DEFANDPARSE2(N1,N2)  CPPCMS_DEFANDPARSE(N1) CPPCMS_DEFANDPARSE(N2)
+		#define CPPCMS_DEFANDPARSE3(N1,N2,N3)  CPPCMS_DEFANDPARSE(N1) CPPCMS_DEFANDPARSE2(N2,N3)
+		#define CPPCMS_DEFANDPARSE4(N1,N2,N3,N4)  CPPCMS_DEFANDPARSE2(N1,N2) CPPCMS_DEFANDPARSE2(N3,N4)
+		#define CPPCMS_DEFANDPARSE5(N1,N2,N3,N4,N5)  CPPCMS_DEFANDPARSE2(N1,N2) CPPCMS_DEFANDPARSE3(N3,N4,N5)
 		
-		template<typename C,typename P1>
-		struct url_binder1  {
-			typedef void (C::*member_type)(P1);
-			member_type member;
-			C *self;
-			int g1;
-			url_binder1(member_type m,C *s,int p1) : member(m),self(s),g1(p1) {}
-			bool operator()(application &app,booster::cmatch const  &m) 
-			{
-				util::const_char_istream s;
-				setup_stream(app,s);
 
-				typename booster::remove_const_reference<P1>::type p1;
-				bool res = parse(app,s,m,g1,p1);
+	
+		#define CPPCMS_URLBINDER										\
+		private:												\
+		template<typename C CPPCMS_URLBINDER_PRD CPPCMS_URLBINDER_TPAR>						\
+		struct url_binder<void (C::*)(CPPCMS_URLBINDER_MPAR)> {							\
+			typedef void (C::*member_type)(CPPCMS_URLBINDER_MPAR);						\
+			member_type member; C *self;									\
+			CPPCMS_URLBINDER_GPAR										\
+			url_binder(											\
+					member_type m,C *s CPPCMS_URLBINDER_PRD						\
+					CPPCMS_URLBINDER_IPAR								\
+			) : 	member(m),										\
+				self(s) CPPCMS_URLBINDER_PRD								\
+				CPPCMS_URLBINDER_CPAR									\
+			{}												\
+			bool operator()(application &CPPCMS_URLBINDER_P1,booster::cmatch const  &CPPCMS_URLBINDER_P2) {	\
+				CPPCMS_URLBINDER_INIT	CPPCMS_URLBINDER_PARSE						\
+				page_guard<C> guard(self);								\
+				(self->*member)(CPPCMS_URLBINDER_PPAR);							\
+				return true;										\
+			}												\
+		};													\
+		public:													\
+		template<typename C CPPCMS_URLBINDER_PRD CPPCMS_URLBINDER_TPAR>						\
+		void map(std::string const &me,std::string const &re,							\
+			 void (C::*mb)(CPPCMS_URLBINDER_MPAR),C *app CPPCMS_URLBINDER_PRD				\
+			 CPPCMS_URLBINDER_IPAR)										\
+		{													\
+			typedef url_binder<void(C::*)(CPPCMS_URLBINDER_MPAR)> btype;					\
+			map_generic(me,re,btype(mb,app CPPCMS_URLBINDER_PRD CPPCMS_URLBINDER_PPAR));			\
+		}													\
+		template<typename C CPPCMS_URLBINDER_PRD CPPCMS_URLBINDER_TPAR>						\
+		void map(std::string const &re,										\
+			 void (C::*mb)(CPPCMS_URLBINDER_MPAR),C *app CPPCMS_URLBINDER_PRD				\
+			 CPPCMS_URLBINDER_IPAR)										\
+		{													\
+			typedef url_binder<void (C::*)(CPPCMS_URLBINDER_MPAR)> btype;					\
+			map_generic(re,btype(mb,app CPPCMS_URLBINDER_PRD CPPCMS_URLBINDER_PPAR));			\
+		}													\
+		template<typename C CPPCMS_URLBINDER_PRD CPPCMS_URLBINDER_TPAR>						\
+		void map(std::string const &me,booster::regex const &re,						\
+			 void (C::*mb)(CPPCMS_URLBINDER_MPAR),C *app CPPCMS_URLBINDER_PRD				\
+			 CPPCMS_URLBINDER_IPAR)										\
+		{													\
+			typedef url_binder<void (C::*)(CPPCMS_URLBINDER_MPAR)> btype;					\
+			map_generic(me,re,btype(mb,app CPPCMS_URLBINDER_PRD CPPCMS_URLBINDER_PPAR));			\
+		}													\
+		template<typename C CPPCMS_URLBINDER_PRD CPPCMS_URLBINDER_TPAR>						\
+		void map(booster::regex const &re,									\
+			 void (C::*mb)(CPPCMS_URLBINDER_MPAR),C *app CPPCMS_URLBINDER_PRD				\
+			 CPPCMS_URLBINDER_IPAR)										\
+		{													\
+			typedef url_binder<void (C::*)(CPPCMS_URLBINDER_MPAR)> btype;					\
+			map_generic(re,btype(mb,app CPPCMS_URLBINDER_PRD CPPCMS_URLBINDER_PPAR));			\
+		}													\
+		private:												
 
-				if(!res) return false;
-				page_guard<C> guard(self);
-				(self->*member)(p1);
-				return true;
-			}
-		};
-		
-		template<typename C,typename P1,typename P2>
-		struct url_binder2  {
-			typedef void (C::*member_type)(P1,P2);
-			member_type member;
-			C *self;
-			int g1,g2;
-			url_binder2(member_type m,C *s,int p1,int p2) : member(m),self(s),g1(p1),g2(p2) {}
-			bool operator()(application &app,booster::cmatch const  &m) 
-			{
-				util::const_char_istream s;
-				setup_stream(app,s);
 
-				typename booster::remove_const_reference<P1>::type p1;
-				typename booster::remove_const_reference<P2>::type p2;
-				bool res = parse(app,s,m,g1,p1) && parse(app,s,m,g2,p2);
-				
-				if(!res) return false;
-				page_guard<C> guard(self);
-				(self->*member)(p1,p2);
-				return true;
-			}
-		};
+		#define CPPCMS_URLBINDER_PRD
+		#define CPPCMS_URLBINDER_INIT
+		#define CPPCMS_URLBINDER_TPAR  
+		#define CPPCMS_URLBINDER_MPAR  
+		#define CPPCMS_URLBINDER_PPAR  
+		#define CPPCMS_URLBINDER_GPAR  
+		#define CPPCMS_URLBINDER_IPAR  
+		#define CPPCMS_URLBINDER_CPAR  
+		#define CPPCMS_URLBINDER_PARSE  
+		#define CPPCMS_URLBINDER_P1
+		#define CPPCMS_URLBINDER_P2
 
+		CPPCMS_URLBINDER
+
+		#undef CPPCMS_URLBINDER_TPAR
+		#undef CPPCMS_URLBINDER_MPAR
+		#undef CPPCMS_URLBINDER_PPAR
+		#undef CPPCMS_URLBINDER_GPAR
+		#undef CPPCMS_URLBINDER_IPAR
+		#undef CPPCMS_URLBINDER_CPAR
+		#undef CPPCMS_URLBINDER_PARSE
+
+		#undef CPPCMS_URLBINDER_INIT
+		#undef CPPCMS_URLBINDER_PRD
+		#undef CPPCMS_URLBINDER_P1 
+		#undef CPPCMS_URLBINDER_P2 
+
+
+		#define CPPCMS_URLBINDER_PRD ,
+		#define CPPCMS_URLBINDER_INIT util::const_char_istream s; setup_stream(app,s);
+		#define CPPCMS_URLBINDER_P1 app
+		#define CPPCMS_URLBINDER_P2 m
+
+		#define CPPCMS_URLBINDER_TPAR  typename P1
+		#define CPPCMS_URLBINDER_MPAR  P1
+		#define CPPCMS_URLBINDER_PPAR  p1
+		#define CPPCMS_URLBINDER_GPAR  int g1;
+		#define CPPCMS_URLBINDER_IPAR  int p1
+		#define CPPCMS_URLBINDER_CPAR  g1(p1)
+		#define CPPCMS_URLBINDER_PARSE CPPCMS_DEFANDPARSE(1) 
+
+		CPPCMS_URLBINDER
+
+		#undef CPPCMS_URLBINDER_TPAR
+		#undef CPPCMS_URLBINDER_MPAR
+		#undef CPPCMS_URLBINDER_PPAR
+		#undef CPPCMS_URLBINDER_GPAR
+		#undef CPPCMS_URLBINDER_IPAR
+		#undef CPPCMS_URLBINDER_CPAR
+		#undef CPPCMS_URLBINDER_PARSE
+
+
+		#define CPPCMS_URLBINDER_TPAR  typename P1,typename P2
+		#define CPPCMS_URLBINDER_MPAR  P1,P2
+		#define CPPCMS_URLBINDER_PPAR  p1,p2
+		#define CPPCMS_URLBINDER_GPAR  int g1,g2;
+		#define CPPCMS_URLBINDER_IPAR  int p1,int p2
+		#define CPPCMS_URLBINDER_CPAR  g1(p1),g2(p2)
+		#define CPPCMS_URLBINDER_PARSE CPPCMS_DEFANDPARSE2(1,2) 
+
+		CPPCMS_URLBINDER
+
+		#undef CPPCMS_URLBINDER_TPAR
+		#undef CPPCMS_URLBINDER_MPAR
+		#undef CPPCMS_URLBINDER_PPAR
+		#undef CPPCMS_URLBINDER_GPAR
+		#undef CPPCMS_URLBINDER_IPAR
+		#undef CPPCMS_URLBINDER_CPAR
+		#undef CPPCMS_URLBINDER_PARSE
+
+
+		#define CPPCMS_URLBINDER_TPAR  typename P1,typename P2,typename P3
+		#define CPPCMS_URLBINDER_MPAR  P1,P2,P3
+		#define CPPCMS_URLBINDER_PPAR  p1,p2,p3
+		#define CPPCMS_URLBINDER_GPAR  int g1,g2,g3;
+		#define CPPCMS_URLBINDER_IPAR  int p1,int p2,int p3
+		#define CPPCMS_URLBINDER_CPAR  g1(p1),g2(p2),g3(p3)
+		#define CPPCMS_URLBINDER_PARSE CPPCMS_DEFANDPARSE3(1,2,3) 
+
+		CPPCMS_URLBINDER
+
+		#undef CPPCMS_URLBINDER_TPAR
+		#undef CPPCMS_URLBINDER_MPAR
+		#undef CPPCMS_URLBINDER_PPAR
+		#undef CPPCMS_URLBINDER_GPAR
+		#undef CPPCMS_URLBINDER_IPAR
+		#undef CPPCMS_URLBINDER_CPAR
+		#undef CPPCMS_URLBINDER_PARSE
+
+
+		#define CPPCMS_URLBINDER_TPAR  typename P1,typename P2,typename P3,typename P4
+		#define CPPCMS_URLBINDER_MPAR  P1,P2,P3,P4
+		#define CPPCMS_URLBINDER_PPAR  p1,p2,p3,p4
+		#define CPPCMS_URLBINDER_GPAR  int g1,g2,g3,g4;
+		#define CPPCMS_URLBINDER_IPAR  int p1,int p2,int p3,int p4
+		#define CPPCMS_URLBINDER_CPAR  g1(p1),g2(p2),g3(p3),g4(p4)
+		#define CPPCMS_URLBINDER_PARSE CPPCMS_DEFANDPARSE4(1,2,3,4) 
+
+		CPPCMS_URLBINDER
+
+		#undef CPPCMS_URLBINDER_TPAR
+		#undef CPPCMS_URLBINDER_MPAR
+		#undef CPPCMS_URLBINDER_PPAR
+		#undef CPPCMS_URLBINDER_GPAR
+		#undef CPPCMS_URLBINDER_IPAR
+		#undef CPPCMS_URLBINDER_CPAR
+		#undef CPPCMS_URLBINDER_PARSE
+
+
+		#define CPPCMS_URLBINDER_TPAR  typename P1,typename P2,typename P3,typename P4,typename P5
+		#define CPPCMS_URLBINDER_MPAR  P1,P2,P3,P4,P5
+		#define CPPCMS_URLBINDER_PPAR  p1,p2,p3,p4,p5
+		#define CPPCMS_URLBINDER_GPAR  int g1,g2,g3,g4,g5;
+		#define CPPCMS_URLBINDER_IPAR  int p1,int p2,int p3,int p4,int p5
+		#define CPPCMS_URLBINDER_CPAR  g1(p1),g2(p2),g3(p3),g4(p4),g5(p5)
+		#define CPPCMS_URLBINDER_PARSE CPPCMS_DEFANDPARSE5(1,2,3,4,5) 
+
+		CPPCMS_URLBINDER
+
+		#undef CPPCMS_URLBINDER_TPAR
+		#undef CPPCMS_URLBINDER_MPAR
+		#undef CPPCMS_URLBINDER_PPAR
+		#undef CPPCMS_URLBINDER_GPAR
+		#undef CPPCMS_URLBINDER_IPAR
+		#undef CPPCMS_URLBINDER_CPAR
+		#undef CPPCMS_URLBINDER_PARSE
+
+
+		#define CPPCMS_URLBINDER_TPAR  typename P1,typename P2,typename P3,typename P4,typename P5,typename P6
+		#define CPPCMS_URLBINDER_MPAR  P1,P2,P3,P4,P5,P6
+		#define CPPCMS_URLBINDER_PPAR  p1,p2,p3,p4,p5,p6
+		#define CPPCMS_URLBINDER_GPAR  int g1,g2,g3,g4,g5,g6;
+		#define CPPCMS_URLBINDER_IPAR  int p1,int p2,int p3,int p4,int p5,int p6
+		#define CPPCMS_URLBINDER_CPAR  g1(p1),g2(p2),g3(p3),g4(p4),g5(p5),g6(p6)
+		#define CPPCMS_URLBINDER_PARSE CPPCMS_DEFANDPARSE5(1,2,3,4,5) CPPCMS_DEFANDPARSE(6)
+
+		CPPCMS_URLBINDER
+
+		#undef CPPCMS_URLBINDER_TPAR
+		#undef CPPCMS_URLBINDER_MPAR
+		#undef CPPCMS_URLBINDER_PPAR
+		#undef CPPCMS_URLBINDER_GPAR
+		#undef CPPCMS_URLBINDER_IPAR
+		#undef CPPCMS_URLBINDER_CPAR
+		#undef CPPCMS_URLBINDER_PARSE
+
+		#define CPPCMS_URLBINDER_TPAR  typename P1,typename P2,typename P3,typename P4,typename P5,typename P6,typename P7
+		#define CPPCMS_URLBINDER_MPAR  P1,P2,P3,P4,P5,P6,P7
+		#define CPPCMS_URLBINDER_PPAR  p1,p2,p3,p4,p5,p6,p7
+		#define CPPCMS_URLBINDER_GPAR  int g1,g2,g3,g4,g5,g6,g7;
+		#define CPPCMS_URLBINDER_IPAR  int p1,int p2,int p3,int p4,int p5,int p6,int p7
+		#define CPPCMS_URLBINDER_CPAR  g1(p1),g2(p2),g3(p3),g4(p4),g5(p5),g6(p6),g7(p7)
+		#define CPPCMS_URLBINDER_PARSE CPPCMS_DEFANDPARSE5(1,2,3,4,5) CPPCMS_DEFANDPARSE2(6,7)
+
+		CPPCMS_URLBINDER
+
+		#undef CPPCMS_URLBINDER_TPAR
+		#undef CPPCMS_URLBINDER_MPAR
+		#undef CPPCMS_URLBINDER_PPAR
+		#undef CPPCMS_URLBINDER_GPAR
+		#undef CPPCMS_URLBINDER_IPAR
+		#undef CPPCMS_URLBINDER_CPAR
+		#undef CPPCMS_URLBINDER_PARSE
+
+		#define CPPCMS_URLBINDER_TPAR  typename P1,typename P2,typename P3,typename P4,typename P5,typename P6,typename P7,typename P8
+		#define CPPCMS_URLBINDER_MPAR  P1,P2,P3,P4,P5,P6,P7,P8
+		#define CPPCMS_URLBINDER_PPAR  p1,p2,p3,p4,p5,p6,p7,p8
+		#define CPPCMS_URLBINDER_GPAR  int g1,g2,g3,g4,g5,g6,g7,g8;
+		#define CPPCMS_URLBINDER_IPAR  int p1,int p2,int p3,int p4,int p5,int p6,int p7,int p8
+		#define CPPCMS_URLBINDER_CPAR  g1(p1),g2(p2),g3(p3),g4(p4),g5(p5),g6(p6),g7(p7),g8(p8)
+		#define CPPCMS_URLBINDER_PARSE CPPCMS_DEFANDPARSE5(1,2,3,4,5) CPPCMS_DEFANDPARSE3(6,7,8)
+
+		CPPCMS_URLBINDER
+
+		#undef CPPCMS_URLBINDER_TPAR
+		#undef CPPCMS_URLBINDER_MPAR
+		#undef CPPCMS_URLBINDER_PPAR
+		#undef CPPCMS_URLBINDER_GPAR
+		#undef CPPCMS_URLBINDER_IPAR
+		#undef CPPCMS_URLBINDER_CPAR
+		#undef CPPCMS_URLBINDER_PARSE
+
+		#undef CPPCMS_URLBINDER
+		#undef CPPCMS_URLBINDER_INIT
+		#undef CPPCMS_URLBINDER_PRD
+		#undef CPPCMS_URLBINDER_P1 
+		#undef CPPCMS_URLBINDER_P2 
 
 		struct _data;
 		booster::hold_ptr<_data> d;
