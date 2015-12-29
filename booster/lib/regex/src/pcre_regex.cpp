@@ -118,7 +118,18 @@ namespace booster {
 		d->flags = flags;
 		char const *err_ptr = 0;
 		int offset = 0;
-		pcre *p=pcre_compile(pattern.c_str(),0,&err_ptr,&offset,0);
+		int pcre_flags = 0;
+		if(flags & icase) {
+			pcre_flags |= PCRE_CASELESS;
+		}
+		if(flags & utf8) {
+			#ifndef PCRE_UTF8
+			throw regex_error("PCRE Library does not support UTF-8 please upgrade");
+			#else
+			pcre_flags |= PCRE_UTF8;
+			#endif
+		}
+		pcre *p=pcre_compile(pattern.c_str(),pcre_flags,&err_ptr,&offset,0);
 		if(!p) {
 			std::ostringstream ss;
 			ss << "booster::regex:" << err_ptr <<", at offset "<<offset;
@@ -137,7 +148,7 @@ namespace booster {
 		anchored+=pattern;
 		anchored+=")\\z";
 
-		p=pcre_compile(anchored.c_str(),0,&err_ptr,&offset,0);
+		p=pcre_compile(anchored.c_str(),pcre_flags,&err_ptr,&offset,0);
 		if(!p) {
 			throw regex_error("booster::regex: Internal error");
 		}

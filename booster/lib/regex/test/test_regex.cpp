@@ -7,12 +7,20 @@
 //
 #include <booster/regex.h>
 #include "test.h"
+#include <pcre.h>
+
+#define THROWS(x,te) do {					\
+	try{x;}catch(te const &){break;}catch(...){} 		\
+	std::ostringstream oss;					\
+	oss << "Error " << __FILE__ << ":"<<__LINE__ << " "#x; 	\
+	throw std::runtime_error(oss.str());			\
+}while(0)
 
 #include <iostream>
 
-bool search(std::string r,std::string t)
+bool search(std::string r,std::string t,int flags=0)
 {
-	booster::regex re(r);
+	booster::regex re(r,flags);
 	bool v1 =  re.search(t.c_str(),t.c_str()+t.size());
 	std::vector<std::pair<int,int> > m;
 	bool v2 =  re.search(t.c_str(),t.c_str()+t.size(),m);
@@ -20,9 +28,9 @@ bool search(std::string r,std::string t)
 	return v1;
 }
 
-bool match(std::string r,std::string t)
+bool match(std::string r,std::string t,int flags = 0)
 {
-	booster::regex re(r);
+	booster::regex re(r,flags);
 	std::vector<std::pair<int,int> > m;
 	bool v1 = re.match(t.c_str(),t.c_str()+t.size());
 	bool v2 = re.match(t.c_str(),t.c_str()+t.size(),m);
@@ -163,6 +171,43 @@ int main()
 			TEST(match("((((((((((foo))))))))))","foo"));
 			TEST(!match("((((((((((foo))))))))))","foox"));
 			TEST(!match("((((((((((foo))))))))))","xfoo"));
+			
+			TEST(!match("a","A",0));
+			TEST(!search("a","xAz",0));
+			TEST(match("a","A",booster::regex::icase));
+			TEST(search("a","xAz",booster::regex::icase));
+
+
+
+			int utf8 = 0;
+			#ifdef PCRE_UTF8
+			pcre_config(PCRE_CONFIG_UTF8,&utf8);
+			#endif
+
+			if(utf8) {
+
+				std::cout << "Testing UTF-8" << std::endl;
+				TEST(match(".","\xD7\x90",booster::regex::utf8));
+				TEST(match(".","\xD0\x96",booster::regex::utf8));
+				TEST(match("\xD0\x96","\xD0\xB6",booster::regex::icase | booster::regex::utf8));
+
+				int prop=0;
+				pcre_config(PCRE_CONFIG_UNICODE_PROPERTIES,&prop);
+				if(prop) {
+					std::cout << "Testing Unicode Properties" << std::endl;
+					TEST(match("\\p{Hebrew}","\xD7\x90",booster::regex::utf8));
+					TEST(!match("\\p{Hebrew}","\xD0\x96",booster::regex::utf8));
+					TEST(!match("\\p{Hebrew}","a",booster::regex::utf8));
+				}
+				else {
+					std::cout << "Unicode properties not compiled in" << std::endl;
+					THROWS(match("\\p{Hebrew}","a",booster::regex::utf8),booster::regex_error);
+				}
+			}
+			else {
+				std::cout << "UTF-8 is not compiled in" << std::endl;
+				THROWS(match(".","a",booster::regex::utf8),booster::regex_error);
+			}
 			
 			std::cout << "Testing match_result" << std::endl;
 			test_match<std::string,booster::smatch>("aab");

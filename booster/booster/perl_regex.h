@@ -120,6 +120,8 @@ namespace booster {
 
 		static const int perl = 0; ///< Constant for expression type - Perl Compatible Regex.
 		static const int normal = 0; ///< Constant for expression type - synonym of perl, default.
+		static const int icase = 0x100; ///< Make case insensitive comparison \ver{v1_2}
+		static const int utf8  = 0x200; ///< Assume that input is UTF-8 so for example '.' would match UTF-8 code point \ver{v1_2}
 
 	private:
 		struct data;
