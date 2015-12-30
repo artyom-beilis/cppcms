@@ -89,6 +89,16 @@ TBD
 <% end %>
 <% end view %>
 
+<% view master_block_filter uses data::master %>
+<% template render () %>
+<%= text %>|<% gt "{1}" using text %>|<% url "/" using text %>
+<% filter jsescape %><%= text %>|<% gt "{1}" using text %>|<% url "/" using text %><% end %>
+<% filter ext test_filter %><%= text %>|<% gt "{1}" using text %>|<% url "/" using text %>|<% filter jsescape %><%= text %><% end %>|<%= text %><% end %>
+<%= text %>
+<% end %>
+<% end view %>
+
+
 <% view master_filter uses data::master %>
 <% template render() %>
 <%= integer %>

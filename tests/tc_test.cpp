@@ -312,6 +312,23 @@ public:
 			"/1//\n"
 			"/foo\n");
 	}
+	void test_block_filter()
+	{
+		std::cout << "- Block filter" << std::endl;
+		data::master m;
+		m.integer = 1;
+		m.text = "<ab\">";
+		render("master_block_filter",m);
+		compare_strings(str(),
+		"\n"	// <% template render () %>
+		"&lt;ab&quot;&gt;|&lt;ab&quot;&gt;|/%3cab%22%3e\n"	// <%= text %>| <% gt "{1}" using text %>|<% url "/" using text %>
+		"<ab\\\">|<ab\\\">|/%3cab%22%3e\n"			// <% filter jsescape %><%= text %>|<% gt "{1}" using text %><% url "/" using text %><% end %>
+		"<ba\">|<ba\">|/%3cab%22%3e|<ab\\\">|<ba\">\n"		
+		  // <% filter ext test_filter %><%= text %>|<% gt "{1}" using text %>|<% url "/" using text %>|<% filter jscape %><%= text %><% end %>|<%= text %><% end %>
+		"&lt;ab&quot;&gt;\n");	//<%= text %>
+
+		
+	}
 	void test_format()
 	{
 		std::cout << "- Testing formatting" << std::endl;
@@ -493,6 +510,7 @@ int main(int argc,char **argv)
 		app.test_foreach();
 		app.test_format();
 		app.test_forms();
+		app.test_block_filter();
 		app.test_cache();
 		app.test_using_render();
 	}
