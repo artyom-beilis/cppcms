@@ -31,25 +31,39 @@ std::string escape(std::string const &s)
 			case '>': content+="&gt;"; break;
 			case '&': content+="&amp;"; break;
 			case '\"': content+="&quot;"; break;
+			case '\'': content+="&#39;"; break;
 			default: content+=c;
 		}
 	}
 	return content;
 }
 
-
-void escape(char const *begin,char const *end,std::ostream &output)
+int escape(char const *begin,char const *end,std::streambuf &output)
 {
 	while(begin!=end) {
 		char c=*begin++;
+		bool ok;
 		switch(c){
-			case '<': output << "&lt;"; break;
-			case '>': output << "&gt;"; break;
-			case '&': output << "&amp;"; break;
-			case '\"': output<<"&quot;"; break;
-			default: output << c;
+		case '<':  ok = output.sputn("&lt;",4)==4; break;
+		case '>':  ok = output.sputn("&gt;",4)==4; break;
+		case '&':  ok = output.sputn("&amp;",5)==5; break;
+		case '\"': ok = output.sputn("&quot;",6)==6; break;
+		case '\'': ok = output.sputn("&#39;",5)==5; break;
+		default:   ok = output.sputc(c)!=EOF;
 		}
+		if(!ok)
+			return -1;
 	}
+	return 0;
+}
+
+void escape(char const *begin,char const *end,std::ostream &output)
+{
+	std::streambuf *buf = output.rdbuf();
+	if(!output || !buf)
+		return;
+	if(escape(begin,end,*buf)!=0)
+		output.setstate(std::ios_base::failbit);
 }
 
 template<typename Iterator>
@@ -89,6 +103,15 @@ void urlencode(char const *b,char const *e,std::ostream &out)
 {
 	std::ostream_iterator<char> it(out);
 	urlencode_impl(b,e,it);
+}
+
+int urlencode(char const *b,char const *e,std::streambuf &out)
+{
+	std::ostreambuf_iterator<char> it(&out);
+	urlencode_impl(b,e,it);
+	if(it.failed())
+		return -1;
+	return 0;
 }
 std::string urlencode(std::string const &s)
 {

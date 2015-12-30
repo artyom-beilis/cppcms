@@ -25,6 +25,7 @@ namespace cppcms {
 		/// - > - \&gt;
 		/// - \& - \&amp;
 		/// - &quot; - \&quot;
+		/// - &#39; - \&#39;
 		///
 		/// Note, this function does not deal with encodings, so it's up to you to
 		/// provide valid text encoding
@@ -37,11 +38,26 @@ namespace cppcms {
 		/// - > - \&gt;
 		/// - \& - \&amp;
 		/// - &quot; - \&quot;
+		/// - &#39; - \&#39;
 		///
 		/// Note, this function does not deal with encodings, so it's up to you to
 		/// provide valid text encoding
 		///
 		void CPPCMS_API escape(char const *begin,char const *end,std::ostream &output);
+		///
+		/// Escape string for inclusion in HTML page, i.e.
+		///
+		/// - < - \&lt;
+		/// - > - \&gt;
+		/// - \& - \&amp;
+		/// - &quot; - \&quot;
+		/// - &#39; - \&#39;
+		///
+		/// Note, this function does not deal with encodings, so it's up to you to
+		/// provide valid text encoding
+		///
+		/// if I/O operation on output fails returns -1, otherwise returns 0
+		int  CPPCMS_API escape(char const *begin,char const *end,std::streambuf &output);
 		///
 		/// Encode string for URL (percent encoding)
 		///
@@ -50,6 +66,10 @@ namespace cppcms {
 		/// Encode string for URL (percent encoding)
 		///
 		void CPPCMS_API urlencode(char const *begin,char const *end,std::ostream &output);
+		///
+		/// Encode string for URL (percent encoding), returns -1 in case of IO failure, and 0 on success
+		///
+		int CPPCMS_API urlencode(char const *begin,char const *end,std::streambuf &output);
 		///
 		/// Decode string from URL-encoding (percent-encoding)
 		///

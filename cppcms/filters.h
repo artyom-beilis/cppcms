@@ -229,6 +229,32 @@ namespace cppcms {
 			obj(out);
 			return out;
 		}
+		///
+		/// \brief Output filter escape
+		///
+		/// Escape text for JavaScript string -- make text safe to include between quotes in the JavaScript or JSON code
+		///
+		/// \ver{v1_2}	
+		class CPPCMS_API jsescape {					
+		public:	
+			jsescape();						
+			~jsescape();					
+			jsescape(jsescape const &);				
+			jsescape const &operator=(jsescape const &other);	
+			void operator()(std::ostream &out) const;
+			jsescape(streamable const &obj);
+
+		private:						
+			streamable obj_;			
+			struct _data;					
+			booster::copy_ptr<_data> d;				
+		};
+
+		inline std::ostream &operator<<(std::ostream &out,jsescape const &obj)
+		{
+			obj(out);
+			return out;
+		}
 
 
 		///

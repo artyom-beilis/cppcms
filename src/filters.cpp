@@ -120,6 +120,18 @@ namespace cppcms { namespace filters {
 		out << ::cppcms::locale::to_title( sb.begin(),sb.end(),out.getloc());
 	}
 
+	namespace {
+		struct escape_buf : public util::filterbuf<escape_buf,128> {
+		public:
+			int convert(char const *begin,char const *end,std::streambuf *out)
+			{
+				if(!out)
+					return -1;
+				return util::escape(begin,end,*out);
+			}
+		};
+	}
+
 	struct escape::_data {};
 	escape::escape() {}
 	escape::~escape() {}
@@ -128,11 +140,99 @@ namespace cppcms { namespace filters {
 	escape const &escape::operator=(escape const &other){ obj_ = other.obj_; return *this; }
 	void escape::operator()(std::ostream &out) const
 	{
-		util::steal_buffer<> sb(out);
+		escape_buf eb;
+		eb.steal(out);
+		obj_(out);
+		eb.release();
+	}
+
+	namespace {
+		struct jsescape_buf : public util::filterbuf<jsescape_buf,128> {
+		public:
+			jsescape_buf() 
+			{
+				buf_[0]='\\';
+				buf_[1]= 'u';
+				buf_[2]= '0';
+				buf_[3]= '0';
+				// 4 first digit
+				// 5 2nd digit
+				buf_[6]='\0';
+			}
+			char const *encode(unsigned char c)
+			{
+				static char const tohex[]="0123456789abcdef";
+				buf_[4]=tohex[c >>  4];
+				buf_[5]=tohex[c & 0xF];
+				return buf_;
+			}
+			int convert(char const *begin,char const *end,std::streambuf *out)
+			{
+				if(!out)
+					return -1;
+				while(begin!=end) {
+					char const *addon = 0;
+					unsigned char c=*begin++;
+					switch(c) {
+					case 0x22: addon = "\\\""; break;
+					case 0x5C: addon = "\\\\"; break;
+					case '\b': addon = "\\b"; break;
+					case '\f': addon = "\\f"; break;
+					case '\n': addon = "\\n"; break;
+					case '\r': addon = "\\r"; break;
+					case '\t': addon = "\\t"; break;
+					case '\'': addon = encode(c); break;
+					default:
+						if(c<=0x1F) 
+							addon=encode(c);
+						else {
+							if(out->sputc(c)==EOF)
+								return -1;
+							continue;
+						}
+					}
+					while(*addon)
+						if(out->sputc(*addon++)==EOF)
+							return -1;
+
+				}
+				return 0;
+			}
+		private:
+			char buf_[8];
+		};
+	}
+
+	struct jsescape::_data {};
+	jsescape::jsescape() {}
+	jsescape::~jsescape() {}
+	jsescape::jsescape(jsescape const &other) : obj_(other.obj_) {}
+	jsescape::jsescape(streamable const &obj) : obj_(obj) {}
+	jsescape const &jsescape::operator=(jsescape const &other){ obj_ = other.obj_; return *this; }
+	void jsescape::operator()(std::ostream &out) const
+	{
+		jsescape_buf sb;
+		sb.steal(out);
 		obj_(out);
 		sb.release();
-		util::escape(sb.begin(),sb.end(),out);
 	}
+	
+	
+	namespace {
+		struct urlencode_buf : public util::filterbuf<urlencode_buf,128> {
+		public:
+			int convert(char const *begin,char const *end,std::streambuf *out)
+			{
+				if(!out)
+					return -1;
+				return util::urlencode(begin,end,*out);
+			}
+		};
+	}
+
+
+
+
 
 	struct urlencode::_data {};
 	urlencode::urlencode() {}
@@ -142,10 +242,10 @@ namespace cppcms { namespace filters {
 	urlencode const &urlencode::operator=(urlencode const &other){ obj_ = other.obj_; return *this; }
 	void urlencode::operator()(std::ostream &out) const
 	{
-		util::steal_buffer<> sb(out);
+		urlencode_buf sb;
+		sb.steal(out);
 		obj_(out);
 		sb.release();
-		util::urlencode(sb.begin(),sb.end(),out);
 	}
 
 	struct raw::_data {};

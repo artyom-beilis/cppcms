@@ -11,6 +11,8 @@
 #include <cppcms/json.h>
 #include <cppcms/cache_interface.h>
 #include <cppcms/url_mapper.h>
+#include <cppcms/steal_buf.h>
+#include <sstream>
 #include "dummy_api.h"
 #include "test.h"
 
@@ -52,8 +54,9 @@ std::string conv(std::string const &l,size_t i)
 
 void compare_strings(std::string const &l,std::string const &r)
 {
-	if(l==r)
+	if(l==r) {
 		return;
+	}
 	size_t m = l.size();
 	if(r.size() > m)  m = r.size();
 	int line = 1;
@@ -101,6 +104,77 @@ public:
 		response().io_mode(cppcms::http::response::normal);
 		response().out();
 		output_.clear();
+	}
+
+	struct upperA : public cppcms::util::filterbuf<upperA,16> {
+	public:
+		int convert(char const *begin,char const *end,std::streambuf *out)
+		{
+			while(begin!=end) {
+				char c=*begin++;
+				if('a'<=c && c<='z')
+					c = 'A' + (c-'a');
+				if(out->sputc(c)==EOF)
+					return -1;
+			}
+			return 0;
+		}
+	};
+	
+	struct upperB : public cppcms::util::filterbuf<upperB,0> {
+	public:
+		int convert(char const *begin,char const *end,std::streambuf *out)
+		{
+			while(begin!=end) {
+				char c=*begin++;
+				if('a'<=c && c<='z')
+					c = 'A' + (c-'a');
+				if(out->sputc(c)==EOF)
+					return -1;
+			}
+			return 0;
+		}
+	};
+
+	void test_buffer()
+	{
+		std::cout << "- Testing filter API" << std::endl;
+		{
+			std::ostringstream ss;
+			upperA a;
+			a.steal(ss);
+			ss<<"test 123456 Hello World";
+			a.release();
+			compare_strings(ss.str(),"TEST 123456 HELLO WORLD");
+		}
+		{
+			std::ostringstream ss;
+			upperB b;
+			b.steal(ss);
+			ss<<"test 123456 Hello World";
+			b.release();
+			compare_strings(ss.str(),"TEST 123456 HELLO WORLD");
+		}
+		{
+			std::ostringstream ss;
+			ss<<cppcms::filters::escape(std::string("<th attr=\"a\" attr='b' & >"));
+			compare_strings(ss.str(),"&lt;th attr=&quot;a&quot; attr=&#39;b&#39; &amp; &gt;");
+		}
+		{
+			std::ostringstream ss;
+			ss<<cppcms::filters::urlencode(std::string("Test-Test /xx"));
+			compare_strings(ss.str(),"Test-Test%20%2fxx");
+		}
+		{
+			std::ostringstream ss;
+			ss<<cppcms::filters::urlencode(cppcms::filters::escape(std::string("<test>")));
+			compare_strings(ss.str(),"%26lt%3btest%26gt%3b");
+		}
+		{
+			std::ostringstream ss;
+			ss<<cppcms::filters::jsescape(std::string("Hello\ntest\t msg=\"a\" or msg='a' \1 "));
+			compare_strings(ss.str(),"Hello\\ntest\\t msg=\\\"a\\\" or msg=\\u0027a\\u0027 \\u0001 ");
+		}
 	}
 
 	std::string str()
@@ -229,7 +303,7 @@ public:
 		m.integer = 1;
 		m.text = "/";
 		render("master_url",m);
-		TEST(str()=="\n"
+		compare_strings(str(),"\n"
 			"/\n"
 			"/1\n"
 			"/1/%2f\n"
@@ -406,6 +480,8 @@ int main(int argc,char **argv)
 		cfg["cache"]["limit"]=100;
 		cppcms::service srv(cfg);
 		test_app app(srv);
+
+		app.test_buffer();
 
 		app.set_context();
 

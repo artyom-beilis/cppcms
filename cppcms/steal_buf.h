@@ -313,6 +313,128 @@ namespace util {
 	private:
 		stackbuf<Size> buf_;
 	};
+
+	template<typename Filter,int BufferSize=128>
+	class filterbuf : public std::streambuf {
+	public:
+		filterbuf() : output_(0), output_stream_(0)
+		{
+			setp(buffer_,buffer_+BufferSize);
+		}
+		filterbuf(std::ostream &out) : output_(0), output_stream_(0)
+		{
+			setp(buffer_,buffer_+BufferSize);
+			steal(out);
+		}
+		~filterbuf()
+		{
+			try {
+				release();
+			}
+			catch(...) {}
+		}
+		void steal(std::ostream &out)
+		{
+			release();
+			output_stream_ = &out;
+			output_ = out.rdbuf(this);
+		}
+		int release()
+		{
+			int r=0;
+			if(output_stream_) {
+				if(write()!=0)
+					r=-1;
+				output_stream_->rdbuf(output_);
+				output_=0;
+				output_stream_=0;
+			}
+			return r;
+		}
+	protected:
+		int overflow(int c)
+		{
+			if(write()!=0)
+				return -1;
+			if(c!=EOF) {
+				*pptr()=c;
+				pbump(1);
+			}
+			return 0;
+		}
+	private:
+		int write()
+		{
+			if(static_cast<Filter*>(this)->convert(pbase(),pptr(),output_)!=0) {
+				output_stream_->setstate(std::ios_base::failbit);
+				return -1;
+			}
+			setp(buffer_,buffer_ + BufferSize);
+			return 0;
+		}
+		char buffer_[BufferSize];
+		std::streambuf *output_;
+		std::ostream *output_stream_;
+	};
+	
+	template<typename Filter>
+	class filterbuf<Filter,0> : public std::streambuf {
+	public:
+		filterbuf() : output_(0), output_stream_(0)
+		{
+		}
+		filterbuf(std::ostream &out) : output_(0), output_stream_(0)
+		{
+			steal(out);
+		}
+		~filterbuf()
+		{
+			release();
+		}
+		void steal(std::ostream &out)
+		{
+			release();
+			output_stream_ = &out;
+			output_ = out.rdbuf(this);
+		}
+		int release()
+		{
+			int r=0;
+			if(output_stream_) {
+				output_stream_->rdbuf(output_);
+				output_=0;
+				output_stream_=0;
+			}
+			return r;
+		}
+	protected:
+		int overflow(int c)
+		{
+			if(c!=EOF) {
+				char tmp=c;
+				if(write(&tmp,&tmp+1)!=0)
+					return -1;
+			}
+			return 0;
+		}
+		std::streamsize xsputn(char const *s,std::streamsize size)
+		{
+			if(write(s,s+size)!=0)
+				return -1;
+			return size;
+		}
+	private:
+		int write(char const *begin,char const *end)
+		{
+			if(static_cast<Filter*>(this)->convert(begin,end,output_)!=0) {
+				output_stream_->setstate(std::ios_base::failbit);
+				return -1;
+			}
+			return 0;
+		}
+		std::streambuf *output_;
+		std::ostream *output_stream_;
+	};
 	
 } // util
 } // cppcms
