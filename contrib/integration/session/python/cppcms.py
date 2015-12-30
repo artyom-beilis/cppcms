@@ -93,8 +93,12 @@ class Loader:
         cls.capi.cppcms_capi_session_get_on_server.argtypes=[ c_void_p ]
         cls.capi.cppcms_capi_session_get_session_cookie_name.restype=c_char_p
         cls.capi.cppcms_capi_session_get_session_cookie_name.argtypes=[ c_void_p ]
+        cls.capi.cppcms_capi_session_set_session_cookie.restype=c_int
+        cls.capi.cppcms_capi_session_set_session_cookie.argtypes=[ c_void_p,c_char_p ]
+        cls.capi.cppcms_capi_session_add_cookie_name.restype=c_int
+        cls.capi.cppcms_capi_session_add_cookie_name.argtypes=[ c_void_p,c_char_p ]
         cls.capi.cppcms_capi_session_load.restype=c_int
-        cls.capi.cppcms_capi_session_load.argtypes=[ c_void_p,c_char_p ]
+        cls.capi.cppcms_capi_session_load.argtypes=[ c_void_p ]
         cls.capi.cppcms_capi_session_save.restype=c_int
         cls.capi.cppcms_capi_session_save.argtypes=[ c_void_p ]
         cls.capi.cppcms_capi_session_cookie_first.restype=c_void_p
@@ -344,12 +348,15 @@ class Session(SessionBase):
         the cookies would be retrived automatically
         """
         if cookie!=None:
-            Loader.capi.cppcms_capi_session_load(self.d,cookie)
+            Loader.capi.cppcms_capi_session_set_session_cookie(self.d,cookie);
+            Loader.capi.cppcms_capi_session_load(self.d)
         elif django_request!=None:
             cookie_name = self.get_session_cookie_name()
             cookie=''
             if cookie_name in django_request.COOKIES:
                 cookie = django_request.COOKIES[cookie_name]
+            for cookie_name in django_request.COOKIES:
+                Loader.capi.cppcms_capi_session_add_cookie_name(self.d,cookie_name)
             Loader.capi.cppcms_capi_session_load(self.d,cookie)
         self.check()
     def save(self,django_response=None):
@@ -450,6 +457,7 @@ def __private_test(config):
         print (c.value())
         if(c.name()==s.get_session_cookie_name()):
             state = c.value()
+    print "Test Completed"
 
 if __name__ == "__main__":
     if len(sys.argv) != 2 and len(sys.argv) != 3:
