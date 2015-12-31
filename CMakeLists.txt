@@ -400,6 +400,7 @@ set(CPPCMS_SOURCES
 	src/copy_filter.cpp
 	src/send_timeout.cpp
 	src/http_content_filter.cpp
+	src/plugin.cpp
 	src/capi/session.cpp
 
 )
@@ -644,6 +645,12 @@ if(NOT DISABLE_SHARED)
 			set_target_properties(${SKIN} PROPERTIES COMPILE_DEFINITIONS DLL_EXPORT)
 		endif()
 	endforeach()
+	
+	add_library(plugin SHARED tests/test_plugin_so.cpp)
+	target_link_libraries(plugin ${CPPCMS_LIB})
+	if(IS_WINDOWS)
+		set_target_properties(plugin PROPERTIES COMPILE_DEFINITIONS DLL_EXPORT)
+	endif()
 
 
 
@@ -707,6 +714,7 @@ set(ALL_TESTS
 	response_test
 	file_buffer_test
 	filter_test
+	plugin_test
 	)
 
 if(NOT DISABLE_PREFORK_CACHE AND NOT IS_WINDOWS)
@@ -823,6 +831,7 @@ add_test(file_buffer_test file_buffer_test)
 if(NOT DISABLE_SHARED)
 	add_test(tc_test_shared tc_test "--shared")
 	add_test(tc_test_separate tc_test "--separate")
+	add_test(plugin_test plugin_test)
 endif()
 
 add_test(status_test
