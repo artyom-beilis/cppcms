@@ -27,7 +27,7 @@ You can find multiple tutorails at the <a href="http://cppcms.com">cppcms.com</a
 
 Multiple examples of using CppCMS can be found at this page \subpage examples_page
 
-\defgroup v1_2 New in CppCMS 1.2
+\page v1_2 New in CppCMS 1.2
 
 \page new_api New API by Version
 
