@@ -831,7 +831,7 @@ add_test(file_buffer_test file_buffer_test)
 if(NOT DISABLE_SHARED)
 	add_test(tc_test_shared tc_test "--shared")
 	add_test(tc_test_separate tc_test "--separate")
-	add_test(plugin_test plugin_test)
+	add_test(plugin_test plugin_test "${CMAKE_CURRENT_BINARY_DIR}")
 endif()
 
 add_test(status_test
