@@ -10,6 +10,7 @@
 
 #include <streambuf>
 #include <ostream>
+#include <istream>
 #include <stdio.h>
 #include <string>
 #include <string.h>
