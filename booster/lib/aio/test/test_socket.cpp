@@ -158,6 +158,17 @@ void test_buffer()
 	TEST(cb.get().first[0].ptr==buf && cb.get().first[0].size==3);
 }
 
+void wait_readable(io::stream_socket &s)
+{
+	booster::aio::reactor r;
+	r.select(s.native(),booster::aio::io_events::in);
+	booster::aio::reactor::event ev;
+	r.poll(&ev,1,-1);
+	TEST(ev.fd==s.native());
+	TEST(ev.events == booster::aio::io_events::in);
+	r.remove(s.native());
+}
+
 void basic_io()
 {
 	std::cout << "Test basic io" << std::endl;
@@ -166,6 +177,7 @@ void basic_io()
 	make_pair(s1,s2);
 	TEST(s2.bytes_readable()==0);
 	TEST(s1.write_some(booster::aio::buffer(str1))==5);
+	wait_readable(s2);
 	TEST(s2.bytes_readable()==5);
 	char buf[16] = {0};
 	TEST(s2.read_some(booster::aio::buffer(buf,sizeof(buf)))==5);
