@@ -140,7 +140,7 @@ namespace {
 
 	class context_guard {
 	public:
-		context_guard(cppcms::application &app,cppcms::http::context &ctx) : app_(&app)
+		context_guard(cppcms::application *app,cppcms::http::context &ctx) : app_(app)
 		{
 			if(app_)
 				app_->add_context(ctx);
@@ -245,7 +245,7 @@ int context::on_headers_ready()
 		if(!app)
 			return 500;
 		try {
-			context_guard g(*app,*this);
+			context_guard g(app.get(),*this);
 			app->main(matched);
 		}
 		catch(...) {
@@ -262,7 +262,7 @@ int context::on_headers_ready()
 
 int context::on_content_progress(size_t n)
 {
-	context_guard g(*d->app,*this);
+	context_guard g(d->app.get(),*this);
 	return request().on_content_progress(n);
 }
 
@@ -276,7 +276,7 @@ void context::on_request_ready(bool error)
 	if(error) {
 		if(app) {
 			try {
-				context_guard g(*app,*this);
+				context_guard g(app.get(),*this);
 				request().on_error();
 			}
 			catch(std::exception const &e) {
