@@ -27,6 +27,9 @@ namespace booster {
 /// \brief This is the namespace where all CppCMS functionality is placed
 ///
 namespace cppcms {
+	namespace plugin {
+		class scope;
+	}
 	namespace impl {
 		struct cached_settings;
 		class service;
@@ -184,6 +187,12 @@ namespace cppcms {
 		/// Under Windows and Cygwin it is always 0.
 		///
 		int process_id();
+
+
+		///
+		/// Get plugin scope ownd by the cppcms::service
+		///
+		plugin::scope &plugins();
 
 		/// \cond INTERNAL
 		

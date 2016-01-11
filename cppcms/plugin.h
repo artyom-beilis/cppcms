@@ -14,9 +14,20 @@
 #include <string>
 #include <set>
 
+namespace booster { class shared_object; }
+
 namespace cppcms {
+namespace json { class value; }
+///
+/// \brief Plugin related API
+///
+/// \ver{v1_2}
 namespace plugin {
 
+///
+/// An exception that is thrown in case of actual function signature is not matching the requested one
+///
+/// \ver{v1_2}
 class CPPCMS_API signature_error : public booster::bad_cast {
 public:
 	signature_error(std::string const &msg);
@@ -26,6 +37,98 @@ private:
 	std::string msg_;
 };
 
+
+///
+/// Class that esures that plugin is loaded and unloads it in destructor if needed
+///
+/// Note: it tracks the loaded plugins by its name globally such that if another scope had loaded the plugin 
+/// it wouldn't be loaded again.
+///
+/// It is useable when plugin should be used outside of life scope of cppcms::service
+///
+/// CppCMS configuration:
+///
+/// - The search paths defined as array of strings in `plugin.paths` (optional)
+/// - List of modules defined as array of strings in `plugin.modules` (optional, if you want to call load later)
+/// - Shared object pattern defined as string in `plugin.shared_object_pattern` (optional)
+///
+/// \ver{v1_2}
+class CPPCMS_API scope {
+	scope(scope const &);
+	void operator=(scope const &);
+public:
+	///
+	/// Create an empty scope
+	///
+	scope();
+	///
+	/// Unloads all loaded plugins
+	///
+	~scope();
+
+	///
+	/// Loads the plugins provided in main cppcms configuration file - argc,argv are same parameters as for cppcms::service constructor
+	///
+	scope(int argc,char **argv);
+	///
+	/// Loads the plugins provided in main cppcms configuration json file - same parameters as for cppcms::service constructor
+	///
+	scope(json::value const &value);
+
+	///
+	/// Set search path for plugins if undefined search according to the OS rules, if one of the paths in the vector is empty the search is performed by 
+	//// OS search rules
+	///
+	void paths(std::vector<std::string> const &paths);
+	///
+	/// Specify shared object/DLL naming convension. For example `lib{1}.dll` or `lib{1}.so` for converting the module name to shared object/dll name.
+	///
+	/// Thus in the shared object \a pattern is `lib{1}.dll` that when module "foo" is loaded it tries to load `libfoo.dll` If not speficied default
+	/// nameing is used, see booster::shared_object::name
+	///
+	void shared_object_pattern(std::string const &pattern);
+
+	///
+	/// Load specific module according to the paths and shared_object_pattern provided. Also note paths and pattern can be defined in cppcms configuration
+	/// in the constructor
+	///
+	/// \note  module name isn't nessary same as plugin name. Module refers to name of shared object or dll while plugin is application defined. Same dll/so can 
+	/// contain multiple plugins or none.
+	///
+	void load(std::string const &module);
+
+	///
+	/// Check if the module was loaded withing any of the scopes - note it is static member function
+	///
+	static bool is_loaded(std::string const &module);
+
+	///
+	/// Get shared object loading withing \a this scope. If it wasn't loaded withing this scope throws cppcms_error
+	///
+	booster::shared_object const &get(std::string const &module) const;
+
+	///
+	/// Check if module is loaded withing this scope, unlike is_loaded that checks for the module globally, it refers to this scope only
+	///
+	bool is_loaded_by_this_scope(std::string const &module) const;
+private:
+	void init(json::value const &config);
+	struct _class_data;
+	static _class_data &class_data();
+
+	struct _data;
+	booster::hold_ptr<_data> d;
+};
+
+
+///
+/// Central class that manages registration of plugins. 
+///
+/// It is used as singleton and accessed via manager::instance().
+///
+/// Each plugin registers itself in the constructor and destructor implemented in shared library.
+///
+///
 class CPPCMS_API manager {
 public:
 	///
@@ -47,7 +150,7 @@ public:
 	///
 	/// For example
 	/// \code
-	///   booster::callback<cppcms::application *(cppcms::service &)> cb = cppcms::plugin::manager::entry<cppcms::application *(cppcms::service &)>("foo","application");
+	///   booster::callback<cppcms::application *(cppcms::service &)> cb = :manager::instance().entry<cppcms::application *(cppcms::service &)>("foo","application");
 	///   cppcms::application *app =cb(service());
 	///   attach(app,"/plugins/foo(/.*)",1); // attach new application
 	/// \endcode
@@ -55,11 +158,10 @@ public:
 	/// Or
 	///
 	/// \code
-	///   cppcms::application *app = cppcms::plugin::manager::entry<cppcms::application *(cppcms::service &)>("myapi","app::generator")(service());
+	///   cppcms::application *app = manager::instance().entry<cppcms::application *(cppcms::service &)>("myapi","app::generator")(service());
 	///   attach(app,"/plugins/foo(/.*)",1);
 	/// \endcode
 	///
-	/// \ver{v1_2}
 	template<typename Signature>
 	booster::callback<Signature>
 	entry(std::string const &plugin_name,std::string const &entry_name)
@@ -143,7 +245,13 @@ private:
 
 #define CPPCMS_PLUGIN_CONCAT(x,y) x ## y
 #define CPPCMS_PLUGIN_CONCAT2(x,y) CPPCMS_PLUGIN_CONCAT(x,y)
-#define CPPCMS_NAMED_PLUGIN_ENTRY(plugin_name,call_name,call,type,signature)		\
+
+///
+/// Install generic plugin entry in plugin named \a plugin_name, the entry name \a call_name
+/// and such that the &call represents valid assignment for booster::callback<type>
+/// \a signature is textual representation of the type used for error reporting
+///
+#define CPPCMS_FULL_PLUGIN_ENTRY(plugin_name,call_name,call,type,signature)		\
 namespace {										\
 	struct CPPCMS_PLUGIN_CONCAT2(stpg_ , __LINE__) {				\
 		static booster::intrusive_ptr<booster::refcounted> entry()		\
@@ -166,7 +274,48 @@ namespace {										\
 	} CPPCMS_PLUGIN_CONCAT2(instance_of_stpg_,__LINE__);				\
 } 
 
-#define CPPCMS_PLUGIN_ENTRY(name,call,type) CPPCMS_NAMED_PLUGIN_ENTRY(#name,#call,name :: call,type,#type)
+
+///
+/// Install common function entry such that \a name is plugin name, \a call is entry name and &name::call is valid assignment
+/// for booster::callback<type>
+///
+/// Usually name should be namespace or class name, call is function or static member functions
+///
+/// For example
+/// \code
+/// namespace myplugin {
+///	class my_class : public plugin_api {
+///     public:
+///         statuc my_class *create(std::string const &parameter) { return new my_class(parameter); }
+///         ...
+///     };
+///     CPPCMS_PLUGIN_ENTRY(myplugin,my_class::create,plugin_api *(std::string const &))
+/// }
+/// \endcode
+/// 
+/// it is accessed as `manager::instance().entry<plugin_api *(std::string const &)>("myplugin","my_class::create")`
+#define CPPCMS_PLUGIN_ENTRY(name,call,type) CPPCMS_FULL_PLUGIN_ENTRY(#name,#call,name :: call,type,#type)
+
+///
+/// Install common function entry such that \a name is plugin name, \a entry is entry name and &name::call is valid assignment
+/// for booster::callback<type>
+///
+/// Usually name should be namespace or class name, call is function or static member functions
+///
+/// For example
+/// \code
+/// namespace myplugin {
+///	class my_class : public plugin_api {
+///     public:
+///         statuc my_class *create(std::string const &parameter) { return new my_class(parameter); }
+///         ...
+///     };
+///     CPPCMS_NAMED_PLUGIN_ENTRY(myplugin,api,my_class::create,plugin_api *(std::string const &))
+/// }
+/// \endcode
+/// 
+/// it is accessed as `manager::instance().entry<plugin_api *(std::string const &)>("myplugin","api")`
+#define CPPCMS_NAMED_PLUGIN_ENTRY(name,entry,call,type) CPPCMS_FULL_PLUGIN_ENTRY(#name,#entry,name :: call,type,#type)
 
 
 } // plugin

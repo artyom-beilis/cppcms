@@ -10,6 +10,7 @@
 
 #include <cppcms/json.h>
 #include <cppcms/localization.h>
+#include <cppcms/plugin.h>
 #include <booster/aio/io_service.h>
 #include <booster/aio/stream_socket.h>
 #include <booster/shared_ptr.h>
@@ -67,6 +68,8 @@ namespace impl {
 		std::auto_ptr<booster::aio::stream_socket> sig_,breaker_;
 		
 		std::vector<std::string> args_;
+
+		booster::hold_ptr<plugin::scope> plugins_;
 	};
 
 

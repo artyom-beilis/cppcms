@@ -1,4 +1,6 @@
 #include <cppcms/plugin.h>
+#include <cppcms/service.h>
+#include <cppcms/json.h>
 #include <booster/shared_object.h>
 #include <iostream>
 #include "test.h"
@@ -12,10 +14,18 @@ int main(int argc,char **argv)
 		return 1;
 	}
 	std::string path = argv[1];
+	cppcms::json::value params;
+
+	params["plugin"]["paths"][0]=path;
+	params["plugin"]["modules"][0]="plugin";
+
 	try {
 		using cppcms::plugin::manager;
-		booster::shared_object obj(path + "/" + booster::shared_object::name("plugin"));
 		{
+			cppcms::plugin::scope sc(params);
+			TEST(sc.is_loaded_by_this_scope("plugin"));
+			TEST(cppcms::plugin::scope::is_loaded("plugin"));
+
 			std::cout << "- Normal call" << std::endl;
 			booster::callback<std::string(std::string const &)> cb;
 			cb = manager::instance().entry<std::string(std::string const &)>("foo","lower");
@@ -37,12 +47,18 @@ int main(int argc,char **argv)
 			TEST(manager::instance().has_plugin("foo"));
 			TEST(manager::instance().plugins().size()==1);
 			TEST(*manager::instance().plugins().begin()=="foo");
-			TEST(manager::instance().entries("foo").size()==2);
-			TEST(*manager::instance().entries("foo").begin()=="bar::create");
-			TEST(*manager::instance().entries("foo").rbegin()=="lower");
+			TEST(manager::instance().entries("foo").size()==3);
+			std::set<std::string> names = manager::instance().entries("foo");
+			std::set<std::string>::iterator p=names.begin();
+			TEST(*p++ == "bar::create");
+			TEST(*p++ == "counter");
+			TEST(*p++ == "lower");
+			TEST(p==names.end());
+			TEST(manager::instance().entry<int()>("foo","counter")()==1);
+			TEST(manager::instance().entry<int()>("foo","counter")()==2);
 		} 
-		obj.close();
 		std::cout << "- Unload" << std::endl;
+		TEST(!cppcms::plugin::scope::is_loaded("plugin"));
 		try {
 			manager::instance().entry<std::string(std::string const &)>("foo","lower");
 			std::cerr << "Must Not get there:" << __LINE__<<std::endl;
@@ -51,6 +67,37 @@ int main(int argc,char **argv)
 		catch(cppcms::cppcms_error const &) {}
 		catch(...) { throw std::runtime_error("Something else thrown"); }
 		TEST(cppcms::plugin::manager::instance().has_plugin("foo")==false);
+		std::cout << "- Scope vs Service" << std::endl;
+		{
+			cppcms::service srv(params);
+			TEST(manager::instance().has_plugin("foo"));
+			TEST(manager::instance().entry<int()>("foo","counter")()==1);
+			TEST(manager::instance().entry<int()>("foo","counter")()==2);
+			TEST(srv.plugins().is_loaded_by_this_scope("plugin"));
+			TEST(cppcms::plugin::scope::is_loaded("plugin"));
+			{
+				cppcms::plugin::scope sc(params);
+				TEST(!sc.is_loaded_by_this_scope("plugin"));
+				TEST(manager::instance().entry<int()>("foo","counter")()==3);
+			}
+			TEST(manager::instance().entry<int()>("foo","counter")()==4);
+		}
+		{
+			cppcms::plugin::scope sc(params);
+			TEST(manager::instance().has_plugin("foo"));
+			TEST(manager::instance().entry<int()>("foo","counter")()==1);
+			TEST(manager::instance().entry<int()>("foo","counter")()==2);
+			TEST(cppcms::plugin::scope::is_loaded("plugin"));
+			{
+				cppcms::service srv(params);
+				TEST(!srv.plugins().is_loaded_by_this_scope("plugin"));
+				TEST(sc.is_loaded_by_this_scope("plugin"));
+				TEST(manager::instance().entry<int()>("foo","counter")()==3);
+			}
+			TEST(manager::instance().entry<int()>("foo","counter")()==4);
+		}
+		TEST(!manager::instance().has_plugin("foo"));
+		TEST(!cppcms::plugin::scope::is_loaded("plugin"));
 	}
 	catch(std::exception const &e) {
 		std::cerr << "Error:" << e.what() << std::endl;

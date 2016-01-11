@@ -32,6 +32,7 @@
 #include <cppcms/mount_point.h>
 #include <cppcms/forwarder.h>
 #include <cppcms/mem_bind.h>
+#include <cppcms/plugin.h>
 #include "cgi_acceptor.h"
 #ifndef CPPCMS_WIN32
 #include "prefork_acceptor.h"
@@ -225,6 +226,7 @@ void service::setup()
 	impl_->sig_.reset(new io::stream_socket(*impl_->io_service_));
 	impl_->breaker_.reset(new io::stream_socket(*impl_->io_service_));
 
+	impl_->plugins_.reset(new cppcms::plugin::scope(settings()));
 	impl_->applications_pool_.reset(new cppcms::applications_pool(*this,0));
 	impl_->views_pool_.reset(new cppcms::views::manager(settings()));
 	impl_->cache_pool_.reset(new cppcms::cache_pool(settings()));
@@ -997,10 +999,15 @@ namespace impl {
 		// io_service, because soma apps may try unregister themselfs
 		applications_pool_.reset();
 		locale_generator_.reset();
-		settings_.reset();
-
+settings_.reset();
+		
 	}
 } // impl
+
+plugin::scope &service::plugins()
+{
+	return *impl_->plugins_;
+}
 
 
 } // cppcms

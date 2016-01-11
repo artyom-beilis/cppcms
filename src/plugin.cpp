@@ -7,15 +7,23 @@
 ///////////////////////////////////////////////////////////////////////////////
 #define CPPCMS_SOURCE
 #include <cppcms/plugin.h>
+#include <cppcms/json.h>
+#include <cppcms/service.h>
 #include <map>
+#include <booster/locale/format.h>
 #include <booster/thread.h>
+#include <booster/shared_ptr.h>
+#include <booster/shared_object.h>
 
 namespace cppcms {
 namespace plugin {
 
 namespace {
 	struct init {
-		init() { manager::instance(); }
+		init() { 
+			manager::instance(); 
+			scope::is_loaded("");
+		}
 	} init_inst;
 }
 
@@ -131,6 +139,137 @@ char const *signature_error::what() const throw()
 {
 	return msg_.c_str();
 }
+
+
+struct scope::_class_data {
+	booster::mutex lock;
+	std::set<std::string> modules;
+};
+
+scope::_class_data &scope::class_data()
+{
+	static _class_data d;
+	return d;
+}
+
+struct scope::_data {
+	std::vector<std::string> paths;
+	std::string pattern;
+	std::map<std::string,booster::shared_ptr<booster::shared_object> > objects;
+};
+
+scope::scope() : d(new scope::_data())
+{
+}
+
+scope::scope(json::value const &v) : d(new scope::_data())
+{
+	init(v);
+}
+
+scope::~scope() 
+{
+	try {
+		_class_data &cls = class_data();
+		booster::unique_lock<booster::mutex> guard(cls.lock);
+		for(std::map<std::string,booster::shared_ptr<booster::shared_object> >::iterator p=d->objects.begin();p!=d->objects.end();++p) {
+			cls.modules.erase(p->first);
+		}
+		d->objects.clear();
+	}
+	catch(...) {}
+}
+
+scope::scope(int argc,char **argv) : d(new scope::_data())
+{
+	json::value v = service::load_settings(argc,argv);
+	init(v);
+}
+
+void scope::init(json::value const &v)
+{
+	d->paths = v.get("plugin.paths",std::vector<std::string>());
+	d->pattern = v.get("plugin.shared_object_pattern",std::string());
+	
+	std::vector<std::string> modules = v.get("plugin.modules",std::vector<std::string>());
+	for(size_t i=0;i<modules.size();i++) {
+		load(modules[i]);
+	}
+
+}
+
+bool scope::is_loaded(std::string const &name)
+{
+	_class_data &cls = class_data();
+	booster::unique_lock<booster::mutex> guard(cls.lock);
+	return cls.modules.find(name)!=cls.modules.end();
+}
+
+void scope::paths(std::vector<std::string> const &paths)
+{
+	d->paths = paths;
+}
+void scope::shared_object_pattern(std::string const &p)
+{
+	d->pattern = p;
+}
+
+void scope::load(std::string const &name)
+{
+	_class_data &cls = class_data();
+	booster::unique_lock<booster::mutex> guard(cls.lock);
+	if(cls.modules.find(name)!=cls.modules.end())
+		return;
+	std::string so_name;
+	if(d->pattern.empty())
+		so_name = booster::shared_object::name(name);
+	else
+		so_name = (booster::locale::format(d->pattern) % name).str(std::locale::classic());
+
+	booster::shared_ptr<booster::shared_object> obj(new booster::shared_object());
+	if(d->paths.empty()) {
+		if(!obj->open(so_name)) 
+			throw cppcms_error("Failed to load " + so_name);
+	}
+	else {
+		for(size_t i=0;i<d->paths.size();i++) {
+			std::string path  = d->paths[i];
+			if(path.empty())
+				path = so_name;
+			else
+				path = path + "/" + so_name;
+			if(obj->open(so_name))
+				break;
+		}
+		if(!obj->is_open()) {
+			std::ostringstream ss;
+			ss << "Failed to load " << so_name << " from ";
+			for(size_t i=0;i<d->paths.size();i++) {
+				if(i!=0) {
+					ss << ", ";
+				}
+				ss << "`" << d->paths[i] << "'";
+			}
+			throw cppcms_error(ss.str());
+		}
+	}
+	d->objects[name]=obj;
+	cls.modules.insert(name);
+}
+
+bool scope::is_loaded_by_this_scope(std::string const &module) const
+{
+	return d->objects.find(module)!=d->objects.end();
+}
+
+booster::shared_object const &scope::get(std::string const &module) const
+{
+	std::map<std::string,booster::shared_ptr<booster::shared_object> >::const_iterator p = d->objects.find(module);
+	if(p==d->objects.end())
+		throw cppcms_error("Module `" + module + "' wasn't loaded withing this scope");
+	return *p->second;
+}
+
 
 } // plugin
 } // cppcms
