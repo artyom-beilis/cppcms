@@ -129,6 +129,8 @@ private:
 /// Each plugin registers itself in the constructor and destructor implemented in shared library.
 ///
 ///
+/// \ver{v1_2}
+///
 class CPPCMS_API manager {
 public:
 	///
@@ -251,6 +253,9 @@ private:
 /// and such that the &call represents valid assignment for booster::callback<type>
 /// \a signature is textual representation of the type used for error reporting
 ///
+///
+/// \relates cppcms::plugin::manager
+///
 #define CPPCMS_FULL_PLUGIN_ENTRY(plugin_name,call_name,call,type,signature)		\
 namespace {										\
 	struct CPPCMS_PLUGIN_CONCAT2(stpg_ , __LINE__) {				\
@@ -294,6 +299,9 @@ namespace {										\
 /// \endcode
 /// 
 /// it is accessed as `manager::instance().entry<plugin_api *(std::string const &)>("myplugin","my_class::create")`
+///
+/// \relates cppcms::plugin::manager
+///
 #define CPPCMS_PLUGIN_ENTRY(name,call,type) CPPCMS_FULL_PLUGIN_ENTRY(#name,#call,name :: call,type,#type)
 
 ///
@@ -315,6 +323,9 @@ namespace {										\
 /// \endcode
 /// 
 /// it is accessed as `manager::instance().entry<plugin_api *(std::string const &)>("myplugin","api")`
+///
+/// \relates cppcms::plugin::manager
+///
 #define CPPCMS_NAMED_PLUGIN_ENTRY(name,entry,call,type) CPPCMS_FULL_PLUGIN_ENTRY(#name,#entry,name :: call,type,#type)
 
 

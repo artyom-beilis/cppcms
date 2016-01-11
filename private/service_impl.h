@@ -10,7 +10,6 @@
 
 #include <cppcms/json.h>
 #include <cppcms/localization.h>
-#include <cppcms/plugin.h>
 #include <booster/aio/io_service.h>
 #include <booster/aio/stream_socket.h>
 #include <booster/shared_ptr.h>
@@ -23,7 +22,7 @@ class applications_pool;
 class application;
 class thread_pool;
 class session_pool;
-
+namespace plugin { class scope; }
 namespace impl {
 	struct cached_settings;
 	class prefork_acceptor;
