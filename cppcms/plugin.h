@@ -249,27 +249,39 @@ private:
 #define CPPCMS_PLUGIN_CONCAT2(x,y) CPPCMS_PLUGIN_CONCAT(x,y)
 
 ///
-/// Install generic plugin entry in plugin named \a plugin_name, the entry name \a call_name
-/// and such that the &call represents valid assignment for booster::callback<type>
-/// \a signature is textual representation of the type used for error reporting
+/// Install generic plugin entry in plugin named \a plugin_name - string, the entry name \a entry_name - string
+/// and such that following expression is valid callback iniitalization:
+/// `booster::callback<type> cb = call;`
 ///
+/// For example
+/// \code
+/// class my_class : public plugin_api {
+/// public:
+///    statuc my_class *create(std::string const &parameter) { return new my_class(parameter); }
+///    ...
+/// };
+/// CPPCMS_PLUGIN_ENTRY("myplugin","api",&my_class::create,plugin_api *(std::string const &))
+/// }
+/// \endcode
+/// 
+/// it is accessed as `manager::instance().entry<plugin_api *(std::string const &)>("myplugin","my_class::create")`
 ///
 /// \relates cppcms::plugin::manager
 ///
-#define CPPCMS_FULL_PLUGIN_ENTRY(plugin_name,call_name,call,type,signature)		\
+#define CPPCMS_FULL_PLUGIN_ENTRY(plugin_name,entry_name,call,type)			\
 namespace {										\
 	struct CPPCMS_PLUGIN_CONCAT2(stpg_ , __LINE__) {				\
 		static booster::intrusive_ptr<booster::refcounted> entry()		\
 		{									\
 			typedef booster::callback<type> ct;				\
-			ct cb = &call;							\
+			ct cb = call;							\
 			booster::refcounted *tmp = cb.get_pointer().get();		\
 			booster::intrusive_ptr<booster::refcounted> ptr(tmp);		\
 			return ptr;							\
 		}									\
 		CPPCMS_PLUGIN_CONCAT2(stpg_,__LINE__) () {				\
 			cppcms::plugin::manager::instance().add_entry(			\
-				plugin_name,call_name,&entry,signature			\
+				plugin_name,entry_name,&entry,#type			\
 			);								\
 											\
 		}									\
@@ -281,7 +293,7 @@ namespace {										\
 
 
 ///
-/// Install common function entry such that \a name is plugin name, \a call is entry name and &name::call is valid assignment
+/// Install common function entry such that \a name is plugin name, \a call is entry name and `&name::call` is valid assignment
 /// for booster::callback<type>
 ///
 /// Usually name should be namespace or class name, call is function or static member functions
@@ -302,10 +314,10 @@ namespace {										\
 ///
 /// \relates cppcms::plugin::manager
 ///
-#define CPPCMS_PLUGIN_ENTRY(name,call,type) CPPCMS_FULL_PLUGIN_ENTRY(#name,#call,name :: call,type,#type)
+#define CPPCMS_PLUGIN_ENTRY(name,call,type) CPPCMS_FULL_PLUGIN_ENTRY(#name,#call,& name :: call,type)
 
 ///
-/// Install common function entry such that \a name is plugin name, \a entry is entry name and &name::call is valid assignment
+/// Install common function entry such that \a name is plugin name, \a entry is entry name and `&name::call` is valid assignment
 /// for booster::callback<type>
 ///
 /// Usually name should be namespace or class name, call is function or static member functions
@@ -326,7 +338,7 @@ namespace {										\
 ///
 /// \relates cppcms::plugin::manager
 ///
-#define CPPCMS_NAMED_PLUGIN_ENTRY(name,entry,call,type) CPPCMS_FULL_PLUGIN_ENTRY(#name,#entry,name :: call,type,#type)
+#define CPPCMS_NAMED_PLUGIN_ENTRY(name,entry,call,type) CPPCMS_FULL_PLUGIN_ENTRY(#name,#entry,& name :: call,type)
 
 
 } // plugin
