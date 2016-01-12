@@ -828,17 +828,17 @@ class trigger_block:
 
 
 class ngettext_block:
-    pattern=r'^<%\s*ngt\s*('+str_match+')\s*,\s*('+str_match+')\s*,\s*('+variable_match+')\s*(using(.*))?\s*%>$'
+    pattern=r'^<%\s*ngt\s*((?:' + str_match + '\s*,\s*)?'+str_match+')\s*,\s*('+str_match+')\s*,\s*('+variable_match+')\s*(using(.*))?\s*%>$'
     basic_pattern = 'ngt'
     basic_name = 'ngt'
     def use(self,m):
         global output_template
         s1=m.group(1)
-        s2=m.group(3)
-        idt=make_ident(m.group(5))
+        s2=m.group(4)
+        idt=make_ident(m.group(6))
         params=[]
-        if m.group(11):
-            params=make_format_params(m.group(12))
+        if m.group(12):
+            params=make_format_params(m.group(13))
         if not params:
             output_template( "out()<<cppcms::locale::translate(%s,%s,%s);" % (s1,s2,idt))
         else:
@@ -846,15 +846,15 @@ class ngettext_block:
             
 
 class gettext_block:
-    pattern=r'^<%\s*gt\s*('+str_match+')\s*(using(.*))?\s*%>$'
+    pattern=r'^<%\s*gt\s*((?:' + str_match + '\s*,\s*)?'  +str_match+')\s*(using(.*))?\s*%>$'
     basic_pattern = 'gt'
     basic_name = 'gt'
     def use(self,m):
         global output_template
         s=m.group(1)
         params=[]
-        if m.group(3):
-            params=make_format_params(m.group(4))
+        if m.group(4):
+            params=make_format_params(m.group(5))
         if not params:
             output_template( "out()<<cppcms::locale::translate(%s);" % s)
         else:

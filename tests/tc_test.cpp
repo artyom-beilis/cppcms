@@ -329,6 +329,24 @@ public:
 
 		
 	}
+	void test_gettext()
+	{
+		std::cout << "- Gettext" << std::endl;
+		data::master m;
+		m.integer = 5;
+		m.text = "Hello";
+		render("gt_text",m);
+		compare_strings(str(),
+			"\n"		// <% template render() %>
+			"No text\n"	// <% gt "No text" %>
+			"It is text: Hello\n"	// <% gt "It is text: {1}" using text %>
+			"No text\n"	// <% gt "Context", "No text" %>
+			"It is text: Hello\n"	// <% gt "Context", "It is text: {1}" using text %>
+			"I have 5 files in Hello\n"	// <% ngt "I have 1 file in {2}", "I have {1} files in 2" using number, text %>
+			"I have 5 files in Hello\n"	// <% ngt "Context","I have 1 file in {2}", "I have {1} files in 2" using number, text %>
+			""	// <% end template %>
+		);
+	}
 	void test_format()
 	{
 		std::cout << "- Testing formatting" << std::endl;
@@ -513,6 +531,7 @@ int main(int argc,char **argv)
 		app.test_block_filter();
 		app.test_cache();
 		app.test_using_render();
+		app.test_gettext();
 	}
 	catch(std::exception const &e)
 	{

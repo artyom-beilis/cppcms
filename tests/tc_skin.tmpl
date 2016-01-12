@@ -89,6 +89,17 @@ TBD
 <% end %>
 <% end view %>
 
+<% view gt_text uses data::master %>
+<% template render() %>
+<% gt "No text" %>
+<% gt "It is text: {1}" using text %>
+<% gt "Context", "No text" %>
+<% gt "Context", "It is text: {1}" using text %>
+<% ngt "I have 1 file in {2}", "I have {1} files in {2}", integer using integer, text %>
+<% ngt "Context","I have 1 file in {2}", "I have {1} files in {2}", integer using integer, text %>
+<% end template %>
+<% end view %>
+
 <% view master_block_filter uses data::master %>
 <% template render () %>
 <%= text %>|<% gt "{1}" using text %>|<% url "/" using text %>
