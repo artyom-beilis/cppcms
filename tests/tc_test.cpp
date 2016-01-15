@@ -480,6 +480,38 @@ public:
 		);
 	}
 
+	void test_using_from()
+	{
+		std::cout << "- Testing using from" << std::endl;
+		data::master c;
+		c.text = "Text";
+		c.h.x=13;
+
+		c.skin1="plugin";
+		c.name1="master_plugin";
+		render("test_master_plugin", c );
+		compare_strings(str(),"\n"
+			"skin::master_plugin::m1 Text\n" 	//from "master_plugin" include m1() 
+			"skin::master_plugin::m1 Text\n" 	//from name1 include m1() 
+			"plugin::master_plugin::m1 Text\n" 	//from "tc_plugin","master_plugin" include m1() 
+			"plugin::master_plugin::m1 Text\n"	//from "tc_plugin",name1 include m1() 
+			"plugin::master_plugin::m1 Text\n"	//from skin1,"master_plugin" include m1() 
+			"plugin::master_plugin::m1 Text\n"	//from skin1,name1 include m1() 
+			"");
+
+		c.skin1="plugin";
+		c.name1="helper_plugin";
+		render("test_helper_plugin", c );
+		compare_strings(str(),"\n"
+			"skin::helper_plugin::h1 13\n" 	//from "helper_plugin" include h1() 
+			"skin::helper_plugin::h1 13\n" 	//from name1 include h1() 
+			"plugin::helper_plugin::h1 13\n" 	//from "tc_plugin","helper_plugin" include h1() 
+			"plugin::helper_plugin::h1 13\n"	//from "tc_plugin",name1 include h1() 
+			"plugin::helper_plugin::h1 13\n"	//from skin1,"helper_plugin" include h1() 
+			"plugin::helper_plugin::h1 13\n"	//from skin1,name1 include h1() 
+			"");
+	}
+
 
 private:
 	std::string output_;
@@ -503,6 +535,7 @@ int main(int argc,char **argv)
 			cfg["views"]["skins"][0]="tc_sep_skin_a";
 			cfg["views"]["skins"][1]="tc_sep_skin_b";
 			cfg["views"]["skins"][2]="tc_sep_skin";
+			cfg["views"]["skins"][2]="tc_plugin";
 		}
 		else {
 			std::cout << "Using shared header/body" << std::endl;
@@ -532,6 +565,8 @@ int main(int argc,char **argv)
 		app.test_cache();
 		app.test_using_render();
 		app.test_gettext();
+		if(separate)
+			app.test_using_from();
 	}
 	catch(std::exception const &e)
 	{

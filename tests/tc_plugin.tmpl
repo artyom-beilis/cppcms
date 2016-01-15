@@ -1,0 +1,10 @@
+<% c++ #include "tc_sep_skin.h" %>
+<% skin plugin %>
+<% view master_plugin uses data::master extends tc_skin::master_api %>
+<% template m1() %>plugin::master_plugin::m1 <%= text %><% end %>
+<% end view %>
+
+<% view helper_plugin uses data::helper extends tc_skin::helper_api %>
+<% template h1() %>plugin::helper_plugin::h1 <%= x %><% end %>
+<% end view %>
+<% end skin %>

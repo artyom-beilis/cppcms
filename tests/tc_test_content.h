@@ -17,6 +17,7 @@ namespace data {
 	struct master  : public cppcms::base_content {
 		int integer;
 		std::string text;
+		std::string skin1,skin2,name1;
 		helper h;
 		typedef std::vector<int> integers_type;
 		integers_type integers;

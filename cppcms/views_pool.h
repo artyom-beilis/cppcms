@@ -113,6 +113,43 @@ namespace cppcms {
 			std::string name_;
 			booster::hold_ptr<data> d;
 		};
+		
+		///
+		/// \brief A class that allows to use the view withing the internal lock used inside pool class
+		///
+		/// It is similar in its operation in creating the view class similarly to pool::render() but
+		/// not calling base_view::render member function.
+		///
+		/// It is used with `<% using ... from ... %>` CppCMS template
+		///
+		/// \ver{v1_2} 
+		class CPPCMS_API view_lock : public booster::noncopyable {
+		public:
+			///
+			/// Create a view and lock pool's internal lock
+			///
+			view_lock(std::string const &skin,std::string const &template_name,std::ostream &out,base_content &content);
+			///
+			/// Delete the view and unlock the pool's lock
+			///
+			~view_lock();
+			///
+			/// Shortcut to dynamic_cast<View &>(view())
+			///
+			template<typename View>
+			View &use_view()
+			{
+				return dynamic_cast<View &>(view());
+			}
+			///
+			/// Get the underlying view object
+			///
+			base_view &view();
+		private:
+			struct _data;
+			booster::hold_ptr<base_view> view_;
+			booster::hold_ptr<_data> d;
+		};
 
 		///
 		/// \brief This is a singleton object that holds all views in the process. Any view
@@ -164,6 +201,12 @@ namespace cppcms {
 			static pool &instance();
 		
 		private:
+			friend class view_lock;
+			void lock();
+			void unlock();
+
+			// called on locked object
+			base_view *create_view(std::string const &skin,std::string const &template_name,std::ostream &out,base_content &content);
 			pool();
 			~pool();
 

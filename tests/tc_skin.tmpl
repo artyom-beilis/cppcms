@@ -216,8 +216,47 @@ TBD
 <% include show_x(h.y) using helper_helper with h %>
 <% include show_y(h.x) using helper_helper with h %>
 <% include show_integer() using helper_master %>
-<% end %>
-<% end %>
+<% end template %>
+<% end view %>
+
+<% view master_api uses data::master %>
+<% template m1() %><% end %>
+<% end view %>
+
+<% view helper_api uses data::helper %>
+<% template h1() %><% end %>
+<% end view %>
+
+<% view master_plugin uses data::master extends master_api %>
+<% template m1() %>skin::master_plugin::m1 <%= text %><% end %>
+<% end view %>
+
+<% view helper_plugin uses data::helper extends helper_api %>
+<% template h1() %>skin::helper_plugin::h1 <%= x %><% end %>
+<% end view %>
+
+<% view test_master_plugin uses data::master %>
+<% template render() %>
+<% using master_api as m from "master_plugin" %><% include m1() from m %><% end using %>
+<% using master_api as m from name1 %><% include m1() from m %><% end using %>
+<% using master_api as m from "plugin","master_plugin" %><% include m1() from m %><% end using %>
+<% using master_api as m from "plugin",name1 %><% include m1() from m %><% end using %>
+<% using master_api as m from skin1,"master_plugin" %><% include m1() from m %><% end using %>
+<% using master_api as m from skin1,name1 %><% include m1() from m %><% end using %>
+<% end template %>
+<% end view %>
+
+<% view test_helper_plugin uses data::master %>
+<% template render() %>
+<% using helper_api with h as m from "helper_plugin" %><% include h1() from m %><% end using %>
+<% using helper_api with h as m from name1 %><% include h1() from m %><% end using %>
+<% using helper_api with h as m from "plugin","helper_plugin" %><% include h1() from m %><% end using %>
+<% using helper_api with h as m from "plugin",name1 %><% include h1() from m %><% end using %>
+<% using helper_api with h as m from skin1,"helper_plugin" %><% include h1() from m %><% end using %>
+<% using helper_api with h as m from skin1,name1 %><% include h1() from m %><% end using %>
+<% end template %>
+<% end view %>
+
 
 
 <% end skin %>

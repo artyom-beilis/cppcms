@@ -288,7 +288,7 @@ def make_ident(val):
     else:
         return "content." + val
 
-def print_using_block_start(class_name,variable_name,content_name):
+def print_using_block_start(class_name,variable_name,content_name,temp_and_view=None):
     global output_template
     if content_name:
         content=make_ident(content_name)
@@ -299,19 +299,31 @@ def print_using_block_start(class_name,variable_name,content_name):
     output_template(r'{')
     if guard:
         output_template(r'  cppcms::base_content::app_guard _g(%s,content);' % content);
-    output_template(r'  %s %s(out(),%s);' % ( class_name, variable_name, content));
+    if temp_and_view:
+        output_template(r'  cppcms::views::view_lock _vl(%s,out(),%s); %s &%s = _vl.use_view<%s>();' % ( temp_and_view, content, class_name, variable_name, class_name));
+    else:
+        output_template(r'  %s %s(out(),%s);' % ( class_name, variable_name, content));
     
 def print_using_block_end():
     global output_template
     output_template('}')
 
 class using_block:
-    pattern=r'^<%\s*using\s+(?P<class>(?:\w+::)*\w+)(?:\s+with\s+(?P<content>' + variable_match + r'))?\s+as\s+(?P<name>[a-zA-Z_]\w*)\s*%>$' 
+    pattern=r'^<%\s*using\s+(?P<class>(?:\w+::)*\w+)(?:\s+with\s+(?P<content>' + variable_match + r'))?\s+as\s+(?P<name>[a-zA-Z_]\w*)'  \
+            + r'(?P<from>\s+from' \
+            + r'(\s*(?P<fst_str>'+ str_match +r')|(?:\s+(?P<fst_var>' + variable_match + r')))' \
+            + r'(\s*,\s*((?P<snd_str>'+ str_match +r')|(?P<snd_var>' + variable_match + r')))?' \
+            + r')?' \
+        + '\s*%>$' 
     basic_pattern = 'using'
     basic_name = 'using'
     type='using'
     def use(self,m):
-        print_using_block_start(m.group('class'),m.group('name'),m.group('content'))
+        if m.group('from'):
+            temp_and_view = get_render_names(m);
+        else:
+            temp_and_view = None
+        print_using_block_start(m.group('class'),m.group('name'),m.group('content'),temp_and_view)
         global stack
         stack.append(self)
     def on_end(self):
@@ -669,6 +681,31 @@ class form_block:
     def on_end(self):
         self.format_input(self.command_type,self.ident)
 
+def get_render_names(m):
+    first_str = m.group('fst_str')
+    first_var = m.group('fst_var')
+    if first_var:
+        first = make_ident(first_var)
+    else:
+        first = first_str
+    
+    second_str = m.group('snd_str')
+    second_var = m.group('snd_var')
+    if second_var:
+        second = make_ident(second_var)
+    else:
+        second = second_str
+
+    if first and second:
+        template_name = first
+        view_name = second
+    else:
+        global namespace_name
+        template_name = '"' + namespace_name + '"'
+        view_name = first;
+    return template_name + ', ' + view_name
+    
+
 class render_block:
     pattern=r'^<%\s*render\s+' \
             + r'((?P<fst_str>'+ str_match +r')|(?P<fst_var>' + variable_match + r'))' \
@@ -685,34 +722,14 @@ class render_block:
             content = 'content';
             guard=False
         
-        first_str = m.group('fst_str')
-        first_var = m.group('fst_var')
-        if first_var:
-            first = make_ident(first_var)
-        else:
-            first = first_str
-        
-        second_str = m.group('snd_str')
-        second_var = m.group('snd_var')
-        if second_var:
-            second = make_ident(second_var)
-        else:
-            second = second_str
-
-        if first and second:
-            template_name = first
-            view_name = second
-        else:
-            global namespace_name
-            template_name = '"' + namespace_name + '"'
-            view_name = first;
+        temp_and_view = get_render_names(m);
        
         output_template('{')
 
         if guard:
             output_template(r'cppcms::base_content::app_guard _g(%s,content);' % content)
 
-        output_template(r'cppcms::views::pool::instance().render(%s,%s,out(),%s);' % (template_name,view_name,content))
+        output_template(r'cppcms::views::pool::instance().render(%s,out(),%s);' % (temp_and_view,content))
 
         output_template('}')
 

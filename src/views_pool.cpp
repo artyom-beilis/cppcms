@@ -130,9 +130,8 @@ void pool::remove(generator const &g)
 		d->generators.erase(name);
 }
 
-void pool::render(std::string const &skin,std::string const &template_name,std::ostream &out,base_content &content)
+base_view *pool::create_view(std::string const &skin,std::string const &template_name,std::ostream &out,base_content &content)
 {
-	booster::shared_lock<booster::recursive_shared_mutex> guard(d->lock);
 	data::generators_type::iterator s=d->generators.find(skin);
 	if(s==d->generators.end()) 
 		throw cppcms_error("cppcms::views::pool: no such skin:" + skin);
@@ -143,11 +142,51 @@ void pool::render(std::string const &skin,std::string const &template_name,std::
 	if(t==reg_skin.end())
 		throw cppcms_error("cppcms::view::pool: no suck view:" + template_name + " is registered for skin: " + skin);
 
+	std::auto_ptr<base_view> v;
+	v = t->second->create(template_name,out,&content);
+	if(!v.get())
+		throw cppcms_error("cppcms::views::pool: no such view " + template_name + " in the skin " + skin);
+	return v.release();
+}
+
+void pool::lock()
+{
+	d->lock.shared_lock();
+}
+void pool::unlock()
+{
+	d->lock.unlock();
+}
+
+struct view_lock::_data {};
+view_lock::view_lock(std::string const &skin,std::string const &template_name,std::ostream &out,base_content &content) 
+{
+	pool &p = pool::instance();
+	p.lock();
+	try {
+		view_.reset(p.create_view(skin,template_name,out,content));
+	}
+	catch(...) {
+		p.unlock();
+		throw;
+	}
+}
+view_lock::~view_lock()
+{
+	view_.reset();
+	pool::instance().unlock();
+}
+
+base_view &view_lock::view()
+{
+	return *view_;
+}
+
+void pool::render(std::string const &skin,std::string const &template_name,std::ostream &out,base_content &content)
+{
+	booster::shared_lock<booster::recursive_shared_mutex> guard(d->lock);
 	{
-		std::auto_ptr<base_view> v;
-		v = t->second->create(template_name,out,&content);
-		if(!v.get())
-			throw cppcms_error("cppcms::views::pool: no such view " + template_name + " in the skin " + skin);
+		booster::hold_ptr<base_view> v(create_view(skin,template_name,out,content));
 		v->render();
 	}
 }
