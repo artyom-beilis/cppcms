@@ -219,12 +219,12 @@ TBD
 <% end template %>
 <% end view %>
 
-<% view master_api uses data::master %>
-<% template m1() %><% end %>
+<% view master_api uses data::master abstract %>
+<% template m1() = 0 %>
 <% end view %>
 
-<% view helper_api uses data::helper %>
-<% template h1() %><% end %>
+<% view helper_api uses data::helper abstract%>
+<% template h1()=0%>
 <% end view %>
 
 <% view master_plugin uses data::master extends master_api %>

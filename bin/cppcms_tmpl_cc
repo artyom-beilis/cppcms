@@ -112,7 +112,7 @@ class html_type:
 
 
 class view_block:
-    pattern=r'^<%\s*view\s+(\w+)\s+uses\s+(:?:?\w+(::\w+)*)(\s+extends\s+(:?:?\w+(::\w+)?))?\s*%>$'
+    pattern=r'^<%\s*view\s+(\w+)\s+uses\s+(:?:?\w+(::\w+)*)(\s+extends\s+(:?:?\w+(::\w+)?))?(?P<abs>\s+abstract)?\s*%>$'
     basic_pattern='view'
     basic_name='view'
     type='view'
@@ -138,6 +138,7 @@ class view_block:
         output_declaration("\t}")
 
     def use(self,m):
+        self.abstract = m.group('abs')!=None
         global view_name
         global output_template
         self.class_name=m.group(1)
@@ -152,20 +153,21 @@ class view_block:
         if len(stack)!=1 or stack[-1].type!='skin':
             error_exit("You must define view inside skin block only")
         stack.append(self)
-        global class_list
         global namespace_name
         class information:
             content_name=self.uses
             name=self.class_name
             namespace=namespace_name
-        class_list.append(information())
+        global class_list
+        if not self.abstract:
+            class_list.append(information())
     def on_end(self):
         output_declaration( "}; // end of class %s" % self.class_name)
 
 
 
 class template_block:
-    pattern=r'^<%\s*template\s+([a-zA-Z]\w*)\s*\(([\w\s,:\&]*)\)\s*%>$'
+    pattern=r'^<%\s*template\s+([a-zA-Z]\w*)\s*\(([\w\s,:\&]*)\)\s*(?P<abs>=\s*0\s*)?%>$'
     basic_pattern = 'template'
     basic_name='template'
     type='template'
@@ -199,16 +201,22 @@ class template_block:
         global inline_templates
         self.name=m.group(1)
         params=""
+        abstract = m.group('abs') != None
         if m.group(2) and not re.match('^\s*$',m.group(2)):
             params=self.create_parameters(m.group(2))
-        if inline_templates:
-            output_declaration( "virtual void %s(%s) {" % (self.name,params) )
+        if abstract:
+            output_declaration( "virtual void %s(%s) = 0;" % (self.name,params) )
         else:
-            output_declaration( "virtual void %s(%s);" % (self.name,params) )
-            output_definition( "void %s::%s(%s) {" % (view_name,self.name,params) )
+            if inline_templates:
+                output_declaration( "virtual void %s(%s) {" % (self.name,params) )
+            else:
+                output_declaration( "virtual void %s(%s);" % (self.name,params) )
+                output_definition( "void %s::%s(%s) {" % (view_name,self.name,params) )
         global stack
         if len(stack)==0 or stack[-1].type!='view':
             error_exit("You must define template inside view block only")
+        if abstract:
+            return
         stack.append(self)
         global current_template
         current_template=self.name

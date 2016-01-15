@@ -535,7 +535,7 @@ int main(int argc,char **argv)
 			cfg["views"]["skins"][0]="tc_sep_skin_a";
 			cfg["views"]["skins"][1]="tc_sep_skin_b";
 			cfg["views"]["skins"][2]="tc_sep_skin";
-			cfg["views"]["skins"][2]="tc_plugin";
+			cfg["views"]["skins"][3]="tc_plugin";
 		}
 		else {
 			std::cout << "Using shared header/body" << std::endl;
