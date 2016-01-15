@@ -657,7 +657,6 @@ if(NOT DISABLE_SHARED)
 			set_target_properties(${SKIN} PROPERTIES COMPILE_DEFINITIONS DLL_EXPORT)
 		endif()
 	endforeach()
-	target_link_libraries(tc_plugin tc_sep_skin)
 
 	add_library(plugin SHARED tests/test_plugin_so.cpp)
 	target_link_libraries(plugin ${CPPCMS_LIB})
