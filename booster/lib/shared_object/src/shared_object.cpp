@@ -28,6 +28,13 @@ namespace booster {
 	shared_object::~shared_object()
 	{
 	}
+	shared_object::shared_object(std::string const &name,int) : d(new data())
+	{
+		std::string err;
+		if(!open(name,err)) {
+			throw booster::runtime_error("booster::shared_object: failed to load shared library " + name +": " + err);
+		}
+	}
 	shared_object::shared_object(std::string const &name) : d(new data())
 	{
 		std::string err;
@@ -46,11 +53,19 @@ namespace booster {
 	{
 		return d->handle != 0;
 	}
+	bool shared_object::open(std::string const &file_name,int)
+	{
+		return open(file_name);
+	}
 	bool shared_object::open(std::string const &file_name)
 	{
 		close();
 		d->handle = LoadLibraryW(booster::nowide::convert(file_name).c_str());
 		return d->handle != 0;		
+	}
+	bool shared_object::open(std::string const &file_name,std::string &error_message,int)
+	{
+		return open(file_name,error_message);
 	}
 	bool shared_object::open(std::string const &file_name,std::string &error_message)
 	{
@@ -82,6 +97,13 @@ namespace booster {
 	shared_object::~shared_object()
 	{
 	}
+	shared_object::shared_object(std::string const &name,int flags) : d(new data())
+	{
+		std::string err;
+		if(!open(name,err,flags)) {
+			throw booster::runtime_error("booster::shared_object: failed to load shared library " + name +": " + err);
+		}
+	}
 	shared_object::shared_object(std::string const &name) : d(new data())
 	{
 		std::string err;
@@ -102,14 +124,30 @@ namespace booster {
 	}
 	bool shared_object::open(std::string const &file_name)
 	{
-		close();
-		d->handle = dlopen(file_name.c_str(),RTLD_LAZY);
-		return d->handle != 0;		
+		return open(file_name,load_lazy);
+	}
+	bool shared_object::open(std::string const &file_name,int flags)
+	{
+		std::string msg;
+		return open(file_name,msg,flags);
 	}
 	bool shared_object::open(std::string const &file_name,std::string &error_message)
 	{
+		return open(file_name,error_message,load_lazy);
+	}
+	bool shared_object::open(std::string const &file_name,std::string &error_message,int flags)
+	{
 		close();
-		d->handle = dlopen(file_name.c_str(),RTLD_LAZY);
+		int dlflags = 0;
+		if(flags & load_lazy)
+			dlflags |= RTLD_LAZY;
+		if(flags & load_now)
+			dlflags |= RTLD_NOW;
+		if(flags & load_global)
+			dlflags |= RTLD_GLOBAL;
+		if(flags & load_local)
+			dlflags |= RTLD_LOCAL;
+		d->handle = dlopen(file_name.c_str(),flags);
 		if(!d->handle) {
 			error_message = dlerror();
 			return false;

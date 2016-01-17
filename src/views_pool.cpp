@@ -271,7 +271,7 @@ namespace impl {
 
 		shared_object(std::string file_name,bool /*unused*/)
 		{
-			handler_ = dlopen(file_name.c_str(),RTLD_LAZY);
+			handler_ = dlopen(file_name.c_str(),RTLD_LAZY | RTLD_GLOBAL);
 			if(!handler_) {
 				booster::system::error_code e(errno,booster::system::system_category);
 				throw booster::system::system_error(e,"Failed to load library "+file_name);

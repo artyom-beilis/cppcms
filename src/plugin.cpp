@@ -227,8 +227,9 @@ void scope::load(std::string const &name)
 		so_name = (booster::locale::format(d->pattern) % name).str(std::locale::classic());
 
 	booster::shared_ptr<booster::shared_object> obj(new booster::shared_object());
+	int dlflags = booster::shared_object::load_lazy |  booster::shared_object::load_global;
 	if(d->paths.empty()) {
-		if(!obj->open(so_name)) 
+		if(!obj->open(so_name,dlflags)) 
 			throw cppcms_error("Failed to load " + so_name);
 	}
 	else {
@@ -238,7 +239,7 @@ void scope::load(std::string const &name)
 				path = so_name;
 			else
 				path = path + "/" + so_name;
-			if(obj->open(so_name))
+			if(obj->open(so_name,dlflags))
 				break;
 		}
 		if(!obj->is_open()) {

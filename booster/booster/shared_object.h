@@ -21,6 +21,10 @@ namespace booster {
 	///
 	class BOOSTER_API shared_object : public booster::noncopyable {
 	public:
+		static const int load_lazy 	= 1; /// Pass RTLD_LAZY to dlopen
+		static const int load_now  	= 2; /// Pass RTLD_NOW to dlopen
+		static const int load_global 	= 3; /// Pass RTLD_GLOBAL to dlopen
+		static const int load_local	= 4; /// Pass RTLD_LOCAL to dlopen
 		///
 		/// Create an empty shared object
 		///
@@ -30,6 +34,15 @@ namespace booster {
 		/// the file system
 		///
 		~shared_object();
+		///
+		/// Create shared object and load it, \see open(std::string const&,bool);
+		///
+		/// \param file_name - the name of the file, UTF-8 encoded under Windows
+		/// \params flags - load flags: one of load_lazy, load_now, load_local, load_global - ignored on Windows
+		///
+		/// \throws booster::system::system_error if it is impossible to load it
+		/// \ver{v1_2}
+		shared_object(std::string const &file_name,int flags);
 		///
 		/// Create shared object and load it, \see open(std::string const&,bool);
 		///
@@ -57,6 +70,26 @@ namespace booster {
 		/// \return true if the shared object was loaded
 		///
 		bool open(std::string const &file_name,std::string &error_message);
+		///
+		/// Load shared object or dll
+		///
+		/// \param file_name - the name of the file, UTF-8 encoded under Windows
+		/// \params flags - load flags: one of load_lazy, load_now, load_local, load_global - ignored on Windows
+		/// \return true if the shared object was loaded
+		///
+		/// \ver{v1_2}
+		bool open(std::string const &file_name,int flags);
+		///
+		/// Load shared object or dll
+		///
+		/// \param file_name - the name of the file, UTF-8 encoded under Windows
+		/// \params flags - load flags: one of load_lazy, load_now, load_local, load_global - ignored on Windows
+		/// \param error_message - the error message 
+		/// \return true if the shared object was loaded
+		///
+		/// \ver{v1_2}
+		bool open(std::string const &file_name,std::string &error_message,int flags);
+		///
 		///
 		/// Unload the shared object
 		///
