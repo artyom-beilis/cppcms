@@ -497,6 +497,7 @@ public:
 			"plugin::master_plugin::m1 Text\n"	//from "tc_plugin",name1 include m1() 
 			"plugin::master_plugin::m1 Text\n"	//from skin1,"master_plugin" include m1() 
 			"plugin::master_plugin::m1 Text\n"	//from skin1,name1 include m1() 
+			"Plugin2: f1-test\n" //  master_api2 as m from "plugin2","master_plugin"; include call()
 			"");
 
 		c.skin1="plugin";
@@ -536,6 +537,7 @@ int main(int argc,char **argv)
 			cfg["views"]["skins"][1]="tc_sep_skin_b";
 			cfg["views"]["skins"][2]="tc_sep_skin";
 			cfg["views"]["skins"][3]="tc_plugin";
+			cfg["views"]["skins"][4]="tc_plugin2";
 		}
 		else {
 			std::cout << "Using shared header/body" << std::endl;

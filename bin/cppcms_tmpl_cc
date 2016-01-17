@@ -112,7 +112,7 @@ class html_type:
 
 
 class view_block:
-    pattern=r'^<%\s*view\s+(\w+)\s+uses\s+(:?:?\w+(::\w+)*)(\s+extends\s+(:?:?\w+(::\w+)?))?(?P<abs>\s+abstract)?\s*%>$'
+    pattern=r'^<%\s*view\s+(\w+)\s+uses\s+(:?:?\w+(::\w+)*)(\s+extends\s+(:?:?\w+(::\w+)?))?(?P<abs>\s+abstract)?(?P<inline>\s+inline)?\s*%>$'
     basic_pattern='view'
     basic_name='view'
     type='view'
@@ -124,7 +124,12 @@ class view_block:
             self.topmost = 1
         else:
             constructor='%s(_s,_content)' % self.extends;
-        output_declaration( "struct %s :public %s" % (self.class_name , self.extends ))
+        global dll_api
+        if self.inline:
+            api_ref = ''
+        else:
+            api_ref = dll_api
+        output_declaration( "struct %s %s :public %s" % (api_ref, self.class_name , self.extends ))
         output_declaration( "{")
         if self.uses!='' : 
             output_declaration( "\t%s &content;" % self.uses)
@@ -139,6 +144,7 @@ class view_block:
 
     def use(self,m):
         self.abstract = m.group('abs')!=None
+        self.inline = m.group('inline')!=None
         global view_name
         global output_template
         self.class_name=m.group(1)
@@ -1110,6 +1116,17 @@ def main():
         output_template = output_declaration
     else:
         output_template = output_definition
+
+    if header_file!='':
+        global header_define 
+        global dll_api
+        header_define = "CPPCMS_GENERATED_HEADER_%s_TMPL_HEADER_INCLUDED" % ( re.sub("[^a-zA-Z0-9]+", "_", header_file ).upper())
+        if sys.version_info >= (2,5):
+            from hashlib import md5
+        else:
+            from md5 import md5
+        dll_api = 'VIEW_%s_API' % md5(header_define).hexdigest().upper()
+        
     global output_fd
     if output_file!='':
         output_fd=open(output_file,"w")
@@ -1202,6 +1219,8 @@ definitions = StringIO.StringIO();
 inline_cpp_to = output_declaration
 inline_templates = "default"
 output_template = output_definition
+header_define = ''
+dll_api = ''
 
 
 ################
@@ -1209,13 +1228,26 @@ main()
 ################
 
 if header_file!='':
-    header_define = "CPPCMS_GENERATED_HEADER_%s_TMPL_HEADER_INCLUDED" % ( re.sub("[^a-zA-Z0-9]+", "_", header_file ).upper())
     output_hfd=open(header_file,"w")
     output_hfd.write("#ifndef %s\n" % ( header_define ))
     output_hfd.write("#define %s\n\n" % ( header_define ))
+    output_hfd.write("#if defined(__WIN32) || defined(_WIN32) || defined(WIN32) || defined(__CYGWIN__)\n")
+    output_hfd.write("#  ifdef DLL_EXPORT\n")
+    output_hfd.write("#    ifdef %s_SOURCE\n" % dll_api)
+    output_hfd.write("#      define %s __declspec(dllexport)\n" % dll_api)
+    output_hfd.write("#    else\n")
+    output_hfd.write("#      define %s __declspec(dllimport)\n" % dll_api)
+    output_hfd.write("#    endif\n")
+    output_hfd.write("#  else\n")
+    output_hfd.write("#    define %s\n" % dll_api)
+    output_hfd.write("#  endif\n")
+    output_hfd.write("#else\n")
+    output_hfd.write("#  define %s\n" % dll_api)
+    output_hfd.write("#endif\n")
     output_hfd.write(declarations.getvalue());
     output_hfd.write("#endif // %s\n" % ( header_define ))
     output_hfd.close()
+    output_fd.write('#define %s_SOURCE\n' % dll_api);
     output_fd.write('#include "%s"\n\n' %  os.path.basename(header_file));
 else:
     output_fd.write(declarations.getvalue());

@@ -219,11 +219,17 @@ TBD
 <% end template %>
 <% end view %>
 
-<% view master_api uses data::master abstract %>
+<% view master_api uses data::master abstract inline %>
 <% template m1() = 0 %>
 <% end view %>
 
-<% view helper_api uses data::helper abstract%>
+<% view master_api2 uses data::master abstract %>
+<% template f1() %>f1-test<% end %>
+<% template call() = 0 %>
+<% end view %>
+
+
+<% view helper_api uses data::helper abstract inline %>
 <% template h1()=0%>
 <% end view %>
 
@@ -243,6 +249,7 @@ TBD
 <% using master_api as m from "plugin",name1 %><% include m1() from m %><% end using %>
 <% using master_api as m from skin1,"master_plugin" %><% include m1() from m %><% end using %>
 <% using master_api as m from skin1,name1 %><% include m1() from m %><% end using %>
+<% using master_api2 as m from "plugin2","master_plugin" %><% include call() from m %><% end using %>
 <% end template %>
 <% end view %>
 

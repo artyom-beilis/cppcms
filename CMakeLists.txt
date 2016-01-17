@@ -629,6 +629,20 @@ add_custom_command(
 		)
 
 
+add_custom_command(
+	OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/tc_plugin2.cpp 
+	COMMAND ${PYTHON} ${CMAKE_CURRENT_SOURCE_DIR}/bin/cppcms_tmpl_cc 
+		-o ${CMAKE_CURRENT_BINARY_DIR}/tc_plugin2.cpp
+			${CMAKE_CURRENT_SOURCE_DIR}/tests/tc_plugin2.tmpl
+	DEPENDS 
+		${CMAKE_CURRENT_BINARY_DIR}/tc_sep_skin.h
+		${CMAKE_CURRENT_SOURCE_DIR}/bin/cppcms_tmpl_cc 
+		${CMAKE_CURRENT_SOURCE_DIR}/tests/tc_skin.tmpl
+		${CMAKE_CURRENT_SOURCE_DIR}/tests/tc_plugin2.tmpl
+		)
+
+
+
 
 
 
@@ -650,13 +664,14 @@ if(NOT DISABLE_SHARED)
 				COMPILE_DEFINITIONS "${SKIN3_DEFS}")
 	target_link_libraries(skin3 ${CPPCMS_LIB})
 
-	foreach(SKIN tc_skin_a tc_skin_b tc_skin tc_sep_skin_a tc_sep_skin_b tc_sep_skin tc_plugin)
+	foreach(SKIN tc_skin_a tc_skin_b tc_skin tc_sep_skin_a tc_sep_skin_b tc_sep_skin tc_plugin tc_plugin2)
 		add_library(${SKIN} SHARED ${CMAKE_CURRENT_BINARY_DIR}/${SKIN}.cpp)
 		target_link_libraries(${SKIN} ${CPPCMS_LIB})
 		if(IS_WINDOWS)
 			set_target_properties(${SKIN} PROPERTIES COMPILE_DEFINITIONS DLL_EXPORT)
 		endif()
 	endforeach()
+	target_link_libraries(tc_plugin2 tc_sep_skin)
 
 	add_library(plugin SHARED tests/test_plugin_so.cpp)
 	target_link_libraries(plugin ${CPPCMS_LIB})
