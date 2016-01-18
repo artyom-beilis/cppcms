@@ -1,0 +1,16 @@
+# Copyright (C) 2016 Artyom Beilis
+# This file is distributed under the same license as the CppCMS package.
+#
+msgid ""
+msgstr ""
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2016-01-18 23:10+0200\n"
+"Language: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=n==1?0:1;\n"
+
+msgid "translate me"
+msgstr "Main Translate Me"
+

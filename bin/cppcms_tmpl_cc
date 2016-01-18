@@ -142,6 +142,7 @@ class view_block:
             self.gettext_domain = spec_gettext;
             output_declaration( '\t\t_domain_id=cppcms::translation_domain_scope::domain_id(_s,"%s");' % self.gettext_domain)
         else:
+            output_declaration( '\t\t_domain_id=booster::locale::ios_info::get(_s).domain_id();')
             self.gettext_domain = None;
         output_declaration("\t}")
 

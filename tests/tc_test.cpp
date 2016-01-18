@@ -512,6 +512,29 @@ public:
 			"plugin::helper_plugin::h1 13\n"	//from skin1,name1 include h1() 
 			"");
 	}
+	void test_domain()
+	{
+		std::cout <<"- Testing gettext domains" << std::endl;
+		response().out() << booster::locale::translate("translate me")<<";";
+		{
+			cppcms::translation_domain_scope scope(response().out(),"plugin2");
+			response().out() << booster::locale::translate("translate me")<<";";
+		}
+		response().out() << booster::locale::translate("translate me")<<";";
+		compare_strings(str(),"Main Translate Me;Plugin Translate Me;Main Translate Me;");
+
+		data::master c;
+		std::cout <<"-- main" << std::endl;
+		render("message_base",c);
+		compare_strings(str(),"Main Translate Me");
+		std::cout <<"-- plugin" << std::endl;
+		render("plugin2","msg",c);
+		compare_strings(str(),"Main Translate Me; Plugin Translate Me; Main Translate Me");
+		std::cout <<"-- undefined main" << std::endl;
+		response().out() << booster::locale::as::domain("plugin2");
+		render("plugin2","msg",c);
+		compare_strings(str(),"Plugin Translate Me; Plugin Translate Me; Plugin Translate Me");
+	}
 
 
 private:
@@ -523,14 +546,19 @@ private:
 int main(int argc,char **argv)
 {
 	std::string type;
-	if(argc!=2 || ((type=argv[1])!="--separate" && type!="--shared")) {
-		std::cerr << "Usage (--separate|--shared)" << std::endl;
+	if(argc!=3 || ((type=argv[1])!="--separate" && type!="--shared")) {
+		std::cerr << "Usage (--separate|--shared) /path/to/tests/dir" << std::endl;
 		return 1;
 	}
 	bool separate = type == "--separate";
 	try {
 		cppcms::json::value cfg;
 		cfg["views"]["paths"][0]="./";
+		cfg["localization"]["locales"][0]="en_US.UTF-8";
+		cfg["localization"]["messages"]["paths"][0]=std::string(argv[2]);
+		cfg["localization"]["messages"]["domains"][0]="main";
+		cfg["localization"]["messages"]["domains"][1]="plugin2";
+
 		if(separate) {
 			std::cout << "Using separate header/body" << std::endl;
 			cfg["views"]["skins"][0]="tc_sep_skin_a";
@@ -567,8 +595,10 @@ int main(int argc,char **argv)
 		app.test_cache();
 		app.test_using_render();
 		app.test_gettext();
-		if(separate)
+		if(separate) {
 			app.test_using_from();
+			app.test_domain();
+		}
 	}
 	catch(std::exception const &e)
 	{
