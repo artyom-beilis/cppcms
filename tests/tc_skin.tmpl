@@ -241,6 +241,11 @@ TBD
 <% template h1() %>skin::helper_plugin::h1 <%= x %><% end %>
 <% end view %>
 
+<% view message_base uses data::helper %>
+<% template f1() %><% gt "translate me" %><% end %>
+<% template render() %><% include f1() %><% end %>
+<% end view %>
+
 <% view test_master_plugin uses data::master %>
 <% template render() %>
 <% using master_api as m from "master_plugin" %><% include m1() from m %><% end using %>

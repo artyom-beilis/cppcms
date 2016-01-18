@@ -12,7 +12,50 @@
 #include <cppcms/util.h>
 #include <iostream>
 
-namespace cppcms { namespace filters {
+namespace cppcms { 
+
+struct translation_domain_scope::_data {};
+
+void translation_domain_scope::set_and_save(int new_id)
+{
+	if(new_id < 0)
+		return;
+	booster::locale::ios_info &info = booster::locale::ios_info::get(*output_);
+	prev_id_ = info.domain_id();
+	info.domain_id(new_id);
+}
+
+int translation_domain_scope::domain_id(std::ostream &out,std::string const &dom)
+{
+	return std::use_facet<booster::locale::message_format<char> >(out.getloc()).domain(dom);
+}
+
+translation_domain_scope::translation_domain_scope(std::ostream &out,std::string const &dom) : 
+	output_(&out),
+	prev_id_(-1)
+{
+	set_and_save(domain_id(out,dom));
+}
+
+translation_domain_scope::translation_domain_scope(std::ostream &out,int new_id) : 
+	output_(&out),
+	prev_id_(-1)
+{
+	set_and_save(new_id);
+}
+
+translation_domain_scope::~translation_domain_scope()
+{
+	if(prev_id_==-1)
+		return;
+	try {
+		booster::locale::ios_info::get(*output_).domain_id(prev_id_);
+	}
+	catch(...) {}
+}
+
+	
+namespace filters {
 
 	streamable::streamable() 
 	{

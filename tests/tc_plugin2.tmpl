@@ -1,6 +1,12 @@
 <% c++ #include "tc_sep_skin.h" %>
+<% domain plugin %>
 <% skin plugin2 %>
 <% view master_plugin uses data::master extends tc_skin::master_api2 %>
 <% template call() %>Plugin2: <% include f1() %><% end %>
 <% end view %>
+
+<% view msg uses data::helper extends tc_skin::message_base %>
+<% template render() %><% include f1() %>; <% gt "translate me" %>; <% include f1() %><% end %>
+<% end view %>
+
 <% end skin %>

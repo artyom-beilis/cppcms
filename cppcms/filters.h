@@ -15,9 +15,42 @@
 #include <iostream>
 #include <cppcms/defs.h>
 #include <booster/copy_ptr.h>
+#include <booster/hold_ptr.h>
+#include <booster/noncopyable.h>
 #include <cppcms/localization.h>
 
 namespace cppcms {
+	///
+	/// \brief set gettext domain id withing specific scope
+	///
+	/// \ver{v1_2}
+	class CPPCMS_API translation_domain_scope : public booster::noncopyable {
+	public:
+		///
+		/// Get numeric id for the domain
+		///
+		static int domain_id(std::ostream &out,std::string const &domain);
+
+		///
+		/// Set domain id on the stream and save previous one to restore in the destructor
+		///
+		translation_domain_scope(std::ostream &output,int domain_id);
+		///
+		/// Set domain on the stream and save previous one to restore in the destructor
+		///
+		translation_domain_scope(std::ostream &output,std::string const &domain);
+		///
+		/// Restrore domain
+		///
+		~translation_domain_scope();
+	private:
+		void set_and_save(int id);
+		struct _data;
+		booster::hold_ptr<_data> d;
+		std::ostream *output_;
+		int prev_id_;
+	};
+	///
 	///
 	/// \brief This namespace various filters that can be used in templates for filtering data
 	///

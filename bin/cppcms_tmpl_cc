@@ -133,16 +133,21 @@ class view_block:
         output_declaration( "{")
         if self.uses!='' : 
             output_declaration( "\t%s &content;" % self.uses)
-            output_declaration( "\t%s(std::ostream &_s,%s &_content): %s,content(_content)" % ( self.class_name,self.uses,constructor ))
+            output_declaration( "\t%s(std::ostream &_s,%s &_content): %s,content(_content),_domain_id(0)" % ( self.class_name,self.uses,constructor ))
         else:
-            output_declaration( "\t%s(std::ostream &_s): %s" % ( self.class_name,constructor ))
+            output_declaration( "\t%s(std::ostream &_s): %s,_domain_id(0)" % ( self.class_name,constructor ))
         output_declaration("\t{")
         global spec_gettext
-        if self.topmost and spec_gettext:
-            output_declaration('\t\tout() << cppcms::locale::as::domain("%s");' % spec_gettext )
+        if spec_gettext:
+            self.gettext_domain = spec_gettext;
+            output_declaration( '\t\t_domain_id=cppcms::translation_domain_scope::domain_id(_s,"%s");' % self.gettext_domain)
+        else:
+            self.gettext_domain = None;
         output_declaration("\t}")
 
     def use(self,m):
+        global view_created
+        view_created = True
         self.abstract = m.group('abs')!=None
         self.inline = m.group('inline')!=None
         global view_name
@@ -168,6 +173,8 @@ class view_block:
         if not self.abstract:
             class_list.append(information())
     def on_end(self):
+        output_declaration( "private:")
+        output_declaration( "\tint _domain_id;")
         output_declaration( "}; // end of class %s" % self.class_name)
 
 
@@ -215,9 +222,11 @@ class template_block:
         else:
             if inline_templates:
                 output_declaration( "virtual void %s(%s) {" % (self.name,params) )
+                output_declaration( "\tcppcms::translation_domain_scope _trs(out(),_domain_id);\n")
             else:
                 output_declaration( "virtual void %s(%s);" % (self.name,params) )
                 output_definition( "void %s::%s(%s) {" % (view_name,self.name,params) )
+                output_definition( "\tcppcms::translation_domain_scope _trs(out(),_domain_id);\n")
         global stack
         if len(stack)==0 or stack[-1].type!='view':
             error_exit("You must define template inside view block only")
@@ -571,6 +580,24 @@ class error_com:
     def use(self,m):
         error_exit("Invalid statement `%s'" % m.group(1))
 
+
+class domain_block:
+    pattern=r'^<%\s*domain\s+(\w+)\s*%>$'
+    basic_pattern = 'domain'
+    basic_name = 'domain'
+    type = 'domain'
+    def use(self,m):
+        gt = m.group(1)
+        global spec_gettext
+        global view_created
+        if not spec_gettext:
+            if view_created:
+                error_exit("Can't use domain command after a view was created")
+            else:
+                spec_gettext = gt
+            return
+        if spec_gettext != gt:
+            error_exit("Gettext domain is already defined as `%s' and differs from given `%s'" % (spec_gettext , gt ))
 
 class cpp_include_block:
     pattern=r'^<%\s*c\+\+(src)?\s+(.*)%>$'
@@ -1167,6 +1194,7 @@ def main():
                     using_block(), \
                     render_block(), \
                     html_type(), form_block(), csrf_block(), \
+                    domain_block(), \
                     filters_show_block(), error_com() ]:
 
                 basic_pattern = r'^<%\s*' + c.basic_pattern + r'.*%>$'
@@ -1211,6 +1239,7 @@ exit_flag=0
 current_template=''
 spec_gettext=''
 ignore_inline=1
+view_created=False
 scope_filter='cppcms::filters::escape'
 
 view_name = ''
