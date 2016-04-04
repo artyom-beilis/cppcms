@@ -239,7 +239,7 @@ void scope::load(std::string const &name)
 				path = so_name;
 			else
 				path = path + "/" + so_name;
-			if(obj->open(so_name,dlflags))
+			if(obj->open(path,dlflags))
 				break;
 		}
 		if(!obj->is_open()) {
