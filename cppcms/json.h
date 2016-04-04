@@ -706,7 +706,7 @@ namespace json {
 		static float get(value const &v)
 		{
 			double r=v.number();
-			if(	r < std::numeric_limits<float>::min()
+			if(	r < (-std::numeric_limits<float>::max()) // actually should be C++11 lowest, but it should be under IEEE float lowest()=-max()
 			     || std::numeric_limits<float>::max() < r )
 			{
 				throw bad_value_cast();
@@ -727,7 +727,7 @@ namespace json {
 		}
 		static void set(value &v,long double const &in)
 		{
-			if( in < std::numeric_limits<double>::min()
+			if( in < -std::numeric_limits<double>::max() // should actually be std::numeric_limits<float>::lowest() but it is ==-max()
 			     || std::numeric_limits<double>::max() < in )
 			{
 				throw bad_value_cast();

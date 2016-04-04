@@ -227,6 +227,14 @@ int main()
 		TEST(v.type() == cppcms::json::is_object);
 		TEST(!v.load(part,part+4,true));
 
+		{
+			json::value v;
+			v["x"]=-10.0;
+			TEST(v.get<float>("x")==-10.0f);
+			TEST(v.get<double>("x")==-10.0);
+			TEST(v.get<long double>("x")==-10.0);
+		}
+
 	}
 	catch(std::exception const &e)
 	{
