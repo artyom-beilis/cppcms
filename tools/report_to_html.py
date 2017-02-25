@@ -5,17 +5,20 @@ import sys
 import datetime
 
 dic = [ \
-	[ 'gcc_44', '<td>Linux 2.6.32</td><td>GCC-4.4</td><td>x86_64</td>' ] , 
-	[ 'gcc_44_stlport', '<td>Linux 2.6.32</td><td>GCC-4.4/STLPort 5.2</td><td>x86_64</td>'],
-	[ 'clangcc', '<td>Linux 2.6.32</td><td>Clang-2.9</td><td>x86_64</td>'],
-	[ 'intel', '<td>Linux 2.6.32</td><td>Intel 12.1</td><td>x86_64</td>'], 
-	[ 'arm', '<td>Linux 2.6.32</td><td>GCC-4.1</td><td>armel</td>'],
+	[ 'gcc_53', '<td>Linux 4.4</td><td>GCC-5.3</td><td>x86_64</td>' ] , 
+	[ 'clang_38_libcpp', '<td>Linux 4.4</td><td>Clang-3.8/libc++</td><td>x86_64</td>' ] , 
+	#[ 'clangcc', '<td>Linux 2.6.32</td><td>Clang-2.9</td><td>x86_64</td>'],
+	#[ 'intel', '<td>Linux 2.6.32</td><td>Intel 12.1</td><td>x86_64</td>'], 
+	#[ 'arm', '<td>Linux 2.6.32</td><td>GCC-4.1</td><td>armel</td>'],
 	[ 'bsd_gcc', '<td>FreeBSD 8.0</td><td>GCC-4.2</td><td>x86</td>'],
 	[ 'solaris_gcc', '<td>OpenSolaris 2009.06</td><td>GCC-3.4</td><td>x86</td>'],
 	[ 'solaris_suncc', '<td>OpenSolaris 2009.06</td><td>Sun Studio 5.11</td><td>x86</td>'],
 	[ 'win_gcc', '<td>Windows XP SP2</td><td>GCC-4.5</td><td>x86</td>'],
 	[ 'win_msvc', '<td>Windows XP SP2</td><td>MSVC 2008</td><td>x86</td>'],
 ]
+
+repo_url=sys.argv[1]
+repo_rev=sys.argv[2]
 
 r=r'(\w+)\s+-\s*(pass|fail)';
 
@@ -30,6 +33,8 @@ print """
 <h1>Nightly CppCMS Builds and Tests</h1>
 """
 print datetime.datetime.now().strftime('<h2>Tested at: %Y-%m-%d %H:%M</h2>')
+
+print "<p>%s<br/>%s</p>" % (repo_url,repo_rev)
 
 print """
 <table cellpadding="3" cellspacing="0" border="1" >

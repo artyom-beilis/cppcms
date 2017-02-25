@@ -20,6 +20,7 @@ win_gcc()
 		-DCMAKE_INCLUDE_PATH=e:/projects/mingw/include \
 		-DCMAKE_LIBRARY_PATH=e:/projects/mingw/lib \
 		-DDISABLE_STATIC=ON .. \
+		-DBOOSTER_AIO_HAVE_PF_INET6=OFF \
 		-DCMAKE_BUILD_TYPE=Debug \
 		&& make && ctest -E icu_vs_os_timezone
 	then
@@ -47,6 +48,7 @@ win_msvc()
 		-DCMAKE_BUILD_TYPE=RelWithDebInfo \
 		-DCMAKE_INCLUDE_PATH='e:\projects\msvc9\packages\release\include' \
 		-DCMAKE_LIBRARY_PATH='e:\projects\msvc9\packages\release\lib' \
+		-DBOOSTER_AIO_HAVE_PF_INET6=OFF \
 		-DDISABLE_STATIC=ON .. \
 		&& nmake && ctest -E icu_vs_os_timezone
 	then

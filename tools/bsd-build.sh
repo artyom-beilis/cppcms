@@ -1,6 +1,7 @@
 #!/usr/bin/env bash 
 
 cd /tmp
+
 rm -fr /tmp/faults
 mkdir /tmp/faults
 
@@ -9,9 +10,7 @@ rm -f report.txt
 FLAGS=
 
 rm -fr /tmp/nb
-svn export svn://svn.code.sf.net/p/cppcms/code/framework/trunk nb
-cd nb
-tar -xjf cppcms_boost.tar.bz2
+tar -xzvf nb.tar.gz
 
 cd /tmp
 
@@ -22,7 +21,7 @@ bsd_gcc()
 	mkdir build
 	cd build
 
-	if cmake $FLAGS -DCMAKE_INCLUDE_PATH=/opt/icu46/include -DCMAKE_LIBRARY_PATH=/opt/icu46/lib -DCMAKE_CXX_FLAGS:STRING=-I/opt/icu46/include -DCMAKE_BUILD_TYPE=Debug -DDISABLE_STATIC=ON .. && make && make test
+	if cmake $FLAGS -DCMAKE_INCLUDE_PATH=/opt/icu46/include -DCMAKE_LIBRARY_PATH=/opt/icu46/lib -DCMAKE_CXX_FLAGS:STRING=-I/opt/icu46/include -DDISABLE_STATIC=ON .. && make -j 4 && make test
 	then
 		return 0;
 	else
