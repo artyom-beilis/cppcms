@@ -23,8 +23,8 @@ namespace booster {
 	public:
 		static const int load_lazy 	= 1; /// Pass RTLD_LAZY to dlopen
 		static const int load_now  	= 2; /// Pass RTLD_NOW to dlopen
-		static const int load_global 	= 3; /// Pass RTLD_GLOBAL to dlopen
-		static const int load_local	= 4; /// Pass RTLD_LOCAL to dlopen
+		static const int load_global 	= 4; /// Pass RTLD_GLOBAL to dlopen
+		static const int load_local	= 8; /// Pass RTLD_LOCAL to dlopen
 		///
 		/// Create an empty shared object
 		///

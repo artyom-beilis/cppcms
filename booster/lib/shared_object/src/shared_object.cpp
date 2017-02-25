@@ -10,6 +10,7 @@
 #else
 #include <dlfcn.h>
 #endif
+#include <iostream>
 
 namespace booster {
 	#ifdef BOOSTER_WIN_NATIVE
@@ -147,7 +148,7 @@ namespace booster {
 			dlflags |= RTLD_GLOBAL;
 		if(flags & load_local)
 			dlflags |= RTLD_LOCAL;
-		d->handle = dlopen(file_name.c_str(),flags);
+		d->handle = dlopen(file_name.c_str(),dlflags);
 		if(!d->handle) {
 			error_message = dlerror();
 			return false;
