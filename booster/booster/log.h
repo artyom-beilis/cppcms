@@ -362,6 +362,15 @@ namespace log {
 			/// to provide non-default parameters, you need to call it on your own
 			///
 			syslog();
+
+			///
+			/// Create a new logger and call openlog with  id, opts and facility 
+			///
+			syslog(std::string const &id,int opts,int facility = 0);
+			///
+			/// Create a new logger and call openlog with  NULL id , opts and facility 
+			///
+			syslog(int opts,int facility = 0);
 			///
 			/// Send the message to the log
 			///

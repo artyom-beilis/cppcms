@@ -276,10 +276,9 @@ void impl::setup_logging(json::value const &settings)
 			else if(op=="LOG_PID") ops|=LOG_PID;
 		}
 		if(id.empty())
-			::openlog(0,ops,0);
+			logger::instance().add_sink(booster::shared_ptr<sink>(new sinks::syslog(ops)));
 		else
-			::openlog(id.c_str(),ops,0);
-		logger::instance().add_sink(booster::shared_ptr<sink>(new sinks::syslog()));
+			logger::instance().add_sink(booster::shared_ptr<sink>(new sinks::syslog(id,ops)));
 		#endif
 	}
 

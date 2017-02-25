@@ -419,12 +419,31 @@ namespace log {
 				d->stream << format_plain_text_message_tz(msg,tz_offset_) << std::endl;
 		}
 		#ifdef BOOSTER_POSIX
-		struct syslog::data {};
-		syslog::syslog()
+		struct syslog::data {
+			std::string id;
+			bool log_was_opened;
+			data() : log_was_opened(false) {}
+		};
+		syslog::syslog(int opts,int facility) : 
+			d(new data())
+		{
+			d->log_was_opened = true;
+			openlog(NULL,opts,facility);
+		}
+		syslog::syslog(std::string const &id,int opts,int facility) : 
+			d(new data())
+		{
+			d->id = id;
+			d->log_was_opened = true;
+			openlog(d->id.c_str(),opts,facility);
+		}
+		syslog::syslog() : d(new data())
 		{
 		}
 		syslog::~syslog()
 		{
+			if(d.get() && d->log_was_opened)
+				closelog();
 		}
 		void syslog::log(message const &msg)
 		{
