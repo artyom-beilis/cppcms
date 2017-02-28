@@ -261,8 +261,10 @@ void impl::setup_logging(json::value const &settings)
 			throw cppcms_error("Syslog is not availible on Windows");
 		#else
 		std::string id = settings.get("logging.syslog.id","");
+		std::string facility = settings.get("logging.syslog.facility","user");
 		std::vector<std::string> vops = settings.get("logging.syslog.options",std::vector<std::string>());
 		std::string sfacility = settings.get("logging.syslog.options","");
+		int facility_code = 0;
 		int ops = 0;
 		for(unsigned i=0;i<vops.size();i++) {
 			std::string const &op=vops[i];
@@ -275,10 +277,33 @@ void impl::setup_logging(json::value const &settings)
 			#endif
 			else if(op=="LOG_PID") ops|=LOG_PID;
 		}
+		if(!facility.empty()) {
+			if(facility == "user") {
+				facility_code = LOG_USER;
+			} else if(facility == "local0") {
+				facility_code = LOG_LOCAL0;
+			} else if(facility == "local1") {
+				facility_code = LOG_LOCAL1;
+			} else if(facility == "local2") {
+				facility_code = LOG_LOCAL2;
+			} else if(facility == "local3") {
+				facility_code = LOG_LOCAL3;
+			} else if(facility == "local4") {
+				facility_code = LOG_LOCAL4;
+			} else if(facility == "local5") {
+				facility_code = LOG_LOCAL5;
+			} else if(facility == "local6") {
+				facility_code = LOG_LOCAL6;
+			} else if(facility == "local7") {
+				facility_code = LOG_LOCAL7;
+			} else {
+				throw cppcms_error("Unsupported syslog facility: " + facility);
+			}
+		}
 		if(id.empty())
-			logger::instance().add_sink(booster::shared_ptr<sink>(new sinks::syslog(ops)));
+			logger::instance().add_sink(booster::shared_ptr<sink>(new sinks::syslog(ops,facility_code)));
 		else
-			logger::instance().add_sink(booster::shared_ptr<sink>(new sinks::syslog(id,ops)));
+			logger::instance().add_sink(booster::shared_ptr<sink>(new sinks::syslog(id,ops,facility_code)));
 		#endif
 	}
 
