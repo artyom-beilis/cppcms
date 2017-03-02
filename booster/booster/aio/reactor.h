@@ -9,7 +9,7 @@
 #define BOOSTER_AIO_REACTOR_H
 #include <booster/config.h>
 #include <booster/aio/types.h>
-#include <memory>
+#include <booster/auto_ptr_inc.h>
 #include <string>
 namespace booster {
 namespace aio {

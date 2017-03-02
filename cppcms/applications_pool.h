@@ -16,7 +16,7 @@
 #include <booster/weak_ptr.h>
 #include <booster/enable_shared_from_this.h>
 
-#include <memory>
+#include <booster/auto_ptr_inc.h>
 #include <string>
 
 namespace cppcms {

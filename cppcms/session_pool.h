@@ -13,7 +13,7 @@
 #include <booster/hold_ptr.h>
 #include <cppcms/session_api.h>
 
-#include <memory>
+#include <booster/auto_ptr_inc.h>
 
 namespace cppcms {
 	class service;

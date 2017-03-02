@@ -26,7 +26,7 @@
 
 #include <string>
 #include <cstring>
-#include <memory>
+#include <booster/auto_ptr_inc.h>
 
 namespace booster {
     namespace locale {

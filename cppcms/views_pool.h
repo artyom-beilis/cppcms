@@ -13,7 +13,7 @@
 #include <cppcms/base_view.h>
 #include <cppcms/cppcms_error.h>
 
-#include <memory>
+#include <booster/auto_ptr_inc.h>
 #include <map>
 #include <vector>
 #include <ostream>

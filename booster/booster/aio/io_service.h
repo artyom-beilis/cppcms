@@ -17,7 +17,7 @@
 #include <booster/callback.h>
 #include <booster/noncopyable.h>
 #include <string>
-#include <memory>
+#include <booster/auto_ptr_inc.h>
 
 namespace booster {
 class ptime;

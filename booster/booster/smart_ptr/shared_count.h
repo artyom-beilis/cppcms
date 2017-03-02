@@ -20,7 +20,7 @@
 #include <booster/bad_weak_ptr.h>
 #include <booster/smart_ptr/sp_counted_base.h>
 #include <booster/smart_ptr/sp_counted_impl.h>
-#include <memory>
+#include <booster/auto_ptr_inc.h>
 #include <functional>       // std::less
 #include <new>              // std::bad_alloc
 

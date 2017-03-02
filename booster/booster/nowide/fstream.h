@@ -4,7 +4,7 @@
 #include <booster/config.h>
 #include <booster/nowide/convert.h>
 #include <fstream>
-#include <memory>
+#include <booster/auto_ptr_inc.h>
 
 #if defined BOOSTER_WIN_NATIVE || defined BOOSTER_WORKAROUND_BROKEN_GCC_ON_DARWIN
 #include <booster/streambuf.h>

@@ -13,7 +13,7 @@
 #include <booster/hold_ptr.h>
 #include <booster/function.h>
 #include <locale>
-#include <memory>
+#include <booster/auto_ptr_inc.h>
 #include <cppcms/locale_fwd.h>
 #include <cppcms/json.h>
 

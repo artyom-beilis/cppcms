@@ -12,7 +12,7 @@
 #include <cppcms/defs.h>
 #include <booster/hold_ptr.h>
 #include <booster/shared_ptr.h>
-#include <memory>
+#include <booster/auto_ptr_inc.h>
 
 namespace cppcms {
 namespace sessions {

@@ -14,7 +14,7 @@
 #include <cppcms/config.h>
 #include "test.h"
 #include <iostream>
-#include <memory>
+#include <booster/auto_ptr_inc.h>
 #include <time.h>
 #ifdef CPPCMS_WIN_NATIVE
 #include <windows.h>

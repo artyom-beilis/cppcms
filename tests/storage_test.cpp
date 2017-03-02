@@ -25,7 +25,7 @@
 #include <booster/function.h>
 #include <booster/backtrace.h>
 #include <string.h>
-#include <memory>
+#include <booster/auto_ptr_inc.h>
 #include <iostream>
 #include <vector>
 #include <stdio.h>

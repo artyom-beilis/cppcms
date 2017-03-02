@@ -20,7 +20,7 @@
 #include <booster/traits/enable_if.h>
 #include <booster/traits/is_base_of.h>
 
-#include <memory>
+#include <booster/auto_ptr_inc.h>
 #include <iterator>
 #include <map>
 #include <vector>

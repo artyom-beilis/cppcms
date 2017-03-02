@@ -8,7 +8,7 @@
 #ifndef BOOSTER_SRC_LOCALE_MO_LAMBDA_H_INCLUDED
 #define BOOSTER_SRC_LOCALE_MO_LAMBDA_H_INCLUDED
 
-#include <memory>
+#include <booster/auto_ptr_inc.h>
 
 namespace booster {
     namespace locale {

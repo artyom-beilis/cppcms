@@ -31,7 +31,7 @@
 #include <string>
 #include <list>
 #include <limits>
-#include <memory>
+#include <booster/auto_ptr_inc.h>
 #include <time.h>
 #include <cppcms/cstdint.h>
 

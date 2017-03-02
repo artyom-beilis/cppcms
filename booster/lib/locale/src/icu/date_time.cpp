@@ -16,7 +16,7 @@
 #include <unicode/gregocal.h>
 #include <unicode/utypes.h>
 
-#include <memory>
+#include <booster/auto_ptr_inc.h>
 #include <math.h>
 
 #include "cdata.h"

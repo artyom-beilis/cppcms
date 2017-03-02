@@ -17,7 +17,7 @@
 #include <string>
 #include <vector>
 #include <set>
-#include <memory>
+#include <booster/auto_ptr_inc.h>
 #include <booster/locale/formatting.h>
 
 

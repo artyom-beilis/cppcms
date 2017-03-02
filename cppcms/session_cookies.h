@@ -10,7 +10,7 @@
 #include <cppcms/session_api.h>
 #include <booster/hold_ptr.h>
 #include <booster/noncopyable.h>
-#include <memory>
+#include <booster/auto_ptr_inc.h>
 #include <string>
 namespace cppcms {
 class session_interface;

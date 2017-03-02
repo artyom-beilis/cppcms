@@ -9,7 +9,7 @@
 #define BOOSTER_LOCALE_IMPL_ICU_CODECVT_HPP
 #include <booster/config.h>
 #include <booster/locale/util.h>
-#include <memory>
+#include <booster/auto_ptr_inc.h>
 namespace booster {
 namespace locale {
 namespace impl_icu {

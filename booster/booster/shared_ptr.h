@@ -16,7 +16,7 @@
 
 #include <booster/config.h>   // for broken compiler workarounds
 
-#include <memory>
+#include <booster/auto_ptr_inc.h>
 #include <cassert>
 #include <booster/backtrace.h>
 #include <booster/checked_delete.h>

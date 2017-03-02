@@ -32,7 +32,7 @@
 #include <fstream>
 #include <pthread.h>
 #include <string.h>
-#include <memory>
+#include <booster/auto_ptr_inc.h>
 #endif
 
 namespace booster {

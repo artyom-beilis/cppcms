@@ -21,7 +21,7 @@
 #include <sys/socket.h>
 
 #include <algorithm>
-#include <memory>
+#include <booster/auto_ptr_inc.h>
 
 #include "cgi_api.h"
 

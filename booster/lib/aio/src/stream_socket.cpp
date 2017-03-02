@@ -410,7 +410,6 @@ namespace {
 		size_t count;
 		stream_socket *self;
 		io_handler h;
-		bool via_poll;
 	};
 
 	struct writer_all : public callable<void(system::error_code const &e)> 

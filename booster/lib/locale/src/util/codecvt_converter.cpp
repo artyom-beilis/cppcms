@@ -627,7 +627,7 @@ namespace util {
 
     };
 
-    static const char ensure_mbstate_size_is_at_least_2[sizeof(mbstate_t) >= 2 ? 1 : -1] = {0};
+    BOOSTER_UNUSED static const char ensure_mbstate_size_is_at_least_2[sizeof(mbstate_t) >= 2 ? 1 : -1] = {0};
     
     template<>
     class code_converter<char> : public std::codecvt<char,char,mbstate_t>

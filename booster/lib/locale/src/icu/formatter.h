@@ -9,7 +9,7 @@
 #define BOOSTER_LOCALE_FORMATTER_H_INCLUDED
 
 #include <string>
-#include <memory>
+#include <booster/auto_ptr_inc.h>
 #include <booster/cstdint.h>
 #include <booster/config.h>
 #include <unicode/locid.h>

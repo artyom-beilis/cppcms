@@ -61,16 +61,16 @@ namespace system {
 	};
 
 	BOOSTER_API error_category const &get_system_category();
-	static const error_category &system_category = get_system_category();
+	BOOSTER_UNUSED static const error_category &system_category = get_system_category();
 	
 	#ifdef BOOSTER_WIN32
 	BOOSTER_API error_category const &get_windows_category();
-	static const error_category &windows_category = get_system_category();
+	BOOSTER_UNUSED static const error_category &windows_category = get_system_category();
 	#endif
 
 	#ifdef BOOSTER_POSIX
 	BOOSTER_API error_category const &get_posix_category();
-	static const error_category &posix_category = get_system_category();
+	BOOSTER_UNUSED static const error_category &posix_category = get_system_category();
 	#endif
 
 

@@ -18,7 +18,7 @@
 #include <booster/smart_ptr/sp_counted_base.h>
 
 #if defined(BOOSTER_SP_USE_STD_ALLOCATOR)
-#include <memory>           // std::allocator
+#include <booster/auto_ptr_inc.h>           // std::allocator
 #endif
 
 #include <cstddef>          // std::size_t

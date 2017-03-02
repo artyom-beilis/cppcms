@@ -10,7 +10,7 @@
 
 #include <cppcms/defs.h>
 #include <string>
-#include <memory>
+#include <booster/auto_ptr_inc.h>
 
 namespace cppcms {
 	class service;

@@ -11,7 +11,7 @@
 #include <booster/system_error.h>
 #include <errno.h>
 #include <string.h>
-#include <memory>
+#include <booster/auto_ptr_inc.h>
 #include <vector>
 #include <stack>
 

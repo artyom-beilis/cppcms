@@ -17,7 +17,7 @@
 #include <booster/locale/date_time.h>
 #include <stdlib.h>
 #include <ctime>
-#include <memory>
+#include <booster/auto_ptr_inc.h>
 #include <algorithm>
 #include <limits>
 

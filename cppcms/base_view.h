@@ -15,7 +15,7 @@
 #include <string>
 #include <map>
 #include <ctime>
-#include <memory>
+#include <booster/auto_ptr_inc.h>
 
 #include <booster/hold_ptr.h>
 #include <cppcms/base_content.h>

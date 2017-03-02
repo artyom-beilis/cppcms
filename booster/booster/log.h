@@ -10,7 +10,7 @@
 
 #include <booster/config.h>
 #include <iosfwd>
-#include <memory>
+#include <booster/auto_ptr_inc.h>
 #include <string>
 #include <booster/copy_ptr.h>
 #include <booster/hold_ptr.h>
@@ -338,8 +338,8 @@ namespace log {
 			std::string format_file(std::string const &,int);
 
 			unsigned max_files_;
-			size_t max_size_;
-			size_t current_size_;
+			BOOSTER_UNUSED_MEMBER size_t max_size_;
+			BOOSTER_UNUSED_MEMBER size_t current_size_;
 			bool opened_;
 			bool append_;
 			bool use_local_time_;

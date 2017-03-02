@@ -16,7 +16,7 @@
 #include <booster/locale/encoding.h>
 
 #include <string>
-#include <memory>
+#include <booster/auto_ptr_inc.h>
 #include "icu_util.h"
 
 namespace booster {

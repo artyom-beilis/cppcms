@@ -17,7 +17,7 @@
 
 #include "crc32.h"
 
-#include <memory>
+#include <booster/auto_ptr_inc.h>
 #include <time.h>
 
 

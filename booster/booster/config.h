@@ -73,5 +73,17 @@
 #  define BOOST_NO_SWPRINTF 
 #endif
 
+#if defined __GNUC__ || defined __clang__ 
+#define BOOSTER_UNUSED __attribute__((unused))
+#else
+#define BOOSTER_UNUSED
+#endif
+
+#if defined __clang__ 
+#define BOOSTER_UNUSED_MEMBER __attribute__((unused))
+#else
+#define BOOSTER_UNUSED_MEMBER
+#endif
+
 
 #endif /// BOOSTER_CONFIG_H

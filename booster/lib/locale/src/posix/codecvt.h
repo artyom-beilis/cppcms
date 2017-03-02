@@ -10,7 +10,7 @@
 #include <booster/config.h>
 #include <booster/locale/util.h>
 
-#include <memory>
+#include <booster/auto_ptr_inc.h>
 #include <string>
 
 namespace booster {

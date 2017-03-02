@@ -11,7 +11,7 @@
 #include <cppcms/defs.h>
 #include <booster/noncopyable.h>
 #include <booster/hold_ptr.h>
-#include <memory>
+#include <booster/auto_ptr_inc.h>
 #include <string>
 
 namespace cppcms {

@@ -13,7 +13,7 @@
 #include <booster/aio/io_service.h>
 #include <booster/aio/stream_socket.h>
 #include <booster/shared_ptr.h>
-#include <memory>
+#include <booster/auto_ptr_inc.h>
 
 
 namespace cppcms {

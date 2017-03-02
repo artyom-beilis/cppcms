@@ -9,7 +9,7 @@
 #define BOOSTER_CALLBACK_H
 
 #include <booster/backtrace.h>
-#include <memory>
+#include <booster/auto_ptr_inc.h>
 #include <booster/intrusive_ptr.h>
 #include <booster/refcounted.h>
 
