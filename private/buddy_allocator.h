@@ -8,6 +8,7 @@
 #ifndef CPPCMS_PRIVATE_BUDDY_ALLOCATOR_H
 #define CPPCMS_PRIVATE_BUDDY_ALLOCATOR_H
 
+#include <cppcms/defs.h>
 #include <stddef.h>
 #include <assert.h>
 #include <memory.h>
@@ -314,7 +315,7 @@ private:
 	page *free_list_[sizeof(void*)*8];	// 16 always
 	size_t memory_size_;	
 	int max_bit_size_; // at least sizeof(size_t)	
-	size_t padding_for_alignment_[2]; 
+	CPPCMS_UNUSED_MEMBER size_t padding_for_alignment_[2]; 
 };
 } // impl
 } // cppcms

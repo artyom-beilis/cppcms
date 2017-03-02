@@ -45,4 +45,17 @@
 #define CPPCMS_DEPRECATED
 #endif
 
+#if defined __GNUC__ || defined __clang__ 
+#define CPPCMS_UNUSED __attribute__((unused))
+#else
+#define CPPCMS_UNUSED
+#endif
+
+#if defined __clang__ 
+#define CPPCMS_UNUSED_MEMBER __attribute__((unused))
+#else
+#define CPPCMS_UNUSED_MEMBER
+#endif
+
+
 #endif /// CPPCMS_DEFS_H

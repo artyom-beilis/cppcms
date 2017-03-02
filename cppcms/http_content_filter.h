@@ -17,7 +17,7 @@
 namespace cppcms {
 
 namespace impl {
-	class cached_settings;
+	struct cached_settings;
 }
 
 namespace http {

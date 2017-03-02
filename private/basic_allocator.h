@@ -69,7 +69,7 @@ public :
 	{
 		return true;
 	}
-	bool operator!=(basic_allocator const& a) const
+	bool operator!=(basic_allocator const&) const
 	{
 		return false;
 	}

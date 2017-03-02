@@ -153,8 +153,8 @@ namespace cppcms {
 		uint32_t html_list_type_;
 		uint32_t widget_part_type_;
 		std::ostream *output_;
-		uint32_t reserved_1;
-		uint32_t reserved_2;
+		CPPCMS_UNUSED_MEMBER uint32_t reserved_1;
+		CPPCMS_UNUSED_MEMBER uint32_t reserved_2;
 		struct _data;
 		booster::hold_ptr<_data> d;
 
@@ -703,7 +703,7 @@ namespace cppcms {
 			uint32_t has_message_ : 1;
 			uint32_t has_error_ : 1;
 			uint32_t has_help_ : 1;
-			uint32_t reserverd_ : 24;
+			CPPCMS_UNUSED_MEMBER uint32_t reserverd_ : 24;
 
 			struct _data;
 			booster::hold_ptr<_data> d;
@@ -1324,7 +1324,7 @@ namespace cppcms {
 				uint32_t selected : 1;
 				uint32_t need_translation : 1;
 				uint32_t original_select : 1;
-				uint32_t reserved : 29;
+				CPPCMS_UNUSED_MEMBER uint32_t reserved : 29;
 				std::string id;
 				std::string str_option;
 				locale::message tr_option;
@@ -1411,7 +1411,7 @@ namespace cppcms {
 				~element();
 
 				uint32_t need_translation : 1;
-				uint32_t reserved : 31;
+				CPPCMS_UNUSED_MEMBER uint32_t reserved : 31;
 				std::string id;
 				std::string str_option;
 				locale::message tr_option;
@@ -1432,7 +1432,7 @@ namespace cppcms {
 			int default_selected_;
 
 			uint32_t non_empty_ : 1;
-			uint32_t reserverd  : 32;
+			CPPCMS_UNUSED_MEMBER uint32_t reserverd  : 32;
 		};
 
 		///
@@ -1474,7 +1474,7 @@ namespace cppcms {
 
 		private:
 			uint32_t vertical_ : 1;
-			uint32_t reserved_ : 31;
+			CPPCMS_UNUSED_MEMBER uint32_t reserved_ : 31;
 
 			struct _data;
 			booster::hold_ptr<_data> d;
@@ -1573,7 +1573,7 @@ namespace cppcms {
 
 			uint32_t check_charset_ : 1;
 			uint32_t check_non_empty_ : 1;
-			uint32_t reserved_ : 30;
+			CPPCMS_UNUSED_MEMBER uint32_t reserved_ : 30;
 
 			booster::shared_ptr<http::file> file_;
 

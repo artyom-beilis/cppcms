@@ -165,7 +165,7 @@ private:
 	uint32_t secure_	: 1;
 	uint32_t has_age_	: 1;
 	uint32_t has_expiration_: 1;
-	uint32_t reserved_	: 29;
+	CPPCMS_UNUSED_MEMBER uint32_t reserved_	: 29;
 };
 
 

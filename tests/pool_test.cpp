@@ -214,8 +214,7 @@ public:
 	};
 	sender(cppcms::service &srv,pools *p) :
 		cppcms::application(srv),
-		pools_(p),
-		first_time_(true)
+		pools_(p)
 	{
 	}
 
@@ -265,7 +264,6 @@ public:
 	}
 private:
 	pools *pools_;
-	bool first_time_;
 };
 
 int main(int argc,char **argv)

@@ -342,7 +342,7 @@ namespace cppcms {
 		booster::intrusive_ptr<impl::base_cache> cache_module_;
 
 		uint32_t page_compression_used_ : 1;
-		uint32_t reserved : 31;
+		CPPCMS_UNUSED_MEMBER uint32_t reserved : 31;
 	};
 
 

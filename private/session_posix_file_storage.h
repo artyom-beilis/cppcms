@@ -29,7 +29,7 @@ namespace sessions {
 		virtual void remove(std::string const &sid);
 		virtual bool is_blocking();
 	private:
-		struct locked_file;
+		class locked_file;
 		struct _data;
 		bool read_timestamp(int fd);
 		bool read_from_file(int fd,time_t &timeout,std::string &data);
@@ -54,7 +54,7 @@ namespace sessions {
 		std::vector<pthread_mutex_t> mutexes_;
 
 		// friends 
-		friend struct locked_file;
+		friend class locked_file;
 		friend class session_file_storage_factory;
 	};
 
