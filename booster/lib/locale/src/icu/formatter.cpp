@@ -58,7 +58,7 @@ namespace locale {
             virtual string_type format(int64_t value,size_t &code_points) const
             {
                 icu::UnicodeString tmp;
-                icu_fmt_->format(value,tmp);
+                icu_fmt_->format(static_cast< ::int64_t>(value),tmp);
                 code_points=tmp.countChar32();
                 return cvt_.std(tmp);
             }
