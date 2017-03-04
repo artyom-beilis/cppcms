@@ -65,6 +65,7 @@
 
 #cmakedefine BOOSTER_HAVE_UNWIND_BACKTRACE
 
+#cmakedefine BOOSTER_HAVE_UNWIND_BACKTRACE_BUILTIN
 /* Define to module suffix. */
 #cmakedefine BOOSTER_LIBRARY_SUFFIX "${BOOSTER_LIBRARY_SUFFIX}"
 
