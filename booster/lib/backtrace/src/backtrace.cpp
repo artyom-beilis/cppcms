@@ -45,10 +45,11 @@
 #include <dbghelp.h>
 #endif
 
-#if defined(BOOSTER_HAVE_UNWIND_BACKTRACE)
-
+#if defined(BOOSTER_HAVE_UNWIND_BACKTRACE) || defined(BOOSTER_HAVE_UNWIND_BACKTRACE_BUILTIN)
 extern "C" {
+    #ifndef BOOSTER_HAVE_UNWIND_BACKTRACE_BUILTIN
 	extern void * _Unwind_GetIP (void *);
+    #endif
 	extern int _Unwind_Backtrace(int (*)(void *,void *),void *);
 }
 
@@ -63,7 +64,7 @@ namespace booster {
         // so enable it on Apple, Sun and BSD using libgcc's _Unwind_Backtrace
         // if present
         //
-        #if defined(BOOSTER_HAVE_UNWIND_BACKTRACE) && ( defined(__FreeBSD__) || defined(__sun) || defined(__APPLE__) ) 
+        #if (defined(BOOSTER_HAVE_UNWIND_BACKTRACE) || defined(BOOSTER_HAVE_UNWIND_BACKTRACE_BUILTIN)) && ( defined(__FreeBSD__) || defined(__sun) || defined(__APPLE__) ) 
 
         namespace {
             struct trace_data {
@@ -77,7 +78,11 @@ namespace booster {
                     trace_data *d = static_cast<trace_data *>(cookie);
                     if(d->reminder > 0) {
                         d->reminder --;
+                        #ifdef BOOSTER_HAVE_UNWIND_BACKTRACE_BUILTIN
+                        d->array[d->total++] = reinterpret_cast<void*>(_Unwind_GetIP(static_cast<_Unwind_Context*>(context)));
+                        #else
                         d->array[d->total++] = _Unwind_GetIP(context);
+                        #endif
                     }
                     return 0;
                 }

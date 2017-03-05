@@ -339,6 +339,10 @@ check_cxx_source_compiles(
 	 #include <sstream>
 	 #include <typeinfo>
 	 #include <new>
+	 #ifdef __GNUC__
+	 #include <cxxabi.h> 
+	 #endif
+	 
 	  extern \"C\" {
 	   extern void* _Unwind_GetIP (void *);
 	   extern int _Unwind_Backtrace(int (*)(void *,void *),void *);
@@ -346,6 +350,26 @@ check_cxx_source_compiles(
 
 	int main() { _Unwind_Backtrace(0,0); _Unwind_GetIP(0); }"
 	BOOSTER_HAVE_UNWIND_BACKTRACE)
+
+check_cxx_source_compiles(
+	"#include <stdexcept>
+	 #include <iostream>
+	 #include <stdlib.h>
+	 #include <string.h>
+	 #include <sstream>
+	 #include <typeinfo>
+	 #include <new>
+	 #ifdef __GNUC__
+	 #include <cxxabi.h> 
+	 #endif
+	 
+	 extern \"C\" {
+	   extern int _Unwind_Backtrace(int (*)(void *,void *),void *);
+	 }
+
+	 int main() { _Unwind_Backtrace(0,0); _Unwind_GetIP((_Unwind_Context *)0); }"
+	BOOSTER_HAVE_UNWIND_BACKTRACE_BUILTIN)
+
 
 
 Check_cxx_source_compiles(
