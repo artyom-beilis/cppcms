@@ -95,6 +95,7 @@ class Conn:
             query = 'GET ' + self.path + ' HTTP/1.0\r\n\r\n'
         self.s=socket.socket(socket.AF_INET, socket.SOCK_STREAM);
         self.s.connect(('127.0.0.1',8080))
+        self.s.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
         if 'chunks' in opts:
             size=int(opts['chunks'])
             self.s.send(query)
