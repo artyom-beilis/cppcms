@@ -48,7 +48,7 @@ namespace aio {
 	///
 	/// aio category object reference
 	///
-	static aio_error::category const &aio_error_cat = aio_error::get_category();
+	BOOSTER_UNUSED static aio_error::category const &aio_error_cat = aio_error::get_category();
 }
 } // booster
 
