@@ -28,7 +28,6 @@ namespace booster {
         }
         inline size_t call_iconv(iconv_t d,char **in,size_t *insize,char **out,size_t *outsize)
         {
-            char const **rin = const_cast<char const **>(in);
             return do_iconv(__iconv, d, in,insize,out,outsize);
         }
 #else
