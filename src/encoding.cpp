@@ -31,7 +31,7 @@ namespace impl{
 			return (*this)(lp,rp);
 		}
 
-		bool operator()(std::string const &l,char const &rp) const
+		bool operator()(std::string const &l,char const *rp) const
 		{
 			char const *lp=l.c_str();
 			return (*this)(lp,rp);
