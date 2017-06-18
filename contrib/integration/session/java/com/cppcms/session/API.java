@@ -50,7 +50,9 @@ public class API {
 		int cppcms_capi_session_set_on_server(Pointer session,int is_on_server);
 		int cppcms_capi_session_get_on_server(Pointer session);
 		String cppcms_capi_session_get_session_cookie_name(Pointer session);
-		int cppcms_capi_session_load(Pointer session,String session_cookie_value);
+		int cppcms_capi_session_set_session_cookie(Pointer session,String value);
+		int cppcms_capi_session_add_cookie_name(Pointer session,String value);
+		int cppcms_capi_session_load(Pointer session);
 		int cppcms_capi_session_save(Pointer session);
 		Pointer cppcms_capi_session_cookie_first(Pointer session);
 		Pointer cppcms_capi_session_cookie_next(Pointer session);
@@ -96,9 +98,11 @@ public class API {
 		for(int i=0;i<names.length;i++) {
 			try {
 				loadLibrary(names[i]);
+				if(api != null)
+					break;
 			}
-			catch(Exception e) {}
-			catch(Error e){}
+			catch(Exception e) { }
+			catch(Error e){ }
 		}
 		if(api==null) {
 			StringBuilder sb = new StringBuilder();

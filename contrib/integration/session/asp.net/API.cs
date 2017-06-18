@@ -121,9 +121,15 @@ internal class API {
 
         [DllImport(library,EntryPoint="cppcms_capi_session_get_session_cookie_name")]
         public static extern IntPtr session_get_session_cookie_name(IntPtr session);
+       
+        [DllImport(library,EntryPoint="cppcms_capi_session_set_session_cookie")]
+        public static extern IntPtr session_set_session_cookie(IntPtr session,byte[] val);
+        
+	[DllImport(library,EntryPoint="cppcms_capi_session_add_cookie_name")]
+        public static extern IntPtr session_add_cookie_name(IntPtr session,byte[] val);
 
         [DllImport(library,EntryPoint="cppcms_capi_session_load")]
-        public static extern int session_load(IntPtr session,byte[]  session_cookie_value);
+        public static extern int session_load(IntPtr session);
 
         [DllImport(library,EntryPoint="cppcms_capi_session_save")]
         public static extern int session_save(IntPtr session);

@@ -86,10 +86,12 @@ public class Session : SessionBase {
 	public void Load(HttpRequest r)
 	{
 		HttpCookie c=r.Cookies[SessionCookieName];
+		string val;
 		if(c==null)
-			Load("");
+			val = "";
 		else
-			Load(c.Value);
+			val = c.Value;
+		API.session_set_session_cookie(d,tb(val));
 	}
 	public void Save() { API.session_save(d); check(); }
 	public Cookie[] Cookies {

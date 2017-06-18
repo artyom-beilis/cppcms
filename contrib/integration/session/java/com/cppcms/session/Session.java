@@ -152,11 +152,6 @@ public class Session extends SessionBase{
 		check();
 		return r;
 	}
-	public void load(String cookieValue)
-	{
-		API.api.cppcms_capi_session_load(d,cookieValue);
-		check();
-	}
 	public void save()
 	{
 		API.api.cppcms_capi_session_save(d);
@@ -214,17 +209,26 @@ public class Session extends SessionBase{
 		check();
 		return cookies.toArray(new String[cookies.size()]);
 	}
+	public void load(String sessionCookie)
+	{
+		API.api.cppcms_capi_session_set_session_cookie(d,sessionCookie);
+		API.api.cppcms_capi_session_load(d);
+		check();
+	}
 	public void load(HttpServletRequest request)
 	{
 		String cookieName = getSessionCookieName();
 		Cookie[] cookies = request.getCookies();
+		String sessionCookie = "";
 		for(int i=0;i<cookies.length;i++) {
 			if(cookies[i].getName().equals(cookieName)) {
-				load(cookies[i].getValue());
-				return;
+				sessionCookie = cookies[i].getValue();
 			}
+			API.api.cppcms_capi_session_add_cookie_name(d,cookies[i].getValue());
 		}
-		load("");
+		API.api.cppcms_capi_session_set_session_cookie(d,sessionCookie);
+		API.api.cppcms_capi_session_load(d);
+		check();
 	}
 	public void save(HttpServletResponse response)
 	{
