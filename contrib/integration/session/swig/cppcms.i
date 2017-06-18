@@ -50,8 +50,6 @@ typedef struct cppcms_capi_cookie{} cppcms_capi_cookie;
         char const *get(char const *key);
         int set_binary_as_hex(char const *key,char const *value);
         char const *get_binary_as_hex(char const *key);
-        #int set_binary(char const *key,void const *value,int length);
-        #int get_binary(char const *key,void *buf,int buffer_size);
         int get_binary_len(char const *key);
         int reset_session();
         int set_default_age();

@@ -1,6 +1,8 @@
 <?php
-
-include_once('../cppcms.php');
+if(version_compare(PHP_VERSION, '7.0.0') >= 0)
+	include_once('../php7/cppcms.php');
+else
+	include_once('../php5/cppcms.php');
 
 $pool=CppCMS_SessionPool::from_config('../../reference/config.js');
 $session=$pool->session();
