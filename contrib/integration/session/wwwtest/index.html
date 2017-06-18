@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html>
+<head><title>Unit test</title></head>
+<body>
+<script src="tester.js" ></script>
+<script>
+function get_url()
+{
+    var sel = document.getElementById('url');
+    return sel.options[sel.selectedIndex].value;
+}
+</script>
+<select id="url">
+    <option value="/test" selected="selected">CppCMS Reference</option>
+    <option value="/unit_test.php">PHP</option>
+</select>
+<button onclick="tester(get_url())">Run Test</button><span id="wait" style="color:green"></span>
+<table border='1' width='80%'>
+<thead>
+<tr><th width='200px'>Test</th><th width='100px'>Status</th><th>Comment</th></tr>
+<tbody id='log'>
+</tbody>
+</table>
+</body>

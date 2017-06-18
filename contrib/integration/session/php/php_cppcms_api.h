@@ -64,6 +64,8 @@ ZEND_NAMED_FUNCTION(_wrap_CppCMSAPISession_get_expiration);
 ZEND_NAMED_FUNCTION(_wrap_CppCMSAPISession_set_on_server);
 ZEND_NAMED_FUNCTION(_wrap_CppCMSAPISession_get_on_server);
 ZEND_NAMED_FUNCTION(_wrap_CppCMSAPISession_get_session_cookie_name);
+ZEND_NAMED_FUNCTION(_wrap_CppCMSAPISession_add_cookie_name);
+ZEND_NAMED_FUNCTION(_wrap_CppCMSAPISession_set_session_cookie);
 ZEND_NAMED_FUNCTION(_wrap_CppCMSAPISession_load);
 ZEND_NAMED_FUNCTION(_wrap_CppCMSAPISession_save);
 ZEND_NAMED_FUNCTION(_wrap_CppCMSAPISession_cookie_first);

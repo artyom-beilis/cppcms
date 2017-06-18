@@ -130,10 +130,13 @@ class CppCMS_Session extends CppCMS_SessioBase implements ArrayAccess {
 			if(isset($_COOKIE[$name])) {
 				$session_cookie_value = $_COOKIE[$name];
 			}
+            foreach($_COOKIE as $key => $value)
+                $this->api->add_cookie_name($key);
 		}
 		if($session_cookie_value == null) 
 			$session_cookie_value = "";
-		$this->api->load($session_cookie_value);
+        $this->api->set_session_cookie($session_cookie_value);
+		$this->api->load();
 		$this->check();
 	}
 
@@ -165,33 +168,3 @@ class CppCMS_Session extends CppCMS_SessioBase implements ArrayAccess {
 
 }
 
-
-// Code Test
-if (!count(debug_backtrace()))
-{
-	$pool = CppCMS_SessionPool::from_config('cppcms-config.js');
-	$session = $pool->session();
-	$session->load();
-	$session['x']='yes';
-	$session['y']=13.4;
-	$session->set_exposed('y',true);
-	$session->save(false);
-	$cookies = $session->cookies();
-	$state='';
-	foreach($cookies as $c) {
-		echo $c,"\n";
-		if($c->name() == $session->get_session_cookie_name())
-			$state = $c->value();
-	}
-	$session = $pool->session();
-	$session->load($state);
-	$session->set_exposed('y',false);
-	echo implode(', ',$session->keys()),"\n";
-	$session->save(false);
-	$cookies = $session->cookies();
-	foreach($cookies as $c) {
-		echo $c,"\n";
-		if($c->name() == $session->get_session_cookie_name())
-			$state = $c->value();
-	}
-}

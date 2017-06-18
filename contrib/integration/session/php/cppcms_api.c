@@ -2239,7 +2239,7 @@ fail:
 }
 
 
-ZEND_NAMED_FUNCTION(_wrap_CppCMSAPISession_load) {
+ZEND_NAMED_FUNCTION(_wrap_CppCMSAPISession_add_cookie_name) {
   struct cppcms_capi_session *arg1 = (struct cppcms_capi_session *) 0 ;
   char *arg2 = (char *) 0 ;
   zval **args[2];
@@ -2252,7 +2252,7 @@ ZEND_NAMED_FUNCTION(_wrap_CppCMSAPISession_load) {
   
   {
     if(SWIG_ConvertPtr(*args[0], (void **) &arg1, SWIGTYPE_p_cppcms_capi_session, 0) < 0) {
-      SWIG_PHP_Error(E_ERROR, "Type error in argument 1 of CppCMSAPISession_load. Expected SWIGTYPE_p_cppcms_capi_session");
+      SWIG_PHP_Error(E_ERROR, "Type error in argument 1 of CppCMSAPISession_add_cookie_name. Expected SWIGTYPE_p_cppcms_capi_session");
     }
   }
   if(!arg1) SWIG_PHP_Error(E_ERROR, "this pointer is NULL");
@@ -2266,7 +2266,70 @@ ZEND_NAMED_FUNCTION(_wrap_CppCMSAPISession_load) {
   }
   /*@SWIG@*/;
   
-  result = (int)cppcms_capi_session_load(arg1,(char const *)arg2);
+  result = (int)cppcms_capi_session_add_cookie_name(arg1,(char const *)arg2);
+  {
+    ZVAL_LONG(return_value,result);
+  }
+  return;
+fail:
+  SWIG_FAIL();
+}
+
+
+ZEND_NAMED_FUNCTION(_wrap_CppCMSAPISession_set_session_cookie) {
+  struct cppcms_capi_session *arg1 = (struct cppcms_capi_session *) 0 ;
+  char *arg2 = (char *) 0 ;
+  zval **args[2];
+  int result;
+  
+  SWIG_ResetError();
+  if(ZEND_NUM_ARGS() != 2 || zend_get_parameters_array_ex(2, args) != SUCCESS) {
+    WRONG_PARAM_COUNT;
+  }
+  
+  {
+    if(SWIG_ConvertPtr(*args[0], (void **) &arg1, SWIGTYPE_p_cppcms_capi_session, 0) < 0) {
+      SWIG_PHP_Error(E_ERROR, "Type error in argument 1 of CppCMSAPISession_set_session_cookie. Expected SWIGTYPE_p_cppcms_capi_session");
+    }
+  }
+  if(!arg1) SWIG_PHP_Error(E_ERROR, "this pointer is NULL");
+  
+  /*@SWIG:/usr/share/swig2.0/php/utils.i,62,CONVERT_STRING_IN@*/
+  if ((*args[1])->type==IS_NULL) {
+    arg2 = (char *) 0;
+  } else {
+    convert_to_string_ex(args[1]);
+    arg2 = (char *) Z_STRVAL_PP(args[1]);
+  }
+  /*@SWIG@*/;
+  
+  result = (int)cppcms_capi_session_set_session_cookie(arg1,(char const *)arg2);
+  {
+    ZVAL_LONG(return_value,result);
+  }
+  return;
+fail:
+  SWIG_FAIL();
+}
+
+
+ZEND_NAMED_FUNCTION(_wrap_CppCMSAPISession_load) {
+  struct cppcms_capi_session *arg1 = (struct cppcms_capi_session *) 0 ;
+  zval **args[1];
+  int result;
+  
+  SWIG_ResetError();
+  if(ZEND_NUM_ARGS() != 1 || zend_get_parameters_array_ex(1, args) != SUCCESS) {
+    WRONG_PARAM_COUNT;
+  }
+  
+  {
+    if(SWIG_ConvertPtr(*args[0], (void **) &arg1, SWIGTYPE_p_cppcms_capi_session, 0) < 0) {
+      SWIG_PHP_Error(E_ERROR, "Type error in argument 1 of CppCMSAPISession_load. Expected SWIGTYPE_p_cppcms_capi_session");
+    }
+  }
+  if(!arg1) SWIG_PHP_Error(E_ERROR, "this pointer is NULL");
+  result = (int)cppcms_capi_session_load(arg1);
   {
     ZVAL_LONG(return_value,result);
   }
@@ -2762,6 +2825,8 @@ static zend_function_entry cppcms_api_functions[] = {
  SWIG_ZEND_NAMED_FE(cppcmsapisession_set_on_server,_wrap_CppCMSAPISession_set_on_server,NULL)
  SWIG_ZEND_NAMED_FE(cppcmsapisession_get_on_server,_wrap_CppCMSAPISession_get_on_server,NULL)
  SWIG_ZEND_NAMED_FE(cppcmsapisession_get_session_cookie_name,_wrap_CppCMSAPISession_get_session_cookie_name,NULL)
+ SWIG_ZEND_NAMED_FE(cppcmsapisession_add_cookie_name,_wrap_CppCMSAPISession_add_cookie_name,NULL)
+ SWIG_ZEND_NAMED_FE(cppcmsapisession_set_session_cookie,_wrap_CppCMSAPISession_set_session_cookie,NULL)
  SWIG_ZEND_NAMED_FE(cppcmsapisession_load,_wrap_CppCMSAPISession_load,NULL)
  SWIG_ZEND_NAMED_FE(cppcmsapisession_save,_wrap_CppCMSAPISession_save,NULL)
  SWIG_ZEND_NAMED_FE(cppcmsapisession_cookie_first,_wrap_CppCMSAPISession_cookie_first,NULL)

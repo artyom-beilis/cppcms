@@ -230,8 +230,16 @@ class CppCMSAPISession {
 		return CppCMSAPISession_get_session_cookie_name($this->_cPtr);
 	}
 
-	function load($session_cookie_value) {
-		return CppCMSAPISession_load($this->_cPtr,$session_cookie_value);
+	function add_cookie_name($key) {
+		return CppCMSAPISession_add_cookie_name($this->_cPtr,$key);
+	}
+
+	function set_session_cookie($value) {
+		return CppCMSAPISession_set_session_cookie($this->_cPtr,$value);
+	}
+
+	function load() {
+		return CppCMSAPISession_load($this->_cPtr);
 	}
 
 	function save() {
