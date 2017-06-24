@@ -152,7 +152,7 @@ public class Session extends SessionBase{
 		check();
 		return r;
 	}
-	public void save()
+	protected void save()
 	{
 		API.api.cppcms_capi_session_save(d);
 		check();
@@ -220,7 +220,7 @@ public class Session extends SessionBase{
 		String cookieName = getSessionCookieName();
 		Cookie[] cookies = request.getCookies();
 		String sessionCookie = "";
-		for(int i=0;i<cookies.length;i++) {
+		for(int i=0;cookies != null && i<cookies.length;i++) {
 			if(cookies[i].getName().equals(cookieName)) {
 				sessionCookie = cookies[i].getValue();
 			}
