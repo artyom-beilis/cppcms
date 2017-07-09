@@ -82,16 +82,26 @@ public class Session : SessionBase {
 		get { string r=ts(API.session_get_session_cookie_name(d)); check(); return r; }
 	}
 	
-	public void Load(String cookie) { API.session_load(d,tb(cookie)); check(); }
+	public void Load(String cookie) { 
+		API.session_set_session_cookie(d,tb(cookie));
+		API.session_load(d); 
+		check(); 
+	}
 	public void Load(HttpRequest r)
 	{
-		HttpCookie c=r.Cookies[SessionCookieName];
-		string val;
-		if(c==null)
-			val = "";
-		else
-			val = c.Value;
+		string val = "";
+		string cookieName = SessionCookieName;
+		HttpCookieCollection cookies = r.Cookies;
+		int n=cookies.Count;
+		for(int i=0;i<n;i++) {
+			HttpCookie c = cookies[i];
+			if(c.Name == cookieName)
+				val = c.Value;
+			API.session_add_cookie_name(d,tb(c.Name));
+		}
 		API.session_set_session_cookie(d,tb(val));
+		API.session_load(d); 
+		check();
 	}
 	public void Save() { API.session_save(d); check(); }
 	public Cookie[] Cookies {
