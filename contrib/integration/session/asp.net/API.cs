@@ -15,7 +15,7 @@ internal class API {
         public const int ERROR_LOGIC=5;
         public const int ERROR_ALLOC=6;
 
-	public const string library = "cppcms";
+        public const string library = "cppcms";
 
         [DllImport(library,EntryPoint="cppcms_capi_error")]
         public static extern int error(IntPtr obj);
@@ -125,7 +125,7 @@ internal class API {
         [DllImport(library,EntryPoint="cppcms_capi_session_set_session_cookie")]
         public static extern IntPtr session_set_session_cookie(IntPtr session,byte[] val);
         
-	[DllImport(library,EntryPoint="cppcms_capi_session_add_cookie_name")]
+        [DllImport(library,EntryPoint="cppcms_capi_session_add_cookie_name")]
         public static extern IntPtr session_add_cookie_name(IntPtr session,byte[] val);
 
         [DllImport(library,EntryPoint="cppcms_capi_session_load")]
