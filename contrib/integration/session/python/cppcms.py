@@ -283,6 +283,46 @@ class Session(SessionBase):
         Loader.capi.cppcms_capi_session_set_exposed(self.d,key,v)
         self.check()
 
+    def get_age(self):
+        r = Loader.capi.cppcms_capi_session_get_age(self.d);
+        self.check();
+        print 'GOT AGE',r
+        return r;
+    def set_age(self,value):
+        Loader.capi.cppcms_capi_session_set_age(self.d,int(value))
+        self.check()
+        print 'SET AGE',int(value)
+    
+    def default_age(self):
+        print 'DEF AGE'
+        Loader.capi.cppcms_capi_session_set_default_age(self.d)
+        self.check()
+
+    def get_expiration(self):
+        r = Loader.capi.cppcms_capi_session_get_expiration(self.d);
+        self.check();
+        return r;
+    def set_expiration(self,value):
+        Loader.capi.cppcms_capi_session_set_expiration(self.d,int(value))
+        self.check()
+    
+    def default_expiration(self):
+        Loader.capi.cppcms_capi_session_set_default_expiration(self.d)
+        self.check()
+
+    def get_on_server(self):
+        r = Loader.capi.cppcms_capi_session_get_on_server(self.d);
+        self.check();
+        return r;
+    def set_on_server(self,value):
+        Loader.capi.cppcms_capi_session_set_on_server(self.d,int(value))
+        self.check()
+
+    def reset_session(self):
+        Loader.capi.cppcms_capi_session_reset_session(self.d)
+        self.check()
+
+    @property
     def keys(self):
         """Get list of all keys"""
         l=[]
@@ -301,7 +341,8 @@ class Session(SessionBase):
             r=Loader.capi.cppcms_capi_session_cookie_next(self.d)
         self.check()
         return l
-    def get_csrf_token(self):
+    @property
+    def csrf_token(self):
         """Get cppcms CSRF token"""
         r=Loader.capi.cppcms_capi_session_get_csrf_token(self.d)
         self.check()
@@ -330,7 +371,8 @@ class Session(SessionBase):
         """Set a value for a key"""
         Loader.capi.cppcms_capi_session_set(self.d,key,value)
         self.check()
-    def get_session_cookie_name(self):
+    @property
+    def session_cookie_name(self):
         """
         Get the name of the cookie that is used to store CppCMS session
         Note: the value of this cookie should be passed to load method
@@ -351,13 +393,14 @@ class Session(SessionBase):
             Loader.capi.cppcms_capi_session_set_session_cookie(self.d,cookie);
             Loader.capi.cppcms_capi_session_load(self.d)
         elif django_request!=None:
-            cookie_name = self.get_session_cookie_name()
+            cookie_name = self.session_cookie_name
             cookie=''
             if cookie_name in django_request.COOKIES:
                 cookie = django_request.COOKIES[cookie_name]
             for cookie_name in django_request.COOKIES:
                 Loader.capi.cppcms_capi_session_add_cookie_name(self.d,cookie_name)
-            Loader.capi.cppcms_capi_session_load(self.d,cookie)
+            Loader.capi.cppcms_capi_session_set_session_cookie(self.d,cookie)
+            Loader.capi.cppcms_capi_session_load(self.d)
         self.check()
     def save(self,django_response=None):
         """
@@ -422,14 +465,14 @@ def __private_test(config):
     binary.extend(b'\x01\x00\xFF\x7F')
     s.set_binary('z',binary)
     s.set_exposed('x',1)
-    for k in s.keys():
+    for k in s.keys:
         print ('Got ' + k)
         print ('Value ' + s.get(k))
     s.save()
     for c in s.cookies():
         print (c)
         print (c.value())
-        if(c.name()==s.get_session_cookie_name()):
+        if(c.name()==s.session_cookie_name):
             state = c.value()
     l=None
     s=None
@@ -444,7 +487,7 @@ def __private_test(config):
     for c in s.cookies():
         print (c)
         print (c.value())
-        if(c.name()==s.get_session_cookie_name()):
+        if(c.name()==s.session_cookie_name):
             state = c.value()
     s=None
     s=Session(p)
@@ -455,7 +498,7 @@ def __private_test(config):
     for c in s.cookies():
         print (c)
         print (c.value())
-        if(c.name()==s.get_session_cookie_name()):
+        if(c.name()==s.session_cookie_name):
             state = c.value()
     print "Test Completed"
 
