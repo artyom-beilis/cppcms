@@ -158,6 +158,10 @@ function tester(url)
 			id:'expiration b',
 			request:[{op:'get_expiration'},{op:'is_set',key:'x'}],
 			response:'1:1;2:no;',
+            callback:function() {
+                document.cookie ='cppcms_session_foo=test; path=/'
+                return null;
+            }
 		},
 		{
 			id:'expose',
@@ -165,6 +169,8 @@ function tester(url)
 				 {op:'set',value:'ttt',key:'y'},{op:'is_exposed',key:'y'}],
 			response:'1:ok;2:ok;3:yes;4:ok;5:no;',
 			callback:function() {
+				if(get_cookie('cppcms_session_foo')!='')
+					return 'invalid foo cookie';
 				if(get_cookie('cppcms_session_x')!='test')
 					return 'invalid x cookie';
 				if(get_cookie('cppcms_session_y')!='')
