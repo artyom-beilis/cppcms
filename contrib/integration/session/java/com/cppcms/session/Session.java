@@ -224,7 +224,7 @@ public class Session extends SessionBase{
 			if(cookies[i].getName().equals(cookieName)) {
 				sessionCookie = cookies[i].getValue();
 			}
-			API.api.cppcms_capi_session_add_cookie_name(d,cookies[i].getValue());
+			API.api.cppcms_capi_session_add_cookie_name(d,cookies[i].getName());
 		}
 		API.api.cppcms_capi_session_set_session_cookie(d,sessionCookie);
 		API.api.cppcms_capi_session_load(d);
