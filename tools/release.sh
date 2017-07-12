@@ -20,15 +20,17 @@ cd ..
 tar -cjf $DIRNAME.tar.bz2 $DIRNAME
 rm -fr $DIRNAME
 
-if false
+pushd .
+if true
 then
     tar -xjf $DIRNAME.tar.bz2
     cd $DIRNAME
-    mkdir -p ../www/$VERSION
-    cp -a doc/doxygen/html/*  ../www/$VERSION/
-    cd ../www
+    mkdir -p ../../../www/$VERSION
+    cp -a doc/doxygen/html/*  ../../../www/$VERSION/
+    cd ../../../www
     rm -f latest
     ln -s $VERSION latest
 fi
-
+popd 
+mv $DIRNAME.tar.bz2 ../../releases/
 
