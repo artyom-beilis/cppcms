@@ -112,7 +112,7 @@ public:
 		data()->on_upload_progress++;
 		TESTNT(input_file.size() > 0);
 		std::string ref = get_ref(input_file.name());
-		TESTNT(size_t(input_file.size()) << ref.size());
+		TESTNT(size_t(input_file.size()) <= ref.size());
 		std::ostringstream ss;
 		input_file.data().seekg(0);
 		ss<<input_file.data().rdbuf();
