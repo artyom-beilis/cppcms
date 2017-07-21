@@ -70,7 +70,7 @@ namespace util {
             return days[is_leap(year)][month-1] + day - 1;
         }
         
-        time_t internal_timegm(std::tm const *t)
+        std::time_t internal_timegm(std::tm const *t)
         {
             int year = t->tm_year + 1900;
             int month = t->tm_mon;
@@ -88,8 +88,8 @@ namespace util {
             int day_of_year = days_from_1jan(year,month,day);
             int days_since_epoch = days_from_1970(year) + day_of_year;
             
-            time_t seconds_in_day = 3600 * 24;
-            time_t result =  seconds_in_day * days_since_epoch + 3600 * t->tm_hour + 60 * t->tm_min + t->tm_sec;
+            std::time_t seconds_in_day = 3600 * 24;
+            std::time_t result =  seconds_in_day * days_since_epoch + 3600 * t->tm_hour + 60 * t->tm_min + t->tm_sec;
             
             return result;
         }
@@ -123,11 +123,7 @@ namespace util {
                 "JO","KE","KW","LY","MA","OM","QA","SA","SD","SO",
                 "SY","TN","YE"
             };
-            // workaround for Sun Solaris !@#%@#$%@#$%234
-            #ifdef sun
-            #undef sun
-            #endif
-            static char const * const sun[] = {
+            static char const * const sunday[] = {
                 "AR","AS","AZ","BW","CA","CN","FO","GE","GL","GU",
                 "HK","IL","IN","JM","JP","KG","KR","LA","MH","MN",
                 "MO","MP","MT","NZ","PH","PK","SG","TH","TT","TW",
@@ -137,7 +133,7 @@ namespace util {
                 return 5; // fri
             if(std::binary_search<char const * const *>(sat,sat+sizeof(sat)/(sizeof(sat[0])),terr,comparator))
                 return 6; // sat
-            if(std::binary_search<char const * const *>(sun,sun+sizeof(sun)/(sizeof(sun[0])),terr,comparator))
+            if(std::binary_search<char const * const *>(sunday,sunday+sizeof(sunday)/(sizeof(sunday[0])),terr,comparator))
                 return 0; // sun
             // default
             return 1; // mon
@@ -150,7 +146,7 @@ namespace util {
             gregorian_calendar(std::string const &terr)
             {
                 first_day_of_week_ = first_day_of_week(terr.c_str());
-                time_ = time(0);
+                time_ = std::time(0);
                 is_local_ = true;
                 tzoff_ = 0;
                 from_time(time_);
@@ -235,10 +231,10 @@ namespace util {
                     std::tm val = tm_updated_;
                     val.tm_isdst = -1;
                     val.tm_wday = -1; // indecator of error
-                    time_t point = -1;
+                    std::time_t point = -1;
                     if(is_local_) {
-                        point = mktime(&val);
-                        if(point == static_cast<time_t>(-1)){
+                        point = std::mktime(&val);
+                        if(point == static_cast<std::time_t>(-1)){
                             #ifndef BOOSTER_WIN_NATIVE
                             // windows does not handle negative time_t, under other plaforms
                             // it may be actually valid value in  1969-12-31 23:59:59
@@ -318,7 +314,7 @@ namespace util {
                         #ifdef BOOSTER_WIN_NATIVE
                         return 1970; // Unix epoch windows can't handle negative time_t
                         #else
-                        if(sizeof(time_t) == 4)
+                        if(sizeof(std::time_t) == 4)
                             return 1901; // minimal year with 32 bit time_t
                         else
                             return 1; 
@@ -326,7 +322,7 @@ namespace util {
                     case absolute_maximum:
                     case least_maximum:
                     case actual_maximum:
-                        if(sizeof(time_t) == 4)
+                        if(sizeof(std::time_t) == 4)
                             return 2038; // Y2K38 - maximal with 32 bit time_t
                         else
                             return std::numeric_limits<int>::max();
@@ -565,7 +561,7 @@ namespace util {
             ///
             virtual void set_time(posix_time const &p)
             {
-                from_time(static_cast<time_t>(p.seconds));
+                from_time(static_cast<std::time_t>(p.seconds));
             }
             virtual posix_time get_time() const  
             {
@@ -791,9 +787,9 @@ namespace util {
 
     private:
 
-        void from_time(time_t point)
+        void from_time(std::time_t point)
         {
-            time_t real_point = point + tzoff_;
+            std::time_t real_point = point + tzoff_;
             std::tm *t = 0;
             #ifdef BOOSTER_WIN_NATIVE
             // Windows uses TLS, thread safe
@@ -811,7 +807,7 @@ namespace util {
             time_ = point;
         }
         int first_day_of_week_;
-        time_t time_;
+        std::time_t time_;
         std::tm tm_;
         std::tm tm_updated_;
         bool normalized_;

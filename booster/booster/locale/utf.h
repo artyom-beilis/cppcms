@@ -29,7 +29,7 @@ namespace utf {
     /// \endcond
 
     ///
-    /// \brief The integral type type that can hold a Unicode code point
+    /// \brief The integral type that can hold a Unicode code point
     ///
     typedef uint32_t code_point;
 

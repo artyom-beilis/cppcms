@@ -14,6 +14,7 @@
 #include <booster/locale/info.h>
 #include <sstream>
 #include <vector>
+#include <ctime>
 #include <stdlib.h>
 
 #include "timezone.h"
@@ -129,13 +130,13 @@ private:
                 return ret_ptr;
             }
         case flags::date:
-            return format_time(out,ios,fill,static_cast<time_t>(val),'x');
+            return format_time(out,ios,fill,static_cast<std::time_t>(val),'x');
         case flags::time:
-            return format_time(out,ios,fill,static_cast<time_t>(val),'X');
+            return format_time(out,ios,fill,static_cast<std::time_t>(val),'X');
         case flags::datetime:
-            return format_time(out,ios,fill,static_cast<time_t>(val),'c');
+            return format_time(out,ios,fill,static_cast<std::time_t>(val),'c');
         case flags::strftime:
-            return format_time(out,ios,fill,static_cast<time_t>(val),info.date_time_pattern<char_type>());
+            return format_time(out,ios,fill,static_cast<std::time_t>(val),info.date_time_pattern<char_type>());
         case flags::currency:
             {
                 bool nat =  info.currency_flags()==flags::currency_default 
@@ -177,7 +178,7 @@ private:
         return out;
     }
 
-    iter_type format_time(iter_type out,std::ios_base &ios,char_type fill,time_t time,char c) const
+    iter_type format_time(iter_type out,std::ios_base &ios,char_type fill,std::time_t time,char c) const
     {
         string_type fmt;
         fmt+=char_type('%');
@@ -185,7 +186,7 @@ private:
         return format_time(out,ios,fill,time,fmt);
     }
 
-    iter_type format_time(iter_type out,std::ios_base &ios,char_type fill,time_t time,string_type const &format) const
+    iter_type format_time(iter_type out,std::ios_base &ios,char_type fill,std::time_t time,string_type const &format) const
     {
         std::string tz = ios_info::get(ios).time_zone();
         std::tm tm;

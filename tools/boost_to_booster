@@ -1,14 +1,19 @@
 #!/bin/bash
 
 # 
+
+rm -fr boost_locale_git trunk
+git clone https://github.com/boostorg/locale.git boost_locale_git
+
 rm -fr trunk
 mkdir -p trunk/boost
-mkdir -p trunk/libs
-URL=https://svn.boost.org/svn/boost/trunk
-svn export $URL/boost/locale  trunk/boost/locale
-svn export $URL/boost/locale.hpp  trunk/boost/locale.hpp
-svn export $URL/libs/locale trunk/libs/locale
-# 
+mkdir -p trunk/libs/locale/
+mv boost_locale_git/include/boost/locale trunk/boost/locale
+mv boost_locale_git/include/boost/locale,hpp trunk/boost/locale.hpp
+mv boost_locale_git/src trunk/libs/locale/src
+mv boost_locale_git/test trunk/libs/locale/test
+mv boost_locale_git/examples trunk/libs/locale/examples
+
 
 rm -fr boost_locale
 cp -a trunk boost_locale
@@ -36,6 +41,8 @@ find boost_locale -regextype posix-extended -regex '.*\.(cpp|h|ipp)' -exec sed -
 find boost_locale -regextype posix-extended -regex '.*\.(cpp|h|ipp)' -exec sed -i 's/BOOSTER_LOCALE_DECL/BOOSTER_API/' '{}' \;
 find boost_locale -regextype posix-extended -regex '.*\.(cpp|h|ipp)' -exec sed -i 's/BOOSTER_SYMBOL_VISIBLE//' '{}' \;
 find boost_locale -regextype posix-extended -regex '.*\.(cpp|h|ipp)' -exec sed -i 's/BOOSTER_LOCALE_SOURCE/BOOSTER_SOURCE/' '{}' \;
+find boost_locale -regextype posix-extended -regex '.*\.(cpp|h|ipp)' -exec sed -i 's/BOOSTER_LOCALE_ENABLE_CHAR/BOOSTER_HAS_CHAR/' '{}' \;
+find boost_locale -regextype posix-extended -regex '.*\.(cpp|h|ipp)' -exec sed -i 's/#include <memory>/#include <booster\/auto_ptr_inc.h>/' '{}' \;
 find boost_locale -regextype posix-extended -regex '.*\.(cpp|h|ipp)' -exec sed -i 's/BOOSTER_WINDOWS/BOOSTER_WIN_NATIVE/' '{}' \;
 find boost_locale -regextype posix-extended -regex '.*\.(cpp|h|ipp)' -exec sed -i 's/<stdexcept>/<booster\/backtrace.h>/' '{}' \;
 find boost_locale -regextype posix-extended -regex '.*\.(cpp|h|ipp)' -exec sed -i 's/std::runtime_error/booster::runtime_error/' '{}' \;
@@ -53,5 +60,5 @@ cp -a boost_locale/libs/locale/examples/  boost_locale/libs/locale/src/ boost_lo
 cp -a boost_locale/booster booster/
 rm booster/booster/locale/config.h
 rm booster/booster/locale/definitions.h
-rm lib/locale/test/Jamfile.v2
+rm libs/locale/test/Jamfile.v2
 

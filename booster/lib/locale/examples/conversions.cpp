@@ -33,7 +33,7 @@ int main()
     cout<<"   Greek ὈΔΥΣΣΕΎΣ is correctly converted to "<<to_lower("ὈΔΥΣΣΕΎΣ")<<", instead of incorrect "
                     <<booster::to_lower_copy(std::string("ὈΔΥΣΣΕΎΣ"))<<endl;
     cout<<"     where Σ is converted to σ or to ς, according to position in the word"<<endl;
-    cout<<"Such type of conversion just can be done using std::toupper that work on character base, also std::toupper is "<<endl;
+    cout<<"Such type of conversion just can't be done using std::toupper that work on character base, also std::toupper is "<<endl;
     cout<<"not even applicable when working with variable character length like in UTF-8 or UTF-16 limiting the correct "<<endl;
     cout<<"behavior to unicode subset BMP or ASCII only"<<endl;
    

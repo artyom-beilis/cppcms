@@ -7,6 +7,7 @@
 //
 #define BOOSTER_SOURCE
 #include <booster/locale/encoding.h>
+#include <booster/locale/encoding_errors.h>
 #include "../encoding/conv.h"
 #include "all_generator.h"
 #include "uconv.h"
@@ -131,22 +132,23 @@ namespace impl_icu {
 
     std::locale create_codecvt(std::locale const &in,std::string const &encoding,character_facet_type type)
     {
-        std::auto_ptr<util::base_converter> cvt;
         if(conv::impl::normalize_encoding(encoding.c_str())=="utf8")
-            cvt = util::create_utf8_converter(); 
-        else {
-            cvt = util::create_simple_converter(encoding);
-            if(!cvt.get()) {
-                try {
-                    cvt = create_uconv_converter(encoding);
-                }
-                catch(std::exception const &/*e*/)
-                {
-                    // not too much we can do
-                }
-            }
+            return util::create_utf8_codecvt(in,type);
+
+        try {
+            return util::create_simple_codecvt(in,encoding,type);
         }
-        return util::create_codecvt(in,cvt,type);
+        catch(booster::locale::conv::invalid_charset_error const &) {
+            std::auto_ptr<util::base_converter> cvt;
+            try {
+                cvt = create_uconv_converter(encoding);
+            }
+            catch(std::exception const &/*e*/)
+            {
+                cvt.reset(new util::base_converter());
+            }
+            return util::create_codecvt(in,cvt,type);
+        }
     }
 
 } // impl_icu

@@ -336,7 +336,6 @@ int main(int argc,char **argv)
             std::cout << "Testing for backend --------- " << def[type] << std::endl;
 
             booster::locale::generator g;
-            g.add_messages_domain("default");
             g.add_messages_domain("simple");
             g.add_messages_domain("full");
             g.add_messages_domain("fall");
@@ -344,6 +343,7 @@ int main(int argc,char **argv)
                 g.add_messages_path(argv[1]);
             else
                 g.add_messages_path("./");
+            g.set_default_messages_domain("default");
 
             
             std::string locales[] = { "he_IL.UTF-8", "he_IL.ISO8859-8" };

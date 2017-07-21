@@ -57,7 +57,7 @@ namespace util {
         if(tmp.empty())
             return;
         for(unsigned i=0;i<tmp.size();i++) {
-            if('a' <= tmp[i] && tmp[i]<='a')
+            if('a' <= tmp[i] && tmp[i]<='z')
                 tmp[i]=tmp[i]-'a'+'A';
             else if(tmp[i] < 'A' && 'Z' < tmp[i])
                 return;

@@ -14,7 +14,7 @@
 #include <unicode/ucnv.h>
 #include <unicode/ucnv_err.h>
 #include <vector>
-#include <memory>
+#include <booster/auto_ptr_inc.h>
 
 namespace booster {
 namespace locale {

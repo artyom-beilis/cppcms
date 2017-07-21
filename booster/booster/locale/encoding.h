@@ -229,6 +229,8 @@ namespace booster {
             #endif
 
 
+            /// \endcond
+
             /// @}
 
         } // conv

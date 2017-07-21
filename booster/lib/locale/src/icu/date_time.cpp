@@ -33,7 +33,7 @@ namespace impl_icu {
     static void check_and_throw_dt(UErrorCode &e)
     {
         if(U_FAILURE(e)) {
-            date_time_error(u_errorName(e));
+            throw date_time_error(u_errorName(e));
         }
     }
     using period::marks::period_mark;

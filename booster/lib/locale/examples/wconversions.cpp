@@ -62,7 +62,7 @@ int main()
     wcout<<L"   Greek ὈΔΥΣΣΕΎΣ is correctly converted to "<<to_lower(L"ὈΔΥΣΣΕΎΣ")<<L", instead of incorrect "
                     <<booster::to_lower_copy(std::wstring(L"ὈΔΥΣΣΕΎΣ"))<<endl;
     wcout<<L"     where Σ is converted to σ or to ς, according to position in the word"<<endl;
-    wcout<<L"Such type of conversion just can be done using std::toupper that work on character base, also std::toupper is "<<endl;
+    wcout<<L"Such type of conversion just can't be done using std::toupper that work on character base, also std::toupper is "<<endl;
     wcout<<L"not fully applicable when working with variable character length like in UTF-8 or UTF-16 limiting the correct "<<endl;
     wcout<<L"behavoir to BMP or ASCII only"<<endl;
    

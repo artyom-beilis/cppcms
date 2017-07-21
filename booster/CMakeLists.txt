@@ -713,6 +713,7 @@ add_booster_test(locale date_time)
 add_booster_test(locale generator)
 add_booster_test(locale config)
 add_booster_test(locale utf)
+add_booster_test(locale codecvt)
 
 if(NOT DISABLE_ICU_LOCALE)
 	add_booster_test(locale collate)

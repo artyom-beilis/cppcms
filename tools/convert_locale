@@ -1,6 +1,12 @@
-#!/bin/bash 
+#!/bin/bash  -x
 
-svn export https://cppcms.svn.sourceforge.net/svnroot/cppcms/boost_locale/trunk boost_locale
+rm -fr boost_locale_git boost_locale
+git clone https://github.com/boostorg/locale.git boost_locale_git
+mkdir -p boost_locale/libs/locale
+mv boost_locale_git/include/boost boost_locale/
+mv boost_locale_git/src/ boost_locale/libs/locale/
+mv boost_locale_git/test/ boost_locale/libs/locale/
+
 
 rm -fr root
 mkdir root

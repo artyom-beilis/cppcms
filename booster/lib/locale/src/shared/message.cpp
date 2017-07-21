@@ -1,5 +1,5 @@
 //
-//  Copyright (c) 2009-2011 Artyom Beilis (Tonkikh)
+//  Copyright (c) 2009-2015 Artyom Beilis (Tonkikh)
 //
 //  Distributed under the Boost Software License, Version 1.0. (See
 //  accompanying file LICENSE_1_0.txt or copy at
@@ -436,8 +436,8 @@ namespace booster {
                         while(*e)
                             e++;
                         state = pj_winberger_hash::update_state(state,
-                                    static_cast<char const *>(p),
-                                    static_cast<char const *>(e));
+                                    reinterpret_cast<char const *>(p),
+                                    reinterpret_cast<char const *>(e));
                         state = pj_winberger_hash::update_state(state,'\4');
                     }
                     p = msg.key();
@@ -445,8 +445,8 @@ namespace booster {
                     while(*e)
                         e++;
                     state = pj_winberger_hash::update_state(state,
-                                static_cast<char const *>(p),
-                                static_cast<char const *>(e));
+                                reinterpret_cast<char const *>(p),
+                                reinterpret_cast<char const *>(e));
                     return state;
                 }
             };
@@ -686,9 +686,9 @@ namespace booster {
                         return false;
                     if(!mo.has_hash())
                         return false;
-                    if(compare_encodings(mo_encoding.c_str(),locale_encoding_.c_str())!=0)
+                    if(compare_encodings(mo_encoding,locale_encoding_)!=0)
                         return false;
-                    if(compare_encodings(mo_encoding.c_str(),key_encoding_.c_str())==0) {
+                    if(compare_encodings(mo_encoding,key_encoding_)==0) {
                         return true;
                     }
                     for(unsigned i=0;i<mo.size();i++) {
