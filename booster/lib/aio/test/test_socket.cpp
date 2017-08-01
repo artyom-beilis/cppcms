@@ -338,6 +338,25 @@ void test_async_connect()
 	test_connected(s1,s2);
 }
 
+
+void async_connect_handler_fail(booster::system::error_code const &e)
+{
+    the_service->stop();
+    TEST(e);
+}
+void test_async_connect_fail()
+{
+	std::cout << "Test async connect fail" << std::endl;
+	io::io_service srv;
+	reset_glb(srv);
+	io::stream_socket s(srv);
+	s.open(io::pf_inet);
+	s.async_connect(io::endpoint("127.0.0.1",8080),async_connect_handler_fail);
+	srv.run();
+}
+
+
+
 void test_pair()
 {
 	std::cout << "Testing socket_pair" << std::endl;
@@ -718,6 +737,7 @@ int main()
 		readv_writev();
 		get_set_srv();
 		test_async_connect();
+		test_async_connect_fail();
 		test_unix();
 		test_ipv6();
 		test_pair();

@@ -338,7 +338,7 @@ namespace {
 
 		void operator()(system::error_code const &e)
 		{
-			if(e) { h(e); return; }
+			if(e && e!=system::error_code(aio_error::select_failed,aio_error_cat) ) { h(e); return; }
 			system::error_code err;
 			int errval=0;
 			socklen_t len = sizeof(errval);
@@ -354,7 +354,7 @@ namespace {
 			else if(errval!=0) {
 				err=system::error_code(errval,syscat);
 			}
-			h(e);
+			h(err);
 		}
 	};
 
