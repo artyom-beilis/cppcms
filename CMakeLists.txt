@@ -277,8 +277,8 @@ endif()
 
 
 if(IS_WINDOWS)
-	find_library(WS2_32 ws2_32)
-	find_library(WSOCK32 wsock32)
+	set(WS2_32 ws2_32)
+	set(WSOCK32 wsock32)
 else()
 	check_function_exists(dlopen CPPCMS_HAVE_DLOPEN)
 	if(NOT CPPCMS_HAVE_DLOPEN)
@@ -423,7 +423,7 @@ endif()
 
 if(NOT DISABLE_OPENSSL)
 	find_path(OPENSSL_INCLUDE_DIR openssl/aes.h)
-	find_library(LIB_OPENSSL NAMES crypto libeay32)
+	find_library(LIB_OPENSSL NAMES crypto libcrypto libeay32)
 endif()
 
 if(GCRYPT_INCLUDE_DIR AND LIB_GCRYPT)

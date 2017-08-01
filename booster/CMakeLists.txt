@@ -58,7 +58,7 @@ if(CMAKE_CXX_COMPILER_ID STREQUAL "SunPro")
 else()
 	option(DISABLE_STD_LOCALE	"Disable std locale backend" OFF)
 endif()
-option(USE_WINDOWS6_API		"Use Windows 6 API (Vista, 7)" OFF)
+option(USE_WINDOWS6_API		"Use Windows 6 API (Vista, 7)" ON)
 
 check_function_exists(newlocale BOOSTER_HAS_XLOCALE)
 
@@ -131,7 +131,7 @@ if(NOT DISABLE_ICU_LOCALE)
 	endif()
 
 	find_library(ICU_UC icuuc${ICU_SUFFIX})
-	find_library(ICU_DATA NAMES icudt icudata)
+	find_library(ICU_DATA NAMES icudt${ICU_SUFFIX} icudata)
 	find_library(ICU_I18N NAMES icuin${ICU_SUFFIX} icui18n${ICU_SUFFIX})
 	find_path(ICU_INCLUDE_DIR unicode/unistr.h)
 
@@ -276,7 +276,7 @@ if("${CMAKE_BUILD_TYPE}" STREQUAL "Debug")
 endif()
 
 if(IS_WINDOWS)
-	find_library(WS2_32 ws2_32)
+	set(WS2_32 ws2_32)
 else()
 	check_function_exists(socket HAVE_SOCKET)
 	if(NOT HAVE_SOCKET)
