@@ -149,7 +149,59 @@ if(NOT DISABLE_ICU_LOCALE)
 	add_definitions(-DBOOSTER_LOCALE_WITH_ICU)
 endif()
 
+set(CMAKE_REQUIRED_INCLUDES "${CMAKE_CURRENT_SOURCE_DIR}")
+
+
+
 # Checking for iconv
+check_cxx_source_compiles(
+    "#include <memory>
+     std::unique_ptr<int> foo() { std::unique_ptr<int> p(new int(10)); return p; }
+     std::shared_ptr<int> sfoo() { std::shared_ptr<int> p(new int(10)); return p; }
+     int main()
+     {
+         std::unique_ptr<int> a,b=foo();
+         a=std::move(b);
+         std::shared_ptr<int> c=sfoo();
+     }
+     "
+     BOOSTER_CXX11_SMART_PTR)
+
+if(BOOSTER_CXX11_SMART_PTR)
+    set(BOOSTER_NO_CXX11_SMART_PTR False)
+else()
+    set(BOOSTER_NO_CXX11_SMART_PTR True)
+endif()
+
+check_cxx_source_compiles(
+    "#include <memory>
+     std::auto_ptr<int> foo() { std::auto_ptr<int> p(new int(10)); return p; }
+     int main()
+     {
+         std::auto_ptr<int> a,b=foo();
+         a=b;
+     }
+     "
+     BOOSTER_AUTO_PTR)
+
+if(BOOSTER_AUTO_PTR)
+    set(BOOSTER_NO_AUTO_PTR False)
+    check_cxx_source_compiles(
+        "#include <memory>
+         #include <booster/hold_ptr.h>
+         int test_ar[sizeof(std::auto_ptr<int>) == sizeof(booster::hold_ptr<int>) ? 1 : -1];
+         int main() {}
+         "
+         AUTO_AND_HOLD_PTR_SIZE_IS_SAME
+         )
+    if(NOT AUTO_AND_HOLD_PTR_SIZE_IS_SAME)
+        message(FATAL_ERROR "sizeof(std::auto_ptr) != sizeof(booster::hold_ptr) ABI Breakage")
+    endif()
+else()
+    set(BOOSTER_NO_AUTO_PTR True)
+endif()
+
+
 
 if(NOT DISABLE_ICONV) 
 	check_cxx_source_compiles(

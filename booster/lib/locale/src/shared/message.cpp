@@ -6,10 +6,12 @@
 //  http://www.boost.org/LICENSE_1_0.txt)
 //
 #define BOOSTER_SOURCE
+#define BOOSTER_DETAIL_NO_CONTAINER_FWD
 #include <booster/config.h>
 #include <booster/locale/message.h>
 #include <booster/locale/gnu_gettext.h>
 #include <booster/shared_ptr.h>
+#include <booster/locale/hold_ptr.h>
 #include <booster/locale/encoding.h>
 #ifdef BOOSTER_MSVC
 #  pragma warning(disable : 4996)
@@ -625,7 +627,7 @@ namespace booster {
                     key_conversion_required_ =  sizeof(CharType) == 1 
                                                 && compare_encodings(locale_encoding,key_encoding)!=0;
 
-                    std::auto_ptr<mo_file> mo;
+                    booster::shared_ptr<mo_file> mo;
 
                     if(callback) {
                         std::vector<char> vfile = callback(file_name,locale_encoding);
@@ -649,8 +651,7 @@ namespace booster {
                         throw booster::runtime_error("Invalid mo-format, encoding is not specified");
 
                     if(!plural.empty()) {
-                        std::auto_ptr<lambda::plural> ptr=lambda::compile(plural.c_str());
-                        plural_forms_[id] = ptr;
+                        plural_forms_[id] = lambda::compile(plural.c_str());;
                     }
 
                     if( mo_useable_directly(mo_encoding,*mo) )

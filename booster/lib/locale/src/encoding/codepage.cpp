@@ -23,6 +23,7 @@
 #endif
 
 #include <booster/locale/encoding.h>
+#include <booster/locale/hold_ptr.h>
 
 #include <string>
 #include <cstring>
@@ -39,7 +40,7 @@ namespace booster {
                                             char const *from_charset,
                                             method_type how)
                 {
-                    std::auto_ptr<converter_between> cvt;
+                    hold_ptr<converter_between> cvt;
                     #ifdef BOOSTER_LOCALE_WITH_ICONV
                     cvt.reset(new iconv_between());
                     if(cvt->open(to_charset,from_charset,how))
@@ -65,7 +66,7 @@ namespace booster {
                                         char const *charset,
                                         method_type how)
                 {
-                    std::auto_ptr<converter_to_utf<CharType> > cvt;
+                    hold_ptr<converter_to_utf<CharType> > cvt;
                     #ifdef BOOSTER_LOCALE_WITH_ICONV
                     cvt.reset(new iconv_to_utf<CharType>());
                     if(cvt->open(charset,how))
@@ -91,7 +92,7 @@ namespace booster {
                                         char const *charset,
                                         method_type how)
                 {
-                    std::auto_ptr<converter_from_utf<CharType> > cvt;
+                    hold_ptr<converter_from_utf<CharType> > cvt;
                     #ifdef BOOSTER_LOCALE_WITH_ICONV
                     cvt.reset(new iconv_from_utf<CharType>());
                     if(cvt->open(charset,how))

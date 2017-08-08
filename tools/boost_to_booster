@@ -4,12 +4,15 @@
 
 rm -fr boost_locale_git trunk
 git clone https://github.com/boostorg/locale.git boost_locale_git
+cd boost_locale_git
+git checkout develop
+cd ..
 
 rm -fr trunk
 mkdir -p trunk/boost
 mkdir -p trunk/libs/locale/
 mv boost_locale_git/include/boost/locale trunk/boost/locale
-mv boost_locale_git/include/boost/locale,hpp trunk/boost/locale.hpp
+mv boost_locale_git/include/boost/locale.hpp trunk/boost/locale.hpp
 mv boost_locale_git/src trunk/libs/locale/src
 mv boost_locale_git/test trunk/libs/locale/test
 mv boost_locale_git/examples trunk/libs/locale/examples

@@ -16,6 +16,8 @@
 #include <vector>
 #include <booster/auto_ptr_inc.h>
 
+#include <booster/locale/hold_ptr.h>
+
 namespace booster {
 namespace locale {
 namespace conv {
@@ -61,8 +63,8 @@ namespace impl {
         typedef impl_icu::icu_std_converter<char> from_type;
         typedef impl_icu::icu_std_converter<CharType> to_type;
 
-        std::auto_ptr<from_type> cvt_from_;
-        std::auto_ptr<to_type> cvt_to_;
+        hold_ptr<from_type> cvt_from_;
+        hold_ptr<to_type> cvt_to_;
 
     };
   
@@ -105,8 +107,8 @@ namespace impl {
         typedef impl_icu::icu_std_converter<CharType> from_type;
         typedef impl_icu::icu_std_converter<char> to_type;
 
-        std::auto_ptr<from_type> cvt_from_;
-        std::auto_ptr<to_type> cvt_to_;
+        hold_ptr<from_type> cvt_from_;
+        hold_ptr<to_type> cvt_to_;
 
     };
 
@@ -146,8 +148,8 @@ namespace impl {
         typedef impl_icu::icu_std_converter<char> from_type;
         typedef impl_icu::icu_std_converter<char> to_type;
 
-        std::auto_ptr<from_type> cvt_from_;
-        std::auto_ptr<to_type> cvt_to_;
+        hold_ptr<from_type> cvt_from_;
+        hold_ptr<to_type> cvt_to_;
 
     };
 

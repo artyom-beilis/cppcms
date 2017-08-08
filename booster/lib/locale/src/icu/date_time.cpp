@@ -9,6 +9,7 @@
 #include <booster/locale/date_time_facet.h>
 #include <booster/locale/date_time.h>
 #include <booster/locale/formatting.h>
+#include <booster/locale/hold_ptr.h>
 #include "all_generator.h"
 
 #include <booster/thread.h>
@@ -217,7 +218,7 @@ namespace impl_icu {
             // fieldDifference has side effect of moving calendar (WTF?)
             // So we clone it for performing this operation
             // 
-            std::auto_ptr<icu::Calendar> self(calendar_->clone());
+            hold_ptr<icu::Calendar> self(calendar_->clone());
 
             calendar_impl const *other_cal=dynamic_cast<calendar_impl const *>(other_ptr);
             if(other_cal){

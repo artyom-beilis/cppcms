@@ -15,6 +15,7 @@
 #include <ios>
 #include <booster/locale/date_time_facet.h>
 #include <booster/locale/date_time.h>
+#include <booster/locale/hold_ptr.h>
 #include <stdlib.h>
 #include <ctime>
 #include <booster/auto_ptr_inc.h>
@@ -671,7 +672,7 @@ namespace util {
             {
                 if(diff == 0)
                     return 0;
-                std::auto_ptr<gregorian_calendar> self(clone());
+                hold_ptr<gregorian_calendar> self(clone());
                 self->adjust_value(p,move,diff);
                 if(diff > 0){
                     if(self->time_ > other->time_)
@@ -692,7 +693,7 @@ namespace util {
             ///
             virtual int difference(abstract_calendar const *other_cal,period::marks::period_mark p) const 
             {
-                std::auto_ptr<gregorian_calendar> keeper;
+                hold_ptr<gregorian_calendar> keeper;
                 gregorian_calendar const *other = dynamic_cast<gregorian_calendar const *>(other_cal);
                 if(!other) {
                     keeper.reset(clone());

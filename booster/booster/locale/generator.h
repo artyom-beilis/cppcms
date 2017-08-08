@@ -16,6 +16,7 @@
 #include <string>
 #include <locale>
 #include <booster/auto_ptr_inc.h>
+#include <booster/locale/hold_ptr.h>
 
 namespace booster {
 
@@ -220,7 +221,7 @@ namespace booster {
             void operator=(generator const &);
 
             struct data;
-            std::auto_ptr<data> d;
+            hold_ptr<data> d;
         };
 
     }

@@ -15,6 +15,7 @@
 #endif
 #include <booster/locale/message.h>
 #include <booster/locale/formatting.h>
+#include <booster/locale/hold_ptr.h>
 
 #include <sstream>
 
@@ -121,7 +122,7 @@ namespace booster {
 
                 std::ios_base &ios_;
                 struct data;
-                std::auto_ptr<data> d;
+                hold_ptr<data> d;
             };
 
         }

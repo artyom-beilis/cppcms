@@ -72,4 +72,10 @@
 /* Define to module suffix. */
 #cmakedefine BOOSTER_LIBRARY_PREFIX "${BOOSTER_LIBRARY_PREFIX}"
 
+/* No C++11 unique_ptr/shared_ptr */
+#cmakedefine BOOSTER_NO_CXX11_SMART_PTR
+
+/* auto_ptr removed by C++17 */
+#cmakedefine BOOSTER_NO_AUTO_PTR
+
 #endif
