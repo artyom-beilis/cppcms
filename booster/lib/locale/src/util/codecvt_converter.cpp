@@ -90,19 +90,10 @@ namespace util {
                 to_unicode_tbl_[i]=i;
             for(unsigned i=128;i<256;i++) {
                 char buf[2] = { char(i) , 0 };
+                std::wstring const tmp = conv::to_utf<wchar_t>(buf,buf+1,encoding,conv::skip);
                 uint32_t uchar=utf::illegal;
-                try {
-                    std::wstring const tmp = conv::to_utf<wchar_t>(buf,buf+1,encoding,conv::stop);
-                    if(tmp.size() == 1) {
-                        uchar = tmp[0];
-                    }
-                    else {
-                        uchar = utf::illegal;
-                    }
-                }
-                catch(conv::conversion_error const &/*e*/) {
-                    uchar = utf::illegal;
-                }
+                if(tmp.size() == 1) 
+                    uchar = tmp[0];
                 to_unicode_tbl_[i]=uchar;
             }
             for(int i=0;i<hash_table_size;i++)
