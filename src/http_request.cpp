@@ -555,6 +555,12 @@ std::string request::getenv(char const *s)
 {
 	return conn_->getenv(s);
 }
+
+std::string request::getenv(std::string const &s)
+{
+	return conn_->getenv(s);
+}
+
 char const *request::cgetenv(char const *s)
 {
 	return conn_->cgetenv(s);

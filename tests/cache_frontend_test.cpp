@@ -118,6 +118,7 @@ public:
 		set_context(true);
 		cache().clear();
 		TEST(request().getenv("HTTP_ACCEPT_ENCODING") == "gzip, deflate");
+		TEST(request().getenv(std::string("HTTP_ACCEPT_ENCODING")) == "gzip, deflate");
 		cache().fetch_page("test");
 		response().out() << "gzip";
 		cache().store_page("test");
