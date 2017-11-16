@@ -206,6 +206,10 @@ namespace cgi {
 			booster::system::error_code e;
 			size_t n = socket_.bytes_readable(e);
 			if(e) { h(e); return ; }
+			if(n == 0) { 
+				h(booster::system::error_code(booster::aio::aio_error::eof,booster::aio::aio_error_cat)); 
+				return;
+			}
 
 			if(n > 16384)
 				n=16384;
