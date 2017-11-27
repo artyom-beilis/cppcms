@@ -144,6 +144,7 @@ namespace cgi {
 		{
 			booster::aio::const_buffer packet;
 			booster::aio::const_buffer::entry const *chunks = in.get().first;
+//#define DEBUG_FASTCGI
 #ifdef DEBUG_FASTCGI
 			{
 				size_t n=in.get().second;
@@ -178,6 +179,9 @@ namespace cgi {
 						full_header_.padding_length = pad_len = 1;
 						full_header_.to_net();
 					}
+                    else {
+                        pad_len = 1;
+                    }
 					packet += io::buffer(&full_header_,sizeof(full_header_));
 				}
 				else {
@@ -214,6 +218,12 @@ namespace cgi {
 				prepare_eof();
 				packet += io::buffer(&eof_,sizeof(eof_));
 			}
+            #ifdef DEBUG_FASTCGI
+			std::pair<booster::aio::const_buffer::entry const *,size_t> cnk = packet.get();
+            for(size_t i=0;i<cnk.second;i++) {
+                std::cerr << "[ " << (void const *)(cnk.first[i].ptr) << " " << cnk.first[i].size << "]\n" << std::endl;
+            }
+            #endif
 			return packet;
 		}
 		virtual booster::aio::stream_socket &socket() { return socket_; }
@@ -613,6 +623,7 @@ namespace cgi {
 			async_read_headers(h);
 		}
 
+        // this is internal function for short messages
 		void async_send_respnse(handler const &h)
 		{
 			header_.content_length=body_.size();

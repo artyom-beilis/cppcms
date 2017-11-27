@@ -20,6 +20,7 @@ UNKNOWN_TYPE        = 11
 TEST_RANDOM = 1
 TEST_GET_VALUES = 2
 TEST_KEEP_ALIVE = 4
+TEST_STANDARD = 8
 
 def escape(s):
     tmp=''

@@ -120,6 +120,12 @@ def test_scgi(name):
         return toscgi.toscgi(file)
     test_all(name,load)
 
+def test_scgi_normal(name):
+    def load(name):
+        file=load_file(name)
+        return toscgi.toscgi(file)
+    test_normal(name,load)
+
 def transfer_all(s,inp):
     s.setblocking(1)
     s.sendall(inp)
@@ -217,9 +223,13 @@ elif test=='fastcgi_tcp' or test=='fastcgi_unix':
     test_fcgi('scgi_5',tofcgi.TEST_RANDOM)
     print "Testing GET_VALUES"
     test_fcgi('scgi_1',tofcgi.TEST_GET_VALUES)
+    print "Testing long message"
+    test_fcgi('scgi_6',tofcgi.TEST_STANDARD)
 elif test=='scgi_tcp' or test=='scgi_unix':
     test_scgi('scgi_1')
     test_scgi('scgi_2')
     test_scgi('scgi_3')
+    print "Testing long message"
+    test_scgi_normal('scgi_6')
 else:
     usege()

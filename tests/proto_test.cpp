@@ -13,6 +13,7 @@
 #include <cppcms/http_context.h>
 #include <cppcms/json.h>
 #include <iostream>
+#include <iomanip>
 #include "client.h"
 #include "test.h"
 
@@ -45,6 +46,11 @@ public:
 			out << p->first <<':'<<p->second << '\n';
 		}
 		out << '\n';
+        std::string long_msg = request().getenv("LONG_MESSAGE");
+        int lmsg = atoi(long_msg.c_str());
+        for(int i=1;i<=lmsg;i++) {
+            out << std::setfill('0') << std::setw(5) << i << '\n';
+        }
 		typedef cppcms::http::request::form_type form_type;
 		form_type const &form=request().post();
 		for(form_type::const_iterator p=form.begin();p!=form.end();++p) {
