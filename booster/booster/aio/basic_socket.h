@@ -82,6 +82,7 @@ namespace aio {
 			keep_alive,	//< SO_KEEPALIVE socket option 
 			reuse_address	//< SO_REUSEADDR socket option
 		} boolean_option_type;
+		
 
 		///
 		/// Get a value for a boolean_option_type
@@ -106,6 +107,43 @@ namespace aio {
 		/// Throws system::system_error if error occurs.
 		///	
 		void set_option(boolean_option_type opt,bool v);
+
+		///
+		/// Integer socket options list
+		///
+		/// \ver{v1_2}
+		typedef enum {
+			receive_buffer_size,	//< SO_RCVBUF options
+			send_buffer_size,	//< SO_SNDBUF option 
+		} integer_option_type;
+		///
+		/// Get a value for a integer_option_type
+		///
+		/// If a error occurs it is assigned to \a e.
+		///	
+		/// \ver{v1_2}
+		int get_option(integer_option_type opt,system::error_code &e);
+		///
+		/// Get a value for a integer_option_type
+		/// Throws system::system_error if error occurs.
+		///	
+		/// \ver{v1_2}
+		int get_option(integer_option_type opt);
+		///
+		/// Set a value for a integer_option_type
+		///
+		/// If a error occurs it is assigned to \a e.
+		///	
+		/// \ver{v1_2}
+		void set_option(integer_option_type opt,int v,system::error_code &e);
+		///
+		/// Set a value for a integer_option_type
+		///
+		/// Throws system::system_error if error occurs.
+		///	
+		/// \ver{v1_2}
+		void set_option(integer_option_type opt,int v);
+
 		///
 		/// Bind the opended socket the \ref endpoint \a ep
 		///

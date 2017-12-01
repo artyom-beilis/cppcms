@@ -105,6 +105,71 @@ endpoint basic_socket::remote_endpoint()
 }
 
 
+
+void basic_socket::set_option(integer_option_type opt,int v,system::error_code &e)
+{
+	int value = v;
+	char const *p=reinterpret_cast<char const *>(&value);
+	int res = 0;
+	switch(opt) {
+	case receive_buffer_size:
+		res=::setsockopt(native(),SOL_SOCKET,SO_RCVBUF,p,sizeof(value));
+		break;
+	case send_buffer_size:
+		res=::setsockopt(native(),SOL_SOCKET,SO_SNDBUF,p,sizeof(value));
+		break;
+	default:
+		;
+	}
+	if(res < 0)
+		e=geterror();
+}
+
+void basic_socket::set_option(integer_option_type opt,int v)
+{
+	system::error_code e;
+	set_option(opt,v,e);
+	if(e) throw system::system_error(e);
+}
+
+int basic_socket::get_option(integer_option_type opt,system::error_code &e)
+{
+	int value = 0;
+	socklen_t len = sizeof(value);
+	#ifdef BOOSTER_WIN32
+	char *ptr = reinterpret_cast<char *>(&value);
+	#else
+	int *ptr = &value;
+	#endif
+	int res = 0;
+	switch(opt) {
+	case receive_buffer_size:
+		res=::getsockopt(native(),SOL_SOCKET,SO_RCVBUF,ptr,&len);
+		break;
+	case send_buffer_size:
+		res=::getsockopt(native(),SOL_SOCKET,SO_SNDBUF,ptr,&len);
+		break;
+	default:
+		;
+	}
+	if(res < 0) {
+		e=geterror();
+		return false;
+	}
+	return value;
+}
+
+int basic_socket::get_option(integer_option_type opt)
+{
+	system::error_code e;
+	int res = get_option(opt,e);
+	if(e) throw system::system_error(e);
+	return res;
+}
+
+
+
+
 void basic_socket::set_option(boolean_option_type opt,bool v,system::error_code &e)
 {
 	int value = v ? 1 : 0;
