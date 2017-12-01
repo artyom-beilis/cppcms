@@ -382,6 +382,7 @@ namespace cgi {
 			if(pfd.revents & POLLOUT)
 				return socket_.write_some(buf,e);
 			e=booster::system::error_code(errc::protocol_violation,cppcms_category);
+			die();
 			return 0;
 		}
 		#endif
