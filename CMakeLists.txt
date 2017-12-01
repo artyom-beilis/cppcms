@@ -908,7 +908,7 @@ add_test(http_timeouts_test_read
 
 add_test(http_timeouts_test_write
 	http_timeouts_test "-c" "${CNF}/proto_test.js" 
-	"--service-api=http" "--service-port=8080" "--service-ip=127.0.0.1" "--http-timeout=5" "--logging-level=debug"
+	"--service-api=http" "--service-port=8080" "--service-ip=127.0.0.1" "--http-timeout=5" "--logging-level=debug" "--service-sndbuf=32786" "--service-rcvbuf=32768"
 	"--test-write=true"
 	"--test-exec=${PYTHON} ${CNF}/http_timeouts_test.py write")
 

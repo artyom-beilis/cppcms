@@ -43,6 +43,7 @@ def test_unfinished_out(msg,chunks=[]):
 def test_unfinished_read(msg,reads,ignore):
     print "Tesing %s with %d reads" % (msg,reads)
     s=make_sock();
+    s.setsockopt(socket.SOL_SOCKET, socket.SO_RCVBUF,32768)
     read_size = s.getsockopt(socket.SOL_SOCKET, socket.SO_RCVBUF)
     print "SO_RCVBUF=%d" % read_size
     if read_size < 32768:
