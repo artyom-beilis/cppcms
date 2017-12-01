@@ -58,6 +58,8 @@ namespace cgi {
 		#ifndef CPPCMS_WIN32
 		virtual booster::shared_ptr<cppcms::http::context> accept(int fd) = 0;
 		#endif
+		virtual void sndbuf(int v) = 0;
+		virtual void rcvbuf(int v) = 0;
 		virtual void stop() = 0;
 		virtual ~acceptor(){}
 	};

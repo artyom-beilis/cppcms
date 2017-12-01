@@ -43,7 +43,9 @@ namespace impl {
 				srv_(srv),
 				acceptor_(srv_.get_io_service()),
 				stopped_(false),
-				tcp_(true)
+				tcp_(true),
+				sndbuf_(-1),
+				rcvbuf_(-1)
 			{
 				io::endpoint ep(ip,port);
 				acceptor_.open(ep.family());
@@ -133,12 +135,27 @@ namespace impl {
 				acceptor_.cancel();
 			}
 
+			void sndbuf(int v)
+			{
+				sndbuf_ = v;
+			}
+			void rcvbuf(int v)
+
+			{
+				rcvbuf_ = v;
+			}
+
 		private:
 			void on_accept(booster::system::error_code const &e)
 			{
 				if(!e) {
+					
 					if(tcp_)
 						asio_socket_->set_option(io::basic_socket::tcp_no_delay,true);
+					if(sndbuf_!=-1)
+						asio_socket_->set_option(io::basic_socket::send_buffer_size,sndbuf_);
+					if(rcvbuf_!=-1)
+						asio_socket_->set_option(io::basic_socket::receive_buffer_size,rcvbuf_);
 					booster::shared_ptr< ::cppcms::http::context> cnt(new ::cppcms::http::context(api_));
 					api_.reset();
 					cnt->run();	
@@ -152,6 +169,7 @@ namespace impl {
 			booster::aio::acceptor acceptor_;
 			bool stopped_;
 			bool tcp_;
+			int sndbuf_,rcvbuf_;
 			Factory factory_;
 		};
 

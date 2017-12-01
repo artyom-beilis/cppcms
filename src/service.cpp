@@ -768,6 +768,8 @@ std::auto_ptr<cppcms::impl::cgi::acceptor> service::setup_acceptor(json::value c
 
 	std::string api=v.get<std::string>("api");
 	std::string socket=v.get("socket","");
+	int sndbuf = v.get("sndbuf",-1);
+	int rcvbuf = v.get("rcvbuf",-1);
 	std::string ip;
 	int port=0;
 
@@ -834,6 +836,9 @@ std::auto_ptr<cppcms::impl::cgi::acceptor> service::setup_acceptor(json::value c
 	}
 	if(!a.get())
 		throw cppcms_error("Unknown api: " + api);
+
+	a->sndbuf(sndbuf);
+	a->rcvbuf(rcvbuf);
 
 	return a;
 }
