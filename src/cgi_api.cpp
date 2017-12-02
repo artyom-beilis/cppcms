@@ -494,11 +494,11 @@ struct connection::async_write_handler : public booster::callable<void(booster::
 			h(e);
 			return;
 		}
-		if(e && booster::aio::basic_io_device::would_block(e)) {
-			conn->socket().on_writeable(self_type(this));
+		if(e && !booster::aio::basic_io_device::would_block(e)) {
+			h(e);
 			return;
 		}
-		h(e);
+		conn->socket().on_writeable(self_type(this));
 	}
 };
 
