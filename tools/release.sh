@@ -16,6 +16,7 @@ DIRNAME=cppcms-$VERSION
 mv current-release $DIRNAME
 cd $DIRNAME
 doxygen
+cp /usr/share/doc/lmdb-doc/html/dynsections.js doc/doxygen/html
 cd ..
 tar -cjf $DIRNAME.tar.bz2 $DIRNAME
 rm -fr $DIRNAME
