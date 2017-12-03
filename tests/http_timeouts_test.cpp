@@ -25,8 +25,8 @@ int sync_bad_count = 0;
 bool eof_detected = false;
 int count_timeouts = 0;
 
-int above_15 = 0;
-int below_10 = 0;
+int above_3to = 0;
+int below_2to = 0;
 
 bool write_tests = false;
 
@@ -48,10 +48,12 @@ public:
 			}
 		}
 		time_t end = time(0);
-		if(end - start > 15)
-			above_15 ++;
-		else if(end - start < 10)
-			below_10 ++;
+		int timeout = settings().get<int>("http.timeout");
+		std::cout << "IO Completed in " << (end-start) << " seconds, timeout=" << timeout << std::endl;
+		if(end - start > 3*timeout)
+			above_3to ++;
+		else if(end - start < 2*timeout)
+			below_2to ++;
 
 		if(bad_found) {
 			std::cout << "Disconned as expected" << std::endl;
@@ -87,15 +89,17 @@ public:
 		booster::shared_ptr<cppcms::http::context> context;
 		int counter;
 		time_t start;
+		int timeout;
 		void operator()(cppcms::http::context::completion_type ct)
 		{
 			if(ct == cppcms::http::context::operation_aborted) {
 				async_bad_count++;
 				time_t end = time(0);
-				if(end - start > 15)
-					above_15 ++;
-				else if(end - start < 10)
-					below_10 ++;
+				std::cout << "IO Completed in " << (end-start) << " seconds, timeout=" << timeout << std::endl;
+				if(end - start > 3*timeout)
+					above_3to ++;
+				else if(end - start < 2*timeout)
+					below_2to ++;
 				return;
 			}
 			if(counter > 0) {
@@ -118,6 +122,7 @@ public:
 		call.context = release_context();
 		call.counter = 10000;
 		call.start = time(0);
+		call.timeout = settings().get<int>("http.timeout");
 		call(cppcms::http::context::operation_completed);
 
 	}
@@ -130,8 +135,8 @@ void print_count_report(std::ostream &out)
 		<< " sync_bad_count =" << sync_bad_count << std::endl
 		<< " async_bad_count =" << async_bad_count << std::endl
 		<< " count_timeouts =" << count_timeouts << std::endl
-		<< " above 15 =" << above_15 << std::endl
-		<< " below 10 =" << below_10 << std::endl
+		<< " above 15 =" << above_3to << std::endl
+		<< " below 10 =" << below_2to << std::endl
 		<< " eof =" << eof_detected << std::endl;
 }
 
@@ -165,8 +170,8 @@ int main(int argc,char **argv)
 			async_bad_count != 2 
 			|| sync_bad_count != 2 
 			|| count_timeouts != 4
-			|| above_15 != 2
-			|| below_10 != 2
+			|| above_3to != 2
+			|| below_2to != 2
 		)
 		:
 		(

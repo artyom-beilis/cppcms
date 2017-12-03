@@ -25,12 +25,8 @@
 #include "binder.h"
 
 // for testing only
-//#define CPPCMS_NO_SO_SNDTIMO
-
-#if defined(__sun)  
-#  ifndef CPPCMS_NO_SO_SNDTIMO
-#    define CPPCMS_NO_SO_SNDTIMO
-#  endif
+#if !defined(__linux) && !defined(CPPCMS_WIN32)
+#  define CPPCMS_NO_SO_SNDTIMO
 #endif
 
 #ifdef CPPCMS_NO_SO_SNDTIMO
@@ -194,6 +190,11 @@ namespace cgi {
 		}
 		virtual void async_read_headers(handler const &h)
 		{
+			#ifdef CPPCMS_NO_SO_SNDTIMO
+			booster::system::error_code e;
+			socket_.set_non_blocking_if_needed(true,e);
+			if(e) { h(e); return; }
+			#endif
 			update_time();
 			add_to_watchdog();
 			async_read_some_headers(h);
@@ -360,6 +361,7 @@ namespace cgi {
 		#else
 		size_t timed_write_some(booster::aio::const_buffer const &buf,booster::system::error_code &e)
 		{
+			socket_.set_non_blocking_if_needed(true,e);
 			booster::ptime start = booster::ptime::now();
 
 			pollfd pfd=pollfd();
@@ -379,7 +381,7 @@ namespace cgi {
 				e=booster::system::error_code(errno,booster::system::system_category);
 				return 0;
 			}
-			if(pfd.revents & POLLOUT)
+			if(r==1 && pfd.revents & POLLOUT)
 				return socket_.write_some(buf,e);
 			e=booster::system::error_code(errc::protocol_violation,cppcms_category);
 			die();

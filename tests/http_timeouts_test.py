@@ -67,13 +67,15 @@ def test_unfinished_read(msg,reads,ignore):
 
 
 write = sys.argv[1] == 'write'
+if len(sys.argv) >= 3:
+    timeout_time = int(sys.argv[2])
 
 if write:
     print 'Write to the client timeout'
     test_unfinished_read('GET /async/long HTTP/1.0',0,0)
-    test_unfinished_read('GET /async/long HTTP/1.0',20,1000)
+    test_unfinished_read('GET /async/long HTTP/1.0',timeout_time + 15,1000)
     test_unfinished_read('GET /sync/long HTTP/1.0',0,0)
-    test_unfinished_read('GET /sync/long HTTP/1.0',20,1000)
+    test_unfinished_read('GET /sync/long HTTP/1.0',timeout_time + 15,1000)
 else:
     print 'Read from client timeouts'
     test_unfinished_out('')

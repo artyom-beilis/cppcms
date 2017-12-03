@@ -96,7 +96,6 @@ endif()
 
 
 
-
 #############################################################################
 #
 # Setup various build flags for different supported compilers and systems
@@ -906,11 +905,23 @@ add_test(http_timeouts_test_read
 	"--test-write=false"
 	"--test-exec=${PYTHON} ${CNF}/http_timeouts_test.py read")
 
+#
+# In future maybe
+#
+#if(${CMAKE_SYSTEM_NAME} STREQUAL "FreeBSD")
+#	set(HTTP_TIMEOUT 15)
+#else()
+#	set(HTTP_TIMEOUT 5)
+#endif()
+#
+
+set(HTTP_TIMEOUT 15)
+
 add_test(http_timeouts_test_write
 	http_timeouts_test "-c" "${CNF}/proto_test.js" 
-	"--service-api=http" "--service-port=8080" "--service-ip=127.0.0.1" "--http-timeout=5" "--logging-level=debug" "--service-sndbuf=32786" "--service-rcvbuf=32768"
+	"--service-api=http" "--service-port=8080" "--service-ip=127.0.0.1" "--http-timeout=${HTTP_TIMEOUT}" "--logging-level=debug" "--service-sndbuf=32786" "--service-rcvbuf=32768"
 	"--test-write=true"
-	"--test-exec=${PYTHON} ${CNF}/http_timeouts_test.py write")
+	"--test-exec=${PYTHON} ${CNF}/http_timeouts_test.py write ${HTTP_TIMEOUT}")
 
 
 add_test(file_server_test
