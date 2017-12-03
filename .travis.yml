@@ -3,5 +3,9 @@ language: cpp
 os:
     - osx
 
+compiler:
+    - gcc
+    - clang
+
 script:
-    - mkdir build && cd build && cmake -DDISABLE_STATIC=ON -DCMAKE_BUILD_TYPE=Debug .. && make && ctest
+    - mkdir build && cd build && cmake -DDISABLE_STATIC=ON .. && make && ctest
