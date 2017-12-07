@@ -8,10 +8,12 @@ set(CPPCMS_PACKAGE_STRING "CppCMS/1.2.0")
 set(CPPCMS_PACKAGE_VERSION "1.2.0")
 
 set(CPPCMS_VERSION "1.2.0")
-set(BOOSTER_VERSION "1.2.0")
-
 set(CPPCMS_SOVERSION "1")
+
 set(BOOSTER_SOVERSION "0")
+set(BOOSTER_VERSION "0.2.0")
+
+
 
 include(CheckFunctionExists)
 include(CheckCXXSourceCompiles)
