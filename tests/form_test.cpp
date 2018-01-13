@@ -115,6 +115,7 @@ public:
 				p2.non_empty();
 				regex.non_empty();
 				email.non_empty();
+				checkbox.required(true);
 				select_multiple.non_empty();
 				select.non_empty();
 				radio.non_empty();

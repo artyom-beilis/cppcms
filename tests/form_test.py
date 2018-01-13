@@ -88,12 +88,12 @@ r=h.getresponse()
 body=r.read();
 ref_body = \
 """\
-<p>pass&nbsp;<span class="cppcms_form_input"><input type="password" name="_5"  ></span></p>
-<p>pass2&nbsp;<span class="cppcms_form_input"><input type="password" name="_6"  ></span></p>
-<p>yes or not&nbsp;<span class="cppcms_form_input"><input type="text" name="_7"  ></span></p>
-<p>E-Mail&nbsp;<span class="cppcms_form_input"><input type="text" name="_8"  ></span></p>
-<p>Checkbox&nbsp;<span class="cppcms_form_input"><input type="checkbox" name="_9" value="y"  ></span></p>
-<p>Select Multiple&nbsp;<span class="cppcms_form_input"><select multiple name="_10"  >
+<p>pass&nbsp;<span class="cppcms_form_input"><input type="password" name="_5" required  ></span></p>
+<p>pass2&nbsp;<span class="cppcms_form_input"><input type="password" name="_6" required  ></span></p>
+<p>yes or not&nbsp;<span class="cppcms_form_input"><input type="text" name="_7" required  ></span></p>
+<p>E-Mail&nbsp;<span class="cppcms_form_input"><input type="text" name="_8" required  ></span></p>
+<p>Checkbox&nbsp;<span class="cppcms_form_input"><input type="checkbox" name="_9" required value="y"  ></span></p>
+<p>Select Multiple&nbsp;<span class="cppcms_form_input"><select multiple name="_10" required  >
 <option value="0" selected >a</option>
 <option value="1" selected >b</option>
 <option value="2" >c</option>
