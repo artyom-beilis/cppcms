@@ -16,7 +16,7 @@
 char const test_1_content[] = "multipart/form-data; boundary=xxyy";
 char const test_1_file[] = 
 "--xxyy\r\n"
-"Content-Disposition: form-data; name=\"test1\"; filename=\"foo.txt\"\r\n"
+"Content-Disposition: form-data; name=test1; filename=\"foo.txt\"\r\n"
 "Content-Type: text/plain\r\n"
 "\r\n"
 "hello\r\n"

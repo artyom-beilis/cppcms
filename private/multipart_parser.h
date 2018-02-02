@@ -315,7 +315,7 @@ namespace cppcms {
 					if(tmp==p)
 						return false;
 					value.assign(p,tmp);
-					tmp=p;
+					p=tmp;
 					return true;
 				}
 			}
