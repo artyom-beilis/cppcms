@@ -129,8 +129,10 @@ namespace cgi {
 			total_read_(0),
 			time_to_die_(0),
 			timeout_(0),
+			keep_alive_(0),
 			sync_option_is_set_(false),
 			in_watchdog_(false),
+			http_version_(http_1_0),
 			watchdog_(wd),
 			rewrite_(rw),
 			eof_callback_(false)
@@ -142,8 +144,8 @@ namespace cgi {
 			format_number(port,sport,10);
 			env_.add("SERVER_PORT",sport);
 			env_.add("GATEWAY_INTERFACE","CGI/1.0");
-			env_.add("SERVER_PROTOCOL","HTTP/1.0");
 			timeout_ = srv.cached_settings().http.timeout;
+			keep_alive_ = srv.cached_settings().http.keep_alive;
 
 		}
 		~http()
@@ -247,7 +249,7 @@ namespace cgi {
 										' ');
 						if(rmethod!=header_end) 
 							query=std::find(rmethod+1,header_end,' ');
-						if(query!=header_end) {
+						if(query!=header_end && config_http_version(query+1,header_end)) {
 							request_method_ = pool_.add(header_begin,rmethod);
 							request_uri_ = pool_.add(rmethod+1,query);
 							first_header_observerd_=true;
@@ -508,7 +510,9 @@ namespace cgi {
 							return true;
 						}
 						if(strcmp(name,"STATUS")==0) {
-							response_line_ = "HTTP/1.0 ";
+							response_line_ = "HTTP/";
+							response_line_ +=http_version_string(http_version_);
+							response_line_ +=" ";
 							response_line_ +=value;
 							response_line_ +="\r\n";
 							response_line_.append(addon);
@@ -517,7 +521,9 @@ namespace cgi {
 					}
 					break;
 				case parser::end_of_headers:
-					response_line_ = "HTTP/1.0 200 Ok\r\n";
+					response_line_ = "HTTP/";
+					response_line_ += http_version_string(http_version_);
+					response_line_ += " 200 Ok\r\n";
 					response_line_.append(addon);
 					return true;
 
@@ -683,8 +689,44 @@ namespace cgi {
 		unsigned total_read_;
 		time_t time_to_die_;
 		int timeout_;
+		int keep_alive_;
 		bool sync_option_is_set_;
 		bool in_watchdog_;
+
+		enum http_version_type {
+			http_1_0 = 1000,
+			http_1_1 = 1010
+		};
+
+		http_version_type http_version_;
+
+		bool config_http_version(char const *ver,char const *ver_end)
+		{
+			if(ver_end - ver != 8)
+				return false;
+			if(memcmp(ver,"HTTP/1.",7)!=0)
+				return false;
+			if(ver[7] == '0') {
+				http_version_ = http_1_0;
+				env_.add("SERVER_PROTOCOL","HTTP/1.0");
+				return true;
+			}
+			if(ver[7] == '1') {
+				http_version_ = http_1_1;
+				env_.add("SERVER_PROTOCOL","HTTP/1.1");
+				return true;
+			}
+			return false;
+
+		}
+
+		static char const *http_version_string(http_version_type type)
+		{
+			switch(type) {
+			case http_1_1:	return "1.1";
+			default:	return "1.0";
+			};
+		}
 
 		void add_to_watchdog()
 		{

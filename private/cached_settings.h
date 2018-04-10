@@ -104,6 +104,7 @@ namespace impl {
 			} proxy;
 			std::vector<std::string> script_names;
 			int timeout;
+			int keep_alive;
 			cached_http(json::value const &v) 
 			{
 				proxy.behind=v.get("http.proxy.behind",false);
@@ -128,6 +129,7 @@ namespace impl {
 				if(!script.empty())
 					script_names.push_back(script);
 				timeout = v.get("http.timeout",30);
+				keep_alive = v.get("http.keep_alive",5);
 			}
 		} http;
 		struct cached_session {
