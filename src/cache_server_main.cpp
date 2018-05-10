@@ -127,6 +127,7 @@ struct settings {
 		gc=v.get("session.gc",10);
 		std::string stor = v.get("session.storage","");
 		if(!stor.empty()) {
+			#ifndef CPPCMS_NO_GZIP
 			if(stor == "files") {
 				std::string dir = v.get("session.dir","");
 				#ifdef CPPCMS_WIN_NATIVE
@@ -135,7 +136,9 @@ struct settings {
 				sessions.reset(new cppcms::sessions::session_file_storage_factory(dir,threads,1,false));
 				#endif
 			}
-			else if(stor == "memory") {
+			else 
+			#endif //CPPCMS_NO_GZIP
+            if(stor == "memory") {
 				sessions.reset(new cppcms::sessions::session_memory_storage_factory());
 			}
 			else if(stor == "external") {

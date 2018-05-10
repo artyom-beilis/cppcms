@@ -133,6 +133,7 @@ int main()
 		storage=mem.get();
 		test(storage,mem);
 		std::cout << "Testing file storage" << std::endl;
+		#ifndef CPPCMS_NO_GZIP
 		#ifndef CPPCMS_WIN_NATIVE
 		std::cout << "Testing single process" << std::endl;
 		session_file_storage_factory f1(dir,5,1,false);
@@ -151,6 +152,7 @@ int main()
 		storage=f.get();
 		test_files(storage,f);
 		#endif
+        #endif
 		#ifndef CPPCMS_NO_TCP_CACHE
 		std::cout << "Testing network backend" << std::endl;
 		
