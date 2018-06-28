@@ -103,7 +103,7 @@ public:
     // auto_ptr<Y> is special cased to provide the strong guarantee
 
     template<class Y>
-    explicit shared_count( std::auto_ptr<Y> & r ): pi_( new sp_counted_impl_p<Y>( r.get() ) )
+    explicit shared_count( std::unique_ptr<Y> & r ): pi_( new sp_counted_impl_p<Y>( r.get() ) )
     {
 
         r.release();

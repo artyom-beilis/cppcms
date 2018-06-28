@@ -182,9 +182,9 @@ namespace locale {
                 return do_parse(str,value);
             }
 
-            date_format(std::auto_ptr<icu::DateFormat> fmt,std::string codepage) :
+            date_format(std::unique_ptr<icu::DateFormat> fmt,std::string codepage) :
                 cvt_(codepage),
-                aicu_fmt_(fmt)
+                aicu_fmt_(std::move(fmt))
             {
                 icu_fmt_ = aicu_fmt_.get();
             }
@@ -227,13 +227,13 @@ namespace locale {
             }
 
             icu_std_converter<CharType> cvt_;
-            std::auto_ptr<icu::DateFormat> aicu_fmt_;
+            std::unique_ptr<icu::DateFormat> aicu_fmt_;
             icu::DateFormat *icu_fmt_;
         };
 
         icu::UnicodeString strftime_to_icu_full(icu::DateFormat *dfin,char const *alt)
         {
-            std::auto_ptr<icu::DateFormat> df(dfin);
+            std::unique_ptr<icu::DateFormat> df(dfin);
             icu::SimpleDateFormat *sdf=dynamic_cast<icu::SimpleDateFormat *>(df.get());
             icu::UnicodeString tmp;
             if(sdf) {
@@ -374,14 +374,14 @@ namespace locale {
         }
         
         template<typename CharType>
-        std::auto_ptr<formatter<CharType> > generate_formatter(
+        std::unique_ptr<formatter<CharType> > generate_formatter(
                     std::ios_base &ios,
                     icu::Locale const &locale,
                     std::string const &encoding)
         {
             using namespace booster::locale::flags;
 
-            std::auto_ptr<formatter<CharType> > fmt;
+            std::unique_ptr<formatter<CharType> > fmt;
             ios_info &info=ios_info::get(ios);
             uint64_t disp = info.display_flags();
 
@@ -389,7 +389,7 @@ namespace locale {
 
 
             if(disp == posix)
-                return fmt;
+                return std::move(fmt);
            
             UErrorCode err=U_ZERO_ERROR;
             
@@ -455,7 +455,7 @@ namespace locale {
             case strftime:
                 {
                     using namespace flags;
-                    std::auto_ptr<icu::DateFormat> adf;
+                    std::unique_ptr<icu::DateFormat> adf;
                     icu::DateFormat *df = 0;
                     icu::SimpleDateFormat *sdf = cache.date_formatter();
                     // try to use cached first
@@ -555,7 +555,7 @@ namespace locale {
                             adf.reset(new icu::SimpleDateFormat(fmt,locale,err));
                         }
                         if(U_FAILURE(err)) 
-                            return fmt;
+                            return std::move(fmt);
                         df = adf.get();
                     }
 
@@ -563,26 +563,26 @@ namespace locale {
                         
                     // Depending if we own formatter or not
                     if(adf.get())
-                        fmt.reset(new date_format<CharType>(adf,encoding));
+                        fmt.reset(new date_format<CharType>(std::move(adf),encoding));
                     else
                         fmt.reset(new date_format<CharType>(df,encoding));
                 }
                 break;
             }
 
-            return fmt;
+            return std::move(fmt);
         }
 
 
 
     template<>
-    std::auto_ptr<formatter<char> > formatter<char>::create(std::ios_base &ios,icu::Locale const &l,std::string const &e)
+    std::unique_ptr<formatter<char> > formatter<char>::create(std::ios_base &ios,icu::Locale const &l,std::string const &e)
     {
         return generate_formatter<char>(ios,l,e);
     }
 
     template<>
-    std::auto_ptr<formatter<wchar_t> > formatter<wchar_t>::create(std::ios_base &ios,icu::Locale const &l,std::string const &e)
+    std::unique_ptr<formatter<wchar_t> > formatter<wchar_t>::create(std::ios_base &ios,icu::Locale const &l,std::string const &e)
     {
         return generate_formatter<wchar_t>(ios,l,e);
     }

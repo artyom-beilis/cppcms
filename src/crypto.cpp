@@ -14,6 +14,7 @@
 #ifdef CPPCMS_HAVE_OPENSSL
 #  include <openssl/sha.h>
 #endif
+#include <utility>
 #include <vector>
 #include <booster/backtrace.h>
 #include <booster/nowide/cstdio.h>
@@ -228,21 +229,21 @@ namespace crypto {
 
 	} // anon
 	
-	std::auto_ptr<message_digest> message_digest::md5()
+	std::unique_ptr<message_digest> message_digest::md5()
 	{
-		std::auto_ptr<message_digest> d(new md5_digets());
-		return d;
+		std::unique_ptr<message_digest> d(new md5_digets());
+		return std::move(d);
 	}
 
-	std::auto_ptr<message_digest> message_digest::sha1()
+	std::unique_ptr<message_digest> message_digest::sha1()
 	{
-		std::auto_ptr<message_digest> d(new sha1_digets());
-		return d;
+		std::unique_ptr<message_digest> d(new sha1_digets());
+		return std::move(d);
 	}
 
-	std::auto_ptr<message_digest> message_digest::create_by_name(std::string const &namein)
+	std::unique_ptr<message_digest> message_digest::create_by_name(std::string const &namein)
 	{
-		std::auto_ptr<message_digest> d;
+		std::unique_ptr<message_digest> d;
 		std::string name = namein;
 		for(unsigned i=0;i<name.size();i++)
 			if('A' <= name[i] && name[i]<='Z')
@@ -273,7 +274,7 @@ namespace crypto {
 			d.reset(new ssl_sha512());
 		#endif
 		
-		return d;
+		return std::move(d);
 	}
 
 	key::key() : data_(0), size_(0)
@@ -443,11 +444,11 @@ namespace crypto {
 
 	struct hmac::data_ {};
 
-	hmac::hmac(std::auto_ptr<message_digest> digest,key const &k) : key_(k)
+	hmac::hmac(std::unique_ptr<message_digest> digest,key const &k) : key_(k)
 	{
 		if(!digest.get())
 			throw booster::invalid_argument("Has algorithm is not provided");
-		md_ = digest;
+		md_ = std::move(digest);
 		md_opad_.reset(md_->clone());
 		init();
 	}

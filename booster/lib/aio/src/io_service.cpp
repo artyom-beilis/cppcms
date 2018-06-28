@@ -355,7 +355,7 @@ private:
 	// The reactor itself so multiple threads
 	// can dispatch events on same reactor
 	//
-	std::auto_ptr<reactor> reactor_;
+	std::unique_ptr<reactor> reactor_;
 	
 	//
 	// Rest of the data protected by the

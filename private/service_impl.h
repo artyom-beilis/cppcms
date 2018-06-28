@@ -42,21 +42,21 @@ namespace impl {
 
 	private:
 		friend class cppcms::service;
-		std::auto_ptr<booster::aio::io_service> io_service_;
+		std::unique_ptr<booster::aio::io_service> io_service_;
 
 		std::vector<booster::shared_ptr<cgi::acceptor> > acceptors_;
 		#ifndef CPPCMS_WIN32
-		std::auto_ptr<prefork_acceptor> prefork_acceptor_;
+		std::unique_ptr<prefork_acceptor> prefork_acceptor_;
 		#endif
-		std::auto_ptr<json::value> settings_;
-		std::auto_ptr<applications_pool> applications_pool_;
-		std::auto_ptr<thread_pool> thread_pool_;
-		std::auto_ptr<locale::generator> locale_generator_;
-		std::auto_ptr<views::manager> views_pool_;
-		std::auto_ptr<cache_pool> cache_pool_;
-		std::auto_ptr<session_pool> session_pool_;
-		std::auto_ptr<cppcms::forwarder> forwarder_;
-		std::auto_ptr<impl::cached_settings> cached_settings_;
+		std::unique_ptr<json::value> settings_;
+		std::unique_ptr<applications_pool> applications_pool_;
+		std::unique_ptr<thread_pool> thread_pool_;
+		std::unique_ptr<locale::generator> locale_generator_;
+		std::unique_ptr<views::manager> views_pool_;
+		std::unique_ptr<cache_pool> cache_pool_;
+		std::unique_ptr<session_pool> session_pool_;
+		std::unique_ptr<cppcms::forwarder> forwarder_;
+		std::unique_ptr<impl::cached_settings> cached_settings_;
 		std::locale default_locale_;
 
 		std::vector<booster::function<void()> > on_fork_;
@@ -64,7 +64,7 @@ namespace impl {
 		int id_;
 
 		booster::aio::native_type notification_socket_;
-		std::auto_ptr<booster::aio::stream_socket> sig_,breaker_;
+		std::unique_ptr<booster::aio::stream_socket> sig_,breaker_;
 		
 		std::vector<std::string> args_;
 

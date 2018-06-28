@@ -14,7 +14,7 @@ namespace booster {
 namespace locale {
 namespace impl_icu {
     BOOSTER_API
-    std::auto_ptr<util::base_converter> create_uconv_converter(std::string const &encoding);
+    std::unique_ptr<util::base_converter> create_uconv_converter(std::string const &encoding);
 
 } // impl_icu
 } // locale 

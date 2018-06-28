@@ -14,6 +14,8 @@
 #include <cppcms/crypto.h>
 #include <cppcms/cppcms_error.h>
 
+#include <utility>
+
 namespace cppcms {
 namespace sessions {
 namespace impl {
@@ -24,11 +26,11 @@ hmac_factory::hmac_factory(std::string const &algo,crypto::key const &k) :
 {
 }
 
-std::auto_ptr<encryptor> hmac_factory::get()
+std::unique_ptr<encryptor> hmac_factory::get()
 {
-	std::auto_ptr<encryptor> ptr;
+	std::unique_ptr<encryptor> ptr;
 	ptr.reset(new hmac_cipher(algo_,key_));
-	return ptr;
+	return std::move(ptr);
 }
 
 

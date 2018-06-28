@@ -104,7 +104,7 @@ namespace log {
 		char const *file_name_;
 		int file_line_;
 
-		std::auto_ptr<std::ostringstream> message_;
+		std::unique_ptr<std::ostringstream> message_;
 
 		struct data;
 		copy_ptr<data> d;

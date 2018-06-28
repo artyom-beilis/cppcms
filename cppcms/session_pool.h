@@ -66,17 +66,17 @@ namespace cppcms {
 		///
 		/// Assign your own implementation of session_api passing pointer to session_api_factory.
 		///
-		void backend(std::auto_ptr<session_api_factory> b);
+		void backend(std::unique_ptr<session_api_factory> b);
 		///
 		/// Assign your own implementation of sessions::encryptor that would be used for client side session
 		/// management by passing pointer to sessions::encryptor_factory
 		///
-		void encryptor(std::auto_ptr<sessions::encryptor_factory> e);
+		void encryptor(std::unique_ptr<sessions::encryptor_factory> e);
 		///
 		/// Assign your own implementation of sessions::session_storage that would be used for server side session
 		/// management by passing pointer to sessions::session_storage_factory
 		///
-		void storage(std::auto_ptr<sessions::session_storage_factory> s);
+		void storage(std::unique_ptr<sessions::session_storage_factory> s);
 	private:
 
 		impl::cached_settings const &cached_settings();
@@ -102,9 +102,9 @@ namespace cppcms {
 
 		booster::hold_ptr<_data> d;
 
-		std::auto_ptr<session_api_factory> backend_;
-		std::auto_ptr<sessions::encryptor_factory> encryptor_;
-		std::auto_ptr<sessions::session_storage_factory> storage_; 
+		std::unique_ptr<session_api_factory> backend_;
+		std::unique_ptr<sessions::encryptor_factory> encryptor_;
+		std::unique_ptr<sessions::session_storage_factory> storage_; 
 
 		service *service_;
 	};

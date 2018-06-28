@@ -61,8 +61,8 @@ namespace impl {
         typedef impl_icu::icu_std_converter<char> from_type;
         typedef impl_icu::icu_std_converter<CharType> to_type;
 
-        std::auto_ptr<from_type> cvt_from_;
-        std::auto_ptr<to_type> cvt_to_;
+        std::unique_ptr<from_type> cvt_from_;
+        std::unique_ptr<to_type> cvt_to_;
 
     };
   
@@ -105,8 +105,8 @@ namespace impl {
         typedef impl_icu::icu_std_converter<CharType> from_type;
         typedef impl_icu::icu_std_converter<char> to_type;
 
-        std::auto_ptr<from_type> cvt_from_;
-        std::auto_ptr<to_type> cvt_to_;
+        std::unique_ptr<from_type> cvt_from_;
+        std::unique_ptr<to_type> cvt_to_;
 
     };
 
@@ -146,8 +146,8 @@ namespace impl {
         typedef impl_icu::icu_std_converter<char> from_type;
         typedef impl_icu::icu_std_converter<char> to_type;
 
-        std::auto_ptr<from_type> cvt_from_;
-        std::auto_ptr<to_type> cvt_to_;
+        std::unique_ptr<from_type> cvt_from_;
+        std::unique_ptr<to_type> cvt_to_;
 
     };
 

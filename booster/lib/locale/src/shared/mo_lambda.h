@@ -24,7 +24,7 @@ namespace booster {
                     }
                 };
 
-                typedef std::auto_ptr<plural> plural_ptr;
+                typedef std::unique_ptr<plural> plural_ptr;
 
                 plural_ptr compile(char const *c_expression);
 

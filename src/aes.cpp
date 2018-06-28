@@ -15,6 +15,8 @@
 
 #if defined(CPPCMS_HAVE_OPENSSL)
 	#include <openssl/aes.h>
+
+#include <utility>
 	#define CPPCMS_HAVE_AES
 #endif
 
@@ -375,9 +377,9 @@ namespace crypto {
 
 #endif
 
-std::auto_ptr<cbc> cbc::create(std::string const &name)
+std::unique_ptr<cbc> cbc::create(std::string const &name)
 {
-	std::auto_ptr<cbc> res;
+	std::unique_ptr<cbc> res;
 	if(name=="aes" || name=="AES" || name=="aes128" || name=="aes-128" || name=="AES128" || name=="AES-128")
 		res = cbc::create(aes128);
 	else if(name=="aes192" || name=="aes-192" || name=="AES192" || name=="AES-192")
@@ -385,12 +387,12 @@ std::auto_ptr<cbc> cbc::create(std::string const &name)
 	else if(name=="aes256" || name=="aes-256" || name=="AES256" || name=="AES-256")
 		res = cbc::create(aes256);
 
-	return res;
+	return std::move(res);
 }
 
-std::auto_ptr<cbc> cbc::create(cbc::cbc_type type)
+std::unique_ptr<cbc> cbc::create(cbc::cbc_type type)
 {
-	std::auto_ptr<cbc> res;
+	std::unique_ptr<cbc> res;
 	switch(type) {
 #ifdef CPPCMS_HAVE_AES
 	case aes128:
@@ -406,7 +408,7 @@ std::auto_ptr<cbc> cbc::create(cbc::cbc_type type)
 	default:
 		;
 	}
-	return res;
+	return std::move(res);
 }
 
 

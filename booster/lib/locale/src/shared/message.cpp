@@ -625,7 +625,7 @@ namespace booster {
                     key_conversion_required_ =  sizeof(CharType) == 1 
                                                 && compare_encodings(locale_encoding,key_encoding)!=0;
 
-                    std::auto_ptr<mo_file> mo;
+                    std::unique_ptr<mo_file> mo;
 
                     if(callback) {
                         std::vector<char> vfile = callback(file_name,locale_encoding);
@@ -649,7 +649,7 @@ namespace booster {
                         throw booster::runtime_error("Invalid mo-format, encoding is not specified");
 
                     if(!plural.empty()) {
-                        std::auto_ptr<lambda::plural> ptr=lambda::compile(plural.c_str());
+                        std::unique_ptr<lambda::plural> ptr=lambda::compile(plural.c_str());
                         plural_forms_[id] = ptr;
                     }
 

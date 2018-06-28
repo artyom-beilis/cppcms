@@ -14,6 +14,7 @@
 #include <cppcms/config.h>
 #include <cppcms/view.h>
 #include <string>
+#include <utility>
 #include <vector>
 #include <iomanip>
 #include "dummy_api.h"

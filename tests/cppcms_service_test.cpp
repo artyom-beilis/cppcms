@@ -10,6 +10,7 @@
 #include <cppcms/applications_pool.h>
 #include <cppcms/http_response.h>
 #include <iostream>
+#include <utility>
 
 #include <sys/types.h>
 #include <unistd.h>

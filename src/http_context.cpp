@@ -27,6 +27,8 @@
 #include "cached_settings.h"
 
 #include <cppcms/config.h>
+
+#include <utility>
 #include "binder.h"
 
 
@@ -37,9 +39,9 @@ namespace http {
 		std::locale locale;
 		std::string skin;
 		http::request request;
-		std::auto_ptr<http::response> response;
-		std::auto_ptr<cache_interface> cache;
-		std::auto_ptr<session_interface> session;
+		std::unique_ptr<http::response> response;
+		std::unique_ptr<cache_interface> cache;
+		std::unique_ptr<session_interface> session;
 		booster::shared_ptr<application_specific_pool> pool;
 		booster::intrusive_ptr<application> app;
 		std::string matched;

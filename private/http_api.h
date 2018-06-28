@@ -17,7 +17,7 @@ namespace cppcms {
 namespace impl {
 namespace cgi {
 	class acceptor;
-	std::auto_ptr<acceptor> http_api_factory(cppcms::service &srv,std::string ip,int port,int backlog);
+	std::unique_ptr<acceptor> http_api_factory(cppcms::service &srv,std::string ip,int port,int backlog);
 } // cgi
 } // impl
 } // cppcms

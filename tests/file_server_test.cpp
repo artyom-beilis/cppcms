@@ -17,6 +17,7 @@
 #include <cppcms/copy_filter.h>
 #include "internal_file_server.h"
 #include <iostream>
+#include <utility>
 #include "client.h"
 #include "test.h"
 #ifdef CPPCMS_WIN_NATIVE

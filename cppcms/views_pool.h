@@ -35,7 +35,7 @@ namespace cppcms {
 		class CPPCMS_API generator : public booster::noncopyable {
 		public:
 			/// The callback that creates a single view
-			typedef std::auto_ptr<base_view> view_factory_type(std::ostream &,base_content *c);
+			typedef std::unique_ptr<base_view> view_factory_type(std::ostream &,base_content *c);
 
 			generator();
 			~generator();
@@ -76,7 +76,7 @@ namespace cppcms {
 			/// Create a view by its name that writes that data to \a outout using
 			/// a content \a content.
 			///
-			std::auto_ptr<base_view> create(std::string const &view_name,
+			std::unique_ptr<base_view> create(std::string const &view_name,
 							std::ostream &output,
 							base_content *content) const;
 			///
@@ -86,9 +86,9 @@ namespace cppcms {
 		private:
 			
 			template<typename View,typename Content>
-			static std::auto_ptr<base_view> view_builder(std::ostream &stream,base_content *c) 
+			static std::unique_ptr<base_view> view_builder(std::ostream &stream,base_content *c) 
 			{
-				std::auto_ptr<base_view> p;
+				std::unique_ptr<base_view> p;
 				
 				try {
 					p.reset(new View(stream,dynamic_cast<Content &>(*c)));
@@ -96,14 +96,14 @@ namespace cppcms {
 				catch(std::bad_cast const &) {
 					throw cppcms_error("cppcms::views::generator: an attempt to use content of invalid type");
 				}
-				return p;
+				return std::move(p);
 			}
 			
 			template<typename View,typename Content>
-			static std::auto_ptr<base_view> unsafe_view_builder(std::ostream &stream,base_content *c) 
+			static std::unique_ptr<base_view> unsafe_view_builder(std::ostream &stream,base_content *c) 
 			{
-				std::auto_ptr<base_view> p(new View(stream,static_cast<Content &>(*c)));
-				return p;
+				std::unique_ptr<base_view> p(new View(stream,static_cast<Content &>(*c)));
+				return std::move(p);
 			}
 			
 

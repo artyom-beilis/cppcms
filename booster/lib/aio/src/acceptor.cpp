@@ -9,6 +9,8 @@
 #include "socket_details.h"
 #include <booster/aio/socket.h>
 
+#include <utility>
+
 //#define BOOSTER_AIO_FORCE_POLL
 
 
@@ -101,7 +103,7 @@ namespace {
 		acceptor *source;
 		async_acceptor(event_handler const &_h,stream_socket *_t,acceptor *_s) : h(_h),target(_t),source(_s) {}
 
-		typedef std::auto_ptr<async_acceptor> pointer;
+		typedef std::unique_ptr<async_acceptor> pointer;
 
 		void operator()(system::error_code const &e)
 		{
@@ -122,7 +124,7 @@ void acceptor::async_accept(stream_socket &target,event_handler const &h)
 	if(!dont_block(h))
 		return;
 	async_acceptor::pointer acceptor(new async_acceptor( h, &target, this ));
-	on_readable(acceptor);
+	on_readable(std::move(acceptor));
 }
 
 

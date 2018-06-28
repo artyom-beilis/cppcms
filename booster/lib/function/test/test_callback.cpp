@@ -8,6 +8,7 @@
 #include <booster/callback.h>
 #include "test.h"
 #include <iostream>
+#include <utility>
 
 bool foov_called;
 void foov() { 
@@ -101,8 +102,8 @@ int main()
 		TEST(fcnt2()==4);
 		
 		{
-			std::auto_ptr<mycall> mc(new mycall());
-			callback<void()> f(mc);
+			std::unique_ptr<mycall> mc(new mycall());
+			callback<void()> f(std::move(mc));
 			f();
 			TEST(mycall_called); mycall_called=false;
 		}
@@ -113,9 +114,9 @@ int main()
 			TEST(mycall_called); mycall_called=false;
 		}
 		{
-			std::auto_ptr<mycall> mc(new mycall());
+			std::unique_ptr<mycall> mc(new mycall());
 			callback<void()> f;
-			f=mc;
+			f=std::move(mc);
 			f();
 			TEST(mycall_called); mycall_called=false;
 		}
@@ -127,8 +128,8 @@ int main()
 			TEST(mycall_called); mycall_called=false;
 		}
 		{
-			std::auto_ptr<myicall> mc(new myicall());
-			callback<void(int)> f(mc);
+			std::unique_ptr<myicall> mc(new myicall());
+			callback<void(int)> f(std::move(mc));
 			f(2);
 			TEST(mycall_called); mycall_called=false;
 		}
@@ -139,9 +140,9 @@ int main()
 			TEST(mycall_called); mycall_called=false;
 		}
 		{
-			std::auto_ptr<myicall> mc(new myicall());
+			std::unique_ptr<myicall> mc(new myicall());
 			callback<void(int)> f;
-			f=mc;
+			f=std::move(mc);
 			f(2);
 			TEST(mycall_called); mycall_called=false;
 		}

@@ -79,7 +79,7 @@ namespace booster {
 		///
 		/// Assign an io_device to the streambuf transferring an ownership on it
 		///
-		void device(std::auto_ptr<io_device> d);
+		void device(std::unique_ptr<io_device> d);
 		///
 		/// Assign an existing io_device to the streambuf.
 		///
@@ -130,7 +130,7 @@ namespace booster {
 		struct _data;
 		hold_ptr<_data> d; // for future use
 
-		std::auto_ptr<io_device> device_auto_ptr_;
+		std::unique_ptr<io_device> device_auto_ptr_;
 		io_device *device_;
 
 	};

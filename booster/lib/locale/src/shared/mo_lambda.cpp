@@ -9,6 +9,8 @@
 #include <string.h>
 #include <stdlib.h>
 
+#include <utility>
+
 namespace booster {
 namespace locale {
 namespace gnu_gettext {
@@ -29,7 +31,7 @@ namespace { // anon
     struct unary : public plural 
     {
         unary(plural_ptr ptr) : 
-            op1(ptr)
+            op1(std::move(ptr))
         {
         }
     protected:
@@ -40,8 +42,8 @@ namespace { // anon
     struct binary : public plural 
     {
         binary(plural_ptr p1,plural_ptr p2) :
-            op1(p1),
-            op2(p2)
+            op1(std::move(p1)),
+            op2(std::move(p2))
         {
         }
     protected:
@@ -169,9 +171,9 @@ namespace { // anon
 
     struct conditional : public plural {
         conditional(plural_ptr p1,plural_ptr p2,plural_ptr p3) :
-             op1(p1),
-             op2(p2),
-             op3(p3)
+             op1(std::move(p1)),
+             op2(std::move(p2)),
+             op3(std::move(p3))
         {
         }
         virtual int operator()(int n) const
@@ -183,7 +185,7 @@ namespace { // anon
             plural_ptr op1_copy(op1->clone());      
             plural_ptr op2_copy(op2->clone());      
             plural_ptr op3_copy(op3->clone());      
-            return new conditional(op1_copy,op2_copy,op3_copy);     
+            return new conditional(std::move(op1_copy),std::move(op2_copy),std::move(op3_copy));     
         }                                           
     private:
         plural_ptr op1,op2,op3;
@@ -194,24 +196,24 @@ namespace { // anon
     {
 
         switch(value) {
-        case '/':  return plural_ptr(new div(left,right));
-        case '*':  return plural_ptr(new mul(left,right));
-        case '%':  return plural_ptr(new mod(left,right));
-        case '+':  return plural_ptr(new add(left,right));
-        case '-':  return plural_ptr(new sub(left,right));
-        case SHL:  return plural_ptr(new shl(left,right));
-        case SHR:  return plural_ptr(new shr(left,right));
-        case '>':  return plural_ptr(new  gt(left,right));
-        case '<':  return plural_ptr(new  lt(left,right));
-        case GTE:  return plural_ptr(new gte(left,right));
-        case LTE:  return plural_ptr(new lte(left,right));
-        case  EQ:  return plural_ptr(new  eq(left,right));
-        case NEQ:  return plural_ptr(new neq(left,right));
-        case '&':  return plural_ptr(new bin_and(left,right));
-        case '^':  return plural_ptr(new bin_xor(left,right));
-        case '|':  return plural_ptr(new bin_or (left,right));
-        case AND:  return plural_ptr(new l_and(left,right));
-        case  OR:  return plural_ptr(new l_or(left,right));
+        case '/':  return plural_ptr(new div(std::move(left),std::move(right)));
+        case '*':  return plural_ptr(new mul(std::move(left),std::move(right)));
+        case '%':  return plural_ptr(new mod(std::move(left),std::move(right)));
+        case '+':  return plural_ptr(new add(std::move(left),std::move(right)));
+        case '-':  return plural_ptr(new sub(std::move(left),std::move(right)));
+        case SHL:  return plural_ptr(new shl(std::move(left),std::move(right)));
+        case SHR:  return plural_ptr(new shr(std::move(left),std::move(right)));
+        case '>':  return plural_ptr(new  gt(std::move(left),std::move(right)));
+        case '<':  return plural_ptr(new  lt(std::move(left),std::move(right)));
+        case GTE:  return plural_ptr(new gte(std::move(left),std::move(right)));
+        case LTE:  return plural_ptr(new lte(std::move(left),std::move(right)));
+        case  EQ:  return plural_ptr(new  eq(std::move(left),std::move(right)));
+        case NEQ:  return plural_ptr(new neq(std::move(left),std::move(right)));
+        case '&':  return plural_ptr(new bin_and(std::move(left),std::move(right)));
+        case '^':  return plural_ptr(new bin_xor(std::move(left),std::move(right)));
+        case '|':  return plural_ptr(new bin_or (std::move(left),std::move(right)));
+        case AND:  return plural_ptr(new l_and(std::move(left),std::move(right)));
+        case  OR:  return plural_ptr(new l_or(std::move(left),std::move(right)));
         default:
             return plural_ptr();
         }
@@ -305,7 +307,7 @@ namespace { // anon
             if(res.get() && t.next()!=END) {
                 return plural_ptr();
             };
-            return res;
+            return std::move(res);
         }
 
     private:
@@ -319,7 +321,7 @@ namespace { // anon
                     return plural_ptr();
                 if(t.get()!=')')
                     return plural_ptr();
-                return op;
+                return std::move(op);
             }
             else if(t.next()==NUM) {
                 int value;
@@ -343,11 +345,11 @@ namespace { // anon
                     return plural_ptr();
                 switch(op) {
                 case '-': 
-                    return plural_ptr(new minus(op1));
+                    return plural_ptr(new minus(std::move(op1)));
                 case '!': 
-                    return plural_ptr(new l_not(op1));
+                    return plural_ptr(new l_not(std::move(op1)));
                 case '~': 
-                    return plural_ptr(new bin_not(op1));
+                    return plural_ptr(new bin_not(std::move(op1)));
                 default:
                     return plural_ptr();
                 }
@@ -383,9 +385,9 @@ namespace { // anon
                     return plural_ptr();
             }
             else {
-                return cond;
+                return std::move(cond);
             }
-            return plural_ptr(new conditional(cond,case1,case2));
+            return plural_ptr(new conditional(std::move(cond),std::move(case1),std::move(case2)));
         }
 
         tokenizer &t;

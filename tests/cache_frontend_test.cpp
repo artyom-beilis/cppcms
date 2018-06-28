@@ -17,6 +17,7 @@
 
 #include <iomanip>
 #include <sstream>
+#include <utility>
 
 #include <cppcms/serialization.h>
 

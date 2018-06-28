@@ -42,7 +42,7 @@ namespace booster {
 
 	extern "C" void *booster_thread_func(void *p)
 	{
-		std::auto_ptr<thread_function_type> caller(reinterpret_cast<thread_function_type *>(p));
+		std::unique_ptr<thread_function_type> caller(reinterpret_cast<thread_function_type *>(p));
 		try {
 			thread_function_type &func = *caller;
 			func();

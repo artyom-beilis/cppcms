@@ -13,6 +13,7 @@
 #include <cppcms/cppcms_error.h>
 #include <cppcms/json.h>
 #include <list>
+#include <utility>
 #include <vector>
 #include <cppcms/config.h>
 #include <booster/regex.h>
@@ -398,17 +399,17 @@ void application_specific_pool::prepopulate(cppcms::service &srv)
 namespace impl {
 	class legacy_sync_pool : public application_specific_pool {
 	public:
-		legacy_sync_pool(std::auto_ptr<applications_pool::factory> f)
+		legacy_sync_pool(std::unique_ptr<applications_pool::factory> f)
 		{
-			fact_ = f;
+			fact_ = std::move(f);
 		}
 		application *new_application(cppcms::service &srv)
 		{
-			std::auto_ptr<application> a = (*fact_)(srv);
+			std::unique_ptr<application> a = (*fact_)(srv);
 			return a.release();
 		}
 	private:
-		std::auto_ptr<applications_pool::factory> fact_;	
+		std::unique_ptr<applications_pool::factory> fact_;	
 	};
 
 	class legacy_async_pool : public application_specific_pool
@@ -454,9 +455,9 @@ applications_pool::~applications_pool()
 }
 
 
-void applications_pool::mount(std::auto_ptr<factory> aps,mount_point const &mp)
+void applications_pool::mount(std::unique_ptr<factory> aps,mount_point const &mp)
 {
-	booster::shared_ptr<application_specific_pool> p(new impl::legacy_sync_pool(aps));
+	booster::shared_ptr<application_specific_pool> p(new impl::legacy_sync_pool(std::move(aps)));
 	p->size(d->thread_count);
 	p->flags(app::legacy);
 
@@ -464,9 +465,9 @@ void applications_pool::mount(std::auto_ptr<factory> aps,mount_point const &mp)
 	d->apps.push_back(_data::attachment(p,mp));
 }
 
-void applications_pool::mount(std::auto_ptr<factory> aps)
+void applications_pool::mount(std::unique_ptr<factory> aps)
 {
-	mount(aps,mount_point());
+	mount(std::move(aps),mount_point());
 }
 void applications_pool::mount(booster::intrusive_ptr<application> app)
 {

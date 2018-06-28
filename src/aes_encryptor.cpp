@@ -10,6 +10,7 @@
 #include <stdio.h>
 
 #include <string>
+#include <utility>
 #include <vector>
 #include <algorithm>
 #include <sstream>
@@ -40,8 +41,8 @@ aes_factory::aes_factory(std::string const &algo,crypto::key const &k) :
 	cbc_(algo),
 	hmac_("sha1")
 {
-	std::auto_ptr<crypto::message_digest> md_ptr(crypto::message_digest::create_by_name(hmac_));
-	std::auto_ptr<crypto::cbc> cbc_ptr(crypto::cbc::create(algo));
+	std::unique_ptr<crypto::message_digest> md_ptr(crypto::message_digest::create_by_name(hmac_));
+	std::unique_ptr<crypto::cbc> cbc_ptr(crypto::cbc::create(algo));
 	if(!cbc_ptr.get()) {
 		throw booster::invalid_argument("cppcms::sessions::aes_factory: the algorithm " + algo + " is not supported,"
 						" or the cppcms library was compiled without OpenSSL/GNU-TLS support");
@@ -77,11 +78,11 @@ aes_factory::aes_factory(std::string const &algo,crypto::key const &k) :
 }
 
 
-std::auto_ptr<encryptor> aes_factory::get()
+std::unique_ptr<encryptor> aes_factory::get()
 {
-	std::auto_ptr<encryptor> ptr;
+	std::unique_ptr<encryptor> ptr;
 	ptr.reset(new aes_cipher(cbc_,hmac_,cbc_key_,hmac_key_));
-	return ptr;
+	return std::move(ptr);
 }
 
 
@@ -124,7 +125,7 @@ std::string aes_cipher::encrypt(string const &plain)
 {
 	load();
 	
-	std::auto_ptr<crypto::message_digest> digest(digest_->clone());
+	std::unique_ptr<crypto::message_digest> digest(digest_->clone());
 
 	unsigned digest_size = digest->digest_size();
 	uint32_t size = plain.size();
@@ -141,7 +142,7 @@ std::string aes_cipher::encrypt(string const &plain)
 	memcpy(&input[cbc_block_size + sizeof(size)],plain.c_str(),plain.size());
 	
 	cbc_->encrypt(&input.front(),&output.front(),block_size);
-	crypto::hmac signature(digest,mac_key_);
+	crypto::hmac signature(std::move(digest),mac_key_);
 	signature.append(&output[0],block_size);
 	signature.readout(&output[block_size]);
 
@@ -164,7 +165,7 @@ bool aes_cipher::decrypt(std::string const &cipher,std::string &plain)
 		return false;
 	}
 	
-	crypto::hmac signature(std::auto_ptr<crypto::message_digest>(digest_->clone()),mac_key_);
+	crypto::hmac signature(std::unique_ptr<crypto::message_digest>(digest_->clone()),mac_key_);
 	signature.append(cipher.c_str(),real_size);
 	std::vector<char> verify(digest_size,0);
 	signature.readout(&verify[0]);

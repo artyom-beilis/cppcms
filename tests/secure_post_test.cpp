@@ -16,6 +16,7 @@
 #include <cppcms/json.h>
 #include <cppcms/form.h>
 #include <iostream>
+#include <utility>
 #include "client.h"
 #include "test.h"
 

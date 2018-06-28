@@ -16,6 +16,7 @@
 #include <cppcms/serialization.h>
 #include <cppcms/json.h>
 #include <iostream>
+#include <utility>
 #include "client.h"
 #include "test.h"
 

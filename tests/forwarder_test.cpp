@@ -16,6 +16,7 @@
 #include <cppcms/json.h>
 #include <cppcms/forwarder.h>
 #include <iostream>
+#include <utility>
 #include "client.h"
 #include "test.h"
 #include <booster/shared_ptr.h>

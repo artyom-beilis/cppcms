@@ -18,6 +18,7 @@
 #include "../../locale/src/util/timezone.h"
 #include <locale>
 #include <set>
+#include <utility>
 #include <string.h>
 
 #include <stdio.h>
@@ -68,7 +69,7 @@ namespace log {
 		module_(other.module_),
 		file_name_(other.file_name_),
 		file_line_(other.file_line_),
-		message_(other.message_)
+		message_(std::move(other.message_))
 	{
 	}
 	message &message::operator=(message &other) 
@@ -78,7 +79,7 @@ namespace log {
 			module_ = other.module_;
 			file_name_=other.file_name_;
 			file_line_=other.file_line_;
-			message_=other.message_;
+			message_=std::move(other.message_);
 		}
 		return *this;
 	}

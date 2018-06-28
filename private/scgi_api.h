@@ -17,10 +17,10 @@ namespace cppcms {
 namespace impl {
 namespace cgi {
 	class acceptor;
-	std::auto_ptr<acceptor> scgi_api_tcp_socket_factory(cppcms::service &srv,std::string ip,int port,int backlog);
+	std::unique_ptr<acceptor> scgi_api_tcp_socket_factory(cppcms::service &srv,std::string ip,int port,int backlog);
 #if !defined(CPPCMS_WIN32)
-	std::auto_ptr<acceptor> scgi_api_unix_socket_factory(cppcms::service &srv,std::string socket,int backlog);
-	std::auto_ptr<acceptor> scgi_api_unix_socket_factory(cppcms::service &srv,int backlog);
+	std::unique_ptr<acceptor> scgi_api_unix_socket_factory(cppcms::service &srv,std::string socket,int backlog);
+	std::unique_ptr<acceptor> scgi_api_unix_socket_factory(cppcms::service &srv,int backlog);
 #endif 
 
 } // cgi

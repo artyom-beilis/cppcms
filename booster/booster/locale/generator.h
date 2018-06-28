@@ -220,7 +220,7 @@ namespace booster {
             void operator=(generator const &);
 
             struct data;
-            std::auto_ptr<data> d;
+            std::unique_ptr<data> d;
         };
 
     }

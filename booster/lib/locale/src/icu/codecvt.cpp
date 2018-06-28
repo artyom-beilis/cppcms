@@ -21,6 +21,7 @@
 #endif
 
 #include "icu_util.h"
+#include <utility>
 #include <vector>
 namespace booster {
 namespace locale {
@@ -117,9 +118,9 @@ namespace impl_icu {
         int max_len_;
     };
     
-    std::auto_ptr<util::base_converter> create_uconv_converter(std::string const &encoding)
+    std::unique_ptr<util::base_converter> create_uconv_converter(std::string const &encoding)
     {
-        std::auto_ptr<util::base_converter> cvt;
+        std::unique_ptr<util::base_converter> cvt;
         try {
             cvt.reset(new uconv_converter(encoding));
         }
@@ -127,7 +128,7 @@ namespace impl_icu {
         {
             // no encoding so we return empty pointer
         }
-        return cvt;
+        return std::move(cvt);
     }
 
     std::locale create_codecvt(std::locale const &in,std::string const &encoding,character_facet_type type)
@@ -139,7 +140,7 @@ namespace impl_icu {
             return util::create_simple_codecvt(in,encoding,type);
         }
         catch(booster::locale::conv::invalid_charset_error const &) {
-            std::auto_ptr<util::base_converter> cvt;
+            std::unique_ptr<util::base_converter> cvt;
             try {
                 cvt = create_uconv_converter(encoding);
             }
@@ -147,7 +148,7 @@ namespace impl_icu {
             {
                 cvt.reset(new util::base_converter());
             }
-            return util::create_codecvt(in,cvt,type);
+            return util::create_codecvt(in,std::move(cvt),type);
         }
     }
 

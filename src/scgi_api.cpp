@@ -12,6 +12,7 @@
 #include "service_impl.h"
 #include "cppcms_error_category.h"
 #include <iostream>
+#include <utility>
 #include <stdlib.h>
 #include <stdio.h>
 #include <cppcms/config.h>
@@ -168,21 +169,21 @@ namespace cgi {
 
 	
 	
-	std::auto_ptr<acceptor> scgi_api_tcp_socket_factory(cppcms::service &srv,std::string ip,int port,int backlog)
+	std::unique_ptr<acceptor> scgi_api_tcp_socket_factory(cppcms::service &srv,std::string ip,int port,int backlog)
 	{
-		std::auto_ptr<acceptor> a(new socket_acceptor<scgi>(srv,ip,port,backlog));
-		return a;
+		std::unique_ptr<acceptor> a(new socket_acceptor<scgi>(srv,ip,port,backlog));
+		return std::move(a);
 	}
 #if !defined(CPPCMS_WIN32)
-	std::auto_ptr<acceptor> scgi_api_unix_socket_factory(cppcms::service &srv,std::string socket,int backlog)
+	std::unique_ptr<acceptor> scgi_api_unix_socket_factory(cppcms::service &srv,std::string socket,int backlog)
 	{
-		std::auto_ptr<acceptor> a(new socket_acceptor<scgi>(srv,socket,backlog));
-		return a;
+		std::unique_ptr<acceptor> a(new socket_acceptor<scgi>(srv,socket,backlog));
+		return std::move(a);
 	}
-	std::auto_ptr<acceptor> scgi_api_unix_socket_factory(cppcms::service &srv,int backlog)
+	std::unique_ptr<acceptor> scgi_api_unix_socket_factory(cppcms::service &srv,int backlog)
 	{
-		std::auto_ptr<acceptor> a(new socket_acceptor<scgi>(srv,backlog));
-		return a;
+		std::unique_ptr<acceptor> a(new socket_acceptor<scgi>(srv,backlog));
+		return std::move(a);
 	}
 #endif
 

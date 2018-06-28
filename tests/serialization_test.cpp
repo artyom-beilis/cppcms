@@ -431,7 +431,7 @@ int main()
 		test_ptr<booster::hold_ptr<int> >();
 		test_ptr<booster::copy_ptr<int> >();
 		test_ptr<booster::clone_ptr<int> >();
-		test_ptr<std::auto_ptr<int> >();
+		test_ptr<std::unique_ptr<int> >();
 
 		std::cout << "Testing object serialization" << std::endl;
 		{

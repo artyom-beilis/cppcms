@@ -14,6 +14,7 @@
 #include <cppcms/form.h>
 #include <cppcms/http_response.h>
 #include <iostream>
+#include <utility>
 
 #include "client.h"
 

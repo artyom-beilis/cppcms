@@ -699,11 +699,11 @@ namespace cgi {
 				return;
 			}
 			body_.resize(cur_size + rec_size);
-			std::auto_ptr<booster::callable<void(booster::system::error_code const &,size_t)> > cb;
+			std::unique_ptr<booster::callable<void(booster::system::error_code const &,size_t)> > cb;
 			cb.reset(new on_header_read_binder(h,self()));
 			async_read_from_socket(
 				&body_[cur_size],rec_size,
-				cb);
+				std::move(cb));
 		}
 		void on_body_read(booster::system::error_code const &e,handler const &h)
 		{
@@ -851,23 +851,23 @@ namespace cgi {
 		}
 	};
 
-	std::auto_ptr<acceptor> fastcgi_api_tcp_socket_factory(cppcms::service &srv,std::string ip,int port,int backlog)
+	std::unique_ptr<acceptor> fastcgi_api_tcp_socket_factory(cppcms::service &srv,std::string ip,int port,int backlog)
 	{
-		std::auto_ptr<acceptor> a(new socket_acceptor<fastcgi>(srv,ip,port,backlog));
-		return a;
+		std::unique_ptr<acceptor> a(new socket_acceptor<fastcgi>(srv,ip,port,backlog));
+		return std::move(a);
 	}
 
 #if !defined(CPPCMS_WIN32)
 
-	std::auto_ptr<acceptor> fastcgi_api_unix_socket_factory(cppcms::service &srv,std::string socket,int backlog)
+	std::unique_ptr<acceptor> fastcgi_api_unix_socket_factory(cppcms::service &srv,std::string socket,int backlog)
 	{
-		std::auto_ptr<acceptor> a(new socket_acceptor<fastcgi>(srv,socket,backlog));
-		return a;
+		std::unique_ptr<acceptor> a(new socket_acceptor<fastcgi>(srv,socket,backlog));
+		return std::move(a);
 	}
-	std::auto_ptr<acceptor> fastcgi_api_unix_socket_factory(cppcms::service &srv,int backlog)
+	std::unique_ptr<acceptor> fastcgi_api_unix_socket_factory(cppcms::service &srv,int backlog)
 	{
-		std::auto_ptr<acceptor> a(new socket_acceptor<fastcgi>(srv,backlog));
-		return a;
+		std::unique_ptr<acceptor> a(new socket_acceptor<fastcgi>(srv,backlog));
+		return std::move(a);
 	}
 #endif
 

@@ -87,7 +87,7 @@ namespace impl_icu {
         ///
         /// Would create a new spelling formatter only once.
         ///
-        static std::auto_ptr<formatter> create(std::ios_base &ios,icu::Locale const &l,std::string const &enc);
+        static std::unique_ptr<formatter> create(std::ios_base &ios,icu::Locale const &l,std::string const &enc);
 
         virtual ~formatter()
         {
@@ -98,13 +98,13 @@ namespace impl_icu {
     /// Specialization for real implementation
     ///
     template<>
-    std::auto_ptr<formatter<char> > formatter<char>::create(std::ios_base &ios,icu::Locale const &l,std::string const &enc);
+    std::unique_ptr<formatter<char> > formatter<char>::create(std::ios_base &ios,icu::Locale const &l,std::string const &enc);
 
     ///
     /// Specialization for real implementation
     ///
     template<>
-    std::auto_ptr<formatter<wchar_t> > formatter<wchar_t>::create(std::ios_base &ios,icu::Locale const &l,std::string const &e);
+    std::unique_ptr<formatter<wchar_t> > formatter<wchar_t>::create(std::ios_base &ios,icu::Locale const &l,std::string const &e);
 
     #ifdef BOOSTER_HAS_CHAR16_T
     ///

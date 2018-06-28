@@ -122,8 +122,8 @@ template<typename Setup>
 class mem_cache : public base_cache {
 	typedef typename Setup::mutex_type mutex_type;
 	typedef typename Setup::shared_mutex_type shared_mutex_type;
-	std::auto_ptr<mutex_type> lru_mutex;
-	std::auto_ptr<shared_mutex_type> access_lock;
+	std::unique_ptr<mutex_type> lru_mutex;
+	std::unique_ptr<shared_mutex_type> access_lock;
 	typedef typename Setup::allocator allocator;
 	typedef typename Setup::lock_guard lock_guard;
 	typedef typename Setup::rdlock_guard rdlock_guard;
