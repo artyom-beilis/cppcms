@@ -125,7 +125,7 @@ int main()
 	try {
 
 		booster::shared_ptr<cppcms::sessions::session_storage> storage;
-		std::unique_ptr<cppcms::sessions::session_storage_factory> storage_factory;
+		//std::unique_ptr<cppcms::sessions::session_storage_factory> storage_factory;
 		using namespace cppcms::sessions;
 
 		std::cout << "Testing memory storage" << std::endl;

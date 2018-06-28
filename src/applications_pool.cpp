@@ -15,6 +15,7 @@
 #include <list>
 #include <utility>
 #include <vector>
+#include <cassert>
 #include <cppcms/config.h>
 #include <booster/regex.h>
 #include <booster/shared_ptr.h>

@@ -221,7 +221,7 @@ namespace impl_posix {
         catch(std::exception const &e) {
             // Nothing to do, just retrun empty cvt
         }
-        return std::move(cvt);
+        return cvt;
     }
 
 #else // no iconv

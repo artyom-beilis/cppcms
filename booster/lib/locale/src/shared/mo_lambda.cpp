@@ -71,7 +71,7 @@ namespace { // anon
 
     #define UNOP(name,oper)                         \
     struct name: public unary {                     \
-        name(plural_ptr op) : unary(op)             \
+        name(plural_ptr op) : unary(std::move(op))	\
         {                                           \
         };                                          \
         virtual int operator()(int n) const         \
@@ -81,7 +81,7 @@ namespace { // anon
         virtual name *clone() const                 \
         {                                           \
             plural_ptr op1_copy(op1->clone());      \
-            return new name(op1_copy);              \
+            return new name(std::move(op1_copy));	\
         }                                           \
     };
 
@@ -89,7 +89,7 @@ namespace { // anon
     struct name : public binary                     \
     {                                               \
         name(plural_ptr p1,plural_ptr p2) :         \
-            binary(p1,p2)                           \
+            binary(std::move(p1),std::move(p2))		\
         {                                           \
         }                                           \
                                                     \
@@ -101,14 +101,14 @@ namespace { // anon
         {                                           \
             plural_ptr op1_copy(op1->clone());      \
             plural_ptr op2_copy(op2->clone());      \
-            return new name(op1_copy,op2_copy);     \
+            return new name(std::move(op1_copy),std::move(op2_copy));	\
         }                                           \
     };
 
     #define BINOPD(name,oper)                       \
     struct name : public binary {                   \
         name(plural_ptr p1,plural_ptr p2) :         \
-            binary(p1,p2)                           \
+            binary(std::move(p1),std::move(p2))		\
         {                                           \
         }                                           \
         virtual int operator()(int n) const         \
@@ -121,7 +121,7 @@ namespace { // anon
         {                                           \
             plural_ptr op1_copy(op1->clone());      \
             plural_ptr op2_copy(op2->clone());      \
-            return new name(op1_copy,op2_copy);     \
+            return new name(std::move(op1_copy),std::move(op2_copy));	\
         }                                           \
     };
 
@@ -291,7 +291,7 @@ namespace { // anon
                 int o=t.get();                                      \
                 if((op2=hexpr()).get()==0)                          \
                     return plural_ptr();                            \
-                op1=bin_factory(o,op1,op2);                         \
+                op1=bin_factory(o,std::move(op1),std::move(op2));	\
             }                                                       \
             return op1;                                             \
         }
@@ -307,7 +307,7 @@ namespace { // anon
             if(res.get() && t.next()!=END) {
                 return plural_ptr();
             };
-            return std::move(res);
+            return res;
         }
 
     private:
@@ -321,7 +321,7 @@ namespace { // anon
                     return plural_ptr();
                 if(t.get()!=')')
                     return plural_ptr();
-                return std::move(op);
+                return op;
             }
             else if(t.next()==NUM) {
                 int value;
@@ -385,7 +385,7 @@ namespace { // anon
                     return plural_ptr();
             }
             else {
-                return std::move(cond);
+                return cond;
             }
             return plural_ptr(new conditional(std::move(cond),std::move(case1),std::move(case2)));
         }

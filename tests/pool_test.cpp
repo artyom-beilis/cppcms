@@ -18,6 +18,7 @@
 #include <cppcms/json.h>
 #include <booster/thread.h>
 #include <iostream>
+#include <cassert>
 #include "client.h"
 #include <sstream>
 #include <utility>
@@ -166,9 +167,9 @@ public:
 			counter::instance(request().get("id"))->print(response().out());
 		else if(name=="/unmount") {
 			std::string id = request().get("id");
-			bool exists_before = weak_pools[id].lock();
+			bool exists_before = !weak_pools[id].expired();
 			service().applications_pool().unmount(weak_pools[id]);
-			bool exists_after = weak_pools[id].lock();
+			bool exists_after = !weak_pools[id].expired();
 			response().out()<<"unmount=" << id << "\n"
 				"before="<<exists_before <<"\n"
 				"after="<<exists_after;

@@ -53,11 +53,11 @@ namespace booster {
                 for(unsigned i=0;i<all_backends_.size();i++)
                     backends.push_back(all_backends_[i].second);
                 std::unique_ptr<localization_backend> res(new actual_backend(backends,default_backends_));
-                return std::move(res);
+                return res;
             }
             void add_backend(std::string const &name,std::unique_ptr<localization_backend> backend_ptr)
             {
-                booster::shared_ptr<localization_backend> sptr(backend_ptr);
+                booster::shared_ptr<localization_backend> sptr(std::move(backend_ptr));
                 if(all_backends_.empty()) {
                     all_backends_.push_back(std::make_pair(name,sptr));
                     for(unsigned i=0;i<default_backends_.size();i++)

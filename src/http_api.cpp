@@ -78,7 +78,7 @@ namespace cgi {
 		}
 
 	private:
-		typedef std::set<weak_http_ptr> connections_type;
+		typedef std::set<weak_http_ptr, std::owner_less<weak_http_ptr>> connections_type;
 		connections_type connections_;
 		booster::aio::deadline_timer timer_;
 	};

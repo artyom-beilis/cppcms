@@ -112,7 +112,7 @@ if(CMAKE_COMPILER_IS_GNUCXX)
 		int main() {}"
 		GCC_IS_GCC4)
 
-	set(CXX_FLAGS "-Wall -Wextra")
+	set(CXX_FLAGS "-Wall -Wextra -std=c++14")
 	set(C_FLAGS "-Wall -Wextra")
 
 	if(CMAKE_SYSTEM_NAME STREQUAL "SunOS")

@@ -13,6 +13,7 @@
 #include <string>
 #include <vector>
 #include <limits>
+#include <algorithm>
 #include <booster/noncopyable.h>
 
 namespace cppcms {

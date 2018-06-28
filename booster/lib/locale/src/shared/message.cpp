@@ -27,6 +27,7 @@
 #endif
 
 #include <iostream>
+#include <algorithm>
 
 
 #include "mo_hash.h"
@@ -650,12 +651,12 @@ namespace booster {
 
                     if(!plural.empty()) {
                         std::unique_ptr<lambda::plural> ptr=lambda::compile(plural.c_str());
-                        plural_forms_[id] = ptr;
+                        plural_forms_[id] = std::move(ptr);
                     }
 
                     if( mo_useable_directly(mo_encoding,*mo) )
                     {
-                        mo_catalogs_[id]=mo;
+                        mo_catalogs_[id]=std::move(mo);
                     }
                     else {
                         converter<CharType> cvt_value(locale_encoding,mo_encoding);

@@ -14,6 +14,7 @@
 #include <booster/atomic_counter.h>
 #include <booster/intrusive_ptr.h>
 #include <booster/shared_ptr.h>
+#include <booster/weak_ptr.h>
 #include <string>
 
 namespace cppcms {

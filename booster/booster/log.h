@@ -21,10 +21,12 @@
 
 namespace booster {
 
-template<typename T>
-class shared_ptr;
-template<typename T>
-class weak_ptr;
+template <typename T>
+using shared_ptr = std::shared_ptr<T>;
+
+template <typename T>
+using weak_ptr = std::weak_ptr<T>;
+
 
 ///
 /// \brief This namespace includes Booster.Log related classes
