@@ -269,8 +269,7 @@ namespace cppcms {
 		{
 			std::unique_ptr<application> operator()(service &s) const
 			{
-				std::unique_ptr<application> app(new T(s));
-				return std::move(app);
+				return std::unique_ptr<application>(new T(s));
 			}
 		};
 		template<typename T,typename P1>
@@ -280,8 +279,7 @@ namespace cppcms {
 			P1 p1_;
 			std::unique_ptr<application> operator()(service &s) const
 			{
-				std::unique_ptr<application> app(new T(s,p1_));
-				return std::move(app);
+				return std::unique_ptr<application>(new T(s,p1_));
 			}
 		};
 		template<typename T,typename P1,typename P2>
@@ -292,8 +290,7 @@ namespace cppcms {
 			P2 p2_;
 			std::unique_ptr<application> operator()(service &s) const
 			{
-				std::unique_ptr<application> app(new T(s,p1_,p2_));
-				return std::move(app);
+				return std::unique_ptr<application>(new T(s,p1_,p2_));
 			}
 		};
 	} // details
@@ -309,8 +306,7 @@ namespace cppcms {
 	template<typename T>
 	std::unique_ptr<applications_pool::factory> applications_factory()
 	{
-		std::unique_ptr<applications_pool::factory> f(new details::simple_factory0<T>);
-		return std::move(f);
+		return std::unique_ptr<applications_pool::factory>(new details::simple_factory0<T>);
 	}
 	
 	///
@@ -322,8 +318,7 @@ namespace cppcms {
 	template<typename T,typename P1>
 	std::unique_ptr<applications_pool::factory> applications_factory(P1 p1)
 	{
-		std::unique_ptr<applications_pool::factory> f(new details::simple_factory1<T,P1>(p1));
-		return std::move(f);
+		return std::unique_ptr<applications_pool::factory>(new details::simple_factory1<T,P1>(p1));
 	}
 	
 	///
@@ -335,8 +330,7 @@ namespace cppcms {
 	template<typename T,typename P1,typename P2>
 	std::unique_ptr<applications_pool::factory> applications_factory(P1 p1,P2 p2)
 	{
-		std::unique_ptr<applications_pool::factory> f(new details::simple_factory2<T,P1,P2>(p1,p2));
-		return std::move(f);
+		return std::unique_ptr<applications_pool::factory>(new details::simple_factory2<T,P1,P2>(p1,p2));
 	}
 
 	/// \cond INTERNAL 

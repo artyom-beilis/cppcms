@@ -841,7 +841,7 @@ std::unique_ptr<cppcms::impl::cgi::acceptor> service::setup_acceptor(json::value
 	a->sndbuf(sndbuf);
 	a->rcvbuf(rcvbuf);
 
-	return std::move(a);
+	return a;
 }
 
 void service::start_acceptor(bool after_fork)

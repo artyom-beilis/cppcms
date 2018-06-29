@@ -853,21 +853,18 @@ namespace cgi {
 
 	std::unique_ptr<acceptor> fastcgi_api_tcp_socket_factory(cppcms::service &srv,std::string ip,int port,int backlog)
 	{
-		std::unique_ptr<acceptor> a(new socket_acceptor<fastcgi>(srv,ip,port,backlog));
-		return std::move(a);
+		return std::unique_ptr<acceptor>(new socket_acceptor<fastcgi>(srv,ip,port,backlog));
 	}
 
 #if !defined(CPPCMS_WIN32)
 
 	std::unique_ptr<acceptor> fastcgi_api_unix_socket_factory(cppcms::service &srv,std::string socket,int backlog)
 	{
-		std::unique_ptr<acceptor> a(new socket_acceptor<fastcgi>(srv,socket,backlog));
-		return std::move(a);
+		return std::unique_ptr<acceptor>(new socket_acceptor<fastcgi>(srv,socket,backlog));
 	}
 	std::unique_ptr<acceptor> fastcgi_api_unix_socket_factory(cppcms::service &srv,int backlog)
 	{
-		std::unique_ptr<acceptor> a(new socket_acceptor<fastcgi>(srv,backlog));
-		return std::move(a);
+		return std::unique_ptr<acceptor>(new socket_acceptor<fastcgi>(srv,backlog));
 	}
 #endif
 

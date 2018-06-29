@@ -387,7 +387,7 @@ std::unique_ptr<cbc> cbc::create(std::string const &name)
 	else if(name=="aes256" || name=="aes-256" || name=="AES256" || name=="AES-256")
 		res = cbc::create(aes256);
 
-	return std::move(res);
+	return res;
 }
 
 std::unique_ptr<cbc> cbc::create(cbc::cbc_type type)
@@ -408,7 +408,7 @@ std::unique_ptr<cbc> cbc::create(cbc::cbc_type type)
 	default:
 		;
 	}
-	return std::move(res);
+	return res;
 }
 
 

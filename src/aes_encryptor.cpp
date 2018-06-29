@@ -80,9 +80,7 @@ aes_factory::aes_factory(std::string const &algo,crypto::key const &k) :
 
 std::unique_ptr<encryptor> aes_factory::get()
 {
-	std::unique_ptr<encryptor> ptr;
-	ptr.reset(new aes_cipher(cbc_,hmac_,cbc_key_,hmac_key_));
-	return std::move(ptr);
+	return std::unique_ptr<encryptor>(new aes_cipher(cbc_,hmac_,cbc_key_,hmac_key_));
 }
 
 

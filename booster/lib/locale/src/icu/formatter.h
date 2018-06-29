@@ -111,7 +111,7 @@ namespace impl_icu {
     /// Specialization for real implementation
     ///
     template<>
-    std::auto_ptr<formatter<char16_t> > formatter<char16_t>::create(std::ios_base &ios,icu::Locale const &l,std::string const &e);
+    std::unique_ptr<formatter<char16_t> > formatter<char16_t>::create(std::ios_base &ios,icu::Locale const &l,std::string const &e);
     #endif
 
     #ifdef BOOSTER_HAS_CHAR32_T
@@ -119,7 +119,7 @@ namespace impl_icu {
     /// Specialization for real implementation
     ///
     template<>
-    std::auto_ptr<formatter<char32_t> > formatter<char32_t>::create(std::ios_base &ios,icu::Locale const &l,std::string const &e);
+    std::unique_ptr<formatter<char32_t> > formatter<char32_t>::create(std::ios_base &ios,icu::Locale const &l,std::string const &e);
     #endif
 
 } // namespace impl_icu

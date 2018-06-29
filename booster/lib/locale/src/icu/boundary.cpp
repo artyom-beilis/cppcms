@@ -128,7 +128,7 @@ std::unique_ptr<icu::BreakIterator> get_iterator(boundary_type t,icu::Locale con
     check_and_throw_icu_error(err);
     if(!bi.get())
         throw booster::runtime_error("Failed to create break iterator");
-    return std::move(bi);
+    return bi;
 }
 
 

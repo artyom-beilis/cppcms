@@ -96,14 +96,13 @@ namespace cppcms {
 				catch(std::bad_cast const &) {
 					throw cppcms_error("cppcms::views::generator: an attempt to use content of invalid type");
 				}
-				return std::move(p);
+				return p;
 			}
 			
 			template<typename View,typename Content>
 			static std::unique_ptr<base_view> unsafe_view_builder(std::ostream &stream,base_content *c) 
 			{
-				std::unique_ptr<base_view> p(new View(stream,static_cast<Content &>(*c)));
-				return std::move(p);
+				return std::unique_ptr<base_view>(new View(stream,static_cast<Content &>(*c)));
 			}
 			
 

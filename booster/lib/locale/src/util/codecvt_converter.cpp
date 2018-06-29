@@ -266,13 +266,12 @@ namespace util {
         std::unique_ptr<base_converter> res;
         if(check_is_simple_encoding(encoding))
             res.reset(new simple_converter(encoding));
-        return std::move(res);
+        return res;
     }
 
     std::unique_ptr<base_converter> create_utf8_converter()
     {
-        std::unique_ptr<base_converter> res(new utf8_converter());
-        return std::move(res);
+        return std::unique_ptr<base_converter>(new utf8_converter());
     }
     
     template<typename CharType>
@@ -299,7 +298,7 @@ namespace util {
             std::unique_ptr<base_converter> r;
             if(!thread_safe_)
                 r.reset(cvt_->clone());
-            return std::move(r);
+            return r;
         }
 
         utf::code_point to_unicode(std::unique_ptr<base_converter> &ptr,char const *&begin,char const *end) const 

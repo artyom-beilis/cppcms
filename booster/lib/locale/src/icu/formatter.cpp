@@ -389,7 +389,7 @@ namespace locale {
 
 
             if(disp == posix)
-                return std::move(fmt);
+                return fmt;
            
             UErrorCode err=U_ZERO_ERROR;
             
@@ -555,7 +555,7 @@ namespace locale {
                             adf.reset(new icu::SimpleDateFormat(fmt,locale,err));
                         }
                         if(U_FAILURE(err)) 
-                            return std::move(fmt);
+                            return fmt;
                         df = adf.get();
                     }
 
@@ -570,7 +570,7 @@ namespace locale {
                 break;
             }
 
-            return std::move(fmt);
+            return fmt;
         }
 
 
@@ -590,7 +590,7 @@ namespace locale {
 
     #ifdef BOOSTER_HAS_CHAR16_T
     template<>
-    std::auto_ptr<formatter<char16_t> > formatter<char16_t>::create(std::ios_base &ios,icu::Locale const &l,std::string const &e)
+    std::unique_ptr<formatter<char16_t> > formatter<char16_t>::create(std::ios_base &ios,icu::Locale const &l,std::string const &e)
     {
         return generate_formatter<char16_t>(ios,l,e);
     }
@@ -599,7 +599,7 @@ namespace locale {
 
     #ifdef BOOSTER_HAS_CHAR32_T
     template<>
-    std::auto_ptr<formatter<char32_t> > formatter<char32_t>::create(std::ios_base &ios,icu::Locale const &l,std::string const &e)
+    std::unique_ptr<formatter<char32_t> > formatter<char32_t>::create(std::ios_base &ios,icu::Locale const &l,std::string const &e)
     {
         return generate_formatter<char32_t>(ios,l,e);
     }

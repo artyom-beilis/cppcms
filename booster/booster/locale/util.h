@@ -182,7 +182,7 @@ namespace util {
     /// character encodings like ISO-8859-1, koi8-r, windows-1255 and Unicode code points,
     /// 
     /// If \a encoding is not supported, empty pointer is returned. You should check if
-    /// std::auto_ptr<base_converter>::get() != 0
+    /// std::unique_ptr<base_converter>::get() != 0
     ///
     BOOSTER_API std::unique_ptr<base_converter> create_simple_converter(std::string const &encoding);
 

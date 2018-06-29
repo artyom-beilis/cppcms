@@ -115,7 +115,7 @@ public:
 ///     {
 ///         UErrorCode err = U_ZERO_ERROR;
 ///         state_type ptr(ucnv_safeClone(converter_,0,0,&err,ucnv_close);
-///         return std::move(ptr);
+///         return ptr;
 ///     }
 ///     
 ///     boost::locale::utf::code_point to_unicode(state_type &ptr,char const *&begin,char const *end) const

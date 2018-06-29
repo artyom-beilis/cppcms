@@ -128,7 +128,7 @@ namespace impl_icu {
         {
             // no encoding so we return empty pointer
         }
-        return std::move(cvt);
+        return cvt;
     }
 
     std::locale create_codecvt(std::locale const &in,std::string const &encoding,character_facet_type type)

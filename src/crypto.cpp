@@ -231,14 +231,12 @@ namespace crypto {
 	
 	std::unique_ptr<message_digest> message_digest::md5()
 	{
-		std::unique_ptr<message_digest> d(new md5_digets());
-		return std::move(d);
+		return std::unique_ptr<message_digest>(new md5_digets());
 	}
 
 	std::unique_ptr<message_digest> message_digest::sha1()
 	{
-		std::unique_ptr<message_digest> d(new sha1_digets());
-		return std::move(d);
+		return std::unique_ptr<message_digest>(new sha1_digets());
 	}
 
 	std::unique_ptr<message_digest> message_digest::create_by_name(std::string const &namein)
@@ -274,7 +272,7 @@ namespace crypto {
 			d.reset(new ssl_sha512());
 		#endif
 		
-		return std::move(d);
+		return d;
 	}
 
 	key::key() : data_(0), size_(0)

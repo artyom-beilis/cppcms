@@ -62,10 +62,9 @@ std::unique_ptr<base_view> generator::create(	std::string const &view_name,
 {
 	std::unique_ptr<base_view> result;
 	views_type::const_iterator p = views_.find(view_name);
-	if(p==views_.end())
-		return std::move(result);
-	result = p->second(output,content);
-	return std::move(result);
+	if(p!=views_.end())
+		result = p->second(output,content);
+	return result;
 }
 
 std::vector<std::string> generator::enumerate() const

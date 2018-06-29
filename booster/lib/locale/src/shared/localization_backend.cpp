@@ -231,7 +231,7 @@ namespace booster {
 
                     #ifndef BOOSTER_LOCALE_NO_WINAPI_BACKEND
                     backend.reset(impl_win::create_localization_backend());
-                    mgr.add_backend("winapi",backend);
+                    mgr.add_backend("winapi",std::move(backend));
                     #endif
                     
                     #ifndef BOOSTER_LOCALE_NO_STD_BACKEND
