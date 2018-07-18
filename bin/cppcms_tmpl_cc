@@ -11,7 +11,10 @@
 import os
 import re
 import sys
-import StringIO
+try:
+    from StringIO import StringIO
+except ModuleNotFoundError: # StringIO moved to io in python 3
+    from io import StringIO
 
 str_match=r'"([^"\\]|\\[^"]|\\")*"'
 single_var_param_match=r'(?:-?\d+|"(?:[^"\\]|\\[^"]|\\")*")'
@@ -1244,8 +1247,8 @@ view_created=False
 scope_filter='cppcms::filters::escape'
 
 view_name = ''
-declarations = StringIO.StringIO();
-definitions = StringIO.StringIO();
+declarations = StringIO();
+definitions = StringIO();
 inline_cpp_to = output_declaration
 inline_templates = "default"
 output_template = output_definition
