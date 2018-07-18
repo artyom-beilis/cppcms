@@ -80,6 +80,7 @@ namespace cppcms {
 #endif
 #include <sys/types.h>
 #include <sys/stat.h>
+#include <errno.h>
 #include <fcntl.h>
 #include <unistd.h>
 
@@ -108,11 +109,20 @@ namespace cppcms {
 			int fd = open("/dev/urandom",O_RDONLY);
 			if(!fd) 
 				throw cppcms_error("Failed to open /dev/urandom");
-			n = read(fd,ptr,len);
+            while(len > 0) {
+    			n = read(fd,ptr,len);
+                if(n < 0 && errno == EINTR)
+                    continue;
+                if(n <= 0)
+                    break;
+                ptr = static_cast<char *>(ptr) + n;
+                len -= n;
+            }
 			close(fd);
 		}
-		if(n!=int(len))
+		if(len > 0) {
 			throw cppcms_error("Failed to read /dev/urandom");
+        }
 	}
 }
 
