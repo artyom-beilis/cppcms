@@ -356,6 +356,31 @@ class using_block:
     def on_end(self):
         print_using_block_end();
 
+class helper_scope_block:
+    pattern=None
+    basic_name = 'helper scope'
+    basic_pattern = None
+    type='helper_scope'
+    variables = None
+
+    def use(self, m):
+        global output_template
+        output_template("{ // helper scope")
+        global tmpl_seq
+        if m:
+            self.variables = m
+            for e in m:
+                tmpl_seq[e] = ''
+        global stack
+        stack.append(self)
+
+    def on_end(self):
+        global tmpl_seq
+        global output_template
+        if self.variables:
+            for e in self.variables:
+                del tmpl_seq[e]
+        output_template("} // helper scope")
 
 class foreach_block:
     pattern=r'^<%\s*foreach\s+([a-zA-Z]\w*)(\s+as\s+((:?:?\w+)(::\w+)*))?' \
