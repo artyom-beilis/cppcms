@@ -120,6 +120,30 @@ public:
 	void secure(bool v);
 
 	///
+	/// Check if the httponly propertie is set on the cookies
+	///
+	bool httponly() const;
+
+	///
+	/// Set httponly property on the cookies
+	///
+	void httponly(bool v);
+
+	///
+	/// Check if one of the samesite properties is set on the cookies
+	///
+	bool samesite_none() const;
+	bool samesite_lax() const;
+	bool samesite_strict() const;
+
+	///
+	/// Set one of the samesite properties on the cookies
+	///
+	void samesite_none(bool v);
+	void samesite_lax(bool v);
+	void samesite_strict(bool v);
+
+	///
 	/// Check if cookie is not assigned - empty
 	///
 	bool empty() const;
@@ -165,7 +189,11 @@ private:
 	uint32_t secure_	: 1;
 	uint32_t has_age_	: 1;
 	uint32_t has_expiration_: 1;
-	CPPCMS_UNUSED_MEMBER uint32_t reserved_	: 29;
+	uint32_t httponly_	: 1;
+	uint32_t samesite_none_: 1;
+	uint32_t samesite_lax_: 1;
+	uint32_t samesite_strict_: 1;
+	CPPCMS_UNUSED_MEMBER uint32_t reserved_	: 25;
 };
 
 

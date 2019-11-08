@@ -78,6 +78,46 @@ void cookie::browser_age()
 bool cookie::secure() const { return secure_; }
 void cookie::secure(bool secure) { secure_ = secure ? 1: 0; }
 
+bool cookie::httponly() const { return httponly_; }
+void cookie::httponly(bool httponly) { httponly_ = httponly ? 1 : 0; }
+
+bool cookie::samesite_none() const { return samesite_none_; }
+bool cookie::samesite_lax() const { return samesite_lax_; }
+bool cookie::samesite_strict() const { return samesite_strict_; }
+
+void cookie::samesite_none(bool v)
+{
+	if (v) {
+		samesite_none_ = 1;
+		samesite_lax_ = 0;
+		samesite_strict_ = 0;
+	} else {
+		samesite_none_ = 0;
+	}
+}
+
+void cookie::samesite_lax(bool v)
+{
+	if (v) {
+		samesite_none_ = 0;
+		samesite_lax_ = 1;
+		samesite_strict_ = 0;
+	} else {
+		samesite_lax_ = 0;
+	}
+}
+
+void cookie::samesite_strict(bool v)
+{
+	if (v) {
+		samesite_none_ = 0;
+		samesite_lax_ = 0;
+		samesite_strict_ = 1;
+	} else {
+		samesite_strict_ = 0;
+	}
+}
+
 void cookie::write(std::ostream &out) const
 {
 	if(name_.empty())
@@ -117,6 +157,15 @@ void cookie::write(std::ostream &out) const
 		out<<"; Path="<<path_;
 	if(secure_)
 		out<<"; Secure";
+	if(httponly_)
+		out<<"; HttpOnly";
+	// The samesite_*_ setters guarantee that only one of the following is set.
+	if(samesite_none_)
+		out<<"; SameSite=None";
+	if(samesite_lax_)
+		out<<"; SameSite=Lax";
+	if(samesite_strict_)
+		out<<"; SameSite=Strict";
 	out<<"; Version=1";
 }
 
@@ -127,21 +176,21 @@ std::ostream &operator<<(std::ostream &out,cookie const &c)
 }
 
 cookie::cookie(std::string name,std::string value) :
-	name_(name), value_(value), secure_(0), has_age_(0), has_expiration_(0)
+	name_(name), value_(value), secure_(0), has_age_(0), has_expiration_(0), httponly_(0), samesite_none_(0), samesite_lax_(0), samesite_strict_(0)
 {
 }
 
 cookie::cookie(std::string name,std::string value,unsigned age) :
-	name_(name), value_(value), max_age_(age), secure_(0), has_age_(1), has_expiration_(0)
+	name_(name), value_(value), max_age_(age), secure_(0), has_age_(1), has_expiration_(0), httponly_(0), samesite_none_(0), samesite_lax_(0), samesite_strict_(0)
 {
 }
 cookie::cookie(std::string name,std::string value,unsigned age,std::string path,std::string domain,std::string comment) :
-	name_(name), value_(value), path_(path),domain_(domain),comment_(comment),max_age_(age), secure_(0), has_age_(1), has_expiration_(0)
+	name_(name), value_(value), path_(path),domain_(domain),comment_(comment),max_age_(age), secure_(0), has_age_(1), has_expiration_(0), httponly_(0), samesite_none_(0), samesite_lax_(0), samesite_strict_(0)
 {
 }
 
 cookie::cookie(std::string name,std::string value,std::string path,std::string domain,std::string comment) :
-	name_(name), value_(value), path_(path),domain_(domain),comment_(comment), secure_(0), has_age_(0), has_expiration_(0)
+	name_(name), value_(value), path_(path),domain_(domain),comment_(comment), secure_(0), has_age_(0), has_expiration_(0), httponly_(0), samesite_none_(0), samesite_lax_(0), samesite_strict_(0)
 {
 }
 
@@ -155,7 +204,11 @@ cookie::cookie(cookie const &other) :
 	max_age_(other.max_age_),
 	secure_(other.secure_),
 	has_age_(other.has_age_),
-	has_expiration_(other.has_expiration_)
+	has_expiration_(other.has_expiration_),
+	httponly_(other.httponly_),
+	samesite_none_(other.samesite_none_),
+	samesite_lax_(other.samesite_lax_),
+	samesite_strict_(other.samesite_strict_)
 {
 }
 
@@ -171,10 +224,14 @@ cookie const &cookie::operator=(cookie const &other)
 	secure_=other.secure_;
 	has_age_=other.has_age_;
 	has_expiration_ = other.has_expiration_;
+	httponly_ = other.httponly_;
+	samesite_none_ = other.samesite_none_;
+	samesite_lax_ = other.samesite_lax_;
+	samesite_strict_ = other.samesite_strict_;
 	return *this;
 }
 
-cookie::cookie() : secure_(0), has_age_(0), has_expiration_(0) {}
+cookie::cookie() : secure_(0), has_age_(0), has_expiration_(0), httponly_(0), samesite_none_(0), samesite_lax_(0), samesite_strict_(0) {}
 cookie::~cookie() {}
 
 
