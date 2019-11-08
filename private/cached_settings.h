@@ -142,6 +142,10 @@ namespace impl {
 				bool use_age;
 				bool use_exp;
 				bool secure;
+				bool httponly;
+				bool use_samesite_none;
+				bool use_samesite_lax;
+				bool use_samesite_strict;
 				bool remove_unknown_cookies;
 			} cookies;
 			cached_session(json::value const &v)
@@ -173,6 +177,22 @@ namespace impl {
 					cookies.use_age = cookies.use_exp = true;
 				}
 				cookies.secure = v.get("session.cookies.secure",false);
+				cookies.httponly = v.get("session.cookies.httponly", false);
+
+				std::string samesite = v.get("session.cookies.samesite", "");
+				cookies.use_samesite_none = false;
+				cookies.use_samesite_lax = false;
+				cookies.use_samesite_strict = false;
+				if (samesite == "none") {
+					cookies.use_samesite_none = true;
+				} else if (samesite == "lax") {
+					cookies.use_samesite_lax = true;
+				} else if (samesite == "strict") {
+					cookies.use_samesite_strict = true;
+				} else if (!samesite.empty()) {
+					BOOSTER_WARNING("cppcms") << "Invalid session.cookies.samesite"
+					  "if set should be one of 'none', 'lax', or 'strict'; defaults to unset";
+				}
 			}
 		} session;
 		struct cached_misc {

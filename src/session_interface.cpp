@@ -481,6 +481,10 @@ void session_interface::set_session_cookie(int64_t age,std::string const &data,s
 	bool use_exp = cached_settings().session.cookies.use_exp;
 
 	bool secure = cached_settings().session.cookies.secure;
+	bool httponly = cached_settings().session.cookies.httponly;
+	bool use_samesite_none = cached_settings().session.cookies.use_samesite_none;
+	bool use_samesite_lax = cached_settings().session.cookies.use_samesite_lax;
+	bool use_samesite_strict = cached_settings().session.cookies.use_samesite_strict;
 
 	http::cookie the_cookie(cookie_name,util::urlencode(data),path,domain);
 
@@ -501,8 +505,11 @@ void session_interface::set_session_cookie(int64_t age,std::string const &data,s
 		}
 	}
 
-
 	the_cookie.secure(secure);
+	the_cookie.httponly(httponly);
+	the_cookie.samesite_none(use_samesite_none);
+	the_cookie.samesite_lax(use_samesite_lax);
+	the_cookie.samesite_strict(use_samesite_strict);
 	
 	if(d->adapter)
 		d->adapter->set_cookie(the_cookie);

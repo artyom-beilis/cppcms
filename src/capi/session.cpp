@@ -108,6 +108,10 @@ struct cppcms_capi_cookie {
 	std::string path;
 	std::string domain;
 	bool secure;
+	bool httponly;
+	bool has_samesite_none;
+	bool has_samesite_lax;
+	bool has_samesite_strict;
 	bool has_expires;
 	bool has_max_age;
 	time_t expires;
@@ -121,6 +125,10 @@ struct cppcms_capi_cookie {
 		path(c.path()),
 		domain(c.domain()),
 		secure(c.secure()),
+		httponly(c.httponly()),
+		has_samesite_none(c.samesite_none()),
+		has_samesite_lax(c.samesite_lax()),
+		has_samesite_strict(c.samesite_strict()),
 		has_expires(c.expires_defined()),
 		has_max_age(c.max_age_defined()),
 		expires(c.expires()),
@@ -763,5 +771,11 @@ int cppcms_capi_cookie_expires_defined(cppcms_capi_cookie const *cookie) { retur
 long long cppcms_capi_cookie_expires(cppcms_capi_cookie const *cookie) { return cookie ? cookie->expires: -1; }
 
 int cppcms_capi_cookie_is_secure(cppcms_capi_cookie const *cookie) { return cookie ? cookie->secure: -1; }
+
+int cppcms_capi_cookie_is_httponly(cppcms_capi_cookie const *cookie) { return cookie ? cookie->httponly: -1; }
+
+int cppcms_capi_cookie_samesite_none_defined(cppcms_capi_cookie const *cookie) { return cookie ? cookie->has_samesite_none: -1; }
+int cppcms_capi_cookie_samesite_lax_defined(cppcms_capi_cookie const *cookie) { return cookie ? cookie->has_samesite_lax: -1; }
+int cppcms_capi_cookie_samesite_strict_defined(cppcms_capi_cookie const *cookie) { return cookie ? cookie->has_samesite_strict: -1; }
 
 } // extern "C"
