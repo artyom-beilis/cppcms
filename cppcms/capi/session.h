@@ -155,6 +155,12 @@ CPPCMS_API long long cppcms_capi_cookie_expires(cppcms_capi_cookie const *cookie
 
 CPPCMS_API int cppcms_capi_cookie_is_secure(cppcms_capi_cookie const *cookie);
 
+CPPCMS_API int cppcms_capi_cookie_is_httponly(cppcms_capi_cookie const *cookie);
+
+CPPCMS_API int cppcms_capi_cookie_samesite_none_defined(cppcms_capi_cookie const *cookie);
+CPPCMS_API int cppcms_capi_cookie_samesite_lax_defined(cppcms_capi_cookie const *cookie);
+CPPCMS_API int cppcms_capi_cookie_samesite_strict_defined(cppcms_capi_cookie const *cookie);
+
 ///
 /// @}
 ///

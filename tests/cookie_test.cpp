@@ -44,6 +44,37 @@ void basic_test()
 		TEST(ss.str()=="Set-Cookie:a=b; Version=1");
 	}
 	{
+		c.httponly(true);
+		std::ostringstream ss;
+		ss << c;
+		TEST(ss.str()=="Set-Cookie:a=b; HttpOnly; Version=1");
+	}
+	{
+		c.samesite_none(true);
+		std::ostringstream ss;
+		ss << c;
+		TEST(ss.str()=="Set-Cookie:a=b; HttpOnly; SameSite=None; Version=1");
+	}
+	{
+		c.samesite_lax(true);
+		std::ostringstream ss;
+		ss << c;
+		TEST(ss.str()=="Set-Cookie:a=b; HttpOnly; SameSite=Lax; Version=1");
+	}
+	{
+		c.samesite_strict(true);
+		std::ostringstream ss;
+		ss << c;
+		TEST(ss.str()=="Set-Cookie:a=b; HttpOnly; SameSite=Strict; Version=1");
+	}
+	{
+		c.httponly(false);
+		c.samesite_strict(false);
+		std::ostringstream ss;
+		ss << c;
+		TEST(ss.str()=="Set-Cookie:a=b; Version=1");
+	}
+	{
 		c.max_age(10);
 		std::ostringstream ss;
 		ss << c;
