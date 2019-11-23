@@ -533,6 +533,15 @@ namespace cppcms {
 			///
 			void disabled(bool);
 
+			///
+			/// Get the HTML \c required attribute.
+			///
+			bool required();
+
+			///
+			/// Set/Unset the HTML \c required attribute.
+			///
+			void required(bool);
 
 			///
 			/// Get the HTML \c readonly attribute.
@@ -698,6 +707,7 @@ namespace cppcms {
 			uint32_t is_valid_  : 1;
 			uint32_t is_set_ : 1;
 			uint32_t is_disabled_ : 1;
+			uint32_t is_required_ : 1;
 			uint32_t is_readonly_ : 1;
 			uint32_t is_generation_done_ : 1;
 			uint32_t has_message_ : 1;
@@ -969,6 +979,7 @@ namespace cppcms {
 			void non_empty()
 			{
 				non_empty_=true;
+				required(true);
 			}
 
 

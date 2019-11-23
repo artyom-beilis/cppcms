@@ -277,6 +277,7 @@ base_widget::base_widget() :
 	is_valid_(1),
 	is_set_(0),
 	is_disabled_(0),
+	is_required_(0),
 	is_readonly_(0),
 	is_generation_done_(0),
 	has_message_(0),
@@ -409,6 +410,16 @@ void base_widget::disabled(bool v)
 	is_disabled_=v;
 }
 
+bool base_widget::required()
+{
+	return is_required_;
+}
+
+void base_widget::required(bool v)
+{
+	is_required_=v;
+}
+
 bool base_widget::readonly()
 {
 	return is_readonly_;
@@ -535,6 +546,12 @@ void base_widget::render_attributes(form_context &context)
 		else
 			output << "disabled ";
 	}
+	if(required()) {
+		if(context.html() == as_xhtml)
+			output << "required=\"required\" ";
+		else
+			output << "required ";
+	}
 }
 
 void base_widget::clear()
@@ -544,8 +561,12 @@ void base_widget::clear()
 
 bool base_widget::validate()
 {
-	valid(true);
-	return true;
+	if (required()) {
+		valid(set());
+	} else {
+		valid(true);
+	}
+	return valid();
 }
 
 ////////////////////////////////
@@ -587,6 +608,9 @@ void base_text::limits(int min,int max)
 {
 	low_=min;
 	high_=max;
+	if (low_ > 0) {
+		required(true);
+	}
 }
 
 std::pair<int,int> base_text::limits()
@@ -1041,6 +1065,9 @@ void select_multiple::non_empty()
 void select_multiple::at_least(unsigned l)
 {
 	low_ = l;
+	if (low_ > 0) {
+		required(true);
+	}
 }
 
 void select_multiple::at_most(unsigned h)
@@ -1317,6 +1344,13 @@ void radio::render_input(form_context &context)
 					out << "disabled=\"disabled\" ";
 				else
 					out << "disabled ";
+			}
+
+			if(required()) {
+				if(context.html() == as_xhtml)
+					out << "required=\"required\" ";
+				else
+					out << "required ";
 			}
 
 			if(context.html() == as_xhtml)
