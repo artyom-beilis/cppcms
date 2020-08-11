@@ -13,6 +13,7 @@
 #include <booster/cstdint.h>
 #include <booster/thread.h>
 #include <booster/config.h>
+#include <booster/backtrace.h>
 
 #include <unicode/locid.h>
 #include <unicode/numfmt.h>
