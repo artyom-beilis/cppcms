@@ -431,7 +431,6 @@ set(BOOSTER_SRC
 	lib/aio/src/basic_socket.cpp
 	lib/aio/src/acceptor.cpp
 	lib/aio/src/stream_socket.cpp
-	lib/smart_ptr/src/sp_counted_base.cpp
 	lib/smart_ptr/src/atomic_counter.cpp
 	lib/shared_object/src/shared_object.cpp
 	lib/log/src/log.cpp
@@ -688,7 +687,6 @@ endif()
 
 add_booster_test(smart_ptr shared_ptr)
 add_booster_test(smart_ptr atomic_counter)
-add_booster_test(smart_ptr sp_counter)
 
 add_booster_test(log log)
 add_booster_test(nowide nowide)

@@ -168,20 +168,20 @@ namespace cgi {
 
 	
 	
-	std::auto_ptr<acceptor> scgi_api_tcp_socket_factory(cppcms::service &srv,std::string ip,int port,int backlog)
+	std::unique_ptr<acceptor> scgi_api_tcp_socket_factory(cppcms::service &srv,std::string ip,int port,int backlog)
 	{
-		std::auto_ptr<acceptor> a(new socket_acceptor<scgi>(srv,ip,port,backlog));
+		std::unique_ptr<acceptor> a(new socket_acceptor<scgi>(srv,ip,port,backlog));
 		return a;
 	}
 #if !defined(CPPCMS_WIN32)
-	std::auto_ptr<acceptor> scgi_api_unix_socket_factory(cppcms::service &srv,std::string socket,int backlog)
+	std::unique_ptr<acceptor> scgi_api_unix_socket_factory(cppcms::service &srv,std::string socket,int backlog)
 	{
-		std::auto_ptr<acceptor> a(new socket_acceptor<scgi>(srv,socket,backlog));
+		std::unique_ptr<acceptor> a(new socket_acceptor<scgi>(srv,socket,backlog));
 		return a;
 	}
-	std::auto_ptr<acceptor> scgi_api_unix_socket_factory(cppcms::service &srv,int backlog)
+	std::unique_ptr<acceptor> scgi_api_unix_socket_factory(cppcms::service &srv,int backlog)
 	{
-		std::auto_ptr<acceptor> a(new socket_acceptor<scgi>(srv,backlog));
+		std::unique_ptr<acceptor> a(new socket_acceptor<scgi>(srv,backlog));
 		return a;
 	}
 #endif

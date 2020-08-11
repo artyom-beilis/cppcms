@@ -22,6 +22,7 @@
 #include <sstream>
 #include <booster/log.h>
 #include "test.h"
+#include <assert.h>
 
 int g_fail;
 #define TESTNT(x) do { if(x) break;  std::cerr << "FAIL: " #x " in line: " << __LINE__ << std::endl; g_fail = 1; return; } while(0)
@@ -165,9 +166,9 @@ public:
 			counter::instance(request().get("id"))->print(response().out());
 		else if(name=="/unmount") {
 			std::string id = request().get("id");
-			bool exists_before = weak_pools[id].lock();
+			bool exists_before = bool(weak_pools[id].lock());
 			service().applications_pool().unmount(weak_pools[id]);
-			bool exists_after = weak_pools[id].lock();
+			bool exists_after = bool(weak_pools[id].lock());
 			response().out()<<"unmount=" << id << "\n"
 				"before="<<exists_before <<"\n"
 				"after="<<exists_after;

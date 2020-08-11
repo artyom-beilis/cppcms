@@ -9,7 +9,7 @@
 #define BOOSTER_AIO_REACTOR_H
 #include <booster/config.h>
 #include <booster/aio/types.h>
-#include <booster/auto_ptr_inc.h>
+#include <memory>
 #include <string>
 namespace booster {
 namespace aio {
@@ -113,7 +113,7 @@ namespace aio {
 		///
 		std::string name() const;
 	private:
-		std::auto_ptr<reactor_impl> impl_;
+		std::unique_ptr<reactor_impl> impl_;
 	};
 } // aio
 } // booster

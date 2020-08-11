@@ -8,7 +8,7 @@
 #ifndef BOOSTER_SRC_LOCALE_MO_LAMBDA_H_INCLUDED
 #define BOOSTER_SRC_LOCALE_MO_LAMBDA_H_INCLUDED
 
-#include <booster/auto_ptr_inc.h>
+#include <memory>
 
 namespace booster {
     namespace locale {
@@ -24,7 +24,7 @@ namespace booster {
                     }
                 };
 
-                typedef std::auto_ptr<plural> plural_ptr;
+                typedef std::unique_ptr<plural> plural_ptr;
 
                 plural_ptr compile(char const *c_expression);
 

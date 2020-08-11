@@ -17,7 +17,7 @@
 #include <booster/callback.h>
 #include <booster/noncopyable.h>
 #include <string>
-#include <booster/auto_ptr_inc.h>
+#include <memory>
 
 namespace booster {
 class ptime;
@@ -137,7 +137,7 @@ namespace aio {
 	private:
 		struct data;
 		hold_ptr<data> d;
-		std::auto_ptr<event_loop_impl> impl_;	
+		std::unique_ptr<event_loop_impl> impl_;	
 	};
 
 } // aio

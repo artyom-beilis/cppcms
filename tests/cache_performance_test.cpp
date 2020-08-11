@@ -12,7 +12,7 @@
 #include <booster/posix_time.h>
 #include <cppcms/config.h>
 #include <iostream>
-#include <booster/auto_ptr_inc.h>
+#include <booster/memory_inc.h>
 #include <time.h>
 #include <iomanip>
 #include <stdlib.h>

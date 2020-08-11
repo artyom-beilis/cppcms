@@ -37,8 +37,8 @@ namespace cppcms {
 		real_output_stream_(output.rdbuf(&copy_buffer_)),
 		detached_(false)
 	{
-		std::auto_ptr<booster::io_device> device(new tee_device(real_output_stream_,data_));
-		copy_buffer_.device(device);
+		std::unique_ptr<booster::io_device> device(new tee_device(real_output_stream_,data_));
+		copy_buffer_.device(std::move(device));
 	}
 
 	std::string copy_filter::detach()

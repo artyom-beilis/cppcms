@@ -9,7 +9,7 @@
 #define BOOSTER_CALLBACK_H
 
 #include <booster/backtrace.h>
-#include <booster/auto_ptr_inc.h>
+#include <memory>
 #include <booster/intrusive_ptr.h>
 #include <booster/refcounted.h>
 
@@ -164,7 +164,7 @@ namespace booster {
 		{}								\
 										\
 		template<typename Call>						\
-		callback(std::auto_ptr<Call> ptr) : call_ptr(ptr.release())	\
+		callback(std::unique_ptr<Call> ptr) : call_ptr(ptr.release())	\
 		{}								\
 										\
 		template<typename Call>						\
@@ -172,7 +172,7 @@ namespace booster {
 		{ call_ptr = c; return *this; }					\
 										\
 		template<typename Call>						\
-		callback const &operator=(std::auto_ptr<Call> c)		\
+		callback const &operator=(std::unique_ptr<Call> c)		\
 		{ call_ptr = 0; call_ptr = c.release(); return *this; }		\
 										\
 		template<typename F>						\

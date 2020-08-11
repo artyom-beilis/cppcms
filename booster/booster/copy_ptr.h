@@ -11,7 +11,7 @@
 namespace booster { 
 
 	///
-	/// \brief a smart pointer similar to std::auto_ptr but it copies
+	/// \brief a smart pointer similar to std::unique_ptr but it copies
 	///   underlying object on pointer copy instead of moving its ownership.
 	///
 	/// Note: Underlying object has same constness as the pointer itself (not like in ordinary pointer).

@@ -54,11 +54,11 @@ void generator::add_factory(std::string const &n,generator::view_factory_type *f
 	views_[n]=factory;
 }
 
-std::auto_ptr<base_view> generator::create(	std::string const &view_name,
+std::unique_ptr<base_view> generator::create(	std::string const &view_name,
 						std::ostream &output,
 						base_content *content) const
 {
-	std::auto_ptr<base_view> result;
+	std::unique_ptr<base_view> result;
 	views_type::const_iterator p = views_.find(view_name);
 	if(p==views_.end())
 		return result;
@@ -142,7 +142,7 @@ base_view *pool::create_view(std::string const &skin,std::string const &template
 	if(t==reg_skin.end())
 		throw cppcms_error("cppcms::view::pool: no suck view:" + template_name + " is registered for skin: " + skin);
 
-	std::auto_ptr<base_view> v;
+	std::unique_ptr<base_view> v;
 	v = t->second->create(template_name,out,&content);
 	if(!v.get())
 		throw cppcms_error("cppcms::views::pool: no such view " + template_name + " in the skin " + skin);

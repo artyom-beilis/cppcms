@@ -11,7 +11,7 @@
 namespace booster { 
 
 	///
-	/// \brief a smart pointer similar to std::auto_ptr but it is non-copyable and
+	/// \brief a smart pointer similar to std::unique_ptr but it is non-copyable and
 	/// underlying object has same constness as the pointer itself (not like in ordinary pointer).
 	///
 	template<typename T>

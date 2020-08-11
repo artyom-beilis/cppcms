@@ -13,7 +13,7 @@
 #include <booster/hold_ptr.h>
 #include <booster/function.h>
 #include <locale>
-#include <booster/auto_ptr_inc.h>
+#include <booster/memory_inc.h>
 #include <cppcms/locale_fwd.h>
 #include <cppcms/json.h>
 
@@ -207,7 +207,7 @@ namespace cppcms {
 
 	private:
 		void setup();
-		std::auto_ptr<cppcms::impl::cgi::acceptor> setup_acceptor(json::value const &,int,int shift=0);
+		std::unique_ptr<cppcms::impl::cgi::acceptor> setup_acceptor(json::value const &,int,int shift=0);
 		void stop();
 		void start_acceptor(bool after_fork=false);
 		void setup_exit_handling();

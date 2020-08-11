@@ -375,9 +375,9 @@ namespace crypto {
 
 #endif
 
-std::auto_ptr<cbc> cbc::create(std::string const &name)
+std::unique_ptr<cbc> cbc::create(std::string const &name)
 {
-	std::auto_ptr<cbc> res;
+	std::unique_ptr<cbc> res;
 	if(name=="aes" || name=="AES" || name=="aes128" || name=="aes-128" || name=="AES128" || name=="AES-128")
 		res = cbc::create(aes128);
 	else if(name=="aes192" || name=="aes-192" || name=="AES192" || name=="AES-192")
@@ -388,9 +388,9 @@ std::auto_ptr<cbc> cbc::create(std::string const &name)
 	return res;
 }
 
-std::auto_ptr<cbc> cbc::create(cbc::cbc_type type)
+std::unique_ptr<cbc> cbc::create(cbc::cbc_type type)
 {
-	std::auto_ptr<cbc> res;
+	std::unique_ptr<cbc> res;
 	switch(type) {
 #ifdef CPPCMS_HAVE_AES
 	case aes128:

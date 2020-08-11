@@ -102,7 +102,7 @@ int main(int argc,char **argv)
 
 	cppcms::json::value val;
 
-	std::auto_ptr<cppcms::crypto::message_digest> digest = cppcms::crypto::message_digest::create_by_name(hmac);
+	std::unique_ptr<cppcms::crypto::message_digest> digest = cppcms::crypto::message_digest::create_by_name(hmac);
 	if(!digest.get()) {
 		std::cerr << "Unsupported HMAC " << hmac << std::endl;
 		return 1;
@@ -110,7 +110,7 @@ int main(int argc,char **argv)
 	if(!make_entry(val,"hmac",hmac,hmac_file,digest->digest_size()))
 		return 1;
 	if(!cbc.empty()) {
-		std::auto_ptr<cppcms::crypto::cbc> p = cppcms::crypto::cbc::create(cbc);
+		std::unique_ptr<cppcms::crypto::cbc> p = cppcms::crypto::cbc::create(cbc);
 		if(!p.get()) {
 			std::cerr << "Unsupported CBC " << cbc << std::endl;
 			return 1;

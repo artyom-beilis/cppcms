@@ -11,7 +11,7 @@
 namespace booster { 
 namespace locale {
     ///
-    /// \brief a smart pointer similar to std::auto_ptr but it is non-copyable and the
+    /// \brief a smart pointer similar to std::unique_ptr but it is non-copyable and the
     /// underlying object has the same constness as the pointer itself (unlike an ordinary pointer).
     ///
     template<typename T>

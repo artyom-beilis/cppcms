@@ -4,7 +4,7 @@
 #include <booster/config.h>
 #include <booster/nowide/convert.h>
 #include <fstream>
-#include <booster/auto_ptr_inc.h>
+#include <memory>
 
 #if defined BOOSTER_WIN_NATIVE || defined BOOSTER_WORKAROUND_BROKEN_GCC_ON_DARWIN
 #include <booster/streambuf.h>
@@ -146,7 +146,7 @@ namespace nowide {
 					return 0;
 				}
 			}
-			std::auto_ptr<io_device> dev(new details::stdio_iodev(f));
+			std::unique_ptr<io_device> dev(new details::stdio_iodev(f));
 			device(dev);
 			opened_ = true;
 			return this;
@@ -272,7 +272,7 @@ namespace nowide {
 		}
 			
 	private:
-		std::auto_ptr<internal_buffer_type> buf_;
+		std::unique_ptr<internal_buffer_type> buf_;
 	};
 
 	///
@@ -332,7 +332,7 @@ namespace nowide {
 		}
 			
 	private:
-		std::auto_ptr<internal_buffer_type> buf_;
+		std::unique_ptr<internal_buffer_type> buf_;
 	};
 
 	///
@@ -392,7 +392,7 @@ namespace nowide {
 		}
 			
 	private:
-		std::auto_ptr<internal_buffer_type> buf_;
+		std::unique_ptr<internal_buffer_type> buf_;
 	};
 
 

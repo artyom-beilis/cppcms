@@ -25,7 +25,7 @@
 #include <booster/function.h>
 #include <booster/backtrace.h>
 #include <string.h>
-#include <booster/auto_ptr_inc.h>
+#include <booster/memory_inc.h>
 #include <iostream>
 #include <vector>
 #include <stdio.h>
@@ -125,7 +125,7 @@ int main()
 	try {
 
 		booster::shared_ptr<cppcms::sessions::session_storage> storage;
-		std::auto_ptr<cppcms::sessions::session_storage_factory> storage_factory;
+		std::unique_ptr<cppcms::sessions::session_storage_factory> storage_factory;
 		using namespace cppcms::sessions;
 
 		std::cout << "Testing memory storage" << std::endl;
