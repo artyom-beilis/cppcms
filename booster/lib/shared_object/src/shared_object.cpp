@@ -72,7 +72,7 @@ namespace booster {
 	{
 		if(open(file_name)) 
 			return true;
-		booster::system::error_code e(GetLastError(),booster::system::system_category);
+		booster::system::error_code e(GetLastError(),booster::system::system_category());
 		error_message = e.message();
 		return false;
 	}

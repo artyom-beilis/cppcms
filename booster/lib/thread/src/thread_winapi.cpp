@@ -220,7 +220,7 @@ namespace booster {
 			intrusive_ptr_add_ref(d->shared.get());
 		}
 		else {
-			throw system::system_error(system::error_code(errno,system::system_category));
+			throw system::system_error(system::error_code(errno,system::system_category()));
 		}
 		
 		d->h=(HANDLE)(p);

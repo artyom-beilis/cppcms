@@ -118,7 +118,7 @@ namespace booster {
 			{
 				h=CreateEvent(0,FALSE,FALSE,0);
 				if(!h) throw system::system_error(GetLastError(),
-								  system::system_category,
+								  system::system_category(),
 								  "conditional_variable:CreateEvent failed");
 				next = 0;
 			}
