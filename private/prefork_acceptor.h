@@ -64,7 +64,7 @@ public:
 		if(::pipe(fds) < 0) {
 			service_->shutdown();
 			throw booster::system::system_error(
-				booster::system::error_code(errno,booster::system::system_category));
+				booster::system::error_code(errno,booster::system::system_category()));
 		}
 		read_interrupter_=fds[0];
 		write_interrupter_=fds[1];
@@ -115,7 +115,7 @@ private:
 					if(n < 0 && errno == EINTR)
 						continue;
 					if(n < 0) {
-						booster::system::error_code e(errno,booster::system::system_category);
+						booster::system::error_code e(errno,booster::system::system_category());
 						BOOSTER_CRITICAL("cppcms") << "select failed:" << e.message();
 						service_->shutdown();
 						return;
@@ -146,7 +146,7 @@ private:
 							{
 								continue;
 							}
-							booster::system::error_code e(errno,booster::system::system_category);
+							booster::system::error_code e(errno,booster::system::system_category());
 							if(e.value()==EMFILE || e.value()==ENFILE) {
 								BOOSTER_ERROR("cppcms_prefork") 
 									<< "Accept failed:" <<	e.message();

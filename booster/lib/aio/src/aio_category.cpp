@@ -11,7 +11,7 @@
 namespace booster {
 namespace aio{ 
 namespace aio_error {
-	char const *category::name() const
+	char const *category::name() const noexcept
 	{
 		return "aio::";
 	}

@@ -9,7 +9,7 @@
 
 namespace cppcms {
 namespace impl {
-	char const *error_category::name() const
+	char const *error_category::name() const noexcept
 	{
 		return "cppcms::io";
 	}

@@ -378,7 +378,7 @@ namespace cgi {
 				}
 			}
 			if(r < 0) {
-				e=booster::system::error_code(errno,booster::system::system_category);
+				e=booster::system::error_code(errno,booster::system::system_category());
 				return 0;
 			}
 			if(r==1 && pfd.revents & POLLOUT)

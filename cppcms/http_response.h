@@ -11,16 +11,13 @@
 #include <cppcms/defs.h>
 #include <booster/noncopyable.h>
 #include <booster/hold_ptr.h>
+#include <booster/system_error.h>
 
 #include <string>
 #include <iostream>
 #include <cppcms/cstdint.h>
 
-namespace booster{ 
-	namespace system {
-		class error_code;
-	}
-}
+
 namespace cppcms {
 class cache_interface;
 namespace impl { namespace cgi { class connection;  }}

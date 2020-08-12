@@ -33,8 +33,10 @@ namespace aio {
 		///
 		class BOOSTER_API category : public system::error_category {
 		public:
+			category() {}
+			category(category &&) {}
 			/// Get category name
-			virtual char const *name() const;
+			virtual char const *name() const noexcept;
 			/// Get message from code
 			virtual std::string message(int cat) const;
 		};

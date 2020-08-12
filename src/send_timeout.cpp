@@ -28,7 +28,7 @@ void set_send_timeout(booster::aio::stream_socket &sock,int seconds,booster::sys
 	tv.tv_sec = seconds;
 	tv.tv_usec = 0;
 	if(setsockopt(sock.native(),SOL_SOCKET,SO_SNDTIMEO,&tv,sizeof(tv)) < 0) {
-		e=booster::system::error_code(errno,booster::system::system_category);
+		e=booster::system::error_code(errno,booster::system::system_category());
 	}
 }
 

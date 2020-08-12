@@ -71,7 +71,7 @@ namespace booster {
 			delete ptr;
 			ptr = 0;
 			throw system::system_error(	err,
-							system::system_category,
+							system::system_category(),
 							"booster::thread: failed to create a thread");
 		}
 	}
@@ -265,7 +265,7 @@ namespace booster {
 			pthread_key(void (*d)(void *)) : key(d)
 			{
 				if(pthread_key_create(&key_,booster_pthread_key_destroyer) != 0) {
-					throw system::system_error(errno,system::system_category,
+					throw system::system_error(errno,system::system_category(),
 								   "Failed to create thread specific key");
 				}
 			}
@@ -329,7 +329,7 @@ namespace booster {
 			keys_manager() : key_max_(0)
 			{
 				if(pthread_key_create(&key_,booster_detail_keys_deleter)!=0) {
-					throw system::system_error(errno,system::system_category,
+					throw system::system_error(errno,system::system_category(),
 						   "Failed to create thread specific key");
 				}
 			}
@@ -434,7 +434,7 @@ namespace booster {
 		if(!d->lock_file) {
 			int err=errno;
 			pthread_rwlock_destroy(&d->lock);
-			throw system::system_error(err,system::system_category,"fork_shared_mutex:failed to create temporary file");
+			throw system::system_error(err,system::system_category(),"fork_shared_mutex:failed to create temporary file");
 		}
 	}
 	fork_shared_mutex::~fork_shared_mutex()
@@ -461,7 +461,7 @@ namespace booster {
 		pthread_rwlock_unlock(&d->lock);
 		if(err == EACCES || err==EAGAIN)
 			return false;
-		throw system::system_error(err,system::system_category,"fork_shared_mutex: failed to lock");
+		throw system::system_error(err,system::system_category(),"fork_shared_mutex: failed to lock");
 	}
 	void fork_shared_mutex::unique_lock()
 	{
@@ -477,7 +477,7 @@ namespace booster {
 			return;
 		int err = errno;
 		pthread_rwlock_unlock(&d->lock);
-		throw system::system_error(err,system::system_category,"fork_shared_mutex: failed to lock");
+		throw system::system_error(err,system::system_category(),"fork_shared_mutex: failed to lock");
 	}
 
 	bool fork_shared_mutex::try_shared_lock()
@@ -497,7 +497,7 @@ namespace booster {
 		pthread_rwlock_unlock(&d->lock);
 		if(err == EACCES || err==EAGAIN)
 			return false;
-		throw system::system_error(err,system::system_category,"fork_shared_mutex: failed to lock");
+		throw system::system_error(err,system::system_category(),"fork_shared_mutex: failed to lock");
 	}
 
 	void fork_shared_mutex::shared_lock()
@@ -514,7 +514,7 @@ namespace booster {
 			return;
 		int err = errno;
 		pthread_rwlock_unlock(&d->lock);
-		throw system::system_error(err,system::system_category,"fork_shared_mutex: failed to lock");
+		throw system::system_error(err,system::system_category(),"fork_shared_mutex: failed to lock");
 	}
 
 	void fork_shared_mutex::unlock()

@@ -419,8 +419,6 @@ set(BOOSTER_SRC
 	lib/ptime/src/posix_time.cpp
 	lib/ptime/src/ctime.cpp
 	lib/regex/src/pcre_regex.cpp
-	lib/system/src/posix_error.cpp
-	lib/system/src/windows_error.cpp
 	lib/aio/src/aio_category.cpp
 	lib/aio/src/deadline_timer.cpp
 	lib/aio/src/endpoint.cpp
