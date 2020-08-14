@@ -48,6 +48,9 @@ namespace booster {
 		///
 		regex const &operator=(regex const &);
 
+		regex &operator=(regex &&);
+		regex(regex &&);
+
 		~regex();
 
 		///

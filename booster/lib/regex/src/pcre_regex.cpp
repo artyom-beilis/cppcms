@@ -103,6 +103,14 @@ namespace booster {
 		d=other.d;
 		return *this;
 	}
+	regex::regex(regex &&other) : d(std::move(other.d))
+	{
+	}
+	regex &regex::operator=(regex &&other)
+	{
+		d = std::move(other.d);
+		return *this;
+	}
 	regex::~regex()
 	{
 	}
