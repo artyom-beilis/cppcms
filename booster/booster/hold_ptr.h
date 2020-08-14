@@ -17,11 +17,23 @@ namespace booster {
 	template<typename T>
 	class hold_ptr {
 		T *ptr_;
-		hold_ptr(hold_ptr const &other); // non copyable 
-		hold_ptr const &operator=(hold_ptr const &other); // non assignable
 	public:
+		hold_ptr(hold_ptr const &other) = delete; // non copyable 
+		hold_ptr const &operator=(hold_ptr const &other) = delete; // non assignable
 		hold_ptr() : ptr_(0) {}
 		explicit hold_ptr(T *v) : ptr_(v) {}
+		hold_ptr(hold_ptr &&other) : ptr_(other.ptr_)
+		{
+			other.ptr_ = 0;
+		}
+		hold_ptr &operator=(hold_ptr &&other)
+		{
+			if(this!=&other) {
+				this->swap(other);
+				other.reset();
+			}
+			return *this;
+		}
 		~hold_ptr() 
 		{
 			if(ptr_) delete ptr_;

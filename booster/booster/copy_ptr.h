@@ -28,6 +28,18 @@ namespace booster {
 			ptr_(other.ptr_ ? new T(*other.ptr_) : 0)
 		{
 		}
+		copy_ptr(copy_ptr &&other) : ptr_(other.ptr_)
+		{
+			other.ptr_ = 0;
+		}
+		copy_ptr &operator=(copy_ptr &&other) 
+		{
+			if(this!=&other) {
+				this->swap(other);
+				other.reset();
+			}
+			return *this;
+		}
 		copy_ptr const &operator=(copy_ptr const &other)
 		{
 			if(this != &other) {
