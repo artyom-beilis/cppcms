@@ -304,27 +304,6 @@ endif()
 
 
 
-check_cxx_source_compiles(
-	"int main() { volatile int v=0; return __sync_bool_compare_and_swap(&v,0,1); }"
-	BOOSTER_HAS_GCC_SYNC)
-
-check_cxx_source_compiles(
-	"#include <bits/atomicity.h> 
-	using __gnu_cxx::__exchange_and_add;
-	int main(){ volatile int x=0; return __exchange_and_add(&x,1);}"
-	BOOSTER_HAVE_GCC_BITS_EXCHANGE_AND_ADD)
-
-check_cxx_source_compiles(
-	"#include <ext/atomicity.h> 
-	using __gnu_cxx::__exchange_and_add;
-	int main(){ volatile int x=0; return __exchange_and_add(&x,1);}"
-	BOOSTER_HAVE_GCC_EXT_EXCHANGE_AND_ADD)
-
-check_cxx_source_compiles(
-	"#include <sys/types.h>
-	#include <machine/atomic.h>
-	int main() { volatile unsigned v=0; return atomic_cmpset_int(&v,1,0); }"
-	BOOSTER_HAVE_FREEBSD_ATOMIC)
 
 check_cxx_source_compiles(
 	"#include <execinfo.h>
@@ -371,16 +350,6 @@ check_cxx_source_compiles(
 	BOOSTER_HAVE_UNWIND_BACKTRACE_BUILTIN)
 
 
-
-Check_cxx_source_compiles(
-	"#include <atomic.h>
-	int main() { volatile unsigned v=0; return atomic_add_int_nv(&v,1); }"
-	BOOSTER_HAVE_SOLARIS_ATOMIC)
-
-check_cxx_source_compiles(
-	"#include <libkern/OSAtomic.h>
-	int main() { int32_t v=0; return OSAtomicAdd32(1,&v); }"
-	BOOSTER_HAVE_MAC_OS_X_ATOMIC)
 
 check_cxx_source_compiles(
 	"#include <stdint.h>
@@ -429,7 +398,6 @@ set(BOOSTER_SRC
 	lib/aio/src/basic_socket.cpp
 	lib/aio/src/acceptor.cpp
 	lib/aio/src/stream_socket.cpp
-	lib/smart_ptr/src/atomic_counter.cpp
 	lib/shared_object/src/shared_object.cpp
 	lib/log/src/log.cpp
 	lib/iostreams/src/streambuf.cpp

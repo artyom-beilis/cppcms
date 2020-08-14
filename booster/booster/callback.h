@@ -33,7 +33,13 @@ namespace booster {
 	};
 
 
-	#ifdef BOOSTER_DOXYGEN_DOCS
+	template<typename Result, typename ...Params>
+	struct callable<Result(Params...)> : public refcounted 
+	{
+		virtual Result operator()(Params...) = 0;
+		virtual ~callable(){}
+	};
+
 	///
 	/// \brief This is Booster's implementation of std::tr1::callback/booster::callback.
 	///
@@ -51,260 +57,110 @@ namespace booster {
 	///   of parameters that can be used is 8.
 	///
 	///
-	template<typename Result,typename ...Params>			
-	class callback<Result(Params...)>				
+										
+	template<typename Result, typename ...Params >			
+	class callback<Result(Params...)>			
 	{									
-	public:	
+	public:									
+		typedef Result result_type;
+		typedef callable<Result(Params...)> callable_type;						
 		///
 		/// Pointer to callable object
 		///
 		/// \ver{v1_2}
 		typedef intrusive_ptr<callable_type> pointer_type;		
-		///
-		/// Type of result, for use with boost::bind
-		///
-		typedef Result result_type;		
+										
+		template<typename R,typename F>					
+		struct callable_impl : public callable_type {			
+			F func;							
+			callable_impl(F f) : func(f){}				
+			virtual R operator()(Params... args) 		
+			{  return func(args...); }			
+		};								
+										
+		template<typename F>						
+		struct callable_impl<void,F> : public callable_type {		
+			F func;							
+			callable_impl(F f) : func(f){}				
+			virtual void operator()(Params... args) 		
+			{  func(args...); }				
+		};								
+										
 		///
 		/// Default constructor, creates an empty callbacks
 		///			
-		callback();
-		///
-		/// Creates a callback from a callbackal \a func of type F. func
-		/// should be copyable. It is copied and stored inside callback object.
-		///
+		callback(){}							
+										
+		template<typename Call>						
+		callback(intrusive_ptr<Call> c) : call_ptr(c)			
+		{}								
+										
+		template<typename Call>						
+		callback(std::unique_ptr<Call> ptr) : call_ptr(ptr.release())	
+		{}								
+										
+		template<typename Call>						
+		callback const &operator=(intrusive_ptr<Call> c)		
+		{ call_ptr = c; return *this; }					
+										
+		template<typename Call>						
+		callback const &operator=(std::unique_ptr<Call> c)		
+		{ call_ptr = 0; call_ptr = c.release(); return *this; }		
+										
 		template<typename F>						
-		callback(F func);
-		
-		///
-		/// Copy callback, Copies underlying callbackal object.
-		///
-		callback(callback const &other);
+		callback(F func) : call_ptr(new callable_impl<Result,F>(func)) 	
+		{}								
+										
+		callback(callback const &other) : call_ptr(other.call_ptr) {}	
 
-		///
-		/// Assign a callbackal \a func of type F. func
-		/// should be copyable. It is copied and stored inside callback object.
-		///
+		callback(callback &&other) : call_ptr(std::move(other.call_ptr))
+		{
+		}
+										
 		template<typename F>						
-		callback const &operator=(F func);
-
-		///
-		/// Assignment operator. Copies underlying callbackal object.
-		/// 
-		callback const &operator=(callback const &other);
-
-		///
-		/// Calls underling callbackal object. If the callback is empty, throws bad_callback_call.
-		///
-		result_type operator()(Params... params) const;
+		callback const &operator=(F func)				
+		{ 								
+			call_ptr = new callable_impl<Result,F>(func);		
+			return *this;						
+		}								
+										
+		callback &operator=(callback &&other)
+		{
+			call_ptr = std::move(other.call_ptr);
+			return *this;
+		}
+		callback const &operator=(callback const &other)		
+		{ 								
+			if(this != &other) { call_ptr=other.call_ptr; } 	
+			return *this;						
+		}								
+										
+		Result operator()(Params ...args) const			
+		{ 								
+			if(!call_ptr.get()) throw bad_callback_call();		
+			return (*call_ptr)(args...); 		
+		}								
+										
 		///
 		/// Return true if the callback is empty
 		///
-		bool empty() const;
+		bool empty() const { return call_ptr.get()==0; }		
+										
 		///
 		/// Returns true if the callback is not empty
 		///
-		operator bool() const;
+		operator bool() const { return !empty(); }			
+										
+		
+		void swap(callback &other) { call_ptr.swap(other.call_ptr); }	
+		
+		pointer_type const &get_pointer() const { return call_ptr; }	
+		pointer_type &get_pointer() { return call_ptr; }		
+										
+	private:								
+		pointer_type call_ptr;						
+	};									
 
-		///
-		/// Swaps two callbackal object. Does not throw.
-		///
-		void swap(callback &other);
-		///
-		/// Get underlying pointer to callable_type
-		///
-		/// \ver{v1_2}
-		pointer_type const &get_pointer() const;
-		///
-		/// Get underlying pointer to callable_type
-		///
-		/// \ver{v1_2}
-		pointer_type &get_pointer();
-	};			
-
-	#else
-
-	#define BOOSTER_CALLBACK						\
-	template<typename Result BOOSTER_TEMPLATE_PARAMS >			\
-	struct callable<Result(BOOSTER_TEMPLATE_TYPE_PARAMS)> :public refcounted\
-	{									\
-		virtual Result operator()(BOOSTER_TYPE_PARAMS) = 0;		\
-		virtual ~callable(){}						\
-	};									\
-										\
-	template<typename Result BOOSTER_TEMPLATE_PARAMS >			\
-	class callback<Result(BOOSTER_TEMPLATE_TYPE_PARAMS)>			\
-	{									\
-	public:									\
-		typedef Result result_type;					\
-										\
-		typedef callable<Result(BOOSTER_TEMPLATE_TYPE_PARAMS)> 		\
-			callable_type;						\
-		typedef intrusive_ptr<callable_type> pointer_type;		\
-										\
-		template<typename R,typename F>					\
-		struct callable_impl : public callable_type {			\
-			F func;							\
-			callable_impl(F f) : func(f){}				\
-			virtual R operator()(BOOSTER_TYPE_PARAMS) 		\
-			{  return func(BOOSTER_CALL_PARAMS); }			\
-		};								\
-										\
-		template<typename F>						\
-		struct callable_impl<void,F> : public callable_type {		\
-			F func;							\
-			callable_impl(F f) : func(f){}				\
-			virtual void operator()(BOOSTER_TYPE_PARAMS) 		\
-			{  func(BOOSTER_CALL_PARAMS); }				\
-		};								\
-										\
-		callback(){}							\
-										\
-		template<typename Call>						\
-		callback(intrusive_ptr<Call> c) : call_ptr(c)			\
-		{}								\
-										\
-		template<typename Call>						\
-		callback(std::unique_ptr<Call> ptr) : call_ptr(ptr.release())	\
-		{}								\
-										\
-		template<typename Call>						\
-		callback const &operator=(intrusive_ptr<Call> c)		\
-		{ call_ptr = c; return *this; }					\
-										\
-		template<typename Call>						\
-		callback const &operator=(std::unique_ptr<Call> c)		\
-		{ call_ptr = 0; call_ptr = c.release(); return *this; }		\
-										\
-		template<typename F>						\
-		callback(F func) : call_ptr(new callable_impl<Result,F>(func)) 	\
-		{}								\
-										\
-		callback(callback const &other) : call_ptr(other.call_ptr) {}	\
-										\
-		template<typename F>						\
-		callback const &operator=(F func)				\
-		{ 								\
-			call_ptr = new callable_impl<Result,F>(func);		\
-			return *this;						\
-		}								\
-										\
-		callback const &operator=(callback const &other)		\
-		{ 								\
-			if(this != &other) { call_ptr=other.call_ptr; } 	\
-			return *this;						\
-		}								\
-										\
-		Result operator()(BOOSTER_TYPE_PARAMS) const			\
-		{ 								\
-			if(!call_ptr.get()) throw bad_callback_call();		\
-			return (*call_ptr)(BOOSTER_CALL_PARAMS); 		\
-		}								\
-										\
-		bool empty() const { return call_ptr.get()==0; }		\
-										\
-		operator bool() const { return !empty(); }			\
-										\
-		void swap(callback &other) { call_ptr.swap(other.call_ptr); }	\
-		pointer_type const &get_pointer() const { return call_ptr; }	\
-		pointer_type &get_pointer() { return call_ptr; }		\
-										\
-	private:								\
-		pointer_type call_ptr;						\
-	};									\
-
-	#define BOOSTER_TEMPLATE_PARAMS
-	#define BOOSTER_TEMPLATE_TYPE_PARAMS
-	#define BOOSTER_TYPE_PARAMS
-	#define BOOSTER_CALL_PARAMS
-	BOOSTER_CALLBACK
-	#undef BOOSTER_TEMPLATE_PARAMS
-	#undef BOOSTER_TEMPLATE_TYPE_PARAMS
-	#undef BOOSTER_TYPE_PARAMS
-	#undef BOOSTER_CALL_PARAMS
-
-	#define BOOSTER_TEMPLATE_PARAMS ,typename P1
-	#define BOOSTER_TEMPLATE_TYPE_PARAMS  P1
-	#define BOOSTER_TYPE_PARAMS  P1 a1
-	#define BOOSTER_CALL_PARAMS a1
-	BOOSTER_CALLBACK
-	#undef BOOSTER_TEMPLATE_PARAMS
-	#undef BOOSTER_TEMPLATE_TYPE_PARAMS
-	#undef BOOSTER_TYPE_PARAMS
-	#undef BOOSTER_CALL_PARAMS
-
-	#define BOOSTER_TEMPLATE_PARAMS ,typename P1,typename P2
-	#define BOOSTER_TEMPLATE_TYPE_PARAMS  P1, P2
-	#define BOOSTER_TYPE_PARAMS  P1 a1,P2 a2
-	#define BOOSTER_CALL_PARAMS a1,a2
-	BOOSTER_CALLBACK
-	#undef BOOSTER_TEMPLATE_PARAMS
-	#undef BOOSTER_TEMPLATE_TYPE_PARAMS
-	#undef BOOSTER_TYPE_PARAMS
-	#undef BOOSTER_CALL_PARAMS
-			
-	#define BOOSTER_TEMPLATE_PARAMS ,typename P1,typename P2,typename P3
-	#define BOOSTER_TEMPLATE_TYPE_PARAMS  P1, P2, P3
-	#define BOOSTER_TYPE_PARAMS  P1 a1,P2 a2,P3 a3
-	#define BOOSTER_CALL_PARAMS a1,a2,a3
-	BOOSTER_CALLBACK
-	#undef BOOSTER_TEMPLATE_PARAMS
-	#undef BOOSTER_TEMPLATE_TYPE_PARAMS
-	#undef BOOSTER_TYPE_PARAMS
-	#undef BOOSTER_CALL_PARAMS
-	
-	#define BOOSTER_TEMPLATE_PARAMS ,typename P1,typename P2,typename P3,typename P4
-	#define BOOSTER_TEMPLATE_TYPE_PARAMS  P1, P2, P3, P4
-	#define BOOSTER_TYPE_PARAMS  P1 a1,P2 a2,P3 a3,P4 a4
-	#define BOOSTER_CALL_PARAMS a1,a2,a3,a4
-	BOOSTER_CALLBACK
-	#undef BOOSTER_TEMPLATE_PARAMS
-	#undef BOOSTER_TEMPLATE_TYPE_PARAMS
-	#undef BOOSTER_TYPE_PARAMS
-	#undef BOOSTER_CALL_PARAMS
-
-	#define BOOSTER_TEMPLATE_PARAMS ,typename P1,typename P2,typename P3,typename P4,typename P5
-	#define BOOSTER_TEMPLATE_TYPE_PARAMS  P1, P2, P3, P4, P5
-	#define BOOSTER_TYPE_PARAMS  P1 a1,P2 a2,P3 a3,P4 a4,P5 a5
-	#define BOOSTER_CALL_PARAMS a1,a2,a3,a4,a5
-	BOOSTER_CALLBACK
-	#undef BOOSTER_TEMPLATE_PARAMS
-	#undef BOOSTER_TEMPLATE_TYPE_PARAMS
-	#undef BOOSTER_TYPE_PARAMS
-	#undef BOOSTER_CALL_PARAMS
-
-	#define BOOSTER_TEMPLATE_PARAMS ,typename P1,typename P2,typename P3,typename P4,typename P5,typename P6
-	#define BOOSTER_TEMPLATE_TYPE_PARAMS  P1, P2, P3, P4, P5, P6
-	#define BOOSTER_TYPE_PARAMS  P1 a1,P2 a2,P3 a3,P4 a4,P5 a5,P6 a6
-	#define BOOSTER_CALL_PARAMS a1,a2,a3,a4,a5,a6
-	BOOSTER_CALLBACK
-	#undef BOOSTER_TEMPLATE_PARAMS
-	#undef BOOSTER_TEMPLATE_TYPE_PARAMS
-	#undef BOOSTER_TYPE_PARAMS
-	#undef BOOSTER_CALL_PARAMS
-	
-	#define BOOSTER_TEMPLATE_PARAMS ,typename P1,typename P2,typename P3,typename P4,typename P5,typename P6,typename P7
-	#define BOOSTER_TEMPLATE_TYPE_PARAMS  P1, P2, P3, P4, P5, P6, P7
-	#define BOOSTER_TYPE_PARAMS  P1 a1,P2 a2,P3 a3,P4 a4,P5 a5,P6 a6,P7 a7
-	#define BOOSTER_CALL_PARAMS a1,a2,a3,a4,a5,a6,a7
-	BOOSTER_CALLBACK
-	#undef BOOSTER_TEMPLATE_PARAMS
-	#undef BOOSTER_TEMPLATE_TYPE_PARAMS
-	#undef BOOSTER_TYPE_PARAMS
-	#undef BOOSTER_CALL_PARAMS
-	
-	#define BOOSTER_TEMPLATE_PARAMS ,typename P1,typename P2,typename P3,typename P4,typename P5,typename P6,typename P7,typename P8
-	#define BOOSTER_TEMPLATE_TYPE_PARAMS  P1, P2, P3, P4, P5, P6, P7, P8
-	#define BOOSTER_TYPE_PARAMS  P1 a1,P2 a2,P3 a3,P4 a4,P5 a5,P6 a6,P7 a7,P8 a8
-	#define BOOSTER_CALL_PARAMS a1,a2,a3,a4,a5,a6,a7,a8
-	BOOSTER_CALLBACK
-	#undef BOOSTER_TEMPLATE_PARAMS
-	#undef BOOSTER_TEMPLATE_TYPE_PARAMS
-	#undef BOOSTER_TYPE_PARAMS
-	#undef BOOSTER_CALL_PARAMS
-
-	#undef BOOSTER_CALLBACK
-
-	#endif // DOC
 
 } // booster
 

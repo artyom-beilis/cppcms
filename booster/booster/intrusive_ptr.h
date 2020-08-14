@@ -80,6 +80,36 @@ public:
         if(p_ != 0) intrusive_ptr_add_ref(p_);
     }
 
+// Move support
+
+
+    intrusive_ptr(intrusive_ptr && rhs) noexcept : p_( rhs.p_ )
+    {
+        rhs.p_ = 0;
+    }
+
+    intrusive_ptr & operator=(intrusive_ptr && rhs) noexcept
+    {
+        this_type( static_cast< intrusive_ptr && >( rhs ) ).swap(*this);
+        return *this;
+    }
+
+    template<class U> friend class intrusive_ptr;
+
+    template<class U>
+    intrusive_ptr(intrusive_ptr<U> && rhs)
+    : p_( rhs.p_ )
+    {
+        rhs.p_ = 0;
+    }
+
+    template<class U>
+    intrusive_ptr & operator=(intrusive_ptr<U> && rhs) noexcept
+    {
+        this_type( static_cast< intrusive_ptr<U> && >( rhs ) ).swap(*this);
+        return *this;
+    }
+
     intrusive_ptr & operator=(intrusive_ptr const & rhs)
     {
         this_type(rhs).swap(*this);

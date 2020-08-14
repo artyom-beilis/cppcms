@@ -99,6 +99,32 @@ int main()
 		TEST(fcnt1()==2);
 		TEST(fcnt2()==3);
 		TEST(fcnt2()==4);
+
+		{
+			// move copy
+			foov_called = false;
+			callback<void()> c(foov);
+			callback<void()> c2(std::move(c));
+			TEST(c.empty());
+			TEST(!c2.empty());
+			c2();
+			TEST(foov_called);
+			foov_called=false;
+		}
+		{
+			// move assignment
+			foov_called = false;
+			callback<void()> c(foov);
+			callback<void()> c2(reset);
+			TEST(!c.empty());
+			TEST(!c2.empty());
+			c2 = std::move(c);
+			TEST(c.empty());
+			TEST(!foov_called);
+			c2();
+			TEST(foov_called);
+			foov_called=false;
+		}
 		
 		{
 			std::unique_ptr<mycall> mc(new mycall());
