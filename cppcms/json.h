@@ -508,6 +508,22 @@ namespace json {
 		///
 		bool operator!=(value const &other) const;
 
+
+		///
+		/// Move assignment
+		///
+		value &operator=(value &&other)
+		{
+			d=std::move(other.d);
+			return *this;
+		}
+		///
+		/// Move constructor
+		///
+		value(value &&other) : d(std::move(other.d))
+		{
+			
+		}
 		///
 		/// Copy constructor
 		///
@@ -561,6 +577,8 @@ namespace json {
 
 			copyable();
 			copyable(copyable const &r);
+			copyable(copyable &&);
+			copyable &operator=(copyable &&r);
 			copyable const &operator=(copyable const &r);
 			~copyable();
 

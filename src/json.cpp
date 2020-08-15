@@ -22,7 +22,7 @@
 namespace cppcms {
 namespace json {
 
-    static const size_t json_max_depth = 512;
+	static const size_t json_max_depth = 512;
 
 	bad_value_cast::bad_value_cast() : msg_("cppcms::json::bad_cast") 
 	{
@@ -312,6 +312,15 @@ namespace json {
 	value::copyable::copyable(copyable const &r) : 
 		d(r.d) 
 	{
+	}
+
+	value::copyable &value::copyable::operator=(value::copyable &&r)
+	{
+		d.swap(r.d);
+	}
+	value::copyable::copyable(value::copyable &&r) : d(new value::_data())
+	{
+		d.swap(r.d);
 	}
 	value::copyable const &value::copyable::operator=(value::copyable const &r)
 	{
