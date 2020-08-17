@@ -14,8 +14,8 @@ namespace booster {
 	///
 	class noncopyable {
 	private:
-		noncopyable(noncopyable const &);
-		noncopyable const &operator=(noncopyable const &);
+		noncopyable(noncopyable const &) = delete;
+		noncopyable const &operator=(noncopyable const &) = delete;
 	protected:
 		noncopyable(){}
 		~noncopyable(){}
