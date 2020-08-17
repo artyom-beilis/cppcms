@@ -32,34 +32,7 @@
 
 namespace booster {
 
-	struct mutex::data { pthread_mutex_t m; };
 
-	mutex::mutex() : d(new data)
-	{
-		pthread_mutex_init(&d->m,0);
-	}
-	mutex::~mutex()
-	{
-		pthread_mutex_destroy(&d->m);
-	}
-	void mutex::lock() { pthread_mutex_lock(&d->m); }
-	void mutex::unlock() { pthread_mutex_unlock(&d->m); }
-
-	struct recursive_mutex::data { pthread_mutex_t m; };
-
-	recursive_mutex::recursive_mutex() : d(new data)
-	{
-		pthread_mutexattr_t a;
-		pthread_mutexattr_init(&a);
-		pthread_mutexattr_settype(&a,PTHREAD_MUTEX_RECURSIVE);
-		pthread_mutex_init(&d->m,&a);
-	}
-	recursive_mutex::~recursive_mutex()
-	{
-		pthread_mutex_destroy(&d->m);
-	}
-	void recursive_mutex::lock() { pthread_mutex_lock(&d->m); }
-	void recursive_mutex::unlock() { pthread_mutex_unlock(&d->m); }
 
 	struct shared_mutex::data { pthread_rwlock_t m; };
 	shared_mutex::shared_mutex() : d(new data)
@@ -141,29 +114,6 @@ namespace booster {
 	}
 
 	#endif
-
-	struct condition_variable::data { pthread_cond_t c; };
-
-	condition_variable::condition_variable() : d(new data)
-	{
-		pthread_cond_init(&d->c,0);
-	}
-	condition_variable::~condition_variable()
-	{
-		pthread_cond_destroy(&d->c);
-	}
-	void condition_variable::notify_one()
-	{
-		pthread_cond_signal(&d->c);
-	}
-	void condition_variable::notify_all()
-	{
-		pthread_cond_broadcast(&d->c);
-	}
-	void condition_variable::wait(unique_lock<mutex> &m)
-	{
-		pthread_cond_wait(&d->c,&(m.mutex()->d->m));
-	}
 
 
 #if !defined(__NetBSD__) && !defined(__CYGWIN__)

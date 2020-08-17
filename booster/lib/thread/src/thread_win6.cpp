@@ -27,26 +27,6 @@
 //
 
 namespace booster {
-	struct mutex::data {
-		CRITICAL_SECTION m;
-	};
-
-	mutex::mutex() : d(new data)
-	{
-		InitializeCriticalSection(&d->m);
-	}
-	mutex::~mutex()
-	{
-		DeleteCriticalSection(&d->m);
-	}
-	void mutex::lock() 
-	{
-		EnterCriticalSection(&d->m);
-	}
-	void mutex::unlock() 
-	{ 
-		LeaveCriticalSection(&d->m);
-	}
 	
 	struct shared_mutex::data { SRWLOCK m; bool ex; };
 	shared_mutex::shared_mutex() : d(new data)
@@ -74,75 +54,6 @@ namespace booster {
 			ReleaseSRWLockShared(&d->m);
 	}
 
-	struct condition_variable::data { CONDITION_VARIABLE c; };
-
-	condition_variable::condition_variable() : d(new data)
-	{
-		InitializeConditionVariable(&d->c);
-	}
-	condition_variable::~condition_variable()
-	{
-	}
-	void condition_variable::notify_one()
-	{
-		WakeConditionVariable(&d->c);
-	}
-	void condition_variable::notify_all()
-	{
-		WakeAllConditionVariable(&d->c);
-	}
-	void condition_variable::wait(unique_lock<mutex> &m)
-	{
-		SleepConditionVariableCS(&d->c,&(m.mutex()->d->m),INFINITE);
-	}
-
-	/*
-	 * This currently does not work...
-	 * Windows got Deadlock during destruction of the TLS key
-	 
-	namespace details {
-		extern "C" {
-			static WINAPI void booster_fls_key_destroyer(void *p)
-			{
-				if(!p)
-					return;
-				delete static_cast<tls_object*>(p);
-			}
-		}
-		
-		class fls_key : public key {
-		public:
-			fls_key(void (*d)(void *)) : key(d)
-			{
-				key_ = FlsAlloc(booster_fls_key_destroyer);
-				if(key_ == FLS_OUT_OF_INDEXES) {
-					throw  booster::runtime_error("Could not allocate Thread specific key");
-				}
-			}
-			virtual ~fls_key()
-			{
-				FlsFree(key_);
-			}
-			tls_object *get_object()
-			{
-				void *p=FlsGetValue(key_);
-				if(p)
-					return static_cast<tls_object*>(p);
-				tls_object *res = new tls_object(intrusive_ptr<key>(this));
-				FlsSetValue(key_,static_cast<void*>(res));
-				return res;
-			}
-		private:
-			DWORD key_;
-		};
-
-		intrusive_ptr<key> make_key(void (*dtor)(void *))
-		{
-			return new fls_key(dtor);
-		}
-	} // details
-
-	*/
 } // booster
 
 

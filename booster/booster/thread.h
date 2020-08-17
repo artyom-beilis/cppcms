@@ -16,80 +16,17 @@
 #include <booster/config.h>
 
 #include <thread>
-
+#include <mutex>
+#include <condition_variable>
 namespace booster {
 
 
-    using std::thread;
+	using std::thread;
+	using std::mutex;
+	using std::recursive_mutex;
+	using std::condition_variable;
+	using std::unique_lock;
 
-	class condition_variable;
-
-	///
-	/// \brief Mutex object
-	///
-	class BOOSTER_API mutex : public noncopyable {
-	public:
-		mutex();
-		~mutex();
-		///
-		/// Lock the mutex. If the same thread tries to lock the mutex it holds, the behavior is undefined
-		/// and would likely lead to deadlock
-		///
-		/// \see unique_lock
-		///
-		void lock();
-		///
-		/// Unlock the mutex. If called for unlocked mutex, the behavior is undefined
-		///
-		/// \see unique_lock
-		///
-		void unlock();
-		friend class condition_variable;
-	private:
-		struct data;
-		hold_ptr<data> d;
-	};
-
-	///
-	/// \brief Recursive mutex object.
-	///
-	/// Unlike \ref mutex, when the same thread tries to lock the mutex that is already locked it would
-	/// succeed and would require to unlock it same times it was locked.
-	///
-	/// Useful for handling objects locks when the order of functions calls is not known in advice. For example
-	/// \code
-	/// void foo()
-	/// {
-	///    unique_lock<recursive_mutex> guard(this->lock);
-	///    bar();
-	///    baz();
-	/// }
-	/// void bar()
-	/// {
-	///    unique_lock<recursive_mutex> guard(this->lock);
-	///    ...
-	/// }
-	/// \endcode
-	///
-	/// \see unique_lock
-	/// \see shared_lock 
-	///
-	class BOOSTER_API recursive_mutex : public noncopyable {
-	public:
-		recursive_mutex();
-		~recursive_mutex();
-		///
-		/// Lock the mutex. \see unique_lock
-		///
-		void lock();
-		///
-		/// Unlock the mutex, \see unique_lock
-		/// 
-		void unlock();
-	private:
-		struct data;
-		hold_ptr<data> d;
-	};
 
 	///
 	/// \brief Recursuve Shared mutex or a.k.a. Read-Write Lock that can be recursively locked by \b readers
@@ -156,44 +93,6 @@ namespace booster {
 		/// Release the lock
 		///
 		void unlock();
-	private:
-		struct data;
-		hold_ptr<data> d;
-	};
-
-	template<typename Mutex>
-	class unique_lock;
-
-	///
-	/// \brief This is conditional variable object
-	///
-	/// For detailed description of the concept read http://en.wikipedia.org/wiki/Monitor_(synchronization)
-	///
-	class BOOSTER_API condition_variable {
-	public:
-		condition_variable();
-		~condition_variable();
-		
-		///
-		/// Wait for the condition atomically unlocking the mutex referenced by m.
-		///
-		/// When the condition occurs the lock on the mutex would be acquired again.
-		///
-		/// Note it is unspecified whether suspicious wakes can occur. It is good idea to check
-		/// whether the condition hold after this function returns.
-		///
-		void wait(unique_lock<mutex> &m);
-
-		///
-		/// Notify exactly one waiting process on the condition. If no process waits then the notification
-		/// would be ignored
-		/// 
-		void notify_one();
-		///
-		/// Notify all waiting process on the condition. If no process waits then the notification
-		/// would be ignored
-		/// 
-		void notify_all();
 	private:
 		struct data;
 		hold_ptr<data> d;
@@ -345,33 +244,6 @@ namespace booster {
 		intrusive_ptr<details::key> key_;
 	};
 
-
-	///
-	/// \brief a Unique lock guard.
-	///
-	/// Acquire the unique lock in the constructor and release it in the destructor
-	///
-	template<typename Mutex>
-	class unique_lock : public noncopyable {
-	public:
-		/// Acquire the lock
-		unique_lock(Mutex &m) : m_(&m)
-		{
-			m_->lock();
-		}
-		/// Release the lock
-		~unique_lock()
-		{
-			m_->unlock();
-		}
-		/// Get the reference to the mutex object
-		Mutex *mutex() const
-		{
-			return m_;
-		}
-	private:
-		Mutex *m_;
-	};
 
 	///
 	/// \brief a Shared lock guard.
