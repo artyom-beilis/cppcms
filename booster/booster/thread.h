@@ -15,41 +15,12 @@
 #include <booster/function.h>
 #include <booster/config.h>
 
+#include <thread>
+
 namespace booster {
 
-	extern "C" void *booster_thread_func(void *);
-	
-	///
-	/// \brief the class that allows to start an execution thread
-	///
-	class BOOSTER_API thread : public noncopyable {
-	public:
-		///
-		/// Run a function \a cb in separate thread
-		///
-		thread(function<void()> const &cb);
-		~thread();
 
-		///
-		/// Join existing thread
-		///
-		void join();
-
-		///
-		/// Detach from the thread
-		///
-		void detach();
-
-		///
-		/// Get number of CPUS, returns 0 if the number is unknown
-		///
-		static unsigned hardware_concurrency();
-	private:
-		friend void *booster_thread_func(void *);
-		struct data;
-		hold_ptr<data> d;
-	};
-
+    using std::thread;
 
 	class condition_variable;
 

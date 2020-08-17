@@ -98,6 +98,11 @@ namespace booster {
 		{
 			TlsFree(id);
 		}
+        
+        thread_local struct thread_guard {
+            thread_guard() {}
+            ~thread_guard() { on_thread_end(); }
+        } tg_instance;
 
 
 		#ifdef DLL_EXPORT
@@ -131,7 +136,7 @@ namespace booster {
 		#endif
 	} // winthread 
 
-
+#if 0
 	class win_thread_data : public refcounted {
 	public:
 		win_thread_data(function<void()> const &cb) :
@@ -256,6 +261,7 @@ namespace booster {
 		GetSystemInfo(&info);
 		return info.dwNumberOfProcessors;
 	}
+    #endif
 
 	struct recursive_mutex::data { CRITICAL_SECTION m; };
 

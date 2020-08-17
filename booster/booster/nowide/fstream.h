@@ -147,7 +147,7 @@ namespace nowide {
 				}
 			}
 			std::unique_ptr<io_device> dev(new details::stdio_iodev(f));
-			device(dev);
+			device(std::move(dev));
 			opened_ = true;
 			return this;
 		}
