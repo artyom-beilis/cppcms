@@ -12,6 +12,7 @@
 #include <booster/noncopyable.h>
 #include <booster/shared_ptr.h>
 #include <string>
+#include <time.h>
 
 namespace cppcms {
 namespace json {
