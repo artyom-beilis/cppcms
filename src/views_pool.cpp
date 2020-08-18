@@ -228,7 +228,7 @@ namespace impl {
 				int pid=_getpid();
 				file_name_ = (booster::locale::wformat(L"{1}.tmp-{2}.dll") % file_name % pid).str(std::locale::classic());
 				if(!CopyFileW(file_name.c_str(),file_name_.c_str(),1)) {
-					booster::system::error_code e(GetLastError(),booster::system::windows_category);
+					booster::system::error_code e(GetLastError(),booster::system::system_category());
 					throw booster::system::system_error(e,"Failed to copy file "+u8file_name+" to "
 										+booster::nowide::convert(file_name_));
 				}
@@ -242,7 +242,7 @@ namespace impl {
 			if(!handler_) {
 				if(remove_)
 					DeleteFileW(file_name_.c_str());
-				booster::system::error_code e(GetLastError(),booster::system::windows_category);
+				booster::system::error_code e(GetLastError(),booster::system::system_category());
 				throw booster::system::system_error(e,"Failed to load library "+u8file_name);
 			}
 		}
