@@ -317,6 +317,7 @@ namespace json {
 	value::copyable &value::copyable::operator=(value::copyable &&r)
 	{
 		d.swap(r.d);
+		return *this;
 	}
 	value::copyable::copyable(value::copyable &&r) : d(new value::_data())
 	{
