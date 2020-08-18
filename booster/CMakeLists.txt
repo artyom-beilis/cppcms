@@ -196,50 +196,23 @@ endif()
 #############################################################################
 
 if(CMAKE_COMPILER_IS_GNUCXX)
-	check_cxx_source_compiles(
-		"#if __GNUC__ < 4
-		#error
-		#endif
-		int main() {}"
-		GCC_IS_GCC4)
-
-	set(CXX_FLAGS "-Wall -Wextra")
+	set(CXX_FLAGS "-Wall -Wextra -std=c++11")
 
 	if(CMAKE_SYSTEM_NAME STREQUAL "SunOS")
 		set(CXX_FLAGS "${CXX_FLAGS} -pthreads")
 	endif()
 
-	if(NOT GCC_IS_GCC4)
-		# Uninitalized checks are bogous under gcc-3.4
-		set(CXX_FLAGS "${CXX_FLAGS} -Wno-uninitialized")
-	endif()
-
 	if(IS_WINDOWS)
-		if(GCC_IS_GCC4) 
-			# Very important, otherwise process would not start under cygwin
-			set(CMAKE_CXX_LINK_FLAGS "${CMAKE_CXX_LINK_FLAGS} -Wl,--enable-auto-import")
-		else()
-			# gcc-3 does not have shared library for libstdc++ -- cause dll faitures with locale
-			set(DISABLE_SHARED ON)
-		endif()
+		# Very important, otherwise process would not start under cygwin
+		set(CMAKE_CXX_LINK_FLAGS "${CMAKE_CXX_LINK_FLAGS} -Wl,--enable-auto-import")
 	endif()
 
 elseif(CMAKE_CXX_COMPILER_ID STREQUAL "Intel")
-	set(CXX_FLAGS "-Wall")
+	set(CXX_FLAGS "-Wall -std=c++11")
 elseif(CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
-	set(CXX_FLAGS "-Wall -Wextra")
+	set(CXX_FLAGS "-Wall -Wextra -std=c++11")
 elseif(MSVC)
 	set(CXX_FLAGS "/EHsc /W3")
-elseif(CMAKE_CXX_COMPILER_ID STREQUAL "SunPro")
-	#
-	# We use STL port under Sun Studio, standard library is broken
-	#
-	
-	set(CXX_FLAGS "-library=stlport4 -xannotate=no")
-
-	if(CMAKE_SYSTEM_NAME STREQUAL "SunOS")
-		set(CXX_FLAGS "${CXX_FLAGS} -mt")
-	endif()
 endif()
 
 if(NOT IS_WINDOWS)
