@@ -47,18 +47,18 @@ void winservice::uninstall()
 	if(!schm) {
 		throw booster::system::system_error(
 			GetLastError(),
-			booster::system::windows_category,
+			booster::system::system_category(),
 			"Failed to open sevice imager");
 	}
 
 	SC_HANDLE service_handle = OpenServiceW(schm,name.c_str(),DELETE);
 	if(service_handle == NULL) {
-		booster::system::error_code e(GetLastError(),booster::system::windows_category);
+		booster::system::error_code e(GetLastError(),booster::system::system_category());
 		CloseServiceHandle(schm);
 		throw booster::system::system_error(e,"Failed to open the service");
 	}
 	if(!DeleteService(service_handle)) {
-		booster::system::error_code e(GetLastError(),booster::system::windows_category);
+		booster::system::error_code e(GetLastError(),booster::system::system_category());
 		CloseServiceHandle(service_handle);
 		CloseServiceHandle(schm);
 		throw booster::system::system_error(e,"Failed to delete the service");
@@ -89,7 +89,7 @@ void winservice::install()
 
 	wchar_t exe[ MAX_PATH + 1];
 	if(GetModuleFileNameW(0,exe,MAX_PATH+1) == 0) {
-		booster::system::error_code e(GetLastError(),booster::system::windows_category);
+		booster::system::error_code e(GetLastError(),booster::system::system_category());
 		throw booster::system::system_error(e,"Failed to get exe name");
 	}
 	cmd_line = L"\"";
@@ -124,7 +124,7 @@ void winservice::install()
 		
 	SC_HANDLE schm = OpenSCManagerW(0,0,SC_MANAGER_ALL_ACCESS);
 	if(!schm) {
-		booster::system::error_code e(GetLastError(),booster::system::windows_category);
+		booster::system::error_code e(GetLastError(),booster::system::system_category());
 		throw booster::system::system_error(e,"Failed to open sevice imager");
 	}
 
@@ -145,7 +145,7 @@ void winservice::install()
 	);
 
 	if(service_handle == NULL) {
-		booster::system::error_code e(GetLastError(),booster::system::windows_category);
+		booster::system::error_code e(GetLastError(),booster::system::system_category());
 		CloseServiceHandle(schm);
 		throw booster::system::system_error(e,"Failed to install service");
 	}
@@ -175,7 +175,7 @@ namespace {
 	{
 		status_handle = RegisterServiceCtrlHandlerW(L"",win_service_handler_proc);
 		if(status_handle==0) {
-			booster::system::error_code e(GetLastError(),booster::system::windows_category);
+			booster::system::error_code e(GetLastError(),booster::system::system_category());
 			BOOSTER_ERROR("cppcms") << "Failed to register windows service handle:" << e.message();
 			return;
 		}
@@ -220,7 +220,7 @@ void winservice::service()
 		{ 0,0 }
 	};
 	if(!StartServiceCtrlDispatcherW(entry)) {
-		booster::system::error_code e(GetLastError(),booster::system::windows_category);
+		booster::system::error_code e(GetLastError(),booster::system::system_category());
 		throw booster::system::system_error(e,"Failed to start windows service");
 	}
 }
