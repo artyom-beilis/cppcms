@@ -151,7 +151,9 @@ public:
 	cookie();
 	~cookie();
 	cookie(cookie const &);
+	cookie(cookie &&);
 	cookie const &operator=(cookie const &);
+	cookie &operator=(cookie &&);
 
 	///
 	/// Create cookie with name and value, age - browser, rest properties undefined.
@@ -185,6 +187,7 @@ private:
 	std::string comment_;
 
 	unsigned max_age_;
+	time_t expires_;
 
 	uint32_t secure_	: 1;
 	uint32_t has_age_	: 1;
