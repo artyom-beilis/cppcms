@@ -230,7 +230,6 @@ void session_pool::init()
 	if((location == "server" || location == "both") && !storage_.get()) {
 		std::string stor=settings.get<std::string>("session.server.storage");
 		std::unique_ptr<sessions::session_storage_factory> factory;
-		#ifndef CPPCMS_NO_GZIP
 		if(stor == "files") {
 			std::string dir = settings.get("session.server.dir","");
 			#ifdef CPPCMS_WIN_NATIVE
@@ -252,9 +251,7 @@ void session_pool::init()
 			}
 			#endif
 		}
-		else 
-		#endif// CPPCMS_NO_GZIP
-        if(stor == "memory") {
+		else if(stor == "memory") {
 			if(!service_) {
 				throw cppcms_error("Can't use memory storage for external session management");
 			}
