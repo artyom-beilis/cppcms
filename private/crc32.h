@@ -11,7 +11,6 @@
 #define CPPCMS_IMPL_CRC32_H
 #include <cppcms/cstdint.h>
 #ifndef CPPCMS_NO_GZIP
-#error
 #include <zlib.h>
 #else
 /*----------------------------------------------------------------------------*\
