@@ -8,4 +8,4 @@ compiler:
     - clang
 
 script:
-    - mkdir build && cd build && cmake -DDISABLE_STATIC=ON .. && make && ctest
+    - mkdir build && cd build && cmake -DDISABLE_STATIC=ON .. && make && CTEST_OUTPUT_ON_FAILURE=1 ctest
