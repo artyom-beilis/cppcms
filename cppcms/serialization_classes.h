@@ -144,6 +144,15 @@ namespace cppcms {
 		/// Assign archive (avoid it)
 		///
 		archive const &operator=(archive const &);
+		///
+		/// Move ctor archive
+		///
+		archive(archive &&);
+
+		///
+		/// Move Assign archive 
+		///
+		archive &operator=(archive &&);
 
 	private:
 		std::string buffer_;

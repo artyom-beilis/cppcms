@@ -397,6 +397,15 @@ namespace cppcms { namespace xss {
 	rules::rules(rules const &other) : d(other.d)
 	{
 	}
+	rules::rules(rules &&other) : d(new data())
+	{
+		d.swap(other.d);
+	}
+	rules &rules::operator=(rules &&other)
+	{
+		d.swap(other.d);
+		return *this;
+	}
 	rules const &rules::operator=(rules const &other)
 	{
 		d=other.d;

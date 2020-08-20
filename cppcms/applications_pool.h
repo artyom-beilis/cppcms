@@ -341,33 +341,14 @@ namespace cppcms {
 
 	/// \cond INTERNAL 
 	namespace details {
-		template<typename T>
-		struct simple_application_specific_pool0 : public application_specific_pool
-		{
-			T *new_application(service &s) 
-			{
-				return new T(s);
-			}
-		};
-		template<typename T,typename P1>
+		template<typename T,typename Call>
 		struct simple_application_specific_pool1 : public application_specific_pool
 		{
-			simple_application_specific_pool1(P1 p1) : p1_(p1) {}
-			P1 p1_;
+			simple_application_specific_pool1(Call call) : call_(call) {}
+			Call call_;
 			T *new_application(service &s)
 			{
-				return new T(s,p1_);
-			}
-		};
-		template<typename T,typename P1,typename P2>
-		struct simple_application_specific_pool2 : public application_specific_pool 
-		{
-			simple_application_specific_pool2(P1 p1,P2 p2) : p1_(p1),p2_(p2) {}
-			P1 p1_;
-			P2 p2_;
-			T *new_application(service &s)
-			{
-				return new T(s,p1_,p2_);
+				return call_(s);
 			}
 		};
 	} // details
@@ -375,37 +356,22 @@ namespace cppcms {
 	/// \endcond
 
 	///
-	/// Create application application_specific_pool for application of type T, such as T has a constructor
-	/// T::T(cppcms::service &s);
 	///
-	template<typename T>
-	booster::shared_ptr<application_specific_pool> create_pool()
+	/// Create application application_specific_pool for application of type T, such as T has a constructor
+	/// T::T(cppcms::service &s,p...);
+	///
+	template<typename T,typename ...P>
+	booster::shared_ptr<application_specific_pool> create_pool(P...p)
 	{
-		booster::shared_ptr<application_specific_pool> f(new details::simple_application_specific_pool0<T>);
+        typedef T *target_ptr;
+        auto functor = [=](service &s) ->target_ptr {
+            return new T(s,p...);
+        };
+        typedef details::simple_application_specific_pool1<T,decltype(functor)> pool_type;
+		booster::shared_ptr<application_specific_pool> f(new pool_type(std::move(functor)));
 		return f;
 	}
 	
-	///
-	/// Create application application_specific_pool for application of type T, such as T has a constructor
-	/// T::T(cppcms::service &s,P1);
-	///
-	template<typename T,typename P1>
-	booster::shared_ptr<application_specific_pool> create_pool(P1 p1)
-	{
-		booster::shared_ptr<application_specific_pool> f(new details::simple_application_specific_pool1<T,P1>(p1));
-		return f;
-	}
-	
-	///
-	/// Create application application_specific_pool for application of type T, such as T has a constructor
-	/// T::T(cppcms::service &s,P1,P2);
-	///
-	template<typename T,typename P1,typename P2>
-	booster::shared_ptr<application_specific_pool> create_pool(P1 p1,P2 p2)
-	{
-		booster::shared_ptr<application_specific_pool> f(new details::simple_application_specific_pool2<T,P1,P2>(p1,p2));
-		return f;
-	}
 
 } // cppcms
 

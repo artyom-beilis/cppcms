@@ -25,8 +25,17 @@ namespace cppcms { namespace http {
 		d(other.d)
 	{
 	}
+	content_type::content_type(content_type &&other) :
+		d(std::move(other.d))
+	{
+	}
 	content_type::~content_type()
 	{
+	}
+	content_type &content_type::operator=(content_type &&other)
+	{
+		d=std::move(other.d);
+		return *this;
 	}
 	content_type const &content_type::operator=(content_type const &other)
 	{
