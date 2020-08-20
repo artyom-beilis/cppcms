@@ -13,6 +13,15 @@
 #include <algorithm>
 
 namespace booster {
+
+	bool regex::utf8_supported()
+	{
+		int flag = 0;
+		#ifdef PCRE_UTF8
+		pcre_config(PCRE_CONFIG_UTF8,&flag);
+		#endif
+		return flag;
+	}
 	struct regex::data {
 		std::string expression;
 		int flags;

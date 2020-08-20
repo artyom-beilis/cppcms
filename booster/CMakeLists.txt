@@ -53,6 +53,7 @@ option(USE_PTHREAD	"Use pthreads API on windows" OFF)
 option(DISABLE_SHARED	"Disable shared libraries build" OFF)
 option(DISABLE_STATIC	"Disable static libraries build" OFF)
 option(DISABLE_ICU_LOCALE	"Disable icu locale backend" OFF)
+option(DISABLE_PCRE	"Disable PCRE support" OFF)
 if(CMAKE_CXX_COMPILER_ID STREQUAL "SunPro")
 	option(DISABLE_STD_LOCALE	"Disable std locale backend" ON)
 else()
@@ -360,7 +361,6 @@ endif()
 set(BOOSTER_SRC	
 	lib/ptime/src/posix_time.cpp
 	lib/ptime/src/ctime.cpp
-	lib/regex/src/pcre_regex.cpp
 	lib/aio/src/aio_category.cpp
 	lib/aio/src/deadline_timer.cpp
 	lib/aio/src/endpoint.cpp
@@ -436,6 +436,8 @@ if(NOT DISABLE_STD_LOCALE)
 	)
 endif()
 
+
+
 if(NOT DISABLE_WINAPI_LOCALE OR NOT DISABLE_STD_LOCALE OR NOT DISABLE_POSIX_LOCALE)
 	set(BOOSTER_SRC ${BOOSTER_SRC}
 		lib/locale/src/util/gregorian.cpp)
@@ -475,27 +477,39 @@ else()
 endif()
 
 
-
-find_path(PCRE_INCLUDE pcre.h)
-if(PCRE_INCLUDE)
-	include_directories(${PCRE_INCLUDE})
-endif()
-
-if(NOT PCRE_INCLUDE)
-	find_path(PCRE_INCLUDE2 pcre/pcre.h)
-	include_directories(${PCRE_INCLUDE2}/pcre)
-	if(NOT PCRE_INCLUDE2)
-		message(FATAL_ERROR "Can't find PCRE include directory")
+if(NOT DISABLE_PCRE)
+	find_path(PCRE_INCLUDE pcre.h)
+	if(PCRE_INCLUDE)
+		include_directories(${PCRE_INCLUDE})
 	endif()
 
+	if(NOT PCRE_INCLUDE)
+		find_path(PCRE_INCLUDE2 pcre/pcre.h)
+		include_directories(${PCRE_INCLUDE2}/pcre)
+		if(NOT PCRE_INCLUDE2)
+			message("Can't find PCRE include directory falling back to std::regex")
+			set(DISABLE_PCRE ON)
+		endif()
+
+	endif()
+
+	if(NOT DISABLE_PCRE)
+
+		find_library(PCRE_LIB NAMES pcre${PCRE_SUFFIX} pcre)
+		if(NOT PCRE_LIB)
+			set(DISABLE_PCRE ON)
+			message("Can't find PCRE library - falling back to std::regex")
+		endif()
+	endif()
 endif()
 
-find_library(PCRE_LIB NAMES pcre${PCRE_SUFFIX} pcre)
-if(NOT PCRE_LIB)
-	message(FATAL_ERROR "Can't find PCRE library")
+if(DISABLE_PCRE)
+	add_definitions(-DBOOSTER_NO_PCRE)
+	set(BOOSTER_SRC ${BOOSTER_SRC} lib/regex/src/std_regex.cpp)
+else()
+	set(BOOSTER_SRC ${BOOSTER_SRC} lib/regex/src/pcre_regex.cpp)
 endif()
-
-
+	
 
 set(LINK_LIBS )
 
@@ -540,7 +554,9 @@ foreach(ALIB ${LINK_LIBS})
 	if(WS2_32)
 		target_link_libraries(${ALIB} ${WS2_32})
 	endif()
-	target_link_libraries(${ALIB} ${PCRE_LIB})
+	if(NOT DISABLE_PCRE)
+		target_link_libraries(${ALIB} ${PCRE_LIB})
+	endif()
 
 	if(NOT DISABLE_ICU_LOCALE)
 		target_link_libraries(${ALIB} ${ICU_UC})

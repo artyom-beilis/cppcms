@@ -116,10 +116,13 @@ namespace booster {
 		///
 		bool search(char const *begin,char const *end,std::vector<std::pair<int,int> > &marks,int flags = 0) const;
 
+		static bool utf8_supported();
+
 		///
 		/// Returns true if the expression wasn't assigned.
 		///
 		bool empty() const;
+
 
 		static const int perl = 0; ///< Constant for expression type - Perl Compatible Regex.
 		static const int normal = 0; ///< Constant for expression type - synonym of perl, default.
