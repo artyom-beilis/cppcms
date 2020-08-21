@@ -2,22 +2,26 @@
 # coding=utf-8
 
 # vim: tabstop=4 expandtab shiftwidth=4 softtabstop=4 
-import httplib
+from __future__ import print_function
+try:
+    import httplib
+except:
+    import http.client as httplib
 import sys
 
 def test(name,A,B):
     if A != B:
-        print "Error :" + name 
-        print "-----Actual--"
-        print A,"---Expected--"
-        print B,"-------------"
+        print("-----Actual--")
+        print(A,"---Expected--")
+        print(B,"-------------")
+        traceback.print_tb()
         sys.exit(1)
     else:
-        print "Ok:"+name
+        print("Ok:",name)
 
 def test_status(h,stat):
     if h.status != stat:
-        print "Status mistmatch:",h.status,"!=",stat
+        print("Status mistmatch:",h.status,"!=",stat)
         sys.exit(1)
 
 def test_valid(name,params,ans,method='POST'):
@@ -25,7 +29,7 @@ def test_valid(name,params,ans,method='POST'):
     headers = {"Content-type": "application/json"}
     h.request(method,'/test',params,headers)
     r=h.getresponse()
-    test(name,r.read(),ans)
+    test(name,r.read().decode(),ans)
 
 test_valid('sum','{"method" : "sum" , "params" : [ 1, 2 ], "id" : 1}','{"id":1,"error":null,"result":3}')
 test_valid('sum wrong','{"method" : "sum" , "params" : [ 1, 10 ], "id" : null}','')

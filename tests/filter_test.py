@@ -3,7 +3,12 @@
 #
 # vim: tabstop=4 expandtab shiftwidth=4 softtabstop=4 
 #
-import httplib
+from __future__ import print_function
+try:
+    import httplib
+except:
+    import http.client as httplib
+
 import sys
 import re
 import time
@@ -19,7 +24,7 @@ def now():
 
 def make_content(first,length):
     all=[]
-    for i in xrange(0,length):
+    for i in range(0,length):
         all.append(first)
         n=ord(first)+1
         if n > ord('z'):
@@ -86,28 +91,28 @@ class Conn:
             content_length = len(post)
             content_type='multipart/form-data; boundary=123456'
         if content_length > 0:
-            print 'POST ' + self.path
+            print('POST ' + self.path)
             query  = 'POST ' + self.path +' HTTP/1.0\r\n'
             query += ('Content-Type: %s\r\n' % content_type)
             query += ('Content-Length: %d\r\n\r\n' % content_length)
         else:
-            print 'GET ' + self.path
+            print('GET ' + self.path)
             query = 'GET ' + self.path + ' HTTP/1.0\r\n\r\n'
         self.s=socket.socket(socket.AF_INET, socket.SOCK_STREAM);
         self.s.connect(('127.0.0.1',8080))
         self.s.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
         if 'chunks' in opts:
             size=int(opts['chunks'])
-            self.s.send(query)
+            self.s.send(query.encode())
             pos = 0;
             while pos < content_length:
                 if pos > 0:
                     time.sleep(0.05)
                 chunk = post[pos:pos+size]
                 pos+=size
-                self.s.send(chunk)
+                self.s.send(chunk.encode())
         else:
-            self.s.send(query + post)
+            self.s.send((query + post).encode())
 
     def get(self):
         response = ''
@@ -116,7 +121,7 @@ class Conn:
             if len(tmp) == 0:
                 self.s.close()
                 break
-            response = response + tmp
+            response = response + tmp.decode()
         r2 = response.split('\r\n\r\n')
         headers=r2[0]
         if len(r2) == 2:
@@ -142,7 +147,7 @@ class Conn:
                     result[kv[0]]=int(kv[1])
                 else:
                     result[kv[0]]=kv[1]
-        print 'Got %s ' % result
+        print('Got %s ' % result)
         return result
 
 def transfer(path,q=[],custom_content=None):
@@ -203,7 +208,7 @@ def test_upload():
     r=transfer('/upload',['l_1=100','f_1=a','save_to_1=test.txt'])
     test(r['status']==200)
     time.sleep(0.2);
-    test(open('test.txt','rb').read() == make_content('a',100))
+    test(open('test.txt','rb').read().decode() == make_content('a',100))
     os.remove('test.txt')
 
     test(transfer('/upload',['l_1=100','f_1=a','cl_limit=5'])['status']==200)
@@ -262,4 +267,4 @@ def test_raw():
 test_upload()
 test_raw()
 test_on_error_called(0)
-print "OK"
+print("OK")
