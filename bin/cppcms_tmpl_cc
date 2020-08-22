@@ -1156,7 +1156,7 @@ def main():
             from hashlib import md5
         else:
             from md5 import md5
-        dll_api = 'VIEW_%s_API' % md5(header_define).hexdigest().upper()
+        dll_api = 'VIEW_%s_API' % md5(header_define.encode()).hexdigest().upper()
         
     global output_fd
     if output_file!='':
