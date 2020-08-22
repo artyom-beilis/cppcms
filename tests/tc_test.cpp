@@ -282,6 +282,13 @@ public:
 			"\n"
 			"\n"
 		);
+		m.xyz[0]=2;
+		m.xyz[1]=3;
+		m.xyz[2]=5;
+		render("foreach_array",m);
+		TEST(str() ==	"\n"
+				"235\n"
+				"532\n");
 	}
 	void test_if()
 	{

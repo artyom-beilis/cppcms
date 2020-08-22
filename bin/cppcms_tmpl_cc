@@ -2,12 +2,13 @@
 
 ############################################################################
 #
-#  Copyright (C) 2008-2012  Artyom Beilis (Tonkikh) <artyomtnk@yahoo.com>     
-#                                                                             
+#  Copyright (C) 2008-2020  Artyom Beilis (Tonkikh) <artyomtnk@yahoo.com>
+#
 #  See accompanying file COPYING.TXT file for licensing details.
 #
 ############################################################################
 
+from __future__ import print_function
 import os
 import re
 import sys
@@ -22,7 +23,7 @@ call_param_match=r'(?:\(\)|\((?:' + single_var_param_match + r')(?:,' + single_v
 variable_match=r"\*?([a-zA-Z][a-zA-Z0-9_]*"+ call_param_match +r"?)(((\.|->)([a-zA-Z][a-zA-Z0-9_]*" + call_param_match + r"?))*)"
 
 def interleave(*args):
-    for idx in range(0, max(map(len,args))):
+    for idx in range(0, max(list(map(len,args)))):
         for arg in args:
             try:
                 yield arg[idx]
@@ -134,7 +135,7 @@ class view_block:
             api_ref = dll_api
         output_declaration( "struct %s %s :public %s" % (api_ref, self.class_name , self.extends ))
         output_declaration( "{")
-        if self.uses!='' : 
+        if self.uses!='' :
             output_declaration( "\t%s &content;" % self.uses)
             output_declaration( "\t%s(std::ostream &_s,%s &_content): %s,content(_content),_domain_id(0)" % ( self.class_name,self.uses,constructor ))
         else:
@@ -199,7 +200,7 @@ class template_block:
             if id in tmpl_seq:
                 error_exit("Duplicate definition of patameter %s" % id)
                 for v in self.plist:
-                    del tmpl_seq[v] 
+                    del tmpl_seq[v]
                 return ""
             tmpl_seq[id]=''
             res.append(m.group(1))
@@ -212,7 +213,7 @@ class template_block:
         for v in self.plist:
             del tmpl_seq[v]
         error_exit("Wrong expression %s" % lst)
-        
+
     def use(self,m):
         global view_name
         global inline_templates
@@ -254,7 +255,7 @@ class template_block:
         global inline_cpp_to
         inline_cpp_to = output_declaration
 
-        
+
 
 def inline_content(s):
     global ignore_inline
@@ -330,7 +331,7 @@ def print_using_block_start(class_name,variable_name,content_name,temp_and_view=
         output_template(r'  cppcms::views::view_lock _vl(%s,out(),%s); %s &%s = _vl.use_view<%s>();' % ( temp_and_view, content, class_name, variable_name, class_name));
     else:
         output_template(r'  %s %s(out(),%s);' % ( class_name, variable_name, content));
-    
+
 def print_using_block_end():
     global output_template
     output_template('}')
@@ -341,7 +342,7 @@ class using_block:
             + r'(\s*(?P<fst_str>'+ str_match +r')|(?:\s+(?P<fst_var>' + variable_match + r')))' \
             + r'(\s*,\s*((?P<snd_str>'+ str_match +r')|(?P<snd_var>' + variable_match + r')))?' \
             + r')?' \
-        + '\s*%>$' 
+        + '\s*%>$'
     basic_pattern = 'using'
     basic_name = 'using'
     type='using'
@@ -392,7 +393,8 @@ class foreach_block:
         if self.rowid and (self.rowid in tmpl_seq):
             error_exit("Nested sequences with same rowid name %s" % self.rowid )
         tmpl_seq[self.ident]='';
-        output_template( "if((%s).%sbegin()!=(%s).%send()) {" % (self.seq_name,self.reverse,self.seq_name,self.reverse) )
+        output_template("{")
+        output_template( "if(booster::%sbegin(%s)!=booster::%send(%s)) {" % (self.reverse,self.seq_name,self.reverse,self.seq_name) )
         if self.rowid:
             tmpl_seq[self.rowid]='';
             output_template("    int %s = %s;" % (self.rowid,self.rowid_begin))
@@ -410,26 +412,27 @@ class foreach_block:
             del tmpl_seq[self.rowid]
 
         output_template( "}" )
+        output_template( "}" )
     def prepare_foreach(self):
         global output_template
         if not self.type_name:
-            ptr_type = 'CPPCMS_TYPEOF((%(s)s).%(r)sbegin())'
+            ptr_type = 'auto'
         else:
             ptr_type = self.type_name
         incr = ''
         if self.rowid:
             incr = ',++%s' % self.rowid;
-        fmt = "for("+ptr_type+" %(i)s_ptr=(%(s)s).%(r)sbegin(),%(i)s_ptr_end=(%(s)s).%(r)send();%(i)s_ptr!=%(i)s_ptr_end;++%(i)s_ptr%(u)s) {";
+        fmt = "for("+ptr_type+" %(i)s_ptr=booster::%(r)sbegin(%(s)s),%(i)s_ptr_end=booster::%(r)send(%(s)s);%(i)s_ptr!=%(i)s_ptr_end;++%(i)s_ptr%(u)s) {";
         fmt = fmt %  { 's' : self.seq_name, 'i' : self.ident , 'r' : self.reverse, 'u' : incr };
         output_template(fmt)
         if not self.type_name:
-            output_template( "CPPCMS_TYPEOF(*%s_ptr) &%s=*%s_ptr;" % (self.ident,self.ident,self.ident))
+            output_template( "auto &%s=*%s_ptr;" % (self.ident,self.ident))
         else:
             output_template( "std::iterator_traits< %s >::value_type &%s=*%s_ptr;" % (self.type_name,self.ident,self.ident))
         if self.has_separator:
-            output_template( "if(%s_ptr!=(%s).%sbegin()) {" % (self.ident,self.seq_name,self.reverse))
-        
-        
+            output_template( "if(%s_ptr!=booster::%sbegin(%s)) {" % (self.ident,self.reverse,self.seq_name))
+
+
 
 class separator_block:
     pattern=r'^<%\s*separator\s*%>'
@@ -447,7 +450,7 @@ class separator_block:
         foreachb.has_separator=1
         foreachb.prepare_foreach()
 
-        
+
 
 class item_block:
     pattern=r'^<%\s*item\s*%>'
@@ -494,6 +497,7 @@ class empty_block:
     def on_end(self):
         global output_template
         output_template( "} // end of empty")
+        output_template( "}")
         global tmpl_seq
         del tmpl_seq[self.ident]
         if self.rowid:
@@ -559,8 +563,8 @@ class if_block:
                 stack.append(self)
             else:
                 error_exit("Unexpeced elif");
-# END ifop                
-            
+# END ifop
+
 
 class end_block:
     pattern=r'^<%\s*end(\s+(\w+))?\s*%>$';
@@ -675,13 +679,13 @@ class base_show:
 class form_block:
     pattern=r'^<%\s*form\s+(as_p|as_table|as_ul|as_dl|as_space|input|block|begin|end)\s+('\
          + variable_match +')\s*%>$'
-    
+
     basic_pattern  = 'form'
     basic_name = 'form'
     type = 'form'
 
     def format_input(self,command_type,ident):
-   
+
         global html_type_code
         global output_template
 
@@ -702,7 +706,7 @@ class form_block:
             output_template('    _form_context.widget_part(cppcms::form_context::second_part);')
             output_template(render_command)
         output_template('}')
-    
+
     def use(self,m):
         global output_template
 
@@ -733,7 +737,7 @@ def get_render_names(m):
         first = make_ident(first_var)
     else:
         first = first_str
-    
+
     second_str = m.group('snd_str')
     second_var = m.group('snd_var')
     if second_var:
@@ -749,7 +753,7 @@ def get_render_names(m):
         template_name = '"' + namespace_name + '"'
         view_name = first;
     return template_name + ', ' + view_name
-    
+
 
 class render_block:
     pattern=r'^<%\s*render\s+' \
@@ -766,9 +770,9 @@ class render_block:
         else:
             content = 'content';
             guard=False
-        
+
         temp_and_view = get_render_names(m);
-       
+
         output_template('{')
 
         if guard:
@@ -831,7 +835,7 @@ class cache_block:
             r'(\s+for\s+(?P<time>\d+))?(\s+on\s+miss\s+(?P<callback>[a-zA-Z]\w*)\(\))?' \
             + r'(?P<notriggers>\s+no\s+triggers)?' \
             + r'(?P<norecording>\s+no\s+recording)?' \
-            + '\s*%>$'        
+            + '\s*%>$'
     basic_pattern = 'cache'
     basic_name = 'cache'
     type = 'cache'
@@ -850,7 +854,7 @@ class cache_block:
         output_template('    cppcms::copy_filter _cppcms_cache_flt(out());')
         if not self.norecording:
             output_template('    cppcms::triggers_recorder _cppcms_trig_rec(content.app().cache());')
-        # the code below should be the last one 
+        # the code below should be the last one
         if(m.group('callback')):
             output_template('    '+make_ident(m.group('callback')+'()') + ';')
         self.timeout = m.group('time');
@@ -905,7 +909,7 @@ class ngettext_block:
             output_template( "out()<<cppcms::locale::translate(%s,%s,%s);" % (s1,s2,idt))
         else:
             output_template( "out()<<cppcms::locale::format(cppcms::locale::translate(%s,%s,%s)) %% (%s);" % (s1,s2,idt, ') % ('.join(params)))
-            
+
 
 class gettext_block:
     pattern=r'^<%\s*gt\s*((?:' + str_match + '\s*,\s*)?'  +str_match+')\s*(using(.*))?\s*%>$'
@@ -976,7 +980,7 @@ class csrf_block:
                 }
             -->
             </script>
-            """ % suffix; 
+            """ % suffix;
             script = to_string(script).replace('$','"<< content.app().session().get_csrf_token_cookie_name() <<"')
             output_template('out() << "' + script +'";')
 
@@ -995,7 +999,7 @@ class include_block:
     def print_include(self,call,params):
         global output_template
         output_template( "%s(%s);" % (call , ','.join(params)))
-        
+
     def use(self,m):
         if m.group(3):
             params=base_show().get_params(m.group(3))
@@ -1149,7 +1153,7 @@ def main():
         output_template = output_definition
 
     if header_file!='':
-        global header_define 
+        global header_define
         global dll_api
         header_define = "CPPCMS_GENERATED_HEADER_%s_TMPL_HEADER_INCLUDED" % ( re.sub("[^a-zA-Z0-9]+", "_", header_file ).upper())
         if sys.version_info >= (2,5):
