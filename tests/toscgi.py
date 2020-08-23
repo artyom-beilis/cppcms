@@ -5,20 +5,20 @@
 def toscgi(text):
     def to_headers():
         res = []
-        hdr = text[:text.find('\n\n')]
-        for element in hdr.split('\n'):
-            [key,value]=element.split(':')
-            res.append((key.upper().replace('-','_'),value))
+        hdr = text[:text.find(b'\n\n')]
+        for element in hdr.split(b'\n'):
+            [key,value]=element.split(b':')
+            res.append((key.upper().replace(b'-',b'_'),value))
         return res
     def to_body():
-        return text[text.find('\n\n')+2:]
+        return text[text.find(b'\n\n')+2:]
     def format_headers(headers):
-        result = ''
+        result = b''
         for [key,value] in headers:
-            result+=key+'\0'+value+'\0'
+            result+=key+b'\0'+value+b'\0'
         return result
     headers=to_headers()
     body=to_body()
-    headers = [('CONTENT_LENGTH',str(len(body)))] + headers
+    headers = [(b'CONTENT_LENGTH',str(len(body)).encode())] + headers
     headers=format_headers(headers)
-    return str(len(headers))+':' + headers +',' + body
+    return str(len(headers)).encode()+b':' + headers +b',' + body

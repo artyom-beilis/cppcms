@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 # coding=utf-8
 # vim: tabstop=4 expandtab shiftwidth=4 softtabstop=4
+from __future__ import print_function
 import sys
 import socket
 import time
@@ -12,10 +13,10 @@ import tofcgi
 
 def check(name,A,B):
     if A != B:
-        print "Error :" + name 
-        print "-----Actual--"
-        print A,"---Expected--"
-        print B,"-------------"
+        print("Error :",name )
+        print("-----Actual--")
+        print(A,"---Expected--")
+        print(B,"-------------")
         f1=open('actual.txt','wb')
         f2=open('expected.txt','wb')
         f1.write(A)
@@ -24,7 +25,7 @@ def check(name,A,B):
         f2.close()
         sys.exit(1)
     else:
-        print "Ok:"+name
+        print("Ok:",name)
 
 class Nothing:
     pass
@@ -49,7 +50,7 @@ def get_socket():
     return s
 
 def test_io(name,method,input_f,output_f,seed=12,load=load_file,parse=identity):
-    result=''
+    result=b''
     try:
         input=load(input_f)
         output=load_file(output_f)
@@ -60,16 +61,16 @@ def test_io(name,method,input_f,output_f,seed=12,load=load_file,parse=identity):
             s.sendall(input)
             while 1:
                 chunk = s.recv(1024)
-                if chunk == '':
+                if chunk == b'':
                     break
                 result=result+chunk
         elif method=='shortest':
-            for char in input:
-                s.sendall(char)
+            for k in range(len(input)):
+                s.sendall(input[k:k+1])
                 time.sleep(0.001)
             while 1:
                 chunk = s.recv(1)
-                if chunk == '':
+                if chunk == b'':
                     break;
                 time.sleep(0.001)
                 result=result+chunk
@@ -83,12 +84,12 @@ def test_io(name,method,input_f,output_f,seed=12,load=load_file,parse=identity):
                 time.sleep(0.001)
             while 1:
                 chunk = s.recv(random.randint(1,16))
-                if chunk == '':
+                if chunk == b'':
                     break;
                 time.sleep(0.001)
                 result=result+chunk
         else:
-            print 'Unknown method',method
+            print('Unknown method',method)
             sys.exit(1)
         if hasattr(socket,'SHUT_RDWR'):
             s.shutdown(socket.SHUT_RDWR)
@@ -130,12 +131,12 @@ def transfer_all(s,inp):
     s.setblocking(1)
     s.sendall(inp)
     s.setblocking(0)
-    result = ''
+    result = b''
     slept=0
     while 1:
         try:
             tmp = s.recv(1024)
-            if tmp == '':
+            if tmp == b'':
                 raise Exception('Unexpected end of file')
             result+=tmp
             slept=0
@@ -183,7 +184,7 @@ global target
 global socket_type
 
 def usege():
-    print 'Usage proto_test.py (http|fastcgi_tcp|fastcgi_unix|scgi_tcp|scgi_unix)'
+    print('Usage proto_test.py (http|fastcgi_tcp|fastcgi_unix|scgi_tcp|scgi_unix)')
     sys.exit(1)
 
 if len(sys.argv) != 2:
@@ -213,23 +214,23 @@ elif test=='fastcgi_tcp' or test=='fastcgi_unix':
     test_fcgi('scgi_1')
     test_fcgi('scgi_2')
     test_fcgi('scgi_3')
-    print "Testing big pairs"
+    print("Testing big pairs")
     test_fcgi_keep_alive('scgi_4')
     test_fcgi_keep_alive('scgi_5')
     test_fcgi('scgi_4')
     test_fcgi('scgi_5')
-    print "Testing chunked pairs"
+    print("Testing chunked pairs")
     test_fcgi('scgi_4',tofcgi.TEST_RANDOM)
     test_fcgi('scgi_5',tofcgi.TEST_RANDOM)
-    print "Testing GET_VALUES"
+    print("Testing GET_VALUES")
     test_fcgi('scgi_1',tofcgi.TEST_GET_VALUES)
-    print "Testing long message"
+    print("Testing long message")
     test_fcgi('scgi_6',tofcgi.TEST_STANDARD)
 elif test=='scgi_tcp' or test=='scgi_unix':
     test_scgi('scgi_1')
     test_scgi('scgi_2')
     test_scgi('scgi_3')
-    print "Testing long message"
+    print("Testing long message")
     test_scgi_normal('scgi_6')
 else:
     usege()
