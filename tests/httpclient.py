@@ -1,9 +1,12 @@
 #!/usr/bin/env python
 # coding=UTF-8
 # vim: tabstop=4 expandtab shiftwidth=4 softtabstop=4
+from __future__ import print_function
 
-
-import httplib
+try:
+    import httplib
+except:
+    import http.client as httplib
 
 class Cookie:
 
@@ -71,6 +74,9 @@ class Session:
         return allcookies
 
     def transmit(self,url,post_data=None,content_type='application/x-www-form-urlencoded',headers={}):
+        #print("URL :",url)
+        #print("HDR :",headers)
+        #print("POST:",post_data)
         received={}
         conn=httplib.HTTPConnection('127.0.0.1',8080)
         headers['Cookie']=self.getcookies()
@@ -84,14 +90,15 @@ class Session:
         content = r.read();
         self.received=parse_cookies(r)
         self.update_state()
+        #print("GOT :",content)
         return content
     
     def update_state(self):
         if self.print_cookies:
-            print "Got following cookies"
+            print("Got following cookies")
         for name,cookie in self.received.items():
             if self.print_cookies:
-                print cookie
+                print(cookie)
             if name in self.state:
                 if cookie.max_age=='0':
                     del self.state[name]
@@ -101,6 +108,6 @@ class Session:
                 if cookie.max_age != '0':
                     self.state[name] = cookie
         if self.print_cookies:
-            print "---------------------"
+            print("---------------------")
         
 

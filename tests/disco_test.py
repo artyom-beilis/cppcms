@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 # coding=utf-8
 # vim: tabstop=4 expandtab shiftwidth=4 softtabstop=4
+from __future__ import print_function
 import sys
 import socket
 import time
@@ -13,9 +14,9 @@ import tofcgi
 def load_file(file_name):
     file_name = os.path.dirname(sys.argv[0]) + "/" + file_name
     f=open(file_name,'rb')
-    input=f.read()
+    inp=f.read()
     f.close()
-    return input
+    return inp
 
 def test_io(input,socket_type,target):
     try:
@@ -25,7 +26,7 @@ def test_io(input,socket_type,target):
             if socket_type==socket.AF_INET:
                 s.setsockopt(socket.IPPROTO_TCP,socket.TCP_NODELAY,1)
             s.sendall(input)
-            for x in xrange(0,100):
+            for x in range(0,100):
                 chunk = s.recv(1024)
                 if chunk == '':
                     break
@@ -36,7 +37,7 @@ def test_io(input,socket_type,target):
         pass
 
 def usege():
-    print './disco_test.py (http|fastcgi_tcp|scgi_tcp|fastcgi_unix|scgi_unix)'
+    print('./disco_test.py (http|fastcgi_tcp|scgi_tcp|fastcgi_unix|scgi_unix)')
 
 test=sys.argv[1]
 
