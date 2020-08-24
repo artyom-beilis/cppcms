@@ -11,7 +11,7 @@ import os
 
 def test(x):
     if not x:
-        print "Error"
+        print("Error")
         traceback.print_stack()
         sys.exit(1)
 
@@ -23,15 +23,16 @@ def make_sock():
 
 
 def test_request(url,status,content='ignore',valid=[],notvalid=[]):
-    print "-- Testing %s" % url
+    print("-- Testing %s" % url)
     s=make_sock();
-    s.send('GET %s HTTP/1.0\r\n\r\n' % url);
-    text = ''
+    s.send(('GET %s HTTP/1.0\r\n\r\n' % url).encode());
+    text = b''
     while 1:
         tmp = s.recv(1000);
         if len(tmp) == 0:
             break;
         text = text + tmp;
+    text = text.decode()
     exp = 'HTTP/1.0 ' + str(status) + ' '
     test(text[:len(exp)]==exp)
     parts = text.split('\r\n\r\n');
@@ -56,7 +57,7 @@ if len(sys.argv) == 2:
 
 
 
-print "- Testing normal requests"
+print("- Testing normal requests")
 
 if not do_listing:
     test_request('/',404)
@@ -80,7 +81,7 @@ else:
 test_request('/file+with+space.txt',200,'file with space')
 test_request('/file%20with%20space.txt',200,'file with space')
 
-print "- Testing alias"
+print("- Testing alias")
 
 
 test_request('/alias',302)
@@ -89,7 +90,7 @@ test_request('/alias/test.txt',200,'/al/test.txt')
 test_request('/alias/foo/test.txt',200,'/al/foo/test.txt')
 
 
-print "- Testing directory traversal"
+print("- Testing directory traversal")
 
 
 test_request('/foo/../bar/test.txt',200,'/bar/test.txt')
@@ -103,7 +104,7 @@ test_request('/%2e%2e/never.txt','404')
 test_request('/..%c0%afnever.txt','404')
 
 if os.name == 'posix':
-    print "- Testing symlinks"
+    print("- Testing symlinks")
     test_request('/yes.txt',200,'/yes')
     if check_links:
         test_request('/no.txt',404)

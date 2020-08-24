@@ -1,27 +1,32 @@
 #!/usr/bin/env python
 # coding=utf-8
+from __future__ import print_function
 
-import httplib
+try:
+    import httplib
+except:
+    import http.client as httplib
+
 import sys
 
 def test_status(h,stat):
     if h.status != stat:
-        print "Status mistmatch:",h.status,"!=",stat
+        print("Status mistmatch:",h.status,"!=",stat)
         sys.exit(1)
 
 def test_valid(url,status,resp = ''):
     h=httplib.HTTPConnection('localhost:8080');
     h.request('GET','/test' + url)
     r=h.getresponse()
-    body = r.read();
+    body = r.read().decode();
     if r.status!=status:
-        print "Failed", url , r.status,"!=",status 
+        print("Failed", url , r.status,"!=",status )
         sys.exit(1)
     if resp != '' and body!=resp:
-        print "Failed", url ,"[%s]" % body,"!=", "[%s]" % resp
+        print("Failed", url ,"[%s]" % body,"!=", "[%s]" % resp)
         sys.exit(1)
     else:
-        print "Ok",url,status
+        print("Ok",url,status)
 
 test_valid('/normal',200)
 test_valid('/throws',500)
