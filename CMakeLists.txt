@@ -528,7 +528,7 @@ foreach(ALIB ${CPPCMS_LIBS})
 endforeach(ALIB)
 
 
-find_program(PYTHON NAMES python2 python)
+find_program(PYTHON NAMES python python2 python3)
 if(NOT PYTHON)
 	message(FATAL_ERROR "Can't build without Python interpreter")
 endif(NOT PYTHON)

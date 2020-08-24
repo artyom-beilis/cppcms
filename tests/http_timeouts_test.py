@@ -12,7 +12,7 @@ timeout_time = 5
 
 def test(x):
     if not x:
-        print "Error"
+        print("Error")
         traceback.print_stack()
         sys.exit(1)
 
@@ -24,14 +24,14 @@ def make_sock():
 
 
 def test_unfinished_out(msg,chunks=[]):
-    print "Tesing %s with %d chunks" % (msg,len(chunks))
+    print("Tesing %s with %d chunks" % (msg,len(chunks)))
     s=make_sock();
     if len(msg) > 0 :
-        s.send(msg)
+        s.send(msg.encode())
     if len(chunks) > 0:
         for chunk in chunks:
             time.sleep(1)
-            s.send(chunk)
+            s.send(chunk.encode())
     start = time.time()
     text = s.recv(1)
     passed  = time.time() - start
@@ -41,15 +41,15 @@ def test_unfinished_out(msg,chunks=[]):
     test(passed < timeout_time + 2)
 
 def test_unfinished_read(msg,reads,ignore):
-    print "Tesing %s with %d reads" % (msg,reads)
+    print("Tesing %s with %d reads" % (msg,reads))
     s=make_sock();
     s.setsockopt(socket.SOL_SOCKET, socket.SO_RCVBUF,32768)
     read_size = s.getsockopt(socket.SOL_SOCKET, socket.SO_RCVBUF)
-    print "SO_RCVBUF=%d" % read_size
+    print("SO_RCVBUF=%d" % read_size)
     if read_size < 32768:
         read_size = 32768
-    s.send(msg + '\r\n\r\n')
-    for n in xrange(0,reads):
+    s.send(msg.encode() + b'\r\n\r\n')
+    for n in range(0,reads):
         time.sleep(1)
         text = s.recv(read_size)
         l = len(text)
@@ -71,19 +71,19 @@ if len(sys.argv) >= 3:
     timeout_time = int(sys.argv[2])
 
 if write:
-    print 'Write to the client timeout'
+    print('Write to the client timeout')
     test_unfinished_read('GET /async/long HTTP/1.0',0,0)
     test_unfinished_read('GET /async/long HTTP/1.0',timeout_time + 20,1000)
     test_unfinished_read('GET /sync/long HTTP/1.0',0,0)
     test_unfinished_read('GET /sync/long HTTP/1.0',timeout_time + 20,1000)
 else:
-    print 'Read from client timeouts'
+    print('Read from client timeouts')
     test_unfinished_out('')
     test_unfinished_out('GET /sync/long')
     test_unfinished_out('POST /sync/long HTTP/1.0\r\nContent-Length:10000\r\n\r\nbla bla')
     test_unfinished_out('POST /sync/long HTTP/1.0\r\nContent-Length:10000\r\n\r\n', ['ss','ss','ss','ss'])
 
-    print 'Disconnect the client timeout'
+    print('Disconnect the client timeout')
 
     test_unfinished_out('GET /async/goteof HTTP/1.0\r\n\r\n')
 

@@ -3,7 +3,12 @@
 #
 # vim: tabstop=4 expandtab shiftwidth=4 softtabstop=4 
 #
-import httplib
+from __future__ import print_function
+
+try:
+    import httplib
+except:
+    import http.client as httplib
 import sys
 import re
 import time
@@ -20,25 +25,26 @@ class Conn:
     num=re.compile('^[0-9]+$')
     def __init__(self,path):
         self.path = path
-        print now(),'GET',path
+        print(now(),'GET',path)
         self.s=socket.socket(socket.AF_INET, socket.SOCK_STREAM);
         self.s.connect(('127.0.0.1',8080))
-        self.s.send('GET ' + path + ' HTTP/1.0\r\n\r\n')
+        self.s.send(b'GET ' + path.encode() + b' HTTP/1.0\r\n\r\n')
     def get(self,exp404=False):
-        print now(),'READ ',self.path
-        response = ''
+        print(now(),'READ ',self.path)
+        response = b''
         while True:
             tmp=self.s.recv(1000)
             if len(tmp) == 0:
                 self.s.close()
                 break
             response = response + tmp
+        response = response.decode()
         r2 = response.split('\r\n\r\n')
         headers=r2[0]
         body = r2[1]
         first_header = headers.split('\r\n')[0]
         if exp404:
-            print now(), "Got",first_header
+            print(now(), "Got",first_header)
             test(headers.find('HTTP/1.0 404')==0)
             return {'status' : 404 }
 
@@ -51,14 +57,14 @@ class Conn:
                 r[ss[0]]=int(ss[1])
             else:
                 r[ss[0]]=ss[1]
-        print now(), "Got",first_header,r
+        print(now(), "Got",first_header,r)
         return r
 
 def pool_many(url,cb=None):
     a=[None]*10
-    for i in xrange(0,len(a)):
+    for i in range(0,len(a)):
         a[i]=Conn(url)
-    for i in xrange(0,len(a)):
+    for i in range(0,len(a)):
         r=a[i].get()
         if cb:
                 cb(r)
@@ -66,7 +72,7 @@ def pool_many(url,cb=None):
 
 def test_sync():
     n='/sync'
-    print n
+    print(n)
     st=Conn('/test/stats?id=/sync').get()
     test(st["total"]==0)
 
@@ -99,7 +105,7 @@ def test_sync():
 
 def test_sync_prep():
     n='/sync/prepopulated'
-    print n
+    print(n)
     st=Conn('/test/stats?id=' + n).get()
     test(st["total"]==2)
 
@@ -127,7 +133,7 @@ def test_sync_prep():
 
 def test_sync_ts():
     n='/sync/tss'
-    print '/sync/tss'
+    print('/sync/tss')
     st=Conn('/test/stats?id=/sync/tss').get()
     test(st["total"]==0)
 
@@ -163,7 +169,7 @@ def test_sync_ts():
 
 def test_sync_legacy():
     n='/sync/legacy'
-    print n
+    print(n)
     st=Conn('/test/stats?id=' + n).get()
     test(st["total"]==0)
 
@@ -185,7 +191,7 @@ def test_sync_legacy():
 
 def test_async():
     n='/async'
-    print n
+    print(n)
     st=Conn('/test/stats?id=' + n).get()
     test(st["total"]==0)
 
@@ -211,7 +217,7 @@ def test_async():
 
 def test_async_prep():
     n='/async/prepopulated'
-    print n
+    print(n)
     st=Conn('/test/stats?id=' + n).get()
     test(st["total"]==1)
 
@@ -233,7 +239,7 @@ def test_async_prep():
 
 def test_async_legacy():
     n='/async/legacy'
-    print n
+    print(n)
     st=Conn('/test/stats?id=' + n).get()
     test(st["total"]==1)
 
@@ -250,7 +256,7 @@ def test_async_legacy():
 
 def test_async_temporary():
     n='/async/temporary'
-    print n
+    print(n)
     st=Conn('/test/stats?id=' + n).get()
     test(st["total"]==0)
     
@@ -283,7 +289,7 @@ def test_async_temporary():
     
 def test_send():
 
-    print "/sync/sender"
+    print("/sync/sender")
 
     r=Conn('/sync/sender?to=async&to_app=1').get()
     test(r["path"]=="/app")
@@ -311,7 +317,7 @@ def test_send():
     test(r["async"]==0)
     test(r["src_async"]==0)
 
-    print "/async/sender"
+    print("/async/sender")
     
     r=Conn('/async/sender?to=async&to_app=1').get()
     test(r["path"]=="/app")
@@ -339,4 +345,4 @@ test_async_prep()
 test_async_legacy()
 test_async_temporary()
 test_send()
-print "OK"
+print("OK")

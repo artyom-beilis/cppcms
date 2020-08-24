@@ -2,22 +2,26 @@
 # coding=utf-8
 
 # vim: tabstop=4 expandtab shiftwidth=4 softtabstop=4 
-import httplib
+from __future__ import print_function
+try:
+    import httplib
+except:
+    import http.client as httplib
 import sys
 
 def test(name,A,B):
     if A != B:
-        print "Error :" + name 
-        print "-----Actual--"
-        print A,"---Expected--"
-        print B,"-------------"
+        print("Error :", name)
+        print("-----Actual--")
+        print(A,"---Expected--")
+        print(B,"-------------")
         sys.exit(1)
     else:
-        print "Ok:"+name
+        print("Ok:", name)
 
 def test_status(h,stat):
     if h.status != stat:
-        print "Status mistmatch:",h.status,"!=",stat
+        print("Status mistmatch:",h.status,"!=",stat)
         sys.exit(1)
 
 def test_valid(name,url,params,ans,status):
@@ -26,14 +30,14 @@ def test_valid(name,url,params,ans,status):
         h.request('GET','/test' + url + '?' + params)
         r=h.getresponse()
         test_status(r,status)
-        test(name+' GET',r.read(),ans)
+        test(name+' GET',r.read(),ans.encode())
     def post():
         h=httplib.HTTPConnection('localhost:8080');
         headers = {"Content-type": "application/x-www-form-urlencoded"}
         h.request('POST','/test' + url,params,headers)
         r=h.getresponse()
         test_status(r,status)
-        test(name+' POST',r.read(),ans)
+        test(name+' POST',r.read(),ans.encode())
     if params=='':
         get()
     else:
