@@ -351,6 +351,11 @@ namespace cppcms {
 				return call_(s);
 			}
 		};
+        template<typename T,typename ...P>
+        T *create_app(service &s,P...p)
+        {
+            return new T(s,p...);
+        }
 	} // details
 
 	/// \endcond
@@ -363,10 +368,13 @@ namespace cppcms {
 	template<typename T,typename ...P>
 	booster::shared_ptr<application_specific_pool> create_pool(P...p)
 	{
+        /*
         typedef T *target_ptr;
         auto functor = [=](service &s) ->target_ptr {
             return new T(s,p...);
         };
+        */
+        auto functor = std::bind(&details::create_app<T,P...>,std::placeholders::_1,p...);
         typedef details::simple_application_specific_pool1<T,decltype(functor)> pool_type;
 		booster::shared_ptr<application_specific_pool> f(new pool_type(std::move(functor)));
 		return f;
