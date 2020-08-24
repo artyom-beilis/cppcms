@@ -6,7 +6,11 @@
 import httplib
 import sys
 import gzip
-import StringIO
+
+try:
+    from StringIO import StringIO
+except: # StringIO moved to io in python 3
+    from io import BytesIO as StringIO
 
 def test(name,A,B):
     if A != B:
