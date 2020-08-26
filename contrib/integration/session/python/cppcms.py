@@ -2,6 +2,8 @@
 # coding=UTF-8
 # vim: tabstop=4 expandtab shiftwidth=4 softtabstop=4
 
+from __future__ import print_function
+
 from ctypes import *
 import sys
 import types
@@ -165,7 +167,7 @@ class SessionBase:
     def check(self):
         code = Loader.capi.cppcms_capi_error(self.d)
         if code !=0:
-            msg = Loader.capi.cppcms_capi_error_clear(self.d)
+            msg = Loader.capi.cppcms_capi_error_clear(self.d).decode()
             if code == Loader.ERROR_ALLOC:
                 raise MemoryError(msg)
             if code == Loader.ERROR_INVALID_ARGUMENT or code == Loader.ERROR_LOGIC:
@@ -184,9 +186,9 @@ class SessionPool(SessionBase):
             raise ValueError('Both config_file are json_text specified')
         self.d=Loader.capi.cppcms_capi_session_pool_new()
         if config_file!=None:
-            Loader.capi.cppcms_capi_session_pool_init(self.d,config_file)
+            Loader.capi.cppcms_capi_session_pool_init(self.d,config_file.encode())
         else:
-            Loader.capi.cppcms_capi_session_pool_init_from_json(self.d,json_text)
+            Loader.capi.cppcms_capi_session_pool_init_from_json(self.d,json_text.encode())
         try:
             self.check()
         except:
@@ -209,25 +211,25 @@ class Cookie:
     def __str__(self):
         return self.header()
     def name(self):
-        return Loader.capi.cppcms_capi_cookie_name(self.d)
+        return Loader.capi.cppcms_capi_cookie_name(self.d).decode()
     def value(self):
-        return Loader.capi.cppcms_capi_cookie_value(self.d)
+        return Loader.capi.cppcms_capi_cookie_value(self.d).decode()
     def domain(self):
-        return Loader.capi.cppcms_capi_cookie_domain(self.d)
+        return Loader.capi.cppcms_capi_cookie_domain(self.d).decode()
     def header_content(self):
         """
         Returns a header content, i.e. stuff after Set-Cookie:
         for example:  'name=cppcms_session; value=I2343243252; Version=1' 
         """
-        return Loader.capi.cppcms_capi_cookie_header_content(self.d)
+        return Loader.capi.cppcms_capi_cookie_header_content(self.d).decode()
     def header(self):
         """
         returns full set cookie header, for example:
         'Set-Cookie: name=cppcms_session; value=I2343243252; Version=1'
         """
-        return Loader.capi.cppcms_capi_cookie_header(self.d)
+        return Loader.capi.cppcms_capi_cookie_header(self.d).decode()
     def path(self):
-        return Loader.capi.cppcms_capi_cookie_path(self.d)
+        return Loader.capi.cppcms_capi_cookie_path(self.d).decode()
     def max_age(self):
         """Returns max-age value, note check max_age_defined before using it"""
         return Loader.capi.cppcms_capi_cookie_max_age(self.d)
@@ -266,35 +268,32 @@ class Session(SessionBase):
         self.check()
     def is_set(self,key):
         """Check if key is defined"""
-        r=Loader.capi.cppcms_capi_session_is_set(self.d,key)
+        r=Loader.capi.cppcms_capi_session_is_set(self.d,key.encode())
         self.check()
         return r; 
     def erase(self,key):
         """Remove key from session"""
-        Loader.capi.cppcms_capi_session_erase(self.d,key)
+        Loader.capi.cppcms_capi_session_erase(self.d,key.encode())
         self.check()
     def get_exposed(self,key):
         """Check if the key's value is exposed in cookies"""
-        r=Loader.capi.cppcms_capi_session_get_exposed(self.d,key)
+        r=Loader.capi.cppcms_capi_session_get_exposed(self.d,key.encode())
         self.check()
         return r!=0; 
     def set_exposed(self,key,v):
         """Set if the key's value should be exposed in cookies"""
-        Loader.capi.cppcms_capi_session_set_exposed(self.d,key,v)
+        Loader.capi.cppcms_capi_session_set_exposed(self.d,key.encode(),v)
         self.check()
 
     def get_age(self):
         r = Loader.capi.cppcms_capi_session_get_age(self.d);
         self.check();
-        print 'GOT AGE',r
         return r;
     def set_age(self,value):
         Loader.capi.cppcms_capi_session_set_age(self.d,int(value))
         self.check()
-        print 'SET AGE',int(value)
     
     def default_age(self):
-        print 'DEF AGE'
         Loader.capi.cppcms_capi_session_set_default_age(self.d)
         self.check()
 
@@ -328,7 +327,7 @@ class Session(SessionBase):
         l=[]
         r=Loader.capi.cppcms_capi_session_get_first_key(self.d)
         while r:
-            l.append(r)
+            l.append(r.decode())
             r=Loader.capi.cppcms_capi_session_get_next_key(self.d)
         self.check()
         return l
@@ -344,15 +343,15 @@ class Session(SessionBase):
     @property
     def csrf_token(self):
         """Get cppcms CSRF token"""
-        r=Loader.capi.cppcms_capi_session_get_csrf_token(self.d)
+        r=Loader.capi.cppcms_capi_session_get_csrf_token(self.d).decode()
         self.check()
         return r;
     def get_binary(self,key):
         """Get binary value as bytearray"""
-        l=Loader.capi.cppcms_capi_session_get_binary_len(self.d,key)
+        l=Loader.capi.cppcms_capi_session_get_binary_len(self.d,key.encode())
         res = bytearray(l)
         res_proxy = (c_char * l).from_buffer(res);
-        Loader.capi.cppcms_capi_session_get_binary(self.d,key,res_proxy,l)
+        Loader.capi.cppcms_capi_session_get_binary(self.d,key.encode(),res_proxy,l)
         self.check()
         return res
     def set_binary(self,key,value):
@@ -360,16 +359,16 @@ class Session(SessionBase):
         if not type(value) is bytearray:
             raise ValueError("value should be bytearray")
         value_proxy = (c_char * len(value)).from_buffer(value);
-        Loader.capi.cppcms_capi_session_set_binary(self.d,key,value_proxy,len(value))
+        Loader.capi.cppcms_capi_session_set_binary(self.d,key.encode(),value_proxy,len(value))
         self.check()
     def get(self,key):
         """Get a value for a key"""
-        r=Loader.capi.cppcms_capi_session_get(self.d,key)
+        r=Loader.capi.cppcms_capi_session_get(self.d,key.encode())
         self.check()
-        return r;
+        return r.decode();
     def set(self,key,value):
         """Set a value for a key"""
-        Loader.capi.cppcms_capi_session_set(self.d,key,value)
+        Loader.capi.cppcms_capi_session_set(self.d,key.encode(),value.encode())
         self.check()
     @property
     def session_cookie_name(self):
@@ -380,7 +379,7 @@ class Session(SessionBase):
         """
         r=Loader.capi.cppcms_capi_session_get_session_cookie_name(self.d)
         self.check()
-        return r
+        return r.decode()
     def load(self,cookie=None,django_request=None):
         """
         Load the session directly from cookie value, the name of the cookies
@@ -390,7 +389,7 @@ class Session(SessionBase):
         the cookies would be retrived automatically
         """
         if cookie!=None:
-            Loader.capi.cppcms_capi_session_set_session_cookie(self.d,cookie);
+            Loader.capi.cppcms_capi_session_set_session_cookie(self.d,cookie.encode());
             Loader.capi.cppcms_capi_session_load(self.d)
         elif django_request!=None:
             cookie_name = self.session_cookie_name
@@ -398,8 +397,8 @@ class Session(SessionBase):
             if cookie_name in django_request.COOKIES:
                 cookie = django_request.COOKIES[cookie_name]
             for cookie_name in django_request.COOKIES:
-                Loader.capi.cppcms_capi_session_add_cookie_name(self.d,cookie_name)
-            Loader.capi.cppcms_capi_session_set_session_cookie(self.d,cookie)
+                Loader.capi.cppcms_capi_session_add_cookie_name(self.d,cookie_name.encode())
+            Loader.capi.cppcms_capi_session_set_session_cookie(self.d,cookie.encode())
             Loader.capi.cppcms_capi_session_load(self.d)
         self.check()
     def save(self,django_response=None):
@@ -466,12 +465,12 @@ def __private_test(config):
     s.set_binary('z',binary)
     s.set_exposed('x',1)
     for k in s.keys:
-        print ('Got ' + k)
-        print ('Value ' + s.get(k))
+        print('Got ',k)
+        print('Value ',s.get(k))
     s.save()
     for c in s.cookies():
-        print (c)
-        print (c.value())
+        print(c)
+        print(c.value())
         if(c.name()==s.session_cookie_name):
             state = c.value()
     l=None
@@ -479,14 +478,14 @@ def __private_test(config):
     s=Session(p)
     s.load(state)
     tmp=s.get_binary('z')
-    print('Binary expected \\x01\\x00\\xFF\\x7F=' + to_hex(tmp))
+    print('Binary expected \\x01\\x00\\xFF\\x7F=',to_hex(tmp))
     s.set_exposed('x',0)
     s.save()
-    print("Use operator:[] " + s['x'])
-    print("Is in " + str('x' in s))
+    print("Use operator:[] ",s['x'])
+    print("Is in ",str('x' in s))
     for c in s.cookies():
-        print (c)
-        print (c.value())
+        print(c)
+        print(c.value())
         if(c.name()==s.session_cookie_name):
             state = c.value()
     s=None
@@ -496,11 +495,11 @@ def __private_test(config):
     s.clear()
     s.save()
     for c in s.cookies():
-        print (c)
-        print (c.value())
+        print(c)
+        print(c.value())
         if(c.name()==s.session_cookie_name):
             state = c.value()
-    print "Test Completed"
+    print("Test Completed")
 
 if __name__ == "__main__":
     if len(sys.argv) != 2 and len(sys.argv) != 3:
