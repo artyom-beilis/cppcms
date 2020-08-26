@@ -223,7 +223,7 @@ int main(int argc,char **argv)
 			booster::shared_object obj(so);
 			{
 				booster::shared_ptr<cppcms::sessions::session_storage> storage;
-				std::auto_ptr<cppcms::sessions::session_storage_factory> storage_factory;
+				std::unique_ptr<cppcms::sessions::session_storage_factory> storage_factory;
 				cppcms::sessions::cppcms_session_storage_generator_type gen;
 				obj.symbol(gen,"sessions_generator");
 				try {
