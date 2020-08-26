@@ -3,7 +3,6 @@
 #include <cppcms/url_mapper.h>
 #include <cppcms/session_interface.h>
 #include <cppcms/cache_interface.h>
-#include <boost/lexical_cast.hpp>
 
 namespace data {
 

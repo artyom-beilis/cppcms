@@ -27,7 +27,7 @@ int main(int argc,char ** argv)
 {
     try {
         cppcms::service srv(argc,argv);
-        srv.applications_pool().mount(cppcms::applications_factory<my_hello_world>());
+        srv.applications_pool().mount(cppcms::create_pool<my_hello_world>());
         srv.run();
     }
     catch(std::exception const &e) {
