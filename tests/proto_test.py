@@ -13,6 +13,13 @@ import tofcgi
 
 def check(name,A,B):
     if A != B:
+        cl = A.find('Content-Length:')
+        if cl != -1:
+            ce = A[cl:].find('\r\n')
+            tmp = A[:cl] + A[cl+ce+2:]
+            if tmp == B:
+                print("Ok:",name,"no-content-length")
+                return
         print("Error :",name )
         print("-----Actual--")
         print(A,"---Expected--")

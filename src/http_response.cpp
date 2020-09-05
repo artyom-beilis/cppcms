@@ -30,21 +30,17 @@
 #include <map>
 #include <list>
 #include <stdio.h>
+#include "response_headers.h"
 
 #ifndef CPPCMS_NO_GZIP
 #include <zlib.h>
 #endif
 
-//#include <booster/streambuf.h>
 
 namespace cppcms { namespace http {
 
 namespace details {
 
-	bool string_i_comp(std::string const &left,std::string const &right)
-	{
-		return http::protocol::compare(left,right) < 0;
-	}
 	template<typename T>
 	std::string itoa(T v)
 	{
@@ -269,19 +265,24 @@ namespace details {
 	class basic_device : public extended_streambuf {
 	public:
 		basic_device() : 
+			raw_mode_(false),
 			final_(false),
 			eof_send_(false),
 			buffer_size_(0)
 		{
 		}
-		void open(booster::weak_ptr<impl::cgi::connection> c,size_t n)
+		void raw_mode(bool b)
+		{
+			raw_mode_ = b;
+		}
+		void open(booster::weak_ptr<cppcms::impl::cgi::connection> c,size_t n)
 		{
 			buffer_size_ = n;
 			do_setp();
 			conn_ = c;
 		}
 
-		virtual bool do_write(impl::cgi::connection &c,booster::aio::const_buffer const &out,bool eof,booster::system::error_code &e) = 0;
+		virtual bool do_write(cppcms::impl::cgi::connection &c,booster::aio::const_buffer const &out,bool eof,booster::system::error_code &e) = 0;
 
 		int write(booster::aio::const_buffer const &out)
 		{
@@ -292,13 +293,26 @@ namespace details {
 		int write(booster::aio::const_buffer const &out,booster::system::error_code &e)
 		{
 			bool send_eof = final_ && !eof_send_;
-			if(out.empty() && !send_eof) 
-				return 0;
-			booster::shared_ptr<impl::cgi::connection> c = conn_.lock();
+			booster::shared_ptr<cppcms::impl::cgi::connection> c = conn_.lock();
 			if(!c)
 				return -1;
 			eof_send_ = send_eof;
-			if(do_write(*c,out,send_eof,e)) {
+			// make sure flush goes all way to write to flush the buffers
+			if(raw_mode_ && !raw_headers_.headers_done()) {
+				auto out_data = out.get();
+				booster::aio::const_buffer real_out;
+				for(unsigned i=0;i<out_data.second;i++) {
+					char const *ptr = out_data.first[i].ptr;
+					size_t len  = out_data.first[i].size;
+					raw_headers_.consume(ptr,len,*c);
+					if(len > 0)
+						real_out += booster::aio::buffer(ptr,len);
+				}
+				if(raw_headers_.headers_done() || send_eof)
+					if(do_write(*c,real_out,send_eof,e))
+						return 0;
+			}
+			else if(do_write(*c,out,send_eof,e)) {
 				return 0;
 			}
 			if(e) {
@@ -377,7 +391,9 @@ namespace details {
 			flush(e);
 		}
 	protected:
-		booster::weak_ptr<impl::cgi::connection> conn_;
+		booster::weak_ptr<cppcms::impl::cgi::connection> conn_;
+		cppcms::impl::cgi_headers_parser raw_headers_;
+		bool raw_mode_;
 		bool final_;
 		bool eof_send_;
 		size_t buffer_size_;
@@ -467,7 +483,7 @@ namespace details {
 				return basic_device::xsputn(s,n);
 			}
 		}
-		virtual bool do_write(impl::cgi::connection &c,booster::aio::const_buffer const &out,bool eof,booster::system::error_code &e) 
+		virtual bool do_write(cppcms::impl::cgi::connection &c,booster::aio::const_buffer const &out,bool eof,booster::system::error_code &e) 
 		{
 			c.nonblocking_write(out,eof,e);
 			if(e)
@@ -481,7 +497,7 @@ namespace details {
 
 	class output_device : public basic_device {
 	public:
-		virtual bool do_write(impl::cgi::connection &c,booster::aio::const_buffer const &out,bool eof,booster::system::error_code &e) 
+		virtual bool do_write(cppcms::impl::cgi::connection &c,booster::aio::const_buffer const &out,bool eof,booster::system::error_code &e) 
 		{
 			return c.write(out,eof,e);
 		}
@@ -491,10 +507,7 @@ namespace details {
 }
 
 struct response::_data {
-	typedef bool (*compare_type)(std::string const &left,std::string const &right);
-	typedef std::map<std::string,std::string,compare_type> headers_type;
-	headers_type headers;
-	std::list<std::string> added_headers;
+	cppcms::impl::response_headers headers;
 	std::list<details::extended_streambuf *> buffers;
 
 	details::async_io_buf buffered;
@@ -504,12 +517,11 @@ struct response::_data {
 	#endif
 	details::output_device output_buf;
 	std::ostream output;
-	booster::weak_ptr<impl::cgi::connection> conn;
+	booster::weak_ptr<cppcms::impl::cgi::connection> conn;
 	int required_buffer_size;
 	bool full_buffering;
 
-	_data(impl::cgi::connection *c) : 
-		headers(details::string_i_comp),
+	_data(cppcms::impl::cgi::connection *c) : 
 		output(0),
 		conn(c->shared_from_this()),
 		required_buffer_size(-1),
@@ -576,15 +588,12 @@ void response::set_cookie(cookie const &cookie)
 {
 	std::ostringstream ss;
 	ss << cookie;
-	d->added_headers.push_back(ss.str());
+	d->headers.add_header(std::move(ss.str()));
 }
 
 void response::set_header(std::string const &name,std::string const &value)
 {
-	if(value.empty())
-		d->headers.erase(name);
-	else
-		d->headers[name]=value;
+	d->headers.set_header(name,value);
 }
 
 void response::finalize()
@@ -624,7 +633,7 @@ bool response::full_asynchronous_buffering()
 }
 bool response::pending_blocked_output()
 {
-	booster::shared_ptr<impl::cgi::connection> conn = d->conn.lock();
+	booster::shared_ptr<cppcms::impl::cgi::connection> conn = d->conn.lock();
 	if(!conn)
 		return false;
 	return conn->has_pending();
@@ -633,15 +642,12 @@ bool response::pending_blocked_output()
 
 std::string response::get_header(std::string const &name)
 {
-	_data::headers_type::const_iterator p=d->headers.find(name);
-	if(p!=d->headers.end())
-		return p->second;
-	return std::string();
+	return d->headers.get_header(name);
 }
 
 void response::erase_header(std::string const &name)
 {
-	d->headers.erase(name);
+	d->headers.erase_header(name);
 }
 
 bool response::need_gzip()
@@ -680,42 +686,13 @@ void response::io_mode(response::io_mode_type mode)
 	io_mode_=mode;
 }
 
-void response::write_http_headers(std::ostream &out)
+void response::write_http_headers()
 {
-	context_.session().save();
-	
-	_data::headers_type::const_iterator p = d->headers.end();
-
-	if(context_.service().cached_settings().service.generate_http_headers) {
-		p=d->headers.find("Status");
-		if(p == d->headers.end())
-			out << "HTTP/1.0 200 Ok\r\n";
-		else
-			out << "HTTP/1.0 " << p->second <<"\r\n";
-	}
-	
-	for(_data::headers_type::const_iterator h=d->headers.begin();h!=d->headers.end();++h) {
-		if(h==p)
-			continue;
-		out<<h->first<<": "<<h->second<<"\r\n";
-	}
-
-	for(std::list<std::string>::const_iterator p=d->added_headers.begin();p!=d->added_headers.end();++p) {
-		out << *p << "\r\n";
-	}
-
-	out<<"\r\n";
-	out<<std::flush;
+	context_.connection().set_response_headers(d->headers);
 }
 void response::add_header(std::string const &name,std::string const &value)
 {
-	std::string h;
-	h.reserve(name.size() + value.size() + 3);
-	h+=name;
-	h+=": ";
-	h+=value;
-	d->added_headers.push_back(std::string());
-	d->added_headers.back().swap(h);
+	d->headers.add_header(name,value);
 }
 
 
@@ -754,6 +731,8 @@ std::ostream &response::out()
 		d->buffered.open(d->conn,bsize);
 		d->output.rdbuf(&d->buffered);
 		d->buffers.push_front(&d->buffered);
+		if(io_mode_ == asynchronous_raw)
+			d->buffered.raw_mode(true);
 	}
 	else { 
 		size_t bsize = context_.service().cached_settings().service.output_buffer_size;
@@ -762,6 +741,8 @@ std::ostream &response::out()
 		d->output_buf.open(d->conn,bsize);
 		d->output.rdbuf(&d->output_buf);
 		d->buffers.push_front(&d->output_buf);
+		if(io_mode_ == raw)
+			d->output_buf.raw_mode(true);
 	}
 	
 	ostream_requested_=1;
@@ -775,8 +756,10 @@ std::ostream &response::out()
 	#endif
 
 	// Now we shoulde write headers -- before comrpession
-	if(io_mode_ != raw && io_mode_ != asynchronous_raw)
-		write_http_headers(d->output);
+	if(io_mode_ != raw && io_mode_ != asynchronous_raw) {
+		context_.session().save();
+		write_http_headers();
+	}
 	
 	if(copy_to_cache_) {
 		d->cached.open(d->output.rdbuf());
@@ -850,10 +833,9 @@ char const *response::status_to_string(int status)
 	}
 }
 
-void response::make_error_response(int stat,std::string const &msg)
+void response::make_error_response_html_body(int stat,std::ostream &out,std::string const &msg)
 {
-	status(stat);
-	out() <<"<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.01 Transitional//EN\"\n"
+	out   <<"<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.01 Transitional//EN\"\n"
 		"	\"http://www.w3.org/TR/html4/loose.dtd\">\n"
 		"<html>\n"
 		"  <head>\n"
@@ -862,10 +844,17 @@ void response::make_error_response(int stat,std::string const &msg)
 		"  <body>\n"
 		"    <h1>"<<stat<<" &mdash; "<< http::response::status_to_string(stat)<<"</h1>\n";
 	if(!msg.empty()) {
-		out()<<"    <p>"<<util::escape(msg)<<"</p>\n";
+		out<<"    <p>"<<util::escape(msg)<<"</p>\n";
 	}
-	out()<<	"  </body>\n"
-		"</html>\n"<<std::flush;
+	out  <<	"  </body>\n"
+		"</html>\n";
+
+}
+
+void response::make_error_response(int stat,std::string const &msg)
+{
+	status(stat);
+	make_error_response_html_body(stat,out(),msg);
 }
 
 
@@ -901,7 +890,6 @@ void response::status(int code,std::string const &message)
 	set_header("Status",itoa(code)+" "+message);
 }
 void response::trailer(std::string const &s) { set_header("Trailer",s); }
-void response::transfer_encoding(std::string const &s) { set_header("Transfer-Encoding",s); }
 void response::vary(std::string const &s) { set_header("Vary",s); }
 void response::via(std::string const &s) { set_header("Via",s); }
 void response::warning(std::string const &s) { set_header("Warning",s); }

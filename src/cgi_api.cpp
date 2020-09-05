@@ -23,6 +23,7 @@
 #include <stdlib.h>
 #include <cppcms/config.h>
 #include "binder.h"
+#include "response_headers.h"
 
 #include <booster/log.h>
 #include <booster/aio/endpoint.h>
@@ -66,8 +67,7 @@ namespace cppcms { namespace impl { namespace cgi {
 			if(e || n!=header_.size())
 				return;
 			header_.clear();
-			std::string slen = conn_->getenv("CONTENT_LENGTH");
-			content_length_ = slen.empty() ? 0LL : atoll(slen.c_str());
+			content_length_ = conn_->env_content_length();
 			if(content_length_ > 0) {
 				post_.resize( content_length_ > 8192 ? 8192 : content_length_,0);
 				write_post();
@@ -120,7 +120,15 @@ namespace cppcms { namespace impl { namespace cgi {
 				return;
 			}
 			else {
-				conn_->async_write(booster::aio::buffer(&response_.front(),len),false,mfunc_to_event_handler(&cgi_forwarder::on_response_written,shared_from_this()));
+				char const *data = &response_.front();
+				headers_parser_.consume(data,len,*conn_);
+				if(len == 0) {
+					conn_->get_io_service().post(std::bind(&cgi_forwarder::on_response_written,
+										shared_from_this(),
+										booster::system::error_code()));
+					return;
+				}
+				conn_->async_write(booster::aio::buffer(data,len),false,mfunc_to_event_handler(&cgi_forwarder::on_response_written,shared_from_this()));
 			}
 		}
 		void on_response_written(booster::system::error_code const &e)
@@ -149,6 +157,7 @@ namespace cppcms { namespace impl { namespace cgi {
 		std::string header_;
 		std::vector<char> post_;
 		std::vector<char> response_;
+		cppcms::impl::cgi_headers_parser headers_parser_;
 
 	};
 
@@ -188,9 +197,9 @@ void connection::on_headers_read(booster::system::error_code const &e,http::cont
 		return;
 	}
 	forwarder::address_type addr = service().forwarder().check_forwading_rules(
-		cgetenv("HTTP_HOST"),
-		cgetenv("SCRIPT_NAME"),
-		cgetenv("PATH_INFO"));
+		env_http_host(),
+		env_script_name(),
+		env_path_info());
 	
 	if(addr.second != 0 && !addr.first.empty()) {
 		booster::shared_ptr<cgi_forwarder> f(new cgi_forwarder(self(),addr.first,addr.second));
@@ -223,6 +232,12 @@ void connection::handle_http_error(int code,http::context *context,ehandler cons
 {
 	async_chunk_.clear();
 	if(!context->response().some_output_was_written()) {
+		std::ostringstream ss;
+		context->response().status(code);
+		context->response().write_http_headers();
+		cppcms::http::response::make_error_response_html_body(code,ss);
+		async_chunk_ += ss.str();
+#if 0
 		async_chunk_.reserve(256);
 		std::string status;
 		status.reserve(128);
@@ -256,6 +271,7 @@ void connection::handle_http_error(int code,http::context *context,ehandler cons
 		async_chunk_ += "</h1>\r\n"
 			"</body>\r\n"
 			"</html>\r\n";
+#endif			
 	}
 	else {
 		booster::system::error_code e;
@@ -541,6 +557,16 @@ struct connection::reader {
 			conn->async_read_some(p,s,*this);
 	}
 };
+
+std::string connection::format_xcgi_response_headers(cppcms::impl::response_headers &hdr)
+{
+	cppcms::impl::response_headers::string_buffer_wrapper buf(hdr.estimate_size());
+	if(service().cached_settings().service.generate_http_headers)
+		hdr.format_http_headers(buf,"1.0",true);
+	else
+		hdr.format_cgi_headers(buf,true);
+	return std::move(buf.data());
+}
 
 void connection::async_read(void *p,size_t s,io_handler const &h)
 {

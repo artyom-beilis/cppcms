@@ -335,13 +335,14 @@ namespace http {
 		void setbuf(int size);
 	public:
 		/// \cond INTERNAL
-		request(impl::cgi::connection &);
+		request(::cppcms::impl::cgi::connection &);
 		~request();
 		/// \endcond
 	private:
 		friend class context;
-		friend class impl::cgi::connection;
+		friend class ::cppcms::impl::cgi::connection;
 
+		cppcms::http::content_type &lazy_content_type();
 		void set_filter(basic_content_filter *ptr,bool owns);
 
 		int on_content_start();
@@ -368,8 +369,9 @@ namespace http {
 		files_type files_;
 		cookies_type cookies_;
 		cppcms::http::content_type content_type_;
+		bool content_type_ready_;
 		booster::hold_ptr<_data> d;
-		impl::cgi::connection *conn_;
+		::cppcms::impl::cgi::connection *conn_;
 	};
 
 

@@ -24,7 +24,7 @@
 #include "binder.h"
 #include <utility>
 #include "cached_settings.h"
-
+#include "response_headers.h"
 
 #ifdef CPPCMS_WIN_NATIVE
 #  ifndef NOMINMAX 
@@ -142,9 +142,22 @@ namespace cgi {
 			h(booster::system::error_code(),s);
 		}
 	public:
-
-		virtual booster::aio::const_buffer format_output(booster::aio::const_buffer const &in,bool completed,booster::system::error_code &)
+		virtual void set_response_headers(cppcms::impl::response_headers &hdr)
 		{
+			response_headers_ = std::move(format_xcgi_response_headers(hdr));
+			response_headers_written_ = false;
+		}
+
+		virtual booster::aio::const_buffer format_output(booster::aio::const_buffer const &input,bool completed,booster::system::error_code &)
+		{
+			booster::aio::const_buffer in;
+			if(!response_headers_written_) {
+				in=booster::aio::buffer(response_headers_) + input;
+				response_headers_written_ = true;
+			}
+			else {
+				in = input;
+			}
 			booster::aio::const_buffer packet;
 			booster::aio::const_buffer::entry const *chunks = in.get().first;
 //#define DEBUG_FASTCGI
@@ -762,6 +775,8 @@ namespace cgi {
 
 		std::vector<char> cache_;
 		size_t cache_start_,cache_end_;
+		std::string response_headers_;
+		bool response_headers_written_;
 		bool eof_callback_;
 
 		void reset_all()
@@ -774,6 +789,8 @@ namespace cgi {
 			keep_alive_=false;
 			env_.clear();
 			pool_.clear();
+			response_headers_written_=false;
+			response_headers_.clear();
 			memset(&eof_,0,sizeof(eof_));
 			if(cache_.empty()) {
 				cache_start_ = 0;
