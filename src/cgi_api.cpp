@@ -217,9 +217,7 @@ void connection::aync_wait_for_close_by_peer(booster::callback<void()> const &on
 
 void connection::handle_eof(callback const &on_eof)
 {
-	if(request_in_progress_) {
-		on_eof();
-	}
+	on_eof();
 }
 
 void connection::set_error(ehandler const &h,std::string s)
@@ -237,46 +235,12 @@ void connection::handle_http_error(int code,http::context *context,ehandler cons
 		context->response().write_http_headers();
 		cppcms::http::response::make_error_response_html_body(code,ss);
 		async_chunk_ += ss.str();
-#if 0
-		async_chunk_.reserve(256);
-		std::string status;
-		status.reserve(128);
-		status += char('0' +  code/100);
-		status += char('0' +  code/10 % 10);
-		status += char('0' +  code % 10);
-		status += ' ';
-		status += http::response::status_to_string(code);
-		if(context->service().cached_settings().service.generate_http_headers) {
-			async_chunk_ += "HTTP/1.0 ";
-			async_chunk_ += status;
-			async_chunk_ += "\r\n"
-					"Connection: close\r\n"
-					"Content-Type: text/html\r\n"
-					"\r\n";
-		}
-		else {
-			async_chunk_ += "Content-Type: text/html\r\n"
-					"Status: ";
-			async_chunk_ += status;
-			async_chunk_ += "\r\n"
-					"\r\n";
-		}
-
-
-		async_chunk_ += 	
-			"<html>\r\n"
-			"<body>\r\n"
-			"<h1>";
-		async_chunk_ += status;
-		async_chunk_ += "</h1>\r\n"
-			"</body>\r\n"
-			"</html>\r\n";
-#endif			
 	}
 	else {
 		booster::system::error_code e;
 		context->response().flush_async_chunk(e);
 	}
+    error_state_ = true;
 	async_write(booster::aio::buffer(async_chunk_),true,
 		mfunc_to_event_handler(
 			&connection::handle_http_error_eof,
@@ -576,7 +540,7 @@ void connection::async_read(void *p,size_t s,io_handler const &h)
 
 connection::connection(cppcms::service &srv) :
 	service_(&srv),
-	request_in_progress_(true)
+    error_state_(false)
 {
 }
 

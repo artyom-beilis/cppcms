@@ -73,6 +73,7 @@ namespace cgi {
 		virtual void async_read_headers(handler const &h)
 		{
 			reset_all();
+            connection::reset_all();
 			async_read_record(mfunc_to_event_handler(&fastcgi::on_start_request,self(),h));
 		}
 

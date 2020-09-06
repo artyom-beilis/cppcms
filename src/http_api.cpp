@@ -133,7 +133,6 @@ namespace cgi {
 		}
 		void reset_all()
 		{
-			input_body_ptr_ = 0;
 			request_method_ = non_const_empty_string;
 			env_script_name_ = non_const_empty_string;
 			env_path_info_ = non_const_empty_string;
@@ -163,6 +162,7 @@ namespace cgi {
 			format_number(port_,sport,10);
 			env_.add("SERVER_PORT",sport);
 			env_.add("GATEWAY_INTERFACE","CGI/1.0");
+            connection::reset_all();
 		}
 		~http()
 		{
@@ -201,9 +201,22 @@ namespace cgi {
 			return time_to_die_;
 		}
 
+		bool input_buffer_empty()
+		{
+			return input_body_.empty() || input_body_ptr_ == input_body_.size();
+		}
+
 		void async_read_some_headers(handler const &h)
 		{
-			socket_.on_readable(mfunc_to_event_handler(&http::some_headers_data_read,self(),h));
+			if(!input_buffer_empty()) {
+				auto ptr = self();
+				socket_.get_io_service().post([=] {
+					ptr->some_headers_data_read(booster::system::error_code(),h);
+				});
+			}
+			else {
+				socket_.on_readable(mfunc_to_event_handler(&http::some_headers_data_read,self(),h));
+			}
 			update_time();
 		}
 		virtual void async_read_headers(handler const &h)
@@ -215,6 +228,7 @@ namespace cgi {
 			#endif
 			update_time();
 			add_to_watchdog();
+			total_read_ = 0;
 			async_read_some_headers(h);
 		}
 
@@ -222,26 +236,31 @@ namespace cgi {
 		{
 			if(er) { h(er); return; }
 
-			booster::system::error_code e;
-			size_t n = socket_.bytes_readable(e);
-			if(e) { h(e); return ; }
-			if(n == 0) { 
-				h(booster::system::error_code(booster::aio::aio_error::eof,booster::aio::aio_error_cat)); 
-				return;
-			}
+			if(input_buffer_empty()) {
+				booster::system::error_code e;
+				size_t n = socket_.bytes_readable(e);
+				if(e) { h(e); return ; }
+				if(n == 0) { 
+					h(booster::system::error_code(booster::aio::aio_error::eof,booster::aio::aio_error_cat)); 
+					return;
+				}
 
-			if(n > 16384)
-				n=16384;
-			if(input_body_.capacity() < n) {
-				input_body_.reserve(n);
-			}
-			input_body_.resize(input_body_.capacity(),0);
-			input_body_ptr_=0;
-			
-			n = socket_.read_some(booster::aio::buffer(input_body_),e);
+				if(n > 16384)
+					n=16384;
+				if(input_body_.capacity() < n) {
+					input_body_.reserve(n);
+				}
+				input_body_.resize(input_body_.capacity(),0);
+				input_body_ptr_=0;
+				
+				n = socket_.read_some(booster::aio::buffer(input_body_),e);
 
-			total_read_+=n;
-			input_body_.resize(n);
+				total_read_+=n;
+				input_body_.resize(n);
+			}
+			else {
+				total_read_+=input_body_.size() - input_body_ptr_;
+			}
 
 			for(;;) {
 				using ::cppcms::http::impl::parser;
@@ -551,7 +570,7 @@ namespace cgi {
 				response_headers_ += buf;
 				response_headers_ += "\r\n";
 			}
-			if(client_accepts_keep_alive_ && (output_content_length_ != -1 || is_http_11_)) {
+			if(client_accepts_keep_alive_ && !error_state_ && (output_content_length_ != -1 || is_http_11_)) {
 				response_headers_ += "Connection: keep-alive\r\n";
 				keep_alive_ = true;
 				if(output_content_length_ == -1) {

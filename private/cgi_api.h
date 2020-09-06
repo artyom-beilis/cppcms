@@ -74,7 +74,7 @@ namespace cgi {
 		connection(cppcms::service &srv);
 		virtual ~connection();
 		cppcms::service &service();
-	
+
 		void async_prepare_request(	http::context *context,
 						ehandler const &on_post_data_ready);
 
@@ -108,7 +108,6 @@ namespace cgi {
 		bool is_reuseable();
 	
 		std::string last_error();
-	
 
 		/****************************************************************************/
 
@@ -128,6 +127,11 @@ namespace cgi {
 		virtual bool write_to_socket(booster::aio::const_buffer const &in,booster::system::error_code &e);
 		virtual booster::aio::io_service &get_io_service() = 0;
 	protected:
+
+        virtual void reset_all()
+        {
+            map_env_.clear();
+        }
 		std::string format_xcgi_response_headers(cppcms::impl::response_headers &hdr);
 		void append_pending(booster::aio::const_buffer const &new_data);
 
@@ -195,12 +199,14 @@ namespace cgi {
 		cppcms::service *service_;
 		std::string async_chunk_;
 		std::string error_;
-		bool request_in_progress_;
 
 		std::map<std::string,std::string> map_env_;
 
 		booster::intrusive_ptr<async_write_binder> cached_async_write_binder_;
 
+    protected:
+        bool error_state_;
+	
 	};
 
 
