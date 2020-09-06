@@ -277,6 +277,21 @@ else()
 endif()
 
 
+check_cxx_source_compiles(
+	"#include <atomic>
+	int main() { std::atomic_long v(0); v++; v--; return int(v); }"
+	BOOSTER_HAVE_STD_ATOMIC)
+
+if(NOT BOOSTER_HAVE_STD_ATOMIC) 
+	set(CMAKE_REQUIRED_LIBRARIES atomic)
+	check_cxx_source_compiles(
+		"#include <atomic>
+		int main() { std::atomic_long v(0); v++; v--; return int(v); }"
+		BOOSTER_HAVE_STD_ATOMIC_LIB)
+	if(NOT BOOSTER_HAVE_STD_ATOMIC_LIB) 
+		message(FATAL_ERROR "No std::atomic_long support, even with -latomic")
+	endif()
+endif()
 
 
 check_cxx_source_compiles(
@@ -361,6 +376,7 @@ endif()
 set(BOOSTER_SRC	
 	lib/ptime/src/posix_time.cpp
 	lib/ptime/src/ctime.cpp
+	lib/smart_ptr/src/atomic_counter.cpp
 	lib/aio/src/aio_category.cpp
 	lib/aio/src/deadline_timer.cpp
 	lib/aio/src/endpoint.cpp
@@ -544,6 +560,12 @@ foreach(ALIB ${LINK_LIBS})
 	if(LIB_NSL)
 		target_link_libraries(${ALIB} ${LIB_NSL})
 	endif(LIB_NSL)
+
+	if(NOT BOOSTER_HAVE_STD_ATOMIC)
+		if(BOOSTER_HAVE_STD_ATOMIC_LIB)
+			target_link_libraries(${ALIB} atomic)
+		endif()
+	endif()
 
 	if(LIB_SOCKET)
 		target_link_libraries(${ALIB} ${LIB_SOCKET})

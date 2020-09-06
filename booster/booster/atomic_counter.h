@@ -22,40 +22,39 @@ namespace booster {
 	/// \brief Atomic counter is a class that allows perform counting in thread safe way.
 	///
 
-	class atomic_counter {
+	class BOOSTER_API atomic_counter {
 	public:
 		///
 		/// Create a counter with initial value v
 		///
-    		explicit atomic_counter( long v ) : value_(v)
-		{
-		}
-		~atomic_counter()
-		{
-		}
+    		explicit atomic_counter( long v );
+		~atomic_counter();
 
 		///
 		/// Increment and return the result after increment atomically
 		///
     		long operator++()
 		{
-			return ++value_;
+			return inc();
 		}
 		///
 		/// Decrement and return the result after decrement atomically
 		///
     		long operator--()
 		{
-			return --value_;
+			return dec();
 		}
 		///
 		/// Return current value - atomically
 		///
 		operator long() const 
 		{
-			return value_;
+			return get();
 		}
 	private:
+		long inc();
+		long dec();
+		long get() const;
 
 		atomic_counter(atomic_counter const &) = delete;
 		atomic_counter & operator=(atomic_counter const &) = delete;
