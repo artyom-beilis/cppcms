@@ -13,6 +13,7 @@
 namespace booster { 
 
 	struct bidirectional_traversal_tag {};
+	struct forward_traversal_tag {};
 
 	template<
 		typename Derived,
@@ -106,6 +107,60 @@ namespace booster {
 		}
 	};
 
+	template<
+		typename Derived,
+		typename Value,
+		typename Reference,
+		typename Difference
+	>
+	class iterator_facade<Derived,Value,forward_traversal_tag,Reference,Difference> :
+		public std::iterator<std::forward_iterator_tag,Value> 
+	{
+	public:
+		typedef Value value_type;
+		typedef Reference reference;
+		typedef typename details::reference_to_pointer<reference>::pointer pointer;
+		typedef Difference difference_type;
+		typedef std::forward_iterator_tag iterator_category;
+
+		reference operator*() const
+		{
+			return self()->dereference();
+		}
+		pointer operator->() const
+		{
+			return &self()->dereference();
+		}
+		Derived &operator++()
+		{
+			self()->increment();
+			return *self();
+		}
+		Derived operator++(int)
+		{
+			Derived d(*self());
+			self()->increment();
+			return d;
+		}
+		bool operator==(Derived const &other) const
+		{
+			return self()->equal(other);
+		}
+		bool operator!=(Derived const &other) const
+		{
+			return !self()->equal(other);
+		}
+
+	private:
+		Derived const *self() const
+		{
+			return static_cast<Derived const *>(this);
+		}
+		Derived *self()
+		{
+			return static_cast<Derived *>(this);
+		}
+	};
 
 } // booster
 

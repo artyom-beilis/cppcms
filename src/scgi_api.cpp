@@ -19,6 +19,7 @@
 #include <string.h>
 
 #include "binder.h"
+#include "response_headers.h"
 
 namespace io = booster::aio;
 
@@ -33,6 +34,7 @@ namespace cgi {
 			start_(0),
 			end_(0),
 			socket_(srv.impl().get_io_service()),
+			headers_written_(false),
 			eof_callback_(false)
 		{
 		}
@@ -112,9 +114,17 @@ namespace cgi {
 		}
 		virtual void on_async_write_start() {}
 		virtual void on_async_write_progress(bool) {}
+		virtual void set_response_headers(cppcms::impl::response_headers &hdr)
+		{
+			headers_ = std::move(format_xcgi_response_headers(hdr));
+			headers_written_ = false;
+		}
 		virtual booster::aio::const_buffer format_output(booster::aio::const_buffer const &in,bool /*comleted*/,booster::system::error_code &/*e*/) 
 		{
-			return in;
+			if(headers_written_)
+				return in;
+			headers_written_=true;
+			return booster::aio::buffer(headers_) + in;
 		}
 
 		virtual void async_read_some(void *p,size_t s,io_handler const &h)
@@ -162,6 +172,8 @@ namespace cgi {
 		}
 		friend class socket_acceptor<scgi>;
 		io::stream_socket socket_;
+		std::string headers_;
+		bool headers_written_;
 		std::vector<char> buffer_;
 		bool eof_callback_;
 	};

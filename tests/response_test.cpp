@@ -101,6 +101,13 @@ public:
 		return result;
 	}
 
+	void ignore_headers()
+	{
+		size_t pos = output_.find("\r\n\r\n");
+		TEST(pos != std::string::npos);
+		output_ = output_.substr(pos+4);
+	}
+
 	void test_buffer_size(bool async)
 	{
 		std::cout << "- Test setbuf/flush " << (async ? "async" : "sync")<< std::endl;
@@ -112,7 +119,7 @@ public:
 			response().io_mode(cppcms::http::response::nogzip);
 		}
 		response().full_asynchronous_buffering(false);
-		response().out();
+		response().out() << std::flush;
 		response().setbuf(0);
 		str();
 		response().out() << "x";
@@ -172,8 +179,8 @@ public:
 		}
 		if(set_cache)
 			cache().fetch_page("none");
-		response().out();
-		str();
+		response().out() << std::flush;
+		ignore_headers();	
 	}
 	void test_io_error(bool async,bool gzip,bool cached)
 	{
@@ -258,11 +265,13 @@ public:
 		std::vector<char> out(4096);
 		std::string s = str();
 		totalz += s;
-		/*for(size_t i=0;i<totalz.size();i++) {
-			std::cout << std::setw(2) <<std::hex<< unsigned((unsigned char)totalz[i]);
+		/*
+		for(size_t i=0;i<totalz.size();i++) {
+			std::cout << std::setfill('0') << std::setw(2) <<std::hex<< unsigned((unsigned char)totalz[i]);
 		}
 		std::cout << "->[" << total <<"]" << std::endl;
 		*/
+		
 		if(zs_done) {
 			TEST(s.empty());
 			return std::string();
@@ -291,9 +300,9 @@ public:
 		if(cached) {
 			cache().fetch_page("none");
 		}
-		response().out();
-		std::string temp = str();
-		TEST(temp.find("\r\n\r\n")==temp.size()-4);
+		response().out() << std::flush;
+		// We can't promice to flush headers only - gzip header may be written as well
+		ignore_headers();
 		zsinit();
 		response().out() << "message";
 		TEQ(zstr(),"");

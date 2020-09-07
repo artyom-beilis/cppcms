@@ -53,7 +53,7 @@ namespace http {
 		friend class request;
 	public:
 		/// \cond INTERNAL
-		content_limits(impl::cached_settings const &);
+		content_limits(cppcms::impl::cached_settings const &);
 		content_limits();
 		~content_limits();
 		/// \endcond 

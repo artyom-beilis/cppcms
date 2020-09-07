@@ -180,7 +180,14 @@ public:
 	std::string str()
 	{
 		response().out() << std::flush;
-		std::string result = output_;
+		size_t pos = output_.find("\r\n\r\n");
+		std::string result;
+		if(pos != std::string::npos) {
+			result = output_.substr(pos+4);
+		}
+		else {
+			result = output_;
+		}
 		output_.clear();
 		return result;
 	}

@@ -220,9 +220,9 @@ int context::translate_exception()
 
 int context::on_headers_ready()
 {
-	char const *host = conn_->cgetenv("HTTP_HOST");
-	char const *path_info = conn_->cgetenv("PATH_INFO");
-	char const *script_name = conn_->cgetenv("SCRIPT_NAME");
+	char const *host = conn_->env_http_host();
+	char const *path_info = conn_->env_path_info();
+	char const *script_name = conn_->env_script_name();
 	std::string matched;
 
 	booster::intrusive_ptr<application> app;
