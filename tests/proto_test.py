@@ -49,7 +49,7 @@ def get_socket():
         s.setsockopt(socket.IPPROTO_TCP,socket.TCP_NODELAY,1)
     return s
 
-def test_io(name,method,input_f,output_f,seed=12,load=load_file,parse=identity):
+def test_io(name,method,input_f,output_f,seed=12,load=load_file,parse=identity,time_limit=0.5):
     result=b''
     try:
         input=load(input_f)
@@ -59,8 +59,8 @@ def test_io(name,method,input_f,output_f,seed=12,load=load_file,parse=identity):
 
         if method=='normal':
             s.sendall(input)
-            start = time.time()
             while 1:
+                start = time.time()
                 chunk = s.recv(1024)
                 if chunk == b'':
                     break
@@ -70,8 +70,8 @@ def test_io(name,method,input_f,output_f,seed=12,load=load_file,parse=identity):
             for k in range(len(input)):
                 s.sendall(input[k:k+1])
                 time.sleep(0.001)
-            start = time.time()
             while 1:
+                start = time.time()
                 chunk = s.recv(1)
                 if chunk == b'':
                     break;
@@ -86,8 +86,8 @@ def test_io(name,method,input_f,output_f,seed=12,load=load_file,parse=identity):
                 size = size + len(chunk)
                 s.sendall(chunk)
                 time.sleep(0.001)
-            start = time.time()
             while 1:
+                start = time.time()
                 chunk = s.recv(random.randint(1,16))
                 if chunk == b'':
                     break;
@@ -102,20 +102,20 @@ def test_io(name,method,input_f,output_f,seed=12,load=load_file,parse=identity):
         else:
             s.shutdown(2) 
         s.close()
-        assert end - start < 8.0, "Complete response withing 8 seconds"
+        assert end - start < time_limit, ("Complete response withing %1.1f seconds, done in %1.1f" % (time_limit,end-start))
     except socket.error:
         pass
     check(name,parse(result),output)
 
 
-def test_all(name,load=load_file,parse=identity):
+def test_all(name,load=load_file,parse=identity,time_limit=0.5):
     input_f = 'proto_test_' + name + '.in'
     output_f = 'proto_test_' + name + '.out'
-    test_io(name+' normal','normal',input_f,output_f,0,load,parse)
-    test_io(name+' random 1','random',input_f,output_f,1,load,parse)
-    test_io(name+' random 2','random',input_f,output_f,15,load,parse)
-    test_io(name+' random 3','random',input_f,output_f,215,load,parse)
-    test_io(name+' shortest','shortest',input_f,output_f,0,load,parse)
+    test_io(name+' normal','normal',input_f,output_f,0,load,parse,time_limit)
+    test_io(name+' random 1','random',input_f,output_f,1,load,parse,time_limit)
+    test_io(name+' random 2','random',input_f,output_f,15,load,parse,time_limit)
+    test_io(name+' random 3','random',input_f,output_f,215,load,parse,time_limit)
+    test_io(name+' shortest','shortest',input_f,output_f,0,load,parse,time_limit)
 
 def test_normal(name,load=load_file,parse=identity):
     input_f = 'proto_test_' + name + '.in'
@@ -232,8 +232,8 @@ def test_fcgi(name,flags = 0):
         test_normal(name,load,parse)
 
 
-def test_http(name):
-    test_all(name,parse=from_http)
+def test_http(name,time_limit=0.5):
+    test_all(name,parse=from_http,time_limit=time_limit)
 
 global target
 global socket_type
@@ -265,7 +265,7 @@ if test=='http':
     test_http('http_5')
     print("Testing HTTP/1.1")
     test_http('http_6')
-    test_http('http_7')
+    test_http('http_7',time_limit=8.0)
     test_http('http_8')
 elif test=='fastcgi_tcp' or test=='fastcgi_unix':
     test_fcgi_keep_alive('scgi_1')
