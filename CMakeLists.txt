@@ -1070,13 +1070,13 @@ endif()
 
 set_tests_properties( 
 	${TESTS_WITH_TIMEOUT}
-	PROPERTIES TIMEOUT 120)
+	PROPERTIES TIMEOUT 180)
 
 if(NOT IS_WINDOWS)
 	set_tests_properties(
 		proto_test_sync_scgi_unix
 		proto_test_async_scgi_unix
-		PROPERTIES TIMEOUT 120)
+		PROPERTIES TIMEOUT 180)
 
 endif()
 
