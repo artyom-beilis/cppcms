@@ -9,6 +9,7 @@
 #include <cppcms/url_dispatcher.h>
 #include <cppcms/application.h>
 #include <cppcms/http_request.h>
+#include <cppcms/http_response.h>
 #include <cppcms/http_context.h>
 #include <cppcms/encoding.h>
 
@@ -21,14 +22,18 @@ namespace cppcms {
 		struct option : public booster::noncopyable {
 			option(booster::regex const &expr) :
 				expr_(expr),
-				match_method_(0)
+				match_method_(0),
+				match_accept_(false),
+				match_media_type_(false)
 			{
 			}
 			option(booster::regex const &expr,std::string const &method) :
 				expr_(expr),
 				match_method_(1),
 				mexpr_(method),
-				method_(method)
+				method_(method),
+				match_accept_(false),
+				match_media_type_(false)
 			{
 				for(size_t i=0;i<method.size();i++) {
 					// common methods
@@ -39,11 +44,51 @@ namespace cppcms {
 					}
 				}
 			}
+			option(booster::regex const &expr,std::string const &method,std::string const &response_media_type) :
+				expr_(expr),
+				match_method_(1),
+				mexpr_(method),
+				method_(method),
+				match_accept_(true),
+				aexpr_(".*"+response_media_type+".*"),
+				response_media_type_(response_media_type),
+				match_media_type_(false)
+			{
+				for(size_t i=0;i<method.size();i++) {
+					// common methods
+					char c=method[i];
+					if(!('A'<= c && c<='Z')) {
+						match_method_ =2;
+						break;
+					}
+				}
+			}
+			option(booster::regex const &expr,std::string const &method,std::string const &response_media_type, std::string const &request_media_type) :
+				expr_(expr),
+				match_method_(1),
+				mexpr_(method),
+				method_(method),
+				match_accept_(true),
+				aexpr_(".*"+response_media_type+".*"),
+				response_media_type_(response_media_type),
+				match_media_type_(true),
+				request_media_type_(request_media_type)
+			{
+				for(size_t i=0;i<method.size();i++) {
+					// common methods
+					char c=method[i];
+					if(!('A'<= c && c<='Z')) {
+						match_method_ =2;
+						break;
+					}
+				}
+			}
+
 			virtual ~option()
 			{
 			}
 
-			bool matches(std::string const &path,char const *method)
+			bool matches(std::string const &path,char const *method,std::string const &accept,std::string const &media_type)
 			{
 				if(match_method_==1) {
 					if(!method || method_ != method)
@@ -54,16 +99,38 @@ namespace cppcms {
 						return false;
 				}
 				
-				return booster::regex_match(path.c_str(),match_,expr_);
+				if(match_accept_) {
+					if(accept.empty())
+						return false;
+					if ((accept != "*/*") &&
+						(accept.find(response_media_type_) == std::string::npos))
+						return false;
+				}
+				
+				if(match_media_type_) {
+					if(media_type.empty() || (media_type != request_media_type_))
+						return false;
+				}
+				
+				if(!booster::regex_match(path.c_str(),match_,expr_))
+					return false;
+					
+				return true;
 			}
 
-			virtual bool dispatch(std::string const &url,char const *method,application *app) = 0;
+			virtual bool dispatch(std::string const &url,char const *method,std::string const &accept, std::string const &media_type,application *app) = 0;
+				
 		protected:
 			booster::regex expr_;
 			booster::cmatch match_;
 			int match_method_;
 			booster::regex mexpr_;
 			std::string method_;
+			bool match_accept_;
+			booster::regex aexpr_;
+			std::string response_media_type_;
+			bool match_media_type_;
+			std::string request_media_type_;
 		};
 
 		struct mounted : public option {
@@ -74,10 +141,12 @@ namespace cppcms {
 			{
 			}
 
-			virtual bool dispatch(std::string const &url,char const *method,application *)
+			virtual bool dispatch(std::string const &url,char const *method,std::string const &accept, std::string const &media_type,application *)
 			{
-				if(matches(url,method)) {
+				if(matches(url,method,accept,media_type)) {
 					app_->main(match_[select_]);
+					if(match_accept_) // set response content media type if matching accept header is enabled
+						app_->response().set_content_header(response_media_type_);
 					return true;
 				}
 				return false;
@@ -99,9 +168,10 @@ namespace cppcms {
 				select_[4]=e;
 				select_[5]=f;
 			}
-			virtual bool dispatch(std::string const &url,char const *method,application *)
+
+			virtual bool dispatch(std::string const &url,char const *method,std::string const &accept,std::string const &media_type,application *)
 			{
-				if(matches(url,method)) {
+				if(matches(url,method,accept,media_type)) {
 					execute_handler(handle_);
 					return true;
 				}
@@ -154,20 +224,32 @@ namespace cppcms {
 				handle_(h)
 			{
 			}
-			generic_option(std::string method,booster::regex const &r,url_dispatcher::generic_handler const &h) :
+			generic_option(std::string const &method,booster::regex const &r,url_dispatcher::generic_handler const &h) :
 				option(r,method),
 				handle_(h)
 			{
 			}
-			virtual bool dispatch(std::string const &url,char const *method,application *app)
+			generic_option(std::string const &method,std::string const &response_media_type,booster::regex const &r,url_dispatcher::generic_handler const &h) :
+				option(r,method,response_media_type),
+				handle_(h)
+			{
+			}
+			generic_option(std::string const &method,std::string const &response_media_type,std::string const &request_media_type,booster::regex const &r,url_dispatcher::generic_handler const &h) :
+				option(r,method,response_media_type,request_media_type),
+				handle_(h)
+			{
+			}
+
+			virtual bool dispatch(std::string const &url,char const *method,std::string const &accept,std::string const &media_type,application *app)
 			{
 				if(!app)
 					return false;
-				if(matches(url,method)) {
+				if(matches(url,method,accept,media_type)) {
 					return handle_(*app,match_);
 				}
 				return false;
 			}
+
 			url_dispatcher::generic_handler handle_;
 		};
 
@@ -203,16 +285,20 @@ namespace cppcms {
 		unsigned i;
 		std::string method;
 		char const *cmethod = 0;
+		std::string accept;
+		std::string media_type;
 		application *app = d->app;
 		if(app && app->has_context()) {
 			method = app->request().request_method();
 			cmethod = method.c_str();
+			accept = app->request().http_accept();
+			media_type = app->request().content_type_parsed().media_type();
 		}
 		else {
 			app = 0;
 		}
 		for(i=0;i<d->options.size();i++) {
-			if(d->options[i]->dispatch(url,cmethod,app))
+			if(d->options[i]->dispatch(url,cmethod,accept,media_type,app))
 				return true;
 		}
 		return false;
@@ -235,6 +321,16 @@ namespace cppcms {
 		d->options.push_back(make_handler(expr,h));
 	}
 	
+	void url_dispatcher::map_generic(std::string const &method,std::string const &response_media_type,std::string const &request_media_type,booster::regex const &re,generic_handler const &h)
+	{
+		booster::shared_ptr<option> opt(new generic_option(method,response_media_type,request_media_type,re,h));
+		d->options.push_back(opt);
+	}
+	void url_dispatcher::map_generic(std::string const &method,std::string const &response_media_type,booster::regex const &re,generic_handler const &h)
+	{
+		booster::shared_ptr<option> opt(new generic_option(method,response_media_type,re,h));
+		d->options.push_back(opt);
+	}
 	void url_dispatcher::map_generic(std::string const &method,booster::regex const &re,generic_handler const &h)
 	{
 		booster::shared_ptr<option> opt(new generic_option(method,re,h));
