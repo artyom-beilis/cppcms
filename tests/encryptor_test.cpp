@@ -19,9 +19,9 @@
 #include <stdio.h>
 
 template<typename EncryptorFactory>
-std::auto_ptr<cppcms::sessions::encryptor> gen(std::string const &name,cppcms::crypto::key const &k)
+std::unique_ptr<cppcms::sessions::encryptor> gen(std::string const &name,cppcms::crypto::key const &k)
 {
-	std::auto_ptr<cppcms::sessions::encryptor_factory> fact(new EncryptorFactory(name,k));
+	std::unique_ptr<cppcms::sessions::encryptor_factory> fact(new EncryptorFactory(name,k));
 	return fact->get();
 }
 
@@ -31,7 +31,7 @@ void run_test(std::string name,std::string k,bool is_signature = false)
 	using cppcms::crypto::key;
 	char c1=k[0];
 	char c2=k[31];
-	std::auto_ptr<cppcms::sessions::encryptor> enc = gen<Encryptor>(name,key(k));
+	std::unique_ptr<cppcms::sessions::encryptor> enc = gen<Encryptor>(name,key(k));
 	std::string cipher=enc->encrypt("Hello World");
 	std::string plain;
 	TEST(enc->decrypt(cipher,plain));
@@ -118,13 +118,13 @@ void test_crypto()
 	TEST(message_digest::md5()->digest_size() == 16);
 	TEST(message_digest::sha1()->digest_size() == 20);
 	{
-		std::auto_ptr<message_digest> d(message_digest::create_by_name("md5"));
+		std::unique_ptr<message_digest> d(message_digest::create_by_name("md5"));
 		TEST(d->name() == std::string("md5"));
 		TEST(get_diget(*d,"")=="d41d8cd98f00b204e9800998ecf8427e");
 		TEST(get_diget(*d,"Hello World!")=="ed076287532e86365e841e92bfc50d8c");
 	}
 	{
-		std::auto_ptr<message_digest> d(message_digest::create_by_name("sha1"));
+		std::unique_ptr<message_digest> d(message_digest::create_by_name("sha1"));
 		TEST(d->name() == std::string("sha1"));
 		TEST(get_diget(*d,"")=="da39a3ee5e6b4b0d3255bfef95601890afd80709");
 		TEST(get_diget(*d,"Hello World!")=="2ef7bde608ce5404e97d5f042f95f89f1c232871");
@@ -143,7 +143,7 @@ void test_crypto()
 	#if defined(CPPCMS_HAVE_GCRYPT) || defined(CPPCMS_HAVE_OPENSSL)
 	std::cout << "-- testing shaXXX " << std::endl;
 	{
-		std::auto_ptr<message_digest> d(message_digest::create_by_name("sha256"));
+		std::unique_ptr<message_digest> d(message_digest::create_by_name("sha256"));
 		TEST(d->name() == std::string("sha256"));
 		TEST(d->block_size() == 64);
 		TEST(get_diget(*d,"Hello World")=="a591a6d40bf420404a011733cfb7b190d62c65bf0bcda32b57b277d9ad9f146e");

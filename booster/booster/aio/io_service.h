@@ -137,7 +137,7 @@ namespace aio {
 	private:
 		struct data;
 		hold_ptr<data> d;
-		std::auto_ptr<event_loop_impl> impl_;	
+		std::unique_ptr<event_loop_impl> impl_;	
 	};
 
 } // aio

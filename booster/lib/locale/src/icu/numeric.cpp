@@ -115,7 +115,7 @@ public:
     typedef std::basic_string<CharType> string_type;
     typedef CharType char_type;
     typedef formatter<CharType> formatter_type;
-    typedef std::auto_ptr<formatter_type> formatter_ptr;
+    typedef std::unique_ptr<formatter_type> formatter_ptr;
 
     num_format(cdata const &d,size_t refs = 0) : 
         std::num_put<CharType>(refs),
@@ -220,7 +220,7 @@ protected:
     typedef std::basic_string<CharType> string_type;
     typedef CharType char_type;
     typedef formatter<CharType> formatter_type;
-    typedef std::auto_ptr<formatter_type> formatter_ptr;
+    typedef std::unique_ptr<formatter_type> formatter_ptr;
     typedef std::basic_istream<CharType> stream_type;
 
     virtual iter_type do_get(iter_type in, iter_type end, std::ios_base &ios,std::ios_base::iostate &err,long &val) const

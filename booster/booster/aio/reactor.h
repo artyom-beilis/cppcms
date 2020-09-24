@@ -113,7 +113,7 @@ namespace aio {
 		///
 		std::string name() const;
 	private:
-		std::auto_ptr<reactor_impl> impl_;
+		std::unique_ptr<reactor_impl> impl_;
 	};
 } // aio
 } // booster

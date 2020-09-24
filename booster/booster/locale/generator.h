@@ -19,8 +19,8 @@
 
 namespace booster {
 
-    template<typename Type>
-    class shared_ptr;
+	template <typename T>
+	using shared_ptr = std::shared_ptr<T>;
 
     ///
     /// \brief This is the main namespace that encloses all localization classes 
@@ -220,7 +220,7 @@ namespace booster {
             void operator=(generator const &);
 
             struct data;
-            std::auto_ptr<data> d;
+            std::unique_ptr<data> d;
         };
 
     }

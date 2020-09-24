@@ -15,6 +15,7 @@
 #include <errno.h>
 #include <algorithm>
 #include <booster/backtrace.h>
+#include <utility>
 #include <vector>
 #include "codecvt.h"
 
@@ -211,9 +212,9 @@ namespace impl_posix {
         iconv_t from_utf_;
     };
 
-    std::auto_ptr<util::base_converter> create_iconv_converter(std::string const &encoding)
+    std::unique_ptr<util::base_converter> create_iconv_converter(std::string const &encoding)
     {
-        std::auto_ptr<util::base_converter> cvt;
+        std::unique_ptr<util::base_converter> cvt;
         try {
             cvt.reset(new mb2_iconv_converter(encoding));
         }
@@ -224,10 +225,9 @@ namespace impl_posix {
     }
 
 #else // no iconv
-    std::auto_ptr<util::base_converter> create_iconv_converter(std::string const &/*encoding*/)
+    std::unique_ptr<util::base_converter> create_iconv_converter(std::string const &/*encoding*/)
     {
-        std::auto_ptr<util::base_converter> cvt;
-        return cvt;
+        return std::unique_ptr<util::base_converter>();
     }
 #endif
 
@@ -240,9 +240,9 @@ namespace impl_posix {
             return util::create_simple_codecvt(in,encoding,type);
         }
         catch(conv::invalid_charset_error const &) {
-            std::auto_ptr<util::base_converter> cvt;
+            std::unique_ptr<util::base_converter> cvt;
             cvt = create_iconv_converter(encoding);
-            return util::create_codecvt(in,cvt,type);
+            return util::create_codecvt(in,std::move(cvt),type);
         }
     }
 

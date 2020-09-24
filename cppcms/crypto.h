@@ -142,16 +142,16 @@ namespace cppcms {
 			///
 			/// Create MD5 message digest
 			///
-			static std::auto_ptr<message_digest> md5();
+			static std::unique_ptr<message_digest> md5();
 			///
 			/// Create SHA1 message digest
 			///
-			static std::auto_ptr<message_digest> sha1();
+			static std::unique_ptr<message_digest> sha1();
 			///
 			/// Create message digest by name, more then sha1 and md5 may be supported,
 			/// if CppCMS is compiled with cryptography library like libgcrypt or openssl
 			///
-			static std::auto_ptr<message_digest> create_by_name(std::string const &name);
+			static std::unique_ptr<message_digest> create_by_name(std::string const &name);
 		};
 		
 		///
@@ -162,7 +162,7 @@ namespace cppcms {
 			///
 			/// Create hmac that uses given \a digest algorithm and a binary key - \a key
 			///
-			hmac(std::auto_ptr<message_digest> digest,key const &k);
+			hmac(std::unique_ptr<message_digest> digest,key const &k);
 			///
 			/// Create hmac that uses message digest algorithm called \a name and use a binary key - \a key
 			///
@@ -190,7 +190,7 @@ namespace cppcms {
 			void init();	
 			struct data_;
 			booster::hold_ptr<data_> d;
-			std::auto_ptr<message_digest> md_,md_opad_;
+			std::unique_ptr<message_digest> md_,md_opad_;
 			key key_;
 		};
 
@@ -215,7 +215,7 @@ namespace cppcms {
 			///
 			/// If the encryption method is not supported returns an empty pointer! 
 			///
-			static std::auto_ptr<cbc> create(cbc_type type);
+			static std::unique_ptr<cbc> create(cbc_type type);
 			///
 			/// Create a new cbc object that performs encryption using algorithm \a name
 			///
@@ -224,7 +224,7 @@ namespace cppcms {
 			/// Currently supported aes128, aes192, aes256, with names "aes" = "aes-128" = "aes128" , "aes-192" "aes192",
 			/// "aes-256" = "aes256". They require CppCMS to be compiled with OpenSSL or GNU-TLS library
 			///
-			static std::auto_ptr<cbc> create(std::string const &name);
+			static std::unique_ptr<cbc> create(std::string const &name);
 
 			///
 			/// Get the size of the block CBC works on

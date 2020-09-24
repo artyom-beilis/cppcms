@@ -212,7 +212,7 @@ bool session_file_storage::read_all(HANDLE h,void *vbuf,int n)
 
 void session_file_storage::gc()
 {
-	std::auto_ptr<_WIN32_FIND_DATAW> entry(new _WIN32_FIND_DATAW);
+	std::unique_ptr<_WIN32_FIND_DATAW> entry(new _WIN32_FIND_DATAW);
 	HANDLE d=INVALID_HANDLE_VALUE;
 	std::string search_path = path_ + "/*";
 	try{

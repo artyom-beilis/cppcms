@@ -14,6 +14,7 @@
 #include <cppcms/json.h>
 #include <iostream>
 #include <iomanip>
+#include <utility>
 #include "client.h"
 #include "test.h"
 

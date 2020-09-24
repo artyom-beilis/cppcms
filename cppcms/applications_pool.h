@@ -155,7 +155,7 @@ namespace cppcms {
 			///
 			/// Returns newly created instance of an application.
 			///
-			virtual std::auto_ptr<application> operator()(service &) const = 0;
+			virtual std::unique_ptr<application> operator()(service &) const = 0;
 			virtual ~factory(){}
 		};
 
@@ -167,7 +167,7 @@ namespace cppcms {
 		///
 		/// \deprecated Use mount(booster::shared_ptr<application_specific_pool> gen,int application_options) instead
 		///
-		void mount(std::auto_ptr<factory> aps);
+		void mount(std::unique_ptr<factory> aps);
 		
 		///
 		/// Mount an application factory \a app  by mount_point \a point application matching and
@@ -177,7 +177,7 @@ namespace cppcms {
 		///
 		/// \deprecated Use mount(booster::shared_ptr<application_specific_pool> gen,mount_point const &point,int application_options) instead
 		///
-		void mount(std::auto_ptr<factory> aps,mount_point const &point);
+		void mount(std::unique_ptr<factory> aps,mount_point const &point);
 
 		///
 		/// Mount an asynchronous application \a app for processing of any incoming requests. Application
@@ -267,10 +267,9 @@ namespace cppcms {
 		template<typename T>
 		struct simple_factory0 : public applications_pool::factory
 		{
-			std::auto_ptr<application> operator()(service &s) const
+			std::unique_ptr<application> operator()(service &s) const
 			{
-				std::auto_ptr<application> app(new T(s));
-				return app;
+				return std::unique_ptr<application>(new T(s));
 			}
 		};
 		template<typename T,typename P1>
@@ -278,10 +277,9 @@ namespace cppcms {
 		{
 			simple_factory1(P1 p1) : p1_(p1) {}
 			P1 p1_;
-			std::auto_ptr<application> operator()(service &s) const
+			std::unique_ptr<application> operator()(service &s) const
 			{
-				std::auto_ptr<application> app(new T(s,p1_));
-				return app;
+				return std::unique_ptr<application>(new T(s,p1_));
 			}
 		};
 		template<typename T,typename P1,typename P2>
@@ -290,10 +288,9 @@ namespace cppcms {
 			simple_factory2(P1 p1,P2 p2) : p1_(p1),p2_(p2) {}
 			P1 p1_;
 			P2 p2_;
-			std::auto_ptr<application> operator()(service &s) const
+			std::unique_ptr<application> operator()(service &s) const
 			{
-				std::auto_ptr<application> app(new T(s,p1_,p2_));
-				return app;
+				return std::unique_ptr<application>(new T(s,p1_,p2_));
 			}
 		};
 	} // details
@@ -307,10 +304,9 @@ namespace cppcms {
 	/// \deprecated Use create_pool
 	///
 	template<typename T>
-	std::auto_ptr<applications_pool::factory> applications_factory()
+	std::unique_ptr<applications_pool::factory> applications_factory()
 	{
-		std::auto_ptr<applications_pool::factory> f(new details::simple_factory0<T>);
-		return f;
+		return std::unique_ptr<applications_pool::factory>(new details::simple_factory0<T>);
 	}
 	
 	///
@@ -320,10 +316,9 @@ namespace cppcms {
 	/// \deprecated Use create_pool
 	///
 	template<typename T,typename P1>
-	std::auto_ptr<applications_pool::factory> applications_factory(P1 p1)
+	std::unique_ptr<applications_pool::factory> applications_factory(P1 p1)
 	{
-		std::auto_ptr<applications_pool::factory> f(new details::simple_factory1<T,P1>(p1));
-		return f;
+		return std::unique_ptr<applications_pool::factory>(new details::simple_factory1<T,P1>(p1));
 	}
 	
 	///
@@ -333,10 +328,9 @@ namespace cppcms {
 	/// \deprecated Use create_pool
 	///
 	template<typename T,typename P1,typename P2>
-	std::auto_ptr<applications_pool::factory> applications_factory(P1 p1,P2 p2)
+	std::unique_ptr<applications_pool::factory> applications_factory(P1 p1,P2 p2)
 	{
-		std::auto_ptr<applications_pool::factory> f(new details::simple_factory2<T,P1,P2>(p1,p2));
-		return f;
+		return std::unique_ptr<applications_pool::factory>(new details::simple_factory2<T,P1,P2>(p1,p2));
 	}
 
 	/// \cond INTERNAL 

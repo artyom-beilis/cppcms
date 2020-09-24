@@ -9,6 +9,8 @@
 #include <booster/aio/deadline_timer.h>
 #include <booster/aio/io_service.h>
 
+#include <utility>
+
 namespace booster {
 namespace aio {
 
@@ -89,10 +91,10 @@ struct deadline_timer::waiter : public booster::callable<void(system::error_code
 
 void deadline_timer::async_wait(event_handler const &h)
 {
-	std::auto_ptr<waiter> wt(new waiter);
+	std::unique_ptr<waiter> wt(new waiter);
 	wt->h=h;
 	wt->self = this;
-	event_id_ = get_io_service().set_timer_event(deadline_,wt);
+	event_id_ = get_io_service().set_timer_event(deadline_,std::move(wt));
 }
 
 void deadline_timer::cancel()

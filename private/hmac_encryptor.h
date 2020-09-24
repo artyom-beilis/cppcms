@@ -18,7 +18,7 @@ namespace impl {
 
 class CPPCMS_API hmac_factory : public encryptor_factory {
 public:
-	virtual std::auto_ptr<encryptor> get();
+	virtual std::unique_ptr<encryptor> get();
 	hmac_factory(std::string const &algo,crypto::key const &k);
 	virtual ~hmac_factory() {}
 private:

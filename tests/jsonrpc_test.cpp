@@ -9,6 +9,8 @@
 #include "test.h"
 #include <cppcms/applications_pool.h>
 
+#include <utility>
+
 #include "client.h"
 
 

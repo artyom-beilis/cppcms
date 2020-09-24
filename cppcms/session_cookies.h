@@ -60,7 +60,7 @@ namespace sessions {
 		///
 		/// Return a pointer to a newly created encryptor.
 		///
-		virtual std::auto_ptr<encryptor> get() = 0;
+		virtual std::unique_ptr<encryptor> get() = 0;
 
 		///
 		/// Destructor - cleanup everything
@@ -76,7 +76,7 @@ namespace sessions {
 		///
 		/// Create a new object passing it a pointer ecryptor as parameter
 		///
-		session_cookies(std::auto_ptr<encryptor> encryptor);
+		session_cookies(std::unique_ptr<encryptor> encryptor);
 		///
 		/// Destroy it and destroy an encryptor it was created with
 		///
@@ -104,7 +104,7 @@ namespace sessions {
 	private:
 		struct _data;
 		booster::hold_ptr<_data> d;
-		std::auto_ptr<encryptor> encryptor_;
+		std::unique_ptr<encryptor> encryptor_;
 	};
 } // sessions
 } // cppcms

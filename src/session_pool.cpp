@@ -39,6 +39,8 @@
 #include <booster/posix_time.h>
 #include <booster/system_error.h>
 
+#include <utility>
+
 #include "cached_settings.h"
 
 namespace cppcms {
@@ -177,7 +179,7 @@ void session_pool::init()
 			throw cppcms_error("Can't use session encryption without MAC");
 		}
 
-		std::auto_ptr<cppcms::sessions::encryptor_factory> factory;
+		std::unique_ptr<cppcms::sessions::encryptor_factory> factory;
 		if(!enc.empty()) {
 			crypto::key k;
 
@@ -225,11 +227,11 @@ void session_pool::init()
 			}
 		}
 
-		encryptor(factory);
+		encryptor(std::move(factory));
 	}
 	if((location == "server" || location == "both") && !storage_.get()) {
 		std::string stor=settings.get<std::string>("session.server.storage");
-		std::auto_ptr<sessions::session_storage_factory> factory;
+		std::unique_ptr<sessions::session_storage_factory> factory;
 		#ifndef CPPCMS_NO_GZIP
 		if(stor == "files") {
 			std::string dir = settings.get("session.server.dir","");
@@ -302,20 +304,20 @@ void session_pool::init()
 #endif
 		else 
 			throw cppcms_error("sessions_pool: unknown server side storage:"+stor);
-		storage(factory);
+		storage(std::move(factory));
 	}
 	if(location == "server") {
-		std::auto_ptr<session_api_factory> f(new sid_factory(this));
-		backend(f);
+		std::unique_ptr<session_api_factory> f(new sid_factory(this));
+		backend(std::move(f));
 	}
 	else if(location == "client") {
-		std::auto_ptr<session_api_factory> f(new cookies_factory(this));
-		backend(f);
+		std::unique_ptr<session_api_factory> f(new cookies_factory(this));
+		backend(std::move(f));
 	}
 	else if(location == "both") {
 		unsigned limit=settings.get("session.client_size_limit",2048);
-		std::auto_ptr<session_api_factory> f(new dual_factory(limit,this));
-		backend(f);
+		std::unique_ptr<session_api_factory> f(new dual_factory(limit,this));
+		backend(std::move(f));
 	}
 	else if(location == "none")
 		;
@@ -364,17 +366,17 @@ booster::shared_ptr<session_api> session_pool::get()
 	return p;
 }
 
-void session_pool::backend(std::auto_ptr<session_api_factory> b)
+void session_pool::backend(std::unique_ptr<session_api_factory> b)
 {
-	backend_=b;
+	backend_=std::move(b);
 }
-void session_pool::encryptor(std::auto_ptr<sessions::encryptor_factory> e)
+void session_pool::encryptor(std::unique_ptr<sessions::encryptor_factory> e)
 {
-	encryptor_=e;
+	encryptor_=std::move(e);
 }
-void session_pool::storage(std::auto_ptr<sessions::session_storage_factory> s)
+void session_pool::storage(std::unique_ptr<sessions::session_storage_factory> s)
 {
-	storage_=s;
+	storage_=std::move(s);
 }
 
 cppcms::impl::cached_settings const &session_pool::cached_settings()

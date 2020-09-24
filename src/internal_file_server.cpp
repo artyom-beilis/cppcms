@@ -25,6 +25,7 @@
 #include <cppcms/json.h>
 #include <cppcms/util.h>
 #include <sstream>
+#include <utility>
 #include <booster/nowide/fstream.h>
 #include <booster/locale/encoding.h>
 #include <booster/locale/formatting.h>

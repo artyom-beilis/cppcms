@@ -195,7 +195,7 @@ private:
 	int read_interrupter_,write_interrupter_;
 	bool stop_;
 	cppcms::service *service_;
-	std::auto_ptr<booster::thread> thread_;
+	std::unique_ptr<booster::thread> thread_;
 	booster::fork_shared_mutex mutex_;
 };
 

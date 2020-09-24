@@ -1,6 +1,8 @@
 #define BOOSTER_SOURCE
 #include <booster/streambuf.h>
 
+#include <utility>
+
 
 namespace booster {
 	struct streambuf::_data{};
@@ -108,10 +110,10 @@ namespace booster {
 		device_ = 0;
 		device_auto_ptr_.reset();
 	}
-	void streambuf::device(std::auto_ptr<io_device> d)
+	void streambuf::device(std::unique_ptr<io_device> d)
 	{
 		reset_device();
-		device_auto_ptr_=d;
+		device_auto_ptr_=std::move(d);
 		device_ = device_auto_ptr_.get();
 	}
 	void streambuf::set_buffer_size(size_t n) 

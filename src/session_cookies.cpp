@@ -15,6 +15,8 @@
 #include <time.h>
 #include <string.h>
 
+#include <utility>
+
 namespace cppcms {
 namespace sessions {
 
@@ -22,8 +24,8 @@ using namespace std;
 
 struct session_cookies::_data {};
 
-session_cookies::session_cookies(std::auto_ptr<encryptor> enc) :
-	encryptor_(enc)
+session_cookies::session_cookies(std::unique_ptr<encryptor> enc) :
+	encryptor_(std::move(enc))
 {
 }
 session_cookies::~session_cookies()

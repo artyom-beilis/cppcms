@@ -11,6 +11,8 @@
 
 #ifndef BOOSTER_WIN32
 #include <sys/ioctl.h>
+
+#include <utility>
 #endif
 
 #ifdef __sun
@@ -334,7 +336,7 @@ namespace {
 
 		async_connector(event_handler const &_h,stream_socket *_s) : h(_h),sock(_s) {}
 
-		typedef std::auto_ptr<async_connector> pointer;
+		typedef std::unique_ptr<async_connector> pointer;
 
 		void operator()(system::error_code const &e)
 		{
@@ -521,7 +523,7 @@ void stream_socket::async_connect(endpoint const &ep,event_handler const &h)
 	connect(ep,e);
 	if(e && would_block(e)) {
 		async_connector::pointer connector(new async_connector(h,this));
-		on_writeable(connector);
+		on_writeable(std::move(connector));
 	}
 	else {
 		get_io_service().post(h,e);

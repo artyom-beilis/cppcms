@@ -22,6 +22,7 @@
 #include <iostream>
 #include "client.h"
 #include <sstream>
+#include <utility>
 #include <booster/log.h>
 #include "test.h"
 

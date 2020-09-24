@@ -21,6 +21,7 @@
 #include <list>
 #include <sstream>
 #include <algorithm>
+#include <utility>
 #include <stdio.h>
 #include "binder.h"
 
@@ -77,7 +78,7 @@ namespace cgi {
 		}
 
 	private:
-		typedef std::set<weak_http_ptr> connections_type;
+		typedef std::set<weak_http_ptr, std::owner_less<weak_http_ptr>> connections_type;
 		connections_type connections_;
 		booster::aio::deadline_timer timer_;
 	};
@@ -747,13 +748,12 @@ namespace cgi {
 		return new http(srv,ip_,port_,watchdog_,rewrite_);
 	}
 
-	std::auto_ptr<acceptor> http_api_factory(cppcms::service &srv,std::string ip,int port,int backlog)
+	std::unique_ptr<acceptor> http_api_factory(cppcms::service &srv,std::string ip,int port,int backlog)
 	{
 		typedef socket_acceptor<http,http_creator> acceptor_type;
-		std::auto_ptr<acceptor_type> acc(new acceptor_type(srv,ip,port,backlog));
+		std::unique_ptr<acceptor_type> acc(new acceptor_type(srv,ip,port,backlog));
 		acc->factory(http_creator(srv.get_io_service(),srv.settings(),ip,port));
-		std::auto_ptr<acceptor> a(acc);
-		return a;
+		return acc;
 	}
 
 

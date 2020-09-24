@@ -213,7 +213,7 @@ namespace booster {
                 if(!time_zone.empty()) {
                     return icu::TimeZone::createTimeZone(time_zone.c_str());
                 }
-                std::auto_ptr<icu::TimeZone> tz(icu::TimeZone::createDefault());
+                std::unique_ptr<icu::TimeZone> tz(icu::TimeZone::createDefault());
                 icu::UnicodeString id;
                 tz->getID(id);
                 // Check if there is a bug?

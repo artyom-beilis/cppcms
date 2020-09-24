@@ -27,6 +27,7 @@
 #include <cppcms/config.h>
 #include <cppcms/mem_bind.h>
 #include <fstream>
+#include <utility>
 
 #include "hello_world_view.h"
 

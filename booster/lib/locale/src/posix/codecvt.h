@@ -17,7 +17,7 @@ namespace booster {
 namespace locale {
 namespace impl_posix {
     BOOSTER_API
-    std::auto_ptr<util::base_converter> create_iconv_converter(std::string const &encoding);
+    std::unique_ptr<util::base_converter> create_iconv_converter(std::string const &encoding);
 
 } // impl_posix
 } // locale 

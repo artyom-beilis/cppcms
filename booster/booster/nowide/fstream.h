@@ -146,8 +146,7 @@ namespace nowide {
 					return 0;
 				}
 			}
-			std::auto_ptr<io_device> dev(new details::stdio_iodev(f));
-			device(dev);
+			device(std::unique_ptr<io_device>(new details::stdio_iodev(f)));
 			opened_ = true;
 			return this;
 		}
@@ -272,7 +271,7 @@ namespace nowide {
 		}
 			
 	private:
-		std::auto_ptr<internal_buffer_type> buf_;
+		std::unique_ptr<internal_buffer_type> buf_;
 	};
 
 	///
@@ -332,7 +331,7 @@ namespace nowide {
 		}
 			
 	private:
-		std::auto_ptr<internal_buffer_type> buf_;
+		std::unique_ptr<internal_buffer_type> buf_;
 	};
 
 	///
@@ -392,7 +391,7 @@ namespace nowide {
 		}
 			
 	private:
-		std::auto_ptr<internal_buffer_type> buf_;
+		std::unique_ptr<internal_buffer_type> buf_;
 	};
 
 

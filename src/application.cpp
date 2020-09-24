@@ -20,6 +20,7 @@
 #include <booster/hold_ptr.h>
 
 #include <set>
+#include <utility>
 #include <vector>
 #include <sstream>
 
@@ -124,7 +125,7 @@ bool application::has_context()
 
 bool application::owns_context()
 {
-	return root()->d->conn;
+	return !!root()->d->conn;
 }
 
 booster::shared_ptr<http::context> application::release_context()

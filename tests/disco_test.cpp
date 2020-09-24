@@ -15,6 +15,7 @@
 #include <cppcms/mount_point.h>
 #include <cppcms/json.h>
 #include <iostream>
+#include <utility>
 #include "client.h"
 #include "test.h"
 

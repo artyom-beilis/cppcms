@@ -121,7 +121,7 @@ namespace booster {
 
                 std::ios_base &ios_;
                 struct data;
-                std::auto_ptr<data> d;
+                std::unique_ptr<data> d;
             };
 
         }

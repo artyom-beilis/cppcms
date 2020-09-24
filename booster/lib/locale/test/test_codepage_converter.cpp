@@ -17,6 +17,8 @@
 
 #include <string.h>
 
+#include <utility>
+
 char *make2(unsigned v)
 {
     static unsigned char buf[3] = {0};
@@ -80,7 +82,7 @@ bool test_incomplete(booster::locale::util::base_converter &cvt,unsigned codepoi
 #define TEST_FROM(str,codepoint) TEST(test_from(*cvt,codepoint,str))
 #define TEST_INC(codepoint,len) TEST(test_incomplete(*cvt,codepoint,len))
 
-void test_shiftjis(std::auto_ptr<booster::locale::util::base_converter> cvt)
+void test_shiftjis(std::unique_ptr<booster::locale::util::base_converter> cvt)
 {
         std::cout << "- Correct" << std::endl;
         TEST_TO("a",'a');
@@ -113,7 +115,7 @@ int main()
     try {
         using namespace booster::locale::util;
 
-        std::auto_ptr<base_converter> cvt;
+        std::unique_ptr<base_converter> cvt;
 
         std::cout << "Test UTF-8" << std::endl;
         std::cout << "- From UTF-8" << std::endl;
@@ -281,7 +283,7 @@ int main()
 
         cvt = booster::locale::impl_icu::create_uconv_converter("Shift-JIS");
         TEST(cvt.get());
-        test_shiftjis(cvt);
+        test_shiftjis(std::move(cvt));
         #endif
 
         #if defined(BOOSTER_LOCALE_WITH_ICONV) && !defined(BOOSTER_LOCALE_NO_POSIX_BACKEND)
@@ -289,7 +291,7 @@ int main()
 
         cvt = booster::locale::impl_posix::create_iconv_converter("Shift-JIS");
         if(cvt.get()) {
-            test_shiftjis(cvt);
+            test_shiftjis(std::move(cvt));
         }
         else {
             std::cout<< "- Shift-JIS is not supported!" << std::endl;

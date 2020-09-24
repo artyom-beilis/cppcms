@@ -217,7 +217,7 @@ namespace impl_icu {
             // fieldDifference has side effect of moving calendar (WTF?)
             // So we clone it for performing this operation
             // 
-            std::auto_ptr<icu::Calendar> self(calendar_->clone());
+            std::unique_ptr<icu::Calendar> self(calendar_->clone());
 
             calendar_impl const *other_cal=dynamic_cast<calendar_impl const *>(other_ptr);
             if(other_cal){

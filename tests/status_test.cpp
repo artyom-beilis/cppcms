@@ -16,6 +16,7 @@
 #include <booster/posix_time.h>
 #include <cppcms/json.h>
 #include <iostream>
+#include <utility>
 #include "client.h"
 
 class unit_test : public cppcms::application {
