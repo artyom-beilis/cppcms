@@ -356,6 +356,31 @@ class using_block:
     def on_end(self):
         print_using_block_end();
 
+class helper_scope_block:
+    pattern=None
+    basic_name = 'helper scope'
+    basic_pattern = None
+    type='helper_scope'
+    variables = None
+
+    def use(self, m):
+        global output_template
+        output_template("{ // helper scope")
+        global tmpl_seq
+        if m:
+            self.variables = m
+            for e in m:
+                tmpl_seq[e] = ''
+        global stack
+        stack.append(self)
+
+    def on_end(self):
+        global tmpl_seq
+        global output_template
+        if self.variables:
+            for e in self.variables:
+                del tmpl_seq[e]
+        output_template("} // helper scope")
 
 class foreach_block:
     pattern=r'^<%\s*foreach\s+([a-zA-Z]\w*)(\s+as\s+((:?:?\w+)(::\w+)*))?' \
@@ -384,6 +409,7 @@ class foreach_block:
         else:
             self.reverse = ''
         self.type_name = m.group(3)
+        self.val_name = "v_" + self.ident
         global tmpl_seq
         if self.ident in tmpl_seq:
             error_exit("Nested sequences with same name %s" % self.ident)
@@ -391,8 +417,12 @@ class foreach_block:
             error_exit("Nested sequence and rowid has same name %s" % self.ident)
         if self.rowid and (self.rowid in tmpl_seq):
             error_exit("Nested sequences with same rowid name %s" % self.rowid )
+        if self.val_name in tmpl_seq:
+            error_exit("Nested sequence with same value name %s" % self.val_name )
         tmpl_seq[self.ident]='';
-        output_template( "if((%s).%sbegin()!=(%s).%send()) {" % (self.seq_name,self.reverse,self.seq_name,self.reverse) )
+        helper_scope_block().use([self.val_name])
+        output_template( "decltype((%s)) %s = %s;" % (self.seq_name, self.val_name, self.seq_name) )
+        output_template( "if((%s).%sbegin()!=(%s).%send()) {" % (self.val_name,self.reverse,self.val_name,self.reverse) )
         if self.rowid:
             tmpl_seq[self.rowid]='';
             output_template("    int %s = %s;" % (self.rowid,self.rowid_begin))
@@ -410,6 +440,10 @@ class foreach_block:
             del tmpl_seq[self.rowid]
 
         output_template( "}" )
+        if len(stack) == 0 or stack[-1].type != 'helper_scope':
+            error_exit("Internal Error: There should be a helper_scope_block, but there is not")
+        stack.pop().on_end()
+
     def prepare_foreach(self):
         global output_template
         if not self.type_name:
@@ -420,7 +454,7 @@ class foreach_block:
         if self.rowid:
             incr = ',++%s' % self.rowid;
         fmt = "for("+ptr_type+" %(i)s_ptr=(%(s)s).%(r)sbegin(),%(i)s_ptr_end=(%(s)s).%(r)send();%(i)s_ptr!=%(i)s_ptr_end;++%(i)s_ptr%(u)s) {";
-        fmt = fmt %  { 's' : self.seq_name, 'i' : self.ident , 'r' : self.reverse, 'u' : incr };
+        fmt = fmt %  { 's' : self.val_name, 'i' : self.ident , 'r' : self.reverse, 'u' : incr };
         output_template(fmt)
         if not self.type_name:
             output_template( "CPPCMS_TYPEOF(*%s_ptr) &%s=*%s_ptr;" % (self.ident,self.ident,self.ident))
@@ -498,6 +532,9 @@ class empty_block:
         del tmpl_seq[self.ident]
         if self.rowid:
             del tmpl_seq[self.rowid]
+        if len(stack) == 0 or stack[-1].type != 'helper_scope':
+            error_exit("Internal Error: There should be a helper_scope_block, but there is not")
+        stack.pop().on_end()
 
 
 class else_block:
