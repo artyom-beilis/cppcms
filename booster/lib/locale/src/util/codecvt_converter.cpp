@@ -260,17 +260,17 @@ namespace util {
         return 0;
     }
     
-    std::auto_ptr<base_converter> create_simple_converter(std::string const &encoding)
+    std::unique_ptr<base_converter> create_simple_converter(std::string const &encoding)
     {
-        std::auto_ptr<base_converter> res;
+        std::unique_ptr<base_converter> res;
         if(check_is_simple_encoding(encoding))
             res.reset(new simple_converter(encoding));
         return res;
     }
 
-    std::auto_ptr<base_converter> create_utf8_converter()
+    std::unique_ptr<base_converter> create_utf8_converter()
     {
-        std::auto_ptr<base_converter> res(new utf8_converter());
+        std::unique_ptr<base_converter> res(new utf8_converter());
         return res;
     }
     
@@ -278,9 +278,9 @@ namespace util {
     class code_converter : public generic_codecvt<CharType,code_converter<CharType> >
     {
     public:
-        code_converter(std::auto_ptr<base_converter> cvt,size_t refs = 0) : 
+        code_converter(std::unique_ptr<base_converter> cvt,size_t refs = 0) :
             generic_codecvt<CharType,code_converter<CharType> >(refs),
-            cvt_(cvt) 
+            cvt_(std::move(cvt))
         {
             max_len_ = cvt_->max_len();
             thread_safe_ = cvt_->is_thread_safe();
@@ -318,28 +318,28 @@ namespace util {
         }
         
     private:
-        std::auto_ptr<base_converter> cvt_;
+        std::unique_ptr<base_converter> cvt_;
         int max_len_;
         bool thread_safe_;
     };
 
 
-    std::locale create_codecvt(std::locale const &in,std::auto_ptr<base_converter> cvt,character_facet_type type)
+    std::locale create_codecvt(std::locale const &in,std::unique_ptr<base_converter> cvt,character_facet_type type)
     {
         if(!cvt.get())
             cvt.reset(new base_converter());
         switch(type) {
         case char_facet:
-            return std::locale(in,new code_converter<char>(cvt));
+            return std::locale(in,new code_converter<char>(std::move(cvt)));
         case wchar_t_facet:
-            return std::locale(in,new code_converter<wchar_t>(cvt));
+            return std::locale(in,new code_converter<wchar_t>(std::move(cvt)));
         #if defined(BOOSTER_HAS_CHAR16_T) && !defined(BOOSTER_NO_CHAR16_T_CODECVT)
         case char16_t_facet:
-            return std::locale(in,new code_converter<char16_t>(cvt));
+            return std::locale(in,new code_converter<char16_t>(std::move(cvt)));
         #endif
         #if defined(BOOSTER_HAS_CHAR32_T) && !defined(BOOSTER_NO_CHAR32_T_CODECVT)
         case char32_t_facet:
-            return std::locale(in,new code_converter<char32_t>(cvt));
+            return std::locale(in,new code_converter<char32_t>(std::move(cvt)));
         #endif
         default:
             return in;

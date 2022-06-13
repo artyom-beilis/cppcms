@@ -207,7 +207,7 @@ namespace cppcms {
 
 	private:
 		void setup();
-		std::auto_ptr<cppcms::impl::cgi::acceptor> setup_acceptor(json::value const &,int,int shift=0);
+		std::unique_ptr<cppcms::impl::cgi::acceptor> setup_acceptor(json::value const &,int,int shift=0);
 		void stop();
 		void start_acceptor(bool after_fork=false);
 		void setup_exit_handling();

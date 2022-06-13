@@ -762,7 +762,7 @@ int service::process_id()
 	return impl_->id_;
 }
 
-std::auto_ptr<cppcms::impl::cgi::acceptor> service::setup_acceptor(json::value const &v,int backlog,int port_shift)
+std::unique_ptr<cppcms::impl::cgi::acceptor> service::setup_acceptor(json::value const &v,int backlog,int port_shift)
 {
 	using namespace cppcms::impl::cgi;
 
@@ -774,7 +774,7 @@ std::auto_ptr<cppcms::impl::cgi::acceptor> service::setup_acceptor(json::value c
 	int port=0;
 
 	bool tcp;
-	std::auto_ptr<acceptor> a;
+	std::unique_ptr<acceptor> a;
 
 	if(socket.empty()) {
 		ip=v.get("ip","127.0.0.1");
