@@ -98,13 +98,13 @@ inline void sp_enable_shared_from_this( ... )
 }
 
 
-// rvalue auto_ptr support based on a technique by Dave Abrahams
+// rvalue unique_ptr support based on a technique by Dave Abrahams
 
-template< class T, class R > struct sp_enable_if_auto_ptr
+template< class T, class R > struct sp_enable_if_unique_ptr
 {
 };
 
-template< class T, class R > struct sp_enable_if_auto_ptr< std::auto_ptr< T >, R >
+template< class T, class R > struct sp_enable_if_unique_ptr< std::unique_ptr< T >, R >
 {
     typedef R type;
 }; 
@@ -221,7 +221,7 @@ public:
     }
 
     template<class Y>
-    explicit shared_ptr(std::auto_ptr<Y> & r): px(r.get()), pn()
+    explicit shared_ptr(std::unique_ptr<Y> & r): px(r.get()), pn()
     {
         Y * tmp = r.get();
         pn = booster::detail::shared_count(r);
@@ -229,7 +229,7 @@ public:
     }
 
     template<class Ap>
-    explicit shared_ptr( Ap r, typename booster::detail::sp_enable_if_auto_ptr<Ap, int>::type = 0 ): px( r.get() ), pn()
+    explicit shared_ptr( Ap r, typename booster::detail::sp_enable_if_unique_ptr<Ap, int>::type = 0 ): px( r.get() ), pn()
     {
         typename Ap::element_type * tmp = r.get();
         pn = booster::detail::shared_count( r );
@@ -254,14 +254,14 @@ public:
 
 
     template<class Y>
-    shared_ptr & operator=( std::auto_ptr<Y> & r )
+    shared_ptr & operator=( std::unique_ptr<Y> & r )
     {
         this_type(r).swap(*this);
         return *this;
     }
 
     template<class Ap>
-    typename booster::detail::sp_enable_if_auto_ptr< Ap, shared_ptr & >::type operator=( Ap r )
+    typename booster::detail::sp_enable_if_unique_ptr< Ap, shared_ptr & >::type operator=( Ap r )
     {
         this_type( r ).swap( *this );
         return *this;

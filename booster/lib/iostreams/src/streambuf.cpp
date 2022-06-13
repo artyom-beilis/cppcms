@@ -106,13 +106,13 @@ namespace booster {
 	{
 		sync();
 		device_ = 0;
-		device_auto_ptr_.reset();
+		device_unique_ptr_.reset();
 	}
-	void streambuf::device(std::auto_ptr<io_device> d)
+	void streambuf::device(std::unique_ptr<io_device> d)
 	{
 		reset_device();
-		device_auto_ptr_=d;
-		device_ = device_auto_ptr_.get();
+		device_unique_ptr_=std::move(d);
+		device_ = device_unique_ptr_.get();
 	}
 	void streambuf::set_buffer_size(size_t n) 
 	{

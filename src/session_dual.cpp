@@ -18,8 +18,8 @@ namespace sessions {
 
 struct session_dual::_data {};
 
-session_dual::session_dual(std::auto_ptr<encryptor> enc,booster::shared_ptr<session_storage> storage,size_t limit) :
-	client_(new session_cookies(enc)),
+session_dual::session_dual(std::unique_ptr<encryptor> enc,booster::shared_ptr<session_storage> storage,size_t limit) :
+	client_(new session_cookies(std::move(enc))),
 	server_(new session_sid(storage)),
 	data_size_limit_(limit)
 {

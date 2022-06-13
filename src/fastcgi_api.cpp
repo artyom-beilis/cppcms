@@ -699,11 +699,11 @@ namespace cgi {
 				return;
 			}
 			body_.resize(cur_size + rec_size);
-			std::auto_ptr<booster::callable<void(booster::system::error_code const &,size_t)> > cb;
+			std::unique_ptr<booster::callable<void(booster::system::error_code const &,size_t)> > cb;
 			cb.reset(new on_header_read_binder(h,self()));
 			async_read_from_socket(
 				&body_[cur_size],rec_size,
-				cb);
+				std::move(cb));
 		}
 		void on_body_read(booster::system::error_code const &e,handler const &h)
 		{
