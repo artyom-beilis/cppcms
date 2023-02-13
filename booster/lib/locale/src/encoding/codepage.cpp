@@ -12,6 +12,8 @@
 #define BOOSTER_LOCALE_WITH_WCONV
 #endif
 
+#include "conv.h"
+
 #ifdef BOOSTER_LOCALE_WITH_ICONV
 #include "iconv_codepage.ipp"
 #endif
