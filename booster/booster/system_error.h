@@ -24,7 +24,11 @@ namespace system {
 	using std::error_category;
 	using std::system_category;
 	using std::error_code;
-	using std::system_error;
+
+    class system_error : public std::system_error, public backtrace  {
+    public:
+        using std::system_error::system_error;
+    };
 
 } // system
 } // booster
