@@ -133,19 +133,19 @@ void pool::remove(generator const &g)
 base_view *pool::create_view(std::string const &skin,std::string const &template_name,std::ostream &out,base_content &content)
 {
 	data::generators_type::iterator s=d->generators.find(skin);
-	if(s==d->generators.end()) 
-		throw cppcms_error("cppcms::views::pool: no such skin:" + skin);
+	if(s==d->generators.end())
+		throw cppcms_error("cppcms::views::pool: no such skin: " + skin);
 
 	data::skin_generators_type const& reg_skin = s->second;
 
 	data::skin_generators_type::const_iterator t=reg_skin.find(template_name);
 	if(t==reg_skin.end())
-		throw cppcms_error("cppcms::view::pool: no suck view:" + template_name + " is registered for skin: " + skin);
+		throw cppcms_error("cppcms::view::pool: no such view: " + template_name + " is registered for skin: " + skin);
 
 	std::auto_ptr<base_view> v;
 	v = t->second->create(template_name,out,&content);
 	if(!v.get())
-		throw cppcms_error("cppcms::views::pool: no such view " + template_name + " in the skin " + skin);
+		throw cppcms_error("cppcms::views::pool: no such view: " + template_name + " in the skin: " + skin);
 	return v.release();
 }
 
@@ -345,7 +345,7 @@ manager::manager(json::value const &settings) :
 	std::vector<std::string> paths=settings.get("views.paths",std::vector<std::string>());
 	std::vector<std::string> skins=settings.get("views.skins",std::vector<std::string>());
 	if(!skins.empty() && paths.empty()) {
-		throw cppcms_error("When views.skins provided at least one search path should be given in views.paths");
+		throw cppcms_error("When views.skins provided at least one search path should be given in views.paths.");
 	}
 	d->default_skin = settings.get<std::string>("views.default_skin","");
 	if(d->default_skin.empty()) {
@@ -373,7 +373,7 @@ manager::manager(json::value const &settings) :
 			}
 		}
 		if(j == paths.size()) {
-			throw cppcms_error("Failed to load skin:" + name+ ", no shared object/dll found");
+			throw cppcms_error("Failed to load skin: " + name+ ", no shared object/dll found.");
 		}
 	}
 }
@@ -390,7 +390,7 @@ std::string manager::default_skin()
 void manager::render(std::string const &skin_name,std::string const &template_name,std::ostream &out,base_content &content)
 {
 	if(skin_name.empty() && d->default_skin.empty()) {
-		throw cppcms_error("No default skin was detected, please define one in views.default_skin");
+		throw cppcms_error("No default skin was detected, please define one in views.default_skin.");
 	}
 	if(d->auto_reload) {
 		{	// Check if update
