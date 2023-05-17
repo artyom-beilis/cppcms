@@ -4,14 +4,17 @@ set(CMAKE_LEGACY_CYGWIN_WIN32 0)
 
 project(cppcms)
 set(CPPCMS_PACKAGE_NAME "CppCMS")
-set(CPPCMS_PACKAGE_STRING "CppCMS/1.2.1")
-set(CPPCMS_PACKAGE_VERSION "1.2.1")
+# Actual Version
+set(CPPCMS_VERSION "2.0.0.beta2")
+# Binary ABI Version
+set(CPPCMS_SOVERSION "2")
 
-set(CPPCMS_VERSION "1.2.1")
-set(CPPCMS_SOVERSION "1")
+set(CPPCMS_PACKAGE_VERSION "${CPPCMS_VERSION}")
+set(CPPCMS_PACKAGE_STRING "CppCMS/${CPPCMS_PACKAGE_VERSION}")
 
-set(BOOSTER_SOVERSION "0")
-set(BOOSTER_VERSION "0.2.0")
+
+set(BOOSTER_SOVERSION "${CPPCMS_SOVERSION}")
+set(BOOSTER_VERSION   "${CPPCMS_VERSION}")
 
 
 
@@ -105,33 +108,16 @@ endif()
 #############################################################################
 
 if(CMAKE_COMPILER_IS_GNUCXX)
-	check_cxx_source_compiles(
-		"#if __GNUC__ < 4
-		#error
-		#endif
-		int main() {}"
-		GCC_IS_GCC4)
 
-	set(CXX_FLAGS "-Wall -Wextra")
+	set(CXX_FLAGS "-Wall -Wextra -std=c++11")
 	set(C_FLAGS "-Wall -Wextra")
 
 	if(CMAKE_SYSTEM_NAME STREQUAL "SunOS")
 		set(CXX_FLAGS "${CXX_FLAGS} -pthreads")
 	endif()
 
-	if(NOT GCC_IS_GCC4)
-		# Uninitalized checks are bogous under gcc-3.4
-		set(CXX_FLAGS "${CXX_FLAGS} -Wno-uninitialized")
-	endif()
-
 	if(IS_WINDOWS)
-		if(GCC_IS_GCC4) 
-			# Very important, otherwise process would not start under cygwin
-			set(CMAKE_CXX_LINK_FLAGS "${CMAKE_CXX_LINK_FLAGS} -Wl,--enable-auto-import")
-		else()
-			# gcc-3 does not have shared library for libstdc++ -- cause dll faitures with locale
-			set(DISABLE_SHARED ON)
-		endif()
+		set(CMAKE_CXX_LINK_FLAGS "${CMAKE_CXX_LINK_FLAGS} -Wl,--enable-auto-import")
 	endif()
 
 	if(CMAKE_SYSTEM_NAME STREQUAL "FreeBSD" OR CMAKE_SYSTEM_NAME STREQUAL "NetBSD")
@@ -140,27 +126,19 @@ if(CMAKE_COMPILER_IS_GNUCXX)
 	endif()
 
 elseif(CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
-	set(CXX_FLAGS "-Wall -Wextra")
+	set(CXX_FLAGS "-Wall -Wextra -std=c++11")
 	if(CMAKE_SYSTEM_NAME STREQUAL "FreeBSD")
 		set(CMAKE_CXX_LINK_FLAGS "${CMAKE_CXX_LINK_FLAGS} -rdynamic")
 	endif()
 
 elseif(CMAKE_CXX_COMPILER_ID STREQUAL "Intel")
-	set(CXX_FLAGS "-Wall")
+	set(CXX_FLAGS "-Wall -std=c++11")
 	set(C_FLAGS "-Wall")
-elseif(MSVC)
+elseif(MSVC) 
+    # To be defined MSVC 2017 supports c++14 by default so no need to specify
+    # older version seems not to support /std flag... so keep it as it is
 	set(CXX_FLAGS "/EHsc /W3")
 	set(C_FLAGS "/W3")
-elseif(CMAKE_CXX_COMPILER_ID STREQUAL "SunPro")
-	#
-	# We use STL port under Sun Studio, standard library is broken
-	#
-	
-	set(CXX_FLAGS "-library=stlport4 -xannotate=no")
-
-	if(CMAKE_SYSTEM_NAME STREQUAL "SunOS")
-		set(CXX_FLAGS "${CXX_FLAGS} -mt")
-	endif()
 endif()
 
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${CXX_FLAGS}")
@@ -271,9 +249,11 @@ if(NOT DISABLE_GZIP)
 	find_library(ZLIB NAMES z zdll zlib${ZLIB_SUFFIX} zlib)
 	find_path(ZLIB_INCLUDE_DIR zlib.h)
 	if(NOT ZLIB OR NOT ZLIB_INCLUDE_DIR)
-		message(FATAL_ERROR "Can't fild zlib")
+		set(DISABLE_GZIP ON)
+		message("Can't fild zlib - disabling compression support")
+	else()
+		include_directories(${ZLIB_INCLUDE_DIR})
 	endif()
-	include_directories(${ZLIB_INCLUDE_DIR})
 endif()
 
 
@@ -460,14 +440,10 @@ endif()
 	
 
 if(WINDOWS_NATIVE)
-	if(NOT DISABLE_GZIP)
-		set(CPPCMS_SOURCES ${CPPCMS_SOURCES} src/session_win32_file_storage.cpp)
-	endif()
+	set(CPPCMS_SOURCES ${CPPCMS_SOURCES} src/session_win32_file_storage.cpp)
 	set(CPPCMS_SOURCES ${CPPCMS_SOURCES} src/winservice.cpp)
 else()
-	if(NOT DISABLE_GZIP)
-		set(CPPCMS_SOURCES ${CPPCMS_SOURCES} src/session_posix_file_storage.cpp)
-	endif()
+	set(CPPCMS_SOURCES ${CPPCMS_SOURCES} src/session_posix_file_storage.cpp)
 	set(CPPCMS_SOURCES ${CPPCMS_SOURCES} src/daemonize.cpp)
 endif()
 
@@ -1094,13 +1070,13 @@ endif()
 
 set_tests_properties( 
 	${TESTS_WITH_TIMEOUT}
-	PROPERTIES TIMEOUT 120)
+	PROPERTIES TIMEOUT 180)
 
 if(NOT IS_WINDOWS)
 	set_tests_properties(
 		proto_test_sync_scgi_unix
 		proto_test_async_scgi_unix
-		PROPERTIES TIMEOUT 120)
+		PROPERTIES TIMEOUT 180)
 
 endif()
 

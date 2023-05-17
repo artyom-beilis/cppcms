@@ -91,7 +91,9 @@ namespace cppcms {
 		public:
 			rules();
 			rules(rules const &);
+			rules(rules &&);
 			rules const &operator=(rules const &);
+			rules &operator=(rules &&);
 			~rules();
 
 			/// Create rules from JSON object \a r

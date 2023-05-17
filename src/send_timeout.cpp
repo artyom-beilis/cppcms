@@ -28,7 +28,7 @@ void set_send_timeout(booster::aio::stream_socket &sock,int seconds,booster::sys
 	tv.tv_sec = seconds;
 	tv.tv_usec = 0;
 	if(setsockopt(sock.native(),SOL_SOCKET,SO_SNDTIMEO,&tv,sizeof(tv)) < 0) {
-		e=booster::system::error_code(errno,booster::system::system_category);
+		e=booster::system::error_code(errno,booster::system::system_category());
 	}
 }
 
@@ -37,7 +37,7 @@ void set_send_timeout(booster::aio::stream_socket &sock,int seconds,booster::sys
 {
 	DWORD tv = seconds * 1000; // milliseconds
 	if(setsockopt(sock.native(),SOL_SOCKET,SO_SNDTIMEO,reinterpret_cast<char *>(&tv),sizeof(tv)) < 0) {
-		e=booster::system::error_code(WSAGetLastError(),booster::system::windows_category);
+		e=booster::system::error_code(WSAGetLastError(),booster::system::system_category());
 	}
 }
 #endif

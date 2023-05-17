@@ -53,6 +53,7 @@ option(USE_PTHREAD	"Use pthreads API on windows" OFF)
 option(DISABLE_SHARED	"Disable shared libraries build" OFF)
 option(DISABLE_STATIC	"Disable static libraries build" OFF)
 option(DISABLE_ICU_LOCALE	"Disable icu locale backend" OFF)
+option(DISABLE_PCRE	"Disable PCRE support" OFF)
 if(CMAKE_CXX_COMPILER_ID STREQUAL "SunPro")
 	option(DISABLE_STD_LOCALE	"Disable std locale backend" ON)
 else()
@@ -196,50 +197,23 @@ endif()
 #############################################################################
 
 if(CMAKE_COMPILER_IS_GNUCXX)
-	check_cxx_source_compiles(
-		"#if __GNUC__ < 4
-		#error
-		#endif
-		int main() {}"
-		GCC_IS_GCC4)
-
-	set(CXX_FLAGS "-Wall -Wextra")
+	set(CXX_FLAGS "-Wall -Wextra -std=c++11")
 
 	if(CMAKE_SYSTEM_NAME STREQUAL "SunOS")
 		set(CXX_FLAGS "${CXX_FLAGS} -pthreads")
 	endif()
 
-	if(NOT GCC_IS_GCC4)
-		# Uninitalized checks are bogous under gcc-3.4
-		set(CXX_FLAGS "${CXX_FLAGS} -Wno-uninitialized")
-	endif()
-
 	if(IS_WINDOWS)
-		if(GCC_IS_GCC4) 
-			# Very important, otherwise process would not start under cygwin
-			set(CMAKE_CXX_LINK_FLAGS "${CMAKE_CXX_LINK_FLAGS} -Wl,--enable-auto-import")
-		else()
-			# gcc-3 does not have shared library for libstdc++ -- cause dll faitures with locale
-			set(DISABLE_SHARED ON)
-		endif()
+		# Very important, otherwise process would not start under cygwin
+		set(CMAKE_CXX_LINK_FLAGS "${CMAKE_CXX_LINK_FLAGS} -Wl,--enable-auto-import")
 	endif()
 
 elseif(CMAKE_CXX_COMPILER_ID STREQUAL "Intel")
-	set(CXX_FLAGS "-Wall")
+	set(CXX_FLAGS "-Wall -std=c++11")
 elseif(CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
-	set(CXX_FLAGS "-Wall -Wextra")
+	set(CXX_FLAGS "-Wall -Wextra -std=c++11")
 elseif(MSVC)
 	set(CXX_FLAGS "/EHsc /W3")
-elseif(CMAKE_CXX_COMPILER_ID STREQUAL "SunPro")
-	#
-	# We use STL port under Sun Studio, standard library is broken
-	#
-	
-	set(CXX_FLAGS "-library=stlport4 -xannotate=no")
-
-	if(CMAKE_SYSTEM_NAME STREQUAL "SunOS")
-		set(CXX_FLAGS "${CXX_FLAGS} -mt")
-	endif()
 endif()
 
 if(NOT IS_WINDOWS)
@@ -303,28 +277,22 @@ else()
 endif()
 
 
-
 check_cxx_source_compiles(
-	"int main() { volatile int v=0; return __sync_bool_compare_and_swap(&v,0,1); }"
-	BOOSTER_HAS_GCC_SYNC)
+	"#include <atomic>
+	int main() { std::atomic_long v(0); v++; v--; return int(v); }"
+	BOOSTER_HAVE_STD_ATOMIC)
 
-check_cxx_source_compiles(
-	"#include <bits/atomicity.h> 
-	using __gnu_cxx::__exchange_and_add;
-	int main(){ volatile int x=0; return __exchange_and_add(&x,1);}"
-	BOOSTER_HAVE_GCC_BITS_EXCHANGE_AND_ADD)
+if(NOT BOOSTER_HAVE_STD_ATOMIC) 
+	set(CMAKE_REQUIRED_LIBRARIES atomic)
+	check_cxx_source_compiles(
+		"#include <atomic>
+		int main() { std::atomic_long v(0); v++; v--; return int(v); }"
+		BOOSTER_HAVE_STD_ATOMIC_LIB)
+	if(NOT BOOSTER_HAVE_STD_ATOMIC_LIB) 
+		message(FATAL_ERROR "No std::atomic_long support, even with -latomic")
+	endif()
+endif()
 
-check_cxx_source_compiles(
-	"#include <ext/atomicity.h> 
-	using __gnu_cxx::__exchange_and_add;
-	int main(){ volatile int x=0; return __exchange_and_add(&x,1);}"
-	BOOSTER_HAVE_GCC_EXT_EXCHANGE_AND_ADD)
-
-check_cxx_source_compiles(
-	"#include <sys/types.h>
-	#include <machine/atomic.h>
-	int main() { volatile unsigned v=0; return atomic_cmpset_int(&v,1,0); }"
-	BOOSTER_HAVE_FREEBSD_ATOMIC)
 
 check_cxx_source_compiles(
 	"#include <execinfo.h>
@@ -372,16 +340,6 @@ check_cxx_source_compiles(
 
 
 
-Check_cxx_source_compiles(
-	"#include <atomic.h>
-	int main() { volatile unsigned v=0; return atomic_add_int_nv(&v,1); }"
-	BOOSTER_HAVE_SOLARIS_ATOMIC)
-
-check_cxx_source_compiles(
-	"#include <libkern/OSAtomic.h>
-	int main() { int32_t v=0; return OSAtomicAdd32(1,&v); }"
-	BOOSTER_HAVE_MAC_OS_X_ATOMIC)
-
 check_cxx_source_compiles(
 	"#include <stdint.h>
 	int main() { int64_t x=10; return 0; }"
@@ -418,9 +376,7 @@ endif()
 set(BOOSTER_SRC	
 	lib/ptime/src/posix_time.cpp
 	lib/ptime/src/ctime.cpp
-	lib/regex/src/pcre_regex.cpp
-	lib/system/src/posix_error.cpp
-	lib/system/src/windows_error.cpp
+	lib/smart_ptr/src/atomic_counter.cpp
 	lib/aio/src/aio_category.cpp
 	lib/aio/src/deadline_timer.cpp
 	lib/aio/src/endpoint.cpp
@@ -431,8 +387,6 @@ set(BOOSTER_SRC
 	lib/aio/src/basic_socket.cpp
 	lib/aio/src/acceptor.cpp
 	lib/aio/src/stream_socket.cpp
-	lib/smart_ptr/src/sp_counted_base.cpp
-	lib/smart_ptr/src/atomic_counter.cpp
 	lib/shared_object/src/shared_object.cpp
 	lib/log/src/log.cpp
 	lib/iostreams/src/streambuf.cpp
@@ -498,6 +452,8 @@ if(NOT DISABLE_STD_LOCALE)
 	)
 endif()
 
+
+
 if(NOT DISABLE_WINAPI_LOCALE OR NOT DISABLE_STD_LOCALE OR NOT DISABLE_POSIX_LOCALE)
 	set(BOOSTER_SRC ${BOOSTER_SRC}
 		lib/locale/src/util/gregorian.cpp)
@@ -537,27 +493,39 @@ else()
 endif()
 
 
-
-find_path(PCRE_INCLUDE pcre.h)
-if(PCRE_INCLUDE)
-	include_directories(${PCRE_INCLUDE})
-endif()
-
-if(NOT PCRE_INCLUDE)
-	find_path(PCRE_INCLUDE2 pcre/pcre.h)
-	include_directories(${PCRE_INCLUDE2}/pcre)
-	if(NOT PCRE_INCLUDE2)
-		message(FATAL_ERROR "Can't find PCRE include directory")
+if(NOT DISABLE_PCRE)
+	find_path(PCRE_INCLUDE pcre.h)
+	if(PCRE_INCLUDE)
+		include_directories(${PCRE_INCLUDE})
 	endif()
 
+	if(NOT PCRE_INCLUDE)
+		find_path(PCRE_INCLUDE2 pcre/pcre.h)
+		include_directories(${PCRE_INCLUDE2}/pcre)
+		if(NOT PCRE_INCLUDE2)
+			message("Can't find PCRE include directory falling back to std::regex")
+			set(DISABLE_PCRE ON)
+		endif()
+
+	endif()
+
+	if(NOT DISABLE_PCRE)
+
+		find_library(PCRE_LIB NAMES pcre${PCRE_SUFFIX} pcre)
+		if(NOT PCRE_LIB)
+			set(DISABLE_PCRE ON)
+			message("Can't find PCRE library - falling back to std::regex")
+		endif()
+	endif()
 endif()
 
-find_library(PCRE_LIB NAMES pcre${PCRE_SUFFIX} pcre)
-if(NOT PCRE_LIB)
-	message(FATAL_ERROR "Can't find PCRE library")
+if(DISABLE_PCRE)
+	add_definitions(-DBOOSTER_NO_PCRE)
+	set(BOOSTER_SRC ${BOOSTER_SRC} lib/regex/src/std_regex.cpp)
+else()
+	set(BOOSTER_SRC ${BOOSTER_SRC} lib/regex/src/pcre_regex.cpp)
 endif()
-
-
+	
 
 set(LINK_LIBS )
 
@@ -593,6 +561,12 @@ foreach(ALIB ${LINK_LIBS})
 		target_link_libraries(${ALIB} ${LIB_NSL})
 	endif(LIB_NSL)
 
+	if(NOT BOOSTER_HAVE_STD_ATOMIC)
+		if(BOOSTER_HAVE_STD_ATOMIC_LIB)
+			target_link_libraries(${ALIB} atomic)
+		endif()
+	endif()
+
 	if(LIB_SOCKET)
 		target_link_libraries(${ALIB} ${LIB_SOCKET})
 	endif(LIB_SOCKET)
@@ -602,7 +576,9 @@ foreach(ALIB ${LINK_LIBS})
 	if(WS2_32)
 		target_link_libraries(${ALIB} ${WS2_32})
 	endif()
-	target_link_libraries(${ALIB} ${PCRE_LIB})
+	if(NOT DISABLE_PCRE)
+		target_link_libraries(${ALIB} ${PCRE_LIB})
+	endif()
 
 	if(NOT DISABLE_ICU_LOCALE)
 		target_link_libraries(${ALIB} ${ICU_UC})
@@ -688,7 +664,6 @@ endif()
 
 add_booster_test(smart_ptr shared_ptr)
 add_booster_test(smart_ptr atomic_counter)
-add_booster_test(smart_ptr sp_counter)
 
 add_booster_test(log log)
 add_booster_test(nowide nowide)

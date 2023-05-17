@@ -11,16 +11,13 @@
 #include <cppcms/defs.h>
 #include <booster/noncopyable.h>
 #include <booster/hold_ptr.h>
+#include <booster/system_error.h>
 
 #include <string>
 #include <iostream>
 #include <cppcms/cstdint.h>
 
-namespace booster{ 
-	namespace system {
-		class error_code;
-	}
-}
+
 namespace cppcms {
 class cache_interface;
 namespace impl { namespace cgi { class connection;  }}
@@ -196,10 +193,6 @@ namespace http {
 		///
 		void trailer(std::string const &);
 		///
-		/// Set HTTP Header Transfer-Encoding, note
-		///
-		void transfer_encoding(std::string const &);
-		///
 		/// Set HTTP Header Vary
 		///
 		void vary(std::string const &);
@@ -270,6 +263,13 @@ namespace http {
 		/// Note: if \a msg is empty default message for HTTP Status code \a stat is used.
 		///	
 		void make_error_response(int stat,std::string const &msg = std::string());
+		///
+		/// This creates a default HTML body response test with a status \a stat a message \a msg.
+		///
+		/// It does not mofify sate of an objec
+		/// Note: if \a msg is empty default message for HTTP Status code \a stat is used.
+		///	
+		static void make_error_response_html_body(int stat,std::ostream &out,std::string const &msg = std::string());
 
 		///
 		/// Get current io_mode, see a description for io_mode_type.
@@ -363,8 +363,8 @@ namespace http {
 		~response();
 		/// \endcond
 	private:
-		friend class impl::cgi::connection;
-		friend class ::cppcms::cache_interface;
+		friend class cppcms::impl::cgi::connection;
+		friend class cppcms::cache_interface;
 
 		void copy_to_cache();
 		std::string copied_data();
@@ -372,7 +372,7 @@ namespace http {
 
 		std::pair<char const *,size_t> output();
 
-		void write_http_headers(std::ostream &);
+		void write_http_headers();
 
 		int flush_async_chunk(booster::system::error_code &e);
 

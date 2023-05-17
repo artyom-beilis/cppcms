@@ -2,7 +2,7 @@
 
 source url.sh
 
-REPO_REV="GIT `git ls-remote $REPO.git master | awk '{print $1}' `"
+REPO_REV="GIT $GIT_BRANCH/`git ls-remote $REPO.git $GIT_BRANCH | awk '{print $1}' `"
 
 TGT=/tmp/nightly-build-report
 rm -fr $TGT

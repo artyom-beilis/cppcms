@@ -9,12 +9,12 @@
 #define BOOSTER_LOCALE_IMPL_ICU_CODECVT_HPP
 #include <booster/config.h>
 #include <booster/locale/util.h>
-#include <booster/auto_ptr_inc.h>
+#include <memory>
 namespace booster {
 namespace locale {
 namespace impl_icu {
     BOOSTER_API
-    std::auto_ptr<util::base_converter> create_uconv_converter(std::string const &encoding);
+    std::unique_ptr<util::base_converter> create_uconv_converter(std::string const &encoding);
 
 } // impl_icu
 } // locale 

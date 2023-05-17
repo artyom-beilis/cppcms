@@ -92,6 +92,10 @@ public:
 	/// Destructor
 	/// 
 	~content_type();
+	/// Move ctor
+	content_type(content_type &&);
+	/// Move =
+	content_type &operator=(content_type &&);
 private:
 	struct data;
 	void parse(char const *b,char const *e);

@@ -28,12 +28,16 @@ TBD
 <% include c(integer,text) %>
 <% end template %>
 <% end view %>
+<% view foreach_array uses data::master %>
+<% template render() %>
+<% foreach x in xyz %><% item %><%= x %><% end %><%end%>
+<% foreach x reverse in xyz %><% item %><%= x %><% end %><%end%>
+<% end template %>
+<% end view %>
 <% view foreach_tmpl uses data::master %>
 <% template auto_test() %>
-<% c++ #ifdef __GNUC__ %>
 <% foreach x in integers %><% item %><%= x %><% end %><%end%>
 <% foreach x reverse in integers %><% item %><%= x %><% end %><%end%>
-<% c++ #endif %>
 <% end template %>
 <% template render() %><% c++ typedef data::master::integers_type::iterator it; typedef data::master::integers_type::reverse_iterator rit;  %>
 <% foreach x as it in integers %>{<% separator %>,<% item %><%= x %><% end %>}<%empty%>-<% end %>

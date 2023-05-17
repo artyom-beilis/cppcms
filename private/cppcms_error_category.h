@@ -21,7 +21,9 @@ namespace cppcms {
 		}
 		class error_category : public booster::system::error_category {
 		public:
-			virtual char const *name() const;
+			error_category() {}
+			error_category(error_category &&) {}
+			virtual char const *name() const noexcept;
 			virtual std::string message(int cat) const;
 		};
 

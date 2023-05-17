@@ -14,7 +14,7 @@
 #include <cppcms/config.h>
 #include "test.h"
 #include <iostream>
-#include <booster/auto_ptr_inc.h>
+#include <booster/memory_inc.h>
 #include <time.h>
 #ifdef CPPCMS_WIN_NATIVE
 #include <windows.h>
@@ -122,7 +122,7 @@ int main()
 		std::cout << "Ok" << std::endl;
 		#endif
 		
-		std::auto_ptr<cppcms::impl::tcp_cache_service> srv1,srv2;
+		std::unique_ptr<cppcms::impl::tcp_cache_service> srv1,srv2;
 		{
 			try {
 				std::cout << "Testing cache over ip, single server... "<<std::flush;

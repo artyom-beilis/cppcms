@@ -49,7 +49,7 @@ def get_socket():
         s.setsockopt(socket.IPPROTO_TCP,socket.TCP_NODELAY,1)
     return s
 
-def test_io(name,method,input_f,output_f,seed=12,load=load_file,parse=identity):
+def test_io(name,method,input_f,output_f,seed=12,load=load_file,parse=identity,time_limit=0.5):
     result=b''
     try:
         input=load(input_f)
@@ -60,20 +60,24 @@ def test_io(name,method,input_f,output_f,seed=12,load=load_file,parse=identity):
         if method=='normal':
             s.sendall(input)
             while 1:
+                start = time.time()
                 chunk = s.recv(1024)
                 if chunk == b'':
                     break
                 result=result+chunk
+            end = time.time()
         elif method=='shortest':
             for k in range(len(input)):
                 s.sendall(input[k:k+1])
                 time.sleep(0.001)
             while 1:
+                start = time.time()
                 chunk = s.recv(1)
                 if chunk == b'':
                     break;
                 time.sleep(0.001)
                 result=result+chunk
+            end = time.time()
         elif method=='random':
             random.seed(seed);
             size = 0
@@ -83,11 +87,13 @@ def test_io(name,method,input_f,output_f,seed=12,load=load_file,parse=identity):
                 s.sendall(chunk)
                 time.sleep(0.001)
             while 1:
+                start = time.time()
                 chunk = s.recv(random.randint(1,16))
                 if chunk == b'':
                     break;
                 time.sleep(0.001)
                 result=result+chunk
+            end = time.time()
         else:
             print('Unknown method',method)
             sys.exit(1)
@@ -96,19 +102,20 @@ def test_io(name,method,input_f,output_f,seed=12,load=load_file,parse=identity):
         else:
             s.shutdown(2) 
         s.close()
+        assert end - start < time_limit, ("Complete response withing %1.1f seconds, done in %1.1f" % (time_limit,end-start))
     except socket.error:
         pass
     check(name,parse(result),output)
 
 
-def test_all(name,load=load_file,parse=identity):
+def test_all(name,load=load_file,parse=identity,time_limit=0.5):
     input_f = 'proto_test_' + name + '.in'
     output_f = 'proto_test_' + name + '.out'
-    test_io(name+' normal','normal',input_f,output_f,0,load,parse)
-    test_io(name+' random 1','random',input_f,output_f,1,load,parse)
-    test_io(name+' random 2','random',input_f,output_f,15,load,parse)
-    test_io(name+' random 3','random',input_f,output_f,215,load,parse)
-    test_io(name+' shortest','shortest',input_f,output_f,0,load,parse)
+    test_io(name+' normal','normal',input_f,output_f,0,load,parse,time_limit)
+    test_io(name+' random 1','random',input_f,output_f,1,load,parse,time_limit)
+    test_io(name+' random 2','random',input_f,output_f,15,load,parse,time_limit)
+    test_io(name+' random 3','random',input_f,output_f,215,load,parse,time_limit)
+    test_io(name+' shortest','shortest',input_f,output_f,0,load,parse,time_limit)
 
 def test_normal(name,load=load_file,parse=identity):
     input_f = 'proto_test_' + name + '.in'
@@ -147,6 +154,53 @@ def transfer_all(s,inp):
                 time.sleep(0.1)
                 slept=1
 
+def get_next_chunk(data):
+    h_size = data.find(b'\r\n')
+    size = int(data[0:h_size],16)
+    chunk_start = h_size + 2
+    chunk_end = chunk_start + size
+    block_end = chunk_end+2;
+    assert data[chunk_end:block_end] == b'\r\n'
+    chunk = data[chunk_start:chunk_end]
+    reminder = data[block_end:]
+    return chunk,reminder
+
+def from_http(data):
+    if data == b'':
+        return data
+    split_point = data.find(b'\r\n\r\n')
+    headers = data[:split_point+4]
+    rest = data[split_point+4:]
+    content_length = -1
+    chunked = False;
+    headers_out = []
+    for header in headers.split(b'\r\n'):
+        if header.find(b'Content-Length') == 0:
+            content_length = int(header.split(b':')[1])
+        elif header.find(b'Transfer-Encoding: chunked') == 0:
+            chunked = True
+        else:
+            headers_out.append(header)
+    headers = b'\r\n'.join(headers_out) 
+    if content_length != -1:
+        body = rest[:content_length]
+        reminder = rest[content_length:]
+        r1 = headers + body
+        return r1 + from_http(reminder)
+    elif chunked:
+        body = b''
+        while True:
+            chunk,rest = get_next_chunk(rest)
+            if chunk == b'':
+                return headers + body + from_http(rest)
+            body = body + chunk
+    else:
+        return headers + rest
+
+    
+    
+
+
 def test_fcgi_keep_alive(name):
     input_f = 'proto_test_' + name + '.in'
     output_f = 'proto_test_' + name + '.out'
@@ -178,7 +232,8 @@ def test_fcgi(name,flags = 0):
         test_normal(name,load,parse)
 
 
-
+def test_http(name,time_limit=0.5):
+    test_all(name,parse=from_http,time_limit=time_limit)
 
 global target
 global socket_type
@@ -202,11 +257,16 @@ else:
     socket_type=socket.AF_UNIX
 
 if test=='http':
-    test_all('http_1')
-    test_all('http_2')
-    test_all('http_3')
-    test_all('http_4')
-    test_all('http_5')
+    print("Testing HTTP/1.0")
+    test_http('http_1')
+    test_http('http_2')
+    test_http('http_3')
+    test_http('http_4')
+    test_http('http_5')
+    print("Testing HTTP/1.1")
+    test_http('http_6')
+    test_http('http_7',time_limit=8.0)
+    test_http('http_8')
 elif test=='fastcgi_tcp' or test=='fastcgi_unix':
     test_fcgi_keep_alive('scgi_1')
     test_fcgi_keep_alive('scgi_2')

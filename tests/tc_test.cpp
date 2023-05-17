@@ -180,7 +180,14 @@ public:
 	std::string str()
 	{
 		response().out() << std::flush;
-		std::string result = output_;
+		size_t pos = output_.find("\r\n\r\n");
+		std::string result;
+		if(pos != std::string::npos) {
+			result = output_.substr(pos+4);
+		}
+		else {
+			result = output_;
+		}
 		output_.clear();
 		return result;
 	}
@@ -282,6 +289,13 @@ public:
 			"\n"
 			"\n"
 		);
+		m.xyz[0]=2;
+		m.xyz[1]=3;
+		m.xyz[2]=5;
+		render("foreach_array",m);
+		TEST(str() ==	"\n"
+				"235\n"
+				"532\n");
 	}
 	void test_if()
 	{

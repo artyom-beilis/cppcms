@@ -99,10 +99,36 @@ int main()
 		TEST(fcnt1()==2);
 		TEST(fcnt2()==3);
 		TEST(fcnt2()==4);
+
+		{
+			// move copy
+			foov_called = false;
+			callback<void()> c(foov);
+			callback<void()> c2(std::move(c));
+			TEST(c.empty());
+			TEST(!c2.empty());
+			c2();
+			TEST(foov_called);
+			foov_called=false;
+		}
+		{
+			// move assignment
+			foov_called = false;
+			callback<void()> c(foov);
+			callback<void()> c2(reset);
+			TEST(!c.empty());
+			TEST(!c2.empty());
+			c2 = std::move(c);
+			TEST(c.empty());
+			TEST(!foov_called);
+			c2();
+			TEST(foov_called);
+			foov_called=false;
+		}
 		
 		{
-			std::auto_ptr<mycall> mc(new mycall());
-			callback<void()> f(mc);
+			std::unique_ptr<mycall> mc(new mycall());
+			callback<void()> f(std::move(mc));
 			f();
 			TEST(mycall_called); mycall_called=false;
 		}
@@ -113,9 +139,9 @@ int main()
 			TEST(mycall_called); mycall_called=false;
 		}
 		{
-			std::auto_ptr<mycall> mc(new mycall());
+			std::unique_ptr<mycall> mc(new mycall());
 			callback<void()> f;
-			f=mc;
+			f=std::move(mc);
 			f();
 			TEST(mycall_called); mycall_called=false;
 		}
@@ -127,8 +153,8 @@ int main()
 			TEST(mycall_called); mycall_called=false;
 		}
 		{
-			std::auto_ptr<myicall> mc(new myicall());
-			callback<void(int)> f(mc);
+			std::unique_ptr<myicall> mc(new myicall());
+			callback<void(int)> f(std::move(mc));
 			f(2);
 			TEST(mycall_called); mycall_called=false;
 		}
@@ -139,9 +165,9 @@ int main()
 			TEST(mycall_called); mycall_called=false;
 		}
 		{
-			std::auto_ptr<myicall> mc(new myicall());
+			std::unique_ptr<myicall> mc(new myicall());
 			callback<void(int)> f;
-			f=mc;
+			f=std::move(mc);
 			f(2);
 			TEST(mycall_called); mycall_called=false;
 		}

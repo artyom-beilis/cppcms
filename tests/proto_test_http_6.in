@@ -1,0 +1,6 @@
+GET /test HTTP/1.1
+Connection: Keep-Alive
+
+GET /test HTTP/1.1
+Connection: close
+

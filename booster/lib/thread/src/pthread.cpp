@@ -11,7 +11,7 @@
 #include <booster/system_error.h>
 #include <errno.h>
 #include <string.h>
-#include <booster/auto_ptr_inc.h>
+#include <memory>
 #include <vector>
 #include <stack>
 
@@ -32,114 +32,7 @@
 
 namespace booster {
 
-	typedef function<void()> thread_function_type;
 
-	struct thread::data {
-		pthread_t p;
-		bool released;
-		data() : released(false) {}
-	};
-
-	extern "C" void *booster_thread_func(void *p)
-	{
-		std::auto_ptr<thread_function_type> caller(reinterpret_cast<thread_function_type *>(p));
-		try {
-			thread_function_type &func = *caller;
-			func();
-		}
-		catch(std::exception const &/*e*/) {
-			/// TODO
-		}
-		catch(...) {
-			/// TODO
-		}
-		return 0;
-	}
-
-	thread::thread(function<void()> const &cb) :
-		d(new thread::data)
-	{
-		thread_function_type *ptr = new thread_function_type(cb);
-		if( ::pthread_create(&d->p,0,booster_thread_func,reinterpret_cast<void *>(ptr)) == 0 ) {
-			// passed pointer - ownership lost
-			ptr = 0;
-			return;
-		}
-		else {
-			// failed to create - delete the object
-			int err = errno;
-			delete ptr;
-			ptr = 0;
-			throw system::system_error(	err,
-							system::system_category,
-							"booster::thread: failed to create a thread");
-		}
-	}
-	thread::~thread()
-	{
-		detach();
-	}
-	void thread::join()
-	{
-		if(!d->released) {
-			pthread_join(d->p,0);
-			d->released = true;
-		}
-	}
-	void thread::detach()
-	{
-		if(!d->released) {
-			pthread_detach(d->p);
-			d->released = true;
-		}
-	}
-
-	unsigned thread::hardware_concurrency()
-	{
-		#ifdef BOOSTER_WIN32
-			SYSTEM_INFO info=SYSTEM_INFO();
-			GetSystemInfo(&info);
-			return info.dwNumberOfProcessors;
-		#else
-			#ifdef _SC_NPROCESSORS_ONLN
-				long procs = sysconf(_SC_NPROCESSORS_ONLN);
-				if(procs < 0)
-					return 0;
-				return procs;
-			#else
-				return 0;
-			#endif
-		#endif
-	}
-
-	struct mutex::data { pthread_mutex_t m; };
-
-	mutex::mutex() : d(new data)
-	{
-		pthread_mutex_init(&d->m,0);
-	}
-	mutex::~mutex()
-	{
-		pthread_mutex_destroy(&d->m);
-	}
-	void mutex::lock() { pthread_mutex_lock(&d->m); }
-	void mutex::unlock() { pthread_mutex_unlock(&d->m); }
-
-	struct recursive_mutex::data { pthread_mutex_t m; };
-
-	recursive_mutex::recursive_mutex() : d(new data)
-	{
-		pthread_mutexattr_t a;
-		pthread_mutexattr_init(&a);
-		pthread_mutexattr_settype(&a,PTHREAD_MUTEX_RECURSIVE);
-		pthread_mutex_init(&d->m,&a);
-	}
-	recursive_mutex::~recursive_mutex()
-	{
-		pthread_mutex_destroy(&d->m);
-	}
-	void recursive_mutex::lock() { pthread_mutex_lock(&d->m); }
-	void recursive_mutex::unlock() { pthread_mutex_unlock(&d->m); }
 
 	struct shared_mutex::data { pthread_rwlock_t m; };
 	shared_mutex::shared_mutex() : d(new data)
@@ -222,29 +115,6 @@ namespace booster {
 
 	#endif
 
-	struct condition_variable::data { pthread_cond_t c; };
-
-	condition_variable::condition_variable() : d(new data)
-	{
-		pthread_cond_init(&d->c,0);
-	}
-	condition_variable::~condition_variable()
-	{
-		pthread_cond_destroy(&d->c);
-	}
-	void condition_variable::notify_one()
-	{
-		pthread_cond_signal(&d->c);
-	}
-	void condition_variable::notify_all()
-	{
-		pthread_cond_broadcast(&d->c);
-	}
-	void condition_variable::wait(unique_lock<mutex> &m)
-	{
-		pthread_cond_wait(&d->c,&(m.mutex()->d->m));
-	}
-
 
 #if !defined(__NetBSD__) && !defined(__CYGWIN__)
 	//
@@ -265,7 +135,7 @@ namespace booster {
 			pthread_key(void (*d)(void *)) : key(d)
 			{
 				if(pthread_key_create(&key_,booster_pthread_key_destroyer) != 0) {
-					throw system::system_error(errno,system::system_category,
+					throw system::system_error(errno,system::system_category(),
 								   "Failed to create thread specific key");
 				}
 			}
@@ -329,7 +199,7 @@ namespace booster {
 			keys_manager() : key_max_(0)
 			{
 				if(pthread_key_create(&key_,booster_detail_keys_deleter)!=0) {
-					throw system::system_error(errno,system::system_category,
+					throw system::system_error(errno,system::system_category(),
 						   "Failed to create thread specific key");
 				}
 			}
@@ -434,7 +304,7 @@ namespace booster {
 		if(!d->lock_file) {
 			int err=errno;
 			pthread_rwlock_destroy(&d->lock);
-			throw system::system_error(err,system::system_category,"fork_shared_mutex:failed to create temporary file");
+			throw system::system_error(err,system::system_category(),"fork_shared_mutex:failed to create temporary file");
 		}
 	}
 	fork_shared_mutex::~fork_shared_mutex()
@@ -461,7 +331,7 @@ namespace booster {
 		pthread_rwlock_unlock(&d->lock);
 		if(err == EACCES || err==EAGAIN)
 			return false;
-		throw system::system_error(err,system::system_category,"fork_shared_mutex: failed to lock");
+		throw system::system_error(err,system::system_category(),"fork_shared_mutex: failed to lock");
 	}
 	void fork_shared_mutex::unique_lock()
 	{
@@ -477,7 +347,7 @@ namespace booster {
 			return;
 		int err = errno;
 		pthread_rwlock_unlock(&d->lock);
-		throw system::system_error(err,system::system_category,"fork_shared_mutex: failed to lock");
+		throw system::system_error(err,system::system_category(),"fork_shared_mutex: failed to lock");
 	}
 
 	bool fork_shared_mutex::try_shared_lock()
@@ -497,7 +367,7 @@ namespace booster {
 		pthread_rwlock_unlock(&d->lock);
 		if(err == EACCES || err==EAGAIN)
 			return false;
-		throw system::system_error(err,system::system_category,"fork_shared_mutex: failed to lock");
+		throw system::system_error(err,system::system_category(),"fork_shared_mutex: failed to lock");
 	}
 
 	void fork_shared_mutex::shared_lock()
@@ -514,7 +384,7 @@ namespace booster {
 			return;
 		int err = errno;
 		pthread_rwlock_unlock(&d->lock);
-		throw system::system_error(err,system::system_category,"fork_shared_mutex: failed to lock");
+		throw system::system_error(err,system::system_category(),"fork_shared_mutex: failed to lock");
 	}
 
 	void fork_shared_mutex::unlock()

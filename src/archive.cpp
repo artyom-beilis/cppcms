@@ -27,7 +27,23 @@ archive::archive(archive const &other) :
 {
 }
 
+archive::archive(archive &&other) :
+	buffer_(std::move(other.buffer_)),
+	ptr_(std::move(other.ptr_)),
+	mode_(std::move(other.mode_))
+{
+}
 
+
+archive  &archive::operator=(archive &&other)
+{
+	if(this!=&other) {
+		buffer_=std::move(other.buffer_);
+		ptr_ = other.ptr_;
+		mode_=other.mode_;
+	}
+	return *this;
+}
 archive const &archive::operator=(archive const &other)
 {
 	if(this!=&other) {

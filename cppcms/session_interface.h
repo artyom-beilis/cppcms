@@ -18,7 +18,7 @@
 #include <string>
 #include <map>
 #include <set>
-#include <booster/auto_ptr_inc.h>
+#include <booster/memory_inc.h>
 #include <sstream>
 #include <typeinfo>
 

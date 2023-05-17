@@ -20,7 +20,7 @@
 #include <booster/traits/enable_if.h>
 #include <booster/traits/is_base_of.h>
 
-#include <booster/auto_ptr_inc.h>
+#include <booster/memory_inc.h>
 #include <iterator>
 #include <map>
 #include <vector>
@@ -400,7 +400,7 @@ CPPCMS_ARCHIVE_SMART_POINTER(booster::shared_ptr)
 CPPCMS_ARCHIVE_SMART_POINTER(booster::hold_ptr)
 CPPCMS_ARCHIVE_SMART_POINTER(booster::copy_ptr)
 CPPCMS_ARCHIVE_SMART_POINTER(booster::clone_ptr)
-CPPCMS_ARCHIVE_SMART_POINTER(std::auto_ptr)
+CPPCMS_ARCHIVE_SMART_POINTER(std::unique_ptr)
 CPPCMS_ARCHIVE_INTRUSIVE_POINTER(booster::intrusive_ptr)
 
 

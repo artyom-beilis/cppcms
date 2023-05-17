@@ -24,7 +24,7 @@
 #include "binder.h"
 #include <utility>
 #include "cached_settings.h"
-
+#include "response_headers.h"
 
 #ifdef CPPCMS_WIN_NATIVE
 #  ifndef NOMINMAX 
@@ -73,6 +73,7 @@ namespace cgi {
 		virtual void async_read_headers(handler const &h)
 		{
 			reset_all();
+            connection::reset_all();
 			async_read_record(mfunc_to_event_handler(&fastcgi::on_start_request,self(),h));
 		}
 
@@ -142,9 +143,22 @@ namespace cgi {
 			h(booster::system::error_code(),s);
 		}
 	public:
-
-		virtual booster::aio::const_buffer format_output(booster::aio::const_buffer const &in,bool completed,booster::system::error_code &)
+		virtual void set_response_headers(cppcms::impl::response_headers &hdr)
 		{
+			response_headers_ = std::move(format_xcgi_response_headers(hdr));
+			response_headers_written_ = false;
+		}
+
+		virtual booster::aio::const_buffer format_output(booster::aio::const_buffer const &input,bool completed,booster::system::error_code &)
+		{
+			booster::aio::const_buffer in;
+			if(!response_headers_written_) {
+				in=booster::aio::buffer(response_headers_) + input;
+				response_headers_written_ = true;
+			}
+			else {
+				in = input;
+			}
 			booster::aio::const_buffer packet;
 			booster::aio::const_buffer::entry const *chunks = in.get().first;
 //#define DEBUG_FASTCGI
@@ -699,11 +713,11 @@ namespace cgi {
 				return;
 			}
 			body_.resize(cur_size + rec_size);
-			std::auto_ptr<booster::callable<void(booster::system::error_code const &,size_t)> > cb;
+			std::unique_ptr<booster::callable<void(booster::system::error_code const &,size_t)> > cb;
 			cb.reset(new on_header_read_binder(h,self()));
 			async_read_from_socket(
 				&body_[cur_size],rec_size,
-				cb);
+				std::move(cb));
 		}
 		void on_body_read(booster::system::error_code const &e,handler const &h)
 		{
@@ -762,6 +776,8 @@ namespace cgi {
 
 		std::vector<char> cache_;
 		size_t cache_start_,cache_end_;
+		std::string response_headers_;
+		bool response_headers_written_;
 		bool eof_callback_;
 
 		void reset_all()
@@ -774,6 +790,8 @@ namespace cgi {
 			keep_alive_=false;
 			env_.clear();
 			pool_.clear();
+			response_headers_written_=false;
+			response_headers_.clear();
 			memset(&eof_,0,sizeof(eof_));
 			if(cache_.empty()) {
 				cache_start_ = 0;
@@ -851,22 +869,22 @@ namespace cgi {
 		}
 	};
 
-	std::auto_ptr<acceptor> fastcgi_api_tcp_socket_factory(cppcms::service &srv,std::string ip,int port,int backlog)
+	std::unique_ptr<acceptor> fastcgi_api_tcp_socket_factory(cppcms::service &srv,std::string ip,int port,int backlog)
 	{
-		std::auto_ptr<acceptor> a(new socket_acceptor<fastcgi>(srv,ip,port,backlog));
+		std::unique_ptr<acceptor> a(new socket_acceptor<fastcgi>(srv,ip,port,backlog));
 		return a;
 	}
 
 #if !defined(CPPCMS_WIN32)
 
-	std::auto_ptr<acceptor> fastcgi_api_unix_socket_factory(cppcms::service &srv,std::string socket,int backlog)
+	std::unique_ptr<acceptor> fastcgi_api_unix_socket_factory(cppcms::service &srv,std::string socket,int backlog)
 	{
-		std::auto_ptr<acceptor> a(new socket_acceptor<fastcgi>(srv,socket,backlog));
+		std::unique_ptr<acceptor> a(new socket_acceptor<fastcgi>(srv,socket,backlog));
 		return a;
 	}
-	std::auto_ptr<acceptor> fastcgi_api_unix_socket_factory(cppcms::service &srv,int backlog)
+	std::unique_ptr<acceptor> fastcgi_api_unix_socket_factory(cppcms::service &srv,int backlog)
 	{
-		std::auto_ptr<acceptor> a(new socket_acceptor<fastcgi>(srv,backlog));
+		std::unique_ptr<acceptor> a(new socket_acceptor<fastcgi>(srv,backlog));
 		return a;
 	}
 #endif

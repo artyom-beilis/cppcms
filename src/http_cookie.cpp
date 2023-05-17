@@ -16,7 +16,7 @@
 
 namespace cppcms { namespace http {
 
-struct cookie::_data { time_t expires; };
+struct cookie::_data {};
 bool cookie::empty() const
 {
 	return name_.empty() && value_.empty(); 
@@ -35,17 +35,14 @@ void cookie::comment(std::string v) { comment_=v; }
 
 void cookie::expires(time_t when)
 {
-	if(!d.get()) {
-		d.reset(new _data());
-	}
 	has_expiration_=1;
-	d->expires = when;
+	expires_ = when;
 }
 
 time_t cookie::expires() const
 {
 	if(has_expiration_)
-		return d->expires;
+		return expires_;
 	return 0;
 }
 bool cookie::expires_defined() const
@@ -142,10 +139,10 @@ void cookie::write(std::ostream &out) const
 		if(has_age_)
 			ss<<"; Max-Age="<<max_age_;
 
-		if(has_expiration_ && d.get()) {
+		if(has_expiration_) {
 			ss<<"; Expires=";
 			
-			std::tm splitted = booster::ptime::universal_time(booster::ptime(d->expires));
+			std::tm splitted = booster::ptime::universal_time(booster::ptime(expires_));
 			static char const format[]="%a, %d %b %Y %H:%M:%S GMT";
 			char const *b=format;
 			char const *e=b+sizeof(format)-1;
@@ -202,6 +199,7 @@ cookie::cookie(cookie const &other) :
 	domain_(other.domain_),
 	comment_(other.comment_),
 	max_age_(other.max_age_),
+	expires_(other.expires_),
 	secure_(other.secure_),
 	has_age_(other.has_age_),
 	has_expiration_(other.has_expiration_),
@@ -210,6 +208,46 @@ cookie::cookie(cookie const &other) :
 	samesite_lax_(other.samesite_lax_),
 	samesite_strict_(other.samesite_strict_)
 {
+}
+
+cookie::cookie(cookie &&other):
+	d(std::move(other.d)),
+	name_(std::move(other.name_)),
+	value_(std::move(other.value_)),
+	path_(std::move(other.path_)),
+	domain_(std::move(other.domain_)),
+	comment_(std::move(other.comment_)),
+	max_age_(other.max_age_),
+	expires_(other.expires_),
+	secure_(other.secure_),
+	has_age_(other.has_age_),
+	has_expiration_(other.has_expiration_),
+	httponly_(other.httponly_),
+	samesite_none_(other.samesite_none_),
+	samesite_lax_(other.samesite_lax_),
+	samesite_strict_(other.samesite_strict_)
+	
+{
+}
+
+cookie &cookie::operator=(cookie &&other)
+{
+	d=std::move(other.d);
+	name_=std::move(other.name_);
+	value_=std::move(other.value_);
+	path_=std::move(other.path_);
+	domain_=std::move(other.domain_);
+	comment_=std::move(other.comment_);
+	max_age_=other.max_age_;
+	expires_=other.expires_;
+	secure_=other.secure_;
+	has_age_=other.has_age_;
+	has_expiration_ = other.has_expiration_;
+	httponly_ = other.httponly_;
+	samesite_none_ = other.samesite_none_;
+	samesite_lax_ = other.samesite_lax_;
+	samesite_strict_ = other.samesite_strict_;
+	return *this;
 }
 
 cookie const &cookie::operator=(cookie const &other)
@@ -221,6 +259,7 @@ cookie const &cookie::operator=(cookie const &other)
 	domain_=other.domain_;
 	comment_=other.comment_;
 	max_age_=other.max_age_;
+	expires_=other.expires_;
 	secure_=other.secure_;
 	has_age_=other.has_age_;
 	has_expiration_ = other.has_expiration_;
@@ -230,6 +269,7 @@ cookie const &cookie::operator=(cookie const &other)
 	samesite_strict_ = other.samesite_strict_;
 	return *this;
 }
+
 
 cookie::cookie() : secure_(0), has_age_(0), has_expiration_(0), httponly_(0), samesite_none_(0), samesite_lax_(0), samesite_strict_(0) {}
 cookie::~cookie() {}

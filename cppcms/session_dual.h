@@ -12,7 +12,7 @@
 #include <cppcms/defs.h>
 #include <booster/hold_ptr.h>
 #include <booster/shared_ptr.h>
-#include <booster/auto_ptr_inc.h>
+#include <booster/memory_inc.h>
 
 namespace cppcms {
 namespace sessions {
@@ -32,7 +32,7 @@ public:
 	/// \a data_size_limit represents the maximal data size that can be stored on client side, if the data size is bigger then that
 	/// the session data will be stored on server 
 	///
-	session_dual(	std::auto_ptr<encryptor> enc,
+	session_dual(	std::unique_ptr<encryptor> enc,
 			booster::shared_ptr<session_storage> storage,
 			size_t data_size_limit);
 	///

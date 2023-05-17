@@ -103,10 +103,10 @@ index_type map_direct(boundary_type t,icu::BreakIterator *it,int reserve)
     return indx;
 }
 
-std::auto_ptr<icu::BreakIterator> get_iterator(boundary_type t,icu::Locale const &loc)
+std::unique_ptr<icu::BreakIterator> get_iterator(boundary_type t,icu::Locale const &loc)
 {
     UErrorCode err=U_ZERO_ERROR;
-    std::auto_ptr<icu::BreakIterator> bi;
+    std::unique_ptr<icu::BreakIterator> bi;
     switch(t) {
     case character:
         bi.reset(icu::BreakIterator::createCharacterInstance(loc,err));
@@ -134,7 +134,7 @@ template<typename CharType>
 index_type do_map(boundary_type t,CharType const *begin,CharType const *end,icu::Locale const &loc,std::string const &encoding)
 {
     index_type indx;
-    std::auto_ptr<icu::BreakIterator> bi(get_iterator(t,loc));
+    std::unique_ptr<icu::BreakIterator> bi(get_iterator(t,loc));
    
 #if U_ICU_VERSION_MAJOR_NUM*100 + U_ICU_VERSION_MINOR_NUM >= 306
     UErrorCode err=U_ZERO_ERROR;

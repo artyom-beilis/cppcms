@@ -20,9 +20,6 @@
 
 #include <set>
 
-#include <boost/bind.hpp>
-using boost::bind;
-
 
 class chat : public cppcms::rpc::json_rpc_server {
 public:
@@ -59,7 +56,7 @@ public:
         }
         // restart timer
         timer_.expires_from_now(booster::ptime::seconds(1));
-        timer_.async_wait(boost::bind(&chat::on_timer,booster::intrusive_ptr<chat>(this),_1));
+        timer_.async_wait(std::bind(&chat::on_timer,booster::intrusive_ptr<chat>(this),std::placeholders::_1));
     }
 
     // Handle request
@@ -80,7 +77,7 @@ public:
 
             // set disconnect callback
             call->context().async_on_peer_reset(
-                boost::bind(
+                std::bind(
                     &chat::remove_context,
                     booster::intrusive_ptr<chat>(this),
                     call));

@@ -3,7 +3,7 @@ LIBS=-lcppcms -lbooster
 all: clean hello 
 
 hello: hello.cpp view.cpp content.h
-	$(CXX) -Wall hello.cpp view.cpp -o hello $(LIBS)
+	$(CXX) -Wall -std=c++11 hello.cpp view.cpp -o hello $(LIBS)
 
 view.cpp: view.tmpl content.h
 	cppcms_tmpl_cc view.tmpl -o view.cpp

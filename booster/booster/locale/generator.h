@@ -15,12 +15,10 @@
 #endif
 #include <string>
 #include <locale>
-#include <booster/auto_ptr_inc.h>
+#include <memory>
+#include <booster/memory_inc.h>
 
 namespace booster {
-
-    template<typename Type>
-    class shared_ptr;
 
     ///
     /// \brief This is the main namespace that encloses all localization classes 
@@ -220,7 +218,7 @@ namespace booster {
             void operator=(generator const &);
 
             struct data;
-            std::auto_ptr<data> d;
+            std::unique_ptr<data> d;
         };
 
     }

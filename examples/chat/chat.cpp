@@ -16,16 +16,7 @@
 
 #include <set>
 
-#ifdef USE_STD_TR1_BIND
-  #include <tr1/functional>
-  using std::tr1::bind;
-#elif defined USE_STD_BIND
-  #include <functional>
-  using std::bind;
-#else
-  #include <boost/bind.hpp>
-  using boost::bind;
-#endif
+#include <functional>
 
 
 class chat : public cppcms::application {
@@ -63,7 +54,7 @@ public:
         booster::shared_ptr<cppcms::http::context> context=release_context();
         waiters_.insert(context);
         context->async_on_peer_reset(
-            bind(
+            std::bind(
                 &chat::remove_context,
                 booster::intrusive_ptr<chat>(this),
                 context));

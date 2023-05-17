@@ -16,7 +16,7 @@
 #include <booster/weak_ptr.h>
 #include <booster/enable_shared_from_this.h>
 
-#include <booster/auto_ptr_inc.h>
+#include <booster/memory_inc.h>
 #include <string>
 
 namespace cppcms {
@@ -155,7 +155,7 @@ namespace cppcms {
 			///
 			/// Returns newly created instance of an application.
 			///
-			virtual std::auto_ptr<application> operator()(service &) const = 0;
+			virtual std::unique_ptr<application> operator()(service &) const = 0;
 			virtual ~factory(){}
 		};
 
@@ -167,7 +167,7 @@ namespace cppcms {
 		///
 		/// \deprecated Use mount(booster::shared_ptr<application_specific_pool> gen,int application_options) instead
 		///
-		void mount(std::auto_ptr<factory> aps);
+		void mount(std::unique_ptr<factory> aps);
 		
 		///
 		/// Mount an application factory \a app  by mount_point \a point application matching and
@@ -177,7 +177,7 @@ namespace cppcms {
 		///
 		/// \deprecated Use mount(booster::shared_ptr<application_specific_pool> gen,mount_point const &point,int application_options) instead
 		///
-		void mount(std::auto_ptr<factory> aps,mount_point const &point);
+		void mount(std::unique_ptr<factory> aps,mount_point const &point);
 
 		///
 		/// Mount an asynchronous application \a app for processing of any incoming requests. Application
@@ -267,9 +267,9 @@ namespace cppcms {
 		template<typename T>
 		struct simple_factory0 : public applications_pool::factory
 		{
-			std::auto_ptr<application> operator()(service &s) const
+			std::unique_ptr<application> operator()(service &s) const
 			{
-				std::auto_ptr<application> app(new T(s));
+				std::unique_ptr<application> app(new T(s));
 				return app;
 			}
 		};
@@ -278,9 +278,9 @@ namespace cppcms {
 		{
 			simple_factory1(P1 p1) : p1_(p1) {}
 			P1 p1_;
-			std::auto_ptr<application> operator()(service &s) const
+			std::unique_ptr<application> operator()(service &s) const
 			{
-				std::auto_ptr<application> app(new T(s,p1_));
+				std::unique_ptr<application> app(new T(s,p1_));
 				return app;
 			}
 		};
@@ -290,9 +290,9 @@ namespace cppcms {
 			simple_factory2(P1 p1,P2 p2) : p1_(p1),p2_(p2) {}
 			P1 p1_;
 			P2 p2_;
-			std::auto_ptr<application> operator()(service &s) const
+			std::unique_ptr<application> operator()(service &s) const
 			{
-				std::auto_ptr<application> app(new T(s,p1_,p2_));
+				std::unique_ptr<application> app(new T(s,p1_,p2_));
 				return app;
 			}
 		};
@@ -307,9 +307,9 @@ namespace cppcms {
 	/// \deprecated Use create_pool
 	///
 	template<typename T>
-	std::auto_ptr<applications_pool::factory> applications_factory()
+	std::unique_ptr<applications_pool::factory> applications_factory()
 	{
-		std::auto_ptr<applications_pool::factory> f(new details::simple_factory0<T>);
+		std::unique_ptr<applications_pool::factory> f(new details::simple_factory0<T>);
 		return f;
 	}
 	
@@ -320,9 +320,9 @@ namespace cppcms {
 	/// \deprecated Use create_pool
 	///
 	template<typename T,typename P1>
-	std::auto_ptr<applications_pool::factory> applications_factory(P1 p1)
+	std::unique_ptr<applications_pool::factory> applications_factory(P1 p1)
 	{
-		std::auto_ptr<applications_pool::factory> f(new details::simple_factory1<T,P1>(p1));
+		std::unique_ptr<applications_pool::factory> f(new details::simple_factory1<T,P1>(p1));
 		return f;
 	}
 	
@@ -333,79 +333,47 @@ namespace cppcms {
 	/// \deprecated Use create_pool
 	///
 	template<typename T,typename P1,typename P2>
-	std::auto_ptr<applications_pool::factory> applications_factory(P1 p1,P2 p2)
+	std::unique_ptr<applications_pool::factory> applications_factory(P1 p1,P2 p2)
 	{
-		std::auto_ptr<applications_pool::factory> f(new details::simple_factory2<T,P1,P2>(p1,p2));
+		std::unique_ptr<applications_pool::factory> f(new details::simple_factory2<T,P1,P2>(p1,p2));
 		return f;
 	}
 
 	/// \cond INTERNAL 
 	namespace details {
-		template<typename T>
-		struct simple_application_specific_pool0 : public application_specific_pool
-		{
-			T *new_application(service &s) 
-			{
-				return new T(s);
-			}
-		};
-		template<typename T,typename P1>
+		template<typename T,typename Call>
 		struct simple_application_specific_pool1 : public application_specific_pool
 		{
-			simple_application_specific_pool1(P1 p1) : p1_(p1) {}
-			P1 p1_;
+			simple_application_specific_pool1(Call call) : call_(call) {}
+			Call call_;
 			T *new_application(service &s)
 			{
-				return new T(s,p1_);
+				return call_(s);
 			}
 		};
-		template<typename T,typename P1,typename P2>
-		struct simple_application_specific_pool2 : public application_specific_pool 
-		{
-			simple_application_specific_pool2(P1 p1,P2 p2) : p1_(p1),p2_(p2) {}
-			P1 p1_;
-			P2 p2_;
-			T *new_application(service &s)
-			{
-				return new T(s,p1_,p2_);
-			}
-		};
+        template<typename T,typename ...P>
+        T *create_app(service &s,P...p)
+        {
+            return new T(s,p...);
+        }
 	} // details
 
 	/// \endcond
 
 	///
-	/// Create application application_specific_pool for application of type T, such as T has a constructor
-	/// T::T(cppcms::service &s);
 	///
-	template<typename T>
-	booster::shared_ptr<application_specific_pool> create_pool()
+	/// Create application application_specific_pool for application of type T, such as T has a constructor
+	/// T::T(cppcms::service &s,p...);
+	///
+	template<typename T,typename ...P>
+	booster::shared_ptr<application_specific_pool> create_pool(P...p)
 	{
-		booster::shared_ptr<application_specific_pool> f(new details::simple_application_specific_pool0<T>);
+        auto functor = std::bind(&details::create_app<T,P...>,std::placeholders::_1,p...);
+        typedef details::simple_application_specific_pool1<T,decltype(functor)> pool_type;
+		booster::shared_ptr<application_specific_pool> f(new pool_type(std::move(functor)));
 		return f;
 	}
 	
-	///
-	/// Create application application_specific_pool for application of type T, such as T has a constructor
-	/// T::T(cppcms::service &s,P1);
-	///
-	template<typename T,typename P1>
-	booster::shared_ptr<application_specific_pool> create_pool(P1 p1)
-	{
-		booster::shared_ptr<application_specific_pool> f(new details::simple_application_specific_pool1<T,P1>(p1));
-		return f;
-	}
-	
-	///
-	/// Create application application_specific_pool for application of type T, such as T has a constructor
-	/// T::T(cppcms::service &s,P1,P2);
-	///
-	template<typename T,typename P1,typename P2>
-	booster::shared_ptr<application_specific_pool> create_pool(P1 p1,P2 p2)
-	{
-		booster::shared_ptr<application_specific_pool> f(new details::simple_application_specific_pool2<T,P1,P2>(p1,p2));
-		return f;
-	}
 
 } // cppcms
 

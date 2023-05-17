@@ -23,6 +23,7 @@
 #include <algorithm>
 #include <stdio.h>
 #include "binder.h"
+#include "response_headers.h"
 
 // for testing only
 #if !defined(__linux) && !defined(CPPCMS_WIN32)
@@ -54,6 +55,7 @@ namespace cgi {
 
 	class http;
 
+
 	class http_watchdog : public booster::enable_shared_from_this<http_watchdog> {
 	public:
 		typedef booster::shared_ptr<http> http_ptr;
@@ -77,7 +79,7 @@ namespace cgi {
 		}
 
 	private:
-		typedef std::set<weak_http_ptr> connections_type;
+		typedef std::set<weak_http_ptr,std::owner_less<weak_http_ptr> > connections_type;
 		connections_type connections_;
 		booster::aio::deadline_timer timer_;
 	};
@@ -118,33 +120,49 @@ namespace cgi {
 			socket_(srv.impl().get_io_service()),
 			input_body_ptr_(0),
 			input_parser_(input_body_,input_body_ptr_),
-			output_pbase_(0),
-			output_pptr_(0),
-			output_epptr_(0),
-			output_parser_(output_pbase_,output_pptr_,output_epptr_),
-			request_method_(non_const_empty_string),
-			request_uri_(non_const_empty_string),
-			headers_done_(false),
-			first_header_observerd_(false),
-			total_read_(0),
-			time_to_die_(0),
-			timeout_(0),
 			sync_option_is_set_(false),
 			in_watchdog_(false),
+			eof_callback_(false),
 			watchdog_(wd),
 			rewrite_(rw),
-			eof_callback_(false)
+			ip_(ip),
+			port_(port)
 		{
+			timeout_ = srv.cached_settings().http.timeout;
+			reset_all();
+		}
+		void reset_all()
+		{
+			request_method_ = non_const_empty_string;
+			env_script_name_ = non_const_empty_string;
+			env_path_info_ = non_const_empty_string;
+			env_remote_addr_ = non_const_empty_string;
+			env_query_string_ = non_const_empty_string;
+			env_content_type_ = non_const_empty_string;
+			env_content_length_ = 0;
+			request_uri_ = non_const_empty_string;
+			headers_done_ = false;
+			first_header_observerd_ = false;
+			total_read_ = 0;
+			is_http_11_ = false;
+			client_accepts_keep_alive_ = false;
+			keep_alive_ = false;
+			chunked_te_ = false;
+			output_content_length_ = -1;
+			output_written_ = 0;
+			eof_callback_ = false;
+			input_parser_.reset();
+
+			env_.clear();
+			pool_.clear();
 
 			env_.add("SERVER_SOFTWARE",CPPCMS_PACKAGE_NAME "/" CPPCMS_PACKAGE_VERSION);
-			env_.add("SERVER_NAME",pool_.add(ip));
+			env_.add("SERVER_NAME",pool_.add(ip_));
 			char *sport = pool_.alloc(10);
-			format_number(port,sport,10);
+			format_number(port_,sport,10);
 			env_.add("SERVER_PORT",sport);
 			env_.add("GATEWAY_INTERFACE","CGI/1.0");
-			env_.add("SERVER_PROTOCOL","HTTP/1.0");
-			timeout_ = srv.cached_settings().http.timeout;
-
+            connection::reset_all();
 		}
 		~http()
 		{
@@ -183,9 +201,22 @@ namespace cgi {
 			return time_to_die_;
 		}
 
+		bool input_buffer_empty()
+		{
+			return input_body_.empty() || input_body_ptr_ == input_body_.size();
+		}
+
 		void async_read_some_headers(handler const &h)
 		{
-			socket_.on_readable(mfunc_to_event_handler(&http::some_headers_data_read,self(),h));
+			if(!input_buffer_empty()) {
+				auto ptr = self();
+				socket_.get_io_service().post([=] {
+					ptr->some_headers_data_read(booster::system::error_code(),h);
+				});
+			}
+			else {
+				socket_.on_readable(mfunc_to_event_handler(&http::some_headers_data_read,self(),h));
+			}
 			update_time();
 		}
 		virtual void async_read_headers(handler const &h)
@@ -197,33 +228,39 @@ namespace cgi {
 			#endif
 			update_time();
 			add_to_watchdog();
+			total_read_ = 0;
 			async_read_some_headers(h);
 		}
 
-		void some_headers_data_read(booster::system::error_code const &er,handler const &h)
+		virtual void some_headers_data_read(booster::system::error_code const &er,handler const &h)
 		{
 			if(er) { h(er); return; }
 
-			booster::system::error_code e;
-			size_t n = socket_.bytes_readable(e);
-			if(e) { h(e); return ; }
-			if(n == 0) { 
-				h(booster::system::error_code(booster::aio::aio_error::eof,booster::aio::aio_error_cat)); 
-				return;
-			}
+			if(input_buffer_empty()) {
+				booster::system::error_code e;
+				size_t n = socket_.bytes_readable(e);
+				if(e) { h(e); return ; }
+				if(n == 0) { 
+					h(booster::system::error_code(booster::aio::aio_error::eof,booster::aio::aio_error_cat)); 
+					return;
+				}
 
-			if(n > 16384)
-				n=16384;
-			if(input_body_.capacity() < n) {
-				input_body_.reserve(n);
-			}
-			input_body_.resize(input_body_.capacity(),0);
-			input_body_ptr_=0;
-			
-			n = socket_.read_some(booster::aio::buffer(input_body_),e);
+				if(n > 16384)
+					n=16384;
+				if(input_body_.capacity() < n) {
+					input_body_.reserve(n);
+				}
+				input_body_.resize(input_body_.capacity(),0);
+				input_body_ptr_=0;
+				
+				n = socket_.read_some(booster::aio::buffer(input_body_),e);
 
-			total_read_+=n;
-			input_body_.resize(n);
+				total_read_+=n;
+				input_body_.resize(n);
+			}
+			else {
+				total_read_+=input_body_.size() - input_body_ptr_;
+			}
 
 			for(;;) {
 				using ::cppcms::http::impl::parser;
@@ -250,6 +287,9 @@ namespace cgi {
 						if(query!=header_end) {
 							request_method_ = pool_.add(header_begin,rmethod);
 							request_uri_ = pool_.add(rmethod+1,query);
+							char const *http_protocol = query+1;
+							env_.add("SERVER_PROTOCOL",pool_.add(http_protocol));
+							is_http_11_ = strcmp(http_protocol,"HTTP/1.1") == 0;
 							first_header_observerd_=true;
 							BOOSTER_INFO("cppcms_http") << request_method_ <<" " << request_uri_;
 						}
@@ -265,8 +305,17 @@ namespace cgi {
 							h(booster::system::error_code(errc::protocol_violation,cppcms_category));
 							return;
 						}
-						if(strcmp(name,"CONTENT_LENGTH")==0 || strcmp(name,"CONTENT_TYPE")==0)
+						if(strcmp(name,"CONTENT_LENGTH")==0) {
 							env_.add(name,value);
+							if(*value!=0)
+								env_content_length_ = atoll(value);
+							else
+								env_content_length_ = 0;
+						}
+						else if(strcmp(name,"CONTENT_TYPE")==0) {
+							env_content_type_ = value; 
+							env_.add(name,value);
+						}
 						else {
 							char *updated_name =pool_.alloc(strlen(name) + 5 + 1);
 							strcpy(updated_name,"HTTP_");
@@ -318,9 +367,11 @@ namespace cgi {
 			if(eof_callback_)
 				socket_.cancel();
 			eof_callback_ = false;
-			booster::system::error_code e;
-			socket_.shutdown(io::stream_socket::shut_wr,e);
-			socket_.close(e);
+			if(!keep_alive_) {
+				booster::system::error_code e;
+				socket_.shutdown(io::stream_socket::shut_wr,e);
+				socket_.close(e);
+			}
 		}
 		#ifndef CPPCMS_NO_SO_SNDTIMO
 		size_t timed_write_some(booster::aio::const_buffer const &buf,booster::system::error_code &e)
@@ -378,7 +429,7 @@ namespace cgi {
 				}
 			}
 			if(r < 0) {
-				e=booster::system::error_code(errno,booster::system::system_category);
+				e=booster::system::error_code(errno,booster::system::system_category());
 				return 0;
 			}
 			if(r==1 && pfd.revents & POLLOUT)
@@ -409,7 +460,12 @@ namespace cgi {
 		}
 		virtual bool keep_alive()
 		{
-			return false;
+			bool ka_value = keep_alive_;
+			if(ka_value) {
+				reset_all();
+				update_time();
+			}
+			return ka_value;
 		}
 
 		void close()
@@ -442,94 +498,118 @@ namespace cgi {
 				watchdog_->remove(self());
 		}
 		virtual booster::aio::stream_socket &socket() { return socket_; }
-		virtual booster::aio::const_buffer format_output(booster::aio::const_buffer const &in,bool /*completed*/,booster::system::error_code &e)
+		virtual void set_response_headers(cppcms::impl::response_headers &hdr)
 		{
-			if(headers_done_)
-				return in;
-			booster::aio::const_buffer packet;
-			std::pair<booster::aio::const_buffer::entry const *,size_t> tmp = in.get();
-			booster::aio::const_buffer::entry const *entry = tmp.first;
-			size_t parts = tmp.second;
-			output_pbase_=output_pptr_=output_epptr_=0;
-			bool r=false;
-			while(parts > 0)  {
-				output_pbase_=static_cast<char const *>(entry->ptr);
-				output_pptr_ = output_pbase_;
-				output_epptr_ = output_pbase_ + entry->size;
-				r =process_output_headers(e);
-				parts--;
-				entry++;
-				if(r) {
-					if(!e)
-						headers_done_ = true;
-					break;
+			char const *conn = cgetenv("HTTP_CONNECTION");
+			client_accepts_keep_alive_ = conn && cppcms::http::protocol::compare(conn,"keep-alive") == 0;
+			std::string const &cl = hdr.get_header("Content-Length");
+			if(!cl.empty()) {
+				output_content_length_ = atoll(cl.c_str());
+			}
+			else {
+				output_content_length_ = -1;
+			}
+			output_written_ = 0;
+			// 128 for extra headers like Connection/TransferEncoding etc
+			// make sure we reuse memore for K/A connection
+			cppcms::impl::response_headers::string_buffer_wrapper buf;
+			response_headers_.clear();
+			response_headers_.reserve(hdr.estimate_size() + 128);
+			buf.data().swap(response_headers_);
+			hdr.format_http_headers(buf,(is_http_11_ ? "1.1" : "1.0"),false);
+			response_headers_.swap(buf.data());
+		}
+
+		booster::aio::const_buffer make_chunked_wrapper(booster::aio::const_buffer const &in,bool completed)
+		{
+			if(in.bytes_count() == 0) {
+				if(!completed) 
+					return in;
+				else 
+					return booster::aio::buffer("0\r\n\r\n",5);
+			}
+
+			std::ostringstream ss;
+			ss << std::hex << in.bytes_count() << "\r\n";
+			chunked_header_ = std::move(ss.str());
+			char const *trailer = "\r\n";
+			int trailer_len = 2;
+			if(completed) {
+				trailer = "\r\n0\r\n\r\n";
+				trailer_len = 7;
+			}
+			return booster::aio::buffer(chunked_header_) + in + booster::aio::buffer(trailer,trailer_len);
+		}
+
+		virtual booster::aio::const_buffer format_output(booster::aio::const_buffer const &in,bool completed,booster::system::error_code &e)
+		{
+			if(headers_done_) {
+				if(chunked_te_)
+					return make_chunked_wrapper(in,completed);
+				else {
+					output_written_ += in.bytes_count();
+					if(output_content_length_ != -1 && output_written_ > output_content_length_) {
+						e = booster::system::error_code(errc::protocol_violation,cppcms_category);
+					}
+					return in;
 				}
 			}
-			if(e)
-				return packet;
-			if(!r) {
-				tmp = in.get();
-				entry = tmp.first;
-				parts = tmp.second;
-				output_body_.reserve(output_body_.size() + in.bytes_count());
-				while(parts > 0) {
-					output_body_.insert(output_body_.end(),entry->ptr,entry->ptr+entry->size);
-					parts--;
-					entry++;
-				}
-				return packet;
+			if(response_headers_.empty()) {
+				cppcms::impl::response_headers dummy;
+				set_response_headers(dummy);
 			}
-			packet+= booster::aio::buffer(response_line_);
-			if(!output_body_.empty())
-				packet+= booster::aio::buffer(output_body_);
-			packet+= in;
+			chunked_te_=false;
+				
+			response_headers_ +=  "Server: CppCMS-Embedded/" CPPCMS_PACKAGE_VERSION "\r\n";
+			/// add content lengths if does not exist and it can be calculated
+			if(output_content_length_ == -1 && completed) {
+				output_content_length_ = in.bytes_count();
+				char buf[std::numeric_limits<size_t>::digits10 + 4];
+				format_number(in.bytes_count(),buf,sizeof(buf));
+				response_headers_ += "Content-Length: ";
+				response_headers_ += buf;
+				response_headers_ += "\r\n";
+			}
+			if(client_accepts_keep_alive_ && !error_state_ && (output_content_length_ != -1 || is_http_11_)) {
+				response_headers_ += "Connection: keep-alive\r\n";
+				keep_alive_ = true;
+				if(output_content_length_ == -1) {
+					response_headers_ += "Transfer-Encoding: chunked\r\n";
+					chunked_te_=true;
+				}
+			}
+			else {
+				response_headers_ += "Connection: close\r\n";
+				keep_alive_ = false;
+			}
+
+			response_headers_ += "\r\n";
+
+			booster::aio::const_buffer packet = booster::aio::buffer(response_headers_);
+			if(chunked_te_)
+				packet+= make_chunked_wrapper(in,completed);
+			else {
+				output_written_ += in.bytes_count();
+				if(output_content_length_ != -1 && output_written_ > output_content_length_) {
+					e = booster::system::error_code(errc::protocol_violation,cppcms_category);
+				}
+				packet+=in;
+			}
+			headers_done_ = true;
 			return packet;
 		}
-		
+	public:	
+		virtual char const *env_request_method()	{ return request_method_; }
+		virtual char const *env_script_name()		{ return env_script_name_; }
+		virtual char const *env_path_info()		{ return env_path_info_; }
+		virtual char const *env_remote_addr()		{ return env_remote_addr_; }
+		virtual char const *env_query_string()		{ return env_query_string_; }
+		virtual char const *env_content_type()		{ return env_content_type_; }
+		virtual long long  env_content_length() 	{ return env_content_length_; }
 
 	private:
-		bool process_output_headers(booster::system::error_code &e)
-		{
-			static char const *addon = 
-				"Server: CppCMS-Embedded/" CPPCMS_PACKAGE_VERSION "\r\n"
-				"Connection: close\r\n";
 
-			using cppcms::http::impl::parser;
-			for(;;) {
-				switch(output_parser_.step()) {
-				case parser::more_data:
-					return false;
-				case parser::got_header:
-					{
-						char const *name="";
-						char const *value="";
-						if(!parse_single_header(output_parser_.header_,name,value))  {
-							e=booster::system::error_code(errc::protocol_violation,cppcms_category);
-							return true;
-						}
-						if(strcmp(name,"STATUS")==0) {
-							response_line_ = "HTTP/1.0 ";
-							response_line_ +=value;
-							response_line_ +="\r\n";
-							response_line_.append(addon);
-							return true;
-						}
-					}
-					break;
-				case parser::end_of_headers:
-					response_line_ = "HTTP/1.0 200 Ok\r\n";
-					response_line_.append(addon);
-					return true;
-
-				case parser::error_observerd:
-					e=booster::system::error_code(errc::protocol_violation,cppcms_category);
-					return true;
-				}
-			}
-	
-		}
-
-		void process_request(handler const &h)
+		virtual void process_request(handler const &h)
 		{
 			char const *rm = request_method_;
 			char const *rm_end = request_method_ + strlen(request_method_);
@@ -556,14 +636,18 @@ namespace cgi {
 			
 			if(!remote_addr) {
 				booster::system::error_code e;
-				remote_addr=pool_.add(socket_.remote_endpoint(e).ip());
-				if(e) {
-					close();
-					h(e);
-					return;
+				if(remote_ip_.empty()) {
+					remote_ip_ = socket_.remote_endpoint(e).ip();
+					if(e) {
+						close();
+						h(e);
+						return;
+					}
 				}
+				remote_addr=remote_ip_.c_str();
 			}
-			
+		
+			env_remote_addr_ = remote_addr;	
 			env_.add("REMOTE_HOST",remote_addr);
 			env_.add("REMOTE_ADDR",remote_addr);
 
@@ -579,7 +663,8 @@ namespace cgi {
 			}
 			else {
 				path=pool_.add(request_uri_,query - request_uri_);
-				env_.add("QUERY_STRING",query + 1);
+				env_query_string_ = query+1;
+				env_.add("QUERY_STRING",env_query_string_);
 			}
 			
 			std::vector<std::string> const &script_names = 
@@ -592,13 +677,15 @@ namespace cgi {
 				if(path_size >= name_size && memcmp(path,name.c_str(),name_size) == 0 
 				   && (path_size == name_size || path[name_size]=='/'))
 				{
-					env_.add("SCRIPT_NAME",pool_.add(name));
+					env_script_name_ = pool_.add(name);
+					env_.add("SCRIPT_NAME",env_script_name_);
 					path = path + name_size;
 					break;
 				}
 			}
 			
-			env_.add("PATH_INFO",pool_.add(util::urldecode(path,path+strlen(path)))); 
+			env_path_info_ = pool_.add(util::urldecode(path,path+strlen(path)));
+			env_.add("PATH_INFO",env_path_info_); 
 
 			update_time();
 			h(booster::system::error_code());
@@ -623,7 +710,7 @@ namespace cgi {
 			h(booster::system::error_code(errc::protocol_violation,cppcms_category));
 		}
 
-		bool parse_single_header(std::string const &header,char const *&o_name,char const *&o_value)
+		virtual bool parse_single_header(std::string const &header,char const *&o_name,char const *&o_value)
 		{
 			char const *p=header.c_str();
 			char const *e=p + header.size();
@@ -662,29 +749,6 @@ namespace cgi {
 		}
 		
 		friend class socket_acceptor<http,http_creator>;
-		
-		booster::aio::stream_socket socket_;
-
-		std::vector<char> input_body_;
-		unsigned input_body_ptr_;
-		::cppcms::http::impl::parser input_parser_;
-		std::vector<char> output_body_;
-		char const *output_pbase_;
-		char const *output_pptr_;
-		char const *output_epptr_;
-		::cppcms::http::impl::parser output_parser_;
-
-
-		std::string response_line_;
-		char *request_method_;
-		char *request_uri_;
-		bool headers_done_;
-		bool first_header_observerd_;
-		unsigned total_read_;
-		time_t time_to_die_;
-		int timeout_;
-		bool sync_option_is_set_;
-		bool in_watchdog_;
 
 		void add_to_watchdog()
 		{
@@ -701,10 +765,47 @@ namespace cgi {
 			}
 		}
 
+		/////
+		/////  MEMBERS
+		/////
+		
+		booster::aio::stream_socket socket_;
+		std::vector<char> input_body_;
+		unsigned input_body_ptr_;
+		::cppcms::http::impl::parser input_parser_;
+
+		std::string response_headers_;
+		char *request_method_;
+		char const *env_script_name_;
+		char const *env_path_info_;
+		char const *env_remote_addr_;
+		char const *env_query_string_;
+		char const *env_content_type_;
+		long long env_content_length_;
+		char *request_uri_;
+		bool headers_done_;
+		bool first_header_observerd_;
+		unsigned total_read_;
+		time_t time_to_die_;
+		int timeout_;
+		bool sync_option_is_set_;
+		bool in_watchdog_;
+		bool eof_callback_;
+		bool is_http_11_;
+		bool client_accepts_keep_alive_;
+		bool keep_alive_;
+		bool chunked_te_;
+		long long output_content_length_;
+		long long output_written_;
+		std::string chunked_header_;
+
 		booster::shared_ptr<http_watchdog> watchdog_;
 		booster::shared_ptr<url_rewriter> rewrite_;
-		bool eof_callback_;
+		std::string ip_;
+		std::string remote_ip_;
+		int port_;
 	};
+
 	void http_watchdog::check(booster::system::error_code const &e)
 	{
 		if(e)
@@ -747,12 +848,12 @@ namespace cgi {
 		return new http(srv,ip_,port_,watchdog_,rewrite_);
 	}
 
-	std::auto_ptr<acceptor> http_api_factory(cppcms::service &srv,std::string ip,int port,int backlog)
+	std::unique_ptr<acceptor> http_api_factory(cppcms::service &srv,std::string ip,int port,int backlog)
 	{
 		typedef socket_acceptor<http,http_creator> acceptor_type;
-		std::auto_ptr<acceptor_type> acc(new acceptor_type(srv,ip,port,backlog));
+		std::unique_ptr<acceptor_type> acc(new acceptor_type(srv,ip,port,backlog));
 		acc->factory(http_creator(srv.get_io_service(),srv.settings(),ip,port));
-		std::auto_ptr<acceptor> a(acc);
+		std::unique_ptr<acceptor> a(std::move(acc));
 		return a;
 	}
 

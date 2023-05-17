@@ -46,17 +46,17 @@ namespace booster {
                 default_backends_(32,-1)
             {
             }
-            std::auto_ptr<localization_backend> get() const
+            std::unique_ptr<localization_backend> get() const
             {
                 std::vector<booster::shared_ptr<localization_backend> > backends;
                 for(unsigned i=0;i<all_backends_.size();i++)
                     backends.push_back(all_backends_[i].second);
-                std::auto_ptr<localization_backend> res(new actual_backend(backends,default_backends_));
+                std::unique_ptr<localization_backend> res(new actual_backend(backends,default_backends_));
                 return res;
             }
-            void add_backend(std::string const &name,std::auto_ptr<localization_backend> backend_ptr)
+            void add_backend(std::string const &name,std::unique_ptr<localization_backend> backend_ptr)
             {
-                booster::shared_ptr<localization_backend> sptr(backend_ptr);
+                booster::shared_ptr<localization_backend> sptr(std::move(backend_ptr));
                 if(all_backends_.empty()) {
                     all_backends_.push_back(std::make_pair(name,sptr));
                     for(unsigned i=0;i<default_backends_.size();i++)
@@ -178,14 +178,14 @@ namespace booster {
             return *this;
         }
 
-        std::auto_ptr<localization_backend> localization_backend_manager::get() const
+        std::unique_ptr<localization_backend> localization_backend_manager::get() const
         {
             return pimpl_->get();
         }
 
-        void localization_backend_manager::add_backend(std::string const &name,std::auto_ptr<localization_backend> backend)
+        void localization_backend_manager::add_backend(std::string const &name,std::unique_ptr<localization_backend> backend)
         {
-            pimpl_->add_backend(name,backend);
+            pimpl_->add_backend(name,std::move(backend));
         }
         void localization_backend_manager::remove_all_backends()
         {
@@ -217,25 +217,25 @@ namespace booster {
             struct init {
                 init() { 
                     localization_backend_manager mgr;
-                    std::auto_ptr<localization_backend> backend;
+                    std::unique_ptr<localization_backend> backend;
                     #ifdef BOOSTER_LOCALE_WITH_ICU
                     backend.reset(impl_icu::create_localization_backend());
-                    mgr.add_backend("icu",backend);
+                    mgr.add_backend("icu",std::move(backend));
                     #endif
 
                     #ifndef BOOSTER_LOCALE_NO_POSIX_BACKEND
                     backend.reset(impl_posix::create_localization_backend());
-                    mgr.add_backend("posix",backend);
+                    mgr.add_backend("posix",std::move(backend));
                     #endif
 
                     #ifndef BOOSTER_LOCALE_NO_WINAPI_BACKEND
                     backend.reset(impl_win::create_localization_backend());
-                    mgr.add_backend("winapi",backend);
+                    mgr.add_backend("winapi",std::move(backend));
                     #endif
                     
                     #ifndef BOOSTER_LOCALE_NO_STD_BACKEND
                     backend.reset(impl_std::create_localization_backend());
-                    mgr.add_backend("std",backend);
+                    mgr.add_backend("std",std::move(backend));
                     #endif
 
                     localization_backend_manager::global(mgr);

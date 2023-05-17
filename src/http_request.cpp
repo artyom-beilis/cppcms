@@ -335,7 +335,7 @@ int request::on_content_progress(size_t n)
 
 		if(d->read_size == d->content_length) {
 			if(d->read_full) {
-				if(content_type_.is_form_urlencoded()) {
+				if(lazy_content_type().is_form_urlencoded()) {
 					char const *data = &d->post_data[0];
 					char const *data_end = data + d->post_data.size();
 					parse_form_urlencoded(data,data_end,post_);
@@ -387,12 +387,20 @@ void request::on_error()
 		d->filter->on_error();
 	}
 }
+cppcms::http::content_type &request::lazy_content_type()
+{
+	if(!content_type_ready_) {
+		content_type_ = cppcms::http::content_type(conn_->env_content_type());
+		content_type_ready_ = true;
+	}
+	return content_type_;
+}
 
 int request::on_content_start()
 {
 	if(d->content_length == 0)
 		return 0;
-	if(content_type_.is_multipart_form_data()) {
+	if(lazy_content_type().is_multipart_form_data()) {
 		if(d->content_length > d->limits.multipart_form_data_limit())
 			return 413;
 	}
@@ -400,16 +408,16 @@ int request::on_content_start()
 		if(d->content_length > static_cast<long long>(d->limits.content_length_limit()))
 			return 413;
 	}
-	if(!d->filter_is_raw_content_filter && !content_type_.is_multipart_form_data()) {
+	if(!d->filter_is_raw_content_filter && !lazy_content_type().is_multipart_form_data()) {
 		d->post_data.resize(d->content_length);
 		d->read_full = true;
 	}
 	else {
-		if(content_type_.is_multipart_form_data() && !d->filter_is_raw_content_filter) {
+		if(lazy_content_type().is_multipart_form_data() && !d->filter_is_raw_content_filter) {
 			d->multipart_parser.reset(new multipart_parser(
 				d->limits.uploads_path(),
 				d->limits.file_in_memory_limit()));
-			if(!d->multipart_parser->set_content_type(content_type_)) {
+			if(!d->multipart_parser->set_content_type(lazy_content_type())) {
 				return 400;
 			}
 		}
@@ -435,17 +443,12 @@ bool request::parse_form_urlencoded(char const *begin,char const *end,form_type 
 
 bool request::prepare()
 {
-	char const *query=cgetenv("QUERY_STRING");
+	char const *query=conn_->env_query_string();
 	if(!parse_form_urlencoded(query,query + strlen(query),get_))  {
 		get_.clear();
 	}
 	parse_cookies();
-	char const *s = conn_->cgetenv("CONTENT_LENGTH");
-	if(!s || *s==0)
-		d->content_length = 0;
-	else
-		d->content_length = atoll(s);
-	content_type_ = cppcms::http::content_type(conn_->cgetenv("CONTENT_TYPE"));
+	d->content_length = conn_->env_content_length();
 	if(d->content_length == 0)
 		d->ready = true;
 	return true;
@@ -466,7 +469,8 @@ std::pair<void *,size_t> request::raw_post_data()
 	return r;
 }
 
-request::request(impl::cgi::connection &conn) :
+request::request(cppcms::impl::cgi::connection &conn) :
+	content_type_ready_(false),
 	d(new _data(conn.service())),
 	conn_(&conn)
 {
@@ -489,7 +493,7 @@ request::~request()
 
 cppcms::http::content_type request::content_type_parsed()
 {
-	return content_type_;
+	return lazy_content_type();
 }
 
 std::string request::auth_type() { return conn_->getenv("AUTH_TYPE"); }

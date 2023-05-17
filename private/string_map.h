@@ -13,7 +13,11 @@
 #include <string>
 #include <vector>
 #include <limits>
+#include <algorithm>
+#include <unordered_set>
 #include <booster/noncopyable.h>
+#include "hash_map.h"
+#include <booster/iterator/iterator_facade.h>
 
 namespace cppcms {
 	namespace impl {
@@ -29,8 +33,13 @@ namespace cppcms {
 			}
 			void clear()
 			{
-				destroy();
-				add_page();
+				while(pages_->next) {
+					page *p = pages_;
+					pages_ = pages_->next;
+					free(p);
+				}
+				data_ = pages_->data;
+				free_space_ = page_size_;
 			}
 			~string_pool()
 			{
@@ -127,24 +136,45 @@ namespace cppcms {
 				free_space_ = page_size_;
 			}
 
-
 		};
+
+
 
 		class string_map {
 		public:
 			struct entry {
 				char const *key;
 				char const *value;
-				entry(char const *k ="",char const *v="") : key(k),value(v) {}
+				uint32_t hash;
+				int next_index;
+				entry() : key(0), value(0), hash(0),next_index(0) {}
+				entry(char const *k,char const *v="") : 
+					key(k),
+					value(v),
+					hash(calc_hash(k)),
+					next_index(0)
+				{
+				}
 				bool operator<(entry const &other) const
 				{
 					return strcmp(key,other.key) < 0;
 				}
 				bool operator==(entry const &other) const
 				{
-					return strcmp(key,other.key) == 0;
+					return hash == other.hash && strcmp(key,other.key) == 0;
+				}
+				static uint32_t calc_hash(char const *key)
+				{
+					uint32_t state = cppcms::impl::string_hash::initial_state;
+					char const *s = key;
+					while(*s) {
+						state = cppcms::impl::string_hash::update_state(state,*s++);
+					}
+					return state;
 				}
 			};
+
+			#if 0
 
 			string_map() : sorted_(true) 
 			{
@@ -197,6 +227,160 @@ namespace cppcms {
 		private:
 			bool sorted_;
 			std::vector<entry> data_;
+		#elif 1
+			typedef std::vector<entry> data_type;
+
+			struct iterator : public booster::iterator_facade<iterator,entry,booster::forward_traversal_tag>
+			{
+				
+				iterator(std::vector<entry> &data,int first) : d(&data), current_(first) {}
+				iterator() : d(0), current_(-1) {}
+
+				entry &dereference() const
+				{
+					return (*d)[current_];
+				}
+				bool equal(iterator const &other) const
+				{
+					return current_ == other.current_;
+				}
+				void increment()
+				{
+					if(current_ != -1) {
+						current_ = (*d)[current_].next_index;
+					}
+				}
+				std::vector<entry> *d;
+				int current_;
+			};
+
+			int first_;
+			size_t total_;
+			std::vector<entry> data_;
+
+			string_map()
+			{
+				data_.resize(64);
+				total_ = 0;
+				first_ = -1;
+			}
+			void add(char const *key,char const *value) {
+				entry new_entry(key,value);
+				if(total_ * 2 >= data_.size()) {
+					int new_first = -1;
+					std::vector<entry> new_data(data_.size()*2);
+					for(iterator p = begin(),e = end();p!=e;++p) {
+						insert(new_data,*p,new_first);
+					}
+					first_ = new_first;
+					data_.swap(new_data);
+				}
+				insert(data_,new_entry,first_);
+				total_++;
+			}
+			static void insert(std::vector<entry> &d,entry const &e,int &first)
+			{
+				int pos = e.hash % d.size();
+				while(d[pos].key)
+					pos = (pos + 1) % d.size();
+				d[pos] = e;
+				d[pos].next_index = first;
+				first = pos;
+			}
+			
+			char const *get(char const *ckey)
+			{
+				entry e(ckey);
+				int pos = e.hash % data_.size();
+				while(data_[pos].key && !(data_[pos] == e)) 
+					pos = (pos + 1) % data_.size();
+				if(data_[pos].key == 0)
+					return 0;
+				return data_[pos].value;
+			}
+			char const *get_safe(char const *key)
+			{
+				char const *value =get(key);
+				if(value)
+					return value;
+				return "";
+			}
+			void clear()
+			{
+				data_.clear();
+				data_.resize(64);
+				total_ = 0;
+				first_ = -1;
+			}
+			iterator begin()
+			{
+				return iterator(data_,first_);
+			}
+			
+			iterator end()
+			{
+				return iterator(data_,-1);
+			}
+
+		#else
+			struct hasher {
+				typedef uint32_t type;
+				type operator()(entry const &v) const
+				{
+					return v.hash;
+				}
+			};
+
+			typedef std::unordered_set<entry,hasher> data_type;
+			
+			string_map() 
+			{
+				data_.reserve(64);
+			}
+			
+			typedef data_type::iterator iterator;
+			
+			iterator begin()
+			{
+				return data_.begin();
+			}
+			
+			iterator end()
+			{
+				return data_.end();
+			}
+			void add(char const *key,char const *value)
+			{
+				data_.insert(entry(key,value));
+			}
+			void sort()
+			{
+			}
+			
+			char const *get(char const *ckey)
+			{
+				entry key(ckey);
+				iterator p = data_.find(key);
+				if(p == data_.end())
+					return 0;
+				return p->value;
+			}
+			
+			char const *get_safe(char const *key)
+			{
+				char const *value =get(key);
+				if(value)
+					return value;
+				return "";
+			}
+			void clear()
+			{
+				data_.clear();
+			}
+		private:
+			data_type data_;
+			
+		#endif
 		};
 
 	} // impl

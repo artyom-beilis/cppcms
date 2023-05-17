@@ -434,7 +434,7 @@ struct thread_functional {
 
 struct tcp_cache_service::_data {
 	std::vector<booster::shared_ptr<io::io_service> > io;
-	std::auto_ptr<server> srv_cache;
+	std::unique_ptr<server> srv_cache;
 	booster::intrusive_ptr<base_cache> cache;
 	std::vector<booster::shared_ptr<booster::thread> > threads;
 	booster::shared_ptr<booster::thread> gc_thread;

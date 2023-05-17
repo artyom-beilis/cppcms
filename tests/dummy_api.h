@@ -8,6 +8,7 @@
 #ifndef CPPCMS_IMPL_DUMMY_API_H
 #define CPPCMS_IMPL_DUMMY_API_H
 #include "cgi_api.h"
+#include "response_headers.h"
 #include <booster/system_error.h>
 #include <booster/aio/aio_category.h>
 using cppcms::impl::cgi::io_handler;
@@ -21,15 +22,29 @@ public:
 		cppcms::impl::cgi::connection(srv),
 		output_(&output),
 		write_eof_(write_eof),
-		mark_chunks_(mark_chunks)
+		mark_chunks_(mark_chunks),
+		headers_written_(false)
 	{
 		for(std::map<std::string,std::string>::iterator p=env.begin();p!=env.end();++p)
 			env_.add(pool_.add(p->first),pool_.add(p->second));
+
 	}
 
+	virtual void set_response_headers(cppcms::impl::response_headers &h) 
+	{
+		cppcms::impl::response_headers::string_buffer_wrapper wr;
+		h.format_cgi_headers(wr,true);
+		headers_ = wr.data();
+	}
 	booster::aio::const_buffer format_output(booster::aio::const_buffer const &in,bool,booster::system::error_code &)
 	{
-		return in;
+		if(headers_written_) {
+			return in;
+		}
+		else {
+			headers_written_ = true;
+			return booster::aio::buffer(headers_) + in;
+		}
 	}
 	void async_read_headers(handler const &) 
 	{
@@ -45,8 +60,9 @@ public:
 	virtual void on_async_write_start(){}
 	virtual void on_async_write_progress(bool){}
 
-	virtual bool write(booster::aio::const_buffer const &in,bool eof,booster::system::error_code &e) 
+	virtual bool write(booster::aio::const_buffer const &body_in,bool eof,booster::system::error_code &e) 
 	{
+		booster::aio::const_buffer in = format_output(body_in,eof,e);
 		if(*output_ == "$$$ERROR$$$") {
 			e=booster::system::error_code(booster::aio::aio_error::eof,booster::aio::aio_error_cat);
 			return false;
@@ -96,6 +112,8 @@ private:
 	std::string *output_;
 	bool write_eof_;
 	bool mark_chunks_;
+	std::string headers_;
+	bool headers_written_;
 
 };
 

@@ -9,6 +9,7 @@
 #define BOOSTER_ATOMIC_COUNT_H
 
 #include <booster/config.h>
+#include <atomic>
 
 
 ///
@@ -19,15 +20,6 @@ namespace booster {
 
 	///
 	/// \brief Atomic counter is a class that allows perform counting in thread safe way.
-	///
-	/// It is mainly used for reference counting. Under Windows it uses Interlocked API, under
-	/// other platforms it used built-in atomic operations or fails back to pthreads locking implementation.
-	///
-	/// Notes: 
-	///
-	/// -  This counter is not safe for use in process shared memory, when pthreads fall-back is used
-	/// -  Under POSIX platform pthread_mutex_t is always present in order to make sure that we can implement
-	///    or remove pthread fall-back at any point not affecting ABI
 	///
 
 	class BOOSTER_API atomic_counter {
@@ -64,21 +56,10 @@ namespace booster {
 		long dec();
 		long get() const;
 
-		atomic_counter(atomic_counter const &);
-		atomic_counter & operator=(atomic_counter const &);
+		atomic_counter(atomic_counter const &) = delete;
+		atomic_counter & operator=(atomic_counter const &) = delete;
 
-		mutable union {
-			int i;
-			unsigned ui;
-			long l;
-			unsigned long ul;
-			long long ll;
-			unsigned long long ull;
-		} value_;
-		// Is actually used for platforms without lock
-		// it would not be used when atomic operations
-		// available
-		void *mutex_;
+		std::atomic_long value_;
 	};
 
 } // booster

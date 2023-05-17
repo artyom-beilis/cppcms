@@ -9,4 +9,4 @@ if(WIN32 OR CYGWIN)
 endif()
 
 add_executable(tester storage_test.cpp)
-target_link_libraries(tester cppcms booster)
+target_link_libraries(tester cppcms booster pthread)

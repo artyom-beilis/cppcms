@@ -11,10 +11,6 @@
 #include <booster/system_error.h>
 #include <booster/config.h>
 
-#ifdef BOOSTER_CYGWIN
-static booster::system::error_category const &syscat = booster::system::get_windows_category();
-#else
-static booster::system::error_category const &syscat = booster::system::get_system_category();
-#endif
+static booster::system::error_category const &syscat = std::system_category();
 
 #endif

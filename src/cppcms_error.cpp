@@ -25,7 +25,7 @@ cppcms_error::cppcms_error(int err,std::string const &error) :
 
 std::string cppcms_error::strerror(int err)
 {
-	return booster::system::error_code(err,booster::system::system_category).message();
+	return booster::system::error_code(err,booster::system::system_category()).message();
 }
 
 }

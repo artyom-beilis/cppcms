@@ -122,6 +122,9 @@ public:
 		state_ = idle;
 		bracket_counter_ = 0;
 		header_.clear();
+		pbase_ = 0;
+                pptr_ = 0;
+                epptr_ = 0;
 	}
 	enum { more_data, got_header, end_of_headers , error_observerd };
 	int step()

@@ -21,6 +21,7 @@
 #include <cppcms/defs.h>
 #include <cppcms/config.h>
 #include "string_map.h"
+#include "cgi_headers_parser.h"
 
 namespace booster {
 	namespace aio { 
@@ -42,6 +43,7 @@ namespace cppcms {
 
 
 namespace impl {
+	class response_headers;
 	class multipart_parser;
 namespace cgi {
 
@@ -72,7 +74,7 @@ namespace cgi {
 		connection(cppcms::service &srv);
 		virtual ~connection();
 		cppcms::service &service();
-	
+
 		void async_prepare_request(	http::context *context,
 						ehandler const &on_post_data_ready);
 
@@ -106,7 +108,6 @@ namespace cgi {
 		bool is_reuseable();
 	
 		std::string last_error();
-	
 
 		/****************************************************************************/
 
@@ -114,6 +115,7 @@ namespace cgi {
 		// actual protocol like FCGI, SCGI, HTTP or CGI
 	public:
 		bool has_pending();
+		virtual void set_response_headers(cppcms::impl::response_headers &headers) = 0;
 		virtual bool nonblocking_write(booster::aio::const_buffer const &buf,bool eof,booster::system::error_code &e);
 		virtual void async_write(booster::aio::const_buffer const &buf,bool eof,handler const &h);
 		virtual bool write(booster::aio::const_buffer const &buf,bool eof,booster::system::error_code &e);
@@ -125,6 +127,12 @@ namespace cgi {
 		virtual bool write_to_socket(booster::aio::const_buffer const &in,booster::system::error_code &e);
 		virtual booster::aio::io_service &get_io_service() = 0;
 	protected:
+
+        virtual void reset_all()
+        {
+            map_env_.clear();
+        }
+		std::string format_xcgi_response_headers(cppcms::impl::response_headers &hdr);
 		void append_pending(booster::aio::const_buffer const &new_data);
 
 		virtual booster::aio::stream_socket &socket() = 0;
@@ -138,6 +146,24 @@ namespace cgi {
 		virtual void async_read_some(void *,size_t,io_handler const &h) = 0;
 		virtual void on_async_read_complete() {}
 		virtual void async_read_eof(callback const &h) = 0;
+
+	public:
+		// default implementations
+		virtual char const *env_request_method()	{ return cgetenv("REQUEST_METHOD"); }
+		virtual char const *env_script_name()		{ return cgetenv("SCRIPT_NAME"); }
+		virtual char const *env_path_info()		{ return cgetenv("PATH_INFO"); }
+		virtual char const *env_http_host()		{ return cgetenv("HTTP_HOST"); }
+		virtual char const *env_remote_addr()		{ return cgetenv("REMOTE_ADDR"); }
+		virtual char const *env_query_string()		{ return cgetenv("QUERY_STRING"); }
+		virtual char const *env_content_type()  	{ return cgetenv("CONTENT_TYPE"); }
+		virtual long long env_content_length()
+		{ 
+			char const *cl = cgetenv("CONTENT_LENGTH"); 
+			if(!cl || *cl==0)
+				return 0;
+			return atoll(cl);
+		}
+
 
 		/****************************************************************************/
 
@@ -173,12 +199,14 @@ namespace cgi {
 		cppcms::service *service_;
 		std::string async_chunk_;
 		std::string error_;
-		bool request_in_progress_;
 
 		std::map<std::string,std::string> map_env_;
 
 		booster::intrusive_ptr<async_write_binder> cached_async_write_binder_;
 
+    protected:
+        bool error_state_;
+	
 	};
 
 

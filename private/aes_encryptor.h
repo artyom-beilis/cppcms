@@ -20,7 +20,7 @@ class CPPCMS_API aes_factory : public encryptor_factory {
 public:
 	aes_factory(std::string const &cbc,crypto::key const &cbc_key,std::string const &hmac,crypto::key const &hmac_key);
 	aes_factory(std::string const &algo,crypto::key const &k);
-	virtual std::auto_ptr<encryptor> get();
+	virtual std::unique_ptr<encryptor> get();
 	virtual ~aes_factory() {}
 private:
 	std::string cbc_;
@@ -37,8 +37,8 @@ public:
 	virtual bool decrypt(std::string const &cipher,std::string &plain);
 private:
 	void load();
-	std::auto_ptr<crypto::cbc> cbc_;
-	std::auto_ptr<crypto::message_digest> digest_;
+	std::unique_ptr<crypto::cbc> cbc_;
+	std::unique_ptr<crypto::message_digest> digest_;
 	std::string cbc_name_,md_name_;
 	crypto::key cbc_key_;
 	crypto::key mac_key_;

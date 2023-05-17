@@ -74,8 +74,24 @@ namespace impl {
 				unsigned cpus = booster::thread::hardware_concurrency();
 				if(cpus == 0)
 					cpus = 1;
+				if(v.find("service.worker_processes").type()==json::is_string) {
+					std::string value = v.get<std::string>("service.worker_processes");
+					if(value == "nproc")
+						worker_processes = cpus;
+					else if(value == "twice_nproc")
+						worker_processes = 2*cpus;
+					else if(value == "half_nproc")
+						worker_processes = cpus / 2;
+					else {
+						BOOSTER_WARNING("cppcms") << "Invalid service.worker_processes value " << value
+							<< "expecuting integer value, `nproc', `twice_nproc' or `half_nproc'";
+					}
+				}
+				else {
+					worker_processes = v.get("service.worker_processes",0);
+				}
+
 				worker_threads = v.get("service.worker_threads",5 * cpus);
-				worker_processes = v.get("service.worker_processes",0);
 				generate_http_headers = v.get("service.generate_http_headers",false);
 			}
 		} service;

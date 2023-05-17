@@ -11,7 +11,7 @@
 namespace booster { 
 
 	///
-	/// \brief a smart pointer similar to std::auto_ptr but it copies
+	/// \brief a smart pointer similar to std::unique_ptr but it copies
 	///   underlying object on pointer copy instead of moving its ownership.
 	///
 	/// Note: Underlying object has same constness as the pointer itself (not like in ordinary pointer).
@@ -27,6 +27,18 @@ namespace booster {
 		copy_ptr(copy_ptr const &other) :
 			ptr_(other.ptr_ ? new T(*other.ptr_) : 0)
 		{
+		}
+		copy_ptr(copy_ptr &&other) : ptr_(other.ptr_)
+		{
+			other.ptr_ = 0;
+		}
+		copy_ptr &operator=(copy_ptr &&other) 
+		{
+			if(this!=&other) {
+				this->swap(other);
+				other.reset();
+			}
+			return *this;
 		}
 		copy_ptr const &operator=(copy_ptr const &other)
 		{

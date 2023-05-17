@@ -21,6 +21,7 @@ namespace data {
 		helper h;
 		typedef std::vector<int> integers_type;
 		integers_type integers;
+		int xyz[3];
 		std::string test_filter(std::string const &s)
 		{
 			std::string tmp = s;

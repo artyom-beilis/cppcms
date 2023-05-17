@@ -54,11 +54,11 @@ void generator::add_factory(std::string const &n,generator::view_factory_type *f
 	views_[n]=factory;
 }
 
-std::auto_ptr<base_view> generator::create(	std::string const &view_name,
+std::unique_ptr<base_view> generator::create(	std::string const &view_name,
 						std::ostream &output,
 						base_content *content) const
 {
-	std::auto_ptr<base_view> result;
+	std::unique_ptr<base_view> result;
 	views_type::const_iterator p = views_.find(view_name);
 	if(p==views_.end())
 		return result;
@@ -142,7 +142,7 @@ base_view *pool::create_view(std::string const &skin,std::string const &template
 	if(t==reg_skin.end())
 		throw cppcms_error("cppcms::view::pool: no such view: " + template_name + " is registered for skin: " + skin);
 
-	std::auto_ptr<base_view> v;
+	std::unique_ptr<base_view> v;
 	v = t->second->create(template_name,out,&content);
 	if(!v.get())
 		throw cppcms_error("cppcms::views::pool: no such view: " + template_name + " in the skin: " + skin);
@@ -228,7 +228,7 @@ namespace impl {
 				int pid=_getpid();
 				file_name_ = (booster::locale::wformat(L"{1}.tmp-{2}.dll") % file_name % pid).str(std::locale::classic());
 				if(!CopyFileW(file_name.c_str(),file_name_.c_str(),1)) {
-					booster::system::error_code e(GetLastError(),booster::system::windows_category);
+					booster::system::error_code e(GetLastError(),booster::system::system_category());
 					throw booster::system::system_error(e,"Failed to copy file "+u8file_name+" to "
 										+booster::nowide::convert(file_name_));
 				}
@@ -242,7 +242,7 @@ namespace impl {
 			if(!handler_) {
 				if(remove_)
 					DeleteFileW(file_name_.c_str());
-				booster::system::error_code e(GetLastError(),booster::system::windows_category);
+				booster::system::error_code e(GetLastError(),booster::system::system_category());
 				throw booster::system::system_error(e,"Failed to load library "+u8file_name);
 			}
 		}
@@ -273,7 +273,7 @@ namespace impl {
 		{
 			handler_ = dlopen(file_name.c_str(),RTLD_LAZY | RTLD_GLOBAL);
 			if(!handler_) {
-				booster::system::error_code e(errno,booster::system::system_category);
+				booster::system::error_code e(errno,booster::system::system_category());
 				throw booster::system::system_error(e,"Failed to load library "+file_name);
 			}
 		}

@@ -11,7 +11,7 @@
 namespace booster {
 	
 	///
-	/// \brief a smart pointer similar to std::auto_ptr but it clones (by calling T::clone())
+	/// \brief a smart pointer similar to std::unique_ptr but it clones (by calling T::clone())
 	///   underlying object on copy instead of moving its ownership.
 	///
 	template<typename T>
@@ -20,6 +20,19 @@ namespace booster {
 	public:
 		clone_ptr() : ptr_(0) {}
 		explicit clone_ptr(T *v) : ptr_(v) {}
+		clone_ptr(clone_ptr &&other) : 
+			ptr_(other.ptr_)
+		{
+			other.ptr_ = 0;
+		}
+		clone_ptr &operator=(clone_ptr &&other)
+		{
+			if(this!=&other) {
+				this->swap(other);
+				other.reset();
+			}
+			return *this;
+		}
 		clone_ptr(clone_ptr const &other) : ptr_(0)
 		{
 			if(other.ptr_)

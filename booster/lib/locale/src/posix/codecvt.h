@@ -10,14 +10,14 @@
 #include <booster/config.h>
 #include <booster/locale/util.h>
 
-#include <booster/auto_ptr_inc.h>
+#include <memory>
 #include <string>
 
 namespace booster {
 namespace locale {
 namespace impl_posix {
     BOOSTER_API
-    std::auto_ptr<util::base_converter> create_iconv_converter(std::string const &encoding);
+    std::unique_ptr<util::base_converter> create_iconv_converter(std::string const &encoding);
 
 } // impl_posix
 } // locale 

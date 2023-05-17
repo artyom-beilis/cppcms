@@ -9,15 +9,12 @@
 #define BOOSTER_AIO_TYPES_H
 
 #include <booster/config.h>
+#include <booster/system_error.h>
 #include <stddef.h>
 
 namespace booster {
 	template<typename F>
 	class callback;
-
-	namespace system {
-		class error_code;
-	}
 
 
 	///

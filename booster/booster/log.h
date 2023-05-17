@@ -10,21 +10,16 @@
 
 #include <booster/config.h>
 #include <iosfwd>
-#include <booster/auto_ptr_inc.h>
+#include <memory>
 #include <string>
 #include <booster/copy_ptr.h>
 #include <booster/hold_ptr.h>
 #include <booster/noncopyable.h>
-
+#include <booster/memory_inc.h>
 /*! \file */ 
 
 
 namespace booster {
-
-template<typename T>
-class shared_ptr;
-template<typename T>
-class weak_ptr;
 
 ///
 /// \brief This namespace includes Booster.Log related classes
@@ -68,10 +63,10 @@ namespace log {
 		message();
 
 		~message();
-		/// Copy message
-		message(message &);
+		/// Move message
+		message(message &&);
 		/// Assign the  message
-		message &operator=(message &);
+		message &operator=(message &&);
 
 		///
 		/// Get the severity level for the message
@@ -104,7 +99,7 @@ namespace log {
 		char const *file_name_;
 		int file_line_;
 
-		std::auto_ptr<std::ostringstream> message_;
+		std::unique_ptr<std::ostringstream> message_;
 
 		struct data;
 		copy_ptr<data> d;

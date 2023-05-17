@@ -152,7 +152,7 @@ namespace cppcms { namespace xss {
 			typename properties_type::const_iterator pp = pt->second.properties.find(pname);
 			if(pp == pt->second.properties.end())
 				return false;
-			if(pp->second.empty())
+			if(pp->second == nullptr)
 				return true;
 			return false;
 		}
@@ -165,7 +165,7 @@ namespace cppcms { namespace xss {
 			typename properties_type::const_iterator pp = pt->second.properties.find(pname);
 			if(pp == pt->second.properties.end())
 				return false;
-			if(pp->second.empty()) {
+			if(pp->second == nullptr) {
 				if(IsXHTML) {
 					Comp cmp;
 					if(!cmp(pname,value) && !cmp(value,pname))
@@ -396,6 +396,15 @@ namespace cppcms { namespace xss {
 	}
 	rules::rules(rules const &other) : d(other.d)
 	{
+	}
+	rules::rules(rules &&other) : d(new data())
+	{
+		d.swap(other.d);
+	}
+	rules &rules::operator=(rules &&other)
+	{
+		d.swap(other.d);
+		return *this;
 	}
 	rules const &rules::operator=(rules const &other)
 	{
