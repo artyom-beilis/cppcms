@@ -112,7 +112,7 @@ void session_interface::request_origin_validation_is_required(bool v)
 bool session_interface::validate_csrf_token(std::string const &token)
 {
 	std::string session_token = get("_csrf","");
-	return session_token.empty() || session_token == token;
+	return !session_token.empty() && !token.empty() && session_token == token;
 }
 
 void session_interface::validate_request_origin()
