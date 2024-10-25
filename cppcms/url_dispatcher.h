@@ -64,6 +64,10 @@ namespace cppcms {
 	/// Parameters are parsed using `bool parse_url_parameter(util::const_char_istream &parameter,Type &param)`
 	/// that by default uses std::istream to perform casting.
 	///
+	/// Newer `map` interface allows matching an URL, an HTTP request method, an HTTP response content media type, an HTTP accept header, an HTTP request content media type,.
+	/// Parameters are parsed using `bool parse_url_parameter(util::const_char_istream &parameter,Type &param)`
+	/// that by default uses std::istream to perform casting.
+	///
 	/// Additionally every matched parameter is checked to contain valid text encoding
 	///
 	/// Newer API uses map member functions family that was introduced in CppCMS 1.1.
@@ -90,8 +94,11 @@ namespace cppcms {
 	///     /* New API - CppCMS 1.1 and above */
 	///
 	///     dispatcher().map("GET","/resource/(\\d+)",&my_web_project::get_resource,this,1);
+	///     dispatcher().map("GET","text/html","/resource/(\\d+)",&my_web_project::get_resource,this,1);
+	///     dispatcher().map("GET",{"application/json", "application/json"},"/resource/(\\d+)",&my_web_project::get_resource,this,1);
 	///     dispatcher().map("PUT","/resource/(\\d+)",&my_web_project::update_resource,this,1);
 	///     dispatcher().map("POST","/resources",&my_web_project::new_resource,this);
+	///     dispatcher().map("POST","text/html","application/x-www-form-urlencoded","/resources",&my_web_project::new_resource,this);
 	///     dispatcher().map("GET"."/id_by_name/(.*)",&my_web_project::id_by_name,this,1);
 	///     dispatcher().map("/page/(\\d+)",&my_web_project::display_page_by_id,this,1); /* any method */
 	///	...
@@ -128,6 +135,29 @@ namespace cppcms {
 		/// \ver{v1_2}
 		void map_generic(std::string const &method,booster::regex const &re,generic_handler const &h);
 		///
+		/// Map a callback \a h to a URL matching regular expression \a re and an HTTP \a method \a media_type
+		///
+		/// \param method - HTTP method to match like GET, POST, note regular expression can be used as well, for example "(POST|PUT)"
+		/// \param response_media_type - HTTP response media type of content type and also to match against the Accept header like text/html, text/javascript, 
+		///                              note since the http accept header may contain a list of media types the given string must be within list.
+		/// \param re - regular expression to match the URL
+		/// \param h - handler to execute
+		///
+		/// \ver{vnext}
+		void map_generic(std::string const &method,std::string const &response_media_type,booster::regex const &re,generic_handler const &h);
+		///
+		/// Map a callback \a h to a URL matching regular expression \a re and an HTTP \a method \a media_type
+		///
+		/// \param method - HTTP method to match like GET, POST, note regular expression can be used as well, for example "(POST|PUT)"
+		/// \param response_media_type - HTTP response media type of content type and also to match against the Accept header like text/html, text/javascript, 
+		///                              note since the http accept header may contain a list of media types the given string must be within list.
+		/// \param request_media_type - HTTP request media type of content type is matched against the media type of the http request.
+		/// \param re - regular expression to match the URL
+		/// \param h - handler to execute
+		///
+		/// \ver{vnext}
+		void map_generic(std::string const &method,std::string const &response_media_type, std::string const &request_media_type,booster::regex const &re,generic_handler const &h);
+		///
 		/// Map a callback \a h to a URL matching regular expression \a re
 		///
 		/// \param re - regular expression to match the URL
@@ -138,6 +168,92 @@ namespace cppcms {
 
 
 		#ifdef CPPCMS_DOXYGEN_DOCS
+
+
+		///
+		/// \brief Map \a member of \a app as a URL handler that matches the \a method, \a response_media_type, \a request_media_type and regular expression \a re, HTTP method \a method and HTTP media_type \a media_type
+		///
+		/// \param method - HTTP method to match like GET, POST, note regular expression can be used as well, for example "(POST|PUT)"
+		/// \param response_media_type - HTTP response media type of content type and also to match against the Accept header like text/html, text/javascript, 
+		///                              note since the http accept header may contain a list of media types the given string must be within list.
+		/// \param request_media_type - HTTP request media type of content type is matched against the media type of the http request.
+		/// \param re - regular expression to match the URL
+		/// \param member - member function of application \a app
+		/// \param app - application that its \a member is called
+		/// \param groups - matched groups converted to ApplicationMemberArgs
+		///
+		/// Note: 
+		///
+		///  - number of integers in \a groups should match the number of arguments of \a member
+		///  - \a member can have up to 8 arguments MemberArgs and the function should receive same number of integer parameters representing matched groups
+		///
+		/// For exaample
+		/// \code
+		///    class foo : public cppcms::application {
+		///        ...
+		///       void page(int x,std::string const &name);
+		///       void update(int x);
+		///       foo(...) 
+		///       {
+		///          dispatcher().map("GET","application/json","application/json","/page/(\\d+)(/(.*))?",&foo::page,this,1,3);
+		///          dispatcher().map("POST","text/html","application/x-www-form-urlencoded","/update/(\\d+)",&foo::update,this,1);
+		///       }
+		/// \endcode
+		///
+		/// When the request matches the \a method, \a response_media_type, \a request_media_type and regular expression \a re, \a member of \a app is called, For case of `page` that has two
+		/// parameters the first matched group is converted to integer and passed to as first parameter and 3rd group is passed as string to 2nd parameter
+		///
+		/// In case of `update` - that has only 1 parameter, a single integer should be passed
+		///
+		/// In addition to calling \a member function it calls app->init() before call
+		/// and app->clean() after the call if Application is derived from cppcms::application
+		///
+		///		
+		/// \ver{vnext}
+		template<typename Application,typename... ApplicationMemberArgs>
+		void map(std::string const &method,std::string const &response_media_type, std::string const &request_media_type,std::string const &re,void (Application::*member)(ApplicationMemberArgs...),Application *app, int ... groups );
+
+		///
+		/// \brief Map \a member of \a app as a URL handler that matches the \a method, \a response_media_type and regular expression \a re, HTTP method \a method and HTTP media_type \a media_type
+		///
+		/// \param method - HTTP method to match like GET, POST, note regular expression can be used as well, for example "(POST|PUT)"
+		/// \param response_media_type - HTTP response media type of content type and also to match against the Accept header like text/html, text/javascript, 
+		///                              note since the http accept header may contain a list of media types the given string must be within list.
+		/// \param re - regular expression to match the URL
+		/// \param member - member function of application \a app
+		/// \param app - application that its \a member is called
+		/// \param groups - matched groups converted to ApplicationMemberArgs
+		///
+		/// Note: 
+		///
+		///  - number of integers in \a groups should match the number of arguments of \a member
+		///  - \a member can have up to 8 arguments MemberArgs and the function should receive same number of integer parameters representing matched groups
+		///
+		/// For exaample
+		/// \code
+		///    class foo : public cppcms::application {
+		///        ...
+		///       void page(int x,std::string const &name);
+		///       void update(int x);
+		///       foo(...) 
+		///       {
+		///          dispatcher().map("GET","text/html","/page/(\\d+)(/(.*))?",&foo::page,this,1,3);
+		///          dispatcher().map("POST","text/html","/update/(\\d+)",&foo::update,this,1);
+		///       }
+		/// \endcode
+		///
+		/// When the reuqest matches the \a method, \a response_media_type and regular expression \a re, \a member of \a app is called, For case of `page` that has two
+		/// parameters the first matched group is converted to integer and passed to as first parameter and 3rd group is passed as string to 2nd parameter
+		///
+		/// In case of `update` - that has only 1 parameter, a single integer should be passed
+		///
+		/// In addition to calling \a member function it calls app->init() before call
+		/// and app->clean() after the call if Application is derived from cppcms::application
+		///
+		///		
+		/// \ver{vnext}
+		template<typename Application,typename... ApplicationMemberArgs>
+		void map(std::string const &method,std::string const &response_media_type,std::string const &re,void (Application::*member)(ApplicationMemberArgs...),Application *app, int ... groups );
 
 		///
 		/// \brief Map \a member of \a app as a URL handler that matches regualr expression \a re and HTTP method \a method
@@ -218,6 +334,93 @@ namespace cppcms {
 		template<typename Application,typename... ApplicationMemberArgs>
 		void map(std::string const &re,void (Application::*member)(ApplicationMemberArgs...),Application *app, int ... groups );
 
+
+		///
+		/// \brief Map \a member of \a app as a URL handler that matches regualr expression \a re, HTTP method \a method and HTTP media_type \a media_type
+		///
+		/// \param method - HTTP method to match like GET, POST, note regular expression can be used as well, for example "(POST|PUT)"
+		/// \param response_media_type - HTTP response media type of content type and also to match against the Accept header like text/html, text/javascript, 
+		///                              note since the http accept header may contain a list of media types the given string must be within list.
+		/// \param request_media_type - HTTP request media type of content type is matched against the media type of the http request.
+		/// \param re - regular expression to match the URL
+		/// \param member - member function of application \a app
+		/// \param app - application that its \a member is called
+		/// \param groups - matched groups converted to ApplicationMemberArgs
+		///
+		/// Note: 
+		///
+		///  - number of integers in \a groups should match the number of arguments of \a member
+		///  - \a member can have up to 8 arguments MemberArgs and the function should receive same number of integer parameters representing matched groups
+		///
+		/// For exaample
+		/// \code
+		///    class foo : public cppcms::application {
+		///        ...
+		///       void page(int x,std::string const &name);
+		///       void update(int x);
+		///       foo(...) 
+		///       {
+		///          using booster::regex;
+		///          dispatcher().map("POST","application/json","application/json",regex("/page/(\\d+)(/(.*))?",regex::icase),&foo::page,this,1,3);
+		///          dispatcher().map("POST","text/html","application/x-www-form-urlencoded","/update/(\\d+)",&foo::update,this,1);
+		///       }
+		/// \endcode
+		///
+		/// When the reuqest matches the \a method, \a media_type and regualr expression \a re, \a member of \a app is called, For case of `page` that has two
+		/// parameters the first matched group is converted to integer and passed to as first parameter and 3rd group is passed as string to 2nd parameter
+		///
+		/// In case of `update` - that has only 1 parameter, a single integer should be passed
+		///
+		/// In addition to calling \a member function it calls app->init() before call
+		/// and app->clean() after the call if Application is derived from cppcms::application
+		///
+		///		
+		/// \ver{v1_2}
+		template<typename Application,typename... ApplicationMemberArgs>
+		void map(std::string const &method,std::string const &response_media_type, std::string const &request_media_type,booster::regex const &re,void (Application::*member)(ApplicationMemberArgs...),Application *app, int ... groups );
+
+		///
+		/// \brief Map \a member of \a app as a URL handler that matches regualr expression \a re, HTTP method \a method and HTTP media_type \a media_type
+		///
+		/// \param method - HTTP method to match like GET, POST, note regular expression can be used as well, for example "(POST|PUT)"
+		/// \param response_media_type - HTTP response media type of content type and also to match against the Accept header like text/html, text/javascript, 
+		///                              note since the http accept header may contain a list of media types the given string must be within list.
+		/// \param re - regular expression to match the URL
+		/// \param member - member function of application \a app
+		/// \param app - application that its \a member is called
+		/// \param groups - matched groups converted to ApplicationMemberArgs
+		///
+		/// Note: 
+		///
+		///  - number of integers in \a groups should match the number of arguments of \a member
+		///  - \a member can have up to 8 arguments MemberArgs and the function should receive same number of integer parameters representing matched groups
+		///
+		/// For exaample
+		/// \code
+		///    class foo : public cppcms::application {
+		///        ...
+		///       void page(int x,std::string const &name);
+		///       void update(int x);
+		///       foo(...) 
+		///       {
+		///          using booster::regex;
+		///          dispatcher().map("POST","text/hml",regex("/page/(\\d+)(/(.*))?",regex::icase),&foo::page,this,1,3);
+		///          dispatcher().map("POST","text/hml","/update/(\\d+)",&foo::update,this,1);
+		///       }
+		/// \endcode
+		///
+		/// When the reuqest matches the \a method, \a media_type and regualr expression \a re, \a member of \a app is called, For case of `page` that has two
+		/// parameters the first matched group is converted to integer and passed to as first parameter and 3rd group is passed as string to 2nd parameter
+		///
+		/// In case of `update` - that has only 1 parameter, a single integer should be passed
+		///
+		/// In addition to calling \a member function it calls app->init() before call
+		/// and app->clean() after the call if Application is derived from cppcms::application
+		///
+		///		
+		/// \ver{v1_2}
+		template<typename Application,typename... ApplicationMemberArgs>
+		void map(std::string const &method,std::string const &response_media_type,booster::regex const &re,void (Application::*member)(ApplicationMemberArgs...),Application *app, int ... groups );
 
 		///
 		/// \brief Map \a member of \a app as a URL handler that matches regualr expression \a re and HTTP method \a method
@@ -709,6 +912,22 @@ namespace cppcms {
 		};													\
 		public:													\
 		template<typename C CPPCMS_URLBINDER_PRD CPPCMS_URLBINDER_TPAR>						\
+		void map(std::string const &me,std::string const &rpmt,std::string const &rqmt,std::string const &re,							\
+			 void (C::*mb)(CPPCMS_URLBINDER_MPAR),C *app CPPCMS_URLBINDER_PRD				\
+			 CPPCMS_URLBINDER_IPAR)										\
+		{													\
+			typedef url_binder<void(C::*)(CPPCMS_URLBINDER_MPAR)> btype;					\
+			map_generic(me,rpmt,rqmt,re,btype(mb,app CPPCMS_URLBINDER_PRD CPPCMS_URLBINDER_PPAR));			\
+		}													\
+		template<typename C CPPCMS_URLBINDER_PRD CPPCMS_URLBINDER_TPAR>						\
+		void map(std::string const &me,std::string const &rpmt,std::string const &re,							\
+			 void (C::*mb)(CPPCMS_URLBINDER_MPAR),C *app CPPCMS_URLBINDER_PRD				\
+			 CPPCMS_URLBINDER_IPAR)										\
+		{													\
+			typedef url_binder<void(C::*)(CPPCMS_URLBINDER_MPAR)> btype;					\
+			map_generic(me,rpmt,re,btype(mb,app CPPCMS_URLBINDER_PRD CPPCMS_URLBINDER_PPAR));			\
+		}													\
+		template<typename C CPPCMS_URLBINDER_PRD CPPCMS_URLBINDER_TPAR>						\
 		void map(std::string const &me,std::string const &re,							\
 			 void (C::*mb)(CPPCMS_URLBINDER_MPAR),C *app CPPCMS_URLBINDER_PRD				\
 			 CPPCMS_URLBINDER_IPAR)										\
@@ -723,6 +942,22 @@ namespace cppcms {
 		{													\
 			typedef url_binder<void (C::*)(CPPCMS_URLBINDER_MPAR)> btype;					\
 			map_generic(re,btype(mb,app CPPCMS_URLBINDER_PRD CPPCMS_URLBINDER_PPAR));			\
+		}													\
+		template<typename C CPPCMS_URLBINDER_PRD CPPCMS_URLBINDER_TPAR>						\
+		void map(std::string const &me,std::string const &rpmt,std::string const &rqmt,booster::regex const &re,						\
+			 void (C::*mb)(CPPCMS_URLBINDER_MPAR),C *app CPPCMS_URLBINDER_PRD				\
+			 CPPCMS_URLBINDER_IPAR)										\
+		{													\
+			typedef url_binder<void (C::*)(CPPCMS_URLBINDER_MPAR)> btype;					\
+			map_generic(me,rpmt,rqmt,re,btype(mb,app CPPCMS_URLBINDER_PRD CPPCMS_URLBINDER_PPAR));			\
+		}													\
+		template<typename C CPPCMS_URLBINDER_PRD CPPCMS_URLBINDER_TPAR>						\
+		void map(std::string const &me,std::string const &rpmt,booster::regex const &re,						\
+			 void (C::*mb)(CPPCMS_URLBINDER_MPAR),C *app CPPCMS_URLBINDER_PRD				\
+			 CPPCMS_URLBINDER_IPAR)										\
+		{													\
+			typedef url_binder<void (C::*)(CPPCMS_URLBINDER_MPAR)> btype;					\
+			map_generic(me,rpmt,re,btype(mb,app CPPCMS_URLBINDER_PRD CPPCMS_URLBINDER_PPAR));			\
 		}													\
 		template<typename C CPPCMS_URLBINDER_PRD CPPCMS_URLBINDER_TPAR>						\
 		void map(std::string const &me,booster::regex const &re,						\
