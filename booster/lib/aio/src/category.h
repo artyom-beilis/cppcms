@@ -11,6 +11,6 @@
 #include <booster/system_error.h>
 #include <booster/config.h>
 
-static booster::system::error_category const &syscat = std::system_category();
+static booster::system::error_category const &syscat = booster::system::system_category();
 
 #endif

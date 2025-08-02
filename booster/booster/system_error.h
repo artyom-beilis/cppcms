@@ -22,7 +22,11 @@ namespace booster {
 ///
 namespace system {
 	using std::error_category;
+#ifdef BOOSTER_WIN32
+    BOOSTER_API error_category const &system_category() noexcept;
+#else
 	using std::system_category;
+#endif    
 	using std::error_code;
 
     class system_error : public std::system_error, public backtrace  {

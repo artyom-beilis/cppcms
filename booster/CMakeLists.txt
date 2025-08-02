@@ -405,6 +405,7 @@ set(BOOSTER_SRC
 	lib/locale/src/util/default_locale.cpp
 	lib/locale/src/util/info.cpp
 	lib/locale/src/util/locale_data.cpp
+    lib/system/src/system_category.cpp
 )
 
 if(NOT DISABLE_ICU_LOCALE)
