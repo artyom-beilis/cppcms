@@ -58,6 +58,11 @@ context::context(booster::shared_ptr<impl::cgi::connection> conn) :
 	skin(service().views_pool().default_skin());
 }
 
+bool context::prepare_request()
+{
+	return request().prepare();
+}
+
 void context::set_holder(holder *p)
 {
 	d->specific.reset(p);
@@ -236,7 +241,7 @@ int context::on_headers_ready()
 	if(!pool)
 		return 404;
 	
-	request().prepare();
+	prepare_request();
 
 	int flags;
 	
