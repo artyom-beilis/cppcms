@@ -5,7 +5,7 @@ set(CMAKE_LEGACY_CYGWIN_WIN32 0)
 project(cppcms)
 set(CPPCMS_PACKAGE_NAME "CppCMS")
 # Actual Version
-set(CPPCMS_VERSION "2.0.0.beta2")
+set(CPPCMS_VERSION "2.0.1")
 # Binary ABI Version
 set(CPPCMS_SOVERSION "2")
 
