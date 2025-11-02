@@ -243,10 +243,29 @@ namespace cppcms {
 		virtual void clear();
 
 		///
+		/// Add \a subform at specific position to form. The ownership is not
+		/// transferred to the parent.
+		/// When \a index is negative it is interpreted from the back, if index
+		/// is greater than the number of already added elemenets, the element
+		/// will simply add at the end (or beginning if negative).
+		///
+		void add(int index, form &subform);
+
+		///
 		/// Add \a subform to form. The ownership is not transferred to
 		/// the parent.
 		///
 		void add(form &subform);
+
+		///
+		/// Add \a subform at specific position to form. The ownership is
+		/// transferred to the parent and the subform will be destroyed together
+		/// with the parent.
+		/// When \a index is negative it is interpreted from the back, if index
+		/// is greater than the number of already added elemenets, the element
+		/// will simply add at the end (or beginning if negative).
+		///
+		void attach(int index, form *subform);
 
 		///
 		/// Add \a subform to form. The ownership is transferred to
@@ -256,10 +275,29 @@ namespace cppcms {
 		void attach(form *subform);
 
 		///
+		/// Add \a widget at specific position to form. The ownership is not
+		/// transferred to to the parent.
+		/// When \a index is negative it is interpreted from the back, if index
+		/// is greater than the number of already added elemenets, the element
+		/// will simply add at the end (or beginning if negative).
+		///
+		void add(int index, widgets::base_widget &widget);
+
+		///
 		/// Add \a widget to form. The ownership is not transferred to
 		/// to the parent.
 		///
 		void add(widgets::base_widget &widget);
+
+		///
+		/// Add \a widget at specific position to form. The ownership is
+		/// transferred to the parent and the widget will be destroyed together
+		/// with the parent.
+		/// When \a index is negative it is interpreted from the back, if index
+		/// is greater than the number of already added elemenets, the element
+		/// will simply add at the end (or beginning if negative).
+		///
+		void attach(int index, widgets::base_widget *widget);
 
 		///
 		/// Add \a widget to form. The ownership is transferred to
