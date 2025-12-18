@@ -6,7 +6,7 @@
 #  http://www.boost.org/LICENSE_1_0.txt)
 #
 
-cmake_minimum_required(VERSION 2.6)
+cmake_minimum_required(VERSION 3.5)
 project(booster)
 include(CheckFunctionExists)
 include(CheckCXXSourceCompiles)
