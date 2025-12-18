@@ -223,7 +223,7 @@ if(NOT IS_WINDOWS)
 	endif()
 endif()
 
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${CXX_FLAGS}")
+set(CMAKE_CXX_FLAGS "${CXX_FLAGS} ${CMAKE_CXX_FLAGS}")
 
 #############################################################################
 #

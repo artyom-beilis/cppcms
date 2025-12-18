@@ -141,8 +141,8 @@ elseif(MSVC)
 	set(C_FLAGS "/W3")
 endif()
 
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${CXX_FLAGS}")
-set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${C_FLAGS}")
+set(CMAKE_CXX_FLAGS "${CXX_FLAGS} ${CMAKE_CXX_FLAGS}")
+set(CMAKE_C_FLAGS "${C_FLAGS} ${CMAKE_C_FLAGS} ")
 
 #############################################################################
 #
