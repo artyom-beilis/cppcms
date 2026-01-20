@@ -150,27 +150,62 @@ void form::clear()
 	}
 }
 
+namespace {
+
+// std::advance is not applicable because UB when n > size
+template<class Iter>
+Iter advance(Iter it, const Iter& end, int n) {
+	while (n--)
+		if (it == end)
+			break;
+		else
+			++it;
+	return it;
+}
+template<class V, class T>
+void add_impl(form* self, V& elements_, T* form, bool owning, int position) {
+	if (position < 0) {
+		auto it = advance(elements_.rend(), elements_.rbegin(), position * -1);
+		elements_.emplace(it.base() -1, form, owning);
+	} else {
+		auto it = advance(elements_.begin(), elements_.end(), position);
+		elements_.emplace(it, form, owning);
+	}
+	form->parent(self);
+}
+}
+void form::add(int index, widgets::base_widget &form)
+{
+	add_impl(this, elements_, &form, false, index);
+}
+void form::add(int index, form &subform)
+{
+	add_impl(this, elements_, &subform, false, index);
+}
 void form::add(widgets::base_widget &form)
 {
-	elements_.push_back(widget_type(&form,false));
-	form.parent(this);
+	add_impl(this, elements_, &form, false, elements_.size());
 }
 void form::add(form &subform)
 {
-	elements_.push_back(widget_type(&subform,false));
-	subform.parent(this);
+	add_impl(this, elements_, &subform, false, elements_.size());
 }
 
+void form::attach(int index, form *subform)
+{
+	add_impl(this, elements_, subform, true, index);
+}
+void form::attach(int index, widgets::base_widget *form)
+{
+	add_impl(this, elements_, form, true, index);
+}
 void form::attach(form *subform)
 {
-	elements_.push_back(widget_type(subform,true));
-	subform->parent(this);
+	add_impl(this, elements_, subform, true, elements_.size());
 }
-
-void form::attach(widgets::base_widget *subform)
+void form::attach(widgets::base_widget *form)
 {
-	elements_.push_back(widget_type(subform,true));
-	subform->parent(this);
+	add_impl(this, elements_, form, true, elements_.size());
 }
 
 struct form::iterator::_data {};
