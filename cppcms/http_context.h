@@ -250,6 +250,12 @@ namespace cppcms {
 				set_holder(0);
 				return r;
 			}
+		
+		protected:
+			///\ the method can be used by a the dummy http context to prepare the request -> parse the content type
+			///\ note: this is needed in order to be able to test response and request media type url dispatching.
+			bool prepare_request();
+
 		private:
 
 			void set_holder(holder *p);
