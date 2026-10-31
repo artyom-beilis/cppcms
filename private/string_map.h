@@ -33,11 +33,7 @@ namespace cppcms {
 			}
 			void clear()
 			{
-				while(pages_->next) {
-					page *p = pages_;
-					pages_ = pages_->next;
-					free(p);
-				}
+                destroy();
 				data_ = nullptr;
                 pages_ = nullptr;
 				free_space_ = 0;
