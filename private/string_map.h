@@ -38,8 +38,10 @@ namespace cppcms {
 					pages_ = pages_->next;
 					free(p);
 				}
-				data_ = pages_->data;
-				free_space_ = page_size_;
+				data_ = nullptr;
+                pages_ = nullptr;
+				free_space_ = 0;
+                add_page();
 			}
 			~string_pool()
 			{
