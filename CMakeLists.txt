@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.5)
+cmake_minimum_required(VERSION 3.12..4.3)
 set(CMAKE_LEGACY_CYGWIN_WIN32 0)
 
 
@@ -109,7 +109,7 @@ endif()
 
 if(CMAKE_COMPILER_IS_GNUCXX)
 
-	set(CXX_FLAGS "-Wall -Wextra -std=c++11")
+	set(CXX_FLAGS "-Wall -Wextra -std=c++17")
 	set(C_FLAGS "-Wall -Wextra")
 
 	if(CMAKE_SYSTEM_NAME STREQUAL "SunOS")
