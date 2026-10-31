@@ -104,7 +104,7 @@ namespace cppcms {
 
 			char *allocate_space(size_t size)
 			{
-				if(size * 2 > page_size_) {
+				if(size > page_size_) {
 					page *p=(page *)malloc(size + sizeof(page));
 					if(!p)
 						throw std::bad_alloc();
