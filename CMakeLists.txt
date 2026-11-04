@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.5)
+cmake_minimum_required(VERSION 3.10)
 set(CMAKE_LEGACY_CYGWIN_WIN32 0)
 
 
@@ -16,6 +16,8 @@ set(CPPCMS_PACKAGE_STRING "CppCMS/${CPPCMS_PACKAGE_VERSION}")
 set(BOOSTER_SOVERSION "${CPPCMS_SOVERSION}")
 set(BOOSTER_VERSION   "${CPPCMS_VERSION}")
 
+
+set(CMAKE_CXX_STANDARD 17)
 
 
 include(CheckFunctionExists)
@@ -109,7 +111,7 @@ endif()
 
 if(CMAKE_COMPILER_IS_GNUCXX)
 
-	set(CXX_FLAGS "-Wall -Wextra -std=c++11")
+	set(CXX_FLAGS "-Wall -Wextra")
 	set(C_FLAGS "-Wall -Wextra")
 
 	if(CMAKE_SYSTEM_NAME STREQUAL "SunOS")
