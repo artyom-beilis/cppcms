@@ -495,38 +495,52 @@ endif()
 
 
 if(NOT DISABLE_PCRE)
-	find_path(PCRE_INCLUDE pcre.h)
-	if(PCRE_INCLUDE)
-		include_directories(${PCRE_INCLUDE})
-	endif()
+find_path(PCRE2_INCLUDE pcre2.h)
+find_library(PCRE2_LIB NAMES pcre2-8${PCRE_SUFFIX})
 
-	if(NOT PCRE_INCLUDE)
-		find_path(PCRE_INCLUDE2 pcre/pcre.h)
-		include_directories(${PCRE_INCLUDE2}/pcre)
-		if(NOT PCRE_INCLUDE2)
-			message("Can't find PCRE include directory falling back to std::regex")
-			set(DISABLE_PCRE ON)
-		endif()
-
-	endif()
-
-	if(NOT DISABLE_PCRE)
-
-		find_library(PCRE_LIB NAMES pcre${PCRE_SUFFIX} pcre)
-		if(NOT PCRE_LIB)
-			set(DISABLE_PCRE ON)
-			message("Can't find PCRE library - falling back to std::regex")
-		endif()
-	endif()
-endif()
-
-if(DISABLE_PCRE)
-	add_definitions(-DBOOSTER_NO_PCRE)
-	set(BOOSTER_SRC ${BOOSTER_SRC} lib/regex/src/std_regex.cpp)
+if(PCRE2_INCLUDE AND PCRE2_LIB)
+    include_directories(${PCRE2_INCLUDE})
+    SET(PCRE_LIBRARY ${PCRE2_LIB})
 else()
-	set(BOOSTER_SRC ${BOOSTER_SRC} lib/regex/src/pcre_regex.cpp)
-endif()
-	
+
+        find_path(PCRE_INCLUDE pcre.h)
+        if(PCRE_INCLUDE)
+            include_directories(${PCRE_INCLUDE})
+        endif()
+
+        if(NOT PCRE_INCLUDE)
+            find_path(PCRE_INCLUDE2 pcre/pcre.h)
+            include_directories(${PCRE_INCLUDE2}/pcre)
+            if(NOT PCRE_INCLUDE2)
+                message("Can't find PCRE or PCRE2 include directory falling back to std::regex")
+                set(DISABLE_PCRE ON)
+            endif()
+
+        endif()
+
+        if(NOT DISABLE_PCRE)
+
+            find_library(PCRE_LIB NAMES pcre${PCRE_SUFFIX} pcre)
+            if(NOT PCRE_LIB)
+                set(DISABLE_PCRE ON)
+                message("Can't find PCRE library - falling back to std::regex")
+            else()
+                SET(PCRE_LIBRARY ${PCRE_LIB})
+            endif()
+        endif()
+    endif()
+
+    if(DISABLE_PCRE)
+        add_definitions(-DBOOSTER_NO_PCRE)
+        set(BOOSTER_SRC ${BOOSTER_SRC} lib/regex/src/std_regex.cpp)
+    else()
+        if(PCRE2_INCLUDE AND PCRE2_LIB)
+            set(BOOSTER_SRC ${BOOSTER_SRC} lib/regex/src/pcre2_regex.cpp)
+            else()
+            set(BOOSTER_SRC ${BOOSTER_SRC} lib/regex/src/pcre_regex.cpp)
+        endif()
+    endif()
+endif() ## PCRE2	
 
 set(LINK_LIBS )
 
@@ -578,7 +592,7 @@ foreach(ALIB ${LINK_LIBS})
 		target_link_libraries(${ALIB} ${WS2_32})
 	endif()
 	if(NOT DISABLE_PCRE)
-		target_link_libraries(${ALIB} ${PCRE_LIB})
+		target_link_libraries(${ALIB} ${PCRE_LIBRARY})
 	endif()
 
 	if(NOT DISABLE_ICU_LOCALE)

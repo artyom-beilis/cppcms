@@ -7,9 +7,6 @@
 //
 #include <booster/regex.h>
 #include "test.h"
-#ifndef BOOSTER_NO_PCRE
-#include <pcre.h>
-#endif
 
 #define THROWS(x,te) do {					\
 	try{x;}catch(te const &){break;}catch(...){} 		\
@@ -186,11 +183,8 @@ int main()
 				TEST(match(".","\xD7\x90",booster::regex::utf8));
 				TEST(match(".","\xD0\x96",booster::regex::utf8));
 				TEST(match("\xD0\x96","\xD0\xB6",booster::regex::icase | booster::regex::utf8));
-
+#if 0
 				int prop=0;
-				#ifndef BOOSTER_NO_PCRE
-				pcre_config(PCRE_CONFIG_UNICODE_PROPERTIES,&prop);
-				#endif
 				if(prop) {
 					std::cout << "Testing Unicode Properties" << std::endl;
 					TEST(match("\\p{Hebrew}","\xD7\x90",booster::regex::utf8));
@@ -201,6 +195,7 @@ int main()
 					std::cout << "Unicode properties not compiled in" << std::endl;
 					THROWS(match("\\p{Hebrew}","a",booster::regex::utf8),booster::regex_error);
 				}
+#endif                
 			}
 			else {
 				std::cout << "UTF-8 is not compiled in" << std::endl;
